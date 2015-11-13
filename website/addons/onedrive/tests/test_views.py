@@ -1,277 +1,273 @@
 # -*- coding: utf-8 -*-
-"""Views tests for the Onedrive addon."""
+"""Views tests for the OneDrive addon."""
+import os
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
 import httplib
-from datetime import datetime
 
 from framework.auth import Auth
 from website.util import api_url_for, web_url_for
+from onedrive.rest import ErrorResponse
+from onedrive.client import OneDriveOAuth2Flow
+
 from urllib3.exceptions import MaxRetryError
-from onedrive.client import OnedriveClientException
-from tests.factories import AuthUserFactory
+
+from tests.base import OsfTestCase, assert_is_redirect
+from tests.factories import AuthUserFactory, ProjectFactory
 
 from website.addons.onedrive.tests.utils import (
-    OnedriveAddonTestCase, MockOnedrive, patch_client
+    OneDriveAddonTestCase, mock_responses, MockOneDrive, patch_client
 )
-from website.addons.onedrive.tests.factories import OnedriveAccountFactory
-from website.addons.onedrive.utils import onedrive_addon_folder
-from website.addons.onedrive.serializer import OnedriveSerializer
+from website.addons.onedrive.views.config import serialize_settings
+from website.addons.onedrive.views.hgrid import onedrive_addon_folder
+from website.addons.onedrive import utils
 
-mock_client = MockOnedrive()
+mock_client = MockOneDrive()
 
 
-class TestConfigViews(OnedriveAddonTestCase):
+class TestAuthViews(OsfTestCase):
 
     def setUp(self):
-        super(TestConfigViews, self).setUp()
+        super(TestAuthViews, self).setUp()
+        self.user = AuthUserFactory()
+        # Log user in
+        self.app.authenticate(*self.user.auth)
+
+    def test_onedrive_oauth_start(self):
+        url = api_url_for('onedrive_oauth_start_user')
+        res = self.app.get(url)
+        assert_is_redirect(res)
+        assert_in('&force_reapprove=true', res.location)
+
+    @mock.patch('website.addons.onedrive.views.auth.OneDriveOAuth2Flow.finish')
+    @mock.patch('website.addons.onedrive.views.auth.get_client_from_user_settings')
+    def test_onedrive_oauth_finish(self, mock_get, mock_finish):
+        mock_client = mock.MagicMock()
+        mock_client.account_info.return_value = {'display_name': 'Mr. Drop Box'}
+        mock_get.return_value = mock_client
+        mock_finish.return_value = ('mytoken123', 'myonedriveid', 'done')
+        url = api_url_for('onedrive_oauth_finish')
+        res = self.app.get(url)
+        assert_is_redirect(res)
+
+    @mock.patch('website.addons.onedrive.views.auth.session')
+    @mock.patch('website.addons.onedrive.views.auth.OneDriveOAuth2Flow.finish')
+    def test_onedrive_oauth_finish_cancelled(self, mock_finish, mock_session):
+        node = ProjectFactory(creator=self.user)
+        mock_session.data = {'onedrive_auth_nid': node._id}
+        mock_response = mock.Mock()
+        mock_response.status = 404
+        mock_finish.side_effect = OneDriveOAuth2Flow.NotApprovedException
+        settings = self.user.get_addon('onedrive')
+        url = api_url_for('onedrive_oauth_finish')
+        res = self.app.get(url)
+
+        assert_is_redirect(res)
+        assert_in(node._id, res.headers["location"])
+        assert_false(settings)
+
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.disable_access_token')
+    def test_onedrive_oauth_delete_user(self, mock_disable_access_token):
         self.user.add_addon('onedrive')
-        self.external_account = self.user.external_accounts[0]
-        self.node_settings.external_account = self.external_account
-        self.node_settings.save()
-        self.patcher = mock.patch("website.addons.onedrive.model.refresh_oauth_key")
-        self.patcher.return_value = True
-        self.patcher.start()
+        settings = self.user.get_addon('onedrive')
+        settings.access_token = '12345abc'
+        settings.save()
+        assert_true(settings.has_auth)
+        self.user.save()
+        url = api_url_for('onedrive_oauth_delete_user')
+        self.app.delete(url)
+        settings.reload()
+        assert_false(settings.has_auth)
 
-    def tearDown(self):
-        self.patcher.stop()
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.disable_access_token')
+    def test_onedrive_oauth_delete_user_with_invalid_credentials(self, mock_disable_access_token):
+        self.user.add_addon('onedrive')
+        settings = self.user.get_addon('onedrive')
+        settings.access_token = '12345abc'
+        settings.save()
+        assert_true(settings.has_auth)
 
-    def test_onedrive_get_user_settings_has_account(self):
-        url = api_url_for('onedrive_get_user_settings')
+        mock_response = mock.Mock()
+        mock_response.status = 401
+        mock_disable_access_token.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+
+        self.user.save()
+        url = api_url_for('onedrive_oauth_delete_user')
+        self.app.delete(url)
+        settings.reload()
+        assert_false(settings.has_auth)
+
+
+class TestConfigViews(OneDriveAddonTestCase):
+
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.account_info')
+    def test_onedrive_user_config_get_has_auth_info(self, mock_account_info):
+        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
+        url = api_url_for('onedrive_user_config_get')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         # The JSON result
-        account = res.json.get('accounts')
-        assert_is_not_none(account[0])
+        result = res.json['result']
+        assert_true(result['userHasAuth'])
 
-    def test_onedrive_get_user_settings_not_logged_in(self):
-        url = api_url_for('onedrive_get_user_settings')
-        self.user = None
-        res = self.app.get(url)
-        # Redirects to login
-        assert_equal(res.status_code, 302)
-        assert_in('/login?service=http://localhost:80/api/v1/settings/onedrive/accounts', res.text)
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.account_info')
+    def test_onedrive_user_config_get_has_valid_credentials(self, mock_account_info):
+        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
+        url = api_url_for('onedrive_user_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # The JSON result
+        result = res.json['result']
+        assert_true(result['validCredentials'])
 
-    def test_serialized_urls_returns_correct_urls(self):
-        urls = OnedriveSerializer(node_settings=self.node_settings).serialized_urls
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.account_info')
+    def test_onedrive_user_config_get_has_invalid_credentials(self, mock_account_info):
+        mock_response = mock.Mock()
+        mock_response.status = 401
+        mock_account_info.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+        url = api_url_for('onedrive_user_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # The JSON result
+        result = res.json['result']
+        assert_false(result['validCredentials'])
 
-        assert_equal(urls['config'], self.project.api_url_for('onedrive_set_config'))
-        assert_equal(urls['auth'], api_url_for('oauth_connect', service_name='onedrive'))
-        assert_equal(urls['deauthorize'], self.project.api_url_for('onedrive_remove_user_auth'))
-        assert_equal(urls['importAuth'], self.project.api_url_for('onedrive_add_user_auth'))
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.account_info')
+    def test_onedrive_user_config_get_returns_correct_urls(self, mock_account_info):
+        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
+        url = api_url_for('onedrive_user_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # The JSONified URLs result
+        urls = res.json['result']['urls']
+        assert_equal(urls['delete'], api_url_for('onedrive_oauth_delete_user'))
+        assert_equal(urls['create'], api_url_for('onedrive_oauth_start_user'))
+
+    def test_serialize_settings_helper_returns_correct_urls(self):
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        urls = result['urls']
+
+        assert_equal(urls['config'], self.project.api_url_for('onedrive_config_put'))
+        assert_equal(urls['deauthorize'], self.project.api_url_for('onedrive_deauthorize'))
+        assert_equal(urls['auth'], self.project.api_url_for('onedrive_oauth_start'))
+        assert_equal(urls['importAuth'], self.project.api_url_for('onedrive_import_user_auth'))
         assert_equal(urls['files'], self.project.web_url_for('collect_file_trees'))
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
-        assert_equal(urls['folders'], self.project.api_url_for('onedrive_folder_list'))
+        assert_equal(urls['folders'],
+            self.project.api_url_for('onedrive_hgrid_data_contents', root=1))
         assert_equal(urls['settings'], web_url_for('user_addons'))
 
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_serialize_settings_helper_returns_correct_auth_info(self, mock_get_folder):
-        mock_get_folder.return_value = {
-            'name': 'Camera Uploads',
-            'path_collection': {
-                'entries': [
-                    {'name': 'All Files'}
-                ]
-            }
-        }
-        result = OnedriveSerializer().serialize_settings(self.node_settings, self.user, client=mock_client)
+    def test_serialize_settings_helper_returns_correct_auth_info(self):
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_serialize_settings_for_user_no_auth(self, mock_get_folder):
-        mock_get_folder.return_value = {
-            'name': 'Camera Uploads',
-            'path_collection': {
-                'entries': [
-                    {'name': 'All Files'}
-                ]
-            }
-        }
+    def test_serialize_settings_for_user_no_auth(self):
         no_addon_user = AuthUserFactory()
-        result = OnedriveSerializer().serialize_settings(self.node_settings, no_addon_user, client=mock_client)
+        result = serialize_settings(self.node_settings, no_addon_user, client=mock_client)
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
 
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_serialize_settings_valid_credentials(self, mock_get_folder):
-        mock_get_folder.return_value = {
-            'name': 'Camera Uploads',
-            'path_collection': {
-                'entries': [
-                    {'name': 'All Files'}
-                ]
-            }
-        }
-        result = OnedriveSerializer().serialize_settings(self.node_settings, self.user, client=mock_client)
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.account_info')
+    def test_serialize_settings_valid_credentials(self, mock_account_info):
+        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
         assert_true(result['validCredentials'])
 
-    @mock.patch('website.addons.onedrive.serializer.OnedriveClient.get_user_info')
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_serialize_settings_invalid_credentials(self, mock_get_folder, mock_account_info):
-        mock_get_folder.return_value = {
-            'name': 'Camera Uploads',
-            'path_collection': {
-                'entries': [
-                    {'name': 'All Files'}
-                ]
-            }
-        }
-        mock_account_info.side_effect = OnedriveClientException(401, "The given OAuth 2 access token doesn't exist or has expired.")
-        result = OnedriveSerializer().serialize_settings(self.node_settings, self.user)
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.account_info')
+    def test_serialize_settings_invalid_credentials(self, mock_account_info):
+        mock_response = mock.Mock()
+        mock_response.status = 401
+        mock_account_info.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
+        result = serialize_settings(self.node_settings, self.user)
         assert_false(result['validCredentials'])
 
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_serialize_settings_helper_returns_correct_folder_info(self, mock_get_folder):
-        mock_get_folder.return_value = {
-            'name': 'Camera Uploads',
-            'path_collection': {
-                'entries': [
-                    {'name': 'All Files'}
-                ]
-            }
-        }
-        result = OnedriveSerializer().serialize_settings(self.node_settings, self.user, client=mock_client)
+    def test_serialize_settings_helper_returns_correct_folder_info(self):
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
         folder = result['folder']
-        assert_equal(folder['name'], '/' + self.node_settings.folder_name)
-        assert_equal(folder['path'], 'All Files/' + self.node_settings.folder_name)
+        assert_equal(folder['name'], self.node_settings.folder)
+        assert_equal(folder['path'], self.node_settings.folder)
 
-    @mock.patch('website.addons.onedrive.serializer.OnedriveClient.get_user_info')
-    @mock.patch('website.addons.onedrive.model.OnedriveClient.get_folder')
-    @mock.patch('website.addons.onedrive.views.refresh_oauth_key')
-    def test_onedrive_get_config(self, mock_refresh, mock_get_folder, mock_account_info):
-        mock_refresh.return_value = True
-        mock_get_folder.return_value = {
-            'name': 'Camera Uploads',
-            'path_collection': {
-                'entries': [
-                    {'name': 'All Files'}
-                ]
-            }
-        }
-        mock_account_info.return_value = {'display_name': 'Mr. Onedrive'}
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.account_info')
+    def test_onedrive_config_get(self, mock_account_info):
+        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
         self.user_settings.save()
 
-        res = self.app.get(
-            self.project.api_url_for('onedrive_get_config'),
-            auth=self.user.auth,
-        )
+        url = self.project.api_url_for('onedrive_config_get')
+
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         result = res.json['result']
         assert_equal(result['ownerName'], self.user_settings.owner.fullname)
 
-        assert_equal(result['urls']['config'],
-            api_url_for('onedrive_set_config', pid=self.project._primary_key))
+        assert_equal(
+            result['urls']['config'],
+            self.project.api_url_for('onedrive_config_put'),
+        )
 
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_onedrive_set_config(self, mock_get_folder):
-        mock_get_folder.return_value = {
-            'name': 'Camera Uploads',
-            'path_collection': {
-                'entries': [
-                    {'name': 'All Files'}
-                ]
-            }
-        }
-        url = api_url_for('onedrive_set_config', pid=self.project._primary_key)
+    def test_onedrive_config_put(self):
+        url = self.project.api_url_for('onedrive_config_put')
         # Can set folder through API call
         res = self.app.put_json(url, {'selected': {'path': 'My test folder',
-            'name': 'Onedrive/My test folder',
-            'id': '1234567890'}},
+            'name': 'OneDrive/My test folder'}},
             auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.node_settings.reload()
         self.project.reload()
 
+        # Folder was set
+        assert_equal(self.node_settings.folder, 'My test folder')
         # A log event was created
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'onedrive_folder_selected')
         params = last_log.params
-        assert_equal(params['folder_id'], '1234567890')
-        assert_equal(self.node_settings.folder_id, '1234567890')
+        assert_equal(params['folder'], 'My test folder')
 
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_onedrive_remove_user_auth(self, mock_get_folder):
-        mock_get_folder.return_value = {
-            'name': 'Camera Uploads',
-            'path_collection': {
-                'entries': [
-                    {'name': 'All Files'}
-                ]
-            }
-        }
-        url = api_url_for('onedrive_remove_user_auth', pid=self.project._primary_key)
-        saved_folder = self.node_settings.folder_id
+    def test_onedrive_deauthorize(self):
+        url = self.project.api_url_for('onedrive_deauthorize')
+        saved_folder = self.node_settings.folder
         self.app.delete(url, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
 
         assert_false(self.node_settings.has_auth)
         assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder_id, None)
+        assert_is(self.node_settings.folder, None)
 
         # A log event was saved
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'onedrive_node_deauthorized')
         log_params = last_log.params
         assert_equal(log_params['node'], self.project._primary_key)
-        assert_equal(log_params['folder_id'], saved_folder)
+        assert_equal(log_params['folder'], saved_folder)
 
-    @mock.patch('website.addons.onedrive.serializer.OnedriveClient.get_user_info')
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_onedrive_import_user_auth_returns_serialized_settings(self, mock_get_folder, mock_account_info):
-        mock_get_folder.return_value = {
-            'name': 'Camera Uploads',
-            'path_collection': {
-                'entries': [
-                    {'name': 'All Files'}
-                ]
-            }
-        }
-        mock_account_info.return_value = {'display_name': 'Mr. Onedrive'}
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.account_info')
+    def test_onedrive_import_user_auth_returns_serialized_settings(self, mock_account_info):
+        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
         # Node does not have user settings
         self.node_settings.user_settings = None
         self.node_settings.save()
-        url = api_url_for('onedrive_add_user_auth', pid=self.project._primary_key)
-        res = self.app.put_json(
-            url, 
-            {
-                'external_account_id': self.external_account._id,
-            },
-            auth=self.user.auth)
+        url = self.project.api_url_for('onedrive_import_user_auth')
+        res = self.app.put(url, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
 
-        expected_result = OnedriveSerializer().serialize_settings(self.node_settings, self.user,
+        expected_result = serialize_settings(self.node_settings, self.user,
                                              client=mock_client)
         result = res.json['result']
         assert_equal(result, expected_result)
 
-    @mock.patch('website.addons.onedrive.serializer.OnedriveClient.get_user_info')
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_onedrive_import_user_auth_adds_a_log(self, mock_get_folder, mock_account_info):
-        mock_get_folder.return_value = {
-            'name': 'Camera Uploads',
-            'path_collection': {
-                'entries': [
-                    {'name': 'All Files'}
-                ]
-            }
-        }
-        mock_account_info.return_value = {'display_name': 'Mr. Onedrive'}
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.account_info')
+    def test_onedrive_import_user_auth_adds_a_log(self, mock_account_info):
+        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
         # Node does not have user settings
         self.node_settings.user_settings = None
         self.node_settings.save()
-        url = api_url_for('onedrive_add_user_auth', pid=self.project._primary_key)
-        self.app.put_json(
-            url, 
-            {
-                'external_account_id': self.external_account._id,
-            },
-            auth=self.user.auth)
+        url = self.project.api_url_for('onedrive_import_user_auth')
+        self.app.put(url, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
         last_log = self.project.logs[-1]
@@ -281,70 +277,83 @@ class TestConfigViews(OnedriveAddonTestCase):
         assert_equal(log_params['node'], self.project._primary_key)
         assert_equal(last_log.user, self.user)
 
-class TestFilebrowserViews(OnedriveAddonTestCase):
+    def test_onedrive_get_share_emails(self):
+        # project has some contributors
+        contrib = AuthUserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.user))
+        self.project.save()
+        url = self.project.api_url_for('onedrive_get_share_emails')
+        res = self.app.get(url, auth=self.user.auth)
+        result = res.json['result']
+        assert_equal(result['emails'], [u.username for u in self.project.contributors
+                                        if u != self.user])
+        assert_equal(result['url'], utils.get_share_folder_uri(self.node_settings.folder))
 
-    def setUp(self):
-        super(TestFilebrowserViews, self).setUp()
-        self.user.add_addon('onedrive')
-        self.node_settings.external_account = self.user_settings.external_accounts[0]
+    def test_onedrive_get_share_emails_returns_error_if_not_authorizer(self):
+        contrib = AuthUserFactory()
+        contrib.add_addon('onedrive')
+        contrib.save()
+        self.project.add_contributor(contrib, auth=Auth(self.user))
+        self.project.save()
+        url = self.project.api_url_for('onedrive_get_share_emails')
+        # Non-authorizing contributor sends request
+        res = self.app.get(url, auth=contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.FORBIDDEN)
+
+    def test_onedrive_get_share_emails_requires_user_addon(self):
+        # Node doesn't have auth
+        self.node_settings.user_settings = None
         self.node_settings.save()
-        self.patcher_fetch = mock.patch('website.addons.onedrive.model.OnedriveNodeSettings.fetch_folder_name')
-        self.patcher_fetch.return_value = 'Camera Uploads'
-        self.patcher_fetch.start()
-        self.patcher_refresh = mock.patch('website.addons.onedrive.views.refresh_oauth_key')
-        self.patcher_refresh.return_value = True
-        self.patcher_refresh.start()
+        url = self.project.api_url_for('onedrive_get_share_emails')
+        # Non-authorizing contributor sends request
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.BAD_REQUEST)
 
-    def tearDown(self):
-        self.patcher_fetch.stop()
-        self.patcher_refresh.stop()
 
-    def test_onedrive_list_folders(self):
-        with patch_client('website.addons.onedrive.views.OnedriveClient'):
-            url = self.project.api_url_for('onedrive_folder_list', folderId='foo')
+class TestFilebrowserViews(OneDriveAddonTestCase):
+
+    def test_onedrive_hgrid_data_contents(self):
+        with patch_client('website.addons.onedrive.views.hgrid.get_node_client'):
+            url = self.project.api_url_for(
+                'onedrive_hgrid_data_contents',
+                path=self.node_settings.folder,
+            )
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
-            expected = [each for each in contents if each['type']=='folder']
-            assert_equal(len(res.json), len(expected))
+            contents = [x for x in mock_client.metadata('', list=True)['contents'] if x['is_dir']]
+            assert_equal(len(res.json), len(contents))
             first = res.json[0]
             assert_in('kind', first)
-            assert_equal(first['name'], contents[0]['name'])
+            assert_equal(first['path'], contents[0]['path'])
 
-    @mock.patch('website.addons.onedrive.model.OnedriveNodeSettings.folder_id')
-    def test_onedrive_list_folders_if_folder_is_none(self, mock_folder):
-        # If folder is set to none, no data are returned
-        mock_folder.__get__ = mock.Mock(return_value=None)
-        url = self.project.api_url_for('onedrive_folder_list')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(len(res.json), 1)
-
-    def test_onedrive_list_folders_if_folder_is_none_and_folders_only(self):
-        with patch_client('website.addons.onedrive.views.OnedriveClient'):
-            self.node_settings.folder_name = None
+    def test_onedrive_hgrid_data_contents_if_folder_is_none_and_folders_only(self):
+        with patch_client('website.addons.onedrive.views.hgrid.get_node_client'):
+            self.node_settings.folder = None
             self.node_settings.save()
-            url = api_url_for('onedrive_folder_list',
-                pid=self.project._primary_key, foldersOnly=True)
+            url = self.project.api_url_for('onedrive_hgrid_data_contents', foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
-            expected = [each for each in contents if each['type']=='folder']
+            contents = mock_client.metadata('', list=True)['contents']
+            expected = [each for each in contents if each['is_dir']]
             assert_equal(len(res.json), len(expected))
 
-    def test_onedrive_list_folders_folders_only(self):
-        with patch_client('website.addons.onedrive.views.OnedriveClient'):
-            url = self.project.api_url_for('onedrive_folder_list', foldersOnly=True)
+    def test_onedrive_hgrid_data_contents_folders_only(self):
+        with patch_client('website.addons.onedrive.views.hgrid.get_node_client'):
+            url = self.project.api_url_for('onedrive_hgrid_data_contents', foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
-            expected = [each for each in contents if each['type']=='folder']
+            contents = mock_client.metadata('', list=True)['contents']
+            expected = [each for each in contents if each['is_dir']]
             assert_equal(len(res.json), len(expected))
 
-    def test_onedrive_list_folders_doesnt_include_root(self):
-        with patch_client('website.addons.onedrive.views.OnedriveClient'):
-            url = self.project.api_url_for('onedrive_folder_list', folderId=0)
-            res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.get_folder('', list=True)['item_collection']['entries']
-            expected = [each for each in contents if each['type'] == 'folder']
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.metadata')
+    def test_onedrive_hgrid_data_contents_include_root(self, mock_metadata):
+        with patch_client('website.addons.onedrive.views.hgrid.get_node_client'):
+            url = self.project.api_url_for('onedrive_hgrid_data_contents', root=1)
 
-            assert_equal(len(res.json), len(expected))
+            res = self.app.get(url, auth=self.user.auth)
+            contents = mock_client.metadata('', list=True)['contents']
+            assert_equal(len(res.json), 1)
+            assert_not_equal(len(res.json), len(contents))
+            first_elem = res.json[0]
+            assert_equal(first_elem['path'], '/')
 
     @unittest.skip('finish this')
     def test_onedrive_addon_folder(self):
@@ -356,15 +365,15 @@ class TestFilebrowserViews(OnedriveAddonTestCase):
             node_settings=self.node_settings, auth=self.user.auth)
         assert_true(root)
 
-        # The root object is returned w/ None folder
-        self.node_settings.folder_name = None
+        # Nothing is returned when there is no folder linked
+        self.node_settings.folder = None
         self.node_settings.save()
         root = onedrive_addon_folder(
             node_settings=self.node_settings, auth=self.user.auth)
-        assert_true(root)
+        assert_is_none(root)
 
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_onedrive_list_folders_deleted(self, mock_metadata):
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.metadata')
+    def test_onedrive_hgrid_data_contents_deleted(self, mock_metadata):
         # Example metadata for a deleted folder
         mock_metadata.return_value = {
             u'bytes': 0,
@@ -381,30 +390,31 @@ class TestFilebrowserViews(OnedriveAddonTestCase):
             u'size': u'0 bytes',
             u'thumb_exists': False
         }
-        url = self.project.api_url_for('onedrive_folder_list', folderId='foo')
+        url = self.project.api_url_for('onedrive_hgrid_data_contents')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_onedrive_list_folders_returns_error_if_invalid_path(self, mock_metadata):
-        mock_metadata.side_effect = OnedriveClientException(status_code=404, message='File not found')
-        url = self.project.api_url_for('onedrive_folder_list', folderId='lolwut')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.NOT_FOUND)
-
-    @mock.patch('website.addons.onedrive.views.OnedriveClient.get_folder')
-    def test_onedrive_list_folders_handles_max_retry_error(self, mock_metadata):
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.metadata')
+    def test_onedrive_hgrid_data_contents_returns_error_if_invalid_path(self, mock_metadata):
         mock_response = mock.Mock()
-        url = self.project.api_url_for('onedrive_folder_list', folderId='fo')
+        mock_metadata.side_effect = ErrorResponse(mock_response, body='File not found')
+        url = self.project.api_url_for('onedrive_hgrid_data_contents')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.NOT_FOUND)
+
+    @mock.patch('website.addons.onedrive.client.OneDriveClient.metadata')
+    def test_onedrive_hgrid_data_contents_handles_max_retry_error(self, mock_metadata):
+        mock_response = mock.Mock()
+        url = self.project.api_url_for('onedrive_hgrid_data_contents')
         mock_metadata.side_effect = MaxRetryError(mock_response, url)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.BAD_REQUEST)
+        assert_equal(res.status_code, httplib.REQUEST_TIMEOUT)
 
 
-class TestRestrictions(OnedriveAddonTestCase):
+class TestRestrictions(OneDriveAddonTestCase):
 
     def setUp(self):
-        super(OnedriveAddonTestCase, self).setUp()
+        super(OneDriveAddonTestCase, self).setUp()
 
         # Nasty contributor who will try to access folders that he shouldn't have
         # access to
@@ -412,28 +422,22 @@ class TestRestrictions(OnedriveAddonTestCase):
         self.project.add_contributor(self.contrib, auth=Auth(self.user))
         self.project.save()
 
-        self.user.add_addon('onedrive')
-        settings = self.user.get_addon('onedrive')
-        settings.access_token = '12345abc'
-        settings.last_refreshed = datetime.utcnow()
-        settings.save()
+        # Set shared folder
+        self.node_settings.folder = 'foo bar/bar'
+        self.node_settings.save()
 
-        self.patcher = mock.patch('website.addons.onedrive.model.OnedriveNodeSettings.fetch_folder_name')
-        self.patcher.return_value = 'foo bar/baz'
-        self.patcher.start()
-
-    @mock.patch('website.addons.onedrive.model.OnedriveNodeSettings.has_auth')
-    def test_restricted_hgrid_data_contents(self, mock_auth):
-        mock_auth.__get__ = mock.Mock(return_value=False)
+    @mock.patch('website.addons.onedrivesdk.client.OneDriveClient.metadata')
+    def test_restricted_hgrid_data_contents(self, mock_metadata):
+        mock_metadata.return_value = mock_responses['metadata_list']
 
         # tries to access a parent folder
-        url = self.project.api_url_for('onedrive_folder_list',
+        url = self.project.api_url_for('onedrive_hgrid_data_contents',
             path='foo bar')
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
 
     def test_restricted_config_contrib_no_addon(self):
-        url = api_url_for('onedrive_set_config', pid=self.project._primary_key)
+        url = self.project.api_url_for('onedrive_config_put')
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.BAD_REQUEST)
@@ -443,7 +447,7 @@ class TestRestrictions(OnedriveAddonTestCase):
         self.contrib.add_addon('onedrive')
         self.contrib.save()
 
-        url = api_url_for('onedrive_set_config', pid=self.project._primary_key)
+        url = self.project.api_url_for('onedrive_config_put')
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)

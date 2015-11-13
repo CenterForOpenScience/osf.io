@@ -8,56 +8,25 @@ from framework.mongo import set_up_storage
 
 from website.addons.base.testing import AddonTestCase
 from website.addons.onedrive import MODELS
-from website.addons.onedrive.tests.factories import OnedriveAccountFactory
 
 
 def init_storage():
     set_up_storage(MODELS, storage_class=storage.MongoStorage)
 
 
-class OnedriveAddonTestCase(AddonTestCase):
+class OneDriveAddonTestCase(AddonTestCase):
 
     ADDON_SHORT_NAME = 'onedrive'
 
     def set_user_settings(self, settings):
-        external_account = OnedriveAccountFactory()
-        settings.owner.external_accounts.append(external_account)
-        settings.owner.save()
+        settings.access_token = '12345abc'
+        settings.onedrive_id = 'myonedriveid'
 
     def set_node_settings(self, settings):
-        settings.folder_id = '1234567890'
+        settings.folder = 'foo'
 
 
 mock_responses = {
-    'folder': {
-        'name': 'anything',
-        'item_collection': {
-            'entries': [
-                {
-                    'name': 'anything', 'type': 'file', 'id': 'anything'
-                },
-                {
-                    'name': 'anything', 'type': 'folder', 'id': 'anything'
-                },
-                {
-                    'name': 'anything', 'type': 'anything', 'id': 'anything'
-                },
-            ]
-        },
-        'path_collection': {
-            'entries': [
-                {
-                    'name': 'anything', 'type': 'file', 'id': 'anything'
-                },
-                {
-                    'name': 'anything', 'type': 'folder', 'id': 'anything'
-                },
-                {
-                    'name': 'anything', 'type': 'anything', 'id': 'anything'
-                },
-            ]
-        }
-    },
     'put_file': {
         'bytes': 77,
         'icon': 'page_white_text',
@@ -113,7 +82,6 @@ mock_responses = {
         "revision": 29007
     },
     'metadata_single': {
-        u'id': 'id',
         u'bytes': 74,
         u'client_mtime': u'Mon, 13 Jan 2014 20:24:15 +0000',
         u'icon': u'page_white',
@@ -128,49 +96,46 @@ mock_responses = {
         u'thumb_exists': False
     },
     'revisions': [{u'bytes': 0,
-                   u'client_mtime': u'Wed, 31 Dec 1969 23:59:59 +0000',
-                   u'icon': u'page_white_picture',
-                   u'is_deleted': True,
-                   u'is_dir': False,
-                   u'mime_type': u'image/png',
-                   u'modified': u'Tue, 25 Mar 2014 03:39:13 +0000',
-                   u'path': u'/svs-v-barks.png',
-                   u'rev': u'3fed741002c12fc',
-                   u'revision': 67032897,
-                   u'root': u'onedrive',
-                   u'size': u'0 bytes',
-                   u'thumb_exists': True},
-                  {u'bytes': 151164,
-                   u'client_mtime': u'Sat, 13 Apr 2013 21:56:36 +0000',
-                   u'icon': u'page_white_picture',
-                   u'is_dir': False,
-                   u'mime_type': u'image/png',
-                   u'modified': u'Tue, 25 Mar 2014 01:45:51 +0000',
-                   u'path': u'/svs-v-barks.png',
-                   u'rev': u'3fed61a002c12fc',
-                   u'revision': 67032602,
-                   u'root': u'onedrive',
-                   u'size': u'147.6 KB',
-                   u'thumb_exists': True}]
+        u'client_mtime': u'Wed, 31 Dec 1969 23:59:59 +0000',
+        u'icon': u'page_white_picture',
+        u'is_deleted': True,
+        u'is_dir': False,
+        u'mime_type': u'image/png',
+        u'modified': u'Tue, 25 Mar 2014 03:39:13 +0000',
+        u'path': u'/svs-v-barks.png',
+        u'rev': u'3fed741002c12fc',
+        u'revision': 67032897,
+        u'root': u'onedrive',
+        u'size': u'0 bytes',
+        u'thumb_exists': True},
+        {u'bytes': 151164,
+        u'client_mtime': u'Sat, 13 Apr 2013 21:56:36 +0000',
+        u'icon': u'page_white_picture',
+        u'is_dir': False,
+        u'mime_type': u'image/png',
+        u'modified': u'Tue, 25 Mar 2014 01:45:51 +0000',
+        u'path': u'/svs-v-barks.png',
+        u'rev': u'3fed61a002c12fc',
+        u'revision': 67032602,
+        u'root': u'onedrive',
+        u'size': u'147.6 KB',
+        u'thumb_exists': True}]
 }
 
 
-class MockOnedrive(object):
+class MockOneDrive(object):
 
     def put_file(self, full_path, file_obj, overwrite=False, parent_rev=None):
         return mock_responses['put_file']
 
     def metadata(self, path, list=True, file_limit=25000, hash=None, rev=None,
-                 include_deleted=False):
+            include_deleted=False):
         if list:
             ret = mock_responses['metadata_list']
         else:
             ret = mock_responses['metadata_single']
             ret['path'] = path
         return ret
-
-    def get_folder(*args, **kwargs):
-        return mock_responses['folder']
 
     def get_file_and_metadata(*args, **kwargs):
         pass
@@ -184,21 +149,20 @@ class MockOnedrive(object):
             each['path'] = path
         return ret
 
-    def get_user_info(self):
-        return {'display_name': 'Mr. Onedrive'}
-
+    def account_info(self):
+        return {'display_name': 'Mr. One Drive'}
 
 @contextmanager
 def patch_client(target, mock_client=None):
-    """Patches a function that returns a OnedriveClient, returning an instance
-    of MockOnedrive instead.
+    """Patches a function that returns a OneDriveClient, returning an instance
+    of MockOneDrive instead.
 
     Usage: ::
 
-        with patch_client('website.addons.onedrive.views.OnedriveClient') as client:
+        with patch_client('website.addons.onedrive.view.config.get_client') as client:
             # test view that uses the onedrive client.
     """
     with mock.patch(target) as client_getter:
-        client = mock_client or MockOnedrive()
+        client = mock_client or MockOneDrive()
         client_getter.return_value = client
         yield client

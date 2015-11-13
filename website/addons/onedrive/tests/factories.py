@@ -1,40 +1,27 @@
 # -*- coding: utf-8 -*-
-"""Factory boy factories for the Onedrive addon."""
-import mock
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
+"""Factory boy factories for the OneDrive addon."""
 
 from framework.auth import Auth
 
-from factory import SubFactory, post_generation, Sequence
-from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
+from factory import SubFactory, Sequence, post_generation
+from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
 
 from website.addons.onedrive.model import (
-    OnedriveUserSettings,
-    OnedriveNodeSettings
+    OneDriveUserSettings, OneDriveNodeSettings
 )
 
+
 # TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
-
-
-class OnedriveAccountFactory(ExternalAccountFactory):
-    provider = 'onedrive'
-    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
-    oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
-    expires_at = datetime.now() + relativedelta(seconds=3600)
-
-
-class OnedriveUserSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = OnedriveUserSettings
+class OneDriveUserSettingsFactory(ModularOdmFactory):
+    FACTORY_FOR = OneDriveUserSettings
 
     owner = SubFactory(UserFactory)
+    access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
 
 
-class OnedriveNodeSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = OnedriveNodeSettings
+class OneDriveNodeSettingsFactory(ModularOdmFactory):
+    FACTORY_FOR = OneDriveNodeSettings
 
     owner = SubFactory(ProjectFactory)
-    user_settings = SubFactory(OnedriveUserSettingsFactory)
-    with mock.patch('website.addons.onedrive.model.OnedriveNodeSettings.fetch_folder_name') as mock_folder:
-        mock_folder.return_value = 'Camera Uploads'
+    user_settings = SubFactory(OneDriveUserSettingsFactory)
+    folder = 'Camera Uploads'

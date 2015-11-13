@@ -4,5 +4,5 @@ ONEDRIVE_SECRET = None
 
 REFRESH_TIME = 5 * 60  # 5 minutes
 
-# ONEDRIVE_OAUTH_TOKEN_ENDPOINT = 'https://www.box.com/api/oauth2/token'
-# ONEDRIVE_OAUTH_AUTH_ENDPOINT = 'https://www.box.com/api/oauth2/authorize'
+ONEDRIVE_OAUTH_TOKEN_ENDPOINT = 'https://login.live.com/oauth20_authorize.srf?'
+ONEDRIVE_OAUTH_AUTH_ENDPOINT = 'https://login.live.com/oauth20_authorize.srf?'
