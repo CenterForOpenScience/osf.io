@@ -21,6 +21,7 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from website import util
+from website import prereg
 from website import settings
 from website import language
 from website.util import paths
@@ -220,6 +221,20 @@ def make_url_map(app):
         ),
 
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
+
+        Rule(
+            '/prereg/',
+            'get',
+            prereg.prereg_landing_page,
+            OsfWebRenderer('prereg_landing_page.mako')
+        ),
+
+        Rule(
+            '/api/v1/prereg/draft_registrations/',
+            'get',
+            prereg.prereg_draft_registrations,
+            json_renderer,
+        ),
     ])
 
     # Site-wide API routes
@@ -861,8 +876,8 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/register/<template>/',
-                '/project/<pid>/node/<nid>/register/<template>/',
+                '/project/<pid>/register/<metaschema_id>/',
+                '/project/<pid>/node/<nid>/register/<metaschema_id>/',
             ],
             'get',
             project_views.register.node_register_template_page,
@@ -884,7 +899,7 @@ def make_url_map(app):
             ],
             'post',
             project_views.drafts.new_draft_registration,
-            OsfWebRenderer('project/draft_registration.mako', trust=False)),
+            OsfWebRenderer('project/edit_draft_registration.mako', trust=False)),
         Rule(
             [
                 '/project/<pid>/drafts/<draft_id>/',
@@ -1171,9 +1186,6 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/drafts/<draft_id>/',
         ], 'get', project_views.drafts.get_draft_registration, json_renderer),
-        Rule([
-            '/project/<pid>/drafts/',
-        ], 'post', project_views.drafts.create_draft_registration, json_renderer),
         Rule([
             '/project/<pid>/drafts/<draft_id>/',
         ], 'put', project_views.drafts.update_draft_registration, json_renderer),

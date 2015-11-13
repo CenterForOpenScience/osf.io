@@ -1,18 +1,22 @@
 from framework import utils
 
-
 def serialize_meta_schema(meta_schema):
     if not meta_schema:
         return None
     return {
+        'id': meta_schema._id,
         'schema_name': meta_schema.name,
         'schema_version': meta_schema.schema_version,
         'schema': meta_schema.schema,
         'fulfills': meta_schema.fulfills,
         'requires_approval': meta_schema.requires_approval,
+        'consent': meta_schema.consent,
+        'requires_consent': meta_schema.requires_consent,
         'messages': meta_schema.messages
     }
 
+def serialize_meta_schemas(meta_schemas):
+    return [serialize_meta_schema(schema) for schema in (meta_schemas or [])]
 
 def serialize_draft_registration(draft, auth=None):
     from website.profile.utils import serialize_user  # noqa
@@ -31,6 +35,7 @@ def serialize_draft_registration(draft, auth=None):
         'flags': draft.flags,
         'urls': {
             'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id),
+            'submit': node.api_url_for('submit_draft_for_review', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),
             'register': node.api_url_for('register_draft_registration', draft_id=draft._id),
             'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id),

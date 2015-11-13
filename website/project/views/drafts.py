@@ -39,18 +39,33 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     :return: serialized registration
     :rtype: dict
     """
+    data = request.get_json()
+    meta = {}
+    registration_choice = data.get('registrationChoice', 'immediate')
+    if registration_choice == 'embargo':
+        # Initiate embargo
+        meta['embargo_end_date'] = data['embargoEndDate']
+    meta['registration_choice'] = registration_choice
     approval = DraftRegistrationApproval(
         initiated_by=auth.user,
-        end_date=None,
+        meta=meta
     )
+    authorizers = draft.get_authorizers()
+    for user in authorizers:
+        approval.add_authorizer(user)
     approval.save()
     draft.approval = approval
-    draft.approval.ask(node.active_contributors())
     draft.save()
 
-    ret = project_utils.serialize_node(node, auth)
-    ret['success'] = True
-    return ret
+    push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,
+                        kind='info',
+                        trust=False)
+    return {
+        'status': 'initiated',
+        'urls': {
+            'registrations': node.web_url_for('node_registrations')
+        }
+    }, http.ACCEPTED
 
 @autoload_draft
 @must_have_permission(ADMIN)
@@ -72,7 +87,6 @@ def draft_before_register_page(auth, node, draft, *args, **kwargs):
 @http_error_if_disk_saving_mode
 def register_draft_registration(auth, node, draft, *args, **kwargs):
     """Initiate a registration from a draft registration
-
 
     :return: success message; url to registrations page
     :rtype: dict
@@ -131,36 +145,6 @@ def get_draft_registrations(auth, node, *args, **kwargs):
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
     }, http.OK
 
-@must_have_permission(ADMIN)
-@must_be_valid_project
-def create_draft_registration(auth, node, *args, **kwargs):
-    """Create a new draft registration and return it
-
-    :return: serialized draft registration
-    :rtype: dict
-    """
-
-    data = request.get_json()
-
-    schema_name = data.get('schema_name')
-    if not schema_name:
-        raise HTTPError(http.BAD_REQUEST)
-
-    schema_version = data.get('schema_version', 1)
-    schema_data = data.get('schema_data', {})
-    schema_data = rapply(schema_data, strip_html)
-
-    meta_schema = get_schema_or_fail(
-        Q('name', 'eq', schema_name) &
-        Q('schema_version', 'eq', schema_version)
-    )
-    draft = node.create_draft_registration(
-        user=auth.user,
-        schema=meta_schema,
-        data=schema_data,
-        save=True,
-    )
-    return serialize_draft_registration(draft, auth), http.CREATED
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
@@ -171,7 +155,6 @@ def new_draft_registration(auth, node, *args, **kwargs):
     :rtype: flask.redirect
     :raises: HTTPError
     """
-
     data = request.values
 
     schema_name = data.get('schema_name')
@@ -186,8 +169,6 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
     schema_version = data.get('schema_version', 1)
 
-    # can return 404 if the schema does not exist
-    # can return 400 if the schema is in the DB twice (should never happen)
     meta_schema = get_schema_or_fail(
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', int(schema_version))

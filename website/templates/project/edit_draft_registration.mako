@@ -4,7 +4,7 @@
 <div id="draftRegistrationScope" class="scripted">
     <div class="row">
         <div class="col-md-9">
-          <h3>Register</h3>
+          <h3>Edit draft registration</h3>
         </div>
     </div>
     <hr />
@@ -16,16 +16,15 @@
               <div class="span8 col-md-2 columns eight large-8">
                 <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}, visible: pages().length > 1">
                   <li class="re-navbar">
-                    <a class="registration-editor-page" id="top-nav" style="text-align: left; font-weight:bold;" data-bind="text: title, click: $root.selectPage">
+                    <a class="registration-editor-page" id="top-nav" style="text-align: left;" data-bind="text: title, click: $root.selectPage, style:{'font-weight': active() ? 'bold' : 'normal'}">
                       <i class="fa fa-caret-right"></i>
                     </a>
                   </li>
                 </ul>
-                  <!-- /ko -->
               </div>
               <div class="span8 col-md-9 columns eight large-8">
-                <!-- Progress Bar -->
                 % if draft['registration_schema']['schema_name'] != 'Open-Ended Registration':
+                <!-- Progress Bar -->
                 <br />
                 <br />
                 <span data-bind="with: draft">
@@ -39,30 +38,29 @@
                 </span>
                 % endif
                 <!-- EDITOR -->
-                <div data-bind="if: currentPage">
-                   <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
-                       <div data-bind="template: {data: question, name: 'editor'}"></div>
-                   </div>
+                <div data-bind="if: currentPage">                  
+                  <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
                 </div>
                 <p>Last saved: <span data-bind="text: $root.lastSaved"></span>
                 </p>
                 <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
                 </button>
-                    <!-- ko if: onLastPage -->
-                    <a data-bind="css: {'disabled': !canRegister()},
-                                click: $root.check" 
-                       type="button" class="pull-right btn btn-success">Preview for submission
-                    </a>
-                    <!-- /ko -->
-                    <!-- ko ifnot: onLastPage -->
-                      <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
-                    <!-- /ko -->
+                <!-- ko if: onLastPage -->
+                <a data-bind="css: {disabled: !canSubmit()},
+                              click: $root.check"
+                   type="button" class="pull-right btn btn-success">Preview for submission
+                </a>
+                <!-- /ko -->
+                <!-- ko ifnot: onLastPage -->
+                <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
+                <!-- /ko -->
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
 </div>
 
 <%def name="javascript_bottom()">

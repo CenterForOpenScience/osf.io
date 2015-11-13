@@ -45,7 +45,7 @@
       </div>
       % if 'admin' in user['permissions'] and not disk_saving_mode:
       <div class="col-md-3">
-        <a data-bind="click: createDraftModal, css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
+        <a data-bind="click: createDraftModal, disable: loading" id="registerNode" class="btn btn-default" type="button">
           New Registration
         </a>
       </div>
@@ -78,29 +78,30 @@
                 <p>started: <span data-bind="text: initiated"></span></p>
                 <p>last updated: <span data-bind="text: updated"></span></p>
                 <span data-bind="if: requiresApproval">
-                    <div data-bind="if: isApproved">
-                        <div class="draft-status-badge bg-success"> Approved</div>
-                    </div>
-                    <div data-bind="ifnot: isApproved">
-                        <div class="draft-status-badge bg-warning"> Pending Approval </div>
-                    </div>
-                    <div data-bind="if: isPendingReview">
+                    <div data-bind="if: isPendingApproval">
                         <div class="draft-status-badge bg-warning"> Pending Review</div>
+                    </div>
+                    <div data-bind="if: userHasUnseenComment">
+                        <div class="draft-status-badge bg-warning"> Unseen Comments</div>
                     </div>
                 </span>
                 </small>
                 <div class="row">
                   <div class="col-md-10">
-                    <a class="btn btn-info"
-                       data-bind="click: $root.maybeWarn"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</a>
+                    <button class="btn btn-info"
+                       data-bind="click: $root.maybeWarn">
+                      <i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit
+                    </button>
                     <button class="btn btn-danger"
-                            data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
+                            data-bind="click: $root.deleteDraft">
+                      <i style="margin-right: 5px;" class="fa fa-times"></i>Delete
+                    </button>
                   </div>
                   <div class="col-md-1">
-                     <a class="btn btn-success" data-bind="attr.href: urls.register_page,
-                                                           tooltip: {
-                                                             placement: 'top',
-                                                             title: isApproved ? 'Finalize this draft' : 'This draft must be approved before it can be registered'
+                    <a class="btn btn-success" data-bind="attr.href: urls.register_page,
+                                                          tooltip: {
+                                                            placement: 'top',
+                                                            title: isApproved ? 'Finalize this draft' : 'This draft must be approved before it can be registered'
                                                            },
                                                            css: {'disabled': !isApproved}">Register</a>
                   </div>

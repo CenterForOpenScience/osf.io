@@ -29,7 +29,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
     viewModel.showUploader(true);
 
     var $root = bindingContext.$root;
-    $root.currentQuestion.subscribe(function(question) {
+    $root.currentPage.subscribe(function(question) {
         if (filePicker) {
             // A hack to flush the old mithril controller.
             // It's unclear to me exactly why this is happening (after 3hrs), but seems

@@ -26,16 +26,19 @@
     </div>
     <div class="row-md-12">
         <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
+        <button id="register-submit" type="button" class="btn btn-success pull-right" 
+                data-bind="visible: draft.requiresApproval, click: draft.submitForReview">
+          Submit for review
+        </button>
 
-## TODO(lyndsysimon): Factor these buttons out when prereg is merged in.
-##         <span data-bind="if: draft.metaSchema.name === 'Prereg Challenge'" >
-##           <a type="button" class="btn btn-success pull-right" data-bind="click: submitForReview">Submit to the Pre-Registration Challenge</a>
-##           <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: registerDraft">Register without review</button>
-##         </span>
+        <span data-bind="if: draft.metaSchema.name === 'Prereg Challenge'">
+          <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview">Register without review</button>
+        </span>       
 
-            <button id="register-submit" type="button" class="btn btn-success pull-right" data-bind="click: registerDraft">Register</button>
-## TODO(lyndsysimon): This button is not applicable until prereg is merged in.
-##             <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: submitForReview, visible: draft.requiresApproval">Submit for review</button>
+        <button id="register-submit" type="button" class="btn btn-success pull-right" 
+                data-bind="visible: !draft.requiresApproval, click: draft.beforeRegister.bind(draft, null)">
+          Register
+        </button>
     </div>
 </div>
 
@@ -63,8 +66,27 @@
   <div class="modal-footer">
     <button class="btn btn-default" data-bind="click: close">Cancel</button>
     <button class="btn btn-success" data-bind="click: register, enable: canRegister">
-      Register
+      Continue
     </button>
+  </div>
+</script>
+
+<script id="preRegistrationConsent" type="text/html">
+  <span data-bind="html: message"></span>
+  <div class="row">
+    <div class="col-lg-10 col-lg-offset-1">
+      <div class="checkbox checkbox-box">
+        <label class="">
+          <input type="checkbox" data-bind="checked: consent, value: consent">
+          I agree to the terms and conditions.
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary pull-right"
+              data-bind="click: submit, css: {disabled: !consent()}">Continue</button>
+
+      <button type="submit" class="btn btn-default pull-right"
+              data-bind="click: cancel">Cancel</button>
+    </div>
   </div>
 </script>
 

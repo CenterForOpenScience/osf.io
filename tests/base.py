@@ -32,7 +32,8 @@ from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
 
 from website.project.model import (
-    Node, NodeLog, Tag, WatchConfig,
+    Node, NodeLog, Tag, WatchConfig, MetaSchema,
+    ensure_schemas,
 )
 from website import settings
 
@@ -44,6 +45,12 @@ from website.project.signals import contributor_added
 from website.app import init_app
 from website.addons.base import AddonConfig
 from website.project.views.contributor import notify_added_contributor
+
+try:
+    DEFAULT_METASCHEMA = MetaSchema.find()[0]
+except IndexError:
+    ensure_schemas()
+    DEFAULT_METASCHEMA = MetaSchema.find()[0]
 
 # Just a simple app without routing set up or backends
 test_app = init_app(

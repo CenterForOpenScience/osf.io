@@ -6,6 +6,7 @@ import re
 import logging
 import pymongo
 import datetime
+from dateutil import parser as parse_date
 import urlparse
 from collections import OrderedDict
 import warnings
@@ -56,6 +57,7 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.metadata import authorizers
 from website.project.licenses import (
     NodeLicense,
     NodeLicenseRecord,
@@ -96,16 +98,28 @@ class MetaSchema(StoredObject):
     schema_version = fields.IntegerField()
 
     @property
+    def _config(self):
+        return self.schema.get('config', {})
+
+    @property
     def requires_approval(self):
-        return self.schema.get('config', {}).get('requiresApproval', False)
+        return self._config.get('requiresApproval', False)
 
     @property
     def fulfills(self):
-        return self.schema.get('config', {}).get('fulfills', [])
+        return self._config.get('fulfills', [])
 
     @property
     def messages(self):
-        return self.schema.get('config', {}).get('messages', {})
+        return self._config.get('messages', {})
+
+    @property
+    def consent(self):
+        return self._config.get('consent', '')
+
+    @property
+    def requires_consent(self):
+        return self.consent != ''
 
 def ensure_schema(schema, name, version=1):
     schema_obj = None
@@ -688,8 +702,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
 
-    registered_schema = fields.ForeignField('metaschema', backref='registered')
-    # Stores a flat set of <question_id>: <response> pairs-- these quesiton ids_above
+    # A list of all MetaSchemas for which this Node has registered_meta
+    registered_schema = fields.ForeignField('metaschema', backref='registered', list=True, default=list)
+    # A set of <metaschema._id>: <schema> pairs, where <schema> is a
+    # flat set of <question_id>: <response> pairs-- these quesiton ids_above
     # map the the ids in the registrations MetaSchema (see registered_schema).
     # {
     #   <question_id>: {
@@ -703,7 +719,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
 
-    draft_registrations = fields.ForeignField('draftregistration', backref='branched', list=True, default=list)
+    draft_registrations = fields.ForeignField('draftregistration', backref='branched', list=True)
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -2066,11 +2082,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.is_registration = True
         registered.registered_date = when
         registered.registered_user = auth.user
-        registered.registered_schema = schema
+        registered.registered_schema.append(schema)
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta = data
+        registered.registered_meta[schema._id] = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
@@ -3478,6 +3494,7 @@ class EmailApprovableSanction(Sanction):
     APPROVE_URL_TEMPLATE = ''
     REJECT_URL_TEMPLATE = ''
 
+    notify_initiator_on_complete = fields.BooleanField(default=False)
     # Store a persistant copy of urls for use when needed outside of a request context.
     # This field gets automagically updated whenever models approval_state is modified
     # and the model is saved
@@ -3547,8 +3564,28 @@ class EmailApprovableSanction(Sanction):
         }
         self.save()
 
+    def _notify_initiator(self):
+        raise NotImplementedError
 
-class Embargo(EmailApprovableSanction):
+    def _on_complete(self, *args):
+        super(EmailApprovableSanction, self).on_complete(*args)
+        if self.notify_initiator_on_complete:
+            self._notify_initiator()
+
+
+class PreregCallbackMixin(object):
+
+    def _notify_initiator(self):
+        registration = self._get_registration()
+        if registration.registered_schema.name == 'Prereg Challenge':
+            mails.send_mail(
+                self.initiator.username,
+                template=mails.PREREG_CHALLENGE_ACCEPTED,
+                user=self.initiator,
+                registration_url=registration.url
+            )
+
+class Embargo(EmailApprovableSanction, PreregCallbackMixin):
     """Embargo object for registrations waiting to go public."""
 
     COMPLETED = 'completed'
@@ -3597,8 +3634,11 @@ class Embargo(EmailApprovableSanction):
             self._id
         )
 
+    def _get_registration(self):
+        return Node.find_one(Q('embargo', 'eq', self))
+
     def _view_url_context(self, user_id):
-        registration = Node.find_one(Q('embargo', 'eq', self))
+        registration = self._get_registration()
         return {
             'node_id': registration._id
         }
@@ -3606,7 +3646,7 @@ class Embargo(EmailApprovableSanction):
     def _approval_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': approval_token,
@@ -3615,7 +3655,7 @@ class Embargo(EmailApprovableSanction):
     def _rejection_url_context(self, user_id):
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': rejection_token,
@@ -3629,7 +3669,7 @@ class Embargo(EmailApprovableSanction):
             disapproval_link = urls.get('reject', '')
             approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
 
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = self._get_registration()
 
             return {
                 'is_initiator': self.initiated_by == user,
@@ -3649,11 +3689,11 @@ class Embargo(EmailApprovableSanction):
             }
 
     def _validate_authorizer(self, user):
-        registration = Node.find_one(Q('embargo', 'eq', self))
+        registration = self._get_registration()
         return registration.has_permission(user, ADMIN)
 
     def _on_reject(self, user, token):
-        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
@@ -3676,7 +3716,7 @@ class Embargo(EmailApprovableSanction):
         self.reject(user, token)
 
     def _on_complete(self, user):
-        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
             params={
@@ -3809,12 +3849,6 @@ class Retraction(EmailApprovableSanction):
         for node in parent_registration.node_and_primary_descendants():
             node.set_privacy('public', auth=auth, save=True)
             node.update_search()
-        # parent_registration.update_search()
-        # Retraction status is inherited from the root project, so we
-        # need to recursively update search for every descendant node
-        # so that retracted subrojects/components don't appear in search
-        # for node in parent_registration.get_descendants_recursive():
-        #    node.update_search()
 
     def approve_retraction(self, user, token):
         self.approve(user, token)
@@ -3823,7 +3857,7 @@ class Retraction(EmailApprovableSanction):
         self.reject(user, token)
 
 
-class RegistrationApproval(EmailApprovableSanction):
+class RegistrationApproval(EmailApprovableSanction, PreregCallbackMixin):
 
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
@@ -3837,8 +3871,11 @@ class RegistrationApproval(EmailApprovableSanction):
 
     initiated_by = fields.ForeignField('user', backref='registration_approved')
 
+    def _get_registration(self):
+        return Node.find_one(Q('registration_approval', 'eq', self))
+
     def _view_url_context(self, user_id):
-        registration = Node.find_one(Q('registration_approval', 'eq', self))
+        registration = self._get_registration()
         return {
             'node_id': registration._id
         }
@@ -3846,7 +3883,7 @@ class RegistrationApproval(EmailApprovableSanction):
     def _approval_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
-            registration = Node.find_one(Q('registration_approval', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': approval_token,
@@ -3855,7 +3892,7 @@ class RegistrationApproval(EmailApprovableSanction):
     def _rejection_url_context(self, user_id):
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            registration = Node.find_one(Q('registration_approval', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': rejection_token,
@@ -3870,7 +3907,7 @@ class RegistrationApproval(EmailApprovableSanction):
 
             approval_time_span = settings.REGISTRATION_APPROVAL_TIME.days * 24
 
-            registration = Node.find_one(Q('registration_approval', 'eq', self))
+            registration = self._get_registration()
 
             return {
                 'is_initiator': self.initiated_by == user,
@@ -3903,7 +3940,7 @@ class RegistrationApproval(EmailApprovableSanction):
 
     def _on_complete(self, user):
         self.state = Sanction.APPROVED
-        register = Node.find_one(Q('registration_approval', 'eq', self))
+        register = self._get_registration()
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)
         register.set_privacy('public', auth, log=False)
@@ -3926,7 +3963,7 @@ class RegistrationApproval(EmailApprovableSanction):
         self.save()
 
     def _on_reject(self, user, token):
-        register = Node.find_one(Q('registration_approval', 'eq', self))
+        register = self._get_registration()
         registered_from = register.registered_from
         register.delete_registration_tree(save=True)
         registered_from.add_log(
@@ -3943,11 +3980,68 @@ class DraftRegistrationApproval(Sanction):
 
     mode = Sanction.ANY
 
-    def _on_complete(self, *args, **kwargs):
-        pass  # draft approval state gets loaded dynamically from this record
+    # Since draft registrations that require approval are not immediately registered,
+    # meta stores registration_choice and embargo_end_date (when applicable)
+    meta = fields.DictionaryField(default=dict)
 
-    def _on_reject(self, *args, **kwargs):
-        pass  # draft approval state gets loaded dynamically from this record
+    def _send_rejection_email(self, user, draft):
+        schema = draft.registration_schema
+        if schema.name == 'Prereg Challenge':
+            mails.send_mail(
+                user.username,
+                mails.PREREG_CHALLENGE_REJECTED,
+                user=user,
+                draft_url=draft.branched_from.web_url_for(
+                    'edit_draft_registration_page',
+                    draft_id=draft._id
+                )
+            )
+        else:
+            raise NotImplementedError(
+                'TODO: add a generic email template for registration approvals'
+            )
+
+    def _on_complete(self, user):
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        auth = Auth(user) if user else None
+        registration = draft.register(
+            auth=auth,
+            save=True
+        )
+        registration_choice = self.meta['registration_choice']
+        try:
+            {
+                'immediate': functools.partial(registration.require_approval, user),
+                'embargo': functools.partial(
+                    user,
+                    registration.embargo_registration,
+                    parse_date(self.meta['embargo_end_date'], ignoretz=True)
+                )
+            }[registration_choice]()
+        except KeyError:
+            raise ValueError("'registration_choice' must be either 'emebargo' or 'immediate'")
+        except NodeStateError as e:
+            raise e
+            # TODO(samchrisinger)
+            #  raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+        except ValidationValueError as e:
+            raise e
+            # TODO(samchrisinger):
+            # raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+
+    def _on_reject(self, user, *args, **kwargs):
+        # clear out previous registration options
+        self.meta = {}
+        self.save()
+        # remove reference to approval from draft
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        draft.approval = None
+        draft.save()
+        self._send_rejection_email(user, draft)
 
 
 class DraftRegistration(StoredObject):
@@ -3984,19 +4078,22 @@ class DraftRegistration(StoredObject):
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
-    flags = fields.DictionaryField()
-
-    notes = fields.StringField()
-
-    def __init__(self, *args, **kwargs):
-        super(DraftRegistration, self).__init__(*args, **kwargs)
-        meta_schema = self.registration_schema or kwargs.get('registration_schema')
-        if meta_schema:
-            schema = meta_schema.schema
-            if not self.registration_schema:
+    _metaschema_flags = fields.DictionaryField(default=None)
+    # lazily set flags
+    @property
+    def flags(self):
+        if not self._metaschema_flags:
+            self._metaschema_flags = {}
+            meta_schema = self.registration_schema
+            if meta_schema:
+                schema = meta_schema.schema
                 flags = schema.get('flags', {})
                 for flag, value in flags.iteritems():
-                    self.flags[flag] = value
+                    self._metaschema_flags[flag] = value
+            self.save()
+        return self._metaschema_flags
+
+    notes = fields.StringField()
 
     @property
     def requires_approval(self):
@@ -4016,17 +4113,63 @@ class DraftRegistration(StoredObject):
         else:
             return True
 
+    def get_authorizers(self):
+        return authorizers.members_for(self.registration_schema.name)
+
     def update_metadata(self, metadata):
         changes = []
         for question_id, value in metadata.iteritems():
 
             old_value = self.registration_metadata.get(question_id)
 
+            if old_value:
+                old_comments = old_value.get('comments', [])
+                new_comments = value.get('comments', [])
+
+                #  we are using the `created` attribute sort of as a primary key
+                old_comment_ids = [comment['created'] for comment in old_comments]
+
+                # Handle comment conflicts
+                for old_comment in old_comments:
+                    for new_comment in new_comments:
+                        new_id = new_comment.get('created', [])
+                        # if the primary key is already in use and the old comment is more recent,
+                        if new_id in old_comment_ids and old_comment['lastModified'] > new_comment['lastModified']:
+                            # use the old one instead
+                            loc = new_comments.index(new_comment)
+                            new_comments[loc] = old_comment
+
             if not old_value or old_value.get('value') != value.get('value'):
                 changes.append(question_id)
 
         self.registration_metadata.update(metadata)
         return changes
+
+    def find_question(self, qid):
+        for page in self.registration_schema.schema['pages']:
+            for question_id, question in page['questions'].iteritems():
+                if question_id == qid:
+                    return question
+
+    def get_comments(self):
+        """ Returns a list of all comments made on a draft in the format of :
+        [{
+          [QUESTION_ID]: {
+            'question': [QUESTION],
+            'comments': [LIST_OF_COMMENTS]
+           }
+        },]
+       """
+
+        all_comments = []
+        for question_id, value in self.registration_metadata.iteritems():
+            all_comments.append({
+                question_id: {
+                    'question': self.find_question(question_id),
+                    'comments': value['comments'] if 'comments' in value else ''
+                }
+            })
+        return all_comments
 
     def register(self, auth, save=False):
         node = self.branched_from
