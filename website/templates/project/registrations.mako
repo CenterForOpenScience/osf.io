@@ -45,7 +45,7 @@
       </div>
       % if 'admin' in user['permissions'] and not disk_saving_mode:
       <div class="col-md-3">
-        <a data-bind="click: createDraftModal, css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
+        <a data-bind="click: createDraftModal, disable: loading" id="registerNode" class="btn btn-default" type="button">
           New Registration
         </a>
       </div>

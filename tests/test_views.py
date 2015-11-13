@@ -4821,24 +4821,6 @@ class TestDraftRegistrationViews(OsfTestCase):
         for draft in res.json['drafts']:
             assert_in(draft['pk'], [f._id for f in found])
 
-    def test_create_draft_registration(self):
-        target = NodeFactory(creator=self.user)
-        metadata = {
-            'summary': {'value': 'Some airy'}
-        }
-        payload = {
-            'schema_name': 'Open-Ended Registration',
-            'schema_version': 1,
-            'schema_data': metadata,
-        }
-        url = target.api_url_for('create_draft_registration')
-
-        res = self.app.post_json(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, http.CREATED)
-        draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
-        assert_equal(draft.registration_schema, self.meta_schema)
-        assert_equal(draft.registration_metadata, metadata)
-
     def test_new_draft_registration(self):
         target = NodeFactory(creator=self.user)
         payload = {
@@ -4847,6 +4829,18 @@ class TestDraftRegistrationViews(OsfTestCase):
         }
         url = target.web_url_for('new_draft_registration')
 
+        res = self.app.post(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, http.FOUND)
+        draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
+        assert_equal(draft.registration_schema, self.meta_schema)
+
+    def test_new_draft_registration_POST(self):
+        target = NodeFactory(creator=self.user)
+        payload = {
+            'schema_name': 'Open-Ended Registration',
+            'schema_version': 1
+        }
+        url = target.web_url_for('new_draft_registration')
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.FOUND)
         draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
