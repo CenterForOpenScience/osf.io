@@ -38,6 +38,19 @@ def verify_migration(nodes, dev):
             else:
                 raise e
 
+def migrate_non_registered_nodes():
+    nodes.update(
+        {
+            'registered_schema': None
+        },
+        {
+            '$set': {
+                'registered_schema': []
+            }
+        },
+        multi=True
+    )
+
 def get_old_registered_nodes():
     return nodes.find({'is_registration': True})
 
@@ -98,6 +111,7 @@ def main(dry_run, dev=False):
         )
         count = count + 1
     logger.info('Done with {0} nodes migrated and {1} nodes skipped.'.format(count, skipped))
+    migrate_non_registered_nodes()
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv

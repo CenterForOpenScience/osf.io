@@ -33,7 +33,7 @@
                 <small><em data-bind="text: $data.description"></em></small>
                 <div class="col-md-12 well" data-bind="with: $root.schemaData[qid]">
                   <span data-bind="if: $data">
-                    {{$data}}
+                    {{value}}
                   </span>
                 </div>
               </div>
