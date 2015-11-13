@@ -34,6 +34,7 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     required_write_scopes = [CoreScopes.TOKENS_WRITE]
 
     serializer_class = ApiOAuth2PersonalTokenSerializer
+    view_name = 'token-list'
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 
@@ -72,6 +73,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     required_write_scopes = [CoreScopes.TOKENS_WRITE]
 
     serializer_class = ApiOAuth2PersonalTokenSerializer
+    view_name = 'token-detail'
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 
