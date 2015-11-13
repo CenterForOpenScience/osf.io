@@ -22,7 +22,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
     def page_number_query(self, url, page_number):
         """
-        Adds page param to paginated urls.
+        Builds uri and adds page param.
         """
         url = self.request.build_absolute_uri(url)
         paginated_url = replace_query_param(url, self.page_query_param, page_number)
