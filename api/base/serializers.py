@@ -23,25 +23,23 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
     Removes related or self link, if none.
     """
 
-    ret = {
-        'links': {
+    ret = {'links': {}}
+
+    if related_link:
+        ret['links'].update({
             'related': {
                 'href': related_link or {},
                 'meta': rel_meta or {}
-            },
+            }
+        })
+
+    if self_link:
+        ret['links'].update({
             'self': {
                 'href': self_link or {},
                 'meta': self_meta or {}
             }
-        }
-    }
-
-    # Not currently returning self links
-    if not ret['links']['self']['href']:
-        del ret['links']['self']
-
-    if not ret['links']['related']['href']:
-        del ret['links']['related']
+        })
 
     return ret
 
