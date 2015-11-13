@@ -24,6 +24,7 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
 
         self.meta = {'id': 'user_id'}
         self.link_type = 'related'
+        self.always_embed = kwargs.pop('always_embed', False)
 
         super(ser.HyperlinkedIdentityField, self).__init__('users:user-detail', **kwargs)
 

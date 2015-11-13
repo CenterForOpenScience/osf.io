@@ -255,7 +255,7 @@ def root(request, format=None):
     + `embeds`
 
     Please see `Embedding` documentation under `Requests`.
-    
+
     + `links`
 
     Links are urls to alternative representations of the entity or actions that may be performed on the entity.  Most

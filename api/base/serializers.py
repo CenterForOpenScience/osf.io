@@ -506,7 +506,7 @@ class JSONAPISerializer(ser.Serializer):
             if getattr(field, 'json_api_link', False):
                 # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
                 # results rather than adding a relationship link
-                if embeds and (field.field_name in embeds or field.always_embed):
+                if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
                     data['embeds'][field.field_name] = self.context['embed'][field.field_name](obj)
                 else:
                     data['relationships'][field.field_name] = field.to_representation(attribute)
