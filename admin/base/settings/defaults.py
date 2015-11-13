@@ -34,10 +34,10 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
+    'admin.common_auth',
     'admin.spam',
 
     # 3rd party
-    'admin.common_auth',
     'raven.contrib.django.raven_compat',
     'webpack_loader',
 )
