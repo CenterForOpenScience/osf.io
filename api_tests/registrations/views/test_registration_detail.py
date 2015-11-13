@@ -84,7 +84,7 @@ class TestRegistrationDetail(ApiTestCase):
             'description': registration.description,
             'date_created': registration.date_created,
             'date_registered': registration.registered_date,
-            'justification': registration.retraction.justification,
+            'retraction_justification': registration.retraction.justification,
             'public': None,
             'category': None,
             'date_modified': None,

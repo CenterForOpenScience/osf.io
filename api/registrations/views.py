@@ -57,7 +57,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         public                          boolean            has this registration been made publicly-visible?
         retracted                       boolean            has this registration been retracted?
         date_registered                 iso8601 timestamp  timestamp that the registration was created
-        justification                   string             reasons for retracting the registration
+        retraction_justification        string             reasons for retracting the registration
         pending_retraction              boolean            is this registration pending retraction?
         pending_registration_approval   boolean            is this registration pending approval?
         pending_embargo                 boolean            is this registration pending an embargo?
@@ -118,7 +118,7 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registration's detail view are not necessary. A retracted registration will display a limited subset of information,
-    namely, title, description, date_created, registration, retracted, date_registered, justification, and registration
+    namely, title, description, date_created, registration, retracted, date_registered, retraction_justification, and registration
     supplement. All other fields will be displayed as null. Additionally, the only relationships permitted to be accessed
     for a retraction are the contributors.
 
@@ -141,7 +141,7 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
         public                          boolean            has this registration been made publicly-visible?
         retracted                       boolean            has this registration been retracted?
         date_registered                 iso8601 timestamp  timestamp that the registration was created
-        justification                   string             reasons for retracting the registration
+        retraction_justification        string             reasons for retracting the registration
         pending_retraction              boolean            is this registration pending retraction?
         pending_registration_approval   boolean            is this registration pending approval?
         pending_embargo                 boolean            is this registration pending an embargo?

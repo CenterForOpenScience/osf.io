@@ -321,7 +321,7 @@ class UserRegistrations(UserNodes):
         public                          boolean            has this registration been made publicly-visible?
         retracted                       boolean            has this registration been retracted?
         date_registered                 iso8601 timestamp  timestamp that the registration was created
-        justification                   string             reasons for retracting the registration
+        retraction_justification        string             reasons for retracting the registration
         pending_retraction              boolean            is this registration pending retraction?
         pending_registration_approval   boolean            is this registration pending approval?
         pending_embargo                 boolean            is this registration pending an embargo?
