@@ -46,6 +46,16 @@ class HideIfRetraction(ser.Field):
         return self.field.to_representation(value)
 
 
+class HideIfRegistration(HideIfRetraction):
+    """
+    If node is a registration, this field will return None.
+    """
+    def get_attribute(self, instance):
+        if instance.is_registration:
+            return None
+        return self.field.get_attribute(instance)
+
+
 class AllowMissing(ser.Field):
 
     def __init__(self, field, **kwargs):
