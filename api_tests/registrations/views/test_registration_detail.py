@@ -7,7 +7,8 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RetractedRegistrationFactory
 )
 
 
@@ -72,12 +73,9 @@ class TestRegistrationDetail(ApiTestCase):
     def test_retractions_display_limited_fields(self):
         registration = RegistrationFactory(creator=self.user, project=self.public_project, public=True)
         url = '/{}registrations/{}/'.format(API_BASE, registration._id)
-        registration.retract_registration(self.user)
-        retraction = registration.retraction
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         retraction.justification = 'We made a major error.'
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(self.user, token)
-        registration.save()
+        retraction.save()
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
 
@@ -102,7 +100,6 @@ class TestRegistrationDetail(ApiTestCase):
             "registered_meta": None,
             "registration_supplement": registration.registered_meta.keys()[0]
         })
-
 
         contributors = urlparse(res.json['data']['relationships']['contributors']['links']['related']['href']).path
         assert_equal(contributors, '/{}registrations/{}/contributors/'.format(API_BASE, registration._id))

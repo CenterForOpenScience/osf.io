@@ -421,11 +421,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_cannot_update_a_retraction(self):
         registration = RegistrationFactory(creator=self.user, project=self.public_project)
         url = '/{}nodes/{}/'.format(API_BASE, registration._id)
-        registration.retract_registration(self.user)
-        retraction = registration.retraction
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(self.user, token)
-        registration.save()
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.put_json_api(url, {
             'data': {
                 'id': registration._id,
@@ -822,11 +818,7 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_cannot_delete_a_retraction(self):
         registration = RegistrationFactory(creator=self.user, project=self.public_project)
         url = '/{}nodes/{}/'.format(API_BASE, registration._id)
-        registration.retract_registration(self.user)
-        retraction = registration.retraction
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(self.user, token)
-        registration.save()
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
         registration.reload()
         assert_equal(res.status_code, 403)

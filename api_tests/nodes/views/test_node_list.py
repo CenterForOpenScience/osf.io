@@ -90,7 +90,6 @@ class TestNodeList(ApiTestCase):
     def test_omit_retracted_registration(self):
         registration = RegistrationFactory(creator=self.user, project=self.public)
         res = self.app.get(self.url, auth=self.user.auth)
-        print res
         assert_equal(len(res.json['data']), 3)
         retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.get(self.url, auth=self.user.auth)
