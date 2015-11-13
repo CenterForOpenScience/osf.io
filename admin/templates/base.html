@@ -16,9 +16,9 @@
       <!-- Ionicons -->
       <link href="//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" rel="stylesheet" type="text/css" />
       <!-- Theme style -->
-      <link href="{% static 'css/AdminLTE.min.css' %}" rel="stylesheet" type="text/css" />
+      <link href="{% static 'vendor/bower_components/admin-lte/dist/css/AdminLTE.min.css' %}" rel="stylesheet" type="text/css" />
           <!-- AdminLTE Skins. -->
-      <link href="{% static 'css/skin-blue.min.css' %}" rel="stylesheet" type="text/css" />
+      <link href="{% static 'vendor/bower_components/admin-lte/dist/css/skins/skin-blue.min.css' %}" rel="stylesheet" type="text/css" />
       <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
       <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
       <!--[if lt IE 9]>
@@ -27,6 +27,7 @@
       <![endif]-->
       <script src="{% static 'vendor/bower_components/raven-js/dist/raven.min.js' %}"></script>
       <script src="{% static 'vendor/bower_components/jquery/dist/jquery.js' %}"></script>
+      <script src="{% static 'vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js' %}"></script>
     {% endblock %}
   </head>
   <body class="skin-blue sidebar-mini">
@@ -51,7 +52,7 @@
             <ul class="nav navbar-nav">
               <!-- User Account Menu -->
               <li class="dropdown user user-menu">
-                <a href"#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                   <span class="hidden-xs">Logged in as {{ user.get_username }}</span>
                 </a>
               </li>
@@ -102,8 +103,8 @@
     {% block bottom_js %}
       <!-- Bootstrap 3.3.2 JS -->
       {% render_bundle 'vendor' %}
-      <!-- AdminLTE App -->
-      {% render_bundle 'AdminLTE.min' %}
+      {% render_bundle 'admin-base-page' %}
+      <script src="{% static 'vendor/bower_components/admin-lte/dist/js/app.min.js' %}"></script>
     {% endblock %}
 
   </body>

@@ -16,9 +16,7 @@ var staticAdminPath = function(dir) {
     return path.join(adminRoot, dir);
 };
 
-common.entry = {
-    'AdminLTE.min':staticAdminPath('js/AdminLTE.min.js'),
-};
+common.entry['admin-base-page'] = staticAdminPath('js/pages/base-page.js')
 
 // Adding bundle tracker to plugins
 common.plugins = [
