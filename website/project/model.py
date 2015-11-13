@@ -86,7 +86,7 @@ def has_anonymous_link(node, auth):
         if link.key == view_only_link
     )
 
-
+@unique_on(['name', 'schema_version', '_id'])
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -94,9 +94,6 @@ class MetaSchema(StoredObject):
     schema = fields.DictionaryField()
     category = fields.StringField()
 
-    # Version of the Knockout metadata renderer to use (e.g. if data binds
-    # change)
-    metadata_version = fields.IntegerField()
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = fields.IntegerField()
 
@@ -125,6 +122,7 @@ class MetaSchema(StoredObject):
         return self.consent != ''
 
 def ensure_schema(schema, name, version=1):
+    schema_obj = None
     try:
         schema_obj = MetaSchema.find_one(
             Q('name', 'eq', name) &
@@ -137,7 +135,9 @@ def ensure_schema(schema, name, version=1):
             'schema': schema,
         }
         schema_obj = MetaSchema(**meta_schema)
-        schema_obj.save()
+    else:
+        schema_obj.schema = schema
+    schema_obj.save()
     return schema_obj
 
 
@@ -702,8 +702,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
 
-    registered_schema = fields.ForeignField('metaschema', backref='registered')
-    # Stores a flat set of <question_id>: <response> pairs-- these quesiton ids_above
+    # A list of all MetaSchemas for which this Node has registered_meta
+    registered_schema = fields.ForeignField('metaschema', backref='registered', list=True)
+    # A set of <metaschema.name>: <schema> pairs, where <schema> is a
+    # flat set of <question_id>: <response> pairs-- these quesiton ids_above
     # map the the ids in the registrations MetaSchema (see registered_schema).
     # {
     #   <question_id>: {
@@ -4074,22 +4076,21 @@ class DraftRegistration(StoredObject):
 
     approval = fields.ForeignField('draftregistrationapproval', default=None)
 
-    # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
-    # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
-    # and these values are added to the DraftRegistration
-    flags = fields.DictionaryField()
-
-    notes = fields.StringField()
-
-    def __init__(self, *args, **kwargs):
-        super(DraftRegistration, self).__init__(*args, **kwargs)
-        meta_schema = self.registration_schema or kwargs.get('registration_schema')
-        if meta_schema:
-            schema = meta_schema.schema
-            if not self.registration_schema:
+    _metaschema_flags = fields.DictionaryField(default=None)
+    # lazily set flags
+    @property
+    def flags(self):
+        if not self._metaschema_flags:
+            meta_schema = self.registration_schema
+            if meta_schema:
+                schema = meta_schema.schema
                 flags = schema.get('flags', {})
                 for flag, value in flags.iteritems():
-                    self.flags[flag] = value
+                    self._metaschema_flags[flag] = value
+        else:
+            return self._metaschema_flags
+
+    notes = fields.StringField()
 
     @property
     def requires_approval(self):
@@ -4101,10 +4102,11 @@ class DraftRegistration(StoredObject):
 
     @property
     def is_approved(self):
-        if self.requires_approval and not self.approval:
-            return False
-        elif self.requires_approval and self.approval:
-            return self.approval.is_approved
+        if self.requires_approval:
+            if not self.approval:
+                return False
+            else:
+                return self.approval.is_approved
         else:
             return True
 
@@ -4138,19 +4140,7 @@ class DraftRegistration(StoredObject):
                 changes.append(question_id)
 
         self.registration_metadata.update(metadata)
-
-        project_signals.draft_edited.send(changes)
-        self.after_edit(changes)
         return changes
-
-    def after_edit(self, changes):
-
-        if changes:
-            self.flags.update({
-                'isPendingReview': False,
-                'isApproved': False
-            })
-            self.save()
 
     def find_question(self, qid):
         for page in self.registration_schema.schema['pages']:

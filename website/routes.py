@@ -876,8 +876,8 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/register/<template>/',
-                '/project/<pid>/node/<nid>/register/<template>/',
+                '/project/<pid>/register/<metaschema_id>/',
+                '/project/<pid>/node/<nid>/register/<metaschema_id>/',
             ],
             'get',
             project_views.register.node_register_template_page,

@@ -6,7 +6,7 @@
         "title": "OSF-Standard Pre-Data Collection Registration",
         "id": "page1",
         "questions": [{
-            "qid": "q1",
+            "qid": "datacompletion",
             "title": "Is data collection for this project underway or complete?",
             "nav": "Data Completion",
             "type": "choose",
@@ -14,7 +14,7 @@
             "options": ["yes", "no"],
             "description": "Choose yes or no"
         },{
-            "qid": "q2",
+            "qid": "looked",
             "title": "Have you looked at the data?",
             "nav": "Looked at Data",
             "type": "choose",
@@ -22,7 +22,7 @@
             "options": ["yes", "no"],
             "description": "Choose yes or no"
         },{
-            "qid": "q3",
+            "qid": "comments",
             "title": "Other Comments",
             "nav": "Comments",
             "type": "string",
