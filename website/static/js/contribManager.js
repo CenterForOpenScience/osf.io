@@ -82,8 +82,9 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, shou
     });
 
     self.remove = function() {
-
-        self.contributorToRemove(self.fullname);
+        self.contributorToRemove({
+            fullname: self.fullname,
+            id:self.id});
         //self.deleteStaged(true);
         //debugger;
     };
@@ -412,6 +413,8 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 function ContribManager(selector, contributors, adminContributors, user, isRegistration) {
     var self = this;
     self.selectedRemove = new ko.observable();
+    //shouter allows communication between ContribManager and ContribRemover, in particular which contributor needs to
+    // be removed is passed to ContribRemover
     var shouter = new ko.subscribable();
     self.selector = selector;
     self.$element = $(selector);
@@ -433,6 +436,7 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
                 '#removeContributor',
                 data.node.title,
                 data.node.id,
+                data.node.children,
                 data.parent_node.id,
                 data.parent_node.title,
                 data.user.username,

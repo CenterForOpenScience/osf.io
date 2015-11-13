@@ -14,132 +14,104 @@ var Paginator = require('./paginator');
 
 var API_BASE = 'http://localhost:8000/v2/nodes/';
 
+var contributorsToDelete = [];
+
+
+var getChildren = function(nodeId) {
+
+}
+
+
+var getNodeChildrenList = function(nodeId, contributorId) {
+    var self = this;
+    var contribUrl = API_BASE + nodeId + '/contributors/';
+    debugger;
+        $.ajax({
+            url: contribUrl,
+            type: 'GET',
+            crossOrigin: true,
+            xhrFields: {
+                withCredentials: true
+            },
+        }).done(function (response) {
+            for (var i = 0; i < response.data.length; i++) {
+                var node = response.data.length
+                debugger;
+
+            }
+
+            //window.location.reload();
+        }).fail(function (xhr, status, error) {
+            $osf.growl('Error', 'Unable to delete Contributor');
+            Raven.captureMessage('Could not DELETE Contributor.' + error, {
+                API_BASE: url, status: status, error: error
+            });
+        });
+}
+
+
+
 
 var RemoveContributorViewModel = oop.extend(Paginator, {
-    constructor: function(title, nodeId, parentId, parentTitle, userName, shouter) {
+    constructor: function(title, nodeId, nodeHasChildren, parentId, parentTitle, userName, shouter) {
         this.super.constructor.call(this);
         var self = this;
-
         self.title = title;
         self.nodeId = nodeId;
         self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
         self.parentId = parentId;
         self.parentTitle = parentTitle;
 
-        this.contributorToRemove = ko.observable();
+        self.contributorToRemove = ko.observable();
         shouter.subscribe(function(newValue) {
-            console.log('shouter newvalue is ' + newValue);
-            this.contributorToRemove(newValue);
-        }, this, "messageToPublish");
+            self.contributorToRemove(newValue);
+        }, self, "messageToPublish");
 
         self.page = ko.observable('remove');
         self.pageTitle = ko.computed(function() {
             return {
-                remove: 'Delete Contributors',
+                remove: 'Delete Contributor',
+                removeAll: 'Delete Contributor'
             }[self.page()];
         });
         self.userName = ko.observable(userName);
         self.deleteAll = ko.observable(false);
-        //self.query = ko.observable();
-        //self.results = ko.observableArray([]);
-        //self.contributors = ko.observableArray([]);
-        //self.selection = ko.observableArray();
-        //self.notification = ko.observable('');
-        //self.inviteError = ko.observable('');
-        //self.totalPages = ko.observable(0);
-        //self.nodes = ko.observableArray([]);
-        //self.nodesToChange = ko.observableArray();
-        //
-        //self.foundResults = ko.pureComputed(function() {
-        //    return self.query() && self.results().length;
-        //});
-        //
-        //self.noResults = ko.pureComputed(function() {
-        //    return self.query() && !self.results().length;
-        //});
-        //
-        //self.addAllVisible = ko.pureComputed(function() {
-        //    var selected_ids = self.selection().map(function(user){
-        //        return user.id;
-        //    });
-        //    for(var i = 0; i < self.results().length; i++) {
-        //        if(self.contributors().indexOf(self.results()[i].id) === -1 &&
-        //           selected_ids.indexOf(self.results()[i].id) === -1) {
-        //            return true;
-        //        }
-        //    }
-        //    return false;
-        //});
-        //
-        //self.removeAllVisible = ko.pureComputed(function() {
-        //    return self.selection().length > 0;
-        //});
-        //
-        //self.inviteName = ko.observable();
-        //self.inviteEmail = ko.observable();
-        //
-        //self.addingSummary = ko.computed(function() {
-        //    var names = $.map(self.selection(), function(result) {
-        //        return result.fullname;
-        //    });
-        //    return names.join(', ');
-        //});
+        self.nodeHasChildren = ko.observable(nodeHasChildren);
     },
     selectRemove: function() {
         var self = this;
         self.page('remove');
-    },
-    selectWhich: function() {
-        this.page('which');
-    },
-    gotoInvite: function() {
-        var self = this;
-        self.inviteName(self.query());
-        self.inviteError('');
-        self.inviteEmail('');
-        self.page('invite');
     },
     clear: function() {
         var self = this;
         self.selectRemove();
         self.deleteAll(false);
     },
-    submit: function() {
+    deleteOneNode: function() {
         var self = this;
-        debugger;
-            //var url = API_BASE + "chd2w";
-            var url = 'http://localhost:8000/v2/nodes/tpy9k/contributors/k7j3u/';
+        var url = API_BASE + self.nodeId + '/contributors/' + self.contributorToRemove().id + '/';
         $.ajax({
             url: url,
             type: 'DELETE',
-            dataType: 'json',
-            contentType: 'application/json',
             crossOrigin: true,
-            xhrFields: {withCredentials: true},
-            processData: false,
-            data: JSON.stringify(
-                {
-                    'data': {
-                        'type': 'contributors',
-                        'id': 'k7j3u'
-                    }
-                })
+            xhrFields: {
+                withCredentials: true
+            },
         }).done(function (response) {
             window.location.reload();
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to delete Contributor');
-            Raven.captureMessage('Could not DELETE Contributor.', {
+            Raven.captureMessage('Could not DELETE Contributor.' + error, {
                 API_BASE: url, status: status, error: error
             });
         });
-
         self.page('remove');
     },
-    //deleteAll: function() {
-    //    var self = this;
-    //    self.deleteAll(true);
-    //},
-
+    deleteAllNodes: function() {
+        var self = this;
+        self.page('removeAll');
+        getNodeContributorList(self.nodeId, self.contributorToRemove().id);
+    }
 });
 
 
@@ -147,17 +119,18 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribRemover(selector, nodeTitle, nodeId, parentId, parentTitle, userName, shouter) {
+function ContribRemover(selector, nodeTitle, nodeId, nodeHasChildren, parentId, parentTitle, userName, shouter) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
     self.nodeTitle = nodeTitle;
     self.nodeId = nodeId;
+    self.nodeHasChildren = nodeHasChildren;
     self.parentId = parentId;
     self.parentTitle = parentTitle;
     self.userName = userName;
     self.viewModel = new RemoveContributorViewModel(self.nodeTitle,
-        self.nodeId, self.parentId, self.parentTitle, self.userName, shouter);
+        self.nodeId, self.nodeHasChildren, self.parentId, self.parentTitle, self.userName, shouter);
     self.init();
 }
 
@@ -167,6 +140,7 @@ ContribRemover.prototype.init = function() {
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
         self.$element.find('.popover').popover('hide');
+        self.clear();
     });
     // Clear user search modal when dismissed; catches dismiss by escape key
     // or cancel button.
