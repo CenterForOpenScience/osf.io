@@ -19,10 +19,14 @@ class JSONAPIBaseView(generics.GenericAPIView):
         """
         def partial(item):
             embed_value = getattr(item, field.lookup_field, None)
+            if getattr(field, 'kwargs', None):
+                kwargs = {attr_name: getattr(item, attr) for (attr_name, attr) in field.kwargs}
+            else:
+                kwargs = {field.lookup_url_kwarg: embed_value}
             view, view_args, view_kwargs = resolve(
                 reverse(
                     field.view_name,
-                    kwargs={field.lookup_url_kwarg: embed_value}
+                    kwargs=kwargs
                 )
             )
             view_kwargs.update({
