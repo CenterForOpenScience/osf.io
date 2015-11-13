@@ -31,7 +31,11 @@
               <div class="row" data-bind="with: $parent.questions[qid]">
                 <h4 data-bind="attr.id: qid, text: title"></h4>
                 <small><em data-bind="text: $data.description"></em></small>
-                <div class="col-md-12 well" data-bind="text: $root.schemaData[qid].value"></div>
+                <div class="col-md-12 well" data-bind="with: $root.schemaData[qid]">
+                  <span data-bind="if: $data">
+                    {{$data}}
+                  </span>
+                </div>
               </div>
             </div>              
           </div>
@@ -42,13 +46,16 @@
 % else:
   <%def name="title()">Register ${node['title']}</%def>
 <script type="text/javascript">
-  window.location.href = '${node.url}' + 'registrations/';
+  window.location.href = '${node['url']}' + 'registrations/';
 </script>
 % endif
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     % if node.get('registered_schema'):
+      <script type="text/javascript">
+        window.contextVars.node.registrationMetaSchema = ${ node['registered_schema'] | sjson, n };
+      </script>
       <script src="${'/static/public/js/register-page.js' | webpack_asset}"></script>
     % endif
 </%def>

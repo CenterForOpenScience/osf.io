@@ -325,7 +325,7 @@ var MetaSchema = function(params, schemaData) {
     self.version = params.schema_version;
     self.title = params.title || params.schema.title;
     self.schema = params.schema || {};
-    self.id = [self.name, self.version].join('_');
+    self.id = params.id;
 
     // Used for initally selecting a schema
     self._selected = ko.observable(false);
