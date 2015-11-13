@@ -525,6 +525,9 @@ class JSONAPISerializer(ser.Serializer):
         if not data['relationships']:
             del data['relationships']
 
+        if not data['embeds']:
+            del data['embeds']
+
         if envelope:
             ret[envelope] = data
         else:
