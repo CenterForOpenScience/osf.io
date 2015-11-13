@@ -544,7 +544,7 @@ var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
 
     if (typeof date === 'string') {
-        this.date = moment.utc(dateTimeWithoutOffset(date) ? forceUTC(date) : date).toDate();
+        this.date = moment(dateTimeWithoutOffset(date) ? forceUTC(date) : date).utc().toDate();
     } else {
         this.date = date;
     }

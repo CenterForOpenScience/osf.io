@@ -122,7 +122,7 @@ def osfstorage_get_metadata(file_node, **kwargs):
         # TODO This should change to version as its internal it can be changed anytime
         version = int(request.args.get('revision'))
     except (ValueError, TypeError):  # If its not a number
-        version = -1
+        version = None
     return file_node.serialize(version=version, include_full=True)
 
 
