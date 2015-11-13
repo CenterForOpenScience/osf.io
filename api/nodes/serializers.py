@@ -335,7 +335,7 @@ class NodeProviderSerializer(JSONAPISerializer):
     path = ser.CharField(read_only=True)
     node = ser.CharField(source='node_id', read_only=True)
     provider = ser.CharField(read_only=True)
-    files = NodeFileHyperLink(kind='folder', read_only=True, link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
+    files = NodeFileHyperLink(kind='folder', read_only=True, link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'), never_embed=True)
     links = LinksField({
         'upload': WaterbutlerLink(),
         'new_folder': WaterbutlerLink(kind='folder')

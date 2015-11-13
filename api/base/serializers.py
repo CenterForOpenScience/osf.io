@@ -384,6 +384,8 @@ class NodeFileHyperLink(JSONAPIHyperlinkedIdentityField):
     def __init__(self, kind=None, kwargs=None, **kws):
         self.kind = kind
         self.kwargs = []
+        self.never_embed = kws.pop('never_embed', False)
+
         for kw in (kwargs or []):
             if isinstance(kw, basestring):
                 kw = (kw, kw)
