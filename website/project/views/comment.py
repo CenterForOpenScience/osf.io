@@ -101,4 +101,3 @@ def update_comments_timestamp(auth, node, **kwargs):
         return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
     else:
         return {}
-
