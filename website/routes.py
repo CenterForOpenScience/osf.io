@@ -884,7 +884,7 @@ def make_url_map(app):
             ],
             'post',
             project_views.drafts.new_draft_registration,
-            OsfWebRenderer('project/draft_registration.mako', trust=False)),
+            OsfWebRenderer('project/edit_draft_registration.mako', trust=False)),
         Rule(
             [
                 '/project/<pid>/drafts/<draft_id>/',
@@ -1171,9 +1171,6 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/drafts/<draft_id>/',
         ], 'get', project_views.drafts.get_draft_registration, json_renderer),
-        Rule([
-            '/project/<pid>/drafts/',
-        ], 'post', project_views.drafts.create_draft_registration, json_renderer),
         Rule([
             '/project/<pid>/drafts/<draft_id>/',
         ], 'put', project_views.drafts.update_draft_registration, json_renderer),

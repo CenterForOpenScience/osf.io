@@ -10,7 +10,6 @@ import mock
 import httplib as http
 import math
 import time
-import functools
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -64,6 +63,7 @@ from tests.factories import (
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
+from tests.base import DEFAULT_METASCHEMA
 
 class Addon(MockAddonNodeSettings):
     @property
@@ -188,7 +188,6 @@ class TestProjectViews(OsfTestCase):
 
     def setUp(self):
         super(TestProjectViews, self).setUp()
-        ensure_schemas()
         self.user1 = AuthUserFactory()
         self.user1.save()
         self.consolidate_auth1 = Auth(user=self.user1)
@@ -589,7 +588,7 @@ class TestProjectViews(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):
         # register a project
-        self.project.register_node(None, Auth(user=self.project.creator), '', None)
+        self.project.register_node(DEFAULT_METASCHEMA, Auth(user=self.project.creator), '', None)
         # get the first registered project of a project
         url = self.project.api_url_for('get_registrations')
         res = self.app.get(url, auth=self.auth)
@@ -1662,7 +1661,6 @@ class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
         super(TestAddingContributorViews, self).setUp()
-        ensure_schemas()
         self.creator = AuthUserFactory()
         self.project = ProjectFactory(creator=self.creator)
         # Authenticate all requests
@@ -1956,7 +1954,7 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
-        project.register_node(None, Auth(user=project.creator), '', None)
+        project.register_node(DEFAULT_METASCHEMA, Auth(user=project.creator), '', None)
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
@@ -2042,7 +2040,6 @@ class TestUserInviteViews(OsfTestCase):
 
     def setUp(self):
         super(TestUserInviteViews, self).setUp()
-        ensure_schemas()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.invite_url = '/api/v1/project/{0}/invite_contributor/'.format(
@@ -4227,7 +4224,7 @@ class TestDashboardViews(OsfTestCase):
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
         project.register_node(
-            None, Auth(self.creator), '', '',
+            DEFAULT_METASCHEMA, Auth(self.creator), '', '',
         )
 
         # Get the All My Registrations smart folder from the dashboard
@@ -4682,10 +4679,6 @@ class TestDraftRegistrationViews(OsfTestCase):
             u'summary': unicode(fake.sentence())
         }
 
-    def tearDown(self, *args, **kwargs):
-        super(TestDraftRegistrationViews, self).tearDown(*args, **kwargs)
-        DraftRegistration.remove()
-
     @unittest.skip('TODO: test when we support draft review')
     def test_submit_draft_for_review(self):
         pass
@@ -4828,24 +4821,6 @@ class TestDraftRegistrationViews(OsfTestCase):
         for draft in res.json['drafts']:
             assert_in(draft['pk'], [f._id for f in found])
 
-    def test_create_draft_registration(self):
-        target = NodeFactory(creator=self.user)
-        metadata = {
-            'summary': {'value': 'Some airy'}
-        }
-        payload = {
-            'schema_name': 'Open-Ended Registration',
-            'schema_version': 1,
-            'schema_data': metadata,
-        }
-        url = target.api_url_for('create_draft_registration')
-
-        res = self.app.post_json(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, http.CREATED)
-        draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
-        assert_equal(draft.registration_schema, self.meta_schema)
-        assert_equal(draft.registration_metadata, metadata)
-
     def test_new_draft_registration(self):
         target = NodeFactory(creator=self.user)
         payload = {
@@ -4854,6 +4829,18 @@ class TestDraftRegistrationViews(OsfTestCase):
         }
         url = target.web_url_for('new_draft_registration')
 
+        res = self.app.post(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, http.FOUND)
+        draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
+        assert_equal(draft.registration_schema, self.meta_schema)
+
+    def test_new_draft_registration_POST(self):
+        target = NodeFactory(creator=self.user)
+        payload = {
+            'schema_name': 'Open-Ended Registration',
+            'schema_version': 1
+        }
+        url = target.web_url_for('new_draft_registration')
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.FOUND)
         draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
@@ -4905,21 +4892,21 @@ class TestDraftRegistrationViews(OsfTestCase):
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_delete_draft_registration(self):
-        assert_equal(1, DraftRegistration.find().count())
+        orig_count = DraftRegistration.find().count()
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=self.user.auth)
         assert_equal(res.status_code, http.NO_CONTENT)
-        assert_equal(0, DraftRegistration.find().count())
+        assert_equal(orig_count - 1, DraftRegistration.find().count())
 
     def test_only_admin_can_delete_registration(self):
         non_admin = AuthUserFactory()
-        assert_equal(1, DraftRegistration.find().count())
+        orig_count = DraftRegistration.find().count()
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=non_admin.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
-        assert_equal(1, DraftRegistration.find().count())
+        assert_equal(orig_count, DraftRegistration.find().count())
 
     def test_get_metaschemas(self):
         url = '/api/v1/project/drafts/schemas/'
