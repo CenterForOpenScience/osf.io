@@ -63,7 +63,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         rather than the location used in the request.
         """
         kwargs = self.request.parser_context['kwargs'].copy()
-        embedded = kwargs.pop('no_embeds', None)
+        embedded = kwargs.pop('is_embedded', None)
         view_name = self.request.parser_context['view'].view_name
         reversed_url = None
         if embedded:
@@ -90,7 +90,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
         If this is an embedded resource, returns first page, ignoring query params.
         """
-        if request.parser_context['kwargs'].get('no_embeds'):
+        if request.parser_context['kwargs'].get('is_embedded'):
             self._handle_backwards_compat(view)
             page_size = self.get_page_size(request)
             if not page_size:

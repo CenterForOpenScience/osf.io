@@ -27,7 +27,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
             )
             view_kwargs.update({
                 'request': self.request,
-                'no_embeds': True
+                'is_embedded': True
             })
             response = view(*view_args, **view_kwargs)
             return response.data
@@ -37,11 +37,11 @@ class JSONAPIBaseView(generics.GenericAPIView):
         """Inject request into the serializer context. Additionally, inject partial functions
         (request, object -> embedd items) if the query string contains embeds, and this
         is the topmost call to this method (the embed partials call view functions which has
-        the potential to create infinite recursion hence the inclusion of the no_embeds
+        the potential to create infinite recursion hence the inclusion of the is_embedded
         view kwarg to prevent this).
         """
         context = super(JSONAPIBaseView, self).get_serializer_context()
-        if self.kwargs.get('no_embeds'):
+        if self.kwargs.get('is_embedded'):
             return context
         embeds = self.request.query_params.getlist('embed')
         fields = self.serializer_class._declared_fields
