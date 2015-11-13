@@ -756,7 +756,8 @@ var RegistrationEditor = function(urls, editorId) {
     self.iterObject = $osf.iterObject;
     // TODO: better extensions system?
     self.extensions = {
-        'osf-upload': editorExtensions.Uploader
+        'osf-upload': editorExtensions.Uploader,
+        'osf-author-import': editorExtensions.AuthorImport
     };
 };
 /**
@@ -831,14 +832,14 @@ RegistrationEditor.prototype.flatQuestions = function() {
  * @param {Object} data: data in current editor template scope
  * @returns {Object|ViewModel}
  **/
-RegistrationEditor.prototype.context = function(data) {
+RegistrationEditor.prototype.context = function(data, $root) {
     $.extend(data, {
         save: this.save.bind(this),
         readonly: this.readonly
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data);
+        return new this.extensions[data.type](data, $root);
     }
     return data;
 };
@@ -1139,7 +1140,10 @@ RegistrationEditor.prototype.authorDialog = function() {
                         }
                     });
                     if ( authors ) {
-                        self.currentQuestion().setValue(authors.join(', '));
+                        $.each(self.currentQuestion().properties, function(name, subQuestion){
+                            if (name === 'authorship')
+                                subQuestion.setValue(authors.join(', '));
+                        });
                         self.save();
                     }
                 }
@@ -1153,6 +1157,20 @@ RegistrationEditor.prototype.setContributorBoxes = function(value) {
     $.each(boxes, function(i, box) {
         this.checked = value;
     });
+};
+/**
+ * Search the editor for a single question
+ *
+ */
+RegistrationEditor.prototype.find = function(title) {
+    var self = this;
+    var questions = self.flatQuestions();
+
+    for (var i = 0; i < questions.length; i++ ) {
+        if ( questions[i].title.toLowerCase() === title.toLowerCase() ) {
+            return questions[i];
+        }
+    }
 };
 
 /**

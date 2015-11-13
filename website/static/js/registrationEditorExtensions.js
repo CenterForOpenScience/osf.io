@@ -33,9 +33,9 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
         if (filePicker) {
             // A hack to flush the old mithril controller.
             // It's unclear to me exactly why this is happening (after 3hrs), but seems
-            // to be a KO-mithril interaction. We're programattically changing the div 
+            // to be a KO-mithril interaction. We're programattically changing the div
             // containing mithril mountings, and for some reason old controllers (and
-            // their bound settings) are persisting and being reused. This call 
+            // their bound settings) are persisting and being reused. This call
             // explicity removes the old controller.
             // see: http://lhorie.github.io/mithril/mithril.component.html#unloading-components
             m.mount(document.getElementById(filePicker.fangornOpts.divID), null);
@@ -122,8 +122,8 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 }
             }
         });
-    filePicker = fw; 
-    fw.init(); 
+    filePicker = fw;
+    fw.init();
     viewModel.showUploader(false);
 };
 
@@ -142,7 +142,19 @@ var Uploader = function(data) {
     $.extend(self, data);
 };
 
+var AuthorImport = function(data, $root) {
+    var self = this;
+
+    self._orig = data;
+    self.contributors = $root.contributors();
+    self.currentQuestion = $root.currentQuestion;
+    self.currentQuestion($root.find('authorship'));
+
+    $.extend(self, data);
+};
+
 module.exports = {
+    AuthorImport: AuthorImport,
     Uploader: Uploader,
     osfUploader: osfUploader,
     limitOsfStorage: limitOsfStorage
