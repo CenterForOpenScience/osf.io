@@ -5,29 +5,28 @@
     "pages": [{
         "title": "OSF-Standard Pre-Data Collection Registration",
         "id": "page1",
-        "questions": {
-            "datacompletion": {
-                "title": "Is data collection for this project underway or complete?",
-                "nav": "Data Completion",
-                "type": "choose",
-                "format": "singleselect",
-                "options": ["yes", "no"],
-                "description": "Choose yes or no"
-            },
-            "looked": {
-                "title": "Have you looked at the data?",
-                "nav": "Looked at Data",
-                "type": "choose",
-                "format": "singleselect",
-                "options": ["yes", "no"],
-                "description": "Choose yes or no"
-            },
-            "comments": {
-                "title": "Other Comments",
-                "nav": "Comments",
-                "type": "string",
-                "format": "textarea"
-            }
-        }
+        "questions": [{
+            "qid": "datacompletion",
+            "title": "Is data collection for this project underway or complete?",
+            "nav": "Data Completion",
+            "type": "choose",
+            "format": "singleselect",
+            "options": ["yes", "no"],
+            "description": "Choose yes or no"
+        },{
+            "qid": "looked",
+            "title": "Have you looked at the data?",
+            "nav": "Looked at Data",
+            "type": "choose",
+            "format": "singleselect",
+            "options": ["yes", "no"],
+            "description": "Choose yes or no"
+        },{
+            "qid": "comments",
+            "title": "Other Comments",
+            "nav": "Comments",
+            "type": "string",
+            "format": "textarea"
+        }]
     }]
 }

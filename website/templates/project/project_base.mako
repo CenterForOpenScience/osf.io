@@ -73,12 +73,14 @@
             id: ${ user_id | sjson, n },
             urls: {api: userApiUrl},
             isContributor: ${ user.get('is_contributor', False) | sjson, n },
-            fullname: ${ user['fullname'] | sjson, n }
+            fullname: ${ user['fullname'] | sjson, n },
+            isAdmin: ${ user.get('is_admin', False) | sjson, n}
         },
         node: {
             ## TODO: Abstract me
             id: nodeId,
             title: ${ node['title'] | sjson, n },
+            license: ${ node['license'] | sjson, n},
             urls: {
                 api: nodeApiUrl,
                 web: ${ node['url'] | sjson, n },
@@ -93,7 +95,7 @@
             parentTitle: ${ parent_title | sjson, n },
             parentRegisterUrl: ${parent_registration_url | sjson, n },
             parentExists: ${ parent_exists | sjson, n},
-            registrationMetaSchema: ${ node['registered_schema'] | sjson, n },
+            registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n }
         }
     });

@@ -125,9 +125,16 @@
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
                     </p>
                 % endif
-                % if node['is_registration'] and node['registered_meta']:
-                    <br />Registration Supplement:
-                    <a href="${node['url']}register/">${node['registered_schema']['schema']['title']}</a>
+                % if node['is_registration']:
+                    <p>
+                    Registration Supplement:
+                    % for meta_schema in node['registered_schemas']:                    
+                    <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a> 
+                      % if len(node['registered_schemas']) > 1:
+                      ,
+                      % endif
+                    % endfor
+                    </p>
                 % endif
                 % if node['is_registration']:
                     <p>
@@ -146,8 +153,8 @@
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
-                    DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
-                    ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
+                  DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
+                  ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
@@ -174,6 +181,18 @@
                     <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                     </p>
                 % endif
+                % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
+                    <p>
+                      <license-picker params="saveUrl: '${node['update_url']}',
+                                              saveMethod: 'PUT',
+                                              license: window.contextVars.node.license,
+                                              saveLicenseKey: 'node_license',
+                                              readonly: ${ node['is_registration'] | sjson, n}">
+                        <span id="license">License:</span>
+                        <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
+                      </license-picker>
+                    </p>
+                 % endif
             </div>
         </div>
 

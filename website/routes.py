@@ -21,6 +21,7 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from website import util
+from website import prereg
 from website import settings
 from website import language
 from website.util import paths
@@ -220,6 +221,20 @@ def make_url_map(app):
         ),
 
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
+
+        Rule(
+            '/prereg/',
+            'get',
+            prereg.prereg_landing_page,
+            OsfWebRenderer('prereg_landing_page.mako')
+        ),
+
+        Rule(
+            '/api/v1/prereg/draft_registrations/',
+            'get',
+            prereg.prereg_draft_registrations,
+            json_renderer,
+        ),
     ])
 
     # Site-wide API routes
@@ -578,6 +593,28 @@ def make_url_map(app):
             OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
         ),
 
+        Rule(
+            '/settings/tokens/',
+            'get',
+            profile_views.personal_access_token_list,
+            OsfWebRenderer('profile/personal_tokens_list.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/create/',
+            'get',
+            profile_views.personal_access_token_register,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/<_id>/',
+            'get',
+            profile_views.personal_access_token_detail,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
@@ -839,8 +876,8 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/register/<template>/',
-                '/project/<pid>/node/<nid>/register/<template>/',
+                '/project/<pid>/register/<metaschema_id>/',
+                '/project/<pid>/node/<nid>/register/<metaschema_id>/',
             ],
             'get',
             project_views.register.node_register_template_page,

@@ -326,7 +326,10 @@ function inheritFromParent(item, parent, fields) {
  */
 function _fangornResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus', ' '),
-        togglePlus = m('i.fa.fa-plus', ' ');
+        togglePlus = m('i.fa.fa-plus', ' '),
+    // padding added so that this overlaps the toggle-icon div and prevent cursor change into pointer for checkout icons.
+        checkedByUser = m('i.fa.fa-sign-out.text-muted[style="font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', ''),
+        checkedByOther = m('i.fa.fa-sign-out[style="color: #d9534f; font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', '');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder' && item.depth > 1) {
         if(!item.data.permissions.view){
@@ -336,6 +339,14 @@ function _fangornResolveToggle(item) {
             return toggleMinus;
         }
         return togglePlus;
+    }
+    if (item.data.provider === 'osfstorage' && item.kind === 'file') {
+        if (item.data.extra.checkout) {
+            if (item.data.extra.checkout === window.contextVars.currentUser.id){
+                return checkedByUser;
+            }
+            return checkedByOther;
+        }
     }
     return '';
 }
@@ -1009,6 +1020,35 @@ function _removeEvent (event, items, col) {
     }
 }
 
+function doCheckout(item, checkout, showError) {
+    return $osf.ajaxJSON(
+        'PUT',
+        window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
+        {
+            isCors: true,
+            data: {
+                data: {
+                    id: item.data.path.replace('/', ''),
+                    type: 'files',
+                    attributes: {
+                        checkout: checkout
+                    }
+                }
+            }
+        }
+    ).done(function(xhr) {
+        if (showError) {
+            window.location.reload();
+        }
+    }).fail(function(xhr) {
+        if (showError) {
+            $osf.growl('Error', 'Unable to check out file. This is most likely due to the file being already checked-out' +
+                ' by another user.');
+        }
+    });
+}
+
+
 /**
  * Resolves lazy load url for fetching children
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1510,13 +1550,51 @@ var FGItemButtons = {
                         }, 'View'));
                 }
                 if (item.data.permissions && item.data.permissions.edit) {
-                    rowButtons.push(
+                    if (item.data.provider === 'osfstorage') {
+                        if (!item.data.extra.checkout){
+                            rowButtons.push(
+                                m.component(FGButton, {
+                                    onclick: function(event) { _removeEvent.call(tb, event, [item]);  },
+                                    icon: 'fa fa-trash',
+                                    className : 'text-danger'
+                                }, 'Delete'));
+                            rowButtons.push(
+                                m.component(FGButton, {
+                                    onclick: function(event) {
+                                        tb.modal.update(m('', [
+                                            m('p', 'This would mean ' +
+                                                'other contributors cannot edit, delete or upload new versions of this file ' +
+                                                'as long as it is checked-out. You can check it back in at anytime.')
+                                        ]), m('', [
+                                            m('a.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                                            m('a.btn.btn-warning', {onclick: function() {
+                                                doCheckout(item, window.contextVars.currentUser.id, true);
+                                            }}, 'Check out file')
+                                        ]), m('h3.break-word.modal-title', 'Confirm file check-out?'));
+                                    },
+                                    icon: 'fa fa-sign-out',
+                                    className : 'text-warning'
+                                }, 'Check out file'));
+                        } else if (item.data.extra.checkout === window.contextVars.currentUser.id) {
+                            rowButtons.push(
+                                m.component(FGButton, {
+                                    onclick: function(event) {
+                                        doCheckout(item, null, true);
+                                    },
+                                    icon: 'fa fa-sign-in',
+                                    className : 'text-warning'
+                                }, 'Check in file')
+                            );
+                        }
+                    } else {
+                        rowButtons.push(
                         m.component(FGButton, {
                             onclick: function (event) { _removeEvent.call(tb, event, [item]); },
                             icon: 'fa fa-trash',
                             className: 'text-danger'
                         }, 'Delete'));
 
+                    }
                 }
                 if(storageAddons[item.data.provider].externalView) {
                     var providerFullName = storageAddons[item.data.provider].fullName;
@@ -1536,7 +1614,7 @@ var FGItemButtons = {
                     }, 'Download as zip')
                 );
             }
-            if (item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
+            if (item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit &&  (item.data.provider !== 'osfstorage' || !item.data.extra.checkout)) {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: function () {
@@ -1678,9 +1756,10 @@ var FGToolbar = {
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
             // Special cased to not show 'delete multiple' for github or published dataverses
             var showDelete = false;
+            var each, i, len;
             // Only show delete button if user has edit permissions on at least one selected file
-            for (var i = 0, len = items.length; i < len; i++) {
-                var each = items[i];
+            for (i = 0, len = items.length; i < len; i++) {
+                each = items[i];
                 if (each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
                     showDelete = true;
                     break;
@@ -1735,13 +1814,10 @@ var FGToolbar = {
                         var panelVisible = panelToggle.find('.osf-panel-hide');
                         var panelHidden = panelToggle.find('.osf-panel-show');
 
-                        panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
-                        panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
-
                         panelVisible.hide();
                         panelHidden.show();
                     },
-                    icon: 'fa fa-angle-left'
+                    icon: 'fa fa-angle-up'
                 }, ''));
         }
 

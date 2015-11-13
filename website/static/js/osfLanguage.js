@@ -4,6 +4,7 @@ var SUPPORT_LINK = '<a href="mailto:' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL +'<
 var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_LINK + ' if the problem persists.';
 
 module.exports = {
+    SUPPORT_LINK: SUPPORT_LINK,
     // TODO
     makePublic: null,
     makePrivate: null,
@@ -11,7 +12,7 @@ module.exports = {
         registrationFailed: 'Registration failed. If this problem persists, please contact ' + SUPPORT_EMAIL + '.',
         invalidEmbargoTitle: 'Invalid embargo end date',
         invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
-        registerConfirm: 'Are you sure you want to register this project?',
+        registerConfirm: 'Before you continue...',
         registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.',
         registerFail: 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_LINK,
         submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_LINK,
@@ -85,8 +86,24 @@ module.exports = {
         deactivateError: 'Could not deactivate application. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         dataFetchError: 'Data not loaded. ' + REFRESH_OR_SUPPORT,
         dataListFetchError: 'Could not load list of developer applications at this time. ' + REFRESH_OR_SUPPORT,
-        dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
+        dataSendError: 'Error sending data to the server. Check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         creationSuccess: 'Successfully registered new application',
         dataUpdated: 'Application data updated'
+    },
+    apiOauth2Token: {
+        discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
+        deactivateConfirm: 'Are you sure you want to deactivate this token? This cannot be reversed.',
+        deactivateError: 'Could not deactivate token. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + ' if the problem persists.',
+        dataFetchError: 'Data not loaded. ' + REFRESH_OR_SUPPORT,
+        dataListFetchError: 'Could not load list of personal access tokens at this time. ' + REFRESH_OR_SUPPORT,
+        dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
+        creationSuccess: 'Successfully generated new personal access token. This token will never expire. This token should never be shared with others. If it is accidentally revealed publicly, it should be deactivated immediately.',
+        dataUpdated: 'Token data updated'
+    },
+    projectSettings: {
+        updateSuccessMessage: 'Successfully updated project settings.',
+        updateErrorMessage400: 'Error updating project settings. Check that all fields are valid.',
+        updateErrorMessage: 'Could not update project settings. ' + REFRESH_OR_SUPPORT,
+        instantiationErrorMessage: 'Trying to instantiate ProjectSettings view model without an update URL'
     }
 };

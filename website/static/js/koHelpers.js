@@ -310,44 +310,67 @@ ko.bindingHandlers.anchorScroll = {
     }
 };
 
-/**
- * Required in render_node.mako to call getIcon. As a result of modularity there
- * are overlapping scopes. To temporarily escape the parent scope and allow other binding
- * stopBinding can be used. Only other option was to redo the structure of the scopes.
- * Example:
- * <span data-bind="stopBinding: true"></span>
- */
-ko.bindingHandlers.stopBinding = {
-    init: function() {
-        return { controlsDescendantBindings: true };
+
+ko.bindingHandlers.groupOptions = {
+    /** Map a list of lists to a select with optgroup headings
+     *
+     * Usage:
+     * <select class="form-control" data-bind="groupOptions: listOfLists,
+     *                                                       value: boundValue,
+     *                                                       optionsText: textKey>
+     *                                                       optionsValue: valueKey"></select>
+     **/
+    init: function(element, valueAccessor, allBindings) {
+        allBindings = allBindings();
+        var value = allBindings.value;
+        var optionsValue = allBindings.optionsValue || 'value';
+        if (typeof optionsValue === 'string') {
+            var valueKey = optionsValue;
+            optionsValue = function(item) {
+                return item[valueKey];
+            };
+        }
+        var optionsText = allBindings.optionsText || 'value';
+        if (typeof optionsText === 'string') {
+            var textKey = optionsText;
+            optionsText = function(item) {
+                return item[textKey];
+            };
+        }
+
+        var mapChild = function(child) {
+            return $('<option>', {
+                value: optionsValue(child),
+                html: optionsText(child)
+            });
+        };
+
+        var groups = valueAccessor();
+        var children = $();
+        $.each(groups, function(index, group) {
+            if (optionsValue(group)) {
+                children = children.add(mapChild(group));
+            }
+            else {
+                children = children.add(
+                    $('<optgroup>', {
+                        label: optionsText(group)
+                    }).append($.map(group.licenses, mapChild))
+                );
+            }
+        });
+        $(element).append(children);
+        $(element).val(value());
     }
 };
 
 /**
- * Adds class returned from iconmap to the element. The value accessor should be the
- * category of the node.
- * Example:
- * <span data-bind="getIcon: 'analysis'"></span>
- */
-ko.bindingHandlers.getIcon = {
-    init: function(elem, valueAccessor) {
-        var icon;
-        var category = valueAccessor();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            icon = iconmap.componentIcons[category];
-        }
-        else {
-            icon = iconmap.projectIcons[category];
-        }
-        $(elem).addClass(icon);
-    }
-};
-
-/**
- * Creates a pikaday date picker in place. Takes in a function
+ * Creates a pikaday date picker in place. Optionally takes in a function
  * that verifies the selected date is valid
  * Example:
- * <input type="text" data-bind="datePicker: dateIsValid">
+ * <input type="text" data-bind="datePicker: value">
+ * or
+ * <input type="text" data-bind="datePicker: {value: value, value: isValid}">
  */
 ko.bindingHandlers.datePicker = {
     init: function(elem, valueAccessor) {

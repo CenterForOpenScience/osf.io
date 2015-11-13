@@ -41,6 +41,7 @@
                         <ul class="nav">
                             <li><a href="#contributors"><i class="fa fa-chevron-right"></i> Contributors</a></li>
                             <li><a href="#privacy"><i class="fa fa-chevron-right"></i> Privacy</a></li>
+                            <li><a href="#licenses"><i class="fa fa-chevron-right"></i> Licenses</a></li>
                             <li><a href="#citations"><i class="fa fa-chevron-right"></i> Citations</a></li>
                             <li><a href="#viewonly"><i class="fa fa-chevron-right"></i> View-only links</a></li>
                             <li><a href="#comments"><i class="fa fa-chevron-right"></i> Comments</a></li>
@@ -142,6 +143,7 @@
             <div class="col-md-12">
                 <%include file="/public/pages/help/contributors.mako"/>
                 <%include file="/public/pages/help/privacy.mako"/>
+                <%include file="/public/pages/help/licenses.mako"/>
                 <%include file="/public/pages/help/citations.mako"/>
                 <%include file="/public/pages/help/view_only.mako"/>
                 <%include file="/public/pages/help/comments.mako"/>

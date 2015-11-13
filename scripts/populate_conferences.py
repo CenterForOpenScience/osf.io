@@ -467,7 +467,7 @@ MEETING_DATA = {
     },
     'CNI2015': {
         'name': 'Coalition for Networked Information (CNI) Fall Membership Meeting 2015',
-        'info_url': 'https://www.cni.org/events/membership-meetings/upcoming-meeting/fall-2015/',
+        'info_url': 'https://wp.me/P1LncT-64s',
         'logo_url': None,
         'active': True,
         'admins': [],
@@ -475,7 +475,7 @@ MEETING_DATA = {
         'poster': False,
         'talk': True,
     },
-        'SWPA2016': {
+    'SWPA2016': {
         'name': 'Southwestern Psychological Association Convention 2016',
         'info_url': 'https://www.swpsych.org/conv_dates.php',
         'logo_url': 'http://s28.postimg.org/xbwyqqvx9/SWPAlogo4.jpg',
@@ -495,15 +495,19 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-    'PsiChiRepository': {
-        'name': 'Psi Chi',
-        'info_url': 'http://psichi.org',
+    'MiamiBrainhack15': {
+        'name': 'University of Miami Brainhack 2015',
+        'info_url': 'http://brainhack.org/americas/',
         'logo_url': None,
         'active': True,
         'admins': [],
         'public_projects': True,
         'poster': True,
         'talk': True,
+    },
+    'PsiChiRepository': {
+        'name': 'Psi Chi',
+        'info_url': 'http://psichi.org',
         'field_names': {
             'submission1': 'measures',
             'submission2': 'materials',
@@ -514,7 +518,27 @@ MEETING_DATA = {
             'mail_subject': 'Title',
             'mail_message_body': 'Measure or material short description',
             'mail_attachment': 'Your measure/scale or material file(s)'
-        }
+        },
+    },
+    'GI2015': {
+        'name': 'Genome Informatics 2015',
+        'info_url': 'https://meetings.cshl.edu/meetings.aspx?meet=info&year=15',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'MADSSCi2016': {
+        'name': 'Mid-Atlantic Directors and Staff of Scientific Cores & Southeastern Association of Shared Services 2016',
+        'info_url': 'http://madssci.abrf.org',
+        'logo_url': 'http://madssci.abrf.org/sites/default/files/madssci-logo-bk.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
     },
 }
 
@@ -522,7 +546,7 @@ MEETING_DATA = {
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
         meeting = meeting.strip()
-        admin_emails = attrs.pop('admins')
+        admin_emails = attrs.pop('admins', [])
         admin_objs = []
         for email in admin_emails:
             try:

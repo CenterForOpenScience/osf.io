@@ -26,22 +26,25 @@
     </div>
     <div class="row-md-12">
         <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
+        <button id="register-submit" type="button" class="btn btn-success pull-right" 
+                data-bind="visible: draft.requiresApproval, click: draft.submitForReview">
+          Submit for review
+        </button>
 
-## TODO(lyndsysimon): Factor these buttons out when prereg is merged in.
-##         <span data-bind="if: draft.metaSchema.name === 'Prereg Challenge'" >
-##           <a type="button" class="btn btn-success pull-right" data-bind="click: submitForReview">Submit to the Pre-Registration Challenge</a>
-##           <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: registerDraft">Register without review</button>
-##         </span>
+        <span data-bind="if: draft.metaSchema.name === 'Prereg Challenge'">
+          <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview">Register without review</button>
+        </span>       
 
-            <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: registerDraft">Register</button>
-## TODO(lyndsysimon): This button is not applicable until prereg is merged in.
-##             <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: submitForReview, visible: draft.requiresApproval">Submit for review</button>
+        <button id="register-submit" type="button" class="btn btn-success pull-right" 
+                data-bind="visible: !draft.requiresApproval, click: draft.beforeRegister.bind(draft, null)">
+          Register
+        </button>
     </div>
 </div>
 
 <script type="text/html" id="preRegistrationTemplate">
-  <ul>
-    <li>The content and version history of <strong>Wiki and OSF Storage</strong> will be copied to the registration.</li>
+  <ul data-bind="foreach: preRegisterPrompts">
+    <li data-bind="html: $data"></li>
   </ul>
   <div class="form-group">
     <label class="control-label">Registration Choice</label>
@@ -62,11 +65,13 @@
   <em class="text-danger" data-bind="validationMessage: $root.pikaday"></em>
   <div class="modal-footer">
     <button class="btn btn-default" data-bind="click: close">Cancel</button>
-    <button class="btn btn-primary" data-bind="click: register, enable: canRegister">
-      Register
+    <button class="btn btn-success" data-bind="click: register, enable: canRegister">
+      Continue
     </button>
   </div>
 </script>
+
+<%include file="project/registration_utils.mako" />
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}

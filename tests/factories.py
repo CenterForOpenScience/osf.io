@@ -14,9 +14,12 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
 import datetime
+import functools
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
 from mock import patch, Mock
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
@@ -24,17 +27,21 @@ from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
 from website.oauth.models import (
-   ApiOAuth2Application,
-   ExternalAccount,
-   ExternalProvider
+    ApiOAuth2Application,
+    ApiOAuth2PersonalToken,
+    ExternalAccount,
+    ExternalProvider
 )
 from website.project.model import (
     Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
-    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig
+    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig,
+    ensure_schemas
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.archiver import ARCHIVER_SUCCESS
+from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -142,6 +149,16 @@ class ApiOAuth2ApplicationFactory(ModularOdmFactory):
     callback_url = 'http://example.uk'
 
 
+class ApiOAuth2PersonalTokenFactory(ModularOdmFactory):
+    FACTORY_FOR = ApiOAuth2PersonalToken
+
+    owner = SubFactory(UserFactory)
+
+    scopes = 'osf.full_write osf.full_read'
+
+    name = Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
+
+
 class PrivateLinkFactory(ModularOdmFactory):
     FACTORY_FOR = PrivateLink
 
@@ -186,9 +203,9 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                data=None, archive=False, embargo=None, registration_approval=None, retraction=None, *args, **kwargs):
+                data=None, archive=False, embargo=None, registration_approval=None, retraction=None, is_public=False,
+                *args, **kwargs):
         save_kwargs(**kwargs)
-
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
         project.save()
@@ -237,6 +254,8 @@ class RegistrationFactory(AbstractNodeFactory):
             dst_node=reg,
             initiator=user,
         )
+        if is_public:
+            reg.is_public = True
         reg.save()
         return reg
 
@@ -537,6 +556,7 @@ class ArchiveTargetFactory(ModularOdmFactory):
 class ArchiveJobFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveJob
 
+
 class DraftRegistrationFactory(ModularOdmFactory):
     FACTORY_FOR = DraftRegistration
 
@@ -552,7 +572,10 @@ class DraftRegistrationFactory(ModularOdmFactory):
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator
-        registration_schema = registration_schema or MetaSchema.find()[0]
+        try:
+            registration_schema = registration_schema or MetaSchema.find()[0]
+        except IndexError:
+            ensure_schemas()
         registration_metadata = registration_metadata or {}
         draft = branched_from.create_draft_registration(
             user=initiator,
@@ -561,3 +584,23 @@ class DraftRegistrationFactory(ModularOdmFactory):
             save=True,
         )
         return draft
+
+
+class NodeLicenseRecordFactory(ModularOdmFactory):
+    FACTORY_FOR = NodeLicenseRecord
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        try:
+            NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        except NoResultsFound:
+            ensure_licenses()
+        kwargs['node_license'] = kwargs.get(
+            'node_license',
+            NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        )
+        return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)

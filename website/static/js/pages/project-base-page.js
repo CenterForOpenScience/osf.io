@@ -8,6 +8,7 @@ var $osf = require('js/osfHelpers');
 // NodeActions is needed for rendering recent logs in nodelists (e.g. regsitrations and forks
 // pages
 require('js/project');
+require('js/licensePicker');
 
 var node = window.contextVars.node;
 

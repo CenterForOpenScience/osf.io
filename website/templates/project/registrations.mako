@@ -1,17 +1,11 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Registrations</%def>
 <div id="registrationsListScope">
-  <form id="newDraftRegistrationForm" method="POST" style="display:none">
-    <!-- ko if: selectedSchema() -->
-    <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name">
-    <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version">
-    <!-- /ko -->
-  </form>
 <ul id="registrationsTabs" class="nav nav-tabs" role="tablist">
   <li role="presentation" class="active">
     <a id="registrationsControl" aria-controls="registrations" href="#registrations">Registrations</a>
   </li>
-  % if 'admin' in user['permissions']:
+  % if 'admin' in user['permissions'] and node['has_draft_registrations']:
   <li role="presentation" data-bind="visible: hasDrafts">
       <a id="draftsControl" aria-controls="drafts" href="#drafts">Draft Registrations</a>
   </li>
@@ -49,18 +43,23 @@
         To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a>
         %endif
       </div>
-
-        % if 'admin' in user['permissions'] and not disk_saving_mode:
-            <div class="col-md-3">
+      % if 'admin' in user['permissions'] and not disk_saving_mode:
+      <div class="col-md-3">
         <a data-bind="click: createDraftModal, css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
           New Registration
         </a>
-            </div>
-        % endif
+      </div>
+      % endif
     </div>
   </div>
   <div role="tabpanel" class="tab-pane" id="drafts">
-    <div class="row" style="min-height: 150px;padding-top:20px;">
+    <div id="draftRegistrationsScope" class="row scripted" style="min-height: 150px;padding-top:20px;">
+      <form id="newDraftRegistrationForm" method="POST" style="display:none">
+        <!-- ko if: selectedSchema() -->
+        <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name">
+        <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version">
+        <!-- /ko -->
+      </form>
       <div data-bind="visible: !preview()">
         <div class="col-md-9">
           <div class="scripted" data-bind="foreach: drafts">
@@ -79,29 +78,30 @@
                 <p>started: <span data-bind="text: initiated"></span></p>
                 <p>last updated: <span data-bind="text: updated"></span></p>
                 <span data-bind="if: requiresApproval">
-                    <div data-bind="if: isApproved">
-                        <div class="draft-status-badge bg-success"> Approved</div>
-                    </div>
-                    <div data-bind="ifnot: isApproved">
-                        <div class="draft-status-badge bg-warning"> Pending Approval </div>
-                    </div>
-                    <div data-bind="if: isPendingReview">
+                    <div data-bind="if: isPendingApproval">
                         <div class="draft-status-badge bg-warning"> Pending Review</div>
+                    </div>
+                    <div data-bind="if: userHasUnseenComment">
+                        <div class="draft-status-badge bg-warning"> Unseen Comments</div>
                     </div>
                 </span>
                 </small>
                 <div class="row">
                   <div class="col-md-10">
-                    <a class="btn btn-info"
-                       data-bind="click: $root.maybeWarn"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</a>
+                    <button class="btn btn-info"
+                       data-bind="click: $root.maybeWarn">
+                      <i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit
+                    </button>
                     <button class="btn btn-danger"
-                            data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
+                            data-bind="click: $root.deleteDraft">
+                      <i style="margin-right: 5px;" class="fa fa-times"></i>Delete
+                    </button>
                   </div>
                   <div class="col-md-1">
-                     <a class="btn btn-success" data-bind="attr.href: urls.register_page,
-                                                           tooltip: {
-                                                             placement: 'top',
-                                                             title: isApproved ? 'Finalize this draft' : 'This draft must be approved before it can be registered'
+                    <a class="btn btn-success" data-bind="attr.href: urls.register_page,
+                                                          tooltip: {
+                                                            placement: 'top',
+                                                            title: isApproved ? 'Finalize this draft' : 'This draft must be approved before it can be registered'
                                                            },
                                                            css: {'disabled': !isApproved}">Register</a>
                   </div>
@@ -109,67 +109,6 @@
               </h4>
             </li>
           </div>
-        </div>
-      </div>
-      <div data-bind="if: preview">
-        <br />
-        <button data-bind="click: preview.bind($root, false)"
-                class="btn btn-primary"><i class="fa fa-arrow-circle-o-left"></i>&nbsp;&nbsp;&nbsp;Back</button>
-        <br />
-        <br />
-        <p> Select a registration template to continue ... </p>
-        <div class="row">
-          <form name="createDraft" method="post">
-            <div class="col-md-9">
-              <div class="form-group">
-                <select class="form-control" data-bind="options: schemas,
-                                                        optionsText: 'name',
-                                                        value: selectedSchema">
-                </select>
-                <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name" />
-                <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version" />
-              </div>
-            </div>
-            <div class="col-md-3">
-              <button type="submit" class="btn btn-success"> Start </button>
-            </div>
-          </form>
-        </div>
-        <hr />
-        <div class="row" data-bind="if: selectedSchema">
-          <div class="col-md-12" data-bind="with: selectedSchema">
-            <span data-bind="if: requiresApproval">
-              <div class="row">
-                <div class="col-md-12 schema-fulfillment">
-                  <span class="well" data-bind="tooltip: {
-                                                  placement: 'top',
-                                                  title: 'Site administrations will need to approve this draft before it can be registered'
-                                                }">
-                    <span>Requires Approval</span>&nbsp;&nbsp;
-                    <i class="fa fa-exclamation-triangle" target="_blank"></i>
-                  </span>              
-                </div>
-              </div>
-            </span>
-            <span data-bind="if: fulfills.length">
-              <h4> Fulfills: </h4>
-              <div class="row">
-                <div class="col-md-12 schema-fulfillment" data-bind="foreach: fulfills">
-                  <span class="well">
-                    <span data-bind="text: name"></span>&nbsp;&nbsp;
-                    <a class="fa fa-info-circle" target="_blank" data-bind="attr.href: info"></a>
-                  </span>
-                </div>
-              </div>
-            </span>
-            <h4> Description: </h4>
-            <blockquote>
-              <p data-bind="text: schema.description"></p>
-            </blockquote>
-          </div>
-        </div>
-        <hr />
-        <div class="row" data-bind="template: {data: previewSchema, name: 'registrationPreview'}">
         </div>
       </div>
     </div>
@@ -189,8 +128,8 @@
     <span data-bind="foreach: schemas">
     <div class="radio">
         <label>
-          <input type="radio" name="chosenDraftRegistrationTemplate" 
-                 data-bind="value: id, checked: $root.selectedSchemaId"/>
+          <input type="radio" name="selectedDraftSchema" 
+                 data-bind="attr {value: id}, checked: $root.selectedSchemaId" />
           {{ schema.title }}
           <!-- ko if: schema.description -->
           <i data-bind="tooltip: {title: schema.description}" class="fa fa-info-circle"> </i>
@@ -206,3 +145,4 @@
 </%def>
 
 <%include file="project/registration_preview.mako" />
+<%include file="project/registration_utils.mako" />

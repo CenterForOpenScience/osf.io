@@ -52,7 +52,8 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory, DraftRegistrationFactory
+    AuthUserFactory, DashboardFactory, FolderFactory,
+    NodeLicenseRecordFactory, DraftRegistrationFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -961,7 +962,7 @@ class TestMergingUsers(OsfTestCase):
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
         self._merge_dupe()
         handlers.celery_teardown_request()
-        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username})
+        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username}, send_goodbye=False)
         assert_false(self.dupe.mailchimp_mailing_lists[list_name])
 
     def test_inherits_projects_contributed_by_dupe(self):
@@ -1876,6 +1877,29 @@ class TestNode(OsfTestCase):
         self.node.save()
         self.node.reload()
         assert_false(self.parent.nodes_active)
+
+    def test_register_node_makes_private_registration(self):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+        node.is_public = True
+        node.save()
+        registration = node.register_node(None, Auth(user), '', None)
+        assert_false(registration.is_public)
+
+    def test_register_node_makes_private_child_registrations(self):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+        node.is_public = True
+        node.save()
+        child = NodeFactory(parent=node)
+        child.is_public = True
+        child.save()
+        childchild = NodeFactory(parent=child)
+        childchild.is_public = True
+        childchild.save()
+        registration = node.register_node(None, Auth(user), '', None)
+        for node in registration.node_and_primary_descendants():
+            assert_false(node.is_public)
 
     @mock.patch('website.project.signals.after_create_registration')
     def test_register_node_propagates_schema_and_data_to_children(self, mock_signal):
@@ -2857,6 +2881,13 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_registration_of(self.project))
 
+    def test_registration_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        with mock_archive(self.project, autocomplete=True) as registration:
+            assert_equal(registration.node_license.id, license.id)
+
     def test_is_contributor_unregistered(self):
         unreg = UnregUserFactory()
         self.project.add_unregistered_contributor(
@@ -3098,6 +3129,17 @@ class TestTemplateNode(OsfTestCase):
         assert_not_equal(new.date_created, self.project.date_created)
         self._verify_log(new)
 
+    def test_use_as_template_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        new = self.project.use_as_template(
+            auth=self.auth
+        )
+
+        assert_equal(new.license.node_license._id, license.node_license._id)
+        self._verify_log(new)
+
     def _create_complex(self):
         # create project connected via Pointer
         self.pointee = ProjectFactory(creator=self.user)
@@ -3335,7 +3377,8 @@ class TestForkNode(OsfTestCase):
         fork_date = datetime.datetime.utcnow()
 
         # Fork node
-        fork = self.project.fork_node(auth=self.auth)
+        with mock.patch.object(Node, 'bulk_update_search'):
+            fork = self.project.fork_node(auth=self.auth)
 
         # Compare fork to original
         self._cmp_fork_original(self.user, fork_date, fork, self.project)
@@ -3424,6 +3467,13 @@ class TestForkNode(OsfTestCase):
         assert_equal(len(fork.contributors), 1)
         assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
 
+    def test_fork_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        fork = self.project.fork_node(self.auth)
+        assert_equal(fork.node_license.id, license.id)
+
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)
         fork = self.registration.fork_node(self.auth)
@@ -3496,7 +3546,7 @@ class TestRegisterNode(OsfTestCase):
         assert_false(self.registration.is_public)
         self.project.set_privacy('public')
         registration = RegistrationFactory(project=self.project)
-        assert_true(registration.is_public)
+        assert_false(registration.is_public)
 
     def test_contributors(self):
         assert_equal(self.registration.contributors, self.project.contributors)
@@ -4158,6 +4208,35 @@ class TestComments(OsfTestCase):
 
         assert_true(project.can_comment(Auth(user=user)))
 
+    def test_get_content_for_not_deleted_comment(self):
+        project = ProjectFactory(is_public=True)
+        comment = CommentFactory(node=project)
+        content = comment.get_content(auth=Auth(comment.user))
+        assert_equal(content, comment.content)
+
+    def test_get_content_returns_deleted_content_to_commenter(self):
+        comment = CommentFactory(is_deleted=True)
+        content = comment.get_content(auth=Auth(comment.user))
+        assert_equal(content, comment.content)
+
+    def test_get_content_does_not_return_deleted_content_to_non_commenter(self):
+        user = AuthUserFactory()
+        comment = CommentFactory(is_deleted=True)
+        content = comment.get_content(auth=Auth(user))
+        assert_is_none(content)
+
+    def test_get_content_public_project_does_not_return_deleted_content_to_logged_out_user(self):
+        project = ProjectFactory(is_public=True)
+        comment = CommentFactory(node=project, is_deleted=True)
+        content = comment.get_content(auth=None)
+        assert_is_none(content)
+
+    def test_get_content_private_project_throws_permissions_error_for_logged_out_users(self):
+        project = ProjectFactory(is_public=False)
+        comment = CommentFactory(node=project, is_deleted=True)
+        with assert_raises(PermissionsError):
+            comment.get_content(auth=None)
+
 
 class TestPrivateLink(OsfTestCase):
 
@@ -4189,93 +4268,6 @@ class TestPrivateLink(OsfTestCase):
         link.nodes.extend([project, node])
         link.save()
         assert_equal(link.node_scale(node), -40)
-
-class TestDraftRegistration(OsfTestCase):
-
-    def setUp(self, *args, **kwargs):
-        super(TestDraftRegistration, self).setUp(*args, **kwargs)
-
-        self.user = AuthUserFactory()
-        self.auth = self.user.auth
-        self.node = ProjectFactory(creator=self.user)
-
-        MetaSchema.remove()
-        ensure_schemas()
-        self.meta_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 1)
-        )
-        self.draft = DraftRegistration(
-            initiator=self.user,
-            branched_from=self.node,
-            registration_schema=self.meta_schema,
-            registration_metadata={
-                'summary': {'value': 'Some airy'}
-            }
-        )
-        self.draft.save()
-
-    def test_factory(self):
-        draft = DraftRegistrationFactory()
-        assert_is_not_none(draft.branched_from)
-        assert_is_not_none(draft.initiator)
-        assert_is_not_none(draft.registration_schema)
-
-        user = AuthUserFactory()
-        draft = DraftRegistrationFactory(initiator=user)
-        assert_equal(draft.initiator, user)
-
-        node = ProjectFactory()
-        draft = DraftRegistrationFactory(branched_from=node)
-        assert_equal(draft.branched_from, node)
-        assert_equal(draft.initiator, node.creator)
-
-        schema = MetaSchema.find()[1]
-        data = {'some': 'data'}
-        draft = DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
-        assert_equal(draft.registration_schema, schema)
-        assert_equal(draft.registration_metadata, data)
-
-    @mock.patch('website.project.model.Node.register_node')
-    def test_register(self, mock_register_node):
-
-        self.draft.register(self.auth)
-        mock_register_node.assert_called_with(
-            schema=self.draft.registration_schema,
-            auth=self.auth,
-            data=self.draft.registration_metadata,
-        )
-
-    def test_update_metadata_tracks_changes(self):
-        self.draft.registration_metadata = {
-            'foo': {
-                'value': 'bar',
-
-            },
-            'a': {
-                'value': 1,
-            },
-            'b': {
-                'value': True
-            },
-        }
-        changes =  self.draft.update_metadata({
-            'foo': {
-                'value': 'foobar',
-            },
-            'a': {
-                'value': 1,
-            },
-            'b': {
-                'value': True,
-            },
-            'c': {
-                'value': 2,
-            },
-        })
-        self.draft.save()
-        for key in ['foo', 'c']:
-            assert_in(key, changes)
 
 
 if __name__ == '__main__':
