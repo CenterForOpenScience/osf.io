@@ -27,12 +27,6 @@
       <div class="login-logo">
         <a href="../../index2.html"><b>OSF</b>Admin</a>
       </div><!-- /.login-logo -->
-      {% if messages %}
-      {{message.count}}
-        {% for message in messages %}
-          <span class="text-success"> {{ message }}</span>
-        {% endfor %}
-      {% endif %}
       <div class="login-box-body">
         <p class="login-box-msg">Sign in to start your session</p>
         <form action="" method="post">
@@ -53,10 +47,21 @@
               <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
             </div><!-- /.col -->
           </div>
+          <div>
+            {% if messages %} <!-- TODO: refactor message code to display proper class type -->
+              {% for message in messages %}
+              {% if message.level == 40 %}
+                <li class="text-danger">
+                {% else %}
+                <li class="text-success">
+                {% endif %}
+                {{ message }}</li>
+              {% endfor %}
+            {% endif %}
+          </div>
         </form>
       </div><!-- /.login-box-body -->
     </div><!-- /.login-box -->
-
         <!-- jQuery 2.1.4 -->
     <script src="{% static 'js/jquery.min.js' %}"></script>
     <!-- Bootstrap 3.3.2 JS -->
