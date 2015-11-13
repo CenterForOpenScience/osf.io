@@ -145,36 +145,6 @@ def get_draft_registrations(auth, node, *args, **kwargs):
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
     }, http.OK
 
-@must_have_permission(ADMIN)
-@must_be_valid_project
-def create_draft_registration(auth, node, *args, **kwargs):
-    """Create a new draft registration and return it
-
-    :return: serialized draft registration
-    :rtype: dict
-    """
-
-    data = request.get_json()
-
-    schema_name = data.get('schema_name')
-    if not schema_name:
-        raise HTTPError(http.BAD_REQUEST)
-
-    schema_version = data.get('schema_version', 1)
-    schema_data = data.get('schema_data', {})
-    schema_data = rapply(schema_data, strip_html)
-
-    meta_schema = get_schema_or_fail(
-        Q('name', 'eq', schema_name) &
-        Q('schema_version', 'eq', schema_version)
-    )
-    draft = node.create_draft_registration(
-        user=auth.user,
-        schema=meta_schema,
-        data=schema_data,
-        save=True,
-    )
-    return serialize_draft_registration(draft, auth), http.CREATED
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
@@ -185,7 +155,6 @@ def new_draft_registration(auth, node, *args, **kwargs):
     :rtype: flask.redirect
     :raises: HTTPError
     """
-
     data = request.values
 
     schema_name = data.get('schema_name')
@@ -200,8 +169,6 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
     schema_version = data.get('schema_version', 1)
 
-    # can return 404 if the schema does not exist
-    # can return 400 if the schema is in the DB twice (should never happen)
     meta_schema = get_schema_or_fail(
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', int(schema_version))

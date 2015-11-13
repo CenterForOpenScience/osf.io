@@ -10,6 +10,8 @@ from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
+from tests.base import DEFAULT_METASCHEMA
+
 def requires_module(module):
     def decorator(fn):
         @functools.wraps(fn)
@@ -93,7 +95,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         assert_false(registration.archiving)
         assert_false(registration.is_pending_registration)
     """
-    schema = schema or None
+    schema = schema or DEFAULT_METASCHEMA
     auth = auth or Auth(project.creator)
     data = data or ''
 
