@@ -74,7 +74,7 @@ def prereg_form(request, draft_pk):
     """
     draft = get_draft(draft_pk)
     context = {'data': json.dumps(draft)}
-    return render(request, 'edit_draft_registration.html', context)
+    return render(request, 'pre-reg/edit_draft_registration.html', context)
 
 
 # @login_required

@@ -1,4 +1,4 @@
-var registrationUtils = require('js/registrationUtils');
+var registrationUtils = require('js/adminRegistrationUtils');
 var RegistrationEditor = registrationUtils.RegistrationEditor;
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');

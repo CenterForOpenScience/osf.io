@@ -4,7 +4,7 @@ var common = require('../webpack.common.config.js');
 var assign = require('object-assign');
 var BundleTracker = require('webpack-bundle-tracker');
 
-var websiteRoot = path.join(__dirname, 'websiteRoot', 'static');
+var websiteRoot = path.join(__dirname, '..', 'website', 'static');
 
 var adminRoot = path.join(__dirname, 'static');
 
@@ -16,10 +16,11 @@ var staticAdminPath = function(dir) {
     return path.join(adminRoot, dir);
 };
 
-common.entry['admin-base-page'] = staticAdminPath('js/pages/base-page.js')
-common.entry['prereg-admin-page'] = staticAdminPath('js/pages/prereg-admin-page.js')
-common.entry['admin-registration-edit-page'] = staticAdminPath('js/pages/registration-edit-page.js')
-common.entry['admin-registrationUtils'] = staticAdminPath('js/registrationUtils.js')
+common.entry['admin-base-page'] = staticAdminPath('js/pages/base-page.js');
+common.entry['prereg-admin-page'] = staticAdminPath('js/pages/prereg-admin-page.js');
+common.entry['admin-registration-edit-page'] = staticAdminPath('js/pages/registration-edit-page.js');
+
+common.resolve['root'] = [websiteRoot, adminRoot];
 
 // Adding bundle tracker to plugins
 common.plugins = [

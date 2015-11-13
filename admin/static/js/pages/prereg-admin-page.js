@@ -159,7 +159,7 @@ var Row = function(params, permission, reviewers) {
 
     self.editing = ko.observable(false);
 
-    self.title = params.registration_metadata.q01.value || "no title";
+    self.title = params.registration_metadata.q1.value || "no title";
     self.fullname = params.initiator.fullname;
     self.username = params.initiator.emails[0].address;
     self.initiated = self.formatTime(params.initiated);
@@ -194,7 +194,7 @@ Row.prototype.goToDraft = function(data, event) {
     var self = this;
     if (self.editing() === false) {
         self.viewingDraft(true);
-        document.location.href = '/prereg-form/' + self.params.pk + '/';
+        document.location.href = 'prereg_form/' + self.params.pk + '/';
     }
 };
 
