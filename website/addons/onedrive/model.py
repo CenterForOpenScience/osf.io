@@ -31,10 +31,10 @@ class Onedrive(ExternalProvider):
     client_id = settings.ONEDRIVE_KEY
     client_secret = settings.ONEDRIVE_SECRET
 
-    #auth_url_base = settings.ONEDRIVE_OAUTH_AUTH_ENDPOINT
-    #callback_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
-    #auto_refresh_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
-    default_scopes = ['root_readwrite']
+    auth_url_base = settings.ONEDRIVE_OAUTH_AUTH_ENDPOINT
+    callback_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
+    auto_refresh_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
+    default_scopes = ['wl.signin wl.offline_access onedrive.readwrite']
 
     def handle_callback(self, response):
         """View called when the Oauth flow is completed. Adds a new OnedriveUserSettings
