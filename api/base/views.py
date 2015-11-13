@@ -120,6 +120,32 @@ def root(request, format=None):
 
         /nodes/?filter[registered]=true
 
+    ###Embedding
+
+    All related resources that appear in the `relationships` attribute are embeddable, meaning that
+    by adding a query parameter like:
+
+        /nodes/?embed=contributors
+
+    it is possible to fetch a Node and its contributors in a single request. The embedded results will have the following
+    structure:
+
+        {relationship_name}: {full_embedded_response}
+
+    Where `full_embedded_response` means the full API response resulting from a GET request to the `href` link of the
+    corresponding related resource. This means if there are no errors in processing the embedded request the response will have
+    the format:
+
+        data: {response}
+
+    And if there are errors processing the embedded request the response will have the format:
+
+        errors: {errors}
+
+    Multiple embeds can be achieved with multiple query parameters separated by "&".
+
+        /nodes/?embed=contributors&embed=comments
+
     ###Pagination
 
     All entity collection endpoints respond to the `page` query parameter behavior as described in the [JSON-API
@@ -228,26 +254,8 @@ def root(request, format=None):
 
     + `embeds`
 
-    All related resources that appear in the `relationships` attribute are embeddable, meaning that
-    by adding a query paramater like:
-
-        /nodes/?embed=contributors
-
-    it is possible to fetch a Node and its contributors in a single request. The embedded results will have the following
-    structure:
-
-        {relationship_name}: {full_embedded_response}
-
-    Where `full_embedded_response` means the full API response resulting from a GET request to the `href` link of the
-    corresponding related resource. This means if there are no errors in processing the embedded request the response will have
-    the format:
-
-        data: {response}
-
-    And if there are errors processing the embedded request the response will have the format:
-
-        errors: {errors}
-
+    Please see `Embedding` documentation under `Requests`.
+    
     + `links`
 
     Links are urls to alternative representations of the entity or actions that may be performed on the entity.  Most
