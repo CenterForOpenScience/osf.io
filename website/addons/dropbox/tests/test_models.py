@@ -7,7 +7,7 @@ from framework.auth import Auth
 from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings
 )
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, DEFAULT_METASCHEMA
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.dropbox.tests.factories import (
     DropboxUserSettingsFactory, DropboxNodeSettingsFactory,
@@ -257,7 +257,7 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
-            schema=None,
+            schema=DEFAULT_METASCHEMA,
             auth=Auth(user=self.project.creator),
             data='hodor'
         )

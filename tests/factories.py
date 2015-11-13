@@ -46,6 +46,7 @@ ensure_licenses = functools.partial(ensure_licenses, warn=False)
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
 
+from tests.base import DEFAULT_METASCHEMA
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
 def save_kwargs(**kwargs):
@@ -211,10 +212,7 @@ class RegistrationFactory(AbstractNodeFactory):
         project.save()
 
         # Default registration parameters
-        #schema = schema or MetaSchema.find_one(
-        #    Q('name', 'eq', 'Open-Ended_Registration')
-        #)
-        schema = None
+        schema = schema or DEFAULT_METASCHEMA
         user = user or project.creator
         data = data or {'some': 'data'}
         auth = Auth(user=user)

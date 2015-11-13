@@ -4,7 +4,7 @@ import mock
 import unittest
 
 from nose.tools import *  # noqa (PEP8 asserts)
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, DEFAULT_METASCHEMA
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
 from github3.repos.branch import Branch
@@ -477,7 +477,7 @@ class TestGithubSettings(OsfTestCase):
         ]
 
         registration = self.project.register_node(
-            schema=None,
+            schema=DEFAULT_METASCHEMA,
             auth=self.consolidated_auth,
             data=''
         )

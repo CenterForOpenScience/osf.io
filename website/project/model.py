@@ -703,8 +703,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_user = fields.ForeignField('user', backref='registered')
 
     # A list of all MetaSchemas for which this Node has registered_meta
-    registered_schema = fields.ForeignField('metaschema', backref='registered', list=True)
-    # A set of <metaschema.name>: <schema> pairs, where <schema> is a
+    registered_schema = fields.ForeignField('metaschema', backref='registered', list=True, default=list)
+    # A set of <metaschema._id>: <schema> pairs, where <schema> is a
     # flat set of <question_id>: <response> pairs-- these quesiton ids_above
     # map the the ids in the registrations MetaSchema (see registered_schema).
     # {
@@ -719,7 +719,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
 
-    draft_registrations = fields.ForeignField('draftregistration', backref='branched', list=True, default=list)
+    draft_registrations = fields.ForeignField('draftregistration', backref='branched', list=True)
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -2082,11 +2082,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.is_registration = True
         registered.registered_date = when
         registered.registered_user = auth.user
-        registered.registered_schema = schema
+        registered.registered_schema.append(schema)
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta = data
+        registered.registered_meta[schema._id] = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
@@ -4076,19 +4076,23 @@ class DraftRegistration(StoredObject):
 
     approval = fields.ForeignField('draftregistrationapproval', default=None)
 
+    # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
+    # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
+    # and these values are added to the DraftRegistration
     _metaschema_flags = fields.DictionaryField(default=None)
     # lazily set flags
     @property
     def flags(self):
         if not self._metaschema_flags:
+            self._metaschema_flags = {}
             meta_schema = self.registration_schema
             if meta_schema:
                 schema = meta_schema.schema
                 flags = schema.get('flags', {})
                 for flag, value in flags.iteritems():
                     self._metaschema_flags[flag] = value
-        else:
-            return self._metaschema_flags
+            self.save()
+        return self._metaschema_flags
 
     notes = fields.StringField()
 
