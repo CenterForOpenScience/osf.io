@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 import itertools
 import functools
@@ -2068,11 +2069,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.is_registration = True
         registered.registered_date = when
         registered.registered_user = auth.user
-        registered.registered_schema = schema
+        registered.registered_schema.append(schema)
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta = data
+        registered.registered_meta[schema._id] = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
@@ -3986,19 +3987,24 @@ class DraftRegistration(StoredObject):
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
-    flags = fields.DictionaryField()
+    _flags = fields.DictionaryField(default=None)
+    # lazily set flags
+    @property
+    def flags(self):
+        if not self._flags:
+            meta_schema = self.registration_schema
+            if meta_schema:
+                schema = meta_schema.schema
+                flags = schema.get('flags', {})
+                for flag, value in flags.iteritems():
+                    self._flags[flag] = value
+        else:
+            return self._flags
 
     notes = fields.StringField()
 
     def __init__(self, *args, **kwargs):
         super(DraftRegistration, self).__init__(*args, **kwargs)
-        meta_schema = self.registration_schema or kwargs.get('registration_schema')
-        if meta_schema:
-            schema = meta_schema.schema
-            if not self.registration_schema:
-                flags = schema.get('flags', {})
-                for flag, value in flags.iteritems():
-                    self.flags[flag] = value
 
     @property
     def requires_approval(self):
