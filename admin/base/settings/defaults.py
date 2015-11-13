@@ -11,10 +11,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # from the OSF settings
-BUILT_TEMPLATES = osf_settings.BUILT_TEMPLATES
-CORE_TEMPLATES = osf_settings.CORE_TEMPLATES
-ADDONS_REQUESTED = osf_settings.ADDONS_REQUESTED
-ADDON_PATH = osf_settings.ADDON_PATH
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = osf_settings.SECRET_KEY
 
