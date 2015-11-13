@@ -204,7 +204,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'profile_image': 'profile_image_url',
     }))
     users = JSONAPIHyperlinkedIdentityField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id',
-                                             link_type='related')
+                                             link_type='related', always_embed=True)
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
