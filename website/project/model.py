@@ -4076,6 +4076,9 @@ class DraftRegistration(StoredObject):
 
     approval = fields.ForeignField('draftregistrationapproval', default=None)
 
+    # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
+    # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
+    # and these values are added to the DraftRegistration
     _metaschema_flags = fields.DictionaryField(default=None)
     # lazily set flags
     @property
