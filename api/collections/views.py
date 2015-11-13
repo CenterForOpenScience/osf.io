@@ -119,6 +119,7 @@ class CollectionList(generics.ListCreateAPIView, ODMFilterMixin):
     required_write_scopes = [CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE]
 
     serializer_class = CollectionSerializer
+    view_name = 'collections:collection-list'
 
     ordering = ('-date_modified', )  # default ordering
 
@@ -232,6 +233,7 @@ class CollectionDetail(generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     required_write_scopes = [CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE]
 
     serializer_class = CollectionDetailSerializer
+    view_name = 'collections:collection-detail'
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -309,6 +311,7 @@ class LinkedNodesList(generics.ListAPIView, CollectionMixin):
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeSerializer
+    view_name = 'collections:linked-nodes'
 
     def get_queryset(self):
         return [
@@ -380,6 +383,7 @@ class NodeLinksList(generics.ListCreateAPIView, CollectionMixin):
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = CollectionNodeLinkSerializer
+    view_name = 'collections:node-pointers'
 
     def get_queryset(self):
         return [
@@ -443,6 +447,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, CollectionMixin):
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = CollectionNodeLinkSerializer
+    view_name = 'nodes:node-pointer-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
