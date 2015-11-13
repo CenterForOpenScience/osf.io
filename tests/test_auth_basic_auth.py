@@ -50,11 +50,11 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_valid_credential_but_twofactor_required(self, mock_push_status_message):
-        self.user1_addon = self.user1.get_or_add_addon('twofactor')
-        self.user1_addon.totp_drift = 1
-        self.user1_addon.totp_secret = self.TOTP_SECRET
-        self.user1_addon.is_confirmed = True
-        self.user1_addon.save()
+        user1_addon = self.user1.get_or_add_addon('twofactor')
+        user1_addon.totp_drift = 1
+        user1_addon.totp_secret = self.TOTP_SECRET
+        user1_addon.is_confirmed = True
+        user1_addon.save()
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 401)
@@ -62,11 +62,11 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_valid_credential_twofactor_invalid_otp(self, mock_push_status_message):
-        self.user1_addon = self.user1.get_or_add_addon('twofactor')
-        self.user1_addon.totp_drift = 1
-        self.user1_addon.totp_secret = self.TOTP_SECRET
-        self.user1_addon.is_confirmed = True
-        self.user1_addon.save()
+        user1_addon = self.user1.get_or_add_addon('twofactor')
+        user1_addon.totp_drift = 1
+        user1_addon.totp_secret = self.TOTP_SECRET
+        user1_addon.is_confirmed = True
+        user1_addon.save()
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': 'invalid otp'}, expect_errors=True)
         assert_equal(res.status_code, 401)
@@ -74,11 +74,11 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def test_valid_credential_twofactor_valid_otp(self, mock_push_status_message):
-        self.user1_addon = self.user1.get_or_add_addon('twofactor')
-        self.user1_addon.totp_drift = 1
-        self.user1_addon.totp_secret = self.TOTP_SECRET
-        self.user1_addon.is_confirmed = True
-        self.user1_addon.save()
+        user1_addon = self.user1.get_or_add_addon('twofactor')
+        user1_addon.totp_drift = 1
+        user1_addon.totp_secret = self.TOTP_SECRET
+        user1_addon.is_confirmed = True
+        user1_addon.save()
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': _valid_code(self.TOTP_SECRET)})
         assert_equal(res.status_code, 200)
