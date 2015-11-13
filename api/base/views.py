@@ -153,6 +153,8 @@ def root(request, format=None):
 
         /nodes/?embed=contributors&embed=comments
 
+    Some endpoints are automatically embedded.
+
     ###Pagination
 
     All entity collection endpoints respond to the `page` query parameter behavior as described in the [JSON-API

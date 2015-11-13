@@ -464,7 +464,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
 
     ###Users
 
-    This endpoint shows the contributor user detail.
+    This endpoint shows the contributor user detail and is automatically embedded.
     ##Actions
 
     ###Adding Contributors
