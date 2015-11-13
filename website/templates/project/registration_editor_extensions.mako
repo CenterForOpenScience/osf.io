@@ -22,9 +22,8 @@
 
 <!--Author Import -->
 <script type="text/html" id="osf-author-import">
-    <span data-bind="template: {data: $data, name: format}"></span>
-</script>
+    <a data-bind="click: authorDialog, visible: contributors.length > 1">Import Contributors</a>
 
-<script type="text/html" id="osf-import-button">
-  <a data-bind="click: $root.authorDialog, visible: contributors.length > 1">Import Contributors</a>
+    <span data-bind="template: {data: $data, name: format}"></span>
+
 </script>

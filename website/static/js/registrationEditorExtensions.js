@@ -1,6 +1,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var m = require('mithril');
+var bootbox = require('bootbox');
 
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
@@ -149,6 +150,46 @@ var AuthorImport = function(data, $root) {
     self.contributors = $root.contributors();
     self.currentQuestion = $root.currentQuestion;
     self.currentQuestion($root.find('authorship'));
+
+    self.setContributorBoxes = function(value) {
+        var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+        $.each(boxes, function(i, box) {
+            this.checked = value;
+        });
+    };
+
+    self.authorDialog = function() {
+
+        bootbox.dialog({
+            title: 'Choose which contributors to import:',
+            message: function() {
+                ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
+            },
+            buttons: {
+                select: {
+                    label: 'Import',
+                    className: 'btn-primary pull-left',
+                    callback: function() {
+                        var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+                        var authors = [];
+                        $.each(boxes, function(i, box) {
+                            if( this.checked ) {
+                                authors.push(this.value);
+                            }
+                        });
+                        if ( authors ) {
+                            $.each(self.currentQuestion().properties, function(name, subQuestion){
+                                if (subQuestion.type === 'osf-author-import')
+                                    subQuestion.setValue(authors.join(', '));
+                            });
+                            self.save();
+                        }
+                    }
+                }
+
+            }
+        });
+    };
 
     $.extend(self, data);
 };

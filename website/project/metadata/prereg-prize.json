@@ -43,14 +43,8 @@
             "properties": {
                 "authorship": {
                     "id": "q3a",
-                    "type": "string",
-                    "format": "textarea",
-                    "required": true
-                },
-                "importAuthors": {
-                    "id": "q3b",
                     "type": "osf-author-import",
-                    "format": "osf-import-button"
+                    "required": true
                 }
             },
             "required": true

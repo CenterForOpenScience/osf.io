@@ -1115,50 +1115,6 @@ RegistrationEditor.prototype.getContributors = function() {
         });
 };
 /**
- * Opens a bootbox dialog with a checkbox list of each contributor
- * the user has the option to import all contributors or to select
- * each one individually.
- **/
-RegistrationEditor.prototype.authorDialog = function() {
-    var self = this;
-
-    bootbox.dialog({
-        title: 'Choose which contributors to import:',
-        message: function() {
-            ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
-        },
-        buttons: {
-            select: {
-                label: 'Import',
-                className: 'btn-primary pull-left',
-                callback: function() {
-                    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-                    var authors = [];
-                    $.each(boxes, function(i, box) {
-                        if( this.checked ) {
-                            authors.push(this.value);
-                        }
-                    });
-                    if ( authors ) {
-                        $.each(self.currentQuestion().properties, function(name, subQuestion){
-                            if (name === 'authorship')
-                                subQuestion.setValue(authors.join(', '));
-                        });
-                        self.save();
-                    }
-                }
-            }
-
-        }
-    });
-};
-RegistrationEditor.prototype.setContributorBoxes = function(value) {
-    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-    $.each(boxes, function(i, box) {
-        this.checked = value;
-    });
-};
-/**
  * Search the editor for a single question
  *
  */
