@@ -8,7 +8,9 @@
     <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
-            <th><input type="checkbox"></th>
+            <th><label for="all"></label>
+                <input id="all" type="checkbox">
+            </th>
             <th>Author</th>
             <th>Reporter</th>
             <th>Date</th>
@@ -19,7 +21,8 @@
     {% for comment in comments %}
     <tr>
         <td>
-            <input type="checkbox">
+            <label for="{{ comment.id }}"></label>
+            <input id="{{ comment.id }}" type="checkbox">
         </td>
         <td>
             {{ comment.author.fullname }}
