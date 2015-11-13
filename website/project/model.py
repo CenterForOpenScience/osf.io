@@ -4084,14 +4084,15 @@ class DraftRegistration(StoredObject):
     @property
     def flags(self):
         if not self._metaschema_flags:
+            self._metaschema_flags = {}
             meta_schema = self.registration_schema
             if meta_schema:
                 schema = meta_schema.schema
                 flags = schema.get('flags', {})
                 for flag, value in flags.iteritems():
                     self._metaschema_flags[flag] = value
-        else:
-            return self._metaschema_flags
+            self.save()
+        return self._metaschema_flags
 
     notes = fields.StringField()
 
