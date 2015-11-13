@@ -24,37 +24,34 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         """
         Adds page param to paginated urls.
         """
-
-        url = replace_query_param(url, self.page_query_param, page_number)
+        url = self.request.build_absolute_uri(url)
+        paginated_url = replace_query_param(url, self.page_query_param, page_number)
 
         if page_number == 1:
-            return remove_query_param(url, self.page_query_param)
+            return remove_query_param(paginated_url, self.page_query_param)
 
-        return url
+        return paginated_url
 
     def get_first_real_link(self, url):
         if not self.page.has_previous():
             return None
-        return self.page_number_query(self.request.build_absolute_uri(url), 1)
+        return self.page_number_query(url, 1)
 
     def get_last_real_link(self, url):
         if not self.page.has_next():
             return None
-        url = self.request.build_absolute_uri(url)
         page_number = self.page.paginator.num_pages
         return self.page_number_query(url, page_number)
 
     def get_previous_real_link(self, url):
         if not self.page.has_previous():
             return None
-        url = self.request.build_absolute_uri(url)
         page_number = self.page.previous_page_number()
         return self.page_number_query(url, page_number)
 
     def get_next_real_link(self, url):
         if not self.page.has_next():
             return None
-        url = self.request.build_absolute_uri(url)
         page_number = self.page.next_page_number()
         return self.page_number_query(url, page_number)
 
