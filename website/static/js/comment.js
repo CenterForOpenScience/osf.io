@@ -11,7 +11,6 @@ var koHelpers = require('./koHelpers');
 require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
-var Raven = require('raven-js');
 
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
@@ -148,9 +147,8 @@ BaseComment.prototype.fetch = function() {
         url,
         {'isCors': true});
     request.done(function(response) {
-        for (var i=0; i < response.data.length; i++) {
-            updateCommentUserData(response.data[i], self);
-        }
+        var index = 0;
+        updateCommentUserData(response, index, self);
         setUnreadCommentCount(self);
         deferred.resolve(self.comments());
         self._loaded = true;
@@ -158,20 +156,24 @@ BaseComment.prototype.fetch = function() {
     return deferred;
 };
 
-var updateCommentUserData = function(commentJSON, self) {
+var updateCommentUserData = function(commentsData, index, self) {
     var userRequest = osfHelpers.ajaxJSON(
         'GET',
-        commentJSON.relationships.user.links.related.href,
+        commentsData.data[index].relationships.user.links.related.href,
         {'isCors': true});
     userRequest.done(function(response) {
-        commentJSON.relationships.user = response;
-        var commentModel = new CommentModel(commentJSON, self, self.$root);
-        self.comments.push(commentModel);
-        self.comments.sort(function (left, right) {
-            return left.dateCreated() === right.dateCreated() ? 0 : (left.dateCreated() > right.dateCreated() ? -1 : 1);
-        });
+        commentsData.data[index].relationships.user = response;
+        if (index !== commentsData.data.length - 1) {
+            updateCommentUserData(commentsData, (index + 1), self);
+        }
+        else {
+            self.comments(
+                ko.utils.arrayMap(commentsData.data, function(comment) {
+                    return new CommentModel(comment, self, self.$root);
+                })
+            );
+        }
     });
-    return self.comments;
 };
 
 var setUnreadCommentCount = function(self) {
@@ -247,7 +249,7 @@ var CommentModel = function(data, $parent, $root) {
     self.$root = $root;
 
     self.id = ko.observable(data.id);
-    self.content = ko.observable(data.attributes.content);
+    self.content = ko.observable(data.attributes.content || '');
     self.dateCreated = ko.observable(data.attributes.date_created);
     self.dateModified = ko.observable(data.attributes.date_modified);
     self.isDeleted = ko.observable(data.attributes.deleted);
