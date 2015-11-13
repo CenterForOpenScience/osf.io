@@ -298,7 +298,7 @@ class UserRegistrations(UserNodes):
     registration, meaning additional requests to an individual registration's detail view are not necessary. If the user
     id in the path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to
     see the other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently
-    logged-in user. Retractions will display a limited number of fields.
+    logged-in user. Retracted registrations will display a limited number of fields.
 
     ##Registration Attributes
 

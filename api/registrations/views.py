@@ -36,7 +36,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     contributors.
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
-    registrations's detail view are not necessary.  Nodes cannot be accessed through this endpoint.
+    registrations's detail view are not necessary.  Unregistered nodes cannot be accessed through this endpoint.
 
     ##Registration Attributes
 
@@ -73,6 +73,10 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     ###Registered by
 
     The registration was initiated by this user.
+
+    ###Other Relationships
+
+    See documentation on registered_from detail view.  A registration has many of the same properties as a node.
 
     ##Links
 
@@ -120,7 +124,7 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
     registration's detail view are not necessary. A retracted registration will display a limited subset of information,
     namely, title, description, date_created, registration, retracted, date_registered, retraction_justification, and registration
     supplement. All other fields will be displayed as null. Additionally, the only relationships permitted to be accessed
-    for a retraction are the contributors.
+    for a retracted registration are the contributors.
 
     ##Registration Attributes
 
@@ -136,7 +140,6 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
         tags                            array of strings   list of tags that describe the registered node
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered?
-        collection                      boolean            is this registered node a collection of other nodes?
         dashboard                       boolean            is this registered node visible on the user dashboard?
         public                          boolean            has this registration been made publicly-visible?
         retracted                       boolean            has this registration been retracted?
@@ -157,6 +160,10 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
     ###Registered by
 
     The registration was initiated by this user.
+
+     ###Other Relationships
+
+    See documentation on registered_from detail view.  A registration has many of the same properties as a node.
 
     ##Links
 

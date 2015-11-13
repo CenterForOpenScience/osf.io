@@ -132,7 +132,7 @@ class WaterButlerMixin(object):
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
-    Paginated list of nodes ordered by their `date_modified`.  Each node contains the full representation of the
+    Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
     node, meaning additional requests to an individual node's detail view are not necessary.  For a registration,
     however, navigate to the individual registration's detail view for registration-specific information.
 
@@ -286,7 +286,6 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         tags           array of strings   list of tags that describe the node
         fork           boolean            is this project a fork?
         registration   boolean            has this project been registered?
-        collection     boolean            is this node a collection of other nodes?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
