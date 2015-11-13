@@ -995,9 +995,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
 
     ##Links
 
-        self:  the detail url for this node link
-        html:  this node's page on the OSF website
-        profile_image: this contributor's gravatar
+    *None*
 
     ##Relationships
 
@@ -1284,6 +1282,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
         base_permissions.TokenHasScope,
     )
+
+    ordering = ('materialized_path',)  # default ordering
 
     serializer_class = FileSerializer
 
