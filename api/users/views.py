@@ -207,7 +207,9 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     # overrides RetrieveUpdateAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
-        return {'request': self.request}
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['request'] = self.request
+        return context
 
 
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
