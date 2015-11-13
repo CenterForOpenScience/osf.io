@@ -1,5 +1,4 @@
 from django import forms
-from django.contrib.auth import authenticate
 
 class LoginForm(forms.Form):
     username = forms.CharField(label=(u'User Name'), required=True)
