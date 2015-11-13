@@ -18,6 +18,8 @@ var staticAdminPath = function(dir) {
 
 common.entry['admin-base-page'] = staticAdminPath('js/pages/base-page.js')
 common.entry['prereg-admin-page'] = staticAdminPath('js/pages/prereg-admin-page.js')
+common.entry['admin-registration-edit-page'] = staticAdminPath('js/pages/registration-edit-page.js')
+common.entry['admin-registrationUtils'] = staticAdminPath('js/registrationUtils.js')
 
 // Adding bundle tracker to plugins
 common.plugins = [
@@ -50,8 +52,4 @@ common.output = {
 module.exports = assign(common, {
     debug: true,
     devtool: 'source-map'
-<<<<<<< HEAD
 });
-=======
-});
->>>>>>> b03ce55694ae1c0eb24d4c8811f5e239dc6747c5

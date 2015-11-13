@@ -62,7 +62,7 @@ def prereg(request):
 
     #context = {'user_info': user, 'reviewers': reviewers, 'user': request.user}
     context = {'user_info': user, 'reviewers': reviewers}
-    return render(request, 'prereg.html', context)
+    return render(request, 'pre-reg/prereg.html', context)
 
 
 # @login_required
