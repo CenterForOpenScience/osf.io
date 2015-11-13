@@ -157,6 +157,7 @@ class TestNodeDetail(ApiTestCase):
         registration = RegistrationFactory(project=self.public_project, creator=self.user)
         res = self.app.get('/{}nodes/{}/'.format(API_BASE, registration._id), auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['registration'], True)
 
     def test_cannot_return_folder_at_node_detail_endpoint(self):
         folder = FolderFactory(creator=self.user)
