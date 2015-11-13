@@ -27,7 +27,15 @@
         {# General info about the comment #}
         <div class="row">
             <div class="col-md-6">
-                <h4><strong>Author:</strong> {{ comment.author.fullname }}</h4>
+                <h4>
+                    <strong>Author:</strong> {{ comment.author.fullname }}
+                    <small>Users (
+                        <a href="{{ comment.author.display_absolute_url }}">
+                            osf profile
+                        </a>
+                        )
+                    </small>
+                </h4>
             </div>
             <div class="col-md-6">
                 <h4><strong>Comment ID:</strong> {{ comment.id }}</h4>
