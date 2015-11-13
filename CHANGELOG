@@ -2,6 +2,15 @@
 Changelog
 *********
 
+0.56.0 (unreleased)
+===================
+
+- APIv2: Add collections endpoints (staging/dev environments only).
+- APIv2: Add commenting endpoints.
+- APIv2: Add support for bulk operations using JSON API's Bulk Extension (experimental).
+- APIv2: Fix date_modified field for all fields.
+- UI fixes.
+
 0.55.0 (2015-11-15)
 ===================
 
