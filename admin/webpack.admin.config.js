@@ -16,12 +16,8 @@ var staticAdminPath = function(dir) {
     return path.join(adminRoot, dir);
 };
 
-// [lauren]: how I think adding another file will work
-//common.entry.<new file> = staticAdminPath('js/pages/base-page.js');
-common.entry = {
-    'prereg-admin-page':staticAdminPath('pre-reg/js/pages/prereg-admin-page.js'),
-    'app.min':staticAdminPath('pre-reg/js/app.min.js'),
-};
+common.entry['admin-base-page'] = staticAdminPath('js/pages/base-page.js')
+common.entry['prereg-admin-page'] = staticAdminPath('js/pages/prereg-admin-page.js')
 
 // Adding bundle tracker to plugins
 common.plugins = [
@@ -54,4 +50,8 @@ common.output = {
 module.exports = assign(common, {
     debug: true,
     devtool: 'source-map'
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> b03ce55694ae1c0eb24d4c8811f5e239dc6747c5

@@ -1,0 +1,6 @@
+-r ../requirements.txt
+
+# Requirements that are used for the admin module only
+
+# Webpack loader
+django-webpack-loader==0.1.2.1
