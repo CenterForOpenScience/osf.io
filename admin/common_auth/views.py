@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth import authenticate, logout as logout_user, login as auth_login
 from django.shortcuts import render, redirect
 
@@ -5,20 +6,21 @@ from forms import LoginForm
 
 def login(request):
     if request.user.is_authenticated():
-        return redirect('/admin/')
+        return redirect('home')
     form = LoginForm(request.POST or None)
     if request.POST and form.is_valid():
-        username = form.cleaned_data.get('username')
-        password = form.cleaned_data.get('password')
-        admin_user = authenticate(username=username, password=password)
-        if admin_user:
-            auth_login(request, admin_user)
-            return redirect('/admin/')
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            auth_login(request, user)
+            return redirect('home')
         else:
-            return redirect('/admin/auth/login/')
+            messages.error(request, 'Username and/or Password incorrect. Please try again.')
+            return redirect('auth:login')
     context = {'form': form}
     return render(request, 'login.html', context)
 
 def logout(request):
     logout_user(request)
-    return redirect('/admin/auth/login/')
+    return redirect('auth:login')
