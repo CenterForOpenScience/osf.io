@@ -18,6 +18,7 @@ var staticAdminPath = function(dir) {
 
 common.entry = {
     'app.min':staticAdminPath('js/app.min.js'),
+    'spamList':staticAdminPath('js/spam/spamList.js'),
 };
 
 // Adding bundle tracker to plugins
