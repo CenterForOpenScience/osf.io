@@ -1,7 +1,7 @@
 {
-    "name": "Confirmatory-General",
+    "name": "Confirmatory - General",
     "version": 1,
-    "pages": [
+    "pages": [{
         "id": "page1",
         "title": "General",
         "questions": [{
@@ -18,10 +18,9 @@
             "options": ["Yes", "No"]
         }, {
             "qid": "comments",
-            "title"
-            "Comments",
+            "title": "Comments",
             "type": "string",
             "format": "textarea"
         }]
-    ]
+    }]
 }
