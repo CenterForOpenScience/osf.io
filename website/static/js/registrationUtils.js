@@ -636,11 +636,20 @@ Draft.prototype.submitForReview = function() {
     var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';
 
     var submitForReview = function() {
-        bootbox.confirm({
+        bootbox.dialog({
             message: beforeSubmitForApprovalMessage,
-            callback: function(confirmed) {
-                if (confirmed) {
-                    self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
+            buttons: {
+                cancel: {
+                    label: 'Cancel',
+                    className: 'btn-default',
+                    callback: bootbox.hideAll
+                },
+                ok: {
+                    label: 'Continue',
+                    className: 'btn-primary',
+                    callback: function() {
+                        self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
+                    }                    
                 }
             }
         });

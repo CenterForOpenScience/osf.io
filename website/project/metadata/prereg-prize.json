@@ -208,21 +208,15 @@
             "type": "object",
             "title": "Please check one of the following statements",
             "description": "Blinding describes who is aware of the experimental manipulations within a study. Mark all that apply.",
-            "help": "",
-            "properties": {
-                "statement": {
-                    "id:": "q15a",
-                    "type": "choose",
-                    "format": "singleselect",
-                    "options": [
-                        "No blinding is involved in this study.",
-                        "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
-                        "Personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.",
-                        "Personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
-                    ]
-                },
-                "required": true
-            }
+            "type": "choose",
+            "format": "singleselect",
+            "options": [
+                "No blinding is involved in this study.",
+                "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
+                "Personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.",
+                "Personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
+            ],
+            "required": true
         }, {
             "qid": "q16",
             "nav": "Study design",
