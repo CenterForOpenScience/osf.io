@@ -23,15 +23,6 @@ $(function(){
         });
     });
 
-    $('#newProject').click( function() {
-        var title = $('#newProjectTitle').val();
-        $osf.postJSON('/api/v1/project/new/', { title: title }).done(function(response) {
-            window.location = response.projectUrl + 'registrations/';
-        }).fail(function() {
-            $osf.growl('Project creation failed. Reload the page and try again.');
-        });
-    });
-
     // Activate "existing projects" typeahead.
     var url = '/api/v1/dashboard/get_nodes/';
     $.getJSON(url).done(function(response) {
