@@ -94,7 +94,7 @@
   <div data-bind="foreach: {data: $data.questions, as: 'question'}">
     <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
   </div>
-  <div class="row" >
+  <div class="row" data-bind="if: $root.draft().requiresApproval">
     <div class="col-md-12">
       <div class="well" data-bind="template: {data: $data, name: 'commentable'}"></div>
     </div>

@@ -24,7 +24,7 @@
             </div>
         </div>
     </div>
-    <div class="row-md-12">
+    <div class="row-md-12 scripted">
         <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
         <button id="register-submit" type="button" class="btn btn-success pull-right" 
                 data-bind="visible: draft.requiresApproval, click: draft.submitForReview">
@@ -36,7 +36,7 @@
         </span>       
 
         <button id="register-submit" type="button" class="btn btn-success pull-right" 
-                data-bind="visible: !draft.requiresApproval, click: draft.beforeRegister.bind(draft, null)">
+                data-bind="visible: !draft.requiresApproval(), click: draft.beforeRegister.bind(draft, null)">
           Register
         </button>
     </div>

@@ -488,7 +488,7 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
         });
     }
     validation.push({
-        validator: viewModel.isEmbargoEndDateValid,
+        validator: function() {return viewModel.isEmbargoEndDateValid();},
         message: 'Embargo end date must be at least two days in the future.'
     });
     viewModel.pikaday.extend({
