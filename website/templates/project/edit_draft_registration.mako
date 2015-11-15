@@ -38,9 +38,17 @@
                 </span>
                 % endif
                 <!-- EDITOR -->
-                <div data-bind="if: currentPage">                  
-                  <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
+                <div data-bind="if: currentPage">
+                  <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
+                    <div data-bind="template: {data: question, name: 'editor'}"></div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-12">
+                        <div class="well" data-bind="template: {data: currentQuestion(), name: 'commentable'}"></div>
+                    </div>
+                  </div>
                 </div>
+
                 <p>Last saved: <span data-bind="text: $root.lastSaved"></span>
                 </p>
                 <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft

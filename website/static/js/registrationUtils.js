@@ -62,7 +62,7 @@ function Comment(data) {
         }
     });
 
-    self.seenBy = ko.observableArray([]);
+    self.seenBy = ko.observableArray([self.user.id]);
     /**
      * Returns the author as the actual user, not 'You'
      **/
@@ -285,29 +285,27 @@ var Page = function(schemaPage, schemaData) {
     self.id = schemaPage.id;
 
     self.active = ko.observable(false);
+    self.comments = ko.observableArray(
+        $.map(data.comments || [], function(comment) {
+            return new Comment(comment);
+        })
+    );
 
-    schemaData = schemaData || {};
-    self.questions = $.map(schemaPage.questions, function(questionSchema) {
-        return new Question(questionSchema, schemaData[questionSchema.qid]);
+    $.each(schemaPage.questions, function(id, question) {
+        if (data[id] && data[id].value) {
+            question.value(data[id].value);
+        }
+        if (data[id] && data[id].comments) {
+            var comment = $.map(data[id].comments || [], function(comment) {
+                return new Comment(comment);
+            });
+            question.comments(comment);
+        }
+
+        self.questions.push(question);
     });
 
-    self.comments = ko.computed(function() {
-        var comments = [];
-        $.each(self.questions, function(_, question) {
-            comments = comments.concat(question.comments());
-        });
-        comments.sort(function(a, b) {
-            return a.created > b.created;
-        });
-        return comments;
-    });
 
-    // TODO: track currentQuestion based on browser focus
-    var question = self.questions[0];
-    self.nextComment = question.nextComment.bind(question);
-    self.allowAddNext = question.allowAddNext.bind(question);
-    self.addComment = question.addComment.bind(question);
-};
 /**
  * @class MetaSchema
  * Model for MetaSchema instances
@@ -698,6 +696,10 @@ var RegistrationEditor = function(urls, editorId) {
         currentPage.active(true);
         History.replaceState({page: self.pages().indexOf(currentPage)});
     });
+    self.currentPage.subscribe(function(currentPage) {
+        self.currentQuestion(currentPage.questions()[0]);
+    });
+    
     self.onLastPage = ko.pureComputed(function() {
         return self.currentPage() === self.pages()[self.pages().length - 1];
     });
@@ -1069,14 +1071,14 @@ RegistrationEditor.prototype.save = function() {
                 $.each(question.properties, function(prop, subQuestion) {
                     value[prop] = {
                         value: subQuestion.value(),
-                        comments: JSON.parse(ko.toJSON(subQuestion.comments()))
+                        comments: ko.toJS(subQuestion.comments())
                     };
                 });
                 data[qid] = value;
             } else {
                 data[qid] = {
                     value: question.value(),
-                    comments: JSON.parse(ko.toJSON(question.comments()))
+                    comments: ko.toJS(question.comments())
                 };
             }
         });

@@ -92,6 +92,7 @@
       </div>
     </div>
   </div>
+  </div>
 </script>
 
 <script type="text/html" id="editor">
@@ -141,6 +142,7 @@
                 </div>
               </div>
             </div>
+          </div>
         </li>
     </ul>
     <div class="input-group">
