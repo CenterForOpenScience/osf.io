@@ -759,7 +759,8 @@ var RegistrationEditor = function(urls, editorId) {
     self.iterObject = $osf.iterObject;
     // TODO: better extensions system?
     self.extensions = {
-        'osf-upload': editorExtensions.Uploader
+        'osf-upload': editorExtensions.Uploader,
+        'osf-author-import': editorExtensions.AuthorImport
     };
 };
 /**
@@ -839,14 +840,14 @@ RegistrationEditor.prototype.flatQuestions = function() {
  * @param {Object} data: data in current editor template scope
  * @returns {Object|ViewModel}
  **/
-RegistrationEditor.prototype.context = function(data) {
+RegistrationEditor.prototype.context = function(data, $root) {
     $.extend(data, {
         save: this.save.bind(this),
         readonly: this.readonly
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data);
+        return new this.extensions[data.type](data, $root);
     }
     return data;
 };
@@ -1122,45 +1123,18 @@ RegistrationEditor.prototype.getContributors = function() {
         });
 };
 /**
- * Opens a bootbox dialog with a checkbox list of each contributor
- * the user has the option to import all contributors or to select
- * each one individually.
- **/
-RegistrationEditor.prototype.authorDialog = function() {
+ * Search the editor for a single question
+ *
+ */
+RegistrationEditor.prototype.find = function(title) {
     var self = this;
+    var questions = self.flatQuestions();
 
-    bootbox.dialog({
-        title: 'Choose which contributors to import:',
-        message: function() {
-            ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
-        },
-        buttons: {
-            select: {
-                label: 'Import',
-                className: 'btn-primary pull-left',
-                callback: function() {
-                    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-                    var authors = [];
-                    $.each(boxes, function(i, box) {
-                        if( this.checked ) {
-                            authors.push(this.value);
-                        }
-                    });
-                    if ( authors ) {
-                        self.currentQuestion().setValue(authors.join(', '));
-                        self.save();
-                    }
-                }
-            }
-
+    for (var i = 0; i < questions.length; i++ ) {
+        if ( questions[i].title.toLowerCase() === title.toLowerCase() ) {
+            return questions[i];
         }
-    });
-};
-RegistrationEditor.prototype.setContributorBoxes = function(value) {
-    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-    $.each(boxes, function(i, box) {
-        this.checked = value;
-    });
+    }
 };
 
 /**

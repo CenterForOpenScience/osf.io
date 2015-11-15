@@ -36,11 +36,17 @@
         }, {
             "qid": "q2",
             "nav": "Authors",
-            "type": "string",
-            "format": "text",
+            "type": "object",
             "title": "Authorship",
             "description": "The first author of the pre-registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.",
             "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
+            "properties": {
+                "authorship": {
+                    "id": "q3a",
+                    "type": "osf-author-import",
+                    "required": true
+                }
+            },
             "required": true
         }, {
             "qid": "q3",

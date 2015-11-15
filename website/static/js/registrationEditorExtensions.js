@@ -1,6 +1,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var m = require('mithril');
+var bootbox = require('bootbox');
 
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
@@ -33,9 +34,9 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
         if (filePicker) {
             // A hack to flush the old mithril controller.
             // It's unclear to me exactly why this is happening (after 3hrs), but seems
-            // to be a KO-mithril interaction. We're programattically changing the div 
+            // to be a KO-mithril interaction. We're programattically changing the div
             // containing mithril mountings, and for some reason old controllers (and
-            // their bound settings) are persisting and being reused. This call 
+            // their bound settings) are persisting and being reused. This call
             // explicity removes the old controller.
             // see: http://lhorie.github.io/mithril/mithril.component.html#unloading-components
             m.mount(document.getElementById(filePicker.fangornOpts.divID), null);
@@ -122,8 +123,8 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 }
             }
         });
-    filePicker = fw; 
-    fw.init(); 
+    filePicker = fw;
+    fw.init();
     viewModel.showUploader(false);
 };
 
@@ -142,7 +143,59 @@ var Uploader = function(data) {
     $.extend(self, data);
 };
 
+var AuthorImport = function(data, $root) {
+    var self = this;
+
+    self._orig = data;
+    self.contributors = $root.contributors();
+    self.currentQuestion = $root.currentQuestion;
+    self.currentQuestion($root.find('authorship'));
+
+    self.setContributorBoxes = function(value) {
+        var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+        $.each(boxes, function(i, box) {
+            this.checked = value;
+        });
+    };
+
+    self.authorDialog = function() {
+
+        bootbox.dialog({
+            title: 'Choose which contributors to import:',
+            message: function() {
+                ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
+            },
+            buttons: {
+                select: {
+                    label: 'Import',
+                    className: 'btn-primary pull-left',
+                    callback: function() {
+                        var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+                        var authors = [];
+                        $.each(boxes, function(i, box) {
+                            if( this.checked ) {
+                                authors.push(this.value);
+                            }
+                        });
+                        if ( authors ) {
+                            $.each(self.currentQuestion().properties, function(name, subQuestion){
+                                if (subQuestion.type === 'osf-author-import')
+                                    subQuestion.setValue(authors.join(', '));
+                            });
+                            self.save();
+                        }
+                    }
+                }
+
+            }
+        });
+    };
+
+    $.extend(self, data);
+};
+
 module.exports = {
+    AuthorImport: AuthorImport,
     Uploader: Uploader,
     osfUploader: osfUploader,
     limitOsfStorage: limitOsfStorage

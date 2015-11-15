@@ -28,6 +28,7 @@
   <span data-bind="template: {data: $data, name: format}"></span>
 </script>
 
+
 <script type="text/html" id="singleselect">
   <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
     <p>
@@ -40,7 +41,7 @@
 
 <script type="text/html" id="object">
   <span data-bind="foreach: {data: $root.iterObject($data.properties)}">
-      <div data-bind="template: {data: $root.context(value), name: value.type}"></div>
+      <div data-bind="template: {data: $root.context(value, $root), name: value.type}"></div>
       <hr />
     </span>
   </span>
@@ -66,7 +67,7 @@
           <div class="row">
             <div class="col-md-12">
               <div class="form-group" data-bind="css: {has-success: $data.value.isValid}">
-                <span data-bind="with: $root.context($data)">
+                <span data-bind="with: $root.context($data, $root)">
                   <span data-bind="if: $root.showValidation">
                     <p class="text-error" data-bind="validationMessage: $data.value"></p>
                     <ul class="list-group" data-bind="foreach: $data.validationMessages">
@@ -79,12 +80,6 @@
                   </span>
                   <div data-bind="template: {data: $data, name: type}"></div>
                   <br />
-                  <span data-bind="if: $root.currentQuestion">
-                    <!-- TODO(barbour-em): move this to custom question type (if we have time) -->
-                    <button data-bind="click: $root.authorDialog,
-                                       visible: $root.currentQuestion().title === 'Authorship' && $root.contributors().length > 1"  type="button" class="btn btn-primary">Import Contributors
-                    </button>
-                  </span>
                 </span>
               </div>
           </div>
