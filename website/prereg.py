@@ -13,24 +13,33 @@ from modularodm import Q
 from framework.auth import decorators
 from framework.utils import iso8601format
 from website import models
+from website.util import permissions
 
-@decorators.must_be_logged_in
-def prereg_landing_page(auth, **kwargs):
-    """Landing page for the prereg challenge"""
+def drafts_for_user(user):
+    user_projects = models.Node.find(
+        Q('is_deleted', 'eq', False) &
+        Q('permissions.{0}'.format(user._id), 'in', [permissions.ADMIN])
+    )
     PREREG_CHALLENGE_METASCHEMA = models.MetaSchema.find_one(
         Q('name', 'eq', 'Prereg Challenge') &
         Q('schema_version', 'eq', 1)
     )
+    return models.DraftRegistration.find(
+        Q('registration_schema', 'eq', PREREG_CHALLENGE_METASCHEMA) &
+        Q('approval', 'eq', None) &
+        Q('branched_from', 'in', [p._id for p in user_projects])
+    )
 
+@decorators.must_be_logged_in
+def prereg_landing_page(auth, **kwargs):
+    """Landing page for the prereg challenge"""
     registerable_nodes = (
         node for node
         in auth.user.contributor_to
         if node.has_permission(user=auth.user, permission='admin')
     )
     has_projects = bool(registerable_nodes)
-    has_draft_registrations = bool(models.DraftRegistration.find(
-        Q('registration_schema', 'eq', PREREG_CHALLENGE_METASCHEMA)
-    ).count())
+    has_draft_registrations = bool(drafts_for_user(auth.user).count())
 
     return {
         'has_draft_registrations': has_draft_registrations,
@@ -41,15 +50,7 @@ def prereg_landing_page(auth, **kwargs):
 @decorators.must_be_logged_in
 def prereg_draft_registrations(auth, **kwargs):
     """API endpoint; returns prereg draft registrations the user can resume"""
-    PREREG_CHALLENGE_METASCHEMA = models.MetaSchema.find_one(
-        Q('name', 'eq', 'Prereg Challenge') &
-        Q('schema_version', 'eq', 1)
-    )
-
-    drafts = models.DraftRegistration.find(
-        Q('registration_schema', 'eq', PREREG_CHALLENGE_METASCHEMA)
-    )
-
+    drafts = drafts_for_user(auth.user)
     return {
         'draftRegistrations': [
             {

@@ -65,7 +65,7 @@
             </div>
         </form>
     </div>
-    <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg">
+    <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
         <form data-bind="submit: submit" class="form-horizontal">
             <h3 class="m-b-lg"> Create a free account </h3>
                 <div

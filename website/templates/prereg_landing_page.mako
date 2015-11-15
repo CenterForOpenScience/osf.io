@@ -55,7 +55,8 @@
                 <p>Go to an existing preregistration
                 <form>
                     <osf-draft-registrations-search
-                        params="data: '/api/v1/prereg/draft_registrations/'">
+                        params="data: '/api/v1/prereg/draft_registrations/',
+                                submitText: 'Edit draft'">
                     </osf-draft-registrations-search>
                 </form>
             </div>
