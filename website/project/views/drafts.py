@@ -57,6 +57,23 @@ def validate_embargo_end_date(end_date_string, node):
             'message_long': 'Embargo end date must on or before {0}.'.format(max_end_date.isoformat())
         })
 
+def check_draft_state(draft):
+    if draft.registered_node:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_short': 'This draft has already been registered',
+            'message_long': 'This draft has already been registered and cannot be modified.'
+        })
+    elif draft.is_pending_review:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_short': 'This draft is pending review',
+            'message_long': 'This draft is pending review and cannot be modified.'
+        })
+    elif draft.is_approved:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_short': 'This draft has already been approved',
+            'message_long': 'This draft has already been approved and cannot be modified.'
+        })
+
 @autoload_draft
 @must_have_permission(ADMIN)
 @must_be_valid_project
@@ -220,11 +237,7 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
     :return: serialized DraftRegistration
     :rtype: dict
     """
-    if draft.registered_node:
-        raise HTTPError(http.FORBIDDEN, data={
-            'message_short': 'This draft has already been registered.',
-            'message_long': 'This draft has already been registered and cannot be modified.'
-        })
+    check_draft_state(draft)
     ret = project_utils.serialize_node(node, auth, primary=True)
     ret['draft'] = serialize_draft_registration(draft, auth)
     return ret
@@ -239,11 +252,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     :rtype: dict
     :raises: HTTPError
     """
-    if draft.registered_node:
-        raise HTTPError(http.FORBIDDEN, data={
-            'message_short': 'This draft has already been registered.',
-            'message_long': 'This draft has already been registered and cannot be modified.'
-        })
+    check_draft_state(draft)
     data = request.get_json()
 
     schema_data = data.get('schema_data', {})
