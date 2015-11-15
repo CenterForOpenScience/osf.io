@@ -4120,29 +4120,25 @@ class DraftRegistration(StoredObject):
     def update_metadata(self, metadata):
         changes = []
         for question_id, value in metadata.iteritems():
-
             old_value = self.registration_metadata.get(question_id)
-
             if old_value:
-                old_comments = old_value.get('comments', [])
-                new_comments = value.get('comments', [])
-
-                #  we are using the `created` attribute sort of as a primary key
-                old_comment_ids = [comment['created'] for comment in old_comments]
-
-                # Handle comment conflicts
-                for old_comment in old_comments:
-                    for new_comment in new_comments:
-                        new_id = new_comment.get('created', [])
-                        # if the primary key is already in use and the old comment is more recent,
-                        if new_id in old_comment_ids and old_comment['lastModified'] > new_comment['lastModified']:
-                            # use the old one instead
-                            loc = new_comments.index(new_comment)
-                            new_comments[loc] = old_comment
-
-            if not old_value or old_value.get('value') != value.get('value'):
+                old_comments = {
+                    comment['created']: comment
+                    for comment in old_value.get('comments', [])
+                }
+                new_comments = {
+                    comment['created']: comment
+                    for comment in value.get('comments', [])
+                }
+                old_comments.update(new_comments)
+                metadata[question_id]['comments'] = sorted(
+                    old_comments.values(),
+                    key=lambda c: c['created']
+                )
+                if old_value.get('value') != value.get('value'):
+                    changes.append(question_id)
+            else:
                 changes.append(question_id)
-
         self.registration_metadata.update(metadata)
         return changes
 

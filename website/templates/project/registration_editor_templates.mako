@@ -110,7 +110,6 @@
     <h4> Comments </h4>
     <ul class="list-group" id="commentList" data-bind="foreach: {data: comments, as: 'comment'}">
         <li class="list-group-item">
-          <h3 data-bind="text: comment.isDeleted().toString()"></h3>
           <div class="row" data-bind="if: comment.isDeleted">
             <div class="col-md-12">
               <strong><span data-bind="text: comment.getAuthor"></span></strong> deleted this comment on <em data-bind="text: comment.lastModified"></em>
