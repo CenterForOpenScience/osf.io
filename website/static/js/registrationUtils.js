@@ -207,7 +207,7 @@ var Question = function(questionSchema, data) {
             if (self.type === 'object') {
                 var ret = true;
                 $.each(self.properties, function(_, subQuestion) {
-                    if( subQuestion.type !== 'osf-upload') {
+                    if(subQuestion.type !== 'osf-upload') {
                         if ((subQuestion.value() || '').trim() === '' ) {
                             ret = false;
                             return;
@@ -285,26 +285,29 @@ var Page = function(schemaPage, schemaData) {
     self.id = schemaPage.id;
 
     self.active = ko.observable(false);
-    self.comments = ko.observableArray(
-        $.map(data.comments || [], function(comment) {
-            return new Comment(comment);
-        })
-    );
 
-    $.each(schemaPage.questions, function(id, question) {
-        if (data[id] && data[id].value) {
-            question.value(data[id].value);
-        }
-        if (data[id] && data[id].comments) {
-            var comment = $.map(data[id].comments || [], function(comment) {
-                return new Comment(comment);
-            });
-            question.comments(comment);
-        }
-
-        self.questions.push(question);
+    schemaData = schemaData || {};
+    self.questions = $.map(schemaPage.questions, function(questionSchema) {
+        return new Question(questionSchema, schemaData[questionSchema.qid]);
     });
 
+    self.comments = ko.computed(function() {
+        var comments = [];
+        $.each(self.questions, function(_, question) {
+            comments = comments.concat(question.comments());
+        });
+        comments.sort(function(a, b) {
+            return a.created > b.created;
+        });
+        return comments;
+    });
+
+    // TODO: track currentQuestion based on browser focus
+    var question = self.questions[0];
+    self.nextComment = question.nextComment.bind(question);
+    self.allowAddNext = question.allowAddNext.bind(question);
+    self.addComment = question.addComment.bind(question);
+};
 
 /**
  * @class MetaSchema
@@ -695,9 +698,6 @@ var RegistrationEditor = function(urls, editorId) {
         });
         currentPage.active(true);
         History.replaceState({page: self.pages().indexOf(currentPage)});
-    });
-    self.currentPage.subscribe(function(currentPage) {
-        self.currentQuestion(currentPage.questions()[0]);
     });
     
     self.onLastPage = ko.pureComputed(function() {
@@ -1121,20 +1121,6 @@ RegistrationEditor.prototype.getContributors = function() {
                        'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
                        'problem persists.');
         });
-};
-/**
- * Search the editor for a single question
- *
- */
-RegistrationEditor.prototype.find = function(title) {
-    var self = this;
-    var questions = self.flatQuestions();
-
-    for (var i = 0; i < questions.length; i++ ) {
-        if ( questions[i].title.toLowerCase() === title.toLowerCase() ) {
-            return questions[i];
-        }
-    }
 };
 
 /**

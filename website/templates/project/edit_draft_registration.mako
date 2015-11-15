@@ -39,13 +39,8 @@
                 % endif
                 <!-- EDITOR -->
                 <div data-bind="if: currentPage">
-                  <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
-                    <div data-bind="template: {data: question, name: 'editor'}"></div>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-12">
-                        <div class="well" data-bind="template: {data: currentQuestion(), name: 'commentable'}"></div>
-                    </div>
+                  <div data-bind="if: currentPage">                  
+                    <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
                   </div>
                 </div>
 

@@ -89,7 +89,8 @@
                 <div class="row">
                   <div class="col-md-10">
                     <button class="btn btn-info"
-                       data-bind="click: $root.maybeWarn">
+                       data-bind="disable: isPendingApproval,
+                                  click: $root.maybeWarn">
                       <i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit
                     </button>
                     <button class="btn btn-danger"

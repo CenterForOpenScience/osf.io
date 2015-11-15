@@ -146,10 +146,8 @@ var Uploader = function(data) {
 var AuthorImport = function(data, $root) {
     var self = this;
 
-    self._orig = data;
+    self.question = data;
     self.contributors = $root.contributors();
-    self.currentQuestion = $root.currentQuestion;
-    self.currentQuestion($root.find('authorship'));
 
     self.setContributorBoxes = function(value) {
         var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
@@ -178,11 +176,7 @@ var AuthorImport = function(data, $root) {
                             }
                         });
                         if ( authors ) {
-                            $.each(self.currentQuestion().properties, function(name, subQuestion){
-                                if (subQuestion.type === 'osf-author-import')
-                                    subQuestion.setValue(authors.join(', '));
-                            });
-                            self.save();
+                            self.question.value(authors.join(', '));
                         }
                     }
                 }
