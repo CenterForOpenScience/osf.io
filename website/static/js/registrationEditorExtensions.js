@@ -11,15 +11,20 @@ var node = window.contextVars.node;
 
 var NO_FILE = 'No file selected';
 
-var limitOsfStorage = function(item) {
-    if (item.data.provider !== undefined && item.data.provider !== 'osfstorage') {
+var limitContents = function(item) {
+    if (item.data.provider !== undefined && item.data.provider !== 'osfstorage' || item.data.isPointer) {
         item.open = false;
         item.load = false;
         item.css = 'text-muted';
         item.data.permissions = item.data.permissions || {};
         item.data.permissions.edit = false;
         item.data.permissions.view = false;
-        if (item.data.name.indexOf(' (Only OSF Storage supported to ensure accurate versioning.)') === -1) {
+        if (item.data.isPointer) {
+            if (item.data.name.indexOf(' (Linked content is not allowed.)') === -1) {
+                item.data.name = item.data.name + ' (Linked content is not allowed.)';
+            }
+        }
+        else if (item.data.name.indexOf(' (Only OSF Storage supported to ensure accurate versioning.)') === -1) {
             item.data.name = item.data.name + ' (Only OSF Storage supported to ensure accurate versioning.)';
         }
     }
@@ -73,7 +78,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 var tb = this;
                 item.css = '';
 
-                limitOsfStorage(item);
+                limitContents(item);
 
                 if (viewModel.value() !== null) {
                     if (item.data.path === viewModel.value()) {
@@ -102,10 +107,10 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 return configOption || defaultColumns;
             },
             lazyLoadOnLoad: function(tree, event) {
-                limitOsfStorage(tree);
+                limitContents(tree);
 
                 tree.children.forEach(function(item) {
-                    limitOsfStorage(item);
+                    limitContents(item);
 
                     if (viewModel.value() !== null) {
                         if (item.data.path === viewModel.value()) {
@@ -192,5 +197,5 @@ module.exports = {
     AuthorImport: AuthorImport,
     Uploader: Uploader,
     osfUploader: osfUploader,
-    limitOsfStorage: limitOsfStorage
+    limitContents: limitContents
 };
