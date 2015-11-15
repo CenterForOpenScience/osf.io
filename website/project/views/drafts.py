@@ -69,7 +69,7 @@ def check_draft_state(draft):
             'message_short': 'This draft is pending review',
             'message_long': 'This draft is pending review and cannot be modified.'
         })
-    elif draft.is_approved:
+    elif draft.requires_approval and draft.is_approved:
         raise HTTPError(http.FORBIDDEN, data={
             'message_short': 'This draft has already been approved',
             'message_long': 'This draft has already been approved and cannot be modified.'
