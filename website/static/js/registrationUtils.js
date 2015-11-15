@@ -4,7 +4,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var moment = require('moment');
-var URI = require('URIjs');
+var History = require('exports?History!history');
 
 require('js/koHelpers');
 
@@ -696,6 +696,7 @@ var RegistrationEditor = function(urls, editorId) {
             page.active(false);
         });
         currentPage.active(true);
+        History.replaceState({page: self.pages().indexOf(currentPage)});
     });
     self.onLastPage = ko.pureComputed(function() {
         return self.currentPage() === self.pages()[self.pages().length - 1];
@@ -798,7 +799,12 @@ RegistrationEditor.prototype.init = function(draft) {
     });
 
     // Set currentPage to the first page
-    self.currentPage(self.draft().pages()[0]);
+    var pages = self.draft().pages();
+    var index = History.getState().data.page || 0;
+    if (index > pages.length) {
+        index = 0;
+    }
+    self.currentPage(pages[index]);
 
     self.needsSave.subscribe(function(dirty) {
         if (dirty) {
