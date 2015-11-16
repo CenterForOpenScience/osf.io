@@ -52,7 +52,6 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         tags                            array of strings   list of tags that describe the registered node
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered?
-        collection                      boolean            is this registered node a collection of other nodes?
         dashboard                       boolean            is this registered node visible on the user dashboard?
         public                          boolean            has this registration been made publicly-visible?
         retracted                       boolean            has this registration been retracted?
