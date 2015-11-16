@@ -147,8 +147,18 @@ def before_request():
         # Create empty session
         # TODO: Shoudn't need to create a session for Basic Auth
         session = Session()
+        set_session(session)
 
         if user:
+            user_addon = user.get_addon('twofactor')
+            if user_addon and user_addon.is_confirmed:
+                otp = request.headers.get('X-OSF-OTP')
+                if otp is None or not user_addon.verify_code(otp):
+                    # Must specify two-factor authentication OTP code or invalid two-factor
+                    # authentication OTP code.
+                    session.data['auth_error_code'] = http.UNAUTHORIZED
+                    return
+
             session.data['auth_user_username'] = user.username
             session.data['auth_user_id'] = user._primary_key
             session.data['auth_user_fullname'] = user.fullname
@@ -156,9 +166,7 @@ def before_request():
             user.save()
         else:
             # Invalid key: Not found in database
-            session.data['auth_error_code'] = http.FORBIDDEN
-
-        set_session(session)
+            session.data['auth_error_code'] = http.UNAUTHORIZED
         return
 
     cookie = request.cookies.get(settings.COOKIE_NAME)

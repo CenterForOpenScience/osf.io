@@ -74,8 +74,8 @@ class ComposedScopes(object):
     # Tokens collection
     TOKENS_READ = (CoreScopes.TOKENS_READ,)
     TOKENS_WRITE = TOKENS_READ + (CoreScopes.TOKENS_WRITE,)
-    # Comment reports collection
 
+    # Comment reports collection
     COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
     COMMENT_REPORTS_WRITE = COMMENT_REPORTS_READ + (CoreScopes.COMMENT_REPORTS_WRITE,)
 
