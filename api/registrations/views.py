@@ -111,7 +111,11 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
 
     def is_blacklisted(self, query):
         for query_param in query.nodes:
-            if isinstance(self.serializer_class._declared_fields.get(query_param.attribute), HideIfRetraction):
+            field_name = getattr(query_param, 'attribute', None)
+            if not field_name:
+                continue
+            field = self.serializer_class._declared_fields.get(field_name)
+            if isinstance(field, HideIfRetraction):
                 return True
         return False
 
