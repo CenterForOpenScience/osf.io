@@ -1,3 +1,4 @@
+import json
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -18,8 +19,8 @@ class RegistrationSerializer(NodeSerializer):
         help_text='Does this registration have a sanction pending approval?'))
     pending_embargo = HideIfRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
         help_text='Is this registration pending embargo?'))
-    registered_meta = HideIfRetraction(ser.DictField(read_only=True,
-        help_text='Includes a dictionary with registration schema, embargo end date, and supplemental registration questions'))
+    registered_meta = HideIfRetraction(ser.SerializerMethodField(
+        help_text='Includes a dictionary with embargo end date and answers to supplemental registration questions'))
     registration_supplement = ser.SerializerMethodField()
 
     registered_by = HideIfRetraction(JSONAPIHyperlinkedIdentityField(
@@ -75,6 +76,11 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
+
+    def get_registered_meta(self, obj):
+        if obj.registered_meta:
+            return json.loads(obj.registered_meta.values()[0])
+        return None
 
     def get_registration_supplement(self, obj):
         if obj.registered_meta:
