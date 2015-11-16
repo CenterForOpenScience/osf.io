@@ -179,28 +179,29 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     Example:
     children = RelationshipField(
         related_view='nodes:node-children',
-        related_view_kwargs={'node_id': 'pk'},
+        related_view_kwargs={'node_id': '<pk>'},
         self_view='nodes:node-node-children-relationship',
-        self_view_kwargs={'node_id': 'pk'},
+        self_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_node_count'}
     )
 
-    If you surround the lookup_field in angular brackets, it will not attempt to find that attribute on the target, but rather
-    return the lookup_field name verbatim.
+    The lookup field must be surrounded in angular brackets to find the attribute on the target. Otherwise, the lookup
+    field will be returned verbatim.
 
     Example:
      wiki_home = RelationshipField(
         related_view='addon:addon-detail',
-        related_view_kwargs={'node_id': '_id', 'provider': '<wiki>'},
+        related_view_kwargs={'node_id': '<_id>', 'provider': 'wiki'},
     )
-    'wiki' is enclosed in angular brackets, so the serialized result would be '/nodes/abc12/addons/wiki'.
+    '_id' is enclosed in angular brackets, but 'wiki' is not. 'id' will be looked up on the target, but 'wiki' will not.
+     The serialized result would be '/nodes/abc12/addons/wiki'.
 
     Field can handle nested attributes:
 
     Example:
     wiki_home = RelationshipField(
         related_view='wiki:wiki-detail',
-        related_view_kwargs={'node_id': '_id', 'wiki_id': 'wiki_pages_current.home'}
+        related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
     )
 
     """
@@ -253,9 +254,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         """
         bracket_check = _tpl(lookup_field)
         if bracket_check:
-            return bracket_check
-        source_attrs = lookup_field.split('.')
-        return get_nested_attributes(obj, source_attrs)
+            source_attrs = bracket_check.split('.')
+            return get_nested_attributes(obj, source_attrs)
+        return lookup_field
 
     def kwargs_lookup(self, obj, kwargs_dict):
         """

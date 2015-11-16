@@ -29,14 +29,14 @@ class CollectionSerializer(JSONAPISerializer):
 
     node_links = DevOnly(RelationshipField(
         related_view='collections:node-pointers',
-        related_view_kwargs={'collection_id': 'pk'},
+        related_view_kwargs={'collection_id': '<pk>'},
         related_meta={'count': 'get_node_links_count'}
     ))
 
     # TODO: Add a self link to this when it's available
     linked_nodes = DevOnly(RelationshipField(
         related_view='collections:linked-nodes',
-        related_view_kwargs={'collection_id': 'pk'},
+        related_view_kwargs={'collection_id': '<pk>'},
         related_meta={'count': 'get_node_links_count'}
     ))
 

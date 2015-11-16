@@ -14,12 +14,12 @@ class RegistrationSerializer(NodeSerializer):
 
     registered_by = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': 'registered_user_id'}
+        related_view_kwargs={'user_id': '<registered_user_id>'}
     )
 
     registered_from = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': 'registered_from_id'}
+        related_view_kwargs={'node_id': '<registered_from_id>'}
     )
 
     # TODO: Finish me

@@ -84,12 +84,12 @@ class FileSerializer(JSONAPISerializer):
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
-        related_view_kwargs={'node_id': 'node_id', 'path': 'path', 'provider': 'provider'},
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder'
     )
     versions = NodeFileHyperLinkField(
         related_view='files:file-versions',
-        related_view_kwargs={'file_id': '_id'},
+        related_view_kwargs={'file_id': '<_id>'},
         kind='file'
     )
     links = LinksField({

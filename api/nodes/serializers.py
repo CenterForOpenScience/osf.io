@@ -71,45 +71,45 @@ class NodeSerializer(JSONAPISerializer):
 
     children = RelationshipField(
         related_view='nodes:node-children',
-        related_view_kwargs={'node_id': 'pk'},
+        related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_node_count'},
     )
 
     comments = RelationshipField(
         related_view='nodes:node-comments',
-        related_view_kwargs={'node_id': 'pk'},
+        related_view_kwargs={'node_id': '<pk>'},
         related_meta={'unread': 'get_unread_comments_count'})
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
-        related_view_kwargs={'node_id': 'pk'},
+        related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_contrib_count'}
     )
 
     files = RelationshipField(
         related_view='nodes:node-providers',
-        related_view_kwargs={'node_id': 'pk'}
+        related_view_kwargs={'node_id': '<pk>'}
     )
 
     forked_from = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': 'forked_from_id'}
+        related_view_kwargs={'node_id': '<forked_from_id>'}
     )
 
     node_links = DevOnly(RelationshipField(
         related_view='nodes:node-pointers',
-        related_view_kwargs={'node_id': 'pk'},
+        related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'}
     ))
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': 'parent_id'}
+        related_view_kwargs={'node_id': '<parent_id>'}
     )
 
     registrations = DevOnly(RelationshipField(
         related_view='nodes:node-registrations',
-        related_view_kwargs={'node_id': 'pk'},
+        related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_registration_count'}
     ))
 
@@ -221,7 +221,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     users = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': 'pk'}
+        related_view_kwargs={'user_id': '<pk>'}
     )
 
     def profile_image_url(self, user):
@@ -303,7 +303,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     target_node = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': 'pk'}
+        related_view_kwargs={'node_id': '<pk>'}
     )
     class Meta:
         type_ = 'node_links'
@@ -357,7 +357,7 @@ class NodeProviderSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True)
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
-        related_view_kwargs={'node_id': 'node_id', 'path': 'path', 'provider': 'provider'},
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder'
     )
     links = LinksField({
