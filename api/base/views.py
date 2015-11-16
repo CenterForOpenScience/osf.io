@@ -10,6 +10,18 @@ from .utils import absolute_reverse
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
+    def __init__(self, **kwargs):
+        assert getattr(self, 'view_name', None), 'Must specify view_name on view.'
+        assert getattr(self, 'view_category', None), 'Must specify view_category on view.'
+        self._view_fqn = self.view_fqn()
+        super(JSONAPIBaseView, self).__init__(**kwargs)
+
+    # lazily build view_fqn
+    def view_fqn(self):
+        if not getattr(self, '_view_fqn', None):
+            self._view_fqn = ':'.join([self.view_category, self.view_name])
+        return self._view_fqn
+
     def _get_embed_partial(self, field_name, field):
         """Create a partial function to fetch the values of an embedded field. A basic
         example is to include a Node's children in a single response.

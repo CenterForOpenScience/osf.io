@@ -64,7 +64,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         """
         kwargs = self.request.parser_context['kwargs'].copy()
         embedded = kwargs.pop('is_embedded', None)
-        view_name = self.request.parser_context['view'].view_name
+        view_name = self.request.parser_context['view']._view_fqn
         reversed_url = None
         if embedded:
             reversed_url = reverse(view_name, kwargs=kwargs)
