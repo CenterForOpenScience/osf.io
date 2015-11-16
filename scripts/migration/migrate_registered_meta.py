@@ -2,7 +2,6 @@
 Changes existing registered_meta on a node to new schema layout
 required for the prereg-prize
 """
-from nose.tools import *  # noqa PEP8 asserts
 import json
 import sys
 import logging
@@ -75,13 +74,12 @@ def main(dev=False, _db=None):
                     Q('name', 'eq', name)
                 ).sort('-schema_version')[0]
             except IndexError as e:
-                logger.error('No MetaSchema matching name: {0} found'.format(name))
+                logger.error('No MetaSchema matching name: {0} found for node: {1}.'.format(name, node['_id']))
                 # Skip over missing schemas
                 skipped += 1
                 if dev:
                     continue
                 else:
-                    import ipdb; ipdb.set_trace()
                     raise e
             else:
                 registered_meta[meta_schema._id] = {
