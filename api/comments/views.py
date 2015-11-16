@@ -122,7 +122,8 @@ class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
-    view_name = 'comments:comment-replies'
+    view_category = 'comments'
+    view_name = 'comment-replies'
     serializer_class = CommentSerializer
 
     ordering = ('-date_created', )  # default ordering
@@ -234,7 +235,8 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixi
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentDetailSerializer
-    view_name = 'comments:comment-detail'
+    view_category = 'comments'
+    view_name = 'comment-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -304,7 +306,9 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
     serializer_class = CommentReportSerializer
-    view_name = 'comments:comment-reports'
+
+    view_category = 'comments'
+    view_name = 'comment-reports'
 
     def get_queryset(self):
         user_id = self.request.user._id
@@ -386,7 +390,8 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
     serializer_class = CommentReportDetailSerializer
-    view_name = 'comments:report-detail'
+    view_category = 'comments'
+    view_name = 'report-detail'
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):

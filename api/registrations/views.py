@@ -82,7 +82,8 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationSerializer
-    view_name = 'registrations:registration-list'
+    view_category = 'registrations'
+    view_name = 'registration-list'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -161,7 +162,8 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationDetailSerializer
-    view_name = 'registrations:registration-detail'
+    view_category = 'registrations'
+    view_name = 'registration-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):

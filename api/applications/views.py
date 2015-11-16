@@ -34,8 +34,8 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixi
     required_write_scopes = [CoreScopes.APPLICATIONS_WRITE]
 
     serializer_class = ApiOAuth2ApplicationSerializer
-
-    view_name = 'applications:application-list'
+    view_category = 'applications'
+    view_name = 'application-list'
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 
@@ -74,7 +74,8 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     required_write_scopes = [CoreScopes.APPLICATIONS_WRITE]
 
     serializer_class = ApiOAuth2ApplicationDetailSerializer
-    view_name = 'applications:application-detail'
+    view_category = 'applications'
+    view_name = 'application-detail'
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 

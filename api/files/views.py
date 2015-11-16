@@ -284,7 +284,8 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileDetailSerializer
-    view_name = 'files:file-detail'
+    view_category = 'files'
+    view_name = 'file-detail'
 
     def get_node(self):
         return self.get_file().node
@@ -349,7 +350,8 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileVersionSerializer
-    view_name = 'files:file-versions'
+    view_category = 'files'
+    view_name = 'file-versions'
 
     def get_queryset(self):
         return self.get_file().versions
@@ -408,7 +410,8 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileVersionSerializer
-    view_name = 'files:version-detail'
+    view_category = 'files'
+    view_name = 'version-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
