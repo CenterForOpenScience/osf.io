@@ -1,10 +1,14 @@
-
+import re
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 
 class JSONAPIRenderer(JSONRenderer):
     format = "jsonapi"
     media_type = 'application/vnd.api+json'
 
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        stuff = super(JSONAPIRenderer, self).render(data, accepted_media_type, renderer_context)
+        new_stuff = re.sub(r'"<esi:include src=\\"(.*?)\\"\/>"', r'<esi:include src="\1"/>', stuff)
+        return new_stuff
 
 class BrowsableAPIRendererNoForms(BrowsableAPIRenderer):
     """
