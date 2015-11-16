@@ -44,7 +44,7 @@
                                     <i class="fa fa-trash-o fa-lg"></i> Remove
                                 </a>
                                 <a class="btn btn-danger" data-bind="click:deleteAllNodes, visible: deleteAll">
-                                    <i class="fa fa-trash-o fa-lg"></i> Remove
+                                    <i class="fa fa-trash-o fa-lg"></i> Next
                                 </a>
                             </div>
                     </div>
