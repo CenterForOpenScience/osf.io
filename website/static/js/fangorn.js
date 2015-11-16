@@ -341,7 +341,7 @@ function _fangornResolveToggle(item) {
         return togglePlus;
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
-        if (item.data.extra.checkout) {
+        if (item.data.extra && item.data.extra.checkout) {
             if (item.data.extra.checkout === window.contextVars.currentUser.id){
                 return checkedByUser;
             }

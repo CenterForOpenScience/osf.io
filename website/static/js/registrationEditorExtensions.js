@@ -79,7 +79,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 item.css = '';
 
                 limitContents(item);
-
+                
                 if (viewModel.value() !== null) {
                     if (item.data.path === viewModel.value()) {
                         item.css = 'fangorn-selected';
@@ -97,10 +97,6 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                     if (item.data.kind === 'folder') {
                         item.data.accept = item.data.accept || item.parent().data.accept;
                     }
-                }
-
-                if (item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')) {
-                    return Fangorn.Utils.uploadRowTemplate.call(tb, item);
                 }
 
                 var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
