@@ -79,7 +79,11 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_registered_meta(self, obj):
         if obj.registered_meta:
-            return json.loads(obj.registered_meta.values()[0])
+            meta_values = obj.registered_meta.values()[0]
+            try:
+                return json.loads(meta_values)
+            except ValueError:
+                return meta_values
         return None
 
     def get_registration_supplement(self, obj):
