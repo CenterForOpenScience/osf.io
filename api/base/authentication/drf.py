@@ -81,7 +81,7 @@ class OSFBasicAuthentication(BasicAuthentication):
         if user_addon and user_addon.is_confirmed:
             otp = request.META.get('HTTP_X_OSF_OTP')
             if otp is None:
-                raise TwoFactorRequiredError(_('Must specify two-factor authentication OTP code.'))
+                raise TwoFactorRequiredError()
             if not user_addon.verify_code(otp):
                 raise exceptions.AuthenticationFailed(_('Invalid two-factor authentication OTP code.'))
 
