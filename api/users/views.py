@@ -83,6 +83,9 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
 
+    + `profile_image_size=<Int>` -- Modifies `links.profile_image_url` of the user entities so that it points to
+    the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
+
     #This Request/Response
 
     """
@@ -142,8 +145,9 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     ##Links
 
-        self:  the canonical api endpoint of this user
-        html:  this user's page on the OSF website
+        self:               the canonical api endpoint of this user
+        html:               this user's page on the OSF website
+        profile_image_url:  a url to the user's profile image
 
     ##Actions
 
@@ -180,7 +184,8 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     ##Query Params
 
-    *None*.
+    + `profile_image_size=<Int>` -- Modifies `links.profile_image_url` so that it points the image scaled to the given
+    size in pixels.  If left blank, the size depends on the image provider.
 
     #This Request/Response
 
@@ -229,7 +234,7 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
-        collection     boolean            is this node a collection of other nodes?
+        fork           boolean            is this node a fork of another node?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
