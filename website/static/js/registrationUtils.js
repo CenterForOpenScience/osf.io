@@ -246,26 +246,6 @@ var Draft = function(params, metaSchema) {
         self.pages.push(new Page(pageData, self.schemaData));
     });
 
-    /*
-    self.completion = ko.computed(function() {
-        var total = 0;
-        var complete = 0;
-        if (self.schemaData) {
-            var schema = self.schema();
-            $.each(schema.pages, function(i, page) {
-                $.each(page.questions, function(_, question) {
-                    var q = self.schemaData[question.id];
-                    if (q && (q.value || '').trim() !== '') {
-                        complete++;
-                    }
-                    total++;
-                });
-            });
-            return Math.ceil(100 * (complete / total));
-        }
-        return 0;
-    });
-    */
     self.completion = ko.computed(function() {
         var total = 0;
         var complete = 0;

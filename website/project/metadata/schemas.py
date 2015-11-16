@@ -28,8 +28,8 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('brandt-prereg-2.json')),
     ensure_schema_structure(from_json('brandt-postcomp-1.json')),
     ensure_schema_structure(from_json('brandt-postcomp-2.json')),
-    ensure_schema_structure(from_json('confirmatory-general-1.json')),
-    ensure_schema_structure(from_json('egap-project-1.json')),
+    ensure_schema_structure(from_json('confirmatory-general-2.json')),
+    ensure_schema_structure(from_json('egap-project-2.json')),
 ]
 
 ACTIVE_META_SCHEMAS = (
@@ -37,5 +37,4 @@ ACTIVE_META_SCHEMAS = (
     'OSF-Standard Pre-Data Collection Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',
     'Replication Recipe (Brandt et al., 2013): Post-Completion',
-    'Prereg Challenge',
 )
