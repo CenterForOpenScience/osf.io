@@ -9,9 +9,7 @@
   <div class="col-sm-5">
     <h2 class="break-word">
       ## Split file name into two parts: with and without extension
-      
       ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
-
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
       % endif
