@@ -63,32 +63,32 @@ class TestRelationshipField(DbTestCase):
 
         parent = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': 'pk'}
+            related_view_kwargs={'node_id': '<pk>'}
         )
 
         parent_with_meta = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': 'pk'},
+            related_view_kwargs={'node_id': '<pk>'},
             related_meta={'count': 'get_count', 'extra': 'get_extra'},
         )
 
         self_and_related_field = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': 'pk'},
+            related_view_kwargs={'node_id': '<pk>'},
             self_view='nodes:node-contributors',
-            self_view_kwargs={'node_id': 'pk'},
+            self_view_kwargs={'node_id': '<pk>'},
         )
 
         two_url_kwargs = RelationshipField(
             # fake url, for testing purposes
             related_view='nodes:node-pointer-detail',
-            related_view_kwargs={'node_id': 'pk', 'node_link_id': 'pk'},
+            related_view_kwargs={'node_id': '<pk>', 'node_link_id': '<pk>'},
         )
 
         not_attribute_on_target = RelationshipField(
             # fake url, for testing purposes
             related_view='nodes:node-children',
-            related_view_kwargs={'node_id': '<12345>'}
+            related_view_kwargs={'node_id': '12345'}
         )
 
         class Meta:
