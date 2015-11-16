@@ -11,7 +11,7 @@
     <thead>
         <tr>
             <th><label for="all"></label>
-                <input id="all" type="checkbox">
+                <input id="all" type="checkbox" disabled>
             </th>
             <th>Author</th>
             <th>Reporter</th>
@@ -24,7 +24,7 @@
     <tr>
         <td>
             <label for="{{ comment.id }}"></label>
-            <input id="{{ comment.id }}" type="checkbox">
+            <input id="{{ comment.id }}" type="checkbox" disabled>
         </td>
         <td>
             {{ comment.author.fullname }}
@@ -53,4 +53,6 @@
     {% endfor %}
     </tbody>
     </table>
+
+    {% render_bundle 'spamList' %}
 {% endblock content %}

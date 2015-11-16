@@ -16,7 +16,8 @@ var staticAdminPath = function(dir) {
     return path.join(adminRoot, dir);
 };
 
-common.entry['admin-base-page'] = staticAdminPath('js/pages/base-page.js')
+common.entry['admin-base-page'] = staticAdminPath('js/pages/base-page.js');
+common.entry['spamList'] =  staticAdminPath('js/spam/spamList.js');
 
 // Adding bundle tracker to plugins
 common.plugins = [
