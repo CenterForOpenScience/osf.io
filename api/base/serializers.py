@@ -154,11 +154,13 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                                     link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
 
     """
+    embeddable = True
     json_api_link = True  # serializes to a links object
 
     def __init__(self, view_name=None, **kwargs):
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
+        self.always_embed = kwargs.pop('always_embed', False)
         super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
 
     # overrides HyperlinkedIdentityField
@@ -180,7 +182,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         Returns nested dictionary in format {'links': {'self.link_type': ... }
 
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
-        the link is represented as a links object with 'href' and 'meta' members.
+         the link is represented as a links object with 'href' and 'meta' members.
         """
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
@@ -477,10 +479,23 @@ class JSONAPISerializer(ser.Serializer):
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
 
-        data = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', collections.OrderedDict()),
-                                        ('relationships', collections.OrderedDict()), ('links', {})])
+        data = collections.OrderedDict([
+            ('id', ''),
+            ('type', type_),
+            ('attributes', collections.OrderedDict()),
+            ('relationships', collections.OrderedDict()),
+            ('embeds', {}),
+            ('links', {}),
+        ])
 
+        embeds = self.context.get('embed', {})
         fields = [field for field in self.fields.values() if not field.write_only]
+
+        for item in set(embeds.keys()) - set([f.field_name for f in fields if getattr(f, 'json_api_link', False)]):
+            raise InvalidQueryStringError(
+                detail="Field '{0}' is not embeddable.".format(item),
+                parameter='embed'
+            )
 
         for field in fields:
             try:
@@ -489,7 +504,12 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             if getattr(field, 'json_api_link', False):
-                data['relationships'][field.field_name] = field.to_representation(attribute)
+                # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
+                # results rather than adding a relationship link
+                if embeds and (field.field_name in embeds or field.always_embed):
+                    data['embeds'][field.field_name] = self.context['embed'][field.field_name](obj)
+                else:
+                    data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':

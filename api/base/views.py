@@ -1,9 +1,61 @@
 from django.http import JsonResponse
+from django.core.urlresolvers import resolve, reverse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import generics
 
 from api.users.serializers import UserSerializer
 from .utils import absolute_reverse
+
+class JSONAPIBaseView(generics.GenericAPIView):
+
+    def _get_embed_partial(self, field_name, field):
+        """Create a partial function to fetch the values of an embedded field. A basic
+        example is to include a Node's children in a single response.
+
+        :param str field_name: Name of field of the view's serializer_class to load
+        results for
+        :return function object -> dict:
+        """
+        def partial(item):
+            embed_value = getattr(item, field.lookup_field, None)
+            view, view_args, view_kwargs = resolve(
+                reverse(
+                    field.view_name,
+                    kwargs={field.lookup_url_kwarg: embed_value}
+                )
+            )
+            view_kwargs.update({
+                'request': self.request,
+                'no_embeds': True
+            })
+            response = view(*view_args, **view_kwargs)
+            return response.data
+        return partial
+
+    def get_serializer_context(self):
+        """Inject request into the serializer context. Additionally, inject partial functions
+        (request, object -> embedd items) if the query string contains embeds, and this
+        is the topmost call to this method (the embed partials call view functions which has
+        the potential to create infinite recursion hence the inclusion of the no_embeds
+        view kwarg to prevent this).
+        """
+        context = super(JSONAPIBaseView, self).get_serializer_context()
+        if self.kwargs.get('no_embeds'):
+            return context
+        embeds = self.request.query_params.getlist('embed')
+        fields = self.serializer_class._declared_fields
+        for field in fields:
+            if getattr(fields[field], 'always_embed', False) and field not in embeds:
+                embeds.append(unicode(field))
+        embeds_partials = {}
+        for embed in embeds:
+            embed_field = fields.get(embed)
+            embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
+        context.update({
+            'embed': embeds_partials
+        })
+        return context
 
 @api_view(('GET',))
 def root(request, format=None):
@@ -173,6 +225,28 @@ def root(request, format=None):
         }
 
     If there are no related entities, `href` will be null.
+
+    + `embeds`
+
+    All related resources that appear in the `relationships` attribute are embeddable, meaning that
+    by adding a query paramater like:
+
+        /nodes/?embed=contributors
+
+    it is possible to fetch a Node and its contributors in a single request. The embedded results will have the following
+    structure:
+
+        {relationship_name}: {full_embedded_response}
+
+    Where `full_embedded_response` means the full API response resulting from a GET request to the `href` link of the
+    corresponding related resource. This means if there are no errors in processing the embedded request the response will have
+    the format:
+
+        data: {response}
+
+    And if there are errors processing the embedded request the response will have the format:
+
+        errors: {errors}
 
     + `links`
 

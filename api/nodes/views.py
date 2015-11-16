@@ -11,6 +11,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
+from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error, is_bulk_request
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer
@@ -132,7 +133,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -221,6 +222,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
     model_class = Node
 
     serializer_class = NodeSerializer
+    view_name = 'nodes:node-list'
 
     ordering = ('-date_modified', )  # default ordering
 
@@ -299,7 +301,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
         instance.save()
 
 
-class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -413,6 +415,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = NodeDetailSerializer
+    view_name = 'nodes:node-detail'
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -420,12 +423,6 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         if node.is_registration:
             raise ValidationError('This is a registration.')
         return node
-
-    # overrides RetrieveUpdateDestroyAPIView
-    def get_serializer_context(self):
-        # Serializer needs the request in order to make an update to privacy
-        # TODO: The method it overrides already returns request (plus more stuff). Why does this method exist?
-        return {'request': self.request}
 
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
@@ -439,7 +436,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -526,6 +523,7 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
     model_class = User
 
     serializer_class = NodeContributorsSerializer
+    view_name = 'nodes:node-contributors'
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -583,7 +581,7 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
             raise ValidationError("Must have at least one registered admin contributor")
 
 
-class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
+class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node. *Writeable*.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -669,6 +667,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
 
     serializer_class = NodeContributorDetailSerializer
+    view_name = 'nodes:node-contributor-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -696,8 +695,8 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
 
 # TODO: Support creating registrations
-class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
-    """Node Registrations.
+class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+    """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
 
@@ -752,6 +751,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationSerializer
+    view_name = 'nodes:node-registrations'
 
     # overrides ListAPIView
     # TODO: Filter out retractions by default
@@ -766,7 +766,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
+class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -845,6 +845,7 @@ class NodeChildrenList(bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilte
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
     )
+    view_name = 'nodes:node-children'
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
     required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
@@ -885,7 +886,7 @@ class NodeChildrenList(bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilte
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
-class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
+class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -951,6 +952,7 @@ class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreate
     model_class = Pointer
 
     serializer_class = NodeLinksSerializer
+    view_name = 'nodes:node-pointers'
 
     def get_queryset(self):
         return [
@@ -979,8 +981,7 @@ class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreate
         res['is_relationship'] = True
         return res
 
-
-class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
+class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixin):
     """Node Link details. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -1032,6 +1033,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
+    view_name = 'nodes:node-pointer-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -1058,7 +1060,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
+class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
     """Files attached to a node for a given provider. *Read-only*.
 
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
@@ -1235,7 +1237,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
                         "resource": {node_id},        // defaults to current {node_id}
                         "provider": {provider}        // defaults to current {provider}
                        }
-        Succes:        200 OK + new entity representation
+        Success:        200 OK + new entity representation
 
     Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for
     the `action` body parameters.  The `path` parameter is also required and should be the OSF `path` attribute of the
@@ -1287,6 +1289,8 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
+    view_name = 'nodes:node-files'
+
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
@@ -1305,7 +1309,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
         return self.get_queryset_from_request()
 
 
-class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
+class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -1317,6 +1321,7 @@ class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+    view_name = 'nodes:node-file-detail'
 
     def get_object(self):
         fobj = self.fetch_from_waterbutler()
@@ -1342,7 +1347,7 @@ class NodeProvider(object):
         self.pk = node._id
 
 
-class NodeProvidersList(generics.ListAPIView, NodeMixin):
+class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """List of storage providers enabled for this node. *Read-only*.
 
     Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
@@ -1466,6 +1471,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = NodeProviderSerializer
+    view_name = 'nodes:node-providers'
 
     def get_provider_item(self, provider):
         return NodeProvider(provider, self.get_node())
@@ -1480,7 +1486,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         ]
 
 
-class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
+class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     """List of comments on a node. *Writeable*.
 
     Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the
@@ -1557,6 +1563,7 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentSerializer
+    view_name = 'nodes:node-comments'
 
     ordering = ('-date_created', )  # default ordering
 

@@ -8,6 +8,7 @@ from website.files.models import FileVersion
 
 from api.base.permissions import PermissionWithGetter
 from api.base.utils import get_object_or_error
+from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
@@ -34,7 +35,7 @@ class FileMixin(object):
         return obj.wrapped()
 
 
-class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
+class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     """Details about files and folders. *Writeable*.
 
     Welcome to the Files API.  Brace yourself, things are about to get *weird*.
@@ -280,6 +281,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileDetailSerializer
+    view_name = 'files:file-detail'
 
     def get_node(self):
         return self.get_file().node
@@ -289,7 +291,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         return self.get_file()
 
 
-class FileVersionsList(generics.ListAPIView, FileMixin):
+class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
 
     Paginated list of file versions, ordered by the date each version was created/modified.
@@ -344,6 +346,7 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileVersionSerializer
+    view_name = 'files:file-versions'
 
     def get_queryset(self):
         return self.get_file().versions
@@ -353,7 +356,7 @@ def node_from_version(request, view, obj):
     return view.get_file(check_permissions=False).node
 
 
-class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
+class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     """Details about a specific file version. *Read-only*.
 
     A specific version of an uploaded file.  Note that the version is tied to the id/path, so two versions of the same
@@ -402,6 +405,7 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileVersionSerializer
+    view_name = 'files:version-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):

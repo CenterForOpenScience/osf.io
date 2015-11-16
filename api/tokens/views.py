@@ -13,13 +13,14 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
+from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.tokens.serializers import ApiOAuth2PersonalTokenSerializer
 
 from website.models import ApiOAuth2PersonalToken
 
 
-class TokenList(generics.ListCreateAPIView, ODMFilterMixin):
+class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """
     Get a list of personal access tokens that the user has registered
     """
@@ -55,7 +56,7 @@ class TokenList(generics.ListCreateAPIView, ODMFilterMixin):
         serializer.save()
 
 
-class TokenDetail(generics.RetrieveUpdateDestroyAPIView):
+class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     """
     Get information about a specific personal access token that the user has registered
 
