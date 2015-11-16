@@ -132,7 +132,6 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         return nodes
 
 
-
 class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
     """Node Registrations.
 
