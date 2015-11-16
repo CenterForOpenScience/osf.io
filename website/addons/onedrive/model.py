@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 
-# from OneDriveSDK
+from flask import abort, request
+
 import onedrivesdk
 from onedrivesdk.helpers import GetAuthCodeServer
 
@@ -45,19 +46,25 @@ class Onedrive(ExternalProvider):
         """
 
         logger.error('Onedrive::handle_callback')
-        client = OnedriveClient(CredentialsV2(
-            response['access_token'],
-            response['refresh_token'],
-            settings.ONEDRIVE_KEY,
-            settings.ONEDRIVE_SECRET,
-        ))
-
-        about = client.get_user_info()
+        logger.error('Onedrive::response' + repr(response))
+        code = request.args.get('code')
+                
+        #raise ValueError('lets stop here, code:' + code)
+#         client = OnedriveClient(CredentialsV2(
+#             response['access_token'],
+#             response['refresh_token'],
+#             settings.ONEDRIVE_KEY,
+#             settings.ONEDRIVE_SECRET,
+#         ))
+# 
+#         about = client.get_user_info()
 
         return {
-            'provider_id': about['id'],
-            'display_name': about['name'],
-            'profile_url': 'https://app.onedrive.com/profile/{0}'.format(about['id'])
+            'user_id': response['user_id'],
+            'provider_id': response['user_id'],
+            'code': code,
+            #'display_name': response['name'],
+            'profile_url': 'https://app.onedrive.com/profile/{0}'.format(response['user_id'])
         }
 
 class OnedriveUserSettings(AddonOAuthUserSettingsBase):
