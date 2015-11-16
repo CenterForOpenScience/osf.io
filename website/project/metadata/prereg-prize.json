@@ -1,6 +1,6 @@
 {
     "name": "Prereg Challenge",
-    "version": 1,
+    "version": 2,
     "flags": {
         "isApproved": false,
         "isPendingReview": false,

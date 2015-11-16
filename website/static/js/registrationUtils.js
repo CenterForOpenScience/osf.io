@@ -1111,7 +1111,7 @@ RegistrationEditor.prototype.save = function() {
  */
 RegistrationEditor.prototype.makeContributorsRequest = function() {
     var self = this;
-    var contributorsUrl = window.contextVars.node.urls.api + 'contributors_abbrev/';
+    var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
     return $.getJSON(contributorsUrl);
 };
 /**
@@ -1121,7 +1121,7 @@ RegistrationEditor.prototype.getContributors = function() {
     var self = this;
     return self.makeContributorsRequest()
         .then(function(data) {
-            return $.map(data.contributors, function(c) { return c.user_fullname; });
+            return $.map(data.contributors, function(c) { return c.fullname; });
         }).fail(function() {
             $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
                        'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
