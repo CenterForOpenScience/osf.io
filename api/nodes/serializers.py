@@ -89,8 +89,8 @@ class NodeSerializer(JSONAPISerializer):
     parent = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
                                               lookup_url_kwarg='node_id'))
 
-    registrations = HideIfRegistration(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
-                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}))
+    registrations = DevOnly(HideIfRegistration(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
+                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})))
 
     forked_from = HideIfRetraction(JSONAPIHyperlinkedIdentityField(
         view_name='nodes:node-detail',
