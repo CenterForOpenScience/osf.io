@@ -327,14 +327,21 @@ class NodeLinksSerializer(JSONAPISerializer):
         user = request.user
         auth = Auth(user)
         node = self.context['view'].get_node()
-        pointer_node = Node.load(validated_data['_id'])
-        if not pointer_node:
-            raise exceptions.NotFound('Node not found.')
+        target_node_id = validated_data['_id']
+        pointer_node = Node.load(target_node_id)
+        if not pointer_node or pointer_node.is_folder:
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/node_links/data/id'},
+                detail='Target Node \'{}\' not found.'.format(target_node_id)
+            )
         try:
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
         except ValueError:
-            raise exceptions.ValidationError('Node link to node {} already in list'.format(pointer_node._id))
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/node_links/data/id'},
+                detail='Target Node \'{}\' already pointed to by \'{}\'.'.format(target_node_id, node._id)
+            )
 
     def update(self, instance, validated_data):
         pass
