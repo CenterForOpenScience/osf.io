@@ -47,7 +47,7 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
 
 from tests.base import (
     OsfTestCase,
@@ -4651,7 +4651,7 @@ class TestDraftRegistrationViews(OsfTestCase):
         ensure_schemas()
         self.meta_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 1)
+            Q('schema_version', 'eq', 2)
         )
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
@@ -4694,6 +4694,19 @@ class TestDraftRegistrationViews(OsfTestCase):
 
         assert_equal(res.status_code, http.ACCEPTED)
         assert_equal(mock_register_draft.call_args[0][0]._id, self.draft._id)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
+    def test_register_template_page_backwards_comptability(self):
+        reg = self.draft.register(
+            auth=Auth(self.user),
+            save=True
+        )
+        url = reg.web_url_for(
+            'node_register_template_page',
+            metaschema_id=_name_to_id(self.meta_schema.name)
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
 
     @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
     def test_register_template_make_public_creates_pending_registration(self):
