@@ -49,14 +49,14 @@ class RegistrationSerializer(NodeSerializer):
     comments = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-comments', lookup_field='pk', lookup_url_kwarg='node_id',
                                                link_type='related', meta={'unread': 'get_unread_comments_count'}))
 
-    node_links = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
+    node_links = DevOnly(HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-pointers', lookup_field='pk', link_type='related',
+                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})))
 
     parent = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
                                               lookup_url_kwarg='node_id'))
 
-    registrations = (DevOnly(HideIfRegistration(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-registrations', lookup_field='pk', link_type='related',
-                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}))))
+    registrations = DevOnly(HideIfRegistration(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-registrations', lookup_field='pk', link_type='related',
+                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})))
 
     forked_from = HideIfRetraction(JSONAPIHyperlinkedIdentityField(
         view_name='nodes:node-detail',

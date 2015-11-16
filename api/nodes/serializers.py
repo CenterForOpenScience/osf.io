@@ -80,8 +80,8 @@ class NodeSerializer(JSONAPISerializer):
     files = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
                                              link_type='related'))
 
-    node_links = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
+    node_links = DevOnly(HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
+                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})))
 
     comments = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-comments', lookup_field='pk', lookup_url_kwarg='node_id',
                                                link_type='related', meta={'unread': 'get_unread_comments_count'}))
