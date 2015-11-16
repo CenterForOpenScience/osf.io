@@ -5,7 +5,8 @@ import httplib as http
 
 import pymongo
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
+from modularodm.query import QueryBase
+from modularodm.exceptions import ValidationValueError, NoResultsFound, MultipleResultsFound
 
 from framework.exceptions import HTTPError
 

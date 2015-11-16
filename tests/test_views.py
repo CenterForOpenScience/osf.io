@@ -47,6 +47,7 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
 
 from tests.base import (
     OsfTestCase,
@@ -4910,14 +4911,14 @@ class TestDraftRegistrationViews(OsfTestCase):
 
     def test_get_metaschemas(self):
         url = '/api/v1/project/drafts/schemas/'
-        res = self.app.get(url).json
-        schema_names = database['metaschema'].distinct('name')
-        assert_equal(len(res['meta_schemas']), len(schema_names))
-        url = '/api/v1/project/drafts/schemas/?include=all'
-
         res = self.app.get(url)
         assert_equal(res.status_code, http.OK)
-        assert_equal(len(res.json['meta_schemas']), MetaSchema.find().count())
+        assert_equal(len(res.json['meta_schemas']), len(ACTIVE_META_SCHEMAS))
+
+        url = '/api/v1/project/drafts/schemas/?include=all'
+        res = self.app.get(url)
+        assert_equal(res.status_code, http.OK)
+        assert_equal(len(res.json['meta_schemas']), 8)
 
     def test_node_register_page_not_registration_redirects(self):
         url = self.node.web_url_for('node_register_page')
