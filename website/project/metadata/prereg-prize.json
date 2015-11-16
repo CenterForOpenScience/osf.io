@@ -36,7 +36,7 @@
         }, {
             "qid": "q2",
             "nav": "Authors",
-            "type": "object",
+            "type": "string",
             "title": "Authorship",
             "description": "The first author of the pre-registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.",
             "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
@@ -64,7 +64,6 @@
     }, {
         "id": "page2",
         "title": "Sampling Plan",
-        "type": "object",
         "description": "In this section we’ll ask you to describe how you plan to collect samples, as well as the number of samples you plan to collect and your rationale for this decision. Please keep in mind that the data described in this section should be the actual data used for analysis, so if you are using a subset of a larger dataset, please describe the subset that will actually be used in your study.",
         "questions": [{
             "qid": "q5",

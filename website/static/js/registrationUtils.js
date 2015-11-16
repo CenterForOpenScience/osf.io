@@ -169,16 +169,33 @@ var Question = function(questionSchema, data) {
         _value = self.data.value || null;
     }
     if (self.type === 'choose' && self.format === 'multiselect') {
-          self.value = ko.observableArray(_value);
+        self.value = ko.observableArray(_value);
+    }
+    else if (self.type === 'object') {
+        $.each(self.properties, function(prop, field) {
+            field.qid = field.id;
+            self.properties[prop] = new Question(field, self.data[prop]);
+        });
+        self.value = ko.computed({
+            read: function() {
+                var value = {};
+                $.each(self.properties, function(name, prop) {
+                    value[name] = {
+                        value: prop.value(),
+                        comments: prop.comments()
+                    };
+                });
+                return value;
+            },
+            deferred: true
+        });
     }
     else {
-          self.value = ko.observable(_value);
+        self.value = ko.observable(_value);
     }
-
     self.setValue = function(val) {
         self.value(val);
     };
-
 
     if (self.required) {
         self.value.extend({
@@ -215,15 +232,10 @@ var Question = function(questionSchema, data) {
             if (self.type === 'object') {
                 var ret = true;
                 $.each(self.properties, function(_, subQuestion) {
-                    if(subQuestion.type !== 'osf-upload') {
-                        var value = subQuestion.value();
-                        if (Boolean(value === true || (value && value.length))) {
-                            ret = false;
-                            return;
-                        }
-                    }
-                    else {
-                        // TODO
+                    var value = subQuestion.value();
+                    if (Boolean(value === true || (value && value.length))) {
+                        ret = false;
+                        return;
                     }
                 });
                 return ret;
@@ -234,20 +246,6 @@ var Question = function(questionSchema, data) {
         },
         deferEvaluation: true
     });
-
-    self.init();
-};
-/**
- * Maps 'object' type Questions's properties to sub-Questions
- **/
-Question.prototype.init = function() {
-    var self = this;
-    if (self.type === 'object') {
-        $.each(self.properties, function(prop, field) {
-            field.qid = field.id;
-            self.properties[prop] = new Question(field, self.data[prop]);
-        });
-    }
 };
 /**
  * Creates a new comment from the current value of Question.nextComment and clears nextComment
@@ -1087,21 +1085,10 @@ RegistrationEditor.prototype.save = function() {
     $.each(metaSchema.pages, function(i, page) {
         $.each(page.questions, function(_, question) {
             var qid = question.id;
-            if (question.type === 'object') {
-                var value = {};
-                $.each(question.properties, function(prop, subQuestion) {
-                    value[prop] = {
-                        value: subQuestion.value(),
-                        comments: ko.toJS(subQuestion.comments())
-                    };
-                });
-                data[qid] = value;
-            } else {
-                data[qid] = {
-                    value: question.value(),
-                    comments: ko.toJS(question.comments())
-                };
-            }
+            data[qid] = {
+                value: question.value(),
+                comments: ko.toJS(question.comments())
+            };
         });
     });
     var request;
@@ -1114,7 +1101,6 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
-    self.lastSaveRequest = request;
     request.fail(function() {
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
