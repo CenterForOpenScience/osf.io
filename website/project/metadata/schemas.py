@@ -29,4 +29,5 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('brandt-postcomp-1.json')),
     ensure_schema_structure(from_json('brandt-postcomp-2.json')),
     ensure_schema_structure(from_json('confirmatory-general-1.json')),
+    ensure_schema_structure(from_json('egap-project-1.json')),
 ]
