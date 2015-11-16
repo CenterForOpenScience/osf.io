@@ -74,9 +74,9 @@
                   </div>
                 </div>
                 <small>
-                <p>initiated by: <span data-bind="text: initiator.fullname"></span>
-                <p>started: <span data-bind="text: initiated"></span></p>
-                <p>last updated: <span data-bind="text: updated"></span></p>
+                <p>Initiated by: <span data-bind="text: initiator.fullname"></span>
+                <p>Started: <span data-bind="text: initiated"></span></p>
+                <p>Last updated: <span data-bind="text: updated"></span></p>
                 <span data-bind="if: requiresApproval">
                     <div data-bind="if: isApproved">
                         <div class="draft-status-badge bg-success"> Approved</div>
@@ -98,10 +98,6 @@
                   </div>
                   <div class="col-md-1">
                      <a class="btn btn-success" data-bind="attr.href: urls.register_page,
-                                                           tooltip: {
-                                                             placement: 'top',
-                                                             title: isApproved ? 'Finalize this draft' : 'This draft must be approved before it can be registered'
-                                                           },
                                                            css: {'disabled': !isApproved}">Register</a>
                   </div>
                 </div>
@@ -127,7 +123,7 @@
     <span data-bind="foreach: schemas">
     <div class="radio">
         <label>
-          <input type="radio" name="selectedDraftSchema" 
+          <input type="radio" name="selectedDraftSchema"
                  data-bind="attr {value: id}, checked: $root.selectedSchemaId" />
           {{ schema.title }}
           <!-- ko if: schema.description -->
