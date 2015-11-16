@@ -35,7 +35,7 @@ from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
-from website.project.metadata.utils import serialize_meta_schema
+from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
@@ -749,7 +749,7 @@ def _view_project(node, auth, primary=False):
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id,
             'registered_meta': node.registered_meta,
-            'registered_schema': serialize_meta_schema(node.registered_schema),
+            'registered_schemas': serialize_meta_schemas(node.registered_schema),
             'registration_count': len(node.node__registrations),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',

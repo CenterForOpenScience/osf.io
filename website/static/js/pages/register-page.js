@@ -92,7 +92,7 @@ $(function() {
 
         var metaDataViewModel = {
             metaSchema: metaSchema,
-            schemaData: ctx.node.registrationMetaData
+            schemaData: ctx.node.registrationMetaData[metaSchema.id] || {}
         };
         $osf.applyBindings(metaDataViewModel, '#registrationMetaDataScope');
     }

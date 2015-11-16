@@ -22,6 +22,7 @@ from website.project.decorators import (
 from website import language
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 from website.util import rapply
@@ -131,36 +132,6 @@ def get_draft_registrations(auth, node, *args, **kwargs):
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
     }, http.OK
 
-@must_have_permission(ADMIN)
-@must_be_valid_project
-def create_draft_registration(auth, node, *args, **kwargs):
-    """Create a new draft registration and return it
-
-    :return: serialized draft registration
-    :rtype: dict
-    """
-
-    data = request.get_json()
-
-    schema_name = data.get('schema_name')
-    if not schema_name:
-        raise HTTPError(http.BAD_REQUEST)
-
-    schema_version = data.get('schema_version', 1)
-    schema_data = data.get('schema_data', {})
-    schema_data = rapply(schema_data, strip_html)
-
-    meta_schema = get_schema_or_fail(
-        Q('name', 'eq', schema_name) &
-        Q('schema_version', 'eq', schema_version)
-    )
-    draft = node.create_draft_registration(
-        user=auth.user,
-        schema=meta_schema,
-        data=schema_data,
-        save=True,
-    )
-    return serialize_draft_registration(draft, auth), http.CREATED
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
@@ -171,7 +142,6 @@ def new_draft_registration(auth, node, *args, **kwargs):
     :rtype: flask.redirect
     :raises: HTTPError
     """
-
     data = request.values
 
     schema_name = data.get('schema_name')
@@ -186,8 +156,6 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
     schema_version = data.get('schema_version', 1)
 
-    # can return 404 if the schema does not exist
-    # can return 400 if the schema is in the DB twice (should never happen)
     meta_schema = get_schema_or_fail(
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', int(schema_version))
@@ -281,11 +249,19 @@ def get_metaschemas(*args, **kwargs):
     if include == 'latest':
         schema_names = meta_schema_collection.distinct('name')
         for name in schema_names:
-            meta_schema_set = MetaSchema.find(Q('name', 'eq', name))
-            meta_schemas = meta_schemas + [s for s in meta_schema_set.sort('-schema_version').limit(1)]
+            meta_schema_set = MetaSchema.find(
+                Q('name', 'eq', name) &
+                Q('schema_version', 'eq', 2)
+            )
+            meta_schemas = meta_schemas + [s for s in meta_schema_set]
     else:
         meta_schemas = MetaSchema.find()
-
+    meta_schemas = [
+        schema
+        for schema in meta_schemas
+        if schema.name in ACTIVE_META_SCHEMAS
+    ]
+    meta_schemas.sort(key=lambda a: ACTIVE_META_SCHEMAS.index(a.name))
     return {
         'meta_schemas': [
             serialize_meta_schema(ms) for ms in meta_schemas[:count]

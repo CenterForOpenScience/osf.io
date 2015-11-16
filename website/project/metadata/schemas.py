@@ -1,9 +1,11 @@
 import os
 import json
 
-def _name_to_id(name):
-    return ' '.join(name).split('_')
+def _id_to_name(id):
+    return ' '.join(id.split('_'))
 
+def _name_to_id(name):
+    return '_'.join(name.split(' '))
 
 def ensure_schema_structure(schema):
     schema['pages'] = schema.get('pages', [])
@@ -19,11 +21,20 @@ def from_json(fname):
 
 OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('osf-open-ended-1.json')),
-    ensure_schema_structure(from_json('osf-standard-1.json')),
-    ensure_schema_structure(from_json('brandt-prereg-1.json')),
-    ensure_schema_structure(from_json('brandt-postcomp-1.json')),
     ensure_schema_structure(from_json('osf-open-ended-2.json')),
+    ensure_schema_structure(from_json('osf-standard-1.json')),
     ensure_schema_structure(from_json('osf-standard-2.json')),
+    ensure_schema_structure(from_json('brandt-prereg-1.json')),
     ensure_schema_structure(from_json('brandt-prereg-2.json')),
+    ensure_schema_structure(from_json('brandt-postcomp-1.json')),
     ensure_schema_structure(from_json('brandt-postcomp-2.json')),
+    ensure_schema_structure(from_json('confirmatory-general-2.json')),
+    ensure_schema_structure(from_json('egap-project-2.json')),
 ]
+
+ACTIVE_META_SCHEMAS = (
+    'Open-Ended Registration',
+    'OSF-Standard Pre-Data Collection Registration',
+    'Replication Recipe (Brandt et al., 2013): Pre-Registration',
+    'Replication Recipe (Brandt et al., 2013): Post-Completion',
+)

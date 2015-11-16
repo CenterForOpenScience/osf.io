@@ -1,10 +1,10 @@
 from framework import utils
 
-
 def serialize_meta_schema(meta_schema):
     if not meta_schema:
         return None
     return {
+        'id': meta_schema._id,
         'schema_name': meta_schema.name,
         'schema_version': meta_schema.schema_version,
         'schema': meta_schema.schema,
@@ -13,6 +13,8 @@ def serialize_meta_schema(meta_schema):
         'messages': meta_schema.messages
     }
 
+def serialize_meta_schemas(meta_schemas):
+    return [serialize_meta_schema(schema) for schema in (meta_schemas or [])]
 
 def serialize_draft_registration(draft, auth=None):
     from website.profile.utils import serialize_user  # noqa
