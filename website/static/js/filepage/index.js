@@ -342,14 +342,21 @@ var FileViewPage = {
         };
 
         $.fn.editable.defaults.mode = 'inline';
-        if(self.canEdit() // && self.file.provider == 'osfstorage'
+        if(
+            self.canEdit() &&
+            (
+                self.file.provider === 'osfstorage' ||
+                self.file.provider === 'dataverse' ||
+                self.file.provider === 'box' ||
+                self.file.provider === 'figshare'
+            )
         ) {
             var $fileName = $('#fileName');
             var conflict = 'warn';
-            var prePath = self.file.path.split("/").slice(1, -1);
-            var path = "/";
+            var prePath = self.file.path.split('/').slice(1, -1);
+            var path = '/';
             if(prePath.length > 0) {
-                path = "/" + prePath.join("/") + "/";
+                path = '/' + prePath.join('/') + '/';
             }
             var to = {
                 data: {
@@ -386,7 +393,7 @@ var FileViewPage = {
                     }
                 },
                 success: function(response, value) {
-                    //window.location.reload();
+                    window.location.reload();
                 },
                 error: function(response) {
                     var code = response.responseJSON.code;
