@@ -23,6 +23,7 @@ from website.oauth.models import ExternalProvider
 
 logger = logging.getLogger(__name__)
 
+logging.getLogger('onedrive1').setLevel(logging.WARNING)
 
 class Onedrive(ExternalProvider):
     name = 'Onedrive'
@@ -34,13 +35,16 @@ class Onedrive(ExternalProvider):
     auth_url_base = settings.ONEDRIVE_OAUTH_AUTH_ENDPOINT
     callback_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
     auto_refresh_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
-    default_scopes = ['wl.signin wl.offline_access onedrive.readwrite']
+    default_scopes = ['wl.signin onedrive.readwrite']
 
-    def handle_callback(self, response):
+    
+
+    def handle_callback(self, response):        
         """View called when the Oauth flow is completed. Adds a new OnedriveUserSettings
         record to the user and saves the user's access token and account info.
         """
 
+        logger.error('Onedrive::handle_callback')
         client = OnedriveClient(CredentialsV2(
             response['access_token'],
             response['refresh_token'],

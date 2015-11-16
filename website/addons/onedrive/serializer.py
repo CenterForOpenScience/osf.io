@@ -1,3 +1,5 @@
+import logging
+
 from website.addons.base.serializer import OAuthAddonSerializer
 
 from website.util import api_url_for, web_url_for
@@ -6,6 +8,10 @@ from website.util import api_url_for, web_url_for
 import onedrivesdk
 from onedrivesdk.helpers import GetAuthCodeServer
 
+
+logger = logging.getLogger(__name__)
+
+logging.getLogger('onedrive1').setLevel(logging.WARNING)
 
 class OnedriveSerializer(OAuthAddonSerializer):
 
@@ -27,23 +33,27 @@ class OnedriveSerializer(OAuthAddonSerializer):
 
     @property
     def serialized_urls(self):
+        
+        logger.error('serialized_urls-1')
+        
         ret = self.addon_serialized_urls
         ret.update({'settings': web_url_for('user_addons')})
         return ret
 
     @property
     def addon_serialized_urls(self):
+        logger.error('addon_serialized_urls-1')
         node = self.node_settings.owner
-
+        
         return {
-            'auth': api_url_for('oauth_connect',
-                                service_name='onedrive'),
+            #'auth': api_url_for('oauth_connect',
+             #                   service_name='onedrive'),
             'importAuth': node.api_url_for('onedrive_add_user_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('onedrive_folder_list'),
             'config': node.api_url_for('onedrive_set_config'),
-            'emails': node.api_url_for('onedrive_get_share_emails'),
-            'share': 'https://app.onedrive.com/files/0/f/{0}'.format(self.node_settings.folder_id),
+            #'emails': node.api_url_for('onedrive_get_share_emails'),
+            #'share': 'https://app.onedrive.com/files/0/f/{0}'.format(self.node_settings.folder_id),
             'deauthorize': node.api_url_for('onedrive_remove_user_auth'),
             'accounts': node.api_url_for('onedrive_get_user_settings'),
         }
@@ -53,6 +63,9 @@ class OnedriveSerializer(OAuthAddonSerializer):
         OnedriveNodeSettings record. Provides the return value for the
         onedrive config endpoints.
         """
+        
+        logger.error('addon_serialized_settings-1')
+        
         valid_credentials = True
         user_settings = node_settings.user_settings
         self.node_settings = node_settings
