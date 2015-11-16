@@ -362,6 +362,10 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     If this node is a child node of another node, the parent's canonical endpoint will be available in the
     `parent.links.self.href` key.  Otherwise, it will be null.
 
+    ###Registrations
+
+    List of registrations of the current node.
+
     ##Links
 
         self:  the canonical api endpoint of this node

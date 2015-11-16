@@ -298,7 +298,8 @@ class UserRegistrations(UserNodes):
     registration, meaning additional requests to an individual registration's detail view are not necessary. If the user
     id in the path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to
     see the other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently
-    logged-in user. Retracted registrations will display a limited number of fields.
+    logged-in user. Retracted registrations will display a limited number of fields, namely, title, description,
+    date_created, registration, retracted, date_registered, retraction_justification, and registration supplement.
 
     ##Registration Attributes
 
@@ -316,7 +317,6 @@ class UserRegistrations(UserNodes):
         tags                            array of strings   list of tags that describe the registered node
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered?
-        collection                      boolean            is this registered node a collection of other nodes?
         dashboard                       boolean            is this registered node visible on the user dashboard?
         public                          boolean            has this registration been made publicly-visible?
         retracted                       boolean            has this registration been retracted?
@@ -338,6 +338,10 @@ class UserRegistrations(UserNodes):
     ###Registered by
 
     The registration was initiated by this user.
+
+    ###Other Relationships
+
+    See documentation on registered_from detail view.  A registration has many of the same properties as a node.
 
     ##Links
 

@@ -32,9 +32,9 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
     has access.  A retracted registration will display a limited subset of information, namely, title, description,
-    date_created, registration, retracted, date_registered, justification, and registration supplement. All other fields
-    will be displayed as null. Additionally, the only relationships permitted to be accessed for a retraction are the
-    contributors.
+    date_created, registration, retracted, date_registered, retraction_justification, and registration supplement. All
+    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a retraction
+    are the contributors.
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
     registrations's detail view are not necessary.  Unregistered nodes cannot be accessed through this endpoint.
