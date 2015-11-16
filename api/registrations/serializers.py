@@ -22,7 +22,7 @@ class RegistrationSerializer(NodeSerializer):
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
         help_text='Whether this registration has been retracted.')
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    justification = ser.CharField(source='retraction.justification', read_only=True)
+    retraction_justification = ser.CharField(source='retraction.justification', read_only=True)
     pending_retraction = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
         help_text='Is this registration pending retraction?'))
     pending_registration_approval = HideIfRetraction(ser.BooleanField(source='sanction.pending_approval', read_only=True,
