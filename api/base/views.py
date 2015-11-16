@@ -205,8 +205,34 @@ def root(request, format=None):
     When a request fails for whatever reason, the OSF API will return an appropriate HTTP error code and include a
     descriptive error in the body of the response.  The response body will be an object with a key, `errors`, pointing
     to an array of error objects.  Generally, these error objects will consist of a `detail` key with a detailed error
-    message, but may include additional information in accordance with the [JSON-API error
-    spec](http://jsonapi.org/format/1.0/#error-objects).
+    message and a `source` object that may contain a field `pointer` that is a [JSON
+    Pointer](https://tools.ietf.org/html/rfc6901) to the error-causing attribute. The `error` objects may include
+    additional information in accordance with the [JSON-API error spec](http://jsonapi.org/format/1.0/#error-objects).
+
+    ####Example: Error response from an incorrect create node request
+
+        {
+          "errors": [
+            {
+              "source": {
+                "pointer": "/data/attributes/category"
+              },
+              "detail": "This field is required."
+            },
+            {
+              "source": {
+                "pointer": "/data/type"
+              },
+              "detail": "This field may not be null."
+            },
+            {
+              "source": {
+                "pointer": "/data/attributes/title"
+              },
+              "detail": "This field is required."
+            }
+          ]
+        }
 
     ##OSF Enum Fields
 
