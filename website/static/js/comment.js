@@ -148,7 +148,9 @@ BaseComment.prototype.fetch = function() {
         {'isCors': true});
     request.done(function(response) {
         var index = 0;
-        updateCommentUserData(response, index, self);
+        if (response.data.length !== 0) {
+            updateCommentUserData(response, index, self);
+        }
         setUnreadCommentCount(self);
         deferred.resolve(self.comments());
         self._loaded = true;
@@ -157,21 +159,31 @@ BaseComment.prototype.fetch = function() {
 };
 
 var updateCommentUserData = function(commentsData, index, self) {
+    var commentJSON = commentsData.data[index];
+    if (index === -1) {
+        commentJSON = commentsData.data;
+    }
     var userRequest = osfHelpers.ajaxJSON(
         'GET',
-        commentsData.data[index].relationships.user.links.related.href,
+        commentJSON.relationships.user.links.related.href,
         {'isCors': true});
     userRequest.done(function(response) {
-        commentsData.data[index].relationships.user = response;
-        if (index !== commentsData.data.length - 1) {
-            updateCommentUserData(commentsData, (index + 1), self);
+        if (index === -1) {
+            commentsData.data.relationships.user = response;
+            self.comments.unshift(new CommentModel(commentsData.data, self, self.$root));
         }
         else {
-            self.comments(
-                ko.utils.arrayMap(commentsData.data, function(comment) {
-                    return new CommentModel(comment, self, self.$root);
-                })
-            );
+            commentsData.data[index].relationships.user = response;
+            if (index !== commentsData.data.length - 1) {
+                updateCommentUserData(commentsData, (index + 1), self);
+            }
+            else {
+                self.comments(
+                    ko.utils.arrayMap(commentsData.data, function(comment) {
+                        return new CommentModel(comment, self, self.$root);
+                    })
+                );
+            }
         }
     });
 };
@@ -220,7 +232,7 @@ BaseComment.prototype.submitReply = function() {
         self.cancelReply();
         self.replyContent(null);
         self.onSubmitSuccess(response);
-        updateCommentUserData(response.data, self);
+        updateCommentUserData(response, -1, self);
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
