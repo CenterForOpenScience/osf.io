@@ -6,6 +6,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from website.project.model import Q, Node
 from api.base import permissions as base_permissions
 
+from api.base.serializers import HideIfRetraction
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer
@@ -108,10 +109,24 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         query = base_query & permission_query
         return query
 
+    def is_blacklisted(self, query):
+        for query_param in query.nodes:
+            if isinstance(self.serializer_class._declared_fields.get(query_param.attribute), HideIfRetraction):
+                return True
+        return False
+
     # overrides ListAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
-        return Node.find(query)
+        blacklisted = self.is_blacklisted(query)
+        nodes = Node.find(query)
+        # If attempting to filter on a blacklisted field, exclude retractions.
+        if blacklisted:
+            non_retracted_list = [node._id for node in nodes if not node.is_retracted]
+            non_retracted_nodes = Node.find(Q('_id', 'in', non_retracted_list))
+            return non_retracted_nodes
+        return nodes
+
 
 
 class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
@@ -160,7 +175,7 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
 
     The registration was initiated by this user.
 
-     ###Other Relationships
+    ###Other Relationships
 
     See documentation on registered_from detail view.  A registration has many of the same properties as a node.
 
