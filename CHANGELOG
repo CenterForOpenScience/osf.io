@@ -2,7 +2,34 @@
 Changelog
 *********
 
-0.54.0 (2015-10-22)
+0.56.0 (2015-11-13)
+===================
+
+- APIv2: Add collections endpoints (staging/dev environments only).
+- APIv2: Add commenting endpoints.
+- APIv2: Add support for bulk operations using JSON API's Bulk Extension (experimental).
+- APIv2: Fix date_modified field for all fields.
+- UI fixes.
+
+0.55.0 (2015-11-04)
+===================
+
+- File Check-out/Check-in.
+- Add tags to files.
+- Search files by name and tags.
+- Add licenses to projects.
+- Multiple Google Drive accounts can be associated with a user account.
+- Redesign of OSF for Meetings landing page.
+- APIv2: Comparison operators for filtering.
+
+Migrations
+----------
+
+* scripts.migration.migrate_index_for_existing_files
+* scripts.googledrive.migrate_to_external_account
+* scripts.googledrive.connect_external_accounts
+
+0.54.0 (2015-10-25)
 ===================
 
 - Add engagement emails.

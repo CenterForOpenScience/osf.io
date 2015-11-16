@@ -245,13 +245,13 @@ def create_fake_user():
     email = fake.email()
     name = fake.name()
     parsed = utils.impute_names(name)
-    user = UserFactory.build(username=email, fullname=name,
-                             is_registered=True, is_claimed=True,
-                             verification_key=security.random_string(15),
-                             date_registered=fake.date_time(),
-                             emails=[email],
-                             **parsed
-    )
+    user = UserFactory(username=email, fullname=name,
+                       is_registered=True, is_claimed=True,
+                       verification_key=security.random_string(15),
+                       date_registered=fake.date_time(),
+                       emails=[email],
+                       **parsed
+                   )
     user.set_password('faker123')
     user.save()
     logger.info('Created user: {0} <{1}>'.format(user.fullname, user.username))
@@ -274,7 +274,7 @@ def parse_args():
 def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name):
     auth = Auth(user=creator)
     project_title = name if name else fake.science_sentence()
-    project = ProjectFactory.build(title=project_title, description=fake.science_paragraph(), creator=creator)
+    project = ProjectFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
     project.set_privacy(privacy)
     for _ in range(n_users):
         contrib = create_fake_user()
