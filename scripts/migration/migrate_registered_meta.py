@@ -54,13 +54,9 @@ def main(dev=False, _db=None):
     scripts_utils.add_file_logger(logger, __file__)
     logger.info("Iterating over all registrations")
 
-    # nullify old registered_schema refs if set
-    MetaSchema.remove(
-        Q('schema_version', 'eq', 1)
-    )
-    ensure_schemas()
     # convert registered_schema to list field
     prepare_nodes()
+    ensure_schemas()
 
     node_documents = _db['node'].find({'is_registration': True})
     for node in node_documents:
