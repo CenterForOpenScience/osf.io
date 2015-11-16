@@ -8,14 +8,12 @@ import sys
 import logging
 
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import database as db
-nodes = db['node']
 from framework.mongo.utils import from_mongo
 from framework.transactions.context import TokuTransaction
 
-from website.models import Node, MetaSchema
+from website.models import MetaSchema
 from website.app import init_app
 from website.project.model import ensure_schemas
 from website.project.metadata.schemas import _id_to_name
@@ -25,24 +23,10 @@ from scripts import utils as scripts_utils
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-def verify_migration(nodes, dev):
-    for node in nodes:
-        try:
-            assert_is_not_none(node.registered_meta)
-            assert_is_not_none(node.registered_schema)
-            schema = node.registered_schema
-            assert_greater(schema.version, 1)
-        except AssertionError as e:
-            if dev:
-                logger.info("Node: {0} has no associated registered_schema.".format(node._id))
-            else:
-                raise e
-
-def migrate_non_registered_nodes():
-    nodes.update(
-        {
-            'registered_schema': None
-        },
+def prepare_nodes(_db=None):
+    _db = _db or db
+    _db['node'].update(
+        {},
         {
             '$set': {
                 'registered_schema': []
@@ -51,72 +35,76 @@ def migrate_non_registered_nodes():
         multi=True
     )
 
-def get_old_registered_nodes():
-    return nodes.find({'is_registration': True})
+def from_json_or_fail(schema):
+    # Unstringify stored metadata
+    try:
+        schema = json.loads(schema) if schema else {}
+    except TypeError as e:
+        if isinstance(schema, dict):
+            pass
+        else:
+            raise e
+    return schema
 
-def main(dry_run, dev=False):
+def main(dev=False, _db=None):
+    _db = _db or db
     init_app(routes=False)
     count = 0
     skipped = 0
-    if not dry_run:
-        scripts_utils.add_file_logger(logger, __file__)
-        logger.info("Iterating over all registrations")
+    scripts_utils.add_file_logger(logger, __file__)
+    logger.info("Iterating over all registrations")
 
-    # nullify old registered_schema refs
-    MetaSchema.remove(
-        Q('schema_version', 'eq', 1)
-    )
+    # convert registered_schema to list field
+    prepare_nodes()
     ensure_schemas()
 
-    node_documents = get_old_registered_nodes()
+    node_documents = _db['node'].find({'is_registration': True})
     for node in node_documents:
         registered_schemas = []
         registered_meta = {}
         schemas = node['registered_meta']
         if not schemas:
             logger.info('Node: {0} is registered but has no registered_meta'.format(node['_id']))
-            schemas = {}
+            continue
         for schema_id, schema in schemas.iteritems():
             name = _id_to_name(from_mongo(schema_id))
-            # Unstringify stored metadata
-            try:
-                schema = json.loads(schema) if schema else {}
-            except TypeError as e:
-                if isinstance(schema, dict):
-                    pass
-                else:
-                    raise e
+            schema = from_json_or_fail(schema)
             # append matching schema to node.registered_schema
             try:
-                meta_schema = MetaSchema.find_one(
-                    Q('name', 'eq', name) &
-                    Q('schema_version', 'eq', 2)
-                )
-            except NoResultsFound:
-                logger.error('No MetaSchema matching name: {0}, version: {1} found'.format(name, 2))
+                meta_schema = MetaSchema.find(
+                    Q('name', 'eq', name)
+                ).sort('-schema_version')[0]
+            except IndexError as e:
+                logger.error('No MetaSchema matching name: {0} found'.format(name))
                 # Skip over missing schemas
                 skipped += 1
-                continue
+                if dev:
+                    continue
+                else:
+                    import ipdb; ipdb.set_trace()
+                    raise e
             else:
-                registered_meta[meta_schema._id] = schema
-                registered_schemas.append(meta_schema._id)
-        nodes.update(
-            {'_id': node['_id']},
-            {
-                '$set': {
-                    'registered_schema': registered_schemas,
-                    'registered_meta': registered_meta
+                registered_meta[meta_schema._id] = {
+                    key: {
+                        'value': value
+                    }
+                    for key, value in schema.items()
                 }
-            }
+                registered_schemas.append(meta_schema._id)
+        db['node'].update(
+            {'_id': node['_id']},
+            {'$set': {
+                'registered_meta': registered_meta,
+                'registered_schema': registered_schemas
+            }}
         )
         count = count + 1
     logger.info('Done with {0} nodes migrated and {1} nodes skipped.'.format(count, skipped))
-    migrate_non_registered_nodes()
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
     dev = 'dev' in sys.argv
     with TokuTransaction():
-        main(dry_run, dev)
+        main(dev=dev)
         if dry_run:
             raise RuntimeError('Dry run, rolling back transaction.')
