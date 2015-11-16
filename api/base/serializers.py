@@ -251,7 +251,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         Also handles the lookup of nested attributes.
         """
-        bracket_check = lookup_field.partition('<')[-1].rpartition('>')[0]
+        bracket_check = _tpl(lookup_field)
         if bracket_check:
             return bracket_check
         source_attrs = lookup_field.split('.')
