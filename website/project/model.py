@@ -107,7 +107,7 @@ def ensure_schemas(clear=True):
     """
     if clear:
         try:
-            MetaSchema.remove()
+            MetaSchema.remove(remove_all=True)
         except AttributeError:
             if not settings.DEBUG_MODE:
                 raise
