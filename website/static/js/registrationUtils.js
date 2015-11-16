@@ -150,16 +150,6 @@ var Question = function(questionSchema, data) {
     self.id = questionSchema.qid;
 
     self.data = data || {};
-    if ($.isFunction(self.data.value)) {
-        // For subquestions, this could be an observable
-        _value = self.data.value();
-    } else {
-        _value = self.data.value || null;
-    }
-    self.value = ko.observable(_value);
-    self.setValue = function(val) {
-        self.value(val);
-    };
 
     self.title = questionSchema.title || 'Untitled';
     self.nav = questionSchema.nav || 'Untitled';
@@ -171,6 +161,24 @@ var Question = function(questionSchema, data) {
     self.options = questionSchema.options || [];
     self.properties = questionSchema.properties || {};
     self.match = questionSchema.match || '';
+
+    if ($.isFunction(self.data.value)) {
+        // For subquestions, this could be an observable
+        _value = self.data.value();
+    } else {
+        _value = self.data.value || null;
+    }
+    if (self.type === 'choose' && self.format === 'multiselect') {
+          self.value = ko.observableArray(_value);
+    }
+    else {
+          self.value = ko.observable(_value);
+    }
+
+    self.setValue = function(val) {
+        self.value(val);
+    };
+
 
     if (self.required) {
         self.value.extend({
@@ -208,7 +216,8 @@ var Question = function(questionSchema, data) {
                 var ret = true;
                 $.each(self.properties, function(_, subQuestion) {
                     if(subQuestion.type !== 'osf-upload') {
-                        if ((subQuestion.value() || '').trim() === '' ) {
+                        var value = subQuestion.value();
+                        if (Boolean(value === true || (value && value.length))) {
                             ret = false;
                             return;
                         }
@@ -219,7 +228,8 @@ var Question = function(questionSchema, data) {
                 });
                 return ret;
             } else {
-                return (self.value() || '').trim() !== '';
+                var value = self.value();
+                return Boolean(value === true || (value && value.length));
             }
         },
         deferEvaluation: true
@@ -282,6 +292,7 @@ var Page = function(schemaPage, schemaData) {
     var self = this;
     self.questions = ko.observableArray([]);
     self.title = schemaPage.title;
+    self.description = schemaPage.description || '';
     self.id = schemaPage.id;
 
     self.active = ko.observable(false);
@@ -649,7 +660,7 @@ Draft.prototype.submitForReview = function() {
                     className: 'btn-primary',
                     callback: function() {
                         self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
-                    }                    
+                    }
                 }
             }
         });
@@ -708,7 +719,7 @@ var RegistrationEditor = function(urls, editorId) {
         currentPage.active(true);
         History.replaceState({page: self.pages().indexOf(currentPage)});
     });
-    
+
     self.onLastPage = ko.pureComputed(function() {
         return self.currentPage() === self.pages()[self.pages().length - 1];
     });

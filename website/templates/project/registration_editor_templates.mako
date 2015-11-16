@@ -27,13 +27,21 @@
 <script type="text/html" id="choose">
   <span data-bind="template: {data: $data, name: format}"></span>
 </script>
-
-
 <script type="text/html" id="singleselect">
   <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
     <p>
       <input type="radio" data-bind="checked: $parent.value,
                                      value: option"/>
+      <span data-bind="text: option"></span>
+    </p>
+  </div>
+</script>
+<script type="text/html" id="multiselect">
+  <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
+    <p>
+      <input type="checkbox" data-bind="attr.value: option, 
+                                        checked: $parent.value,
+                                        checkedValue: option" />
       <span data-bind="text: option"></span>
     </p>
   </div>
@@ -60,7 +68,7 @@
           <p class="help-block" data-bind="text: description"></p>
           <span data-bind="if: help" class="example-block">
             <a data-bind="click: toggleExample">Show Example</a>
-            <p data-bind="visible: showExample, text: help"></p>
+            <p data-bind="visible: showExample, html: help"></p>
           </span>
           <br />
           <br />
@@ -91,6 +99,13 @@
 </script>
 
 <script type="text/html" id="editor">
+  <span data-bind="if: $data.description">
+    <div class="well">
+      <blockquote>
+        <p data-bind="html: description"></p>
+      </blockquote>
+    </div>
+  </span>
   <div data-bind="foreach: {data: $data.questions, as: 'question'}">
     <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
   </div>

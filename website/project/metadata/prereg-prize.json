@@ -31,7 +31,7 @@
             "format": "text",
             "title": "Title",
             "description": "Provide the working title of your study. It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",
-            "help": "Effect of sugar on brownie tastiness. \n How responses will be evaluated: The title should be a specific and informative description of a project. Vague titles such as 'Fruit fly preregistration plan' are not appropriate.",
+            "help": "Effect of sugar on brownie tastiness. <br /><br />How responses will be evaluated: The title should be a specific and informative description of a project. Vague titles such as 'Fruit fly preregistration plan' are not appropriate.",
             "required": true
         }, {
             "qid": "q2",
@@ -49,7 +49,7 @@
             "format": "textarea",
             "title": "Research Questions",
             "description": "Please list each research question included in this study.",
-            "help": "Though there is strong evidence to suggest that sugar affects taste preferences, the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe to determine if the effect exists in this pastry. \n How responses will be evaluated: The type of submissions for this question will vary widely by discipline, and we cannot determine if the question is worth asking. However, questions that are excessively vague so as to make understanding later sections difficult are not appropriate. For some studies, the research questions and hypotheses are extremely similar, so overlap between this and the subsequent question is expected.",
+            "help": "Though there is strong evidence to suggest that sugar affects taste preferences, the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe to determine if the effect exists in this pastry. <br /><br />How responses will be evaluated: The type of submissions for this question will vary widely by discipline, and we cannot determine if the question is worth asking. However, questions that are excessively vague so as to make understanding later sections difficult are not appropriate. For some studies, the research questions and hypotheses are extremely similar, so overlap between this and the subsequent question is expected.",
             "required": true
         }, {
             "qid": "q4",
@@ -58,35 +58,29 @@
             "format": "textarea",
             "title": "Hypotheses",
             "description": "For each of the research questions listed in the previous section, provide one or multiple specific and testable hypotheses. Please state if the hypotheses are directional or non-directional. If directional, state the direction. A predicted effect is also appropriate here.",
-            "help": "If taste affects preference, then mean preference indices will be higher with higher concentrations of sugar. \n How responses will be evaluated:  In this section, the submission should provide a prediction as to the outcome of the study or a statement that no specific prediction is expected.",
+            "help": "If taste affects preference, then mean preference indices will be higher with higher concentrations of sugar. <br /><br /> How responses will be evaluated:  In this section, the submission should provide a prediction as to the outcome of the study or a statement that no specific prediction is expected.",
             "required": true
         }]
     }, {
         "id": "page2",
         "title": "Sampling Plan",
         "type": "object",
+        "description": "In this section we’ll ask you to describe how you plan to collect samples, as well as the number of samples you plan to collect and your rationale for this decision. Please keep in mind that the data described in this section should be the actual data used for analysis, so if you are using a subset of a larger dataset, please describe the subset that will actually be used in your study.",
         "questions": [{
             "qid": "q5",
             "nav": "Existing Data",
-            "type": "object",
             "title": "Existing Data",
             "description": "Preregistration is designed to make clear the distinction between confirmatory tests, specified prior to seeing the data, and exploratory analyses conducted after observing the data. Therefore, creating a research plan in which existing data will be used presents unique challenges. Please select the description that best describes your situation. Please do not hesitate to contact us if you have questions about how to answer this question (prereg@cos.io).",
-            "help": "",
-            "properties": {
-                "statement": {
-                    "id:": "q5a",
-                    "type": "choose",
-                    "format": "singleselect",
-                    "options": [
-                        "Registration prior to creation of data: As of the date of submission of this research plan for preregistration, the data have not yet been collected, created, or realized.",
-                        "Registration prior to any human observation of the data: As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study. Examples include museum specimens that have not been measured and data that have been collected by non-human collectors and are inaccessible.",
-                        "Registration prior to accessing the data: As of the date of submission, the data exist, but have not been accessed by you or your collaborators. Commonly, this includes data that has been collected by another researcher or institution.",
-                        "Registration prior to analysis of the data: As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). A common situation for this scenario when a large dataset exists that is used for many different studies over time, or when a data set is randomly split into a sample for exploratory analyses, and the other section of data is reserved for later confirmatory data analysis.",
-                        "Registration following analysis of the data: As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Pre-Reg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
-                    ],
-                    "required": true
-                }
-            }
+            "type": "choose",
+            "format": "singleselect",
+            "options": [
+                "Registration prior to creation of data: As of the date of submission of this research plan for preregistration, the data have not yet been collected, created, or realized.",
+                "Registration prior to any human observation of the data: As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study. Examples include museum specimens that have not been measured and data that have been collected by non-human collectors and are inaccessible.",
+                "Registration prior to accessing the data: As of the date of submission, the data exist, but have not been accessed by you or your collaborators. Commonly, this includes data that has been collected by another researcher or institution.",
+                "Registration prior to analysis of the data: As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). A common situation for this scenario when a large dataset exists that is used for many different studies over time, or when a data set is randomly split into a sample for exploratory analyses, and the other section of data is reserved for later confirmatory data analysis.",
+                "Registration following analysis of the data: As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Pre-Reg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
+            ],
+            "required": true
         }, {
             "qid": "q6",
             "nav": "Explanation",
@@ -94,7 +88,7 @@
             "format": "textarea",
             "title": "Explanation of existing data",
             "description": "If you indicate that you will be using some data that already exist in this study, please describe the steps you have taken to assure that you are unaware of any patterns or summary statistics in the data. This may include an explanation of how access to the data has been limited, who has observed the data, or how you have avoided observing any analysis of the specific data you will use in your study. The purpose of this question is to assure that the line between confirmatory and exploratory analysis is clear.",
-            "help": " An appropriate instance of using existing data would be collecting a sample size much larger than is required for the study, using a small portion of it to conduct exploratory analysis, and then registering one particular analysis that showed promising results. After registration, conduct the specified analysis on that part of the dataset that had not been investigated by the researcher up to that point. \n How responses will be evaluated: Both confirmatory (hypothesis testing) and exploratory (hypothesis generating) analysis contribute to scientific progress, and do so best when it is clear which is which.  The Preregistration Challenge stimulates experience with preregistration of analysis plans for hypothesis testing, and transparency about the distinction between confirmatory and exploratory analysis. Research plans using existing data present unique challenges for hypothesis testing because observation of data can influence subsequent analysis plans of the same data. This can produce a gray area between confirmatory and exploratory analysis. Research plans using existing data may not be eligible for the Challenge. Determination of eligibility is based on evidence that the diagnosticity of the confirmatory analysis plans is retained despite the fact that the data exist.",
+            "help": " An appropriate instance of using existing data would be collecting a sample size much larger than is required for the study, using a small portion of it to conduct exploratory analysis, and then registering one particular analysis that showed promising results. After registration, conduct the specified analysis on that part of the dataset that had not been investigated by the researcher up to that point. <br /><br /> How responses will be evaluated: Both confirmatory (hypothesis testing) and exploratory (hypothesis generating) analysis contribute to scientific progress, and do so best when it is clear which is which.  The Preregistration Challenge stimulates experience with preregistration of analysis plans for hypothesis testing, and transparency about the distinction between confirmatory and exploratory analysis. Research plans using existing data present unique challenges for hypothesis testing because observation of data can influence subsequent analysis plans of the same data. This can produce a gray area between confirmatory and exploratory analysis. Research plans using existing data may not be eligible for the Challenge. Determination of eligibility is based on evidence that the diagnosticity of the confirmatory analysis plans is retained despite the fact that the data exist.",
             "required": true
         }, {
             "qid": "q7",
@@ -102,7 +96,7 @@
             "type": "object",
             "title": "Data collection procedures",
             "description": "Please describe the process by which you will collect your data. If you are using human subjects, this should include the population from which you obtain subjects, recruitment efforts, payment for participation, how subjects will be selected for eligibility from the initial pool (e.g. inclusion and exclusion rules), and your study timeline. For studies that don’t include human subjects, include information about how you will collect samples, duration of data gathering efforts, source or location of samples, or batch numbers you will use.",
-            "help": "Participants will be recruited through advertisements at local pastry shops. Participants will be paid $10 for agreeing to participate (raised to $30 if our sample size is not reached within 15 days of beginning recruitment). Participants must be at least 18 years old and be able to eat the ingredients of the pastries.\n How responses will be evaluated: The answer to this question requires a specific set of instructions so that another person could repeat the data collection procedures and recreate the study population. Alternatively, if the study population would be unable to be reproduced because it relies on a specific set of circumstances unlikely to be recreated (e.g., a community of people from a specific time and location), the criteria and methods for creating the group and the rationale for this unique set of subjects should be clear.",
+            "help": "Participants will be recruited through advertisements at local pastry shops. Participants will be paid $10 for agreeing to participate (raised to $30 if our sample size is not reached within 15 days of beginning recruitment). Participants must be at least 18 years old and be able to eat the ingredients of the pastries.<br /><br /> How responses will be evaluated: The answer to this question requires a specific set of instructions so that another person could repeat the data collection procedures and recreate the study population. Alternatively, if the study population would be unable to be reproduced because it relies on a specific set of circumstances unlikely to be recreated (e.g., a community of people from a specific time and location), the criteria and methods for creating the group and the rationale for this unique set of subjects should be clear.",
             "properties": {
                 "question": {
                     "id": "q7a",
@@ -149,6 +143,7 @@
         "id": "page3",
         "title": "Variables",
         "type": "object",
+        "description": "In this section you can describe all variables (both manipulated and measured variables) that will later be used in your confirmatory analysis plan. In your analysis plan, you will have the opportunity to describe how each variable will be used. If you have variables which you are measuring for exploratory analyses, you are not required to list them, though you are permitted to do so.",
         "questions": [{
             "qid": "q11",
             "nav": "Manipulated",
@@ -180,36 +175,29 @@
     }, {
         "id": "page4",
         "title": "Design Plan",
-        "type": "object",
+        "description": "In this section, you will be asked to describe the overall design of your study. Remember that this research plan is designed to register a single study, so if you have multiple experimental designs, please complete a separate preregistration.",
         "questions": [{
             "qid": "q14",
             "nav": "Study type",
-            "type": "object",
-            "title": "Please check one of the following statements",
-            "description": "",
-            "help": "",
-            "properties": {
-                "statement": {
-                    "id:": "q14a",
-                    "type": "choose",
-                    "format": "singleselect",
-                    "options": [
-                        "Experiment - A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment and includes randomized controlled trials.",
-                        "Observational Study - Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, “natural experiments,” and regression discontinuity designs.",
-                        "Meta-Analysis - A systematic review of published studies.",
-                        "Other"
-                    ],
-                    "required": true
-                }
-            }
+            "title": "Study type",
+            "description": "Please check one of the following statements",
+            "type": "choose",
+            "format": "singleselect",
+            "options": [
+                "Experiment - A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment and includes randomized controlled trials.",
+                "Observational Study - Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, “natural experiments,” and regression discontinuity designs.",
+                "Meta-Analysis - A systematic review of published studies.",
+                "Other"
+            ],
+            "required": true
         }, {
             "qid": "q15",
             "nav": "Blinding",
             "type": "object",
-            "title": "Please check one of the following statements",
+            "title": "Blinding",
             "description": "Blinding describes who is aware of the experimental manipulations within a study. Mark all that apply.",
             "type": "choose",
-            "format": "singleselect",
+            "format": "multiselect",
             "options": [
                 "No blinding is involved in this study.",
                 "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
@@ -235,9 +223,10 @@
                     "id": "q16b",
                     "type": "osf-upload",
                     "format": "osf-upload-toggle",
-                    "required": true 
+                    "required": true
                 }
-            }
+            },
+            "required": true
         }, {
             "qid": "q17",
             "nav": "Randomization",
@@ -253,6 +242,7 @@
         "id": "page5",
         "title": "Analysis Plan",
         "type": "object",
+        "description": "For some studies, you may only want to preregister a single confirmatory analysis. For others, there may be multiple sets of confirmatory analyses you wish to register. If you wish to register more than one analysis set, you may do so. If subsequent analyses are very similar to previous ones, you may copy their content and then edit accordingly. Remember, all analyses specified in this section must be reported in the final article, and analyses not specified in this section that are reported in the paper must be clearly labeled as exploratory.",
         "questions": [{
             "qid": "q18",
             "nav": "Title",
@@ -341,6 +331,7 @@
         "id": "page6",
         "title": "Scripts",
         "type": "object",
+        "description": "The purpose of a fully commented analysis script is to unambiguously provide the responses to all of the questions raised in the analysis section. This step is not common, but we encourage you to try creating an analysis script, refine it using a modeled dataset, and use it in place of your written analysis plan.",
         "questions": [{
             "qid": "q26",
             "nav": "Script",
