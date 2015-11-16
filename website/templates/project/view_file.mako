@@ -9,15 +9,7 @@
   <div class="col-sm-5">
     <h2 class="break-word">
       ## Split file name into two parts: with and without extension
-      <%
-       import os
-       file_name_title, file_name_ext = os.path.splitext(file_name)
-       ## POSIX standard for chars in a fully portable filename
-       valid_ext = all(i.isalnum() or i in ['.', '_', '-'] for i in file_name_ext)
-       if not valid_ext:
-        file_name_title = file_name
-        file_name_ext = ''
-      %> 
+      
       ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
 
       % if file_revision:
