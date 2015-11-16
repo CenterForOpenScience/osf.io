@@ -3,7 +3,6 @@
 import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
-import functools
 
 import pytz
 import datetime
@@ -3055,6 +3054,17 @@ class TestTemplateNode(OsfTestCase):
 
         assert_equal(new.title, changed_title)
         assert_not_equal(new.date_created, self.project.date_created)
+        self._verify_log(new)
+
+    def test_use_as_template_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        new = self.project.use_as_template(
+            auth=self.auth
+        )
+
+        assert_equal(new.license.node_license._id, license.node_license._id)
         self._verify_log(new)
 
     def _create_complex(self):

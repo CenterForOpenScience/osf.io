@@ -36,4 +36,12 @@ $(function() {
             });
         }
     });
+    $('#fileTags_tag').attr('maxlength', '128');
+    if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
+        $('a[title="Removing tag"]').remove();
+        $('span.tag span').each(function(idx, elm) {
+            $(elm).text($(elm).text().replace(/\s*$/, ''));
+        });
+    }
+
 });
