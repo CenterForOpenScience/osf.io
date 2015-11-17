@@ -22,6 +22,7 @@ from elasticsearch import (
 
 from framework import sentry
 from framework.tasks import app as celery_app
+from framework.mongo.utils import paginated
 
 from website import settings
 from website.filters import gravatar
@@ -292,8 +293,8 @@ def update_node(node, index=None, bulk=False):
             return
 
     from website.files.models.osfstorage import OsfStorageFile
-    for file_ in OsfStorageFile.find(Q('node', 'eq', node)):
-        update_file(file_)
+    for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
+        update_file(file_, index=index)
 
     if node.is_deleted or not node.is_public or node.archiving:
         delete_doc(elastic_document_id, node)

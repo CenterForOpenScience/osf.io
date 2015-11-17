@@ -215,7 +215,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
             }
         )
 
-    schema_version = data.get('schema_version', 1)
+    schema_version = data.get('schema_version', 2)
 
     meta_schema = get_schema_or_fail(
         Q('name', 'eq', schema_name) &

@@ -30,7 +30,7 @@
                 <span data-bind="with: draft">
                     <div class="progress progress-bar-md">
                         <div data-bind="progress: completion"></div>
-                        <div class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                        <div class="progress-bar progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
                              data-bind="attr.aria-completion: completion,
                                         style: {width: completion() + '%'}">
                         </div>

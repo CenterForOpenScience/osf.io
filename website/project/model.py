@@ -2036,7 +2036,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def create_draft_registration(self, user, schema, data=None, save=False):
         draft = DraftRegistration(
             initiator=user,
-            branched_from=self,
             registration_schema=schema,
             registration_metadata=data or {},
         )
@@ -2216,6 +2215,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def absolute_api_v2_url(self):
         if self.is_registration:
             return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': self._id})
+        if self.is_folder:
+            return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
 
     # used by django and DRF
@@ -4055,10 +4056,8 @@ class DraftRegistration(StoredObject):
 
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
-    # Original Node a draft registration is associated with
-    branched_from = fields.ForeignField('node')
 
-    initiator = fields.ForeignField('user')
+    initiator = fields.ForeignField('user', index=True)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -4076,7 +4075,7 @@ class DraftRegistration(StoredObject):
     # }
     registration_metadata = fields.DictionaryField(default=dict)
     registration_schema = fields.ForeignField('metaschema')
-    registered_node = fields.ForeignField('node')
+    registered_node = fields.ForeignField('node', index=True)
 
     approval = fields.ForeignField('draftregistrationapproval', default=None)
 
@@ -4173,7 +4172,7 @@ class DraftRegistration(StoredObject):
         return all_comments
 
     def register(self, auth, save=False):
-        node = self.branched_from
+        node = self.node__branched
 
         # Create the registration
         register = node.register_node(
