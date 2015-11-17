@@ -575,11 +575,11 @@ class DraftRegistrationFactory(ModularOdmFactory):
         except IndexError:
             ensure_schemas()
         registration_metadata = registration_metadata or {}
-        draft = branched_from.create_draft_registration(
+        draft = DraftRegistration.create_from_node(
+            branched_from,
             user=initiator,
             schema=registration_schema,
             data=registration_metadata,
-            save=True,
         )
         return draft
 

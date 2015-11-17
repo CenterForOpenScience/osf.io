@@ -705,8 +705,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
 
-    draft_registrations = fields.ForeignField('draftregistration', backref='branched', list=True)
-
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
 
@@ -918,7 +916,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def draft_registrations_active(self):
-        return self.draft_registrations.find(
+        return DraftRegistration.find(
+            Q('branched_from', 'eq', self) &
             Q('registered_node', 'eq', None)
         )
 
@@ -2018,19 +2017,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 status.push_status_message(message, kind='info', trust=True)
 
         return forked
-
-    def create_draft_registration(self, user, schema, data=None, save=False):
-        draft = DraftRegistration(
-            initiator=user,
-            branched_from=self,
-            registration_schema=schema,
-            registration_metadata=data or {},
-        )
-        draft.save()
-        self.draft_registrations.append(draft)
-        if save:
-            self.save()
-        return draft
 
     def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
@@ -4022,6 +4008,17 @@ class DraftRegistration(StoredObject):
                 return self.approval.is_approved
         else:
             return True
+
+    @classmethod
+    def create_from_node(cls, node, user, schema, data=None):
+        draft = cls(
+            initiator=user,
+            branched_from=node,
+            registration_schema=schema,
+            registration_metadata=data or {},
+        )
+        draft.save()
+        return draft
 
     def update_metadata(self, metadata):
         changes = []
