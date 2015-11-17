@@ -52,6 +52,10 @@ function getUID() {
     return window.fileBrowserCounter;
 }
 
+var xhrconfig = function (xhr) {
+    xhr.withCredentials = true;
+};
+
 /**
  * Initialize File Browser. Prepeares an option object within FileBrowser
  * @constructor
@@ -70,12 +74,20 @@ var FileBrowser = {
         self.showCollectionMenu = m.prop(false); // Show hide ellipsis menu for collections
         self.collectionMenuObject = m.prop({item : {label:null}, x : 0, y : 0}); // Collection object to complete actions on menu
 
-        // DEFAULT DATA -- to be switched with server response
+        // Default system collections
         self.collections = [
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true }, systemCollection : true}, 'All My Projects'),
             new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true }, systemCollection : true}, 'All My Registrations'),
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true }, systemCollection : false}, 'Everything'),
         ];
+
+        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true}});
+        m.request({method : 'GET', url : collectionsUrl, config : xhrconfig}).then(function(result){
+            console.log(result);
+           result.data.forEach(function(node){
+               self.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/', query : { 'related_counts' : true }, systemCollection : false}, node.attributes.title));
+           });
+        });
+
         self.breadcrumbs = m.prop([
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true }, systemCollection : true}, 'All My Projects'),
         ]);
@@ -122,9 +134,6 @@ var FileBrowser = {
 
         // Refresh the Grid
         self.updateList = function(url){
-            var xhrconfig = function (xhr) {
-                xhr.withCredentials = true;
-            };
             m.request({method : 'GET', url : url, config : xhrconfig})
                 .then(function(value){
                     value.data.map(function(item){
@@ -174,6 +183,13 @@ var FileBrowser = {
         self.sidebarInit = function (element, isInit) {
             if(!isInit){
                 $('[data-toggle="tooltip"]').tooltip();
+                $('.fb-collections ul>li').droppable({
+                    //accept: '.tb-td',
+                    hoverClass: 'bg-color-hover',
+                    drop: function( event, ui ) {
+                       console.log('dropped', event, ui);
+                    }
+                });
             }
         };
 
