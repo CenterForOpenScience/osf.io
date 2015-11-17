@@ -4033,7 +4033,7 @@ class DraftRegistration(StoredObject):
         return changes
 
     def register(self, auth, save=False):
-        node = self.node__branched
+        node = self.node__branched[0]
 
         # Create the registration
         register = node.register_node(
