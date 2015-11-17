@@ -24,9 +24,8 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     nodesOriginal[nodeId] = {
         public: nodeTree.node.is_public,
         id: nodeTree.node.id,
-        addons: nodeTree.node.addons,
         title: nodeTree.node.title,
-        changed: false
+        contributors: nodeTree.node.contributors
     };
 
     if (nodeTree.children) {
@@ -73,7 +72,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         var self = this;
         self.title = title;
         self.nodeId = nodeId;
-        self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
+        self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/get_node_tree';
         self.parentId = parentId;
         self.parentTitle = parentTitle;
         self.contributorToRemove = ko.observable();
@@ -94,15 +93,26 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         var nodesOriginal = {};
         self.nodesOriginal = ko.observableArray();
 
-        /**
-         * original node state on page load
-         */
-        self.nodesOriginal.subscribe(function(newValue) {
-        });
+        //only perform this expensive action when removeAll is selected.
+        self.nodesToRemove = ko.observableArray();
+        self.titlesToRemove = ko.observableArray();
+        self.idsToRemove = ko.observableArray();
 
-        /**
-         * get node free for treebeard from API V1
-         */
+        //self.nodesToRemove = ko.computed(function () {
+        //    if (self.deleteAll()) {
+        //        var nodesOriginal = ko.toJS(self.nodesOriginal());
+        //        var nodesToRemove = [];
+        //        for (var node in nodesOriginal) {
+        //            for (var contributor in node.contributors) {
+        //                if (contributor === self.contributorToRemove) {
+        //                    nodesToRemove.push(node);
+        //                }
+        //            }
+        //        }
+        //        return nodesToRemove;
+        //    };
+        //});
+
         $.ajax({
             url: self.nodeApiUrl,
             type: 'GET',
@@ -110,7 +120,6 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         }).done(function(response) {
             nodesOriginal = getNodesOriginal(response[0], nodesOriginal);
             self.nodesOriginal(nodesOriginal);
-            debugger;
             ////change node state to reflect button push by user on project page (make public | make private)
             //nodesState[nodeParent].public = !parentIsPublic;
             //nodesState[nodeParent].changed = true;
@@ -132,30 +141,60 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             self.selectRemove();
             self.deleteAll(false);
         },
-        deleteOneNode: function() {
+        back: function() {
             var self = this;
-            var url = API_BASE + self.nodeId + '/contributors/' + self.contributorToRemove().id + '/';
-            $.ajax({
-                url: url,
-                type: 'DELETE',
-                crossOrigin: true,
-                xhrFields: {
-                    withCredentials: true
-                },
-            }).done(function (response) {
-                window.location.reload();
-            }).fail(function (xhr, status, error) {
-                $osf.growl('Error', 'Unable to delete Contributor');
-                Raven.captureMessage('Could not DELETE Contributor.' + error, {
-                    API_BASE: url, status: status, error: error
+            self.page('remove');
+        },
+        submit: function() {
+            var self = this;
+            if (self.deleteAll()) {
+
+            }
+            else {
+                var url = API_BASE + self.nodeId + '/contributors/' + self.contributorToRemove().id + '/';
+                $.ajax({
+                    url: url,
+                    type: 'DELETE',
+                    crossOrigin: true,
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                }).done(function (response) {
+                    window.location.reload();
+                }).fail(function (xhr, status, error) {
+                    $osf.growl('Error', 'Unable to delete Contributor');
+                    Raven.captureMessage('Could not DELETE Contributor.' + error, {
+                        API_BASE: url, status: status, error: error
+                    });
                 });
-            });
+            }
             self.page('remove');
         },
         deleteAllNodes: function() {
             var self = this;
-            self.page('removeAll');
+            var nodesOriginal = ko.toJS(self.nodesOriginal());
+            var nodesToRemove = [];
+            var titlesToRemove = [];
+            var idsToRemove = [];
             //getNodeContributorList(self.nodeId, self.contributorToRemove().id);
+            for (var key in nodesOriginal) {
+                if (nodesOriginal.hasOwnProperty(key)) {
+                    var node = nodesOriginal[key]
+                    var contributors = node.contributors;
+                    for (var i = 0; i < contributors.length; i++) {
+                        if (contributors[i] === self.contributorToRemove().id) {
+                            //nodesToRemove.push(node);
+                            titlesToRemove.push(node.title);
+                            idsToRemove.push(node.id);
+                            break;
+                        }
+                    }
+                }
+            }
+            self.titlesToRemove(titlesToRemove);
+            self.idsToRemove(idsToRemove);
+            //self.nodesToRemove(nodesToRemove);
+            self.page('removeAll');
         }
 });
 
@@ -185,7 +224,7 @@ ContribRemover.prototype.init = function() {
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
         self.$element.find('.popover').popover('hide');
-        self.clear();
+        self.viewModel.clear();
     });
     // Clear user search modal when dismissed; catches dismiss by escape key
     // or cancel button.

@@ -297,6 +297,16 @@ var AddContributorViewModel = oop.extend(Paginator, {
     submit: function() {
         var self = this;
         $osf.block();
+        var testData = {
+                users: ko.utils.arrayMap(self.selection(), function(user) {
+                    var permission = user.permission().value; //removes the value from the object
+                    var tUser = JSON.parse(ko.toJSON(user)); //The serialized user minus functions
+                    tUser.permission = permission; //shoving the permission value into permission
+                    return tUser; //user with simplified permissions
+                }),
+                node_ids: self.nodesToChange()
+            };
+        debugger;
         return $osf.postJSON(
             self.nodeApiUrl + 'contributors/', {
                 users: ko.utils.arrayMap(self.selection(), function(user) {
