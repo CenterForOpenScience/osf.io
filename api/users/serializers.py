@@ -7,7 +7,7 @@ from api.base.serializers import AllowMissing
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly, IDField, TypeField
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
 from api.base.utils import add_dev_only_items
 
@@ -54,8 +54,11 @@ class UserSerializer(JSONAPISerializer):
             'profile_image': 'profile_image_url',
         })
     )
-    nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
-                                             link_type='related')
+
+    nodes = RelationshipField(
+        related_view='users:user-nodes',
+        related_view_kwargs={'user_id': '<pk>'},
+    )
 
     class Meta:
         type_ = 'users'
