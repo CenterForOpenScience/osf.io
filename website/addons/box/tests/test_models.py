@@ -156,7 +156,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_true(self.node_settings.complete)
 
     def test_complete_false(self):
-        self.user_settings.revoke_oauth_access(self.external_account)
+        self.user_settings.oauth_grants[self.node._id].pop(self.external_account._id)
 
         assert_true(self.node_settings.has_auth)
         assert_false(self.node_settings.complete)

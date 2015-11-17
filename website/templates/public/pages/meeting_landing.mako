@@ -96,7 +96,13 @@
                             <div id="meetings-grid"></div>
                         </div>
                         <div role="tabpanel" class="tab-pane" id="submissions">
-                            <div id="submissions-grid"></div>
+
+                            <div id="submissions-grid">
+                                <div id="allMeetingsLoader" class="spinner-loading-wrapper">
+                                    <div class="logo-spin logo-lg"></div>
+                                    <p class="m-t-sm fg-load-message"> Loading submissions...</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -159,7 +165,6 @@
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
         window.contextVars.meetings = ${meetings | sjson, n};
-        window.contextVars.submissions = ${submissions | sjson, n};
     </script>
     <script src=${"/static/public/js/meetings-page.js" | webpack_asset}></script>
 </%def>

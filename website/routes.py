@@ -213,6 +213,13 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/api/v1/meetings/submissions/',
+            'get',
+            conference_views.conference_submissions,
+            json_renderer,
+        ),
+
+        Rule(
             '/presentations/',
             'get',
             conference_views.redirect_to_meetings,
@@ -579,6 +586,28 @@ def make_url_map(app):
             profile_views.oauth_application_detail,
             OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
         ),
+
+        Rule(
+            '/settings/tokens/',
+            'get',
+            profile_views.personal_access_token_list,
+            OsfWebRenderer('profile/personal_tokens_list.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/create/',
+            'get',
+            profile_views.personal_access_token_register,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/<_id>/',
+            'get',
+            profile_views.personal_access_token_detail,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
 
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(

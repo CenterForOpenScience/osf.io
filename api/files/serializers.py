@@ -7,13 +7,14 @@ from website import settings
 from framework.auth.core import User
 from website.files.models import FileNode
 from api.base.utils import absolute_reverse
-from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
-from api.base.serializers import JSONAPIHyperlinkedIdentityField
+from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
-class CheckoutField(JSONAPIHyperlinkedIdentityField):
+
+class CheckoutField(ser.HyperlinkedRelatedField):
 
     default_error_messages = {'invalid_data': 'Checkout must be either the current user or null'}
+    json_api_link = True  # serializes to a links object
 
     def __init__(self, **kwargs):
         kwargs['queryset'] = True
@@ -22,18 +23,18 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
         kwargs['lookup_field'] = 'pk'
         kwargs['lookup_url_kwarg'] = 'user_id'
 
-        self.meta = None
+        self.meta = {'id': 'user_id'}
         self.link_type = 'related'
 
-        super(ser.HyperlinkedIdentityField, self).__init__('users:user-detail', **kwargs)
+        super(CheckoutField, self).__init__('users:user-detail', **kwargs)
 
     def get_queryset(self):
         return User.find(Q('_id', 'eq', self.context['request'].user._id))
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:
-            return None
-        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+            return {}
+        return super(CheckoutField, self).get_url(obj, view_name, request, format)
 
     def to_internal_value(self, data):
         if data is None:
@@ -46,6 +47,17 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
             )
         except StopIteration:
             self.fail('invalid_data')
+
+    def to_representation(self, value):
+
+        url = super(CheckoutField, self).to_representation(value)
+
+        rel_meta = None
+        if value:
+            rel_meta = {'id': value._id}
+
+        ret = format_relationship_links(related_link=url, rel_meta=rel_meta)
+        return ret
 
 
 class FileSerializer(JSONAPISerializer):
@@ -68,10 +80,18 @@ class FileSerializer(JSONAPISerializer):
     size = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
+    date_modified = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
 
-    files = NodeFileHyperLink(kind='folder', link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
-    versions = NodeFileHyperLink(kind='file', link_type='related', view_name='files:file-versions', kwargs=(('file_id', '_id'), ))
-
+    files = NodeFileHyperLinkField(
+        related_view='nodes:node-files',
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder'
+    )
+    versions = NodeFileHyperLinkField(
+        related_view='files:file-versions',
+        related_view_kwargs={'file_id': '<_id>'},
+        kind='file'
+    )
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
@@ -87,6 +107,22 @@ class FileSerializer(JSONAPISerializer):
     def get_size(self, obj):
         if obj.versions:
             return obj.versions[-1].size
+        return None
+
+    def get_date_modified(self, obj):
+        if obj.versions:
+            if obj.provider == 'osfstorage':
+                # Odd case osfstorage's date created is when the version was create
+                # (when the file was modified) its date modified is referencing whatever backend it is on
+                return obj.versions[-1].date_created
+            return obj.versions[-1].date_modified
+        return None
+
+    def user_id(self, obj):
+        # NOTE: obj is the user here, the meta field for
+        # Hyperlinks is weird
+        if obj:
+            return obj._id
         return None
 
     def update(self, instance, validated_data):

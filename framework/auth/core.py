@@ -192,12 +192,12 @@ class User(GuidStoredObject, AddonModelMixin):
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': u'http://orcid.com/{}',
+        'orcid': u'http://orcid.org/{}',
         'github': u'http://github.com/{}',
-        'scholar': u'http://scholar.google.com/citation?user={}',
+        'scholar': u'http://scholar.google.com/citations?user={}',
         'twitter': u'http://twitter.com/{}',
         'profileWebsites': [],
-        'linkedIn': u'https://www.linkedin.com/profile/view?id={}',
+        'linkedIn': u'https://www.linkedin.com/{}',
         'impactStory': u'https://impactstory.org/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
     }
@@ -1191,7 +1191,7 @@ class User(GuidStoredObject, AddonModelMixin):
             signals.user_merged.send(self, list_name=key, subscription=subscription)
 
             # clear subscriptions for merged user
-            signals.user_merged.send(user, list_name=key, subscription=False)
+            signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
 
         for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
             if not self.comments_viewed_timestamp.get(node_id):
@@ -1276,6 +1276,12 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in user.node__created:
             node.creator = self
             node.save()
+
+        # - file that the user has checked_out, import done here to prevent import error
+        from website.files.models.base import FileNode
+        for file_node in FileNode.files_checked_out(user=user):
+            file_node.checkout = self
+            file_node.save()
 
         # finalize the merge
 
