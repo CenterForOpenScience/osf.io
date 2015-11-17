@@ -1248,7 +1248,7 @@ class TestNodeBulkUpdateSkipUneditable(ApiTestCase):
         skipped = res.json['meta']['errors']
         assert_items_equal([edited[0]['id'], edited[1]['id']],
                            [self.public_project._id, self.public_project_two._id])
-        assert_items_equal([skipped.keys()[0], skipped.keys()[1]],
+        assert_items_equal([skipped[0]['_id'], skipped[1]['_id']],
                            [self.public_project_three._id, self.public_project_four._id])
         self.public_project.reload()
         self.public_project_two.reload()
@@ -1282,7 +1282,7 @@ class TestNodeBulkUpdateSkipUneditable(ApiTestCase):
         skipped = res.json['meta']['errors']
         assert_items_equal([edited[0]['id'], edited[1]['id']],
                            [self.public_project._id, self.public_project_two._id])
-        assert_items_equal([skipped.keys()[0], skipped.keys()[1]],
+        assert_items_equal([skipped[0]['_id'], skipped[1]['_id']],
                            [self.public_project_three._id, self.public_project_four._id])
         self.public_project.reload()
         self.public_project_two.reload()
@@ -1453,3 +1453,60 @@ class TestNodeBulkDelete(ApiTestCase):
     def test_bulk_delete_no_payload(self):
         res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
+
+
+class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkDeleteSkipUneditable, self).setUp()
+        self.user_one = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user_one)
+        self.project_two = ProjectFactory(title="Project Two",  is_public=True, creator=self.user_one)
+        self.project_three = ProjectFactory(title="Project Three", is_public=True, creator=self.user_two)
+        self.project_four = ProjectFactory(title="Project Four", is_public=True, creator=self.user_two)
+
+        self.payload = {
+            'data': [
+                {
+                    'id': self.project_one._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': self.project_two._id,
+                    'type': 'nodes',
+                },
+                 {
+                    'id': self.project_three._id,
+                    'type': 'nodes',
+                },
+                 {
+                    'id': self.project_four._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+
+
+        self.url = "/{}nodes/?skip_uneditable=True".format(API_BASE)
+
+    def test_skip_uneditable_bulk_delete(self):
+        res = self.app.delete_json_api(self.url, self.payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 200)
+        skipped = res.json['meta']['errors']
+        assert_items_equal([skipped[0]['id'], skipped[1]['id']],
+                           [self.project_three._id, self.project_four._id])
+
+        res = self.app.get('/{}nodes/'.format(API_BASE), auth=self.user_one.auth)
+        assert_items_equal([res.json['data'][0]['id'], res.json['data'][1]['id']],
+                           [self.project_three._id, self.project_four._id])
+
+    def test_skip_uneditable_bulk_delete_query_param_required(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.delete_json_api(url, self.payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get('/{}nodes/'.format(API_BASE), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 4)
