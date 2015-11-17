@@ -3960,7 +3960,7 @@ class DraftRegistration(StoredObject):
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
 
-    initiator = fields.ForeignField('user')
+    initiator = fields.ForeignField('user', index=True)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -3978,7 +3978,7 @@ class DraftRegistration(StoredObject):
     # }
     registration_metadata = fields.DictionaryField(default=dict)
     registration_schema = fields.ForeignField('metaschema')
-    registered_node = fields.ForeignField('node')
+    registered_node = fields.ForeignField('node', index=True)
 
     approval = fields.ForeignField('draftregistrationapproval', default=None)
 
