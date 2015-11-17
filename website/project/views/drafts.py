@@ -221,11 +221,11 @@ def new_draft_registration(auth, node, *args, **kwargs):
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', int(schema_version))
     )
-    draft = node.create_draft_registration(
+    draft = DraftRegistration.create_from_node(
+        node,
         user=auth.user,
         schema=meta_schema,
-        data={},
-        save=True,
+        data={}
     )
     return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id))
 

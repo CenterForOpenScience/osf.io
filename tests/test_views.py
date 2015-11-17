@@ -4847,7 +4847,7 @@ class TestDraftRegistrationViews(OsfTestCase):
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.FOUND)
         target.reload()
-        draft = list(target.draft_registrations)[-1]
+        draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
         assert_equal(draft.registration_schema, self.meta_schema)
 
     def test_update_draft_registration(self):

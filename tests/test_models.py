@@ -1925,34 +1925,6 @@ class TestNode(OsfTestCase):
             assert_equal(r.registered_meta[meta_schema._id], data)
             assert_equal(r.registered_schema[0], meta_schema)
 
-    def test_create_draft_registration(self):
-        ensure_schemas()
-        proj = ProjectFactory()
-        user = proj.creator
-        schema = MetaSchema.find()[0]
-        data = {'some': 'data'}
-        draft = proj.create_draft_registration(
-            user=user,
-            schema=schema,
-            data=data,
-        )
-        assert_equal(user, draft.initiator)
-        assert_equal(schema, draft.registration_schema)
-        assert_equal(data, draft.registration_metadata)
-
-    def test_create_draft_registration_adds_to_draft_registrations_list(self):
-        ensure_schemas()
-        proj = ProjectFactory()
-        user = proj.creator
-        schema = MetaSchema.find()[0]
-        data = {'some': 'data'}
-        draft = proj.create_draft_registration(
-            user=user,
-            schema=schema,
-            data=data,
-        )
-        assert_equal(proj.draft_registrations[0], draft)
-
 
 class TestNodeUpdate(OsfTestCase):
 
@@ -4269,6 +4241,24 @@ class TestPrivateLink(OsfTestCase):
         link.nodes.extend([project, node])
         link.save()
         assert_equal(link.node_scale(node), -40)
+
+
+    def test_create_from_node(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = DraftRegistration.create_from_node(
+            proj,
+            user=user,
+            schema=schema,
+            data=data,
+        )
+        assert_equal(user, draft.initiator)
+        assert_equal(schema, draft.registration_schema)
+        assert_equal(data, draft.registration_metadata)
+        assert_equal(proj, draft.branched_from)
 
 
 if __name__ == '__main__':

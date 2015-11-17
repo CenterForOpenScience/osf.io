@@ -719,8 +719,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
 
-    draft_registrations = fields.ForeignField('draftregistration', backref='branched', list=True)
-
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
 
@@ -932,7 +930,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def draft_registrations_active(self):
-        return self.draft_registrations.find(
+        return DraftRegistration.find(
+            Q('branched_from', 'eq', self) &
             Q('registered_node', 'eq', None)
         )
 
@@ -2032,18 +2031,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 status.push_status_message(message, kind='info', trust=True)
 
         return forked
-
-    def create_draft_registration(self, user, schema, data=None, save=False):
-        draft = DraftRegistration(
-            initiator=user,
-            registration_schema=schema,
-            registration_metadata=data or {},
-        )
-        draft.save()
-        self.draft_registrations.append(draft)
-        if save:
-            self.save()
-        return draft
 
     def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
@@ -4056,6 +4043,8 @@ class DraftRegistration(StoredObject):
 
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
+    # Original Node a draft registration is associated with
+    branched_from = fields.ForeignField('node', index=True)
 
     initiator = fields.ForeignField('user', index=True)
 
@@ -4117,8 +4106,16 @@ class DraftRegistration(StoredObject):
         else:
             return True
 
-    def get_authorizers(self):
-        return authorizers.members_for(self.registration_schema.name)
+    @classmethod
+    def create_from_node(cls, node, user, schema, data=None):
+        draft = cls(
+            initiator=user,
+            branched_from=node,
+            registration_schema=schema,
+            registration_metadata=data or {},
+        )
+        draft.save()
+        return draft
 
     def update_metadata(self, metadata):
         changes = []
@@ -4145,34 +4142,8 @@ class DraftRegistration(StoredObject):
         self.registration_metadata.update(metadata)
         return changes
 
-    def find_question(self, qid):
-        for page in self.registration_schema.schema['pages']:
-            for question_id, question in page['questions'].iteritems():
-                if question_id == qid:
-                    return question
-
-    def get_comments(self):
-        """ Returns a list of all comments made on a draft in the format of :
-        [{
-          [QUESTION_ID]: {
-            'question': [QUESTION],
-            'comments': [LIST_OF_COMMENTS]
-           }
-        },]
-       """
-
-        all_comments = []
-        for question_id, value in self.registration_metadata.iteritems():
-            all_comments.append({
-                question_id: {
-                    'question': self.find_question(question_id),
-                    'comments': value['comments'] if 'comments' in value else ''
-                }
-            })
-        return all_comments
-
     def register(self, auth, save=False):
-        node = self.node__branched[0]
+        node = self.branched_from
 
         # Create the registration
         register = node.register_node(
