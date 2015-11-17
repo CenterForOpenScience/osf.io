@@ -53,7 +53,6 @@ class CoreScopes(object):
 
     NULL = 'null'
 
-
     ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
     ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
 
