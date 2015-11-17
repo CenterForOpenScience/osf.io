@@ -1156,6 +1156,160 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
 
+class TestNodeBulkUpdateSkipUneditable(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkUpdateSkipUneditable, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+
+        self.title = 'Cool Project'
+        self.new_title = 'Super Cool Project'
+        self.description = 'A Properly Cool Project'
+        self.new_description = 'An even cooler project'
+        self.category = 'data'
+        self.new_category = 'project'
+
+        self.public_project = ProjectFactory(title=self.title,
+                                             description=self.description,
+                                             category=self.category,
+                                             is_public=True,
+                                             creator=self.user)
+
+        self.public_project_two = ProjectFactory(title=self.title,
+                                                description=self.description,
+                                                category=self.category,
+                                                is_public=True,
+                                                creator=self.user)
+
+        self.public_project_three = ProjectFactory(title=self.title,
+                                                description=self.description,
+                                                category=self.category,
+                                                is_public=True,
+                                                creator=self.user_two)
+
+        self.public_project_four = ProjectFactory(title=self.title,
+                                                description=self.description,
+                                                category=self.category,
+                                                is_public=True,
+                                                creator=self.user_two)
+
+        self.public_payload = {
+            'data': [
+                {
+                    'id': self.public_project._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                },
+                {
+                    'id': self.public_project_two._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                },
+                 {
+                    'id': self.public_project_three._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                },
+                 {
+                    'id': self.public_project_four._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                }
+            ]
+        }
+
+        self.url = '/{}nodes/?skip_uneditable=True'.format(API_BASE)
+
+    def test_skip_uneditable_bulk_update(self):
+        res = self.app.put_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 200)
+        edited = res.json['data']
+        skipped = res.json['meta']['errors']
+        assert_items_equal([edited[0]['id'], edited[1]['id']],
+                           [self.public_project._id, self.public_project_two._id])
+        assert_items_equal([skipped.keys()[0], skipped.keys()[1]],
+                           [self.public_project_three._id, self.public_project_four._id])
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.new_title)
+        assert_equal(self.public_project_two.title, self.new_title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+
+    def test_skip_uneditable_bulk_update_query_param_required(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.put_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.title)
+        assert_equal(self.public_project_two.title, self.title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+    def test_skip_uneditable_bulk_partial_update(self):
+        res = self.app.patch_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 200)
+        edited = res.json['data']
+        skipped = res.json['meta']['errors']
+        assert_items_equal([edited[0]['id'], edited[1]['id']],
+                           [self.public_project._id, self.public_project_two._id])
+        assert_items_equal([skipped.keys()[0], skipped.keys()[1]],
+                           [self.public_project_three._id, self.public_project_four._id])
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.new_title)
+        assert_equal(self.public_project_two.title, self.new_title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+
+    def test_skip_uneditable_bulk_partial_update_query_param_required(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.patch_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.title)
+        assert_equal(self.public_project_two.title, self.title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+
 class TestNodeBulkDelete(ApiTestCase):
 
     def setUp(self):
