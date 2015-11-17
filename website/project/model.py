@@ -4172,7 +4172,7 @@ class DraftRegistration(StoredObject):
         return all_comments
 
     def register(self, auth, save=False):
-        node = self.node__branched
+        node = self.node__branched[0]
 
         # Create the registration
         register = node.register_node(
