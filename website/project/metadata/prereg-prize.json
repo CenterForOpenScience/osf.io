@@ -109,7 +109,8 @@
                     "format": "osf-upload-toggle",
                     "required": true
                 }
-            }
+            },
+            "required": true
         }, {
             "qid": "q8",
             "nav": "Sample size",

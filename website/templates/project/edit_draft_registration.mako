@@ -43,20 +43,30 @@
                     <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
                   </div>
                 </div>
-
-                <p>Last saved: <span data-bind="text: $root.lastSaved"></span>
-                </p>
-                <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
-                </button>
-                <!-- ko if: onLastPage -->
-                <a data-bind="css: {disabled: !canSubmit()},
-                              click: $root.check"
-                   type="button" class="pull-right btn btn-success">Preview for submission
-                </a>
-                <!-- /ko -->
-                <!-- ko ifnot: onLastPage -->
-                <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
-                <!-- /ko -->
+                
+                <div class="row" style="margin-bottom: 10px;">
+                  <span>
+                    Last saved: <span data-bind="text: $root.lastSaved"></span>
+                  </span>
+                  <!-- ko if: onLastPage -->
+                  <span data-bind="if: validationErrors" class="pull-right">
+                    <span class="text text-warning" data-bind="text: validationErrors"></span>
+                  </span>
+                  <!-- /ko -->
+                </div>
+                <div class="row">
+                  <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
+                  </button>
+                  <!-- ko if: onLastPage -->
+                  <a data-bind="css: {disabled: !canSubmit()},
+                                click: $root.check"
+                     type="button" class="pull-right btn btn-success">Preview for submission
+                  </a>
+                  <!-- /ko -->
+                  <!-- ko ifnot: onLastPage -->
+                  <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
+                  <!-- /ko -->
+                </div>
               </div>
             </div>
           </div>

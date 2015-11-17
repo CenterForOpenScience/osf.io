@@ -761,6 +761,22 @@ var RegistrationEditor = function(urls, editorId) {
         });
     });
 
+    self.validationErrors = ko.computed(function() {
+        if (self.onLastPage()) {
+            var errors = [];
+            var questions = self.flatQuestions() || [];
+            if (questions.length && questions.filter(function(question) {
+                return question.required && !question.isComplete();
+            }).length) {
+                return 'Some required questions are unanswered.';
+            }
+            else {
+                return '';
+            }
+        }
+        return '';
+    });
+
     self.canSubmit = ko.computed(function() {
         var canSubmit = true;
         var questions = self.flatQuestions();
