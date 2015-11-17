@@ -215,7 +215,7 @@ var FileBrowser = {
         };
         self.init();
     },
-    view : function (ctrl) {
+    view : function (ctrl, args) {
         var mobile = window.innerWidth < 767; // true if mobile view
         var infoPanel = '';
         var poStyle = 'width : 75%';
@@ -286,7 +286,8 @@ var FileBrowser = {
                         updateSelected : ctrl.updateSelected,
                         updateFilesData : ctrl.updateFilesData,
                         LinkObject : LinkObject,
-                        reload : ctrl.reload
+                        reload : ctrl.reload,
+                        dragContainment : args.wrapperSelector
                     })
                 )
             ),
