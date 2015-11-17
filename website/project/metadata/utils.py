@@ -22,7 +22,7 @@ def serialize_draft_registration(draft, auth=None):
     from website.profile.utils import serialize_user  # noqa
     from website.project.utils import serialize_node  # noqa
 
-    node = draft.node__branched[0]
+    node = draft.branched_from
 
     return {
         'pk': draft._id,

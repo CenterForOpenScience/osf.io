@@ -237,7 +237,7 @@ var Question = function(questionSchema, data) {
                 var ret = true;
                 $.each(self.properties, function(_, subQuestion) {
                     var value = subQuestion.value();
-                    if (Boolean(value === true || (value && value.length))) {
+                    if (!(Boolean(value === true || (value && value.length)))) {
                         ret = false;
                         return;
                     }
