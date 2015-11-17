@@ -1,16 +1,19 @@
 import re
 import collections
 
+from rest_framework import exceptions
 from rest_framework.reverse import reverse
-from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
+from rest_framework.fields import SkipField
 
+from framework.auth import core as auth_core
 from website import settings
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
 from api.base import utils
-from api.base.exceptions import InvalidQueryStringError, Conflict
+from api.base.settings import BULK_SETTINGS
+from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException
 
 
 class AllowMissing(ser.Field):
@@ -55,13 +58,17 @@ def _url_val(val, obj, serializer, **kwargs):
 
 
 class IDField(ser.CharField):
+    """
+    ID field that validates that 'id' in the request body is the same as the instance 'id' for single requests.
+    """
     def __init__(self, **kwargs):
         kwargs['label'] = 'ID'
         super(IDField, self).__init__(**kwargs)
 
+    #Overrides CharField
     def to_internal_value(self, data):
-        update_methods = ['PUT', 'PATCH']
-        if self.context['request'].method in update_methods:
+        request = self.context['request']
+        if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
             id_field = getattr(self.root.instance, self.source, '_id')
             if id_field != data:
                 raise Conflict()
@@ -69,15 +76,26 @@ class IDField(ser.CharField):
 
 
 class TypeField(ser.CharField):
+    """
+    Type field that validates that 'type' in the request body is the same as the Meta type.
 
+    Also ensures that type is write-only and required.
+    """
     def __init__(self, **kwargs):
         kwargs['write_only'] = True
         kwargs['required'] = True
         super(TypeField, self).__init__(**kwargs)
 
+    # Overrides CharField
     def to_internal_value(self, data):
-        if self.root.Meta.type_ != data:
+        if isinstance(self.root, JSONAPIListSerializer):
+            type_ = self.root.child.Meta.type_
+        else:
+            type_ = self.root.Meta.type_
+
+        if type_ != data:
             raise Conflict()
+
         return super(TypeField, self).to_internal_value(data)
 
 
@@ -105,6 +123,26 @@ class JSONAPIListField(ser.ListField):
         return super(JSONAPIListField, self).to_internal_value(data)
 
 
+class AuthorizedCharField(ser.CharField):
+    """
+    Passes auth of the logged-in user to the object's method
+    defined as the field source.
+
+    Example:
+        content = AuthorizedCharField(source='get_content')
+    """
+    def __init__(self, source=None, **kwargs):
+        assert source is not None, 'The `source` argument is required.'
+        self.source = source
+        super(AuthorizedCharField, self).__init__(source=self.source, **kwargs)
+
+    def get_attribute(self, obj):
+        user = self.context['request'].user
+        auth = auth_core.Auth(user)
+        field_source_method = getattr(obj, self.source)
+        return field_source_method(auth=auth)
+
+
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
     """
     HyperlinkedIdentityField that returns a nested dict with url,
@@ -116,9 +154,10 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                                     link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
 
     """
+    json_api_link = True  # serializes to a links object
 
     def __init__(self, view_name=None, **kwargs):
-        self.meta = kwargs.pop('meta', None)
+        self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
 
@@ -146,22 +185,78 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
         meta = {}
-        for key in self.meta or {}:
-            if key == 'count':
+        for key in self.meta:
+            if key in {'count', 'unread'}:
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
-                if utils.is_truthy(show_related_counts):
-                    meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-                elif utils.is_falsy(show_related_counts):
+                if utils.is_falsy(show_related_counts):
                     continue
-                else:
+                if not utils.is_truthy(show_related_counts):
                     raise InvalidQueryStringError(
                         detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
                         parameter='related_counts'
                     )
-            else:
-                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+
+            meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
 
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
+
+
+class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
+    """
+    HyperlinkedRelated field that returns a nested dict with url,
+    optional meta information, and link_type.
+
+    Example:
+
+        branched_from = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk',
+                                                    lookup_url_kwarg='node_id', read_only=True, link_type='related')
+
+    """
+    json_api_link = True  # serializes to a links object
+
+    def __init__(self, view_name=None, **kwargs):
+        self.meta = kwargs.pop('meta', {})
+        self.link_type = kwargs.pop('link_type', 'url')
+        super(JSONAPIHyperlinkedRelatedField, self).__init__(view_name=view_name, **kwargs)
+
+    def to_representation(self, value):
+        """
+        Returns nested dictionary in format {'links': {'self.link_type': ... }
+
+        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
+        the link is represented as a links object with 'href' and 'meta' members.
+        """
+        url = super(JSONAPIHyperlinkedRelatedField, self).to_representation(value)
+        meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
+        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
+
+
+class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
+    """
+    Field that returns a nested dict with the url (constructed based
+    on the object's type), optional meta information, and link_type.
+
+    Example:
+
+        target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
+
+    """
+    json_api_link = True  # serializes to a links object
+
+    def __init__(self, **kwargs):
+        self.meta = kwargs.pop('meta', {})
+        self.link_type = kwargs.pop('link_type', 'url')
+        super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
+
+    def to_representation(self, value):
+        """
+        Returns nested dictionary in format {'links': {'self.link_type': ... }
+
+        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
+        the link is represented as a links object with 'href' and 'meta' members.
+        """
+        meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
+        return {'links': {self.link_type: {'href': value.get_absolute_url(), 'meta': meta}}}
 
 
 class LinksField(ser.Field):
@@ -308,6 +403,54 @@ class JSONAPIListSerializer(ser.ListSerializer):
             self.child.to_representation(item, envelope=None) for item in data
         ]
 
+    # Overrides ListSerializer which doesn't support multiple update by default
+    def update(self, instance, validated_data):
+        if len(instance) != len(validated_data):
+            raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
+
+        id_lookup = self.child.fields['id'].source
+        instance_mapping = {getattr(item, id_lookup): item for item in instance}
+        data_mapping = {item.get(id_lookup): item for item in validated_data}
+
+        ret = []
+
+        for resource_id, data in data_mapping.items():
+            resource = instance_mapping.get(resource_id, None)
+            ret.append(self.child.update(resource, data))
+
+        return ret
+
+    # overrides ListSerializer
+    def run_validation(self, data):
+        meta = getattr(self, 'Meta', None)
+        bulk_limit = getattr(meta, 'bulk_limit', BULK_SETTINGS['DEFAULT_BULK_LIMIT'])
+
+        num_items = len(data)
+
+        if num_items > bulk_limit:
+            raise JSONAPIException(source={'pointer': '/data'},
+                                   detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items))
+
+        return super(JSONAPIListSerializer, self).run_validation(data)
+
+    # overrides ListSerializer: Add HTML-sanitization similar to that used by APIv1 front-end views
+    def is_valid(self, clean_html=True, **kwargs):
+        """
+        After validation, scrub HTML from validated_data prior to saving (for create and update views)
+
+        Exclude 'type' from validated_data.
+
+        """
+        ret = super(JSONAPIListSerializer, self).is_valid(**kwargs)
+
+        if clean_html is True:
+            self._validated_data = _rapply(self.validated_data, strip_html)
+
+        for data in self._validated_data:
+            data.pop('type', None)
+
+        return ret
+
 
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
@@ -345,7 +488,7 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if isinstance(field, JSONAPIHyperlinkedIdentityField):
+            if getattr(field, 'json_api_link', False):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
@@ -384,8 +527,7 @@ class JSONAPISerializer(ser.Serializer):
         self._validated_data.pop('type', None)
         self._validated_data.pop('target_type', None)
 
-        update_methods = ['PUT', 'PATCH']
-        if self.context['request'].method in update_methods:
+        if self.context['request'].method in utils.UPDATE_METHODS:
             self._validated_data.pop('_id', None)
 
         return ret

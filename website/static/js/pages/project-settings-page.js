@@ -56,25 +56,28 @@ if ($('#wgrid').length) {
 
 $(document).ready(function() {
 
-    // Apply KO bindings for Node Category Settings
-    var categories = [];
+    // Apply KO bindings for Project Settings
+    var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
     for (var i = 0; i < keys.length; i++) {
-        categories.push({
+        categoryOptions.push({
             label: window.contextVars.nodeCategories[keys[i]],
             value: keys[i]
         });
     }
     var disableCategory = !window.contextVars.node.parentExists;
     // need check because node category doesn't exist for registrations
-    if ($('#nodeCategorySettings').length) {
-        var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
-            window.contextVars.node.category,
-            categories,
-            window.contextVars.node.urls.update,
-            disableCategory
-        );
-        $osf.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+    if ($('#projectSettings').length) {
+        var projectSettingsVM = new ProjectSettings.ProjectSettings( {
+            currentTitle: ctx.node.title,
+            currentDescription: ctx.node.description,
+            category: ctx.node.category,
+            categoryOptions: categoryOptions,
+            node_id: ctx.node.id,
+            updateUrl:  $osf.apiV2Url('nodes/' + ctx.node.id + '/'),
+            disabled: disableCategory
+        });
+        ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
 
     $('#deleteNode').on('click', function() {
@@ -251,5 +254,3 @@ $(document).ready(function() {
     });
 
 });
-
-

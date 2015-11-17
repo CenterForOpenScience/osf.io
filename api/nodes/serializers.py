@@ -5,14 +5,15 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.models import Node, User
+from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
-from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField,
-    TargetTypeField, JSONAPIListField, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly)
 from api.base.exceptions import InvalidModelValueError
+from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
+from api.base.serializers import (LinksField, JSONAPIHyperlinkedIdentityField, DevOnly,
+                                  JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink,
+                                  IDField, TypeField, TargetTypeField, JSONAPIListField)
 
 
 class NodeTagField(ser.Field):
@@ -36,7 +37,8 @@ class NodeSerializer(JSONAPISerializer):
         'tags',
         'category',
         'date_created',
-        'date_modified'
+        'date_modified',
+        'registration'
     ])
 
     id = IDField(source='_id', read_only=True)
@@ -76,6 +78,9 @@ class NodeSerializer(JSONAPISerializer):
 
     files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
                                              link_type='related')
+
+    comments = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-comments', lookup_field='pk', lookup_url_kwarg='node_id',
+                                               link_type='related', meta={'unread': 'get_unread_comments_count'})
 
     node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
                                                   lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
@@ -124,6 +129,11 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
+
+    def get_unread_comments_count(self, obj):
+        auth = self.get_user_auth(self.context['request'])
+        user = auth.user
+        return Comment.find_unread(user=user, node=obj)
 
     def create(self, validated_data):
         node = Node(**validated_data)
@@ -297,14 +307,21 @@ class NodeLinksSerializer(JSONAPISerializer):
         user = request.user
         auth = Auth(user)
         node = self.context['view'].get_node()
-        pointer_node = Node.load(validated_data['_id'])
-        if not pointer_node:
-            raise exceptions.NotFound('Node not found.')
+        target_node_id = validated_data['_id']
+        pointer_node = Node.load(target_node_id)
+        if not pointer_node or pointer_node.is_folder:
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/node_links/data/id'},
+                detail='Target Node \'{}\' not found.'.format(target_node_id)
+            )
         try:
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
         except ValueError:
-            raise exceptions.ValidationError('Node link to node {} already in list'.format(pointer_node._id))
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/node_links/data/id'},
+                detail='Target Node \'{}\' already pointed to by \'{}\'.'.format(target_node_id, node._id)
+            )
 
     def update(self, instance, validated_data):
         pass

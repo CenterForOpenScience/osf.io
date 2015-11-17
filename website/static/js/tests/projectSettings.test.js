@@ -6,6 +6,7 @@ var faker = require('faker');
 
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
+var language = require('js/osfLanguage').projectSettings;
 
 /*
  * Dear sloria,
@@ -25,44 +26,28 @@ window.contextVars = {
 
 var ProjectSettings = require('js/projectSettings.js');
 
-var NodeCategorySettings = ProjectSettings.NodeCategorySettings;
+var ProjectSettings = ProjectSettings.ProjectSettings;
 
-describe('NodeCategorySettings', () => {
+describe('ProjectSettings', () => {
     var category = faker.internet.domainWord();
-    var categories = [];
+    var categoryOptions = [];
     for (var i = 0; i < 10; i++) {
-        categories.push(faker.internet.domainWord());
+        categoryOptions.push(faker.internet.domainWord());
     }
     var updateUrl = faker.internet.ip();
-    var vm = new NodeCategorySettings(category, categories, updateUrl);
+    var vm = new ProjectSettings({category: category, categoryOptions: categoryOptions, updateUrl: updateUrl, node_id: 'nodeID'});
     describe('#constructor', function() {
         it('throws an error if no updateUrl is passed', () => {
             var broken = function() {
-                new NodeCategorySettings(category, categories);
+                new ProjectSettings({category: category, categoryOptions: categoryOptions});
             };
-            assert.throws(broken , vm.INSTANTIATION_ERROR_MESSAGE);
+            assert.throws(broken , language.instantiationErrorMessage);
         });
         it('implements the changeMessage interface', () => {
             assert.isTrue(vm.hasOwnProperty('message'));
             assert.isTrue(vm.hasOwnProperty('messageClass'));
             assert.isTrue(Boolean(vm.changeMessage) || false);
             assert.isTrue(Boolean(vm.resetMessage) || false);
-        });
-    });
-    describe('#updateSuccess', () => {
-        var changeMessageSpy;
-        before(() => {
-            changeMessageSpy = sinon.spy(vm, 'changeMessage');
-        });
-        after(() => {
-            vm.changeMessage.restore();
-        });
-        it('updates the message, updates the category, and sets the dirty state to false', () => {
-            var newcategory = categories[0];
-            vm.updateSuccess(newcategory);
-            assert.calledWith(changeMessageSpy, vm.UPDATE_SUCCESS_MESSAGE, vm.MESSAGE_SUCCESS_CLASS);
-            assert.equal(newcategory, vm.category());
-            assert.isFalse(vm.dirty());
         });
     });
     describe('#updateError', () => {
@@ -79,18 +64,17 @@ describe('NodeCategorySettings', () => {
         it('updates the message, and captures the error with Raven', () => {
             var error = faker.lorem.sentence();
             vm.updateError({}, error, {});
-            assert.calledWith(changeMessageSpy, vm.UPDATE_ERROR_MESSAGE, vm.MESSAGE_ERROR_CLASS);
-            assert.calledWith(ravenStub, vm.UPDATE_ERROR_MESSAGE_RAVEN, {
+            assert.calledWith(changeMessageSpy, language.updateErrorMessage);
+            assert.calledWith(ravenStub, language.updateErrorMessage, {
                 url: updateUrl,
                 textStatus: error,
-                err: {}
+                err: {},
             });
         });
     });
-    describe('#updateCategory', () => {
+    describe('#updateAll', () => {
         var server;
         var serverSpy = sinon.spy();
-        var updateSuccessSpy = sinon.spy(vm, 'updateSuccess');
         before(() => {
             server = sinon.fakeServer.create();
             server.respondWith(
@@ -98,13 +82,9 @@ describe('NodeCategorySettings', () => {
                 updateUrl,
                 function(xhr) {
                     serverSpy();
-                    var response = {
-                        'updated_fields': JSON.parse(xhr.requestBody)
-                    };
                     xhr.respond(
                         200,
-                        {'Content-Type': 'application/json'},
-                        JSON.stringify(response)
+                        {'Content-Type': 'application/json'}
                     );
                 }
             );
@@ -112,19 +92,21 @@ describe('NodeCategorySettings', () => {
         after(() => {
             server.restore();
         });
-        it('sends a put to the updateUrl with the selected category, and updates the category on success', (done) => {
-            var newcategory = categories[0];
+        it('sends a put to the updateUrl with the settings inputs and updates them on success', (done) => {
+            var newcategory = categoryOptions[0];
             vm.selectedCategory(newcategory);
-            vm.updateCategory()
+            vm.title('New title');
+            vm.description('New description');
+            vm.requestPayload = vm.serialize();
+            vm.updateAll()
                 .always(function() {
                     assert.called(serverSpy);
-                    assert.calledWith(updateSuccessSpy, newcategory);
                     done();
                 });
             server.respond();
         });
     });
-    describe('#cancelUpdateCategory', () => {
+    describe('#cancelAll', () => {
         var resetMessageSpy;
         before(() => {
             resetMessageSpy = sinon.spy(vm, 'resetMessage');
@@ -132,13 +114,13 @@ describe('NodeCategorySettings', () => {
         after(() => {
             vm.resetMessage.restore();
         });
-        it('restores the selectedCategory to the VM\'s category, sets the dirty state to false, and resets the message', () => {
-            vm.selectedCategory(categories[0]);
-            vm.dirty(true);
+        it('restores the category, title, and description to those of the VM, and resets the message', () => {
+            vm.selectedCategory(categoryOptions[0]);
             vm.changeMessage('Some message', 'some-class');
-            vm.cancelUpdateCategory();
-            assert.equal(vm.selectedCategory(), vm.category());
-            assert.isFalse(vm.dirty());
+            vm.cancelAll();
+            assert.equal(vm.selectedCategory(), vm.categoryPlaceholder);
+            assert.equal(vm.title(), vm.titlePlaceholder);
+            assert.equal(vm.description(), vm.descriptionPlaceholder);
             assert.called(resetMessageSpy);
         });
     });

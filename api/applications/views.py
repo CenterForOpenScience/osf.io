@@ -16,7 +16,6 @@ from website.models import ApiOAuth2Application
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
 from api.base import permissions as base_permissions
-from api.applications.permissions import OwnerOnly
 from api.applications.serializers import ApiOAuth2ApplicationSerializer, ApiOAuth2ApplicationDetailSerializer
 
 
@@ -26,7 +25,7 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        OwnerOnly,
+        base_permissions.OwnerOnly,
         base_permissions.TokenHasScope,
     )
 
@@ -64,7 +63,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        OwnerOnly,
+        base_permissions.OwnerOnly,
         base_permissions.TokenHasScope,
     )
 
