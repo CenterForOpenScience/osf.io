@@ -786,7 +786,7 @@ var RegistrationEditor = function(urls, editorId) {
  *
  * @param {Draft} draft
  **/
-RegistrationEditor.prototype.init = function(draft) {
+RegistrationEditor.prototype.init = function(draft, preview) {
     var self = this;
 
     self.draft(draft);
@@ -838,6 +838,28 @@ RegistrationEditor.prototype.init = function(draft) {
     });
 
     self.currentQuestion(self.flatQuestions().shift());
+
+    if ( preview ) {
+        ko.bindingHandlers.previewQuestion = {
+            init: function(elem, valueAccessor) {
+                var question = valueAccessor();
+                var $elem = $(elem);
+
+                if (question.type === 'object') {
+                    $.each(question.properties, function(_, subQuestion) {
+                        subQuestion = self.context(subQuestion);
+                        if ( self.extensions[subQuestion.type] ) {
+                            $elem.append(subQuestion.preview());
+                        } else {
+                            $elem.append(question.value());
+                        }
+                    });
+                } else {
+                    $elem.append(question.value());
+                }
+            }
+        };
+    }
 };
 /**
  * @returns {Question[]} flat list of the current schema's questions
