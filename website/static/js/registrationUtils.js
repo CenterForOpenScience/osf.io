@@ -162,6 +162,7 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || {};
     self.match = questionSchema.match || '';
 
+    var _value;
     if ($.isFunction(self.data.value)) {
         // For subquestions, this could be an observable
         _value = self.data.value();
@@ -169,6 +170,9 @@ var Question = function(questionSchema, data) {
         _value = self.data.value || null;
     }
     if (self.type === 'choose' && self.format === 'multiselect') {
+        if (!$.isArray(_value)) {
+            _value = [_value];
+        }
         self.value = ko.observableArray(_value);
     }
     else if (self.type === 'object') {
