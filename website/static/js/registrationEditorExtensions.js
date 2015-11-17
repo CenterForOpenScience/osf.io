@@ -79,7 +79,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 item.css = '';
 
                 limitContents(item);
-                
+
                 if (viewModel.value() !== null) {
                     if (item.data.path === viewModel.value()) {
                         item.css = 'fangorn-selected';
@@ -138,8 +138,25 @@ var Uploader = function(data) {
     var self = this;
     self._orig = data;
 
+    self.getFileName = function() {
+        return '#'; // $.getJSON('/some/path/to/get/filename');
+    };
+
+    self.filePath = ko.observable('');
+    // self.getFileName()
+    //     .done(function(data) {
+    //         self.getFileName(data);
+    //     }).fail(function() {
+    //         $osf.growl('Problem loading attached files',
+    //                    'Please refresh the page or contact <a href="mailto: support@cos.io">support@cos.io</a>' +
+    //                    'if the problem persists' );
+    //     });
     self.selectedFileName = ko.observable('no file selected');
     self.filePicker = null;
+
+    self.preview = function() {
+        return data.value() ? data.value() : $('<a href=' + self.filePath() + '>' + self.selectedFileName() + '</a>');
+    };
 
     $.extend(self, data);
 };
@@ -155,6 +172,9 @@ var AuthorImport = function(data, $root) {
         $.each(boxes, function(i, box) {
             this.checked = value;
         });
+    };
+    self.preview = function() {
+        return self.value();
     };
 
     self.authorDialog = function() {
