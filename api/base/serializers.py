@@ -8,7 +8,7 @@ from rest_framework.fields import SkipField
 from framework.auth import core as auth_core
 from website import settings
 from website.util.sanitize import strip_html
-from website.util import waterbutler_api_url_for, deep_get
+from website.util import waterbutler_api_url_for
 from rest_framework.fields import get_attribute as get_nested_attributes
 
 from api.base import utils
@@ -91,7 +91,7 @@ class IDField(ser.CharField):
         kwargs['label'] = 'ID'
         super(IDField, self).__init__(**kwargs)
 
-    #Overrides CharField
+    # Overrides CharField
     def to_internal_value(self, data):
         request = self.context['request']
         if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
@@ -302,7 +302,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
             ret = format_relationship_links(related_url, self_url, related_meta, self_meta)
         return ret
-
 
 
 class JSONAPIHyperlinkedGuidRelatedField(ser.Field):

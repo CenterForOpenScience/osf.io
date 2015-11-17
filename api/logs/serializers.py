@@ -4,6 +4,7 @@ from api.base.serializers import (
     RelationshipField
 )
 
+
 class NodeLogSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset(['action', 'date'])
