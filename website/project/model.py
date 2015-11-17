@@ -2022,7 +2022,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def create_draft_registration(self, user, schema, data=None, save=False):
         draft = DraftRegistration(
             initiator=user,
-            branched_from=self,
             registration_schema=schema,
             registration_metadata=data or {},
         )
@@ -3960,8 +3959,6 @@ class DraftRegistration(StoredObject):
 
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
-    # Original Node a draft registration is associated with
-    branched_from = fields.ForeignField('node')
 
     initiator = fields.ForeignField('user')
 
@@ -4036,7 +4033,7 @@ class DraftRegistration(StoredObject):
         return changes
 
     def register(self, auth, save=False):
-        node = self.branched_from
+        node = self.node__branched
 
         # Create the registration
         register = node.register_node(

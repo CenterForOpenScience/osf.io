@@ -20,11 +20,11 @@ def serialize_draft_registration(draft, auth=None):
     from website.profile.utils import serialize_user  # noqa
     from website.project.utils import serialize_node  # noqa
 
-    node = draft.branched_from
+    node = draft.node__branched
 
     return {
         'pk': draft._id,
-        'branched_from': serialize_node(draft.branched_from, auth),
+        'branched_from': serialize_node(node, auth),
         'initiator': serialize_user(draft.initiator, full=True),
         'registration_metadata': draft.registration_metadata,
         'registration_schema': serialize_meta_schema(draft.registration_schema),
