@@ -400,7 +400,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
     def to_representation(self, data):
         # Don't envelope when serializing collection
         errors = {}
-        bulk_skip_permissions = self.context['request'].query_params.get('skip_permissions', False)
+        bulk_skip_uneditable = self.context['request'].query_params.get('skip_uneditable', False)
 
         if isinstance(data, collections.Mapping):
             errors = data.get('errors', None)
@@ -410,15 +410,15 @@ class JSONAPIListSerializer(ser.ListSerializer):
             self.child.to_representation(item, envelope=None) for item in data
         ]
 
-        if errors and bulk_skip_permissions:
+        if errors and bulk_skip_uneditable:
             ret.append({'errors': errors})
 
         return ret
 
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
-        bulk_skip_permissions = self.context['request'].query_params.get('skip_permissions', False)
-        if not bulk_skip_permissions:
+        bulk_skip_uneditable = self.context['request'].query_params.get('skip_uneditable', False)
+        if not bulk_skip_uneditable:
             if len(instance) != len(validated_data):
                 raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
 
@@ -432,8 +432,8 @@ class JSONAPIListSerializer(ser.ListSerializer):
             data = data_mapping.pop(resource_id, None)
             ret['data'].append(self.child.update(resource, data))
 
-        # If skip_permissions in request, add validated_data for nodes in which the user did not have edit permissions to errors
-        if data_mapping and bulk_skip_permissions:
+        # If skip_uneditable in request, add validated_data for nodes in which the user did not have edit permissions to errors
+        if data_mapping and bulk_skip_uneditable:
             ret.update({'errors': data_mapping})
         return ret
 

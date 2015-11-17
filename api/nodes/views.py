@@ -253,9 +253,9 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
 
             nodes = Node.find(query)
 
-            # If skip_permissions=True in query_params, don't fail entirely if lacking permissions for
-            # one of the nodes.  Instead, allow the editable nodes to be edited.
-            if self.request.query_params.get('skip_permissions', False):
+            # If skip_uneditable=True in query_params, skip nodes for which the user
+            # does not have EDIT permissions.
+            if self.request.query_params.get('skip_uneditable', False):
                 has_permission = []
                 for node in nodes:
                     if node.can_edit(auth):
