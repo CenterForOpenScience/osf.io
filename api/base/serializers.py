@@ -399,25 +399,37 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
     def to_representation(self, data):
         # Don't envelope when serializing collection
-        return [
+        errors = {}
+        is_dictionary = False
+        if isinstance(data, collections.Mapping):
+            is_dictionary = True
+            errors = data.get('errors', None)
+            data = data.get('data', None)
+        ret = [
             self.child.to_representation(item, envelope=None) for item in data
         ]
 
+        if is_dictionary:
+            ret.append({'errors': errors})
+
+        return ret
+
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
-        if len(instance) != len(validated_data):
-            raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
+        # if len(instance) != len(validated_data):
+        #     raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
 
         id_lookup = self.child.fields['id'].source
         instance_mapping = {getattr(item, id_lookup): item for item in instance}
         data_mapping = {item.get(id_lookup): item for item in validated_data}
 
-        ret = []
+        ret = {'data': [], 'errors': {}}
 
-        for resource_id, data in data_mapping.items():
-            resource = instance_mapping.get(resource_id, None)
-            ret.append(self.child.update(resource, data))
-
+        for resource_id, resource in instance_mapping.items():
+            data = data_mapping.pop(resource_id, None)
+            ret['data'].append(self.child.update(resource, data))
+        if data_mapping:
+            ret['errors'] = data_mapping
         return ret
 
     # overrides ListSerializer
