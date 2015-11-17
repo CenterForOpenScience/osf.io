@@ -6,6 +6,7 @@ import functools
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+from modularodm import Q
 
 from framework.auth.core import Auth
 from website import settings
@@ -13,14 +14,15 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-from website.models import Retraction
+from website.models import Retraction, NodeLicense, Tag
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
 from tests.factories import (
     UserFactory, ProjectFactory, NodeFactory,
     UnregUserFactory, UnconfirmedUserFactory,
-    RegistrationFactory
+    RegistrationFactory,
+    NodeLicenseRecordFactory
 )
 
 TEST_INDEX = 'test'
@@ -49,18 +51,26 @@ def query_user(name):
     term = 'category:user AND "{}"'.format(name)
     return query(term)
 
+def query_file(name):
+    term = 'category:file AND "{}"'.format(name)
+    return query(term)
 
-def retry_assertion(interval=0.3
-                    , retries=3):
+def query_tag_file(name):
+    term = 'category:file AND (tags:u"{}")'.format(name)
+    return query(term)
+
+def retry_assertion(interval=0.3, retries=3):
     def test_wrapper(func):
+        t_interval = interval
+        t_retries = retries
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             try:
                 func(*args, **kwargs)
             except AssertionError as e:
                 if retries:
-                    time.sleep(interval)
-                    retry_assertion(interval=interval, retries=retries - 1)(func)(*args, **kwargs)
+                    time.sleep(t_interval)
+                    retry_assertion(interval=t_interval, retries=t_retries - 1)(func)(*args, **kwargs)
                 else:
                     raise e
         return wrapped
@@ -201,6 +211,52 @@ class TestProject(SearchTestCase):
         self.project.set_privacy('public')
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 1)
+
+
+@requires_search
+class TestNodeSearch(SearchTestCase):
+
+    def setUp(self):
+        super(TestNodeSearch, self).setUp()
+        self.node = ProjectFactory(is_public=True, title='node')
+        self.public_child = ProjectFactory(parent=self.node, is_public=True, title='public_child')
+        self.private_child = ProjectFactory(parent=self.node, title='private_child')
+        self.public_subchild = ProjectFactory(parent=self.private_child, is_public=True)
+        self.node.node_license = NodeLicenseRecordFactory()
+        self.node.save()
+
+        self.query = 'category:project & category:component'
+
+    @retry_assertion()
+    def test_node_license_added_to_search(self):
+        docs = query(self.query)['results']
+        node = [d for d in docs if d['title'] == self.node.title][0]
+        assert_in('license', node)
+        assert_equal(node['license']['id'], self.node.node_license.id)
+
+    @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
+    @retry_assertion(retries=10)
+    def test_node_license_propogates_to_children(self):
+        docs = query(self.query)['results']
+        child = [d for d in docs if d['title'] == self.public_child.title][0]
+        assert_in('license', child)
+        assert_equal(child['license'].get('id'), self.node.node_license.id)
+        child = [d for d in docs if d['title'] == self.public_subchild.title][0]
+        assert_in('license', child)
+        assert_equal(child['license'].get('id'), self.node.node_license.id)
+
+    @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
+    @retry_assertion(retries=10)
+    def test_node_license_updates_correctly(self):
+        other_license = NodeLicense.find_one(
+            Q('name', 'eq', 'MIT License')
+        )
+        new_license = NodeLicenseRecordFactory(node_license=other_license)
+        self.node.node_license = new_license
+        self.node.save()
+        docs = query(self.query)['results']
+        for doc in docs:
+            assert_equal(doc['license'].get('id'), new_license.id)
 
 @requires_search
 class TestRegistrationRetractions(SearchTestCase):
@@ -763,3 +819,78 @@ class TestSearchMigration(SearchTestCase):
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
+
+class TestSearchFiles(SearchTestCase):
+
+    def setUp(self):
+        super(TestSearchFiles, self).setUp()
+        self.node = ProjectFactory(is_public=True, title='Otis')
+        self.osf_storage = self.node.get_addon('osfstorage')
+        self.root = self.osf_storage.get_root()
+
+    def test_search_file(self):
+        self.root.append_file('Shake.wav')
+        find = query_file('Shake.wav')['results']
+        assert_equal(len(find), 1)
+
+    def test_delete_file(self):
+        file_ = self.root.append_file('I\'ve Got Dreams To Remember.wav')
+        find = query_file('I\'ve Got Dreams To Remember.wav')['results']
+        assert_equal(len(find), 1)
+        file_.delete()
+        find = query_file('I\'ve Got Dreams To Remember.wav')['results']
+        assert_equal(len(find), 0)
+
+    def test_add_tag(self):
+        file_ = self.root.append_file('That\'s How Strong My Love Is.mp3')
+        tag = Tag(_id='Redding')
+        tag.save()
+        file_.tags.append(tag)
+        file_.save()
+        find = query_tag_file('Redding')['results']
+        assert_equal(len(find), 1)
+
+    def test_remove_tag(self):
+        file_ = self.root.append_file('I\'ve Been Loving You Too Long.mp3')
+        tag = Tag(_id='Blue')
+        tag.save()
+        file_.tags.append(tag)
+        file_.save()
+        find = query_tag_file('Blue')['results']
+        assert_equal(len(find), 1)
+        file_.tags.remove('Blue')
+        file_.save()
+        find = query_tag_file('Blue')['results']
+        assert_equal(len(find), 0)
+
+    def test_make_node_private(self):
+        file_ = self.root.append_file('Change_Gonna_Come.wav')
+        find = query_file('Change_Gonna_Come.wav')['results']
+        assert_equal(len(find), 1)
+        self.node.is_public = False
+        self.node.save()
+        find = query_file('Change_Gonna_Come.wav')['results']
+        assert_equal(len(find), 0)
+
+    def test_make_private_node_public(self):
+        self.node.is_public = False
+        self.node.save()
+        file_ = self.root.append_file('Try a Little Tenderness.flac')
+        find = query_file('Try a Little Tenderness.flac')['results']
+        assert_equal(len(find), 0)
+        self.node.is_public = True
+        self.node.save()
+        find = query_file('Try a Little Tenderness.flac')['results']
+        assert_equal(len(find), 1)
+
+    def test_delete_node(self):
+        node = ProjectFactory(is_public=True, title='The Soul Album')
+        osf_storage = node.get_addon('osfstorage')
+        root = osf_storage.get_root()
+        root.append_file('The Dock of the Bay.mp3')
+        find = query_file('The Dock of the Bay.mp3')['results']
+        assert_equal(len(find), 1)
+        node.is_deleted = True
+        node.save()
+        find = query_file('The Dock of the Bay.mp3')['results']
+        assert_equal(len(find), 0)

@@ -56,7 +56,7 @@ from tests.base import (
     assert_datetime_equal,
 )
 from tests.factories import (
-    UserFactory, ApiOAuth2ApplicationFactory, ProjectFactory, WatchConfigFactory,
+    UserFactory, ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
     ProjectWithAddonFactory, MockAddonNodeSettings,
@@ -1495,7 +1495,8 @@ class TestUserProfile(OsfTestCase):
 
         mock_client.lists.unsubscribe.assert_called_with(
             id=list_id,
-            email={'email': self.user.username}
+            email={'email': self.user.username},
+            send_goodbye=True
         )
         mock_client.lists.subscribe.assert_called_with(
             id=list_id,
@@ -1606,6 +1607,21 @@ class TestUserProfileApplicationsPage(OsfTestCase):
         url = web_url_for('oauth_application_detail', client_id='nonexistent')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.NOT_FOUND)
+
+    def test_url_has_not_broken(self):
+        assert_equal(self.platform_app.url, self.detail_url)
+
+
+class TestUserProfileTokensPage(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserProfileTokensPage, self).setUp()
+        self.user = AuthUserFactory()
+        self.token = ApiOAuth2PersonalTokenFactory()
+        self.detail_url = web_url_for('personal_access_token_detail', _id=self.token._id)
+
+    def test_url_has_not_broken(self):
+        assert_equal(self.token.url, self.detail_url)
 
 
 class TestUserAccount(OsfTestCase):
