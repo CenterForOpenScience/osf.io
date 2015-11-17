@@ -57,7 +57,9 @@ class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
             raise ValidationError('Request must contain array of resource identifier objects.')
 
         response = super(BulkUpdateJSONAPIView, self).bulk_update(request, *args, **kwargs)
-        meta = response.data.pop(-1)
+        meta = {}
+        if 'errors' in response.data[1]:
+            meta = response.data.pop(-1)
         response.data = {'data': response.data, 'meta': meta}
         return response
 
