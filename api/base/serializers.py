@@ -2,7 +2,6 @@ import re
 import collections
 
 from rest_framework import exceptions
-from rest_framework.reverse import reverse
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 
@@ -10,12 +9,39 @@ from framework.auth import core as auth_core
 from website import settings
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for, deep_get
+from rest_framework.fields import get_attribute as get_nested_attributes
 
 from api.base import utils
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException
-
 from website.util import rapply as _rapply
+
+def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
+    """
+    Properly handles formatting of self and related links according to JSON API.
+
+    Removes related or self link, if none.
+    """
+
+    ret = {'links': {}}
+
+    if related_link:
+        ret['links'].update({
+            'related': {
+                'href': related_link or {},
+                'meta': rel_meta or {}
+            }
+        })
+
+    if self_link:
+        ret['links'].update({
+            'self': {
+                'href': self_link or {},
+                'meta': self_meta or {}
+            }
+        })
+
+    return ret
 
 
 class AllowMissing(ser.Field):
@@ -143,95 +169,140 @@ class AuthorizedCharField(ser.CharField):
         return field_source_method(auth=auth)
 
 
-class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
+class RelationshipField(ser.HyperlinkedIdentityField):
     """
-    HyperlinkedIdentityField that returns a nested dict with url,
-    optional meta information, and link_type.
+    RelationshipField that permits the return of both self and related links, along with optional
+    meta information.
 
     Example:
+    children = RelationshipField(
+        related_view='nodes:node-children',
+        related_view_kwargs={'node_id': '<pk>'},
+        self_view='nodes:node-node-children-relationship',
+        self_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_node_count'}
+    )
 
-        children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk',
-                                    link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
+    The lookup field must be surrounded in angular brackets to find the attribute on the target. Otherwise, the lookup
+    field will be returned verbatim.
+
+    Example:
+     wiki_home = RelationshipField(
+        related_view='addon:addon-detail',
+        related_view_kwargs={'node_id': '<_id>', 'provider': 'wiki'},
+    )
+    '_id' is enclosed in angular brackets, but 'wiki' is not. 'id' will be looked up on the target, but 'wiki' will not.
+     The serialized result would be '/nodes/abc12/addons/wiki'.
+
+    Field can handle nested attributes:
+
+    Example:
+    wiki_home = RelationshipField(
+        related_view='wiki:wiki-detail',
+        related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
+    )
 
     """
+
     json_api_link = True  # serializes to a links object
 
-    def __init__(self, view_name=None, **kwargs):
-        self.meta = kwargs.pop('meta', {})
-        self.link_type = kwargs.pop('link_type', 'url')
-        super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
+    def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
+                 self_meta=None, related_meta=None, **kwargs):
+        related_view = related_view
+        self_view = self_view
+        related_kwargs = related_view_kwargs
+        self_kwargs = self_view_kwargs
+        self.views = {'related': related_view, 'self': self_view}
+        self.view_kwargs = {'related': related_kwargs, 'self': self_kwargs}
+        self.related_meta = related_meta
+        self.self_meta = self_meta
+        assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
+        if related_view:
+            assert related_kwargs is not None, 'Must provide related view kwargs.'
+        if self_view:
+            assert self_kwargs is not None, 'Must provide self view kwargs.'
 
-    # overrides HyperlinkedIdentityField
-    def get_url(self, obj, view_name, request, format):
+        super(RelationshipField, self).__init__(self.views, **kwargs)
+
+    def get_meta_information(self, meta_data, value):
         """
-        Given an object, return the URL that hyperlinks to the object.
-
-        Returns None if lookup value is None
+        For retrieving meta values, otherwise returns {}
         """
-        attr = deep_get(obj, self.lookup_field)
-        if attr is None:
-            raise SkipField()
-        kwargs = {self.lookup_url_kwarg: attr}
-        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
-
-    # overrides HyperlinkedIdentityField
-    def to_representation(self, value):
-        """
-        Returns nested dictionary in format {'links': {'self.link_type': ... }
-
-        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
-        the link is represented as a links object with 'href' and 'meta' members.
-        """
-        try:
-            url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
-        except SkipField:
-            url = None  # TODO: remove/fix this when we merge https://github.com/CenterForOpenScience/osf.io/pull/4356
-
         meta = {}
-        for key in self.meta:
-            if key in {'count', 'unread'}:
+        for key in meta_data or {}:
+            if key == 'count':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
-                if utils.is_falsy(show_related_counts):
+                if utils.is_truthy(show_related_counts):
+                    meta[key] = _rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                elif utils.is_falsy(show_related_counts):
                     continue
                 if not utils.is_truthy(show_related_counts):
                     raise InvalidQueryStringError(
                         detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
                         parameter='related_counts'
                     )
+            else:
+                meta[key] = _rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+        return meta
 
-            meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+    def lookup_attribute(self, obj, lookup_field):
+        """
+        Returns attribute from target object unless attribute surrounded in angular brackets where it returns the lookup field.
 
-        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
+        Also handles the lookup of nested attributes.
+        """
+        bracket_check = _tpl(lookup_field)
+        if bracket_check:
+            source_attrs = bracket_check.split('.')
+            return get_nested_attributes(obj, source_attrs)
+        return lookup_field
 
+    def kwargs_lookup(self, obj, kwargs_dict):
+        """
+        For returning kwargs dictionary of format {"lookup_url_kwarg": lookup_value}
+        """
+        kwargs_retrieval = {}
+        for lookup_url_kwarg, lookup_field in kwargs_dict.items():
+            try:
+                lookup_value = self.lookup_attribute(obj, lookup_field)
+            except AttributeError as exc:
+                raise AssertionError(exc)
+            if lookup_value is None:
+                return None
+            kwargs_retrieval[lookup_url_kwarg] = lookup_value
+        return kwargs_retrieval
 
-class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
-    """
-    HyperlinkedRelated field that returns a nested dict with url,
-    optional meta information, and link_type.
+    # Overrides HyperlinkedIdentityField
+    def get_url(self, obj, view_name, request, format):
+        urls = {}
+        for view_name, view in self.views.items():
+            if view is None:
+                urls[view_name] = {}
+            else:
+                kwargs = self.kwargs_lookup(obj, self.view_kwargs[view_name])
+                if kwargs is None:
+                    urls[view_name] = {}
+                else:
+                    urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
 
-    Example:
+        if not urls['self'] and not urls['related']:
+            urls = None
+        return urls
 
-        branched_from = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk',
-                                                    lookup_url_kwarg='node_id', read_only=True, link_type='related')
-
-    """
-    json_api_link = True  # serializes to a links object
-
-    def __init__(self, view_name=None, **kwargs):
-        self.meta = kwargs.pop('meta', {})
-        self.link_type = kwargs.pop('link_type', 'url')
-        super(JSONAPIHyperlinkedRelatedField, self).__init__(view_name=view_name, **kwargs)
-
+    # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
-        """
-        Returns nested dictionary in format {'links': {'self.link_type': ... }
+        urls = super(RelationshipField, self).to_representation(value)
+        if not urls:
+            ret = None
+        else:
+            related_url = urls['related']
+            related_meta = self.get_meta_information(self.related_meta, value)
+            self_url = urls['self']
+            self_meta = self.get_meta_information(self.self_meta, value)
 
-        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
-        the link is represented as a links object with 'href' and 'meta' members.
-        """
-        url = super(JSONAPIHyperlinkedRelatedField, self).to_representation(value)
-        meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
-        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
+            ret = format_relationship_links(related_url, self_url, related_meta, self_meta)
+        return ret
+
 
 
 class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
@@ -381,21 +452,15 @@ class WaterbutlerLink(Link):
         return waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
 
 
-class NodeFileHyperLink(JSONAPIHyperlinkedIdentityField):
-    def __init__(self, kind=None, kwargs=None, **kws):
+class NodeFileHyperLinkField(RelationshipField):
+    def __init__(self, kind=None, **kws):
         self.kind = kind
-        self.kwargs = []
-        for kw in (kwargs or []):
-            if isinstance(kw, basestring):
-                kw = (kw, kw)
-            assert isinstance(kw, tuple) and len(kw) == 2
-            self.kwargs.append(kw)
-        super(NodeFileHyperLink, self).__init__(**kws)
+        super(NodeFileHyperLinkField, self).__init__(**kws)
 
     def get_url(self, obj, view_name, request, format):
         if self.kind and obj.kind != self.kind:
-            return None
-        return reverse(view_name, kwargs={attr_name: getattr(obj, attr) for (attr_name, attr) in self.kwargs}, request=request, format=format)
+            return {}
+        return super(NodeFileHyperLinkField, self).get_url(obj, view_name, request, format)
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
@@ -458,7 +523,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.  Looks to nest fields
-    according to JSON API spec. Relational fields must use JSONAPIHyperlinkedIdentityField.
+    according to JSON API spec. Relational fields must set json_api_link=True flag.
     Self/html links must be nested under "links".
     """
 
@@ -492,7 +557,9 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             if getattr(field, 'json_api_link', False):
-                data['relationships'][field.field_name] = field.to_representation(attribute)
+                result = field.to_representation(attribute)
+                if result:
+                    data['relationships'][field.field_name] = result
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':

@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
 from api.base.serializers import (
     JSONAPISerializer,
-    JSONAPIHyperlinkedIdentityField
+    RelationshipField
 )
 
 class NodeLogSerializer(JSONAPISerializer):
@@ -15,13 +15,11 @@ class NodeLogSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'logs'
 
-    nodes = JSONAPIHyperlinkedIdentityField(
-        view_name='logs:log-nodes',
-        lookup_field='pk',
-        lookup_url_kwarg='log_id'
+    nodes = RelationshipField(
+        related_view='logs:log-nodes',
+        related_view_kwargs={'log_id': '<pk>'},
     )
-    user = JSONAPIHyperlinkedIdentityField(
-        view_name='users:user-detail',
-        lookup_field='user._id',
-        lookup_url_kwarg='user_id'
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user._id>'},
     )
