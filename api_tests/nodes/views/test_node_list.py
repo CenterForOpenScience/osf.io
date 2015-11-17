@@ -1491,6 +1491,10 @@ class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
 
         self.url = "/{}nodes/?skip_uneditable=True".format(API_BASE)
 
+    def tearDown(self):
+        super(TestNodeBulkDeleteSkipUneditable, self).tearDown()
+        Node.remove()
+
     def test_skip_uneditable_bulk_delete(self):
         res = self.app.delete_json_api(self.url, self.payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 200)
