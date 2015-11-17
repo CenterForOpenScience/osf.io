@@ -13,6 +13,7 @@ from tests.factories import (
 
 node_url_for = lambda n_id: '/{}nodes/{}/'.format(API_BASE, n_id)
 
+
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
         super(TestNodeRegistrationList, self).setUp()

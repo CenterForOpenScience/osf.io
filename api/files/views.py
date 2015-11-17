@@ -76,7 +76,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
                                  equivalent to addon_short_name on the OSF
         size          integer    size of file in bytes
-        extra         object     may contain additional data beyond what's describe here,
+        extra         object     may contain additional data beyond what's described here,
                                  depending on the provider
           version     integer    version number of file. will be 1 on initial upload
           downloads   integer    count of the number times the file has been downloaded
@@ -116,6 +116,13 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
                                          for Box.com.
         last_touched  iso8601 timestamp  last time the metadata for the file was retrieved. only applies to non-OSF
                                          storage providers.
+        date_modified iso8601 timestamp  timestamp of when this file was last updated
+        extra         object             may contain additional data beyond what's described here, depending on
+                                         the provider
+          hashes      object
+            md5       string             md5 hash of file, null for folders
+            sha256    string             SHA-256 hash of file, null for folders
+
 
     ##Relationships
 
