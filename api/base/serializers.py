@@ -239,7 +239,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             if key == 'count':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
                 if utils.is_truthy(show_related_counts):
-                    meta[key] = website_utils.rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
                 elif utils.is_falsy(show_related_counts):
                     continue
                 if not utils.is_truthy(show_related_counts):
@@ -248,7 +248,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                         parameter='related_counts'
                     )
             else:
-                meta[key] = website_utils.rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
 
     def lookup_attribute(self, obj, lookup_field):
