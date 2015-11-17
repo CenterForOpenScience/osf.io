@@ -5,6 +5,7 @@ from rest_framework_bulk import generics as bulk_generics
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from website.project.model import Q
+from website.util.permissions import ADMIN
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.utils import is_bulk_request
@@ -120,6 +121,17 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         if not self.allow_bulk_destroy_resources(user, resource_object_list):
             raise PermissionDenied
 
-        self.perform_bulk_destroy(resource_object_list)
+        if self.request.query_params.get('skip_uneditable', False):
+            for resource in resource_object_list:
+                allowed = []
+                skipped = []
+                if resource.has_permission(user, ADMIN):
+                    allowed.append(resource)
+                else:
+                    skipped.append({'id': resource._id, 'type': object_type})
+            self.perform_bulk_destroy(allowed)
+            return Response(status=status.HTTP_200_OK, data={'meta': {'errors': skipped}})
 
+
+        self.perform_bulk_destroy(resource_object_list)
         return Response(status=status.HTTP_204_NO_CONTENT)
