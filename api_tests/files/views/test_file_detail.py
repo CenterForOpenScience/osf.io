@@ -57,7 +57,13 @@ class TestFileView(ApiTestCase):
             'provider': self.file.provider,
             'size': self.file.versions[-1].size,
             # HACK: odm's dates are weird
-            'date_modified': self.file.versions[-1].date_created.isoformat()[:-3]
+            'date_modified': self.file.versions[-1].date_created.isoformat()[:-3],
+            'extra': {
+                'hashes': {
+                    'md5': None,
+                    'sha256': None,
+                },
+            },
         })
 
     def test_checkout(self):
