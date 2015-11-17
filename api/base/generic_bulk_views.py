@@ -58,9 +58,11 @@ class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
 
         response = super(BulkUpdateJSONAPIView, self).bulk_update(request, *args, **kwargs)
         meta = {}
-        if 'errors' in response.data[1]:
+        if 'errors' in response.data[-1]:
             meta = response.data.pop(-1)
-        response.data = {'data': response.data, 'meta': meta}
+        response.data = {'data': response.data}
+        if meta:
+            response.data.update({'meta': meta})
         return response
 
 

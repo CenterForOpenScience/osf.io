@@ -400,36 +400,41 @@ class JSONAPIListSerializer(ser.ListSerializer):
     def to_representation(self, data):
         # Don't envelope when serializing collection
         errors = {}
-        is_dictionary = False
+        bulk_skip_permissions = self.context['request'].query_params.get('skip_permissions', False)
+
         if isinstance(data, collections.Mapping):
-            is_dictionary = True
             errors = data.get('errors', None)
             data = data.get('data', None)
+
         ret = [
             self.child.to_representation(item, envelope=None) for item in data
         ]
 
-        if is_dictionary:
+        if errors and bulk_skip_permissions:
             ret.append({'errors': errors})
 
         return ret
 
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
-        # if len(instance) != len(validated_data):
-        #     raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
+        bulk_skip_permissions = self.context['request'].query_params.get('skip_permissions', False)
+        if not bulk_skip_permissions:
+            if len(instance) != len(validated_data):
+                raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
 
         id_lookup = self.child.fields['id'].source
         instance_mapping = {getattr(item, id_lookup): item for item in instance}
         data_mapping = {item.get(id_lookup): item for item in validated_data}
 
-        ret = {'data': [], 'errors': {}}
+        ret = {'data': []}
 
         for resource_id, resource in instance_mapping.items():
             data = data_mapping.pop(resource_id, None)
             ret['data'].append(self.child.update(resource, data))
-        if data_mapping:
-            ret['errors'] = data_mapping
+
+        # If skip_permissions in request, add validated_data for nodes in which the user did not have edit permissions to errors
+        if data_mapping and bulk_skip_permissions:
+            ret.update({'errors': data_mapping})
         return ret
 
     # overrides ListSerializer
