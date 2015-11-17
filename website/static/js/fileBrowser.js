@@ -184,7 +184,6 @@ var FileBrowser = {
             if(!isInit){
                 $('[data-toggle="tooltip"]').tooltip();
                 $('.fb-collections ul>li').droppable({
-                    //accept: '.tb-td',
                     hoverClass: 'bg-color-hover',
                     drop: function( event, ui ) {
                        console.log('dropped', event, ui, this);
@@ -322,6 +321,43 @@ var FileBrowser = {
  * @constructor
  */
 var Collections  = {
+    controller : function(args){
+        var self = this;
+        self.newCollectionName = m.prop('');
+        self.addCollection = function () {
+            console.log( self.newCollectionName());
+            $('.modal').modal('hide');
+            var url = $osf.apiV2Url('collections/', {});
+            var data = {
+                'data': {
+                    "type": "collections",
+                    "attributes": {
+                        "title": self.newCollectionName(),
+                    }
+                }
+            };
+            m.request({method : 'POST', url : url, config : xhrconfig, data : data}).then(function(result){
+                console.log(result);
+            });
+            self.newCollectionName('');
+
+            //Method:        POST
+            //URL:           links.self
+            //Query Params:  <none>
+            //Body (JSON):   {
+            //    "data": {
+            //        "type": "collections", # required
+            //        "attributes": {
+            //            "title":       {title},          # required
+            //        }
+            //    }
+            //}
+            //Success:       201 CREATED + collection representation
+            //
+            //
+
+        };
+    },
     view : function (ctrl, args) {
         var selectedCSS;
         return m('.fb-collections', [
@@ -371,7 +407,80 @@ var Collections  = {
                     ])
                 ]) : ''
             ]),
+            m('.fb-collections-modals', [
+                m('#addColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addCollLabel"][aria-hidden="true"]',
+                    m('.modal-dialog',
+                        m('.modal-content', [
+                            m('.modal-header', [
+                                m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                                    m('span[aria-hidden="true"]','×'),
+                                ]),
+                                m('h3.modal-title#addCollLabel', 'Add New Collection')
+                            ]),
+                            m('.modal-body', [
+                                m('p', 'Collections are groups of projects that help you organize your work. [Learn more] about how to use Collections to organize your workflow. '),
+                                m('.form-inline', [
+                                    m('.form-group', [
+                                        m('label[for="addCollInput]', 'Collection Name'),
+                                        m('input[type="text"].form-control#addCollInput', {onchange: m.withAttr('value', ctrl.newCollectionName), value: ctrl.newCollectionName()})
 
+                                    ])
+                                ]),
+                                m('p', 'After you create your collection drag and drop projects to the collection. ')
+                            ]),
+                            m('.modal-footer', [
+                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
+                                m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
+                            ])
+                        ])
+                    )
+                ),
+                m('#renameColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="renameCollLabel"][aria-hidden="true"]',
+                    m('.modal-dialog',
+                        m('.modal-content', [
+                            m('.modal-header', [
+                                m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                                    m('span[aria-hidden="true"]','×'),
+                                ]),
+                                m('h3.modal-title#renameCollLabel', 'Rename Collection')
+                            ]),
+                            m('.modal-body', [
+                                m('p', 'Collections are groups of projects that help you organize your work. [Learn more] about how to use Collections to organize your workflow. '),
+                                m('.form-inline', [
+                                    m('.form-group', [
+                                        m('label[for="addCollInput]', 'Collection Name'),
+                                        m('input[type="text"].form-control#addCollInput', { value : args.collectionMenuObject().item.label})
+                                    ])
+                                ]),
+                            ]),
+                            m('.modal-footer', [
+                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
+                                m('button[type="button"].btn.btn-success', 'Rename')
+                            ])
+                        ])
+                    )
+                ),
+                m('#removeColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="removeCollLabel"][aria-hidden="true"]',
+                    m('.modal-dialog',
+                        m('.modal-content', [
+                            m('.modal-header', [
+                                m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                                    m('span[aria-hidden="true"]','×'),
+                                ]),
+                                m('h3.modal-title#removeCollLabel', 'Delete Collection ' + args.collectionMenuObject().item.label)
+                            ]),
+                            m('.modal-body', [
+                                m('p', 'You sure?'),
+
+                            ]),
+                            m('.modal-footer', [
+                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
+                                m('button[type="button"].btn.btn-danger', 'Delete')
+                            ])
+                        ])
+                    )
+                )
+            ])
         ]);
     }
 };
@@ -550,77 +659,6 @@ var ActivityLogs = {
 var Modals = {
     view : function(ctrl, args) {
         return m('.fb-Modals', [
-            m('#addColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addCollLabel"][aria-hidden="true"]',
-                m('.modal-dialog',
-                    m('.modal-content', [
-                        m('.modal-header', [
-                            m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                                m('span[aria-hidden="true"]','×'),
-                            ]),
-                            m('h3.modal-title#addCollLabel', 'Add New Collection')
-                        ]),
-                        m('.modal-body', [
-                            m('p', 'Collections are groups of projects that help you organize your work. [Learn more] about how to use Collections to organize your workflow. '),
-                            m('.form-inline', [
-                                m('.form-group', [
-                                    m('label[for="addCollInput]', 'Collection Name'),
-                                    m('input[type="text"].form-control#addCollInput')
-                                ])
-                            ]),
-                            m('p', 'After you create your collection drag and drop projects to the collection. ')
-                        ]),
-                        m('.modal-footer', [
-                            m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
-                            m('button[type="button"].btn.btn-success', 'Add')
-                        ])
-                    ])
-                )
-            ),
-            m('#renameColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="renameCollLabel"][aria-hidden="true"]',
-                m('.modal-dialog',
-                    m('.modal-content', [
-                        m('.modal-header', [
-                            m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                                m('span[aria-hidden="true"]','×'),
-                            ]),
-                            m('h3.modal-title#renameCollLabel', 'Rename Collection')
-                        ]),
-                        m('.modal-body', [
-                            m('p', 'Collections are groups of projects that help you organize your work. [Learn more] about how to use Collections to organize your workflow. '),
-                            m('.form-inline', [
-                                m('.form-group', [
-                                    m('label[for="addCollInput]', 'Collection Name'),
-                                    m('input[type="text"].form-control#addCollInput', { value : args.collectionMenuObject().item.label})
-                                ])
-                            ]),
-                        ]),
-                        m('.modal-footer', [
-                            m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
-                            m('button[type="button"].btn.btn-success', 'Rename')
-                        ])
-                    ])
-                )
-            ),
-            m('#removeColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="removeCollLabel"][aria-hidden="true"]',
-                m('.modal-dialog',
-                    m('.modal-content', [
-                        m('.modal-header', [
-                            m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                                m('span[aria-hidden="true"]','×'),
-                            ]),
-                            m('h3.modal-title#removeCollLabel', 'Delete Collection ' + args.collectionMenuObject().item.label)
-                        ]),
-                        m('.modal-body', [
-                            m('p', 'You sure?'),
-
-                        ]),
-                        m('.modal-footer', [
-                            m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
-                            m('button[type="button"].btn.btn-danger', 'Delete')
-                        ])
-                    ])
-                )
-            ),
             m('#infoModal.modal.fade[tabindex=-1][role="dialog"][aria-hidden="true"]',
                 m('.modal-dialog',
                     m('.modal-content', [
