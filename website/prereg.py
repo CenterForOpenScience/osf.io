@@ -33,11 +33,11 @@ def drafts_for_user(user):
 @decorators.must_be_logged_in
 def prereg_landing_page(auth, **kwargs):
     """Landing page for the prereg challenge"""
-    registerable_nodes = (
+    registerable_nodes = [
         node for node
         in auth.user.contributor_to
         if node.has_permission(user=auth.user, permission='admin')
-    )
+    ]
     has_projects = bool(registerable_nodes)
     has_draft_registrations = bool(drafts_for_user(auth.user).count())
 

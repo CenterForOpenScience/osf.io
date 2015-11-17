@@ -1,7 +1,6 @@
 import sys
 import logging
-
-from modularodm import Q
+import datetime as dt
 
 from website.app import init_app
 from website.models import DraftRegistration, Sanction, User
@@ -9,6 +8,20 @@ from website.models import DraftRegistration, Sanction, User
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.WARN)
 logging.disable(level=logging.INFO)
+
+
+def add_comments(draft):
+    comment = [{
+        'user': {
+            'id': 'itsMe',
+            'name': 'Mario!'
+        },
+        'value': 'Ahoy! This is a comment!',
+        'lastModified': dt.datetime.utcnow().isoformat()
+    }]
+    for question_id, value in draft.registration_metadata.iteritems():
+        value['comments'] = comment
+    draft.save()
 
 def main(dry_run=True):
     if dry_run:
@@ -18,6 +31,7 @@ def main(dry_run=True):
                             if draft.requires_approval and draft.approval and draft.approval.state == Sanction.UNAPPROVED]
 
     for draft in need_approval_drafts:
+        add_comments(draft)
         sanction = draft.approval
         try:
             if not dry_run:
