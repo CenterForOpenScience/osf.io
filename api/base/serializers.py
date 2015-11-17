@@ -208,15 +208,16 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
     json_api_link = True  # serializes to a links object
 
-    def __init__(self, **kwargs):
-        related_view = kwargs.pop('related_view', None)
-        self_view = kwargs.pop('self_view', None)
-        related_kwargs = kwargs.pop('related_view_kwargs', None)
-        self_kwargs = kwargs.pop('self_view_kwargs', None)
+    def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
+                 self_meta=None, related_meta=None, **kwargs):
+        related_view = related_view
+        self_view = self_view
+        related_kwargs = related_view_kwargs
+        self_kwargs = self_view_kwargs
         self.views = {'related': related_view, 'self': self_view}
         self.view_kwargs = {'related': related_kwargs, 'self': self_kwargs}
-        self.related_meta = kwargs.pop('related_meta', None)
-        self.self_meta = kwargs.pop('self_meta', None)
+        self.related_meta = related_meta
+        self.self_meta = self_meta
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
             assert related_kwargs is not None, 'Must provide related view kwargs.'
@@ -287,16 +288,13 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
 
         if not urls['self'] and not urls['related']:
-            urls = {}
-
+            urls = None
         return urls
 
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
-
         urls = super(RelationshipField, self).to_representation(value)
-
-        if urls == {}:
+        if not urls:
             ret = None
         else:
             related_url = urls['related']
