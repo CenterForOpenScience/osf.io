@@ -84,7 +84,7 @@ var FileBrowser = {
         m.request({method : 'GET', url : collectionsUrl, config : xhrconfig}).then(function(result){
             console.log(result);
            result.data.forEach(function(node){
-               self.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/', query : { 'related_counts' : true }, systemCollection : false}, node.attributes.title));
+               self.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
            });
         });
 
@@ -187,7 +187,26 @@ var FileBrowser = {
                     //accept: '.tb-td',
                     hoverClass: 'bg-color-hover',
                     drop: function( event, ui ) {
-                       console.log('dropped', event, ui);
+                       console.log('dropped', event, ui, this);
+                        var collection = self.collections[$(this).attr('data-index')];
+                        var data = {
+                            'data': {
+                                'type': 'node_links',
+                                'relationships': {
+                                    'nodes': {
+                                        'data': {
+                                            'type': 'nodes',
+                                            'id': '54uvd'
+                                        }
+                                    }
+                                }
+                            }
+                        };
+
+                        m.request({method : 'POST', url : collection.data.node.relationships.node_links.links.related.href, config : xhrconfig, data : data}).then(function(result){
+                            console.log(result);
+                        });
+
                     }
                 });
             }
@@ -316,9 +335,9 @@ var Collections  = {
                 m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
             ]),
             m('ul', [
-                args.list.map(function(item){
+                args.list.map(function(item, index){
                     selectedCSS = item.id === args.activeFilter() ? 'active' : '';
-                    return m('li', { className : selectedCSS},
+                    return m('li', { className : selectedCSS, 'data-index' : index },
                         [
                             m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label),
                             !item.data.systemCollection ? m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
