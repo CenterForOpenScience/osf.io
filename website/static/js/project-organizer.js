@@ -440,7 +440,7 @@ var tbOptions = {
             m('input.form-control[placeholder="' + tb.options.filterPlaceholder + '"][type="text"]', {
                 style: 'width:100%;display:inline;',
                 onkeyup: tb.filter,
-                onchange: m.withAttr("value", tb.filterText),
+                onchange: m.withAttr('value', tb.filterText),
                 value: tb.filterText()
             }),
             m('.filterReset', { onclick : function () {
