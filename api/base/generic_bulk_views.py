@@ -124,16 +124,15 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         # If skip_uneditable=True in query_params, skip resources for which the user does not have admin permissions
         # and delete the remaining resources
         if self.request.query_params.get('skip_uneditable', False):
+            allowed = []
+            skipped = []
             for resource in resource_object_list:
-                allowed = []
-                skipped = []
                 if resource.has_permission(user, ADMIN):
                     allowed.append(resource)
                 else:
                     skipped.append({'id': resource._id, 'type': object_type})
             self.perform_bulk_destroy(allowed)
             return Response(status=status.HTTP_200_OK, data={'meta': {'errors': skipped}})
-
 
         self.perform_bulk_destroy(resource_object_list)
         return Response(status=status.HTTP_204_NO_CONTENT)

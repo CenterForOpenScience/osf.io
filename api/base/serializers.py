@@ -434,7 +434,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
         # If skip_uneditable in request, add validated_data for nodes in which the user did not have edit permissions to errors
         if data_mapping and bulk_skip_uneditable:
-            ret.update({'errors': data_mapping})
+            ret.update({'errors': data_mapping.values()})
         return ret
 
     # overrides ListSerializer
