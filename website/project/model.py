@@ -3947,9 +3947,9 @@ class DraftRegistration(StoredObject):
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
     # Original Node a draft registration is associated with
-    branched_from = fields.ForeignField('node')
+    branched_from = fields.ForeignField('node', index=True)
 
-    initiator = fields.ForeignField('user')
+    initiator = fields.ForeignField('user', index=True)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
