@@ -17,9 +17,7 @@
       <li class="${'active' if current_page == 'dev_apps' else ''}">
         <a href="${ '#' if current_page == 'dev_apps' else web_url_for('oauth_application_list')}">Developer apps</a></li>
 
-      % if dev_mode:
       <li class="${'active' if current_page == 'personal_tokens' else ''}">
         <a href="${ '#' if current_page == 'personal_tokens' else web_url_for('personal_access_token_list')}">Personal access tokens</a></li>
-      % endif
   </ul>
 </div>
