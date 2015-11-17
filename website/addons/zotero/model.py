@@ -181,6 +181,22 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
         self.zotero_list_id = None
         return super(ZoteroNodeSettings, self).clear_auth()
 
+    def deauthorize(self, auth=None, add_log=True):
+        """Remove user authorization from this node and log the event."""
+        if add_log:
+            self.owner.add_log(
+                'zotero_node_deauthorized',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                },
+                auth=auth,
+            )
+
+        self.clear_auth()
+
+        self.save()
+
     def set_target_folder(self, zotero_list_id, zotero_list_name, auth):
         """Configure this addon to point to a Zotero folder
 

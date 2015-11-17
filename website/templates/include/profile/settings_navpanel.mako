@@ -14,10 +14,12 @@
       <li class="${'active' if current_page == 'notifications' else ''}">
         <a href="${ '#' if current_page == 'notifications' else web_url_for('user_notifications') }">Notifications</a></li>
 
+      <li class="${'active' if current_page == 'dev_apps' else ''}">
+        <a href="${ '#' if current_page == 'dev_apps' else web_url_for('oauth_application_list')}">Developer apps</a></li>
+
       % if dev_mode:
-          ## TODO: Remove dev_mode restriction when APIv2 released into production
-          <li class="${'active' if current_page == 'dev_apps' else ''}">
-            <a href="${ '#' if current_page == 'dev_apps' else web_url_for('oauth_application_list')}">Developer Apps</a></li>
+      <li class="${'active' if current_page == 'personal_tokens' else ''}">
+        <a href="${ '#' if current_page == 'personal_tokens' else web_url_for('personal_access_token_list')}">Personal access tokens</a></li>
       % endif
   </ul>
 </div>
