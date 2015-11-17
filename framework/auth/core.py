@@ -95,17 +95,17 @@ def validate_profile_websites(profile_websites):
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
 
-# def validate_academia(academia):
-#     for value in academia or []:
-#         try:
-#             validate_url(value)
-#         except ValidationError:
-#             # Reraise with a better message
-#             raise ValidationError('Invalid academia.edu URL.')
-#
-#
-# def validate_social_academia(value):
-#     validate_academia(value.get('academia'))
+def validate_academia(academia):
+    for value in academia or []:
+        try:
+            validate_url(value)
+        except ValidationError:
+            # Reraise with a better message
+            raise ValidationError('Invalid academia.edu URL.')
+
+
+def validate_social(value):
+    validate_academia(value.get('academia'))
 
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
