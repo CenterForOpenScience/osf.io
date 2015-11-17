@@ -14,8 +14,11 @@ $(function(){
         var input = $(target).find('input').first().focus();
     });
 
-    $('#newProject').click( function() {
-        var title = $('#newProjectTitle').val();
+    $('#newProject, #newProjectXS').click( function() {
+        var title = $(this).parent().find('.new-project-title').val();
+        if (!title) {
+            return;
+        }
         $osf.postJSON('/api/v1/project/new/', { title: title }).done(function(response) {
             window.location = response.projectUrl + 'registrations/';
         }).fail(function() {
@@ -37,6 +40,10 @@ $(function(){
             nodes: registrationSelection,
             enableComponents: true
         }, '#existingProject');
+        $osf.applyBindings({
+            nodes: registrationSelection,
+            enableComponents: true
+        }, '#existingProjectXS');
     }).fail(function(xhr, textStatus, error) {
         Raven.captureMessage('Could not fetch dashboard nodes.', {
             url: '/api/v1/dashboard/get_nodes/', textStatus: textStatus, error: error
@@ -47,6 +54,7 @@ $(function(){
     $.getJSON('/api/v1/prereg/draft_registrations/').then(function(response){
         if (response.draftRegistrations.length) {
             $osf.applyBindings({}, '#existingPrereg');
+            $osf.applyBindings({}, '#existingPreregXS');
         }
     });
 });

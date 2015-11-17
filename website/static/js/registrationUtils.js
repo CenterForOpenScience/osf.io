@@ -178,7 +178,7 @@ var Question = function(questionSchema, data) {
     else if (self.type === 'object') {
         $.each(self.properties, function(prop, field) {
             field.qid = field.id;
-            self.properties[prop] = new Question(field, self.data.value[prop]);
+            self.properties[prop] = new Question(field, self.data[prop]);
         });
         self.value = ko.computed({
             read: function() {

@@ -41,6 +41,7 @@ var baseSearchViewModel = function (params) {
         return this.itemSelected() !== null;
     }.bind(this));
     this.submitText = ko.observable(params.submitText || 'Submit');
+    this.placeholder = params.placeholder || '';
 
     // Get the data and initialize the component
     this.fetchData().done(
