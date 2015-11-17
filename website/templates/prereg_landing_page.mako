@@ -43,20 +43,20 @@
         <div class="col-sm-${ option_columns } col-sm-offset-${ options_offset }">
             <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new preregistration</div>
             <div id="newPrereg" class="p-md osf-box box-round clearfix m-b-lg" style="display:none">
-                <p>Give a title to the presentation, like the title of a paper that may come out of this work
-                    <input type="text" id="newProjectTitle" class="form-control" placeholder="Title">
-                    <button type="submit" id="newProject" class="btn btn-primary pull-right m-t-md">Continue <i class="fa fa-angle-right"></i></button>
+              <p>Please provide a title for your project: </p>
+              <input type="text" id="newProjectTitle" class="form-control" placeholder="Title">
+              <button type="submit" id="newProject" class="btn btn-primary pull-right m-t-md">Continue <i class="fa fa-angle-right"></i></button>
             </div>
         </div>
         %if has_draft_registrations:
         <div class="col-sm-${ option_columns }">
             <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing preregistration</div>
             <div id="existingPrereg" class="p-md osf-box box-round clearfix m-b-lg" style="display:none">
-                <p>Go to an existing preregistration
+              <p>Go to an existing preregistration:</p>
                 <form>
-                    <osf-draft-registrations-search
-                        params="data: '/api/v1/prereg/draft_registrations/',
-                                submitText: 'Edit draft'">
+                  <osf-draft-registrations-search
+                     params="data: '/api/v1/prereg/draft_registrations/',
+                             submitText: 'Edit draft'">
                     </osf-draft-registrations-search>
                 </form>
             </div>
@@ -66,7 +66,7 @@
         <div class="col-sm-${ option_columns }">
             <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Preregister a project you already have on the OSF</div>
             <div id="existingProject" class="p-md osf-box box-round clearfix m-b-lg" style="display:none">
-                <p>Preregister an existing project</p>
+                <p>Preregister an existing project:</p>
                 <osf-project-search
                     params="data: nodes,
                             onSubmit: function(selected) { window.location = selected.urls.register; },
