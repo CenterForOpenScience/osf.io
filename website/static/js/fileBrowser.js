@@ -84,7 +84,7 @@ var FileBrowser = {
         m.request({method : 'GET', url : collectionsUrl, config : xhrconfig}).then(function(result){
             console.log(result);
            result.data.forEach(function(node){
-               self.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
+               self.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
            });
         });
 
