@@ -6,6 +6,7 @@ var bootbox = require('bootbox');
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
 var $osf = require('js/osfHelpers');
+var waterbutler = require('js/waterbutler');
 
 var node = window.contextVars.node;
 
@@ -67,11 +68,11 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
             onselectrow: function(item) {
                 if (item.kind === 'file') {
                     viewModel.value(item.data.path);
-                    viewModel.selectedFileName(item.data.name);
+                    viewModel.selectedFile(item);
                     item.css = 'fangorn-selected';
                 } else {
-                    viewModel.value('');
-                    viewModel.selectedFileName(NO_FILE);
+                    viewModel.value(NO_FILE);
+                    viewModel.selectedFile(null);
                 }
             },
             resolveRows: function(item) {
@@ -111,7 +112,8 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                     if (viewModel.value() !== null) {
                         if (item.data.path === viewModel.value()) {
                             item.css = 'fangorn-selected';
-                            viewModel.selectedFileName(item.data.name);
+                            item.data.nodeId = tree.data.nodeId;
+                            viewModel.selectedFile(item);
                         }
                     }
                     Fangorn.Utils.inheritFromParent(item, tree);
@@ -138,24 +140,22 @@ var Uploader = function(data) {
     var self = this;
     self._orig = data;
 
-    self.getFileName = function() {
-        return '#'; // $.getJSON('/some/path/to/get/filename');
-    };
+    self.selectedFile = ko.observable(null);
+    self.selectedFile.subscribe(function(file) {
+        data.extra.selectedFileName = file.data.name;
+        data.extra.viewUrl = '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path;
+    });
 
-    self.filePath = ko.observable('');
-    // self.getFileName()
-    //     .done(function(data) {
-    //         self.getFileName(data);
-    //     }).fail(function() {
-    //         $osf.growl('Problem loading attached files',
-    //                    'Please refresh the page or contact <a href="mailto: support@cos.io">support@cos.io</a>' +
-    //                    'if the problem persists' );
-    //     });
-    self.selectedFileName = ko.observable('no file selected');
     self.filePicker = null;
 
     self.preview = function() {
-        return data.value() ? data.value() : $('<a href=' + self.filePath() + '>' + self.selectedFileName() + '</a>');
+        var value = data.value();
+        if (!value || value === 'no file selected') {
+            return 'no file selected';
+        }
+        else {
+            return $('<a target="_blank" href="' + data.extra.viewUrl + '">' + data.extra.selectedFileName + '</a>');
+        }
     };
 
     $.extend(self, data);

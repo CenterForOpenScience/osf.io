@@ -14,22 +14,11 @@
          <div data-bind="foreach: {data: draft.pages, as: 'page'}">
              <h3 data-bind="attr.id: page.id, text: page.title"></h3>
              <div data-bind="foreach: {data: page.questions, as: 'question'}">
-                 <!-- <span data-bind="with: $root.editor.context(question, $root.editor)"> -->
-                     <p>
-                         <strong data-bind="attr.id: $data.id, text: $data.title"></strong>:
-                         <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
-                     </p>
+               <p>
+                 <strong data-bind="attr.id: $data.id, text: $data.title"></strong>:
+                 <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
+               </p>
              </div>
-             <!-- <div data-bind="foreach: {data: page.questions, as: 'question'}">
-                  <span data-bind="with: question">
-                  <span data-bind="with: $root.editor.context(question, $root.editor)">
-                  <p>
-                  <strong data-bind="attr.id: question.id, text: question.title"></strong>:
-                  <span data-bind="previewQuestion: question"></span>
-                  </p>
-                  </span>
-                  </span>
-                  </div> -->
             </div>
         </div>
     </div>

@@ -178,7 +178,7 @@ var Question = function(questionSchema, data) {
     else if (self.type === 'object') {
         $.each(self.properties, function(prop, field) {
             field.qid = field.id;
-            self.properties[prop] = new Question(field, self.data[prop]);
+            self.properties[prop] = new Question(field, self.data.value[prop]);
         });
         self.value = ko.computed({
             read: function() {
@@ -186,7 +186,8 @@ var Question = function(questionSchema, data) {
                 $.each(self.properties, function(name, prop) {
                     value[name] = {
                         value: prop.value(),
-                        comments: prop.comments()
+                        comments: prop.comments(),
+                        extra: prop.extra
                     };
                 });
                 return value;
@@ -210,7 +211,7 @@ var Question = function(questionSchema, data) {
             required: false
         });
     }
-    self.extra = {};
+    self.extra = self.data.extra || {};
 
     self.showExample = ko.observable(false);
     self.showUploader = ko.observable(false);
@@ -859,21 +860,24 @@ RegistrationEditor.prototype.init = function(draft, preview) {
 
     self.currentQuestion(self.flatQuestions().shift());
 
-    if ( preview ) {
+    preview = preview || false;
+    if (preview) {
         ko.bindingHandlers.previewQuestion = {
             init: function(elem, valueAccessor) {
                 var question = valueAccessor();
                 var $elem = $(elem);
 
                 if (question.type === 'object') {
-                    $.each(question.properties, function(_, subQuestion) {
-                        subQuestion = self.context(subQuestion);
-                        if ( self.extensions[subQuestion.type] ) {
-                            $elem.append(subQuestion.preview());
-                        } else {
-                            $elem.append(question.value());
-                        }
-                    });
+                    $elem.append(
+                        $.map(question.properties, function(subQuestion) {
+                            subQuestion = self.context(subQuestion);
+                            if (self.extensions[subQuestion.type] ) {
+                                return $('<p>').append(subQuestion.preview());
+                            } else {
+                                return $('<p>').append(subQuestion.value());
+                            }
+                        })
+                    );
                 } else {
                     $elem.append(question.value());
                 }
@@ -1127,10 +1131,11 @@ RegistrationEditor.prototype.save = function() {
     $.each(metaSchema.pages, function(i, page) {
         $.each(page.questions, function(_, question) {
             var qid = question.id;
-            data[qid] = {
+            data[qid] = ko.toJS({
                 value: question.value(),
-                comments: ko.toJS(question.comments())
-            };
+                comments: question.comments(),
+                extra: question.extra
+            });
         });
     });
     var request;
