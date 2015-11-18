@@ -20,9 +20,6 @@ var waterbutler = require('./waterbutler');
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
-var MAXLEVEL = {
-    'pane': 5
-};
 
 var TOGGLELEVEL = 2;
 
@@ -260,8 +257,6 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.mode = $parent.mode;
-    self.MAXLEVEL = MAXLEVEL[self.mode];
-
     self.level = $parent.level + 1;
 
     self.loading = ko.observable(true);
@@ -313,12 +308,7 @@ var CommentModel = function(data, $parent, $root) {
             self.showChildren(false);
             return false;
         }
-        return self.level < self.MAXLEVEL;
-    });
-
-    self.shouldContinueThread = ko.pureComputed(function() {
-        if (self.shouldShowChildren()) { return false;}
-        return ((!self.isHidden()) && self.hasChildren());
+        return true;
     });
 
     self.nodeUrl = '/' + self.$root.nodeId() + '/';
@@ -484,7 +474,6 @@ var CommentListModel = function(options) {
     self.MAXLENGTH = MAXLENGTH;
 
     self.mode = options.mode;
-    self.MAXLEVEL = MAXLEVEL[self.mode];
 
     self.editors = 0;
     self.userName = ko.observable(options.userName);
