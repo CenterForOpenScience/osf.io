@@ -139,7 +139,7 @@ def root(request, format=None):
 
     ###Entities
 
-    An entity is a single resource that has been retreived from the API, usually from an endpoint with the entity's id
+    An entity is a single resource that has been retrieved from the API, usually from an endpoint with the entity's id
     as the final path part.  A successful response from an entity request will be a JSON object with a top level `data`
     key pointing to a sub-object with the following members:
 
@@ -237,7 +237,7 @@ def root(request, format=None):
     ##OSF Enum Fields
 
     Some entities in the OSF API have fields that only take a restricted set of values.  Those fields are listed here
-    for reference.  Fuller descriptions are available on the relevent entity pages.
+    for reference.  Fuller descriptions are available on the relevant entity pages.
 
     ###OSF Node Categories
 

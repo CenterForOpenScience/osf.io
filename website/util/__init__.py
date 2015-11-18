@@ -5,6 +5,7 @@ import re
 import urllib
 import logging
 import urlparse
+from contextlib import contextmanager
 
 import furl
 
@@ -181,14 +182,10 @@ def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
     url.args.update(kwargs)
     return url.url
 
-def soft_get(something, key, default=None):
-    """
-    Gently try to get key from something. Emulates dict.get behavior across
-    both collections and classes.
-    """
-    if not something:
-        return default
-    elif isinstance(something, collections.Mapping):
-        return something.get(key, default)
-    else:
-        return getattr(something, key, default)
+@contextmanager
+def disconnected_from(signal, listener):
+    """Temporarily disconnect a Blinker signal."""
+    signal.disconnect(listener)
+    yield
+    signal.connect(listener)
+

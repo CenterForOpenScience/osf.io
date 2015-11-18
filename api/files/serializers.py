@@ -81,6 +81,7 @@ class FileSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
     date_modified = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
+    extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
@@ -117,6 +118,16 @@ class FileSerializer(JSONAPISerializer):
                 return obj.versions[-1].date_created
             return obj.versions[-1].date_modified
         return None
+
+    def get_extra(self, obj):
+        extras = {}
+        if obj.versions:
+            metadata = obj.versions[-1].metadata
+            extras['hashes'] = {  # mimic waterbutler response
+                'md5': metadata.get('md5', None),
+                'sha256': metadata.get('sha256', None),
+            }
+        return extras
 
     def user_id(self, obj):
         # NOTE: obj is the user here, the meta field for
