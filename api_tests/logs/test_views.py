@@ -24,7 +24,7 @@ class LogsTestCase(ApiTestCase):
 
         self.user = AuthUserFactory()
 
-        self.action_set = NodeLog.actions()
+        self.action_set = NodeLog.actions
         self.node = ProjectFactory(is_public=False)
         for i in range(len(self.action_set)):
             self.node.add_log(
