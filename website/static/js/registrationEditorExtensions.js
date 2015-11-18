@@ -124,7 +124,8 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 if (tree.depth > 1) {
                     Fangorn.Utils.orderFolder.call(this, tree);
                 }
-            }
+            },
+            links: false
         });
     filePicker = fw;
     fw.init();
