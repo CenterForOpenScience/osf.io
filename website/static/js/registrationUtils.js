@@ -392,12 +392,17 @@ MetaSchema.prototype.flatQuestions = function() {
     return flat;
 };
 
-MetaSchema.prototype.askConsent = function() {
+MetaSchema.prototype.askConsent = function(mustAgree) {
     var self = this;
 
     var ret = $.Deferred();
 
+    if (typeof mustAgree === 'undefined') {
+        mustAgree = true;
+    }
+
     var viewModel = {
+        mustAgree: mustAgree,
         message: self.consent,
         consent: ko.observable(false),
         submit: function() {
@@ -1343,7 +1348,7 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
                 callback: function(event) {
                     var selectedSchema = self.selectedSchema();
                     if (selectedSchema.requiresConsent) {
-                        selectedSchema.askConsent().then(function() {
+                        selectedSchema.askConsent(false).then(function() {
                             $('#newDraftRegistrationForm').submit();
                         });
                     }
