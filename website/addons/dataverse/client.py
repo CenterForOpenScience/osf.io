@@ -1,7 +1,7 @@
 import httplib as http
 
 from dataverse import Connection
-from dataverse.exceptions import UnauthorizedError, OperationFailedError
+from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFailedError
 
 from framework.exceptions import HTTPError
 
