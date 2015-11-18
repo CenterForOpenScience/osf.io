@@ -33,33 +33,49 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<registered_from_id>'}
     ))
 
-    children = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-children', lookup_field='pk', link_type='related',
-                                                lookup_url_kwarg='node_id', meta={'count': 'get_node_count'}))
-
-    contributors = JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-contributors', lookup_field='pk', link_type='related',
-                                                    lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
-
-    files = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-providers', lookup_field='pk', lookup_url_kwarg='node_id',
-                                             link_type='related'))
-
-    comments = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-comments', lookup_field='pk', lookup_url_kwarg='node_id',
-                                               link_type='related', meta={'unread': 'get_unread_comments_count'}))
-
-    node_links = DevOnly(HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})))
-
-    parent = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
-                                              lookup_url_kwarg='node_id'))
-
-    registrations = DevOnly(HideIfRegistration(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-registrations', lookup_field='pk', link_type='related',
-                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})))
-
-    forked_from = HideIfRetraction(JSONAPIHyperlinkedIdentityField(
-        view_name='nodes:node-detail',
-        lookup_field='forked_from_id',
-        link_type='related',
-        lookup_url_kwarg='node_id'
+    children = HideIfRetraction(RelationshipField(
+        related_view='registrations:registration-children',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_node_count'},
     ))
+
+    comments = HideIfRetraction(RelationshipField(
+        related_view='registrations:registration-comments',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'unread': 'get_unread_comments_count'}))
+
+    contributors = RelationshipField(
+        related_view='registrations:registration-contributors',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_contrib_count'}
+    )
+
+    files = HideIfRetraction(RelationshipField(
+        related_view='registrations:registration-providers',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
+
+    forked_from = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<forked_from_id>'}
+    ))
+
+    node_links = DevOnly(HideIfRetraction(RelationshipField(
+        related_view='registrations:registration-pointers',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_pointers_count'}
+    )))
+
+    parent = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<parent_id>'}
+    ))
+
+    registrations = DevOnly(HideIfRegistration(RelationshipField(
+        related_view='registrations:registration-registrations',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_registration_count'}
+    )))
 
     # TODO: Finish me
 
