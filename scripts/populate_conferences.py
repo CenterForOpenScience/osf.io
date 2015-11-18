@@ -540,6 +540,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'SMM2015': {
+        'name': 'The Society for Marine Mammalogy',
+        'info_url': 'https://www.marinemammalscience.org/conference/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
