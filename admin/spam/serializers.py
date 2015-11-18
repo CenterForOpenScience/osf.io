@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from website.project.model import Comment, User
 from website.profile.utils import serialize_user
 from modularodm import Q
