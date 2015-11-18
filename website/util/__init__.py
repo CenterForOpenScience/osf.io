@@ -183,7 +183,8 @@ def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
     return url.url
 
 @contextmanager
-def disconnected_to(signal, listener):
+def disconnected_from(signal, listener):
+    """Temporarily disconnect a Blinker signal."""
     signal.disconnect(listener)
     yield
     signal.connect(listener)

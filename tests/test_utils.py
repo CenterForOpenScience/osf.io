@@ -415,6 +415,7 @@ class TestSignalUtils(unittest.TestCase):
 
     def test_temporary_disconnect(self):
         self.signal_.connect(self.listener)
-        with util.disconnected_to(self.signal_, self.listener):
+        with util.disconnected_from(self.signal_, self.listener):
             self.signal_.send()
         self.mock_listener.assert_not_called()
+
