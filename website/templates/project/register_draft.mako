@@ -25,6 +25,7 @@
     <div class="row-md-12 scripted">
         <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
         <button id="register-submit" type="button" class="btn btn-success pull-right"
+                style="margin-left: 5px;"
                 data-bind="visible: draft.requiresApproval, click: draft.submitForReview">
           Submit for review
         </button>
@@ -34,6 +35,7 @@
         </span>
 
         <button id="register-submit" type="button" class="btn btn-success pull-right"
+                style="margin-left: 5px;"
                 data-bind="visible: !draft.requiresApproval(), click: draft.beforeRegister.bind(draft, null)">
           Register
         </button>

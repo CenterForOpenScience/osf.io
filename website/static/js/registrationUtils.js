@@ -500,7 +500,7 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var viewModel = new ViewModel();
     viewModel.canRegister = ko.computed(function() {
         var embargoed = viewModel.showEmbargoDatePicker();
-        return (embargoed && viewModel.isEmbargoEndDateValid()) || !embargoed;
+        return (embargoed && viewModel.pikaday.isValid());
     });
     var validation = [];
     if (self.metaSchema.requiresApproval) {

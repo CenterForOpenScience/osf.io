@@ -44,7 +44,7 @@ def validate_embargo_end_date(end_date_string, node):
     :raises: HTTPError if end_date is less than the approval window or greater than the
     max embargo end date
     """
-    end_date = parse_date(end_date_string)
+    end_date = parse_date(end_date_string, ignoretz=True)
     today = datetime.datetime.utcnow()
     if (end_date - today) <= settings.DRAFT_REGISTRATION_APPROVAL_PERIOD:
         raise HTTPError(http.BAD_REQUEST, data={
@@ -91,7 +91,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     if registration_choice == 'embargo':
         # Initiate embargo
         end_date_string = data['embargoEndDate']
-        validate_embargo_end_date(end_date_string)
+        validate_embargo_end_date(end_date_string, node)
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
     approval = DraftRegistrationApproval(
