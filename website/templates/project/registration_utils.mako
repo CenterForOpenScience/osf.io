@@ -12,6 +12,7 @@
               data-bind="click: submit, css: {disabled: !consent()}">Continue</button>
 
       <button type="submit" class="btn btn-default pull-right"
+              style="margin-right: 5px"
               data-bind="click: cancel">Cancel</button>
     </div>
   </div>
