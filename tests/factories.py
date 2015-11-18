@@ -46,7 +46,8 @@ ensure_licenses = functools.partial(ensure_licenses, warn=False)
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
 
-from tests.base import DEFAULT_METASCHEMA
+from tests.base import get_default_metaschema
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
 def save_kwargs(**kwargs):

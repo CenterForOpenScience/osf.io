@@ -24,10 +24,68 @@ from tests.factories import (
 )
 from tests.test_registrations.base import RegistrationsTestBase
 
+from tests.base import get_default_metaschema
+DEFAULT_METASCHEMA = get_default_metaschema()
 
-class TestRegistrationViews(OsfTestCase):
-    # TODO: do these already exist?
-    pass
+class TestRegistrationViews(RegistrationsTestBase):
+
+    def test_node_register_page_not_registration_redirects(self):
+        url = self.node.web_url_for('node_register_page')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.FOUND)
+
+    @mock.patch('website.archiver.tasks.archive')
+    def test_node_register_page_registration(self, mock_archive):
+        reg = self.node.register_node(DEFAULT_METASCHEMA, Auth(self.user), '', None)
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+
+    def test_non_admin_can_view_node_register_page(self):
+        non_admin = AuthUserFactory()
+        self.node.add_contributor(
+            non_admin,
+            permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            auth=Auth(self.user),
+            save=True
+        )
+        reg = RegistrationFactory(project=self.node)
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=non_admin.auth)
+        assert_equal(res.status_code, http.OK)
+
+    def test_is_public_node_register_page(self):
+        self.node.is_public = True
+        self.node.save()
+        reg = RegistrationFactory(project=self.node)
+        reg.is_public = True
+        reg.save()
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=None)
+        assert_equal(res.status_code, http.OK)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
+    def test_register_template_page_backwards_comptability(self):
+        # Historically metaschema's were referenced by a slugified version
+        # of their name.
+        reg = self.draft.register(
+            auth=Auth(self.user),
+            save=True
+        )
+        url = reg.web_url_for(
+            'node_register_template_page',
+            metaschema_id=_name_to_id(self.meta_schema.name),
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+
+    def test_register_template_page_redirects_if_not_registration(self):
+        url = self.node.web_url_for(
+            'node_register_template_page',
+            metaschema_id=self.meta_schema._id,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.FOUND)
 
 
 class TestDraftRegistrationViews(RegistrationsTestBase):
@@ -75,19 +133,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         assert_equal(res.status_code, http.ACCEPTED)
         assert_equal(mock_register_draft.call_args[0][0]._id, self.draft._id)
-
-    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
-    def test_register_template_page_backwards_comptability(self):
-        reg = self.draft.register(
-            auth=Auth(self.user),
-            save=True
-        )
-        url = reg.web_url_for(
-            'node_register_template_page',
-            metaschema_id=_name_to_id(self.meta_schema.name),
-        )
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_template_make_public_creates_pending_registration(self, mock_enquque):
@@ -286,6 +331,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.NO_CONTENT)
         assert_equal(0, DraftRegistration.find().count())
 
+    @mock.patch('website.archiver.tasks.archive')
+    def test_delete_draft_registration_registered(self, mock_register_draft):
+        self.draft.register(auth=Auth(self.user), save=True)
+        url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
+
+        res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
     def test_only_admin_can_delete_registration(self):
         non_admin = AuthUserFactory()
         assert_equal(1, DraftRegistration.find().count())
@@ -295,8 +348,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_equal(1, DraftRegistration.find().count())
 
-    def test_get_metaschemas(self):
-        url = '/api/v1/project/drafts/schemas/'
+    def test_get_metaschemas(self):        
+        url = api_url_for('get_metaschemas')
         res = self.app.get(url).json
         assert_equal(len(res['meta_schemas']), len(ACTIVE_META_SCHEMAS))
 
@@ -309,32 +362,3 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
                 if schema.name in ACTIVE_META_SCHEMAS
             ]
         ))
-
-    def test_node_register_page_not_registration_redirects(self):
-        url = self.node.web_url_for('node_register_page')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.FOUND)
-
-    def test_non_admin_can_view_node_register_page(self):
-        non_admin = AuthUserFactory()
-        self.node.add_contributor(
-            non_admin,
-            permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            auth=Auth(self.user),
-            save=True
-        )
-        reg = RegistrationFactory(project=self.node)
-        url = reg.web_url_for('node_register_page')
-        res = self.app.get(url, auth=non_admin.auth)
-        assert_equal(res.status_code, http.OK)
-
-    def test_is_public_node_register_page(self):
-        self.node.is_public = True
-        self.node.save()
-        reg = RegistrationFactory(project=self.node)
-        reg.is_public = True
-        reg.save()
-        url = reg.web_url_for('node_register_page')
-        res = self.app.get(url, auth=None)
-        assert_equal(res.status_code, http.OK)
-

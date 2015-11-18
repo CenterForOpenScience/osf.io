@@ -55,6 +55,7 @@ from tests.base import (
     capture_signals,
     assert_is_redirect,
     assert_datetime_equal,
+    get_default_metaschema
 )
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, ProjectFactory, WatchConfigFactory,
@@ -64,7 +65,7 @@ from tests.factories import (
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
-from tests.base import DEFAULT_METASCHEMA
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 class Addon(MockAddonNodeSettings):
     @property

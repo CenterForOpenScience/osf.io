@@ -46,7 +46,7 @@ from website.addons.wiki.exceptions import (
     PageNotFoundError,
 )
 
-from tests.base import OsfTestCase, Guid, fake, capture_signals
+from tests.base import OsfTestCase, Guid, fake, capture_signals, get_default_metaschema
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
@@ -58,8 +58,7 @@ from tests.factories import (
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
 
-
-from tests.base import DEFAULT_METASCHEMA
+DEFAULT_METASCHEMA = get_default_metaschema()
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
 

@@ -193,7 +193,6 @@ def get_draft_registrations(auth, node, *args, **kwargs):
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
     }, http.OK
 
-
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def new_draft_registration(auth, node, *args, **kwargs):
@@ -283,6 +282,14 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
     :return: None
     :rtype: NoneType
     """
+    if draft.registered_node:
+        raise HTTPError(
+            http.FORBIDDEN,
+            data={
+                'message_short': 'Can\'t delete draft',
+                'message_long': 'This draft has already been registered and cannot be deleted.'
+            }
+        )
     DraftRegistration.remove_one(draft)
     return None, http.NO_CONTENT
 
