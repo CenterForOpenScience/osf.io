@@ -143,11 +143,25 @@ var Uploader = function(data) {
 
     self.selectedFile = ko.observable(null);
     self.selectedFile.subscribe(function(file) {
-        data.extra({
-            selectedFileName: file.data.name,
-            viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path
-        });
+        if (file) {
+            data.extra({
+                selectedFileName: file.data.name,
+                viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
+                hasSelectedFile: true
+            });
+        }
+        else {
+            data.extra({
+                selectedFileName: 'no file selected'
+            });
+            data.value('no file selected');
+        }
     });
+    self.hasSelectedFile = ko.computed(function() {
+        return !!(data.extra().viewUrl);
+    });
+    self.unselectFile = self.selectedFile.bind(null, null);
+
     self.filePicker = null;
 
     self.preview = function() {

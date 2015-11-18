@@ -13,6 +13,10 @@
 <script type="text/html" id="osf-upload-toggle">
   <div id="selectedFile">File selected for upload:
     <span id="fileName" data-bind="text: extra().selectedFileName">no file selected</span>
+    <button data-bind="visible: hasSelectedFile,
+                       click: unselectFile"
+            style="margin-left: 5px;"
+            class="btn btn-xs btn-danger fa fa-times"></button>
   </div>
   <a data-bind="click: toggleUploader">Attach File</a>
   <span data-bind="visible: showUploader">
