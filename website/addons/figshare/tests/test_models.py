@@ -1,12 +1,13 @@
 import mock
 from nose.tools import *  # noqa
 
-from tests.base import OsfTestCase, DEFAULT_METASCHEMA
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import ProjectFactory, AuthUserFactory
 
 from framework.auth import Auth
 from website.addons.figshare import settings as figshare_settings
 
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 class TestNodeSettings(OsfTestCase):
     def setUp(self):

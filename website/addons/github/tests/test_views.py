@@ -4,7 +4,7 @@ import mock
 import unittest
 
 from nose.tools import *  # noqa (PEP8 asserts)
-from tests.base import OsfTestCase, DEFAULT_METASCHEMA
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
 from github3.repos.branch import Branch
@@ -17,6 +17,7 @@ from website.addons.github import views, utils
 from website.addons.github.utils import check_permissions
 from website.addons.github.tests.utils import create_mock_github
 
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 # TODO: Test remaining CRUD methods
 # TODO: Test exception handling

@@ -16,7 +16,7 @@ from framework.auth import Auth
 
 from website.models import Node, MetaSchema, DraftRegistration
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
-from website.util import permissions
+from website.util import permissions, api_url_for
 
 from tests.base import OsfTestCase
 from tests.factories import (

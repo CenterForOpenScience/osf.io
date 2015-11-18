@@ -1,7 +1,7 @@
 from nose.tools import *  # noqa
 import mock
 
-from tests.base import DEFAULT_METASCHEMA
+from tests.base import get_default_metaschema
 from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
 from framework.exceptions import PermissionsError
@@ -10,6 +10,7 @@ from website.addons.dataverse.model import AddonDataverseNodeSettings
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 from website.addons.dataverse.tests.utils import create_external_account
 
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 class TestDataverseUserSettings(DataverseAddonTestCase):
     """Tests were modified from Mendeley. None of this functionality is
