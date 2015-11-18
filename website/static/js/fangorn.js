@@ -754,6 +754,10 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  */
 var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
     'or the file folder has been deleted.';
+// Which DEFAULT_ERROR_MESSAGE is best?
+// var DEFAULT_ERROR_MESSAGE = 'Unable to reach the provider, please try ' +
+//     'again later. If the problem persists, please contact ' +
+//     '<a href="mailto:support@osf.io">support@osf.io</a>.'
 function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
     // File may either be a webkit Entry or a file object, depending on the browser
@@ -781,11 +785,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         }
     }
     if (msgText !== 'Upload canceled.') {
-        $osf.growl(
-            'Error',
-            'Unable to reach the provider, please try again later. If the ' +
-            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
-            );
+        $osf.growl('Error', msgText);
     }
     treebeard.options.uploadInProgress = false;
 }
