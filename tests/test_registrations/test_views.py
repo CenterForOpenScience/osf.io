@@ -12,14 +12,15 @@ from nose.tools import *  # noqa PEP8 asserts
 
 from modularodm import Q
 
-from framework.mongo import database
+from framework.auth import Auth
 
 from website.models import Node, MetaSchema, DraftRegistration
-from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
+from website.util import permissions
 
 from tests.base import OsfTestCase
 from tests.factories import (
-    NodeFactory, AuthUserFactory, DraftRegistrationFactory
+    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory
 )
 from tests.test_registrations.base import RegistrationsTestBase
 
@@ -74,6 +75,19 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         assert_equal(res.status_code, http.ACCEPTED)
         assert_equal(mock_register_draft.call_args[0][0]._id, self.draft._id)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
+    def test_register_template_page_backwards_comptability(self):
+        reg = self.draft.register(
+            auth=Auth(self.user),
+            save=True
+        )
+        url = reg.web_url_for(
+            'node_register_template_page',
+            metaschema_id=_name_to_id(self.meta_schema.name),
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_template_make_public_creates_pending_registration(self, mock_enquque):
@@ -202,18 +216,41 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         for draft in res.json['drafts']:
             assert_in(draft['pk'], [f._id for f in found])
 
-    def test_new_draft_registration(self):
+    def test_new_draft_registration_POST(self):
         target = NodeFactory(creator=self.user)
         payload = {
-            'schema_name': 'Open-Ended Registration',
-            'schema_version': 1
+            'schema_name': self.meta_schema.name,
+            'schema_version': self.meta_schema.schema_version
         }
         url = target.web_url_for('new_draft_registration')
 
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.FOUND)
+        target.reload()
         draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
         assert_equal(draft.registration_schema, self.meta_schema)
+
+    def test_update_draft_registration_cant_update_registered(self):
+        metadata = {
+            'summary': {'value': 'updated'}
+        }
+        assert_not_equal(metadata, self.draft.registration_metadata)
+        payload = {
+            'schema_data': metadata,
+            'schema_name': 'OSF-Standard Pre-Data Collection Registration',
+            'schema_version': 1
+        }
+        self.draft.register(Auth(self.user), save=True)
+        url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
+
+        res = self.app.put_json(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_edit_draft_registration_page_already_registered(self):
+        self.draft.register(Auth(self.user), save=True)
+        url = self.node.web_url_for('edit_draft_registration_page', draft_id=self.draft._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_update_draft_registration(self):
         metadata = {
@@ -272,3 +309,32 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
                 if schema.name in ACTIVE_META_SCHEMAS
             ]
         ))
+
+    def test_node_register_page_not_registration_redirects(self):
+        url = self.node.web_url_for('node_register_page')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.FOUND)
+
+    def test_non_admin_can_view_node_register_page(self):
+        non_admin = AuthUserFactory()
+        self.node.add_contributor(
+            non_admin,
+            permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            auth=Auth(self.user),
+            save=True
+        )
+        reg = RegistrationFactory(project=self.node)
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=non_admin.auth)
+        assert_equal(res.status_code, http.OK)
+
+    def test_is_public_node_register_page(self):
+        self.node.is_public = True
+        self.node.save()
+        reg = RegistrationFactory(project=self.node)
+        reg.is_public = True
+        reg.save()
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=None)
+        assert_equal(res.status_code, http.OK)
+

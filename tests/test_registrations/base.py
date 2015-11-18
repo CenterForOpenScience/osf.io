@@ -8,7 +8,7 @@ from website.util import permissions
 from website.models import MetaSchema
 from website.project.model import ensure_schemas
 
-from tests.base import OsfTestCase, fake
+from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory
 
 class RegistrationsTestBase(OsfTestCase):
@@ -31,7 +31,7 @@ class RegistrationsTestBase(OsfTestCase):
         ensure_schemas()
         self.meta_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 1)
+            Q('schema_version', 'eq', 2)
         )
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
