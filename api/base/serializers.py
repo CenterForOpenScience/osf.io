@@ -269,8 +269,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if bracket_check:
             source_attrs = bracket_check.split('.')
             lookup_value = get_nested_attributes(obj, source_attrs)
-            if lookup_value is None:
-                return None
             return lookup_value
         return lookup_field
 
@@ -284,6 +282,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 lookup_value = self.lookup_attribute(obj, lookup_field)
             except AttributeError as exc:
                 raise AssertionError(exc)
+            if lookup_value is None:
+                return None
             kwargs_retrieval[lookup_url_kwarg] = lookup_value
         return kwargs_retrieval
 
@@ -590,7 +590,7 @@ class JSONAPISerializer(ser.Serializer):
                 # results rather than adding a relationship link
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
                     result = self.context['embed'][field.field_name](obj)
-                    if result: 
+                    if result:
                         data['embeds'][field.field_name] = result
                 else:
                     result = field.to_representation(attribute)
