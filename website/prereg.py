@@ -22,7 +22,7 @@ def drafts_for_user(user):
     )
     PREREG_CHALLENGE_METASCHEMA = models.MetaSchema.find_one(
         Q('name', 'eq', 'Prereg Challenge') &
-        Q('schema_version', 'eq', 1)
+        Q('schema_version', 'eq', 2)
     )
     return models.DraftRegistration.find(
         Q('registration_schema', 'eq', PREREG_CHALLENGE_METASCHEMA) &

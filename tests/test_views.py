@@ -4852,7 +4852,10 @@ class TestDraftRegistrationViews(OsfTestCase):
 
     def test_update_draft_registration(self):
         metadata = {
-            'summary': {'value': 'updated'}
+            'summary': {
+                'value': 'updated',
+                'comments': []
+            }
         }
         assert_not_equal(metadata, self.draft.registration_metadata)
         payload = {
@@ -4921,7 +4924,7 @@ class TestDraftRegistrationViews(OsfTestCase):
         url = '/api/v1/project/drafts/schemas/?include=all'
         res = self.app.get(url)
         assert_equal(res.status_code, http.OK)
-        assert_equal(len(res.json['meta_schemas']), 8)
+        assert_equal(len(res.json['meta_schemas']), 9)
 
     def test_node_register_page_not_registration_redirects(self):
         url = self.node.web_url_for('node_register_page')
