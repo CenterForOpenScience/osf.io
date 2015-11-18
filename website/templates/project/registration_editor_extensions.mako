@@ -5,14 +5,14 @@
 
 <script type="text/html" id="osf-upload-open">
   <div id="selectedFile">File selected for upload:
-    <span id="fileName" data-bind="text: extra.selectedFileName">no file selected</span>
+    <span id="fileName" data-bind="text: extra().selectedFileName">no file selected</span>
   </div>
   <div data-bind="attr.id: $data.id, osfUploader"></div>
 </script>
 
 <script type="text/html" id="osf-upload-toggle">
   <div id="selectedFile">File selected for upload:
-    <span id="fileName" data-bind="text: extra.selectedFileName">no file selected</span>
+    <span id="fileName" data-bind="text: extra().selectedFileName">no file selected</span>
   </div>
   <a data-bind="click: toggleUploader">Attach File</a>
   <span data-bind="visible: showUploader">

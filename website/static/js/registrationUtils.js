@@ -178,7 +178,7 @@ var Question = function(questionSchema, data) {
     else if (self.type === 'object') {
         $.each(self.properties, function(prop, field) {
             field.qid = field.id || prop;
-            self.properties[prop] = new Question(field, self.data[prop]);
+            self.properties[prop] = new Question(field, self.data.value[prop]);
         });
         self.value = ko.computed({
             read: function() {
@@ -211,7 +211,7 @@ var Question = function(questionSchema, data) {
             required: false
         });
     }
-    self.extra = self.data.extra || {};
+    self.extra = ko.observable(self.data.extra || {});
 
     self.showExample = ko.observable(false);
     self.showUploader = ko.observable(false);
