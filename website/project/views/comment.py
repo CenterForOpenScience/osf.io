@@ -83,6 +83,7 @@ def resolve_target(node, page, guid):
 
 def serialize_comment(comment, auth, anonymous=False):
     node = comment.node
+
     if not comment.root_target:
         root_id = ''
         title = ''
@@ -114,7 +115,7 @@ def serialize_comment(comment, auth, anonymous=False):
         'title': title,
         'provider': comment.root_target.provider if isinstance(comment.root_target, StoredFileNode) else '',
         'content': comment.content,
-        'hasChildren': bool(getattr(comment, 'commented', [])),
+        'hasChildren': Comment.find(Q('target', 'eq', comment)).count() != 0,
         'canEdit': comment.user == auth.user,
         'modified': comment.modified,
         'isDeleted': comment.is_deleted,
@@ -255,7 +256,7 @@ def list_comments(auth, node, **kwargs):
         comments = list_total_comments(node, auth, page)
     else:
         target = resolve_target(node, page, guid)
-        comments = getattr(target, 'commented', [])
+        comments = Comment.find(Q('target', 'eq', target))
 
     n_unread = 0
     if node.is_contributor(auth.user):
@@ -375,13 +376,15 @@ def _update_comments_timestamp_total(node, auth, page):
     if page == Comment.FILES:
         for root_target_id in node.commented_files:
             root_target = File.load(root_target_id)
-            if root_target.commented[0].is_hidden:
+            comments = Comment.find(Q('target', 'eq', root_target))
+            if comments and comments[0].is_hidden:
                 continue
             ret = _update_comments_timestamp(auth, node, page, root_target_id)
     elif page == Comment.WIKI:
         root_targets = list(NodeWikiPage.find(Q('node', 'eq', node)))
         for wiki_page in root_targets:
-            if hasattr(wiki_page, 'commented'):
+            comments = Comment.find(Q('target', 'eq', wiki_page))
+            if comments:
                 ret = _update_comments_timestamp(auth, node, page, wiki_page.page_name)
     return ret
 

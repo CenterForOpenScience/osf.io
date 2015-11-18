@@ -777,8 +777,8 @@ def _view_project(node, auth, primary=False, check_files=False):
             'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
             'comment_level': node.comment_level,
-            'has_comments': bool(getattr(node, 'commented', [])),
-            'has_children': bool(getattr(node, 'commented', False)),
+            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
+            'has_children': bool(Comment.find(Q('node', 'eq', node))),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
@@ -919,7 +919,8 @@ def n_unread_total_wiki(user, node):
     root_targets = list(NodeWikiPage.find(Q('node', 'eq', node)))
     n_unread = 0
     for wiki_page in root_targets:
-        if hasattr(wiki_page, 'commented'):
+        comments = Comment.find(Q('target', 'eq', wiki_page))
+        if comments:
             root_id = wiki_page.page_name
             n_unread += n_unread_comments(node, user, 'wiki', root_id)
     return n_unread

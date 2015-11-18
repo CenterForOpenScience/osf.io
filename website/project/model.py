@@ -158,7 +158,7 @@ class Comment(GuidStoredObject):
     # the node that the comment belongs to
     node = fields.ForeignField('node', required=True, backref='comment_owner')
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
-    target = fields.AbstractForeignField(required=True, backref='commented')
+    target = fields.AbstractForeignField(required=True)
     # The file/wiki/overview's page that the comment is for
     root_target = fields.AbstractForeignField(backref='comment_target')
 

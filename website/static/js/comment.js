@@ -19,8 +19,6 @@ var waterbutler = require('./waterbutler');
 
 
 // Maximum length for comments, in characters
-var FIGSHARE = 'figshare';
-
 var MAXLENGTH = 500;
 var MAXLEVEL = {
     'page': 10,
@@ -212,33 +210,9 @@ BaseComment.prototype.configureCommentsVisibility = function(nodeId) {
             comment.loading(false);
             continue;
         }
-        if (comment.page() === FILES) {
-            comment.checkFileExistsAndConfigure(comment.rootId(), nodeId);
-        }
+        comment.loading(false);
     }
 };
-
-BaseComment.prototype.checkFileExistsAndConfigure = function(rootId, nodeId) {
-    var self = this;
-    var url  = waterbutler.buildMetadataUrl(rootId, self.provider(), nodeId, {}); // waterbutler url
-    var request = $.ajax({
-        method: 'GET',
-        url: url,
-        beforeSend: osfHelpers.setXHRAuthorization
-    });
-    request.done(function (resp) {
-        if (self.provider() === FIGSHARE) {
-            self.title(resp.data.name);
-        }
-        self.loading(false);
-    });
-    request.fail(function (xhl) {
-        self.isHidden(true);
-        self.loading(false);
-    });
-    return request;
-};
-
 
 BaseComment.prototype.submitReply = function() {
     var self = this;
