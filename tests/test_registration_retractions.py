@@ -373,7 +373,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             parent=self.subproject,
             title='Subcomponent'
         )
-        self.registration = RegistrationFactory(project=self.project)
+        self.registration = RegistrationFactory(project=self.project, is_public=True)
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
 
@@ -662,7 +662,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         super(RegistrationRetractionViewsTestCase, self).setUp()
         self.user = AuthUserFactory()
         self.registered_from = ProjectFactory(creator=self.user, is_public=True)
-        self.registration = RegistrationFactory(project=self.registered_from)
+        self.registration = RegistrationFactory(project=self.registered_from, is_public=True)
 
         self.retraction_post_url = self.registration.api_url_for('node_registration_retraction_post')
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')

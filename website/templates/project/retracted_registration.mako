@@ -27,9 +27,7 @@
                 % endif
                 % if node['is_registration'] and node['registered_meta']:
                     <br />Registration Supplement:
-                    % for meta in node['registered_meta']:
-                        ${meta['name_clean']}
-                    % endfor
+                    <span>${node['registered_schema']['schema']['title']}</span>
                 % endif
                 <br />
                 Date Created: <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
