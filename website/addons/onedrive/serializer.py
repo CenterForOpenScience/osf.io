@@ -72,12 +72,12 @@ class OnedriveSerializer(OAuthAddonSerializer):
         current_user_settings = current_user.get_addon('onedrive')
         user_is_owner = user_settings is not None and user_settings.owner == current_user
 
-        if user_settings:
-            try:
-                client = client or OnedriveClient(user_settings.external_accounts[0].oauth_key)
-                client.get_user_info()
-            except (OnedriveClientException, IndexError):
-                valid_credentials = False
+#        if user_settings:
+#            try:
+#                client = client or OnedriveClient(user_settings.external_accounts[0].oauth_key)
+#                client.get_user_info()
+#            except (OnedriveClientException, IndexError):
+#                valid_credentials = False
 
         result = {
             'userIsOwner': user_is_owner,

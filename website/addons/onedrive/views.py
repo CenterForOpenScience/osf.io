@@ -151,18 +151,18 @@ def onedrive_folder_list(node_addon, **kwargs):
             }
         }]
 
-    try:
-        refresh_oauth_key(node_addon.external_account)
-        client = OnedriveClient(node_addon.external_account.oauth_key)
-    except OnedriveClientException:
-        raise HTTPError(http.FORBIDDEN)
+#    try:
+#        refresh_oauth_key(node_addon.external_account)
+#        client = OnedriveClient(node_addon.external_account.oauth_key)
+#    except OnedriveClientException:
+#        raise HTTPError(http.FORBIDDEN)
 
-    try:
-        metadata = client.get_folder(folder_id)
-    except OnedriveClientException:
-        raise HTTPError(http.NOT_FOUND)
-    except MaxRetryError:
-        raise HTTPError(http.BAD_REQUEST)
+#    try:
+#        metadata = client.get_folder(folder_id)
+#    except OnedriveClientException:
+#        raise HTTPError(http.NOT_FOUND)
+#    except MaxRetryError:
+#        raise HTTPError(http.BAD_REQUEST)
 
     # Raise error if folder was deleted
     if metadata.get('is_deleted'):
