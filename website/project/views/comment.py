@@ -19,53 +19,8 @@ from website.files.models.base import File, StoredFileNode
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
-from website.project.views.node import _view_project, n_unread_comments
+from website.project.views.node import n_unread_comments
 from website.profile.utils import serialize_user
-
-
-@must_be_contributor_or_public
-def view_comments_project(auth, **kwargs):
-    """
-    Returns information needed to get comments for the total discussion page
-    """
-
-    node = kwargs['node'] or kwargs['project']
-    page = request.args.get('page', None)
-    if page == 'overview':
-        page = Comment.OVERVIEW
-    root_id = node._id if page == Comment.OVERVIEW else None
-
-    if page:
-        _update_comments_timestamp(auth, node, page=page, root_id=root_id)
-
-    ret = {
-        'comment_target': page or 'total',
-        'comment_target_id': root_id
-    }
-    ret.update(_view_project(node, auth, primary=True, check_files=(not page)))
-    return ret
-
-
-@must_be_contributor_or_public
-def view_comments_single(cid, auth, **kwargs):
-    """
-    Returns information needed to get a single comment and its replies
-    """
-    node = kwargs['node'] or kwargs['project']
-    comment = kwargs_to_comment(cid, auth)
-    serialized_comment = serialize_comment(comment, auth)
-
-    from website.addons.wiki.model import NodeWikiPage
-
-    ret = {
-        'comment': serialized_comment,
-        'comment_target': serialized_comment['page'],
-        'comment_target_id': comment.root_target.page_name
-        if isinstance(comment.root_target, NodeWikiPage)
-        else comment.root_target._id
-    }
-    ret.update(_view_project(node, auth, primary=True))
-    return ret
 
 
 def resolve_target(node, page, guid):
@@ -248,11 +203,7 @@ def list_comments(auth, node, **kwargs):
     guid = request.args.get('target')
     root_id = request.args.get('rootId')
 
-    if page == 'total' and not root_id:  # "Total" on discussion page
-        comments = list_total_comments(node, auth, 'total')
-    elif page == 'total':  # Discussion widget on overview's page
-        comments = list_total_comments_widget(node, auth)
-    elif not root_id:  # Overview/Files/Wiki page on discussion page
+    if not root_id:  # Overview/Files/Wiki page on discussion page
         comments = list_total_comments(node, auth, page)
     else:
         target = resolve_target(node, page, guid)
@@ -276,18 +227,9 @@ def list_comments(auth, node, **kwargs):
     return ret
 
 
-def list_total_comments_widget(node, auth):
-    comments = list(Comment.find(Q('node', 'eq', node)).sort('date_created'))
-    return comments
-
-
 def list_total_comments(node, auth, page):
-    if page == 'total':
-        comments = list(Comment.find(Q('node', 'eq', node)).sort('date_created'))
-    else:
-        comments = list(Comment.find(Q('node', 'eq', node) &
-                                Q('page', 'eq', page)).sort('date_created'))
-
+    comments = list(Comment.find(Q('node', 'eq', node) &
+                                 Q('page', 'eq', page)).sort('date_created'))
     root_comments = []
     for comment in comments:
         if not isinstance(comment.target, Comment):

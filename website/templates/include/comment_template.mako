@@ -63,9 +63,6 @@
                             <span data-bind="ifnot: author.id">
                                 <span class="comment-author" data-bind="text: author.fullname"></span>
                             </span>
-                            <span data-bind="if: mode !== 'pane'">
-                                <a class="comment-author" data-bind="attr: {href: targetUrl()}, text: cleanTitle"></a>
-                            </span>
                             <span class="comment-date pull-right">
                                 <span data-bind="template: {if: modified, afterRender: setupToolTips}">
                                     <a data-toggle="tooltip" data-bind="attr: {title: prettyDateModified()}">*</a>
@@ -113,9 +110,6 @@
                         <!-- Action bar -->
                         <div style="display: inline">
                             <div data-bind="ifnot: editing, event: {mouseover: setupToolTips('i')}" class="comment-actions pull-right">
-                                <a data-bind="attr:{href: '/'+id()}" style="color: #000000">
-                                    <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="fa fa-link"></i>
-                                </a>
                                 <span data-bind="if: canEdit, click: edit">
                                     <i data-toggle="tooltip" data-placement="bottom" title="Edit" class="fa fa-pencil"></i>
                                 </span>
@@ -182,10 +176,6 @@
             <!-- /ko -->
 
         </ul>
-
-        <div data-bind="if: shouldContinueThread">
-            <a data-bind="attr: {href: '/' + id()}">Continue this thread &#8594;</a>
-        </div>
 
     </div>
 

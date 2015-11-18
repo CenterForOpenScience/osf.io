@@ -311,9 +311,8 @@ $(document).ready(function() {
         $('.project-nav a').each(function () {
             var href = $(this).attr('href');
             if (path === href ||
-               (path.indexOf('discussions') > -1 && href.indexOf('discussions') > -1) ||
-               (path.indexOf('files') > -1 && href.indexOf('files') > -1 && path.indexOf('discussions') < 0) ||
-               (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1) && path.indexOf('discussions') < 0) {
+               (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
+               (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
                 $(this).closest('li').addClass('active');
             }
         });

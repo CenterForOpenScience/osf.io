@@ -32,7 +32,6 @@ var entry = {
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
-    'discussions-page': staticPath('js/pages/discussions-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
     'profile-settings-applications-list-page': staticPath('js/pages/profile-settings-applications-list-page.js'),

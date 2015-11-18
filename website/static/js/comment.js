@@ -21,7 +21,6 @@ var waterbutler = require('./waterbutler');
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
 var MAXLEVEL = {
-    'page': 10,
     'pane': 5
 };
 
@@ -152,9 +151,7 @@ BaseComment.prototype.fetch = function(nodeId, threadId) {
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    if (threadId !== undefined) {
-        return self.getThread(threadId);
-    }
+
     $.getJSON(
         self.$root.nodeApiUrl + 'comments/',
         {
@@ -175,21 +172,6 @@ BaseComment.prototype.fetch = function(nodeId, threadId) {
             self._loaded = true;
         }
     );
-    return deferred.promise();
-};
-
-BaseComment.prototype.getThread = function(threadId) {
-    var self = this;
-    var deferred = $.Deferred();
-    if (self._loaded) {
-        deferred.resolve(self.comments());
-    }
-    var request = $.getJSON(self.$root.nodeApiUrl + 'comment/' + threadId + '/');
-    request.done(function(response){
-        self.comments([new CommentModel(response.comment, self, self.$root)]);
-        deferred.resolve(self.comments());
-        self._loaded = true;
-    });
     return deferred.promise();
 };
 
@@ -243,9 +225,6 @@ BaseComment.prototype.submitReply = function() {
         }
         self.replyErrorMessage('');
         self.onSubmitSuccess(response);
-        if (self.level >= self.MAXLEVEL) {
-            window.location.href = nodeUrl + 'discussions/' + self.id();
-        }
     }).fail(function() {
         self.cancelReply();
         self.errorMessage('Could not submit comment');
@@ -342,59 +321,9 @@ var CommentModel = function(data, $parent, $root) {
         return ((!self.isHidden()) && self.hasChildren());
     });
 
-    self.cleanTitle = ko.pureComputed(function() {
-        var cleaned;
-        switch(self.page()) {
-            case 'wiki':
-                cleaned = '(Wiki';
-                if (self.title().toLowerCase() !== 'home') {
-                    cleaned += ' - ' + self.title();
-                }
-                break;
-            case 'files':
-                cleaned = '(Files - ' + self.title();
-                break;
-            case 'node':
-                cleaned = '(Project Overview';
-                break;
-        }
-        cleaned += ')';
-        return decodeURIComponent(cleaned);
-    });
-
     self.nodeUrl = '/' + self.$root.nodeId() + '/';
 
-    self.rootUrl = ko.pureComputed(function(){
-        var url = 'discussions';
-        if (self.page() === 'node') {
-            url = url + '/?page=overview';
-        } else {
-            url = url + '/?page=' + self.page();
-        }
-        return url;
-    });
-
-    self.parentUrl = ko.pureComputed(function(){
-        if (self.targetId() === self.rootId()) {
-            return '';
-        }
-        return '/' + self.targetId();
-    });
-
-    self.targetUrl = ko.pureComputed(function(){
-        if (self.page() === 'node') {
-            return self.nodeUrl;
-        } else if (self.page() === 'wiki') {
-            return self.nodeUrl + self.page() + '/' + self.rootId();
-        } else if (self.page() === 'files') {
-            return '/' + self.rootId() + '/';
-        }
-    });
-
-    if ((self.mode === 'pane' &&
-        self.level < TOGGLELEVEL) ||
-        (self.mode === 'page' &&
-        self.level < self.MAXLEVEL)) {
+    if (self.mode === 'pane' && self.level < TOGGLELEVEL) {
         self.toggle();
     }
 
@@ -570,33 +499,6 @@ var CommentListModel = function(options) {
 
     self.commented = ko.pureComputed(function(){
         return self.comments().length > 0;
-    });
-    self.rootUrl = ko.pureComputed(function(){
-        if (self.comments().length === 0) {
-            return '';
-        }
-        return self.comments()[0].rootUrl();
-    });
-
-    self.parentUrl = ko.pureComputed(function() {
-        if (self.comments().length === 0) {
-            return '';
-        }
-        return self.comments()[0].parentUrl();
-    });
-
-    self.recentComments = ko.pureComputed(function(){
-        var comments = [];
-        for (var c in self.comments()) {
-            var comment = self.comments()[c];
-            if (comment.isVisible()) {
-                comments.push(comment);
-            }
-            if (comments.length === 5) {
-                break;
-            }
-        }
-        return comments;
     });
 
     self.fetch(options.nodeId, options.threadId);

@@ -222,9 +222,4 @@ $(document).ready(function () {
         $(this).blur();
     });
 
-    // Comment pane trigger
-    $('.open-comment-pane').click(function(){
-        $('.cp-handle').click();
-    });
-
 });

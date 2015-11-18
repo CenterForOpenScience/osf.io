@@ -321,16 +321,6 @@ def make_url_map(app):
                 '/project/<pid>/comment/<cid>/',
                 '/project/<pid>/node/<nid>/comment/<cid>/',
             ],
-            'get',
-            project_views.comment.view_comments_single,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/',
-                '/project/<pid>/node/<nid>/comment/<cid>/',
-            ],
             'put',
             project_views.comment.edit_comment,
             json_renderer,
@@ -1015,30 +1005,6 @@ def make_url_map(app):
             addon_views.addon_view_or_download_file_legacy,
             json_renderer
         ),
-
-
-        ### Discussions ###
-
-        Rule(
-            [
-                '/project/<pid>/discussions/',
-                '/project/<pid>/node/<nid>/discussions/',
-            ],
-            'get',
-            project_views.comment.view_comments_project,
-            OsfWebRenderer('project/discussions.mako'),
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/discussions/<cid>/',
-                '/project/<pid>/node/<nid>/discussions/<cid>/',
-            ],
-            'get',
-            project_views.comment.view_comments_single,
-            OsfWebRenderer('project/discussions.mako'),
-        ),
-
     ])
 
     # API

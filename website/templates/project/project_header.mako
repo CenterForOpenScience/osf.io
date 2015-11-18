@@ -65,13 +65,6 @@
                             % endif
                         % endfor
 
-                        <li>
-                            <a href="${node['url']}discussions/">Discussions
-                                % if user['unread_comments']['total'] > 0:
-                                    <span class="badge">${user['unread_comments']['total']}</span>
-                                % endif
-                            </a>
-                        </li>
                         % if node['is_public'] or user['is_contributor']:
                             <li><a href="${node['url']}analytics/">Analytics</a></li>
                         % endif

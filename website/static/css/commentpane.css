@@ -104,15 +104,6 @@
     cursor: pointer;
 }
 
-.comment-link-icon a {
-    color: #999999;
-}
-
-.comment-link-icon a:hover {
-    color: #000000;
-    text-decoration: none;
-}
-
 .comment-content img{
   vertical-align: middle;
   display: block;
