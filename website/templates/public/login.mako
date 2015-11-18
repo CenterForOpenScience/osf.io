@@ -174,7 +174,7 @@
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
                     <input type="hidden" id="campaign" value="${campaign or ''}" />
-                    <button type="submit" class="btn pull-right btn-success ">Create Account</button>
+                    <button type="submit" class="btn pull-right btn-success ">Create account</button>
                 </div>
             </div>
         </form>
