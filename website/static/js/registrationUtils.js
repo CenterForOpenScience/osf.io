@@ -170,10 +170,15 @@ var Question = function(questionSchema, data) {
         _value = self.data.value || null;
     }
     if (self.type === 'choose' && self.format === 'multiselect') {
-        if (!$.isArray(_value)) {
-            _value = [_value];
+        if (_value) {
+            if(!$.isArray(_value)) {
+                _value = [_value];
+            }
+            self.value = ko.observableArray(_value);
         }
-        self.value = ko.observableArray(_value);
+        else {
+            self.value = ko.observableArray([]);
+        }
     }
     else if (self.type === 'object') {
         $.each(self.properties, function(prop, field) {
