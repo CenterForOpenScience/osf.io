@@ -3,7 +3,6 @@ import datetime as dt
 import mock
 import httplib as http
 from nose.tools import *  # noqa PEP8 asserts
-from modularodm import Q
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 from dateutil.parser import parse as parse_date
 
@@ -11,7 +10,6 @@ from framework.auth import Auth
 from website.project.model import Comment, NodeLog
 from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
-from website.addons.wiki.model import NodeWikiPage
 
 from tests.base import (
     OsfTestCase,
@@ -54,26 +52,6 @@ class TestCommentViews(OsfTestCase):
             },
             **kwargs
         )
-
-    def _add_comment_wiki(self, project, content=None, name='home', **kwargs):
-
-        content = content if content is not None else 'the quick brown fox jumps over the lazy dog'
-        url = project.api_url + 'comment/'
-        project.update_node_wiki(name=name, content='a wiki page', auth=Auth(project.creator))
-        self.app.post_json(
-            url,
-            {
-                'content': content,
-                'isPublic': 'public',
-                'page': 'wiki',
-                'target': name
-            },
-            **kwargs
-        )
-        wiki_keys = NodeWikiPage.find(Q('node', 'eq', self.project)).get_keys()
-        for root_target in wiki_keys:
-            wiki_page = NodeWikiPage.load(root_target)
-            wiki_page.reload()
 
     @mock.patch('website.project.views.comment.get_root_target_title')
     def _add_comment_files(self, project, mock_get_title, content=None, path=None, provider='osfstorage', **kwargs):
@@ -434,19 +412,6 @@ class TestCommentViews(OsfTestCase):
         self.non_contributor.reload()
         assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
 
-    def test_view_comments_updates_user_comments_view_timestamp_wiki(self):
-        self.project.update_node_wiki(name='home', content='a wiki page', auth=Auth(self.project.creator))
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
-            'page': 'wiki',
-            'rootId': 'home'
-        }, auth=self.user.auth)
-        self.user.reload()
-
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['wiki']['home']
-        view_timestamp = dt.datetime.utcnow()
-        assert_datetime_equal(user_timestamp, view_timestamp)
-
     def test_view_comments_updates_user_comments_view_timestamp_files(self):
         path = 'skittles.txt'
         self._add_comment_files(self.project, content='Red orange yellow skittles', path=path, provider='osfstorage', auth=self.project.creator.auth)
@@ -523,29 +488,6 @@ class TestCommentViews(OsfTestCase):
         }, auth=self.user.auth)
         assert_equal(res.json.get('nUnread'), 0)
 
-    def test_n_unread_comments_updates_when_comment_is_added_wiki(self):
-        self._add_comment_wiki(self.project, 'hello world', 'home', auth=self.project.creator.auth)
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, {
-            'page': 'wiki',
-            'rootId': 'home'
-        }, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-        url_timestamp = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url_timestamp, {
-            'page': 'wiki',
-            'rootId': 'home'
-        }, auth=self.user.auth)
-        self.user.reload()
-
-        res = self.app.get(url, {
-            'page': 'wiki',
-            'rootId': 'home'
-        }, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 0)
-
     def test_n_unread_comments_updates_when_comment_reply(self):
         comment = CommentFactory(node=self.project, user=self.project.creator, page='node')
         reply = CommentFactory(node=self.project, user=self.user, target=comment, page='node')
@@ -608,26 +550,12 @@ class TestCommentViews(OsfTestCase):
         res = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res['user']['unread_comments']['files'], 3)
 
-    def test_n_unread_comments_wiki(self):
-        self._add_comment_wiki(self.project, auth=self.project.creator.auth)
-        self._add_comment_wiki(self.project, content='yellow', name='Cold play', auth=self.project.creator.auth)
-        self.project.reload()
-        res = _view_project(self.project, auth=Auth(user=self.user))
-        assert_equal(res['user']['unread_comments']['wiki'], 2)
-
     @mock.patch('website.project.views.node.check_file_exists')
     def test_n_unread_comments_total(self, mock_check_file_exists):
         mock_check_file_exists.return_value = True, 1
         self._add_comment_files(self.project, auth=self.project.creator.auth)
         self.project.reload()
-
         self._add_comment(self.project, auth=self.project.creator.auth)
-        self._add_comment_wiki(
-            self.project,
-            content='yellow',
-            name='Cold play',
-            auth=self.project.creator.auth
-        )
         self._add_comment_files(
             self.project,
             content=None,
@@ -637,7 +565,6 @@ class TestCommentViews(OsfTestCase):
         )
         self.project.reload()
 
-        self._add_comment_wiki(self.project, auth=self.project.creator.auth)
         self._add_comment_files(
             self.project,
             content='I failed my test',
@@ -649,7 +576,6 @@ class TestCommentViews(OsfTestCase):
 
         res = _view_project(self.project, auth=Auth(user=self.user))['user']['unread_comments']
         assert_equal(res['node'], 1)
-        assert_equal(res['wiki'], 2)
         assert_equal(res['files'], 3)
 
 

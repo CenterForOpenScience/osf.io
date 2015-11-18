@@ -9,12 +9,6 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
-% if user['can_comment'] or node['has_comments']:
-    % if page:
-        <%include file="include/comment_pane_template.mako"/>
-    %endif
-% endif
-
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
         <%include file="wiki/templates/status.mako"/>
@@ -367,7 +361,6 @@ ${parent.javascript_bottom()}
 
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
-        name: ${json.dumps(wiki_name) | n},
         canEdit: canEditBody,
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},

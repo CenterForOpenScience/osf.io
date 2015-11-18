@@ -12,7 +12,6 @@ require('ace-mode-markdown');
 require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
 
-var CommentModel = require('js/comment');
 var $osf = require('js/osfHelpers');
 
 var WikiMenu = require('../wikiMenu');
@@ -166,18 +165,3 @@ $(document).ready(function () {
     // Tooltip
     $('[data-toggle="tooltip"]').tooltip();
 });
-
-var $comments = $('.comments');
-if ($comments.length) {
-    var options = {
-        nodeId: window.contextVars.node.id,
-        nodeApiUrl: window.contextVars.node.urls.api,
-        hostPage: 'wiki',
-        hostName: window.contextVars.wiki.name,
-        mode: 'pane',
-        userName: window.contextVars.currentUser.name,
-        canComment: window.contextVars.currentUser.canComment,
-        hasChildren: window.contextVars.node.hasChildren
-    };
-    CommentModel.init('.comment-pane', options);
-}

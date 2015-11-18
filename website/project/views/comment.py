@@ -30,8 +30,6 @@ def resolve_target(node, page, guid):
     if target is None:
         if page == Comment.FILES:
             return File.load(guid)
-        if page == Comment.WIKI:
-            return node.get_wiki_page(guid, 1)
         raise HTTPError(http.BAD_REQUEST)
     return target.referent
 
@@ -44,11 +42,7 @@ def serialize_comment(comment, auth, anonymous=False):
         title = ''
         comment.is_hidden = True
     else:
-        if hasattr(comment.root_target, 'page_name'):  # Wiki
-            # In case the wiki name is changed
-            root_id = comment.root_target.page_name
-            title = comment.root_target.page_name
-        elif isinstance(comment.root_target, StoredFileNode):  # File
+        if isinstance(comment.root_target, StoredFileNode):  # File
             root_id = comment.root_target._id
             title = comment.root_target.name
         else:  # Node or comment
@@ -163,9 +157,7 @@ def get_file_provider(page, root_target):
 
 
 def get_page_type(page, node):
-    if page == Comment.WIKI:
-        return 'wiki'
-    elif page == Comment.FILES:
+    if page == Comment.FILES:
         return 'file'
     elif node.parent_node:
         return 'component'
@@ -183,9 +175,7 @@ def get_root_target_title(page, root_target):
 
 
 def get_comment_url(node, page, root_target):
-    if page == Comment.WIKI:
-        return node.web_url_for('project_wiki_id_page', wid=root_target._id, _absolute=True)
-    elif page == Comment.FILES:
+    if page == Comment.FILES:
         path = root_target.path[1:]
         return node.web_url_for('addon_view_or_download_file', provider=root_target.provider, path=path, _absolute=True)
     else:
@@ -203,7 +193,7 @@ def list_comments(auth, node, **kwargs):
     guid = request.args.get('target')
     root_id = request.args.get('rootId')
 
-    if not root_id:  # Overview/Files/Wiki page on discussion page
+    if not root_id:  # Overview/Files page on discussion page
         comments = list_total_comments(node, auth, page)
     else:
         target = resolve_target(node, page, guid)
@@ -296,15 +286,15 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
             auth.user.save()
             return {node._id: auth.user.comments_viewed_timestamp[node._id][Comment.OVERVIEW].isoformat()}
 
-        # set up timestamp dictionary for wiki/files page
+        # set up timestamp dictionary for files page
         if not timestamps.get(page, None):
             timestamps[page] = dict()
 
-        # if updating timestamp on the files/wiki total page...
+        # if updating timestamp on the files page...
         if root_id is None:
             return _update_comments_timestamp_total(node, auth, page)
 
-        # if updating timestamp on a specific file/wiki page
+        # if updating timestamp on a specific file page
         timestamps[page][root_id] = datetime.utcnow()
         auth.user.save()
         return {node._id: auth.user.comments_viewed_timestamp[node._id][page][root_id].isoformat()}
@@ -313,7 +303,6 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
 
 
 def _update_comments_timestamp_total(node, auth, page):
-    from website.addons.wiki.model import NodeWikiPage
     ret = {}
     if page == Comment.FILES:
         for root_target_id in node.commented_files:
@@ -322,12 +311,6 @@ def _update_comments_timestamp_total(node, auth, page):
             if comments and comments[0].is_hidden:
                 continue
             ret = _update_comments_timestamp(auth, node, page, root_target_id)
-    elif page == Comment.WIKI:
-        root_targets = list(NodeWikiPage.find(Q('node', 'eq', node)))
-        for wiki_page in root_targets:
-            comments = Comment.find(Q('target', 'eq', wiki_page))
-            if comments:
-                ret = _update_comments_timestamp(auth, node, page, wiki_page.page_name)
     return ret
 
 

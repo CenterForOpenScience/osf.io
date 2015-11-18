@@ -207,10 +207,7 @@ def project_wiki_delete(auth, wname, **kwargs):
 
     if not wiki_page:
         raise HTTPError(http.NOT_FOUND)
-    comments = getattr(node.get_wiki_page(wiki_name, 1), 'commented', [])
     node.delete_node_wiki(wiki_name, auth)
-    for comment in comments:
-        comment.hide(save=True)
     wiki_utils.broadcast_to_sharejs('delete', sharejs_uuid, node)
     return {}
 
@@ -351,9 +348,6 @@ def project_wiki_edit_post(auth, wname, **kwargs):
         # update_node_wiki will create a new wiki page because a page
         node.update_node_wiki(wiki_name, form_wiki_content, auth)
         ret = {'status': 'success'}
-    comments = getattr(node.get_wiki_page(wiki_name, 1), 'commented', [])
-    for comment in comments:
-        comment.show(save=True)
     return ret, http.FOUND, None, redirect_url
 
 @must_be_valid_project  # injects node or project
@@ -467,14 +461,6 @@ def project_wiki_rename(auth, wname, **kwargs):
     else:
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, new_wiki_name)
         wiki_utils.broadcast_to_sharejs('redirect', sharejs_uuid, node, new_wiki_name)
-    # Rename timestamp
-    timestamp = auth.user.comments_viewed_timestamp.get(node._id, dict())
-    wiki_timestamp = timestamp.get('wiki', dict())
-    current_wiki_timestamp = wiki_timestamp.get(wiki_name, None)
-    if current_wiki_timestamp:
-        wiki_timestamp[new_wiki_name] = current_wiki_timestamp
-        del current_wiki_timestamp
-        auth.user.save()
 
 
 @must_be_valid_project  # returns project

@@ -12,10 +12,6 @@
     <div class="comments cp-sidebar">
         <h4>
             <span data-bind="if: page() == 'node' ">${node['title']} Discussion</span>
-            <span data-bind="if: page() == 'wiki' ">Wiki
-               <span data-bind="if: id().toLowerCase() !== 'home' "> | <span data-bind="text: id"></span> </span>
-                Discussion
-            </span>
             %if file_name:
                 <span data-bind="if: page() == 'files'">Files | ${file_name} Discussion</span>
             %endif

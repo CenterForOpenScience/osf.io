@@ -57,9 +57,6 @@
                                             <img src="${addons[addon]['icon']}" class="addon-logo"/>
                                         % endif
                                         ${addons[addon]['full_name']}
-                                        % if addons[addon]['full_name']=='Wiki' and user['unread_comments']['wiki'] > 0:
-                                            <span class="badge">${user['unread_comments']['wiki']}</span>
-                                        % endif
                                     </a>
                                 </li>
                             % endif

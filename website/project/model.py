@@ -150,7 +150,6 @@ class Comment(GuidStoredObject):
 
     OVERVIEW = "node"
     FILES = "files"
-    WIKI = "wiki"
 
     _id = fields.StringField(primary=True)
 
@@ -159,7 +158,7 @@ class Comment(GuidStoredObject):
     node = fields.ForeignField('node', required=True, backref='comment_owner')
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
     target = fields.AbstractForeignField(required=True)
-    # The file/wiki/overview's page that the comment is for
+    # The file or project overview page that the comment is for
     root_target = fields.AbstractForeignField(backref='comment_target')
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -167,10 +166,9 @@ class Comment(GuidStoredObject):
     modified = fields.BooleanField(default=False)
 
     is_deleted = fields.BooleanField(default=False)
-    # Whether the original file/wiki is deleted
-    # NOTE Currently, is_hidden will set to True only when a wiki is deleted.
+    # Whether the original file is deleted
     is_hidden = fields.BooleanField(default=False)
-    # The type of root_target: node/files/wiki
+    # The type of root_target: node/files
     page = fields.StringField()
     content = fields.StringField()
 

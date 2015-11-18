@@ -723,7 +723,6 @@ def _view_project(node, auth, primary=False, check_files=False):
                 status.push_status_message(message, 'info', dismissible=False, trust=True)
     n_unread_node = n_unread_comments(node, user, 'node')
     n_unread_files = n_unread_comments(node, user, 'files', check=check_files)
-    n_unread_wiki = n_unread_comments(node, user, 'wiki')
     data = {
         'node': {
             'id': node._primary_key,
@@ -815,9 +814,8 @@ def _view_project(node, auth, primary=False, check_files=False):
             'dashboard_id': dashboard_id,
             'unread_comments': {
                 'node': n_unread_node,
-                'wiki': n_unread_wiki,
                 'files': n_unread_files,
-                'total': n_unread_node + n_unread_wiki + n_unread_files
+                'total': n_unread_node + n_unread_files
             }
         },
         'badges': _get_badge(user),
@@ -898,9 +896,7 @@ def n_unread_total(node, user, page, check=False):
         return n_unread_total_node(user, node)
     elif page == 'files':
         return n_unread_total_files(user, node, check=check)
-    elif page == 'wiki':
-        return n_unread_total_wiki(user, node)
-    return n_unread_total_node(user, node) + n_unread_total_wiki(user, node) + n_unread_total_files(user, node, check=check)
+    return n_unread_total_node(user, node) + n_unread_total_files(user, node, check=check)
 
 
 def n_unread_total_node(user, node):
@@ -912,18 +908,6 @@ def n_unread_total_node(user, node):
                         Q('is_deleted', 'eq', False) &
                         Q('is_hidden', 'eq', False) &
                         Q('page', 'eq', 'node')).count()
-
-
-def n_unread_total_wiki(user, node):
-    from website.addons.wiki.model import NodeWikiPage
-    root_targets = list(NodeWikiPage.find(Q('node', 'eq', node)))
-    n_unread = 0
-    for wiki_page in root_targets:
-        comments = Comment.find(Q('target', 'eq', wiki_page))
-        if comments:
-            root_id = wiki_page.page_name
-            n_unread += n_unread_comments(node, user, 'wiki', root_id)
-    return n_unread
 
 
 def n_unread_total_files(user, node, check=False):

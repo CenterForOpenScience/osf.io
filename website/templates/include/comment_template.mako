@@ -30,7 +30,7 @@
                         <span data-bind="if: hasChildren() && shouldShowChildren()">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
-                        The original file or wiki is not accessible from this ${node['node_type']} or has been deleted.
+                        The original file is not accessible from this ${node['node_type']} or has been deleted.
                     </div>
                 </div>
                     
