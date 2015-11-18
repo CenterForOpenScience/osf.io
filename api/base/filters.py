@@ -245,13 +245,6 @@ class ODMFilterMixin(FilterMixin):
         if not self.serializer_class:
             raise NotImplementedError()
 
-    def get_comparison_operator(self, key):
-        field_type = type(self.serializer_class._declared_fields[key])
-        if field_type in self.field_comparison_operators:
-            return self.field_comparison_operators[field_type]
-        else:
-            return self.DEFAULT_OPERATOR
-
     def get_default_odm_query(self):
         """Return the default MODM query for the result set.
 
