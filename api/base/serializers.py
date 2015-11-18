@@ -222,10 +222,21 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
             assert related_kwargs is not None, 'Must provide related view kwargs.'
+            assert isinstance(related_kwargs, dict), "Related view kwargs must have format {'lookup_url_kwarg: lookup_field}."
         if self_view:
             assert self_kwargs is not None, 'Must provide self view kwargs.'
+            assert isinstance(self_kwargs, dict), "Self view kwargs must have format {'lookup_url_kwarg: lookup_field}."
 
-        super(RelationshipField, self).__init__(self.views, **kwargs)
+        view_name = related_view
+        if view_name:
+            lookup_kwarg = related_kwargs.keys()[0]
+            lookup_field = related_kwargs.values()[0]
+        else:
+            view_name = self_view
+            lookup_kwarg = self_kwargs.keys()[0]
+            lookup_field = self_kwargs.values()[0]
+
+        super(RelationshipField, self).__init__(view_name, lookup_url_kwarg=lookup_kwarg, lookup_field=lookup_field, **kwargs)
 
     def get_meta_information(self, meta_data, value):
         """
