@@ -2,6 +2,8 @@
 // automatic rendering. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
+var $ = require('jquery');
+var $osf = require('js/osfHelpers');
 
 (function () {
 
@@ -12,6 +14,7 @@
         doc = window.document,
         re = window.RegExp,
         nav = window.navigator,
+        ctx = window.contextVars,
         SETTINGS = { lineLength: 72 },
 
     // Used to work around some browser bugs where we can't use feature testing.
@@ -194,9 +197,11 @@
                 return; // already initialized
 
             panels = new PanelCollection(idPostfix, aceEditor);
-            var commandManager = new CommandManager(hooks, getString);
+            var commandManager = new CommandManager(hooks, getString, aceEditor);
             var previewManager = function(){};
             var uiManager;
+
+            addDragNDrop(aceEditor, panels, getString);
 
             var useragent = ace.require('ace/lib/useragent');
             var getKey = function (identifier) {
@@ -210,7 +215,228 @@
             that.uiManager = uiManager;
         };
 
-    }
+    };
+
+    var addDragNDrop = function(editor, panels, getString) {
+        var element = editor.container;
+        editor.getPosition = function(x, y) {
+            var config = editor.renderer.$markerFront.config;
+            var height = config.lineHeight;
+            var width = config.characterWidth;
+            var row = Math.floor(y/height) < editor.session.getScreenLength() ? Math.floor(y/height) : editor.session.getScreenLength() - 1;
+            var column = Math.floor(x/width) < editor.session.getScreenLastRowColumn(row) ? Math.floor(x/width) : editor.session.getScreenLastRowColumn(row);
+            return {row: row, column: column}
+        };
+
+        editor.marker = {};
+        editor.marker.cursor = {};
+        editor.marker.active = false;
+        editor.marker.update = function(html, markerLayer, session, config) {
+            var height = config.lineHeight;
+            var width = config.characterWidth;
+            var top = markerLayer.$getTop(this.cursor.row, config);
+            var left = markerLayer.$padding + this.cursor.column * width;
+            html.push(
+                '<div class=\'drag-drop-cursor\' style=\'',
+                'height:', height, 'px;',
+                'top:', top, 'px;',
+                'left:', left, 'px; width:', width, 'px\'></div>'
+            );
+        };
+
+        editor.marker.redraw = function() {
+            this.session._signal("changeFrontMarker");
+        };
+
+        element.addEventListener('dragenter', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }, false);
+
+        element.addEventListener('dragover', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!editor.marker.active) {
+                editor.marker.active = true;
+                editor.marker.session = editor.session;
+                editor.marker.session.addDynamicMarker(editor.marker, true);
+            }
+            editor.marker.cursor = editor.getPosition(event.offsetX, event.offsetY);
+            editor.marker.redraw();
+            var effect;
+                try {
+                  effect = event.dataTransfer.effectAllowed;
+                } catch (_error) {}
+                event.dataTransfer.dropEffect = 'move' === effect || 'linkMove' === effect ? 'move' : 'copy';
+        }, false);
+
+        editor.marker.put = function(url, file) {
+            $.ajax({
+                url: url,
+                type: 'PUT',
+                processData: false,
+                contentType: false,
+                beforeSend: $osf.setXHRAuthorization,
+                data: file
+            })
+        };
+
+        element.addEventListener('drop', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            var re = /(?:\.([^.]+))?$/;
+            var extensions = ['jpg', 'png', 'gif', 'bmp'];
+            var ext;
+            var position = editor.session.screenToDocumentPosition(editor.marker.cursor.row, editor.marker.cursor.column);
+            var url = event.dataTransfer.getData('text/html');
+            if (!!url) {
+                var getImage = /(src=")(.*?)(")/;
+                var imgURL = getImage.exec(url)[2];
+                if (imgURL.substring(0,10) === 'data:image') {
+                    imgURL = event.dataTransfer.getData('URL');
+                    var exp = /(imgurl=)(.*?)(&)/;
+                    if (!!exp.exec(imgURL)) {
+                        imgURL = exp.exec(imgURL)[2];
+                    }
+                    else {
+                        $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
+                        imgURL = undefined;
+                    }
+                }
+                else {
+                    ext = re.exec(imgURL)[1];
+                    if (extensions.indexOf(ext) <= -1) {
+                        $osf.growl('Error', 'File type not supported', 'danger');
+                        imgURL = undefined;
+                    }
+                }
+                if (!!imgURL) {
+                    var state = new TextareaState(panels);
+                    if (!state) {
+                        return;
+                    }
+                    var chunk = state.getChunks();
+                    commandProto.updateLinkDefs(chunk, [imgURL], editor);
+                    editor.session.insert(position, linkDescription(getString("imagedescription"), true, false));
+                }
+            }
+            else {
+                var multiple = event.dataTransfer.files.length > 1;
+                var urls = [];
+                var deferred = [];
+                $.each(event.dataTransfer.files, function(i, file){
+                    ext = re.exec(file.name)[1];
+                    if (extensions.indexOf(ext) <= -1) {
+                        $osf.growl('Error', 'File type not supported', 'danger');
+                    }
+                    else {
+                        var folder = checkFolder();
+                        if (!!folder) {
+                            var waterbutler_url = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + folder + '?name=' + encodeURI(file.name) + '&type=file';
+
+                            deferred.push(
+                                $.ajax({
+                                    url: waterbutler_url,
+                                    type: 'PUT',
+                                    processData: false,
+                                    contentType: false,
+                                    beforeSend: $osf.setXHRAuthorization,
+                                    data: file
+                                }).done(function(response){
+                                    url = response.data.links.download + '?mode=render';
+                                    urls.splice(i, 0, url);
+                                    editor.session.insert(position, linkDescription(getString("imagedescription"), true, multiple));
+                                }).fail(function(data) {
+                                    $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
+                                    'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                                    'if the problem persists.', 'danger');
+                                })
+                            )
+                        }
+                        else {
+                            $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
+                                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                                'if the problem persists.', 'danger');
+                        }
+                    }
+                });
+                $.when.apply(null, deferred).done(function() {
+                    var state = new TextareaState(panels);
+                    if (!state) {
+                        return;
+                    }
+                    var chunk = state.getChunks();
+                    commandProto.updateLinkDefs(chunk, urls, editor);
+                })
+            }
+            editor.marker.session.removeMarker(editor.marker.id);
+            editor.marker.redraw();
+            editor.marker.active = false;
+        }, false);
+
+        element.addEventListener('dragleave', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            editor.marker.session.removeMarker(editor.marker.id);
+            editor.marker.redraw();
+            editor.marker.active = false;
+        });
+    };
+
+    var linkDescription = function(str, isImage, multiple) {
+        if (!isImage) {
+            return '[' + str + '][ ]';
+        }
+        else if (!!multiple) {
+            return '![' + str + '][ ]\n';
+        }
+        return '![' + str + '][ ]';
+    };
+
+    var createFolder = function() {
+        var success;
+        var new_folder_url = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage/?name=Wiki+Image+Uploads&kind=folder';
+        $.ajax({
+            url: new_folder_url,
+            type:'PUT',
+            async: false,
+            beforeSend: $osf.setXHRAuthorization
+        }).done(function(response) {
+            success = response.data.attributes.path;
+        }).fail(function() {
+            success = false;
+        });
+        return success;
+    };
+
+    var checkFolder = function() {
+        var success;
+        var folder_url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/files/osfstorage/?filter[kind]=folder&filter[name]=wiki+image+uploads';
+        $.ajax({
+            url: folder_url,
+            type: 'GET',
+            async: false
+        }).done(function(data, responseText, response) {
+            var json = response.responseJSON;
+            var exists = false;
+            if (json.data.length > 0) {
+                for (var i = 0, folder; folder = json.data[i]; i++) {
+                    var name = folder.attributes.name;
+                    if (name === 'Wiki Image Uploads') {
+                        exists = true;
+                        success = folder.attributes.path;
+                        break;
+                    }
+                }
+            }
+            if (json.data.length === 0 || !exists) {
+                success = createFolder();
+            }
+        }).fail(function(data, responseText, response) {
+            success = false;
+        });
+        return success;
+    };
 
     // before: contains all the text in the input box BEFORE the selection.
     // after: contains all the text in the input box AFTER the selection.
@@ -1708,9 +1934,10 @@
 
     }
 
-    function CommandManager(pluginHooks, getString) {
+    function CommandManager(pluginHooks, getString, editor) {
         this.hooks = pluginHooks;
         this.getString = getString;
+        this.editor = editor;
     }
 
     var commandProto = CommandManager.prototype;
@@ -1809,19 +2036,19 @@
         return text;
     };
 
-    commandProto.addLinkDef = function (chunk, linkDef) {
+    commandProto.updateLinkDefs = function(chunk, urls, editor) {
+        var refNumber = 0;
+        var defsToAdd = {};
 
-        var refNumber = 0; // The current reference number
-        var defsToAdd = {}; //
-        // Start with a clean slate by removing all previous link definitions.
         chunk.before = this.stripLinkDefs(chunk.before, defsToAdd);
         chunk.selection = this.stripLinkDefs(chunk.selection, defsToAdd);
         chunk.after = this.stripLinkDefs(chunk.after, defsToAdd);
 
         var defs = "";
-        var regex = /(\[)((?:\[[^\]]*\]|[^\[\]])*)(\][ ]?(?:\n[ ]*)?\[)(\d+)(\])/g;
+        var regex = /(\[)((?:\[[^\]]*\]|[^\[\]])*)(\][ ]?(?:\n[ ]*)?\[)(\d+| )(\])/g;
+        var linkDef = "";
 
-        var addDefNumber = function (def) {
+        var addDefNumber = function(def) {
             refNumber++;
             def = def.replace(/^[ ]{0,3}\[(\d+)\]:/, "  [" + refNumber + "]:");
             defs += "\n" + def;
@@ -1832,10 +2059,15 @@
         //    of regex, inner is always a proper substring of wholeMatch, and
         // b) more than one level of nesting is neither supported by the regex
         //    nor making a lot of sense (the only use case for nesting is a linked image)
-        var getLink = function (wholeMatch, before, inner, afterInner, id, end) {
+        var getLink = function(wholeMatch, before, inner, afterInner, id, end) {
             inner = inner.replace(regex, getLink);
-            if (defsToAdd[id]) {
-                addDefNumber(defsToAdd[id]);
+            if (!!defsToAdd[id]) {
+                addDefNumber(defsToAdd[id])
+                return before + inner + afterInner + refNumber + end;
+            }
+            else if (urls.length > 0) {
+                linkDef = "[999]: " + urls.shift();
+                addDefNumber(linkDef);
                 return before + inner + afterInner + refNumber + end;
             }
             return wholeMatch;
@@ -1843,14 +2075,7 @@
 
         chunk.before = chunk.before.replace(regex, getLink);
 
-        if (linkDef) {
-            addDefNumber(linkDef);
-        }
-        else {
-            chunk.selection = chunk.selection.replace(regex, getLink);
-        }
-
-        var refOut = refNumber;
+        chunk.selection = chunk.selection.replace(regex, getLink);
 
         chunk.after = chunk.after.replace(regex, getLink);
 
@@ -1863,7 +2088,7 @@
 
         chunk.after += "\n\n" + defs;
 
-        return refOut;
+        editor.setValue(chunk.before + chunk.selection + chunk.after);
     };
 
     // takes the line as entered into the add link/as image dialog and makes
@@ -1896,7 +2121,7 @@
 
             chunk.startTag = chunk.startTag.replace(/!?\[/, "");
             chunk.endTag = "";
-            this.addLinkDef(chunk, null);
+            this.updateLinkDefs(chunk, null, this.editor);
 
         }
         else {
@@ -1908,7 +2133,7 @@
             chunk.startTag = chunk.endTag = "";
 
             if (/\n\n/.test(chunk.selection)) {
-                this.addLinkDef(chunk, null);
+                this.updateLinkDefs(chunk, null, this.editor);
                 return;
             }
             var that = this;
@@ -1938,23 +2163,17 @@
                     // would mean a zero-width match at the start. Since zero-width matches advance the string position,
                     // the first bracket could then not act as the "not a backslash" for the second.
                     chunk.selection = (" " + chunk.selection).replace(/([^\\](?:\\\\)*)(?=[[\]])/g, "$1\\").substr(1);
-                    
-                    var linkDef = " [999]: " + properlyEncoded(link);
-
-                    var num = that.addLinkDef(chunk, linkDef);
-                    chunk.startTag = isImage ? "![" : "[";
-                    chunk.endTag = "][" + num + "]";
 
                     if (!chunk.selection) {
                         if (isImage) {
-                            chunk.selection = that.getString("imagedescription");
+                            chunk.selection = linkDescription(that.getString("imagedescription"), true, false);
                         }
                         else {
-                            chunk.selection = that.getString("linkdescription");
+                            chunk.selection = linkDescription(that.getString("linkdescription"), false, false);
                         }
                     }
+                    that.updateLinkDefs(chunk, [link], that.editor);
                 }
-                postProcessing();
             };
 
             background = ui.createBackground();
