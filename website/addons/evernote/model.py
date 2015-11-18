@@ -1,7 +1,8 @@
 
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
 from website.addons.evernote import (settings, utils)
+from website.addons.evernote.serializer import EvernoteSerializer
 from website.oauth.models import (ExternalProvider, OAUTH1)
 
 from evernote.api.client import EvernoteClient
@@ -50,9 +51,10 @@ class Evernote(ExternalProvider):
             'profile_url': ''
         }
 
-class EvernoteUserSettings(AddonUserSettingsBase):
+class EvernoteUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Evernote
+    serializer = EvernoteSerializer
 
 
-class EvernoteNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
+class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = Evernote
