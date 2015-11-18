@@ -4,7 +4,7 @@ from modularodm.exceptions import ValidationValueError
 from framework.exceptions import PermissionsError
 
 from website.models import Node
-from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
+from api.base.serializers import LinksField, RelationshipField, DevOnly
 from api.base.serializers import JSONAPISerializer, IDField, TypeField
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse, get_user_auth
@@ -27,11 +27,19 @@ class CollectionSerializer(JSONAPISerializer):
 
     links = LinksField({})
 
-    node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='collections:node-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='collection_id', meta={'count': 'get_node_links_count'}))
+    node_links = DevOnly(RelationshipField(
+        related_view='collections:node-pointers',
+        related_view_kwargs={'collection_id': '<pk>'},
+        related_meta={'count': 'get_node_links_count'}
+    ))
+
     # TODO: Add a self link to this when it's available
-    linked_nodes = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='collections:linked-nodes', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='collection_id', meta={'count': 'get_node_links_count'}))
+    linked_nodes = DevOnly(RelationshipField(
+        related_view='collections:linked-nodes',
+        related_view_kwargs={'collection_id': '<pk>'},
+        related_meta={'count': 'get_node_links_count'}
+    ))
+
     class Meta:
         type_ = 'collections'
 

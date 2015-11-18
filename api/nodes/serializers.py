@@ -10,11 +10,9 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
+from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
+    TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly, HideIfRegistration, HideIfRetraction)
 from api.base.exceptions import InvalidModelValueError
-from api.base.serializers import (LinksField, JSONAPIHyperlinkedIdentityField, DevOnly,
-                                  JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink,
-                                  IDField, TypeField, TargetTypeField, JSONAPIListField,
-                                  HideIfRegistration, HideIfRetraction)
 
 
 class NodeTagField(ser.Field):
@@ -71,33 +69,49 @@ class NodeSerializer(JSONAPISerializer):
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
-    children = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
-                                                lookup_url_kwarg='node_id', meta={'count': 'get_node_count'}))
-
-    contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
-                                                    lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
-
-    files = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
-                                             link_type='related'))
-
-    node_links = DevOnly(HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})))
-
-    comments = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-comments', lookup_field='pk', lookup_url_kwarg='node_id',
-                                               link_type='related', meta={'unread': 'get_unread_comments_count'}))
-
-    parent = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
-                                              lookup_url_kwarg='node_id'))
-
-    registrations = DevOnly(HideIfRegistration(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
-                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})))
-
-    forked_from = HideIfRetraction(JSONAPIHyperlinkedIdentityField(
-        view_name='nodes:node-detail',
-        lookup_field='forked_from_id',
-        link_type='related',
-        lookup_url_kwarg='node_id'
+    children = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-children',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_node_count'},
     ))
+
+    comments = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-comments',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'unread': 'get_unread_comments_count'}))
+
+    contributors = RelationshipField(
+        related_view='nodes:node-contributors',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_contrib_count'}
+    )
+
+    files = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-providers',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
+
+    forked_from = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<forked_from_id>'}
+    ))
+
+    node_links = DevOnly(HideIfRetraction(RelationshipField(
+        related_view='nodes:node-pointers',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_pointers_count'}
+    )))
+
+    parent = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<parent_id>'}
+    ))
+
+    registrations = DevOnly(HideIfRegistration(RelationshipField(
+        related_view='nodes:node-registrations',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_registration_count'}
+    )))
 
     class Meta:
         type_ = 'nodes'
@@ -204,8 +218,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
     }, {
         'profile_image': 'profile_image_url',
     }))
-    users = JSONAPIHyperlinkedIdentityField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id',
-                                             link_type='related')
+
+    users = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<pk>'}
+    )
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
@@ -284,8 +301,10 @@ class NodeLinksSerializer(JSONAPISerializer):
     # title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
     #                                                                      'points to')
 
-    target_node = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='pk', link_type='related',
-                                              lookup_url_kwarg='node_id')
+    target_node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
     class Meta:
         type_ = 'node_links'
 
@@ -336,7 +355,11 @@ class NodeProviderSerializer(JSONAPISerializer):
     path = ser.CharField(read_only=True)
     node = ser.CharField(source='node_id', read_only=True)
     provider = ser.CharField(read_only=True)
-    files = NodeFileHyperLink(kind='folder', read_only=True, link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
+    files = NodeFileHyperLinkField(
+        related_view='nodes:node-files',
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder'
+    )
     links = LinksField({
         'upload': WaterbutlerLink(),
         'new_folder': WaterbutlerLink(kind='folder')

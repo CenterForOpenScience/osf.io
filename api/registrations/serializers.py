@@ -4,7 +4,7 @@ from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
 from api.nodes.serializers import NodeSerializer
-from api.base.serializers import IDField, JSONAPIHyperlinkedIdentityField, LinksField, HideIfRetraction, HideIfRegistration, DevOnly
+from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, HideIfRegistration, DevOnly
 
 
 class RegistrationSerializer(NodeSerializer):
@@ -23,18 +23,14 @@ class RegistrationSerializer(NodeSerializer):
         help_text='Includes a dictionary with embargo end date and answers to supplemental registration questions'))
     registration_supplement = ser.SerializerMethodField()
 
-    registered_by = HideIfRetraction(JSONAPIHyperlinkedIdentityField(
-        view_name='users:user-detail',
-        lookup_field='registered_user_id',
-        link_type='related',
-        lookup_url_kwarg='user_id'
+    registered_by = HideIfRetraction(RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<registered_user_id>'}
     ))
 
-    registered_from = HideIfRetraction(JSONAPIHyperlinkedIdentityField(
-        view_name='nodes:node-detail',
-        lookup_field='registered_from_id',
-        link_type='related',
-        lookup_url_kwarg='node_id'
+    registered_from = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<registered_from_id>'}
     ))
 
     children = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-children', lookup_field='pk', link_type='related',

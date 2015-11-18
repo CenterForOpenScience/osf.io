@@ -84,7 +84,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
 
-    + `profile_image_size=<Int>` -- Modifies `links.profile_image_url` of the user entities so that it points to
+    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` of the user entities so that it points to
     the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
 
     #This Request/Response
@@ -155,7 +155,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -173,7 +173,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
         Success:       200 OK + node representation
 
     To update your user profile, issue a PUT request to either the canonical URL of your user resource (as given in
-    `links.self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
+    `/links/self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
     and family names will not be inferred from the `full_name`.  Currently, only `full_name`, `given_name`,
     `middle_names`, `family_name`, and `suffix` are updateable.
 
@@ -185,7 +185,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     ##Query Params
 
-    + `profile_image_size=<Int>` -- Modifies `links.profile_image_url` so that it points the image scaled to the given
+    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` so that it points the image scaled to the given
     size in pixels.  If left blank, the size depends on the image provider.
 
     #This Request/Response

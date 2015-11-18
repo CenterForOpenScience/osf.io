@@ -23,7 +23,7 @@ class TestRegistrationDetail(ApiTestCase):
 
         self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
         self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
-        self.public_registration = RegistrationFactory(project=self.public_project, creator=self.user)
+        self.public_registration = RegistrationFactory(project=self.public_project, creator=self.user, is_public=True)
         self.private_registration = RegistrationFactory(project=self.private_project, creator=self.user)
         self.public_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration._id)
         self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
