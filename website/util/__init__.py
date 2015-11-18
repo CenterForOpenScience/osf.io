@@ -192,20 +192,3 @@ def soft_get(something, key, default=None):
         return something.get(key, default)
     else:
         return getattr(something, key, default)
-
-def deep_get(obj, key):
-    """
-    Using a dot-seperated key deeply fetch dict or class attributes
-    E.g.:
-
-    deep_get({
-        'user': {
-            'name': 'Miles Teg'
-        }
-    }, 'user.name')  # == 'Miles Teg'
-    """
-    if '.' in key:
-        keychain = key.split('.')
-        return deep_get(soft_get(obj, keychain.pop(0)), '.'.join(keychain))
-    else:
-        return soft_get(obj, key)
