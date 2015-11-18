@@ -21,7 +21,6 @@ from website import language
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
-# from website.addons.base.exceptions import AddonEnrichmentError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
