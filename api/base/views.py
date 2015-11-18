@@ -25,7 +25,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         :return function object -> dict:
         """
         def partial(item):
-            embed_value = getattr(item, field.lookup_field, None)
+            embed_value = field.lookup_attribute(item, field.lookup_field)
             if getattr(field, 'kwargs', None):
                 kwargs = {attr_name: getattr(item, attr) for (attr_name, attr) in field.kwargs}
             else:
