@@ -1,7 +1,7 @@
 import httplib as http
 
 from dataverse import Connection
-from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFailedError
+from dataverse.exceptions import UnauthorizedError, OperationFailedError
 
 from framework.exceptions import HTTPError
 
@@ -31,7 +31,7 @@ def connect_or_401(host, token):
     try:
         connection = _connect(host, token)
         if not connection:
-            raise ConnectionError
+            raise HTTPError(http.SERVICE_UNAVAILABLE)
         return connection
     except UnauthorizedError:
         raise HTTPError(http.UNAUTHORIZED)
