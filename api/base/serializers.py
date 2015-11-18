@@ -176,8 +176,11 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
 
         return super(JSONAPIHyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
 
-    def to_esi_representation(self, obj):
-        return '<esi:include src="{}?format=jsonapi"/>'.format(obj.get_absolute_url())
+    def to_esi_representation(self, value):
+        url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
+        if url:
+            return '<esi:include src="{}?format=jsonapi"/>'.format(url)
+        return None
 
     # overrides HyperlinkedIdentityField
     def to_representation(self, value):
@@ -224,8 +227,8 @@ class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedRelatedField, self).__init__(view_name=view_name, **kwargs)
 
-    def to_esi_representation(self, obj):
-        return "<esi:include src='{}?format=jsonapi'/>".format(obj.get_absolute_url())
+    # def to_esi_representation(self, obj):
+    #     return "<esi:include src='{}?format=jsonapi'/>".format(obj.get_absolute_url())
 
 
     def to_representation(self, value):
@@ -257,8 +260,8 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
 
-    def to_esi_representation(self, obj):
-        return '<esi:include src="{}?format=jsonapi"/>'.format(obj.get_absolute_url())
+    # def to_esi_representation(self, obj):
+    #     return '<esi:include src="{}?format=jsonapi"/>'.format(obj.get_absolute_url())
 
     def to_representation(self, value):
         """
@@ -518,10 +521,11 @@ class JSONAPISerializer(ser.Serializer):
                 # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
                 # results rather than adding a relationship link
 
-                if esi:
-                    data['embeds'][field.field_name] = field.to_esi_representation(attribute)
-                elif embeds and (field.field_name in embeds or field.always_embed):
-                    data['embeds'][field.field_name] = self.context['embed'][field.field_name](obj)
+                if embeds and (field.field_name in embeds or field.always_embed):
+                    if esi:
+                        data['embeds'][field.field_name] = field.to_esi_representation(attribute)
+                    else:
+                        data['embeds'][field.field_name] = self.context['embed'][field.field_name](obj)
                 else:
                     data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
