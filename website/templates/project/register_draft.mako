@@ -26,7 +26,9 @@
         <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
         <button id="register-submit" type="button" class="btn btn-success pull-right"
                 style="margin-left: 5px;"
-                data-bind="visible: draft.requiresApproval, click: draft.submitForReview">
+                data-bind="visible: draft.requiresApproval, 
+                           click: draft.submitForReview,
+                           enable: editor.canSubmit">
           Submit for review
         </button>
 
