@@ -187,9 +187,14 @@ var AuthorImport = function(data, $root) {
                 ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
             },
             buttons: {
+                cancel: {
+                    label: 'Cancel',
+                    className: 'btn-default',
+                    callback: bootbox.hideAll
+                },
                 select: {
                     label: 'Import',
-                    className: 'btn-primary pull-left',
+                    className: 'btn-primary',
                     callback: function() {
                         var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
                         var authors = [];
@@ -198,8 +203,14 @@ var AuthorImport = function(data, $root) {
                                 authors.push(this.value);
                             }
                         });
-                        if ( authors ) {
-                            self.question.value(authors.join(', '));
+                        if (authors) {
+                            var oldValue = self.question.value();
+                            if (!/^\s*$/.test(oldValue)) {
+                                self.question.value(oldValue + ', ' + authors.join(', '));
+                            }
+                            else {
+                                self.question.value(authors.join(', '));
+                            }
                         }
                     }
                 }
