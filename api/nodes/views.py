@@ -222,7 +222,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
 
     serializer_class = NodeSerializer
 
-    ordering = ('-date_modified', )  # default ordering
+    ordering = ('-date_created', )  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):

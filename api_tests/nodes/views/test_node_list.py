@@ -333,6 +333,15 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint.")
 
+    def test_default_ordering_on_date_created(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        data = res.json['data']
+        assert_equal(data[0]['id'], self.private_project_user_one._id)
+        assert_equal(data[1]['id'], self.project_three._id)
+        assert_equal(data[2]['id'], self.project_two._id)
+        assert_equal(data[3]['id'], self.project_one._id)
+
 
 class TestNodeCreate(ApiTestCase):
 
