@@ -149,7 +149,7 @@ var FileViewPage = {
         self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
         self.revisions.selected = false;
         self.revisions.title = 'Revisions';
-        
+
         // inform the mfr of a change in display size performed via javascript,
         // otherwise the mfr iframe will not update unless the document windows is changed.
         self.triggerResize = $osf.throttle(function () {
@@ -170,7 +170,7 @@ var FileViewPage = {
         var fileViewPanelsLayout;
 
         if (panelsShown === 2) {
-            // view | edit 
+            // view | edit
             mfrIframeParentLayout = 'col-sm-6';
             fileViewPanelsLayout = 'col-sm-6';
         } else {
@@ -278,8 +278,9 @@ module.exports = function(context) {
         $('#mfrIframe').html(context.file.error);
     } else {
         var url = context.file.urls.render;
-        if (context.accessToken) {
-            url += '&token=' + context.accessToken;
+        if (navigator.appVersion.indexOf('MSIE 9.') !== -1) {
+            url += url.indexOf('?') > -1 ? '&' : '?';
+            url += 'cookie=' + (document.cookie.match(window.contextVars.cookieName + '=(.+?);|$')[1] || '');
         }
 
         if (window.mfr !== undefined) {
