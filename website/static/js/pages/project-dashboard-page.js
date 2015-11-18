@@ -53,13 +53,7 @@ if ($comments.length) {
         mode: 'pane'
     });
 
-    var commentWidgetOptions = $.extend({}, options, {
-        hostPage: 'total',
-        mode: 'widget'
-    });
-
     Comment.init('.comment-pane', commentPaneOptions);
-    Comment.init('#commentsWidgetContainer', commentWidgetOptions);
 }
 
 // Initialize CitationWidget if user isn't viewing through an anonymized VOL

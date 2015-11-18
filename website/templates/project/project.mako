@@ -235,25 +235,6 @@
             </div>
         </div>
 
-        <!-- Discussions -->
-        <div id="commentsWidgetContainer" class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title">Recent discussions</h3>
-                <div class="pull-right">
-                    <a href="${node['url']}discussions/" class="btn"> <i class="fa fa-external-link"></i></a>
-                </div>
-            </div>
-            <div class="panel-body">
-                <div data-bind="if: commented">
-                    <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
-                </div>
-                <div data-bind="ifnot: commented">There are no comments in this ${node['node_type']} yet.</div>
-                <div>
-                    <span>Open the <a class="open-comment-pane">comment pane</a> on the right to make a comment.</span>
-                </div>
-            </div>
-        </div>
-
         % if addons:
             <!-- Show widgets in left column if present -->
             % for addon in addons_enabled:

@@ -72,11 +72,6 @@
                                 </span>
                                 <span data-bind="text: prettyDateCreated"></span>
                                 &nbsp;
-                                <span class="comment-link-icon" data-bind="if: mode == 'widget'">
-                                    <a data-bind="attr:{href: '/'+id()}">
-                                        <i data-toggle="tooltip" data-placement="bottom" title="Link to comment" class="fa fa-link"></i>
-                                    </a>
-                                </span>
                             </span>
                         </form>
                     </div>
@@ -86,7 +81,7 @@
                         <div data-bind="ifnot: editing">
                             <span class="component-overflow"
                               data-bind="html: contentDisplay"></span>
-                            <span class="pull-right" data-bind="if: mode !== 'widget' && hasChildren() && shouldShowChildren()">
+                            <span class="pull-right" data-bind="if: hasChildren() && shouldShowChildren()">
                                 <i data-bind="css: toggleIcon, click: toggle"></i>
                             </span>
                         </div>
@@ -109,7 +104,7 @@
                         </div>
                     </div>
 
-                    <div data-bind="ifnot: mode === 'widget'">
+                    <div>
                         
                         <span class="comment-error">{{errorMessage}}</span>
                         

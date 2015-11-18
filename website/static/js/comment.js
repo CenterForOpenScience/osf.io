@@ -22,8 +22,7 @@ var waterbutler = require('./waterbutler');
 var MAXLENGTH = 500;
 var MAXLEVEL = {
     'page': 10,
-    'pane': 5,
-    'widget': 5
+    'pane': 5
 };
 
 var TOGGLELEVEL = 2;
@@ -404,7 +403,7 @@ var CommentModel = function(data, $parent, $root) {
 CommentModel.prototype = new BaseComment();
 
 CommentModel.prototype.edit = function() {
-    if (this.canEdit() && this.mode !== 'widget') {
+    if (this.canEdit()) {
         this._content = this.content();
         this.editing(true);
         this.$root.editors += 1;
