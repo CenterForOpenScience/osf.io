@@ -6,6 +6,10 @@
 <script type="text/html" id="osf-upload-open">
   <div id="selectedFile">File selected for upload:
     <span id="fileName" data-bind="text: extra().selectedFileName">no file selected</span>
+    <button data-bind="visible: hasSelectedFile,
+                       click: unselectFile"
+            style="margin-left: 5px;"
+            class="btn btn-xs btn-danger fa fa-times"></button>
   </div>
   <div data-bind="attr.id: $data.id, osfUploader"></div>
 </script>

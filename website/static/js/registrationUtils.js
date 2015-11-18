@@ -244,7 +244,7 @@ var Question = function(questionSchema, data) {
                 var ret = true;
                 $.each(self.properties, function(_, subQuestion) {
                     var value = subQuestion.value();
-                    if (!(Boolean(value === true || (value && value.length)))) {
+                    if (subQuestion.required && !(Boolean(value === true || (value && value.length)))) {
                         ret = false;
                         return;
                     }
@@ -252,7 +252,7 @@ var Question = function(questionSchema, data) {
                 return ret;
             } else {
                 var value = self.value();
-                return Boolean(value === true || (value && value.length));
+                return !self.required || Boolean(value === true || (value && value.length));
             }
         },
         deferEvaluation: true
