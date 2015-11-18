@@ -25,5 +25,4 @@ Follow COS at @OSFramework on Twitter: https://twitter.com/OSFramework
 Like us on Facebook: https://www.facebook.com/OpenScienceFramework
 
 Sincerely yours,
-
 The OSF Robot
