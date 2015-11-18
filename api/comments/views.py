@@ -78,7 +78,7 @@ class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     ###Create
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -94,7 +94,7 @@ class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     To create a comment reply, issue a POST request against this endpoint.  The `content` field is mandatory. The
     `deleted` field is optional and defaults to `False`. If the comment reply creation is successful the API will return
     a 201 response with the representation of the new comment reply in the body. For the new comment reply's canonical
-    URL, see the `links.self` field of the response.
+    URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -196,7 +196,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixi
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -210,13 +210,13 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixi
                        }
         Success:       200 OK + comment representation
 
-    To update a comment, issue either a PUT or a PATCH request against the `links.self` URL.  The `content`
+    To update a comment, issue either a PUT or a PATCH request against the `/links/self` URL.  The `content`
     and `deleted` fields are mandatory if you PUT and optional if you PATCH. Non-string values will be accepted and
     stringified, but we make no promises about the stringification output.  So don't do that.
 
-    To delete a comment, issue a PATCH request against the `links.self` URL, with `deleted: True`:
+    To delete a comment, issue a PATCH request against the `/links/self` URL, with `deleted: True`:
 
-    To undelete a comment, issue a PATCH request against the `links.self` URL, with `deleted: False`.
+    To undelete a comment, issue a PATCH request against the `/links/self` URL, with `deleted: False`.
 
     ##Query Params
 
@@ -272,7 +272,7 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     ###Create
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -288,7 +288,7 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     To create a report for this comment, issue a POST request against this endpoint. The `category` field is mandatory,
     and must be one of the following: "spam", "hate" or "violence" . The `message` field is optional. If the comment
     report creation is successful the API will return a 201 response with the representation of the new comment report
-    in the body. For the new comment report's canonical URL, see the `links.self` field of the response.
+    in the body. For the new comment report's canonical URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -346,7 +346,7 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -367,11 +367,11 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
 
     ###Delete
         Method:        DELETE
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Success:       204 + No content
 
-    To delete a comment report, issue a DELETE request against `links.self`.  A successful delete will return a
+    To delete a comment report, issue a DELETE request against `/links/self`.  A successful delete will return a
     204 No Content response.
 
     ##Query Params

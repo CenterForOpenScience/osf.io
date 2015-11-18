@@ -82,7 +82,7 @@ class CollectionList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin
     ###Creating New Organizer Collections
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -97,7 +97,7 @@ class CollectionList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin
     New Organizer Collections are created by issuing a POST request to this endpoint.  The `title` field is
     mandatory. All other fields not listed above will be ignored.  If the Organizer Collection creation is successful
     the API will return a 201 response with the representation of the new node in the body.
-    For the new Collection's canonical URL, see the `links.self` field of the response.
+    For the new Collection's canonical URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -190,7 +190,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -203,7 +203,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
                        }
         Success:       200 OK + node representation
 
-    To update an Organizer Collection, issue either a PUT or a PATCH request against the `links.self` URL.
+    To update an Organizer Collection, issue either a PUT or a PATCH request against the `/links/self` URL.
     The `title` field is mandatory if you PUT and optional if you PATCH, though there's no reason to PATCH if you aren't
     changing the name. Non-string values will be accepted and stringified, but we make no promises about the
     stringification output.  So don't do that.
@@ -211,11 +211,11 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
     ###Delete
 
         Method:   DELETE
-        URL:      links.self
+        URL:      /links/self
         Params:   <none>
         Success:  204 No Content
 
-    To delete a node, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
+    To delete a node, issue a DELETE request against `/links/self`.  A successful delete will return a 204 No Content
     response. Attempting to delete a node you do not own will result in a 403 Forbidden.
 
     ##Query Params
@@ -352,7 +352,7 @@ class NodeLinksList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin
 
     ###Create
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -428,11 +428,11 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
     ###Delete
 
         Method:   DELETE
-        URL:      links.self
+        URL:      /links/self
         Params:   <none>
         Success:  204 No Content
 
-    To delete a node_link, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
+    To delete a node_link, issue a DELETE request against `/links/self`.  A successful delete will return a 204 No Content
     response. Attempting to delete a node you do not own will result in a 403 Forbidden.
 
     ##Query Params
