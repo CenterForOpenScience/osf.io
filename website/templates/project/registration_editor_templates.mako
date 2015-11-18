@@ -110,7 +110,7 @@
     <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
   </div>
   <div class="row" data-bind="if: $root.draft().requiresApproval">
-    <div class="col-md-12"> <!-- data-bind="if: comments().length"> -->
+    <div class="col-md-12" data-bind="if: comments().length">
       <div class="well" data-bind="template: {data: $data, name: 'commentable'}"></div>
     </div>
   </div>
