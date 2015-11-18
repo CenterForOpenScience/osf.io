@@ -1277,9 +1277,24 @@ RegistrationManager.prototype.init = function() {
         );
     });
 
-    $.when(getSchemas, getDraftRegistrations).done(function() {
+    var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
         self.loading(false);
     });
+
+    var urlParams = $osf.urlParams();
+    if (urlParams.c && urlParams.c === 'prereg') {
+        $osf.block();
+        ready.done(function() {
+            $osf.unblock();
+            var preregSchema = self.schemas().filter(function(schema) {
+                return schema.name === 'Prereg Challenge';
+            })[0];
+            preregSchema.askConsent().then(function() {
+                self.selectedSchema(preregSchema);                
+                $('#newDraftRegistrationForm').submit();
+            }); 
+        });
+    }
 };
 /**
  * Confirm and delete a draft registration
@@ -1305,7 +1320,7 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
 /**
  * Show the draft registration preview pane
  **/
-RegistrationManager.prototype.createDraftModal = function() {
+RegistrationManager.prototype.createDraftModal = function(selected) {
     var self = this;
     if (!self.selectedSchema()){
         self.selectedSchema(self.schemas()[0]);

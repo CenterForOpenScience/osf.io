@@ -19,8 +19,11 @@ $(function(){
         if (!title) {
             return;
         }
-        $osf.postJSON('/api/v1/project/new/', { title: title }).done(function(response) {
-            window.location = response.projectUrl + 'registrations/';
+        $osf.postJSON('/api/v1/project/new/', {
+            title: title,
+            campaign: 'prereg'
+        }).done(function(response) {
+            window.location = response.projectUrl + 'registrations/?c=prereg';
         }).fail(function() {
             $osf.growl('Project creation failed. Reload the page and try again.');
         });
