@@ -6,7 +6,7 @@
 
 ## Embargo related logs
 <script type="text/html" id="embargo_approved">
-approved embargo of
+approved embargoed registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
@@ -16,7 +16,7 @@ Embargo for
 </script>
 
 <script type="text/html" id="embargo_cancelled">
-cancelled embargo of
+cancelled embargoed registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
@@ -37,17 +37,17 @@ initiated an embargoed registration of
 
 ## Retraction related logs
 <script type="text/html" id="retraction_approved">
-approved retraction of
+approved retraction of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="retraction_cancelled">
-cancelled retraction of
+cancelled retraction of registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
-initiated retraction of
+initiated retraction of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
