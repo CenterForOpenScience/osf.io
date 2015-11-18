@@ -53,10 +53,11 @@
 
     % if private_link_anonymous:
       ## z-index set to 8 to not overlap with getting started with osf non-logged in user bottom-pop-up
+      ## bottom = 30px to not completely block copyright information
       <style>
         #anonymous-mode {
             position:fixed;
-            bottom:0;
+            bottom:30px; 
             left:0;
             z-index: 8;
             width:100%;
