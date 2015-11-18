@@ -887,15 +887,23 @@ RegistrationEditor.prototype.init = function(draft, preview) {
                     $elem.append(
                         $.map(question.properties, function(subQuestion) {
                             subQuestion = self.context(subQuestion);
+                            var value;
                             if (self.extensions[subQuestion.type] ) {
-                                return $('<p>').append(subQuestion.preview());
+                                value = subQuestion.preview();
                             } else {
-                                return $('<p>').append(subQuestion.value());
+                                value = subQuestion.value();
                             }
+                            return $('<p>').append(value);
                         })
                     );
                 } else {
-                    $elem.append(question.value());
+                    var value;
+                    if (self.extensions[question.type] ) {
+                        value = question.preview();
+                    } else {
+                        value = question.value();
+                    }
+                    $elem.append(value);
                 }
             }
         };
