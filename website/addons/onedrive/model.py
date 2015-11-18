@@ -36,7 +36,7 @@ class Onedrive(ExternalProvider):
     auth_url_base = settings.ONEDRIVE_OAUTH_AUTH_ENDPOINT
     callback_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
     auto_refresh_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
-    default_scopes = ['wl.signin onedrive.readwrite']
+    default_scopes = ['wl.basic wl.signin onedrive.readwrite wl.offline_access']
 
     
 
@@ -63,7 +63,7 @@ class Onedrive(ExternalProvider):
             'user_id': response['user_id'],
             'provider_id': response['user_id'],
             'code': code,
-            #'display_name': response['name'],
+            'display_name': 'TBD',
             'profile_url': 'https://app.onedrive.com/profile/{0}'.format(response['user_id'])
         }
 

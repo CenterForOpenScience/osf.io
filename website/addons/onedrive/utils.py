@@ -87,7 +87,6 @@ def refresh_oauth_key(external_account, force=False):
         return
 
     if force or (external_account.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME:
-        key = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, external_account.refresh_token)
 
         external_account.oauth_key = key['access_token']
         external_account.refresh_token = key['refresh_token']
