@@ -12,13 +12,14 @@ from nose.tools import *  # noqa PEP8 asserts
 
 from modularodm import Q
 
+from framework.exceptions import HTTPError
 from framework.auth import Auth
 
 from website.models import Node, MetaSchema, DraftRegistration
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
 from website.util import permissions, api_url_for
+from website.project.views import drafts as draft_views
 
-from tests.base import OsfTestCase
 from tests.factories import (
     NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory
 )
@@ -137,7 +138,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_template_make_public_creates_pending_registration(self, mock_enquque):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        res = self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.user.auth)
+        res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
@@ -153,7 +154,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         NodeFactory(parent=comp1)
 
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        res = self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.user.auth)
+        res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
@@ -348,7 +349,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_equal(1, DraftRegistration.find().count())
 
-    def test_get_metaschemas(self):        
+    def test_get_metaschemas(self):
         url = api_url_for('get_metaschemas')
         res = self.app.get(url).json
         assert_equal(len(res['meta_schemas']), len(ACTIVE_META_SCHEMAS))
@@ -362,3 +363,67 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
                 if schema.name in ACTIVE_META_SCHEMAS
             ]
         ))
+
+    def test_validate_embargo_end_date_too_soon(self):
+        today = dt.datetime.today()
+        too_soon = today + dt.timedelta(days=5)
+        try:
+            draft_views.validate_embargo_end_date(too_soon.isoformat(), self.node)
+        except HTTPError as e:
+            assert_equal(e.code, http.BAD_REQUEST)
+        else:
+            self.fail()
+
+    def test_validate_embargo_end_date_too_late(self):
+        today = dt.datetime.today()
+        too_late = today + dt.timedelta(days=(4 * 365) + 1)
+        try:
+            draft_views.validate_embargo_end_date(too_late.isoformat(), self.node)
+        except HTTPError as e:
+            assert_equal(e.code, http.BAD_REQUEST)
+        else:
+            self.fail()
+
+    def test_validate_embargo_end_date_ok(self):
+        today = dt.datetime.today()
+        too_late = today + dt.timedelta(days=12)
+        try:
+            draft_views.validate_embargo_end_date(too_late.isoformat(), self.node)
+        except Exception:
+            self.fail()
+
+    def test_check_draft_state_registered(self):
+        reg = RegistrationFactory()
+        self.draft.registered_node = reg
+        self.draft.save()
+        try:
+            draft_views.check_draft_state(self.draft)
+        except HTTPError as e:
+            assert_equal(e.code, http.FORBIDDEN)
+        else:
+            self.fail()
+
+    def test_check_draft_state_pending_review(self):
+        self.draft.submit_for_review(self.user, self.immediate_payload, save=True)
+        try:
+            with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)):
+                draft_views.check_draft_state(self.draft)
+        except HTTPError as e:
+            assert_equal(e.code, http.FORBIDDEN)
+        else:
+            self.fail()
+
+    def test_check_draft_state_approved(self):
+        try:
+            with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)), mock.patch.object(DraftRegistration, 'is_approved', mock.PropertyMock(return_value=True)):
+                draft_views.check_draft_state(self.draft)
+        except HTTPError as e:
+            assert_equal(e.code, http.FORBIDDEN)
+        else:
+            self.fail()
+
+    def test_check_draft_state_ok(self):
+        try:
+            draft_views.check_draft_state(self.draft)
+        except Exception:
+            self.fail()

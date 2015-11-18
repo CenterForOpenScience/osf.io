@@ -22,7 +22,7 @@ from website.project.decorators import (
 )
 from website import language, settings
 from website.project import utils as project_utils
-from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
+from website.project.model import MetaSchema, DraftRegistration
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
@@ -94,16 +94,11 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
         validate_embargo_end_date(end_date_string, node)
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
-    approval = DraftRegistrationApproval(
+    draft.submit_for_review(
         initiated_by=auth.user,
-        meta=meta
+        meta=meta,
+        save=True
     )
-    authorizers = draft.get_authorizers()
-    for user in authorizers:
-        approval.add_authorizer(user)
-    approval.save()
-    draft.approval = approval
-    draft.save()
 
     push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,
                         kind='info',

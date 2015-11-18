@@ -58,7 +58,7 @@ class RegistrationsTestBase(OsfTestCase):
             u'registrationChoice': 'embargo'
         }
         self.immediate_payload = {
-            'registration_choice': 'immediate'
+            'registrationChoice': 'immediate'
         }
 
     def draft_url(self, view_name):

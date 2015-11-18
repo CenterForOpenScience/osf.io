@@ -4145,6 +4145,19 @@ class DraftRegistration(StoredObject):
         self.registration_metadata.update(metadata)
         return changes
 
+    def submit_for_review(self, initiated_by, meta, save=False):
+        approval = DraftRegistrationApproval(
+            initiated_by=initiated_by,
+            meta=meta
+        )
+        authorizers = self.get_authorizers()
+        for user in authorizers:
+            approval.add_authorizer(user)
+        approval.save()
+        self.approval = approval
+        if save:
+            self.save()
+
     def register(self, auth, save=False):
         node = self.branched_from
 
