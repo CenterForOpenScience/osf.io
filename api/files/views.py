@@ -151,7 +151,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Get Info (*files, folders*)
 
         Method:   GET
-        URL:      links.info
+        URL:      /links/info
         Params:   <none>
         Success:  200 OK + file representation
 
@@ -161,7 +161,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Download (*files*)
 
         Method:   GET
-        URL:      links.download
+        URL:      /links/download
         Params:   <none>
         Success:  200 OK + file body
 
@@ -171,7 +171,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Create Subfolder (*folders*)
 
         Method:       PUT
-        URL:          links.new_folder
+        URL:          /links/new_folder
         Query Params: ?kind=folder&name={new_folder_name}
         Body:         <empty>
         Success:      201 Created + new folder representation
@@ -185,7 +185,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Upload New File (*folders*)
 
         Method:       PUT
-        URL:          links.upload
+        URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
         Success:      201 Created or 200 OK + new file representation
@@ -199,7 +199,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Update Existing File (*file*)
 
         Method:       PUT
-        URL:          links.upload
+        URL:          /links/upload
         Query Params: ?kind=file
         Body (Raw):   <file data (not form-encoded)>
         Success:      200 OK + updated file representation
@@ -211,7 +211,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Rename (*files, folders*)
 
         Method:        POST
-        URL:           links.move
+        URL:           /links/move
         Query Params:  <none>
         Body (JSON):   {
                         "action": "rename",
@@ -226,7 +226,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Move & Copy (*files, folders*)
 
         Method:        POST
-        URL:           links.move
+        URL:           /links/move
         Query Params:  <none>
         Body (JSON):   {
                         // mandatory
@@ -263,7 +263,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Delete (*file, folders*)
 
         Method:        DELETE
-        URL:           links.delete
+        URL:           /links/delete
         Query Params:  <none>
         Success:       204 No Content
 
