@@ -3,6 +3,7 @@ import random
 
 import pymongo
 from modularodm import fields
+from framework.guid import signals
 
 from framework.mongo import StoredObject
 
@@ -92,7 +93,10 @@ class GuidStoredObject(StoredObject):
     def save(self, *args, **kwargs):
         """Ensure GUID on save."""
         self._ensure_guid()
-        return super(GuidStoredObject, self).save(*args, **kwargs)
+        retval = super(GuidStoredObject, self).save(*args, **kwargs)
+        if retval:
+            signals.guid_stored_object_saved.send('save', guid_stored_object=self)
+        return retval
 
     def __str__(self):
         return str(self._id)
