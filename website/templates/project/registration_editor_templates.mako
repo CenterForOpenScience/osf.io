@@ -39,7 +39,7 @@
 <script type="text/html" id="multiselect">
   <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
     <p>
-      <input type="checkbox" data-bind="attr.value: option, 
+      <input type="checkbox" data-bind="attr.value: option,
                                         checked: $parent.value,
                                         checkedValue: option" />
       <span data-bind="text: option"></span>
@@ -110,7 +110,7 @@
     <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
   </div>
   <div class="row" data-bind="if: $root.draft().requiresApproval">
-    <div class="col-md-12" data-bind="if: comments().length">
+    <div class="col-md-12"> <!-- data-bind="if: comments().length"> -->
       <div class="well" data-bind="template: {data: $data, name: 'commentable'}"></div>
     </div>
   </div>
@@ -147,8 +147,10 @@
               <br />
               <div class="row">
                 <div class="col-md-12 form-group">
-                  <textarea class="form-control" data-bind="disable: comment.saved,
-                                                            value: comment.value" type="text"></textarea>
+                  <textarea class="form-control"
+                          style="resize: none; overflow: scroll"
+                            data-bind="disable: comment.saved,
+                                       value: comment.value" type="text"></textarea>
                 </div>
               </div>
             </div>
@@ -157,12 +159,12 @@
     </ul>
     <div class="input-group">
       <input class="form-control registration-editor-comment" type="text"
-             data-bind="value: nextComment,
+             data-bind="value: currentQuestion.nextComment,
                         valueUpdate: 'keyup'" />
       <span class="input-group-btn">
         <button class="btn btn-primary"
-                data-bind="click: addComment.bind($data, $root.save.bind($root)),
-                           enable: allowAddNext">Add</button>
+                data-bind="click: currentQuestion.addComment.bind(currentQuestion, $root.save.bind($root)),
+                           enable: currentQuestion.allowAddNext">Add</button>
       </span>
     </div>
 </script>

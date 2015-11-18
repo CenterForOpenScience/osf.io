@@ -177,7 +177,7 @@ var Question = function(questionSchema, data) {
     }
     else if (self.type === 'object') {
         $.each(self.properties, function(prop, field) {
-            field.qid = field.id;
+            field.qid = field.id || prop;
             self.properties[prop] = new Question(field, self.data[prop]);
         });
         self.value = ko.computed({
@@ -317,10 +317,20 @@ var Page = function(schemaPage, schemaData) {
     });
 
     // TODO: track currentQuestion based on browser focus
-    var question = self.questions[0];
-    self.nextComment = question.nextComment.bind(question);
+    self.currentQuestion = self.questions[0];
+
+    /*
+    self.nextComment = ko.computed({
+        read: function(){
+            return question.nextComment();
+        },
+        write: function(value) {
+            question.nextComment(value);
+        }
+    });
     self.allowAddNext = question.allowAddNext.bind(question);
     self.addComment = question.addComment.bind(question);
+    */
 };
 
 /**
