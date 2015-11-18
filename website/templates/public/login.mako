@@ -8,8 +8,8 @@
 <div class="text-center m-t-lg">
     <h3>Preregistration Challenge </h3>
     <hr>
-    <p>Preregistration challenge uses the Open Science Framework for it's application.
-        <br>If you have an account login with your credentials below, or create a free account to continue.
+    <p>
+      Please login to the Open Science Framework or create a free account to continue.
     </p>
 </div>
 %endif
