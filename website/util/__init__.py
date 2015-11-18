@@ -119,7 +119,6 @@ def api_v2_url(path_str,
 def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
     """Reverse URL lookup for web routes (those that use the OsfWebRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
-    `_absolute`, which will make an absolute URL with the correct HTTP scheme
     based on whether the app is in debug mode.
     """
     url = url_for('OsfWebRenderer__{0}'.format(view_name), *args, **kwargs)
@@ -188,4 +187,3 @@ def disconnected_from(signal, listener):
     signal.disconnect(listener)
     yield
     signal.connect(listener)
-
