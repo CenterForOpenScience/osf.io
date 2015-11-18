@@ -1024,10 +1024,15 @@ def node_child_tree(user, node_ids):
         for addon in node.get_addon_names():
             if (addon is not 'osfstorage') and (addon is not 'wiki') and (addons.count(addon) != 1):
                 addons.append(addon)
-        contributors = node.contributors
-        contributors_ids = []
-        for contributor in contributors:
-            contributors_ids.append(contributor._id)
+        contributors = []
+        for contributor in node.contributors:
+            contributors.append({
+                'id': contributor._id,
+                'is_admin': node.has_permission(user, ADMIN),
+
+
+
+            })
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
 
@@ -1048,7 +1053,9 @@ def node_child_tree(user, node_ids):
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
                 'addons': addons,
-                'contributors': contributors_ids
+                'contributors': contributors_ids,
+                'visible_contributors': node.visible_contributors,
+                'is_admin': node.has_permission(user, ADMIN),
             },
             'children': children,
             'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',

@@ -1174,6 +1174,16 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/contributor/remove/',
+                '/project/<pid>/node/<nid>/contributor/remove/',
+            ],
+            'POST',
+            project_views.contributor.project_remove_contributor,
+            json_renderer,
+        ),
+
         Rule([
             '/project/<pid>/get_editable_children/',
             '/project/<pid>/node/<nid>/get_editable_children/',

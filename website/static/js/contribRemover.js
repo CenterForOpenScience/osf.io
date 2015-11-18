@@ -148,7 +148,25 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         submit: function() {
             var self = this;
             if (self.deleteAll()) {
-
+                $osf.postJSON(
+                    window.contextVars.node.urls.api + 'contributor/remove/',
+                    {contributor: self.contributorToRemove(),
+                    nodes: self.nodesToRemove()}
+                ).done(function(response) {
+                    // TODO: Don't reload the page here; instead use code below
+                    if (response.redirectUrl) {
+                        window.location.href = response.redirectUrl;
+                    } else {
+                        window.location.reload();
+                    }
+                    self.page('remove');
+                }).fail(function (xhr, status, error) {
+                    $osf.growl('Error', 'Unable to delete Contributor');
+                    Raven.captureMessage('Could not DELETE Contributor.' + error, {
+                        API_BASE: url, status: status, error: error
+                    });
+                    self.page('remove');
+                });
             }
             else {
                 var url = API_BASE + self.nodeId + '/contributors/' + self.contributorToRemove().id + '/';
@@ -161,21 +179,22 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                     },
                 }).done(function (response) {
                     window.location.reload();
+                    self.page('remove');
                 }).fail(function (xhr, status, error) {
                     $osf.growl('Error', 'Unable to delete Contributor');
                     Raven.captureMessage('Could not DELETE Contributor.' + error, {
                         API_BASE: url, status: status, error: error
                     });
+                    self.page('remove');
                 });
             }
-            self.page('remove');
         },
         deleteAllNodes: function() {
             var self = this;
             var nodesOriginal = ko.toJS(self.nodesOriginal());
             var nodesToRemove = [];
             var titlesToRemove = [];
-            var idsToRemove = [];
+            var nodesToRemove = [];
             //getNodeContributorList(self.nodeId, self.contributorToRemove().id);
             for (var key in nodesOriginal) {
                 if (nodesOriginal.hasOwnProperty(key)) {
@@ -185,14 +204,14 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                         if (contributors[i] === self.contributorToRemove().id) {
                             //nodesToRemove.push(node);
                             titlesToRemove.push(node.title);
-                            idsToRemove.push(node.id);
+                            nodesToRemove.push(node.id);
                             break;
                         }
                     }
                 }
             }
             self.titlesToRemove(titlesToRemove);
-            self.idsToRemove(idsToRemove);
+            self.nodesToRemove(nodesToRemove);
             //self.nodesToRemove(nodesToRemove);
             self.page('removeAll');
         }

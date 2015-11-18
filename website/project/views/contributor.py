@@ -372,6 +372,52 @@ def project_manage_contributors(auth, node, **kwargs):
     return {}
 
 
+@no_auto_transaction
+@must_be_valid_project  # injects project
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def project_remove_contributor(auth, contributor, nodes, **kwargs):
+    """Remove a contributor from a list of nodes.
+
+    :param Auth auth: Consolidated authorization
+    :param-json list contributors: Ordered list of contributors represented as
+        dictionaries of the form:
+        {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
+    :raises: HTTPError(400) if contributors to be removed are not in list
+        or if no admin users would remain after changes were applied
+
+    """
+    contributors = request.json.get('contributors')
+    for node in nodes:
+        # Update permissions and order
+        try:
+            node.manage_contributors(contributors, auth=auth, save=True)
+        except ValueError as error:
+            raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
+
+        # If user has removed herself from project, alert; redirect to user
+        # dashboard if node is private, else node dashboard
+        if not node.is_contributor(auth.user):
+            status.push_status_message(
+                'You have removed yourself as a contributor from this project',
+                kind='success',
+                trust=False
+            )
+            if node.is_public:
+                return {'redirectUrl': node.url}
+            return {'redirectUrl': web_url_for('dashboard')}
+        # Else if user has revoked her admin permissions, alert and stay on
+        # current page
+        if not node.has_permission(auth.user, ADMIN):
+            status.push_status_message(
+                'You have removed your administrative privileges for this project',
+                kind='success',
+                trust=False
+            )
+        # Else stay on current page
+        return {}
+
+
 def get_timestamp():
     return int(time.time())
 
