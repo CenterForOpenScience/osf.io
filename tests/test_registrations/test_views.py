@@ -15,6 +15,7 @@ from modularodm import Q
 from framework.mongo import database
 
 from website.models import Node, MetaSchema, DraftRegistration
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
 
 from tests.base import OsfTestCase
 from tests.factories import (
@@ -201,24 +202,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         for draft in res.json['drafts']:
             assert_in(draft['pk'], [f._id for f in found])
 
-    def test_create_draft_registration(self):
-        target = NodeFactory(creator=self.user)
-        metadata = {
-            'summary': {'value': 'Some airy'}
-        }
-        payload = {
-            'schema_name': 'Open-Ended Registration',
-            'schema_version': 1,
-            'schema_data': metadata,
-        }
-        url = target.api_url_for('create_draft_registration')
-
-        res = self.app.post_json(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, http.CREATED)
-        draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
-        assert_equal(draft.registration_schema, self.meta_schema)
-        assert_equal(draft.registration_metadata, metadata)
-
     def test_new_draft_registration(self):
         target = NodeFactory(creator=self.user)
         payload = {
@@ -234,7 +217,10 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
     def test_update_draft_registration(self):
         metadata = {
-            'summary': {'value': 'updated'}
+            'summary': {
+                'value': 'updated',
+                'comments': []
+            }
         }
         assert_not_equal(metadata, self.draft.registration_metadata)
         payload = {
@@ -275,10 +261,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     def test_get_metaschemas(self):
         url = '/api/v1/project/drafts/schemas/'
         res = self.app.get(url).json
-        schema_names = database['metaschema'].distinct('name')
-        assert_equal(len(res['meta_schemas']), len(schema_names))
-        url = '/api/v1/project/drafts/schemas/?include=all'
+        assert_equal(len(res['meta_schemas']), len(ACTIVE_META_SCHEMAS))
 
+        url = '/api/v1/project/drafts/schemas/?include=all'
         res = self.app.get(url)
         assert_equal(res.status_code, http.OK)
-        assert_equal(len(res.json['meta_schemas']), MetaSchema.find().count())
+        assert_equal(len(res.json['meta_schemas']), len(
+            [
+                schema for schema in MetaSchema.find()
+                if schema.name in ACTIVE_META_SCHEMAS
+            ]
+        ))
