@@ -1,12 +1,13 @@
 
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import StorageAddonBase
-from website.addons.evernote import settings
+from website.addons.evernote import (settings, utils)
 from website.oauth.models import (ExternalProvider, OAUTH1)
 
 from evernote.api.client import EvernoteClient
 
-# S=s1:U=91b44:E=1586dfd0344:C=151164bd418:P=1cd:A=en-devtoken:V=2:H=ac1412837aeac699e0826380baf0be3d
+import logging
+logger = logging.getLogger(__name__)
 
 class Evernote(ExternalProvider):
     """
@@ -38,11 +39,7 @@ class Evernote(ExternalProvider):
         record to the user and saves the user's access token and account info.
         """
 
-        client =  EvernoteClient(
-            consumer_key=settings.EN_CONSUMER_KEY,
-            consumer_secret=settings.EN_CONSUMER_SECRET,
-            sandbox=settings.EVERNOTE_SANDBOX
-        )
+        client = utils.get_evernote_client(token=response.get('oauth_token'))
 
         userStore = client.get_user_store()
         user = userStore.getUser()
