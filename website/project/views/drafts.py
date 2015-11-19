@@ -125,7 +125,6 @@ def get_draft_registrations(auth, node, *args, **kwargs):
     :return: serialized draft registrations
     :rtype: dict
     """
-
     count = request.args.get('count', 100)
     drafts = node.draft_registrations_active[:count]
     return {
