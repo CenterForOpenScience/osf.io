@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.57.0 (unreleased)
+0.57.0 (2015-11-17)
 ===================
 
 - APIv2: Replace JSONAPIHyperlinkRelated field with RelationshipField.
