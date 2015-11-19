@@ -2,6 +2,12 @@
 Changelog
 *********
 
+0.57.0 (2015-11-18)
+===================
+
+- Add draft registrations.
+- Add button to reset client secret for developer applications.
+
 0.57.0 (2015-11-17)
 ===================
 
