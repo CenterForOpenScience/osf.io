@@ -1,5 +1,4 @@
 from django.http import JsonResponse
-from django.core.urlresolvers import resolve, reverse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
@@ -25,17 +24,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         :return function object -> dict:
         """
         def partial(item):
-            embed_value = field.lookup_attribute(item, field.lookup_field)
-            if getattr(field, 'kwargs', None):
-                kwargs = {attr_name: getattr(item, attr) for (attr_name, attr) in field.kwargs}
-            else:
-                kwargs = {field.lookup_url_kwarg: embed_value}
-            view, view_args, view_kwargs = resolve(
-                reverse(
-                    field.view_name,
-                    kwargs=kwargs
-                )
-            )
+            view, view_args, view_kwargs = field.resolve(item)
             view_kwargs.update({
                 'request': self.request,
                 'is_embedded': True
