@@ -166,9 +166,7 @@ def get_page_type(page, node):
 
 
 def get_root_target_title(page, root_target):
-    if page == Comment.WIKI:
-        return root_target.page_name
-    elif page == Comment.FILES:
+    if page == Comment.FILES:
         return root_target.name
     else:
         return ''
@@ -197,7 +195,7 @@ def list_comments(auth, node, **kwargs):
         comments = list_total_comments(node, auth, page)
     else:
         target = resolve_target(node, page, guid)
-        comments = Comment.find(Q('target', 'eq', target))
+        comments = Comment.find(Q('target', 'eq', target)).sort('date_created')
 
     n_unread = 0
     if node.is_contributor(auth.user):
