@@ -862,13 +862,14 @@ def n_unread_comments(node, user, page, root_id=None, check=False):
     """Return the number of unread comments on a node for a user."""
     if not node.is_contributor(user):
         return 0
-    if root_id is None or page == 'node':
+    if page == 'node':
+        return n_unread_total_node(user, node)
+    if root_id is None:
         return n_unread_total(node, user, page, check=check)
     root_target = Guid.load(root_id)
     if root_target:
         root_target = root_target.referent
-    else:
-        root_target = node.get_wiki_page(root_id, 1)
+
     if page == 'files':
         root_target = FileNode.load(root_id)
         if check:
@@ -889,11 +890,7 @@ def n_unread_comments(node, user, page, root_id=None, check=False):
 
 
 def n_unread_total(node, user, page, check=False):
-    if not node.is_contributor(user):
-        return 0
-    if page == 'node':
-        return n_unread_total_node(user, node)
-    elif page == 'files':
+    if page == 'files':
         return n_unread_total_files(user, node, check=check)
     return n_unread_total_node(user, node) + n_unread_total_files(user, node, check=check)
 

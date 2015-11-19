@@ -30,7 +30,6 @@ var ABUSE_CATEGORIES = {
 };
 
 var FILES = 'files';
-var PANE = 'pane';
 
 /*
  * Format UTC datetime relative to current datetime, ensuring that time
@@ -74,9 +73,7 @@ var BaseComment = function() {
 
     self._loaded = false;
     self.id = ko.observable();
-
     self.page = ko.observable('node'); // Default
-    self.mode = 'pane'; // Default
 
     self.errorMessage = ko.observable();
     self.editErrorMessage = ko.observable();
@@ -241,7 +238,6 @@ var CommentModel = function(data, $parent, $root) {
     //       hasChildren, id, isAbuse, isDeleted. Leaves out author.
     $.extend(self, koHelpers.mapJStoKO(data, {exclude: ['author']}));
 
-
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
     // Update contentDisplay with rednered markdown whenever content changes
@@ -287,7 +283,7 @@ var CommentModel = function(data, $parent, $root) {
     self.toggleIcon = ko.computed(function() {
             return self.showChildren() ? 'fa fa-minus' : 'fa fa-plus';
     });
-    
+
     self.canReport = ko.pureComputed(function() {
         return self.$root.canComment() && !self.canEdit();
     });
@@ -516,7 +512,7 @@ var onOpen = function(hostPage, hostName, nodeApiUrl) {
     );    
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
-            url: nodeApiUrl + 'comments/timestamps/',
+            url: timestampUrl,
             textStatus: textStatus,
             errorThrown: errorThrown
         });

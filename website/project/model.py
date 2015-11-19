@@ -189,10 +189,6 @@ class Comment(GuidStoredObject):
         return '/{}/'.format(self._id)
 
     @property
-    def deep_url(self):
-        return '/{0}discussions/{1}/'.format(self.node.deep_url, self._id)
-    
-    @property
     def absolute_api_v2_url(self):
         return absolute_reverse('comments:comment-detail', kwargs={'comment_id': self._id})
 
@@ -235,8 +231,7 @@ class Comment(GuidStoredObject):
 
         if comment.page == cls.FILES:
             file_key = comment.root_target._id
-            comment.node.commented_files[file_key] = \
-                comment.node.commented_files.get(file_key, 0) + 1
+            comment.node.commented_files[file_key] = comment.node.commented_files.get(file_key, 0) + 1
 
         comment.node.add_log(
             NodeLog.COMMENT_ADDED,
@@ -295,8 +290,7 @@ class Comment(GuidStoredObject):
         self.is_deleted = False
         if self.page == Comment.FILES:
             file_key = self.root_target._id
-            self.node.commented_files[file_key] = \
-                self.node.commented_files.get(file_key, 0) + 1
+            self.node.commented_files[file_key] = self.node.commented_files.get(file_key, 0) + 1
         self.node.add_log(
             NodeLog.COMMENT_ADDED,
             {

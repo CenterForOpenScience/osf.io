@@ -215,5 +215,4 @@ $(document).ready(function () {
     $('a.btn').mouseup(function(){
         $(this).blur();
     });
-
 });

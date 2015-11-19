@@ -191,11 +191,8 @@ def list_comments(auth, node, **kwargs):
     guid = request.args.get('target')
     root_id = request.args.get('rootId')
 
-    if not root_id:  # Overview/Files page on discussion page
-        comments = list_total_comments(node, auth, page)
-    else:
-        target = resolve_target(node, page, guid)
-        comments = Comment.find(Q('target', 'eq', target)).sort('date_created')
+    target = resolve_target(node, page, guid)
+    comments = Comment.find(Q('target', 'eq', target)).sort('date_created')
 
     n_unread = 0
     if node.is_contributor(auth.user):
@@ -213,17 +210,6 @@ def list_comments(auth, node, **kwargs):
     }
 
     return ret
-
-
-def list_total_comments(node, auth, page):
-    comments = list(Comment.find(Q('node', 'eq', node) &
-                                 Q('page', 'eq', page)).sort('date_created'))
-    root_comments = []
-    for comment in comments:
-        if not isinstance(comment.target, Comment):
-            root_comments.append(comment)
-    return root_comments
-
 
 @must_be_logged_in
 @must_be_contributor_or_public

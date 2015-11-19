@@ -76,8 +76,7 @@
                     <div class="comment-content">
 
                         <div data-bind="ifnot: editing">
-                            <span class="component-overflow"
-                              data-bind="html: contentDisplay"></span>
+                            <span class="component-overflow" data-bind="html: contentDisplay"></span>
                             <span class="pull-right" data-bind="if: hasChildren() && shouldShowChildren()">
                                 <i data-bind="css: toggleIcon, click: toggle"></i>
                             </span>
@@ -102,9 +101,9 @@
                     </div>
 
                     <div>
-                        
+
                         <span class="comment-error">{{errorMessage}}</span>
-                        
+
                         <span>&nbsp;</span>
 
                         <!-- Action bar -->
@@ -133,8 +132,8 @@
                             <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
                         </form>
                         <div class="pull-right m-t-xs">
-                            <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse">Cancel</a>
-                            <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse">Report</a>
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"> Cancel</a>
+                            <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"> Report</a>
                         </div>
                     </div>
 
@@ -142,7 +141,7 @@
                         <div class="pull-right">
                             <a class="btn btn-default btn-sm" data-bind="click: cancelDelete">Cancel</a>
                             <a class="btn btn-danger btn-sm" data-bind="click: submitDelete">Delete</a>
-                        </div>                    
+                        </div>
                     </div>
 
                 </div>
@@ -161,8 +160,8 @@
                     </div>
                     <div class="clearfix">
                         <div class="pull-right">
-                            <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
-                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}">{{commentButtonText}}</a>
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
+                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
                             <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                         </div>
                     </div>
