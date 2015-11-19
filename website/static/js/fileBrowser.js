@@ -324,15 +324,18 @@ var Collections  = {
     controller : function(args){
         var self = this;
         self.newCollectionName = m.prop('');
+        self.newCollectionRename = m.prop('');
+        self.dismissModal = function () {
+            $('.modal').modal('hide');
+        };
         self.addCollection = function () {
             console.log( self.newCollectionName());
-            $('.modal').modal('hide');
             var url = $osf.apiV2Url('collections/', {});
             var data = {
                 'data': {
-                    "type": "collections",
-                    "attributes": {
-                        "title": self.newCollectionName(),
+                    'type': 'collections',
+                    'attributes': {
+                        'title': self.newCollectionName(),
                     }
                 }
             };
@@ -340,13 +343,40 @@ var Collections  = {
                 console.log(result);
             });
             self.newCollectionName('');
+            self.dismissModal();
         };
         self.deleteCollection = function(){
-          console.log(args.collectionMenuObject().item.data.node.id);
             var url = args.collectionMenuObject().item.data.node.links.self;
             m.request({method : 'DELETE', url : url, config : xhrconfig}).then(function(result){
                 console.log(url, result);
+                for ( var i = 0; i < args.list.length; i++) {
+                    var item = args.list[i];
+                    if (item.data.node && item.data.node.id === args.collectionMenuObject().item.data.node.id){
+                        args.list.splice(i, 1);
+                        break;
+                    }
+                }
             });
+            self.dismissModal();
+        };
+        self.renameCollection = function () {
+            console.log(args.collectionMenuObject());
+            var url = args.collectionMenuObject().item.data.node.links.self;
+            var nodeId = args.collectionMenuObject().item.data.node.id;
+            var title = args.collectionMenuObject().item.label;
+            var data = {
+                'data': {
+                    'type': 'collections',
+                    'id':  nodeId,
+                    'attributes': {
+                        'title': title,
+                    }
+                }
+            };
+            m.request({method : 'PATCH', url : url, config : xhrconfig, data : data}).then(function(result){
+                console.log(url, result);
+            });
+            self.dismissModal();
         };
     },
     view : function (ctrl, args) {
@@ -440,13 +470,20 @@ var Collections  = {
                                 m('.form-inline', [
                                     m('.form-group', [
                                         m('label[for="addCollInput]', 'Collection Name'),
-                                        m('input[type="text"].form-control#addCollInput', { value : args.collectionMenuObject().item.label})
+                                        m('input[type="text"].form-control#renameCollInput',{
+                                            onkeyup: function(ev){
+                                                args.collectionMenuObject().item.label = $(this).val();
+                                            },
+                                            value: args.collectionMenuObject().item.label})
+
                                     ])
                                 ]),
                             ]),
                             m('.modal-footer', [
                                 m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
-                                m('button[type="button"].btn.btn-success', 'Rename')
+                                m('button[type="button"].btn.btn-success', {
+                                    onclick : ctrl.renameCollection
+                                },'Rename')
                             ])
                         ])
                     )
