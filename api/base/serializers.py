@@ -268,8 +268,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         bracket_check = _tpl(lookup_field)
         if bracket_check:
             source_attrs = bracket_check.split('.')
-            lookup_value = get_nested_attributes(obj, source_attrs)
-            return lookup_value
+            return get_nested_attributes(obj, source_attrs)
         return lookup_field
 
     def kwargs_lookup(self, obj, kwargs_dict):
