@@ -28,12 +28,14 @@ var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
  *
  * @param {Object} data: optional data to instatiate model with
  * @param {User} data.user
- * @param {Date} data.lastModified
+ * @param {Date string} data.lastModified
+ * @param {Date string} data.created
+ * @param {Boolean} data.isDeleted
  * @param {String} data.value
  *
  * @type User
  * @property {String} id
- * @property {String} name
+ * @property {String} fullname
  **/
 function Comment(data) {
     var self = this;
@@ -63,6 +65,14 @@ function Comment(data) {
     });
 
     self.seenBy = ko.observableArray([self.user.id]);
+
+    /**
+     * Returns true if the current user is the comment owner
+     **/
+    self.isOwner = ko.pureComputed(function() {
+        return self.user.id === $osf.currentUser().id;
+    });
+
     /**
      * Returns the author as the actual user, not 'You'
      **/
@@ -74,7 +84,7 @@ function Comment(data) {
      * Returns 'You' if the current user is the commenter, else the commenter's name
      */
     self.getAuthor = ko.pureComputed(function() {
-        if (self.user.id === $osf.currentUser().id) {
+        if (self.isOwner()) {
             return 'You';
         } else {
             return self.user.fullname;
@@ -85,12 +95,9 @@ function Comment(data) {
      * Returns true if the current user is the comment creator
      **/
     self.canDelete = ko.pureComputed(function() {
-        return self.user.id === $osf.currentUser().id;
+        return self.isOwner();
     });
 
-    self.isOwner = ko.pureComputed(function() {
-        return self.user.id === $osf.currentUser().id;
-    });
     /**
      * Returns true if the comment is saved and the current user is the comment creator
      **/
@@ -124,26 +131,28 @@ Comment.prototype.viewComment = function(user) {
  * @class Question
  * Model for schema questions
  *
- * @param {Object} data: optional instantiation values
- * @param {String} data.title
- * @param {String} data.nav: short version of title
- * @param {String} data.type: 'string' | 'number' | 'choose' | 'object'; data type
- * @param {String} data.format: 'text' | 'textarea' | 'list'; format corresponding with data.type
- * @param {String} data.description
- * @param {String} data.help
- * @param {String} data.required
- * @param {String[]} data.options: array of options for 'choose' types
- * @param {Object[]} data.properties: object of sub-Question properties for 'object' types
- * @param {String} data.match: optional string that must be matched
- * @param {String} id: unique identifier
+ * @param {Object} questionSchema
+ * @param {String} questionSchema.title
+ * @param {String} questionSchema.nav: short version of title
+ * @param {String} questionSchema.type: 'string' | 'number' | 'choose' | 'object'; data type
+ * @param {String} questionSchema.format: 'text' | 'textarea' | 'list'; format corresponding with data.type
+ * @param {String} questionSchema.description
+ * @param {String} questionSchema.help
+ * @param {String} questionSchema.required
+ * @param {String[]} questionSchema.options: array of options for 'choose' types
+ * @param {Object[]} questionSchema.properties: object of sub-Question properties for 'object' types
+ * @param {String} questionSchema.match: optional string that must be matched
+ * @param {Object} data
+ * @param {Any} data.value
+ * @param {Array[Object]} data.comments
+ * @param {Object} data.extra
  **/
 var Question = function(questionSchema, data) {
     var self = this;
 
-    self.id = questionSchema.qid;
-
     self.data = data || {};
 
+    self.id = questionSchema.qid;
     self.title = questionSchema.title || 'Untitled';
     self.nav = questionSchema.nav || 'Untitled';
     self.type = questionSchema.type || 'string';
@@ -234,7 +243,8 @@ var Question = function(questionSchema, data) {
     });
 
     /**
-     * @returns {Boolean} true if the value <input> is not blank
+     * @returns {Boolean} true if either the question is not required (see logic above) or
+     * the question value (or its required children's values) is not empty
      **/
     self.isComplete = ko.computed({
         read: function() {
@@ -322,6 +332,19 @@ var Page = function(schemaPage, schemaData) {
 
     // TODO: track currentQuestion based on browser focus
     self.currentQuestion = self.questions[0];
+};
+Page.prototype.viewComments = function() {
+    var self = this;
+    var comments = self.comments();
+    $.each(comments, function(index, comment) {
+        comment.viewComment($osf.currentUser());
+    });
+};
+Page.prototype.getUnseenComments = function() {
+    var self = this;
+    return self.comments().filter(function(comment) {
+        return comment.indexOf($osf.currentUser().id) === -1;
+    });
 };
 
 /**
@@ -470,15 +493,11 @@ var Draft = function(params, metaSchema) {
     });
 
     self.userHasUnseenComment = ko.computed(function() {
-        var user = $osf.currentUser();
-        var ret = false;
-        $.each(self.pages(), function(i, page) {
-            $.each(page.comments(), function(idx, comment) {
-                if (comment.seenBy().indexOf(user) === -1 )
-                    ret = true;
-            });
-        });
-        return ret;
+        return $osf.any(
+            $.map(self.pages(), function(page) {
+                return page.getUnseenComments().length > 0;
+            })
+        );
     });
 
     self.completion = ko.computed(function() {
@@ -494,6 +513,13 @@ var Draft = function(params, metaSchema) {
         });
         return Math.ceil(100 * (complete / questions.length));
     });
+};
+Draft.prototype.getUnseenComments = function() {
+    var unseen = [];
+    $.each(self.pages(), function(_, page) {
+        unseen = unseen.concat(page.getUnseenComments());
+    });
+    return unseen;
 };
 Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var self = this;
@@ -726,6 +752,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
                 self.dirtyCount(self.dirtyCount() + 1);
             });
         });
+        page.viewComments();
     });
 
     self.validationErrors = ko.computed(function() {
@@ -894,34 +921,6 @@ RegistrationEditor.prototype.toPreview = function () {
         window.location.assign(self.draft().urls.register_page);
     });
 };
-
-RegistrationEditor.prototype.viewComments = function() {
-    var self = this;
-
-    var comments = self.currentQuestion().comments();
-    $.each(comments, function(index, comment) {
-        if (comment.seenBy().indexOf($osf.currentUser().id) === -1) {
-            comment.seenBy.push($osf.currentUser().id);
-        }
-    });
-};
-RegistrationEditor.prototype.getUnseenComments = function(qid) {
-    var self = this;
-
-    var question = self.draft().schemaData[qid];
-    var comments = question.comments || [];
-    for (var key in question) {
-        if (key === 'comments') {
-            for (var i = 0; i < question[key].length - 1; i++) {
-                if (question[key][i].indexOf($osf.currentUser().id) === -1) {
-                    comments.push(question[key][i]);
-                }
-            }
-        }
-    }
-    return comments;
-};
-
 /**
  * Check that the Draft is valid before registering
  */

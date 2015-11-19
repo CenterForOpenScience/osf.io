@@ -734,6 +734,23 @@ function indexOf(array, searchFn) {
     return -1;
 }
 
+/**
+ * Check if any of the values in an array are truthy
+ *
+ * @param {Array[Any]} listOfBools
+ * @returns {Boolean}
+ **/
+var any = function(listOfBools) {
+    var someTruthy = false;
+    for(var i = 0; i < listOfBools.length; i++){
+        someTruthy = someTruthy || Boolean(listOfBools[i]);
+        if (someTruthy) {
+            break;
+        }
+    }
+    return someTruthy;
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -767,5 +784,6 @@ module.exports = window.$.osf = {
     isIE: isIE,
     isSafari:isSafari,
     indexOf: indexOf,
-    currentUser: currentUser
+    currentUser: currentUser,
+    any: any
 };
