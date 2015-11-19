@@ -448,6 +448,22 @@ var tbOptions = {
                 $('#poFilter>input').val('');
             } }, tb.options.removeIcon())
         ];
+    },
+    lazyLoadPreprocess : function (value) {
+        value.data.map(function(item){
+            item.kind = 'folder';
+            item.uid = item.id;
+            item.name = item.attributes.title;
+            item.date = new $osf.FormattableDate(item.attributes.date_modified);
+
+            // TODO: Dummy data, remove this when api is ready
+            item.contributors = [{
+                id: '8q36f',
+                name : 'Dummy User'
+            }];
+        });
+
+        return value;
     }
 };
 
