@@ -1499,7 +1499,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         ]
 
 
-class NodeLogList(generics.ListAPIView, NodeMixin, ListFilterMixin):
+class NodeLogList(generics.ListAPIView, NodeMixin, ODMFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.
 
     <!--- Copied Description from LogList -->
@@ -1620,9 +1620,9 @@ class NodeLogList(generics.ListAPIView, NodeMixin, ListFilterMixin):
         base_permissions.TokenHasScope,
     )
 
-    def get_default_queryset(self):
-        auth = Auth(self.request.user)
-        return self.get_node().get_aggregate_logs_queryset(auth)
+    def get_default_odm_query(self):
+        auth = get_user_auth(self.request)
+        return self.get_node().get_aggregate_logs_query(auth)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
