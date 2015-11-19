@@ -651,39 +651,16 @@ Draft.prototype.submitForReview = function() {
     var self = this;
 
     var metaSchema = self.metaSchema;
-    var messages = metaSchema.messages;
-    var beforeSubmitForApprovalMessage = messages.beforeSubmitForApproval || '';
-    var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';
-
-    var submitForReview = function() {
-        bootbox.dialog({
-            message: beforeSubmitForApprovalMessage,
-            buttons: {
-                cancel: {
-                    label: 'Cancel',
-                    className: 'btn-default',
-                    callback: bootbox.hideAll
-                },
-                ok: {
-                    label: 'Continue',
-                    className: 'btn-primary',
-                    callback: function() {
-                        self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
-                    }
-                }
-            }
-        });
-    };
 
     if (self.metaSchema.requiresConsent) {
         return self.metaSchema.askConsent()
+            .always(bootbox.hideAll)
             .then(function() {
-                bootbox.hideAll();
-                submitForReview();
-            })
-            .fail(function() {
-                bootbox.hideAll();
+                self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
             });
+    }
+    else {
+        self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
     }
 };
 
