@@ -184,7 +184,7 @@ BaseComment.prototype.configureCommentsVisibility = function(nodeId) {
             comment.loading(false);
             continue;
         }
-        if (comment.page() !== FILES || self.mode === PANE) {
+        if (comment.page() !== FILES) {
             comment.loading(false);
             continue;
         }
@@ -256,7 +256,6 @@ var CommentModel = function(data, $parent, $root) {
         return 'Modified ' + relativeDate(self.dateModified());
     });
 
-    self.mode = $parent.mode;
     self.level = $parent.level + 1;
 
     self.loading = ko.observable(true);
@@ -313,7 +312,7 @@ var CommentModel = function(data, $parent, $root) {
 
     self.nodeUrl = '/' + self.$root.nodeId() + '/';
 
-    if (self.mode === 'pane' && self.level < TOGGLELEVEL) {
+    if (self.level < TOGGLELEVEL) {
         self.toggle();
     }
 
@@ -473,8 +472,6 @@ var CommentListModel = function(options) {
     self.$root = self;
     self.MAXLENGTH = MAXLENGTH;
 
-    self.mode = options.mode;
-
     self.editors = 0;
     self.userName = ko.observable(options.userName);
     self.canComment = ko.observable(options.canComment);
@@ -532,14 +529,13 @@ var onOpen = function(hostPage, hostName, nodeApiUrl) {
  *      nodeApiUrl: Node.api_url,
  *      hostPage: 'node',
  *      hostName: Node._id,
- *      mode: 'page',
  *      userName: User.fullname,
  *      canComment: User.canComment,
  *      hasChildren: Node.hasChildren,
  *      threadId: undefined }
  */
 var init = function(selector, options) {
-    new CommentPane(selector, options.mode, {
+    new CommentPane(selector, {
         onOpen: function(){
             return onOpen(options.hostPage, options.hostName, options.nodeApiUrl);
         }

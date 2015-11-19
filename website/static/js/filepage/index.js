@@ -494,7 +494,6 @@ if ($comments.length) {
         nodeApiUrl: window.contextVars.node.urls.api,
         hostPage: 'files',
         hostName: window.contextVars.file.id,
-        mode: 'pane',
         userName: window.contextVars.currentUser.name,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren
