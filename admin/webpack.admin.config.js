@@ -18,7 +18,7 @@ var staticAdminPath = function(dir) {
 
 common.entry['admin-base-page'] = staticAdminPath('js/pages/base-page.js');
 common.entry['prereg-admin-page'] = staticAdminPath('js/pages/prereg-admin-page.js');
-common.entry['admin-registration-edit-page'] = staticAdminPath('js/pages/registration-edit-page.js');
+common.entry['admin-registration-edit-page'] = staticAdminPath('js/pages/admin-registration-edit-page.js');
 
 common.resolve['root'] = [websiteRoot, adminRoot];
 
