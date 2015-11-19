@@ -341,8 +341,11 @@ var Collections  = {
             };
             m.request({method : 'POST', url : url, config : xhrconfig, data : data}).then(function(result){
                 console.log(result);
+                var node = result.data;
+                args.list.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
             });
             self.newCollectionName('');
+
             self.dismissModal();
         };
         self.deleteCollection = function(){
