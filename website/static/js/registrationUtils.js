@@ -377,7 +377,6 @@ var MetaSchema = function(params, schemaData) {
     self.fulfills = params.fulfills || [];
     self.messages = params.messages || {};
 
-    self.consent = params.consent || '';
     self.requiresConsent = params.requires_consent || false;
 
     self.pages = $.map(self.schema.pages, function(page) {
@@ -396,19 +395,23 @@ MetaSchema.prototype.flatQuestions = function() {
     });
     return flat;
 };
-
-MetaSchema.prototype.askConsent = function(mustAgree) {
+/**
+ * @param Boolean pre: consent before beginning or submitting?
+ **/
+MetaSchema.prototype.askConsent = function(pre) {
     var self = this;
 
     var ret = $.Deferred();
 
-    if (typeof mustAgree === 'undefined') {
-        mustAgree = true;
+    if (typeof pre === 'undefined') {
+        pre = false;
     }
 
+    var message = (pre ? self.messages.preConsentHeader : self.messages.postConsentHeader) + self.messages.consentBody;
+
     var viewModel = {
-        mustAgree: mustAgree,
-        message: self.consent,
+        mustAgree: !pre,
+        message: message,
         consent: ko.observable(false),
         submit: function() {
             $osf.unblock();
@@ -568,35 +571,7 @@ Draft.prototype.preRegisterErrors = function(response, confirm) {
             }}
     });
 };
-Draft.prototype.askConsent = function() {
-    var self = this;
 
-    var ret = $.Deferred();
-
-    var viewModel = {
-        message: self.metaSchema.consent,
-        consent: ko.observable(false),
-        submit: function() {
-            $osf.unblock();
-            bootbox.hideAll();
-            ret.resolve();
-        },
-        cancel: function() {
-            $osf.unblock();
-            bootbox.hideAll();
-            ret.reject();
-        }
-    };
-
-    bootbox.dialog({
-        size: 'large',
-        message: function() {
-            ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
-        }
-    });
-
-    return ret.promise();
-};
 Draft.prototype.beforeRegister = function(url) {
     var self = this;
 
@@ -1370,7 +1345,7 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
                 callback: function(event) {
                     var selectedSchema = self.selectedSchema();
                     if (selectedSchema.requiresConsent) {
-                        selectedSchema.askConsent(false).then(function() {
+                        selectedSchema.askConsent(true).then(function() {
                             $('#newDraftRegistrationForm').submit();
                         });
                     }

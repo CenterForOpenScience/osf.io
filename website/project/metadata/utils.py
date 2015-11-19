@@ -10,7 +10,6 @@ def serialize_meta_schema(meta_schema):
         'schema': meta_schema.schema,
         'fulfills': meta_schema.fulfills,
         'requires_approval': meta_schema.requires_approval,
-        'consent': meta_schema.consent,
         'requires_consent': meta_schema.requires_consent,
         'messages': meta_schema.messages
     }

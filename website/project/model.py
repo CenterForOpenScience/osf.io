@@ -114,12 +114,8 @@ class MetaSchema(StoredObject):
         return self._config.get('messages', {})
 
     @property
-    def consent(self):
-        return self._config.get('consent', '')
-
-    @property
     def requires_consent(self):
-        return self.consent != ''
+        return self._config.get('requiresConsent', False)
 
 def ensure_schema(schema, name, version=1):
     schema_obj = None

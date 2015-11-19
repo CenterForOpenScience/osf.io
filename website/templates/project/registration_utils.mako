@@ -6,10 +6,10 @@
         <label class="">
           <input type="checkbox" data-bind="checked: consent, value: consent">
           <span data-bind="if: mustAgree">
-            I agree to the terms and conditions.
+            I agree
           </span>
           <span data-bind="ifnot: mustAgree">
-            I have read these terms.
+            I have read these terms
           </span>
         </label>
       </div>
