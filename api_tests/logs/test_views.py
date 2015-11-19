@@ -34,6 +34,8 @@ class LogsTestCase(ApiTestCase):
                 save=True
             )
         self.node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.node.creator), log=False, save=True)
+        self.node_log_url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
+        self.url = '/{}logs/'.format(API_BASE)
 
         self.public_node = ProjectFactory(is_public=True)
         for i in range(len(self.action_set)):
@@ -48,58 +50,13 @@ class LogsTestCase(ApiTestCase):
         Node.remove()
 
 
-class TestLogList(LogsTestCase):
-
-    url = '/{}logs/'.format(API_BASE)
-
-    def test_returns_only_public_logs_for_logged_out_user(self):
-        res = self.app.get(self.url)
-        meta = res.json['links']['meta']
-        assert_equal(meta['total'], len(self.action_set) + 1)
-
-        private_log_ids = [l._id for l in self.node.logs]
-        for log in res.json['data']:
-            assert_not_in(log['id'], private_log_ids)
-
-    def test_returns_public_and_contributed_logs_for_logged_in_user(self):
-        res = self.app.get(self.url, auth=self.user.auth)
-        meta = res.json['links']['meta']
-        assert_equal(meta['total'], 2 * (len(self.action_set) + 1))
-
-    def test_returns_logs_for_admin_visible_children(self):
-        self.node.set_permissions(self.user, [
-            osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN
-        ], save=True)
-        c1 = ProjectFactory(parent=self.node, is_public=False)
-        c1.add_log(self.action_set[0], {}, Auth(c1.creator), save=True)
-        child_logs = c1.logs
-
-        res = self.app.get(self.url, auth=self.user.auth)
-        data = res.json['data']
-
-        returned_log_ids = [log['id'] for log in data]
-        for log in child_logs:
-            assert_in(log._id, returned_log_ids)
-
-    def test_folder_node_logs_not_included(self):
-        user = self.node.creator
-        dash = new_dashboard(user)
-        dash_logs = [l._id for l in dash.logs]
-        res = self.app.get(self.url, auth=self.user)
-        for log in res.json['data']:
-            assert_not_in(log['id'], dash_logs)
-
-
 class TestLogNodeList(LogsTestCase):
-
-    url = '/{}logs/'.format(API_BASE)
-
     def test_nodes_link(self):
         self.node.add_log(self.action_set[0], {}, Auth(self.node.creator), save=True)
         log = self.node.logs[-1]
         self.public_node.logs.append(log)
         self.public_node.save()
-        res = self.app.get(self.url, auth=self.user)
+        res = self.app.get(self.node_log_url, auth=self.user.auth)
         data = res.json['data']
         nodes_link = data[0]['relationships']['nodes']['links']['related']['href']
         res = self.app.get(nodes_link, auth=self.user.auth)

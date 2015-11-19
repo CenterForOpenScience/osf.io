@@ -1,143 +1,15 @@
-from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 
-from website.models import Node, NodeLog
+from website.models import NodeLog
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_user_auth
 from api.base import permissions as base_permissions
-from api.logs.serializers import NodeLogSerializer
 from api.nodes.serializers import NodeSerializer
-from api.nodes.utils import get_visible_nodes_for_user
 
-class LogList(generics.ListAPIView, ODMFilterMixin):
-    """List of logs representing actions done on the OSF. *Read-only*.
-
-    Paginated list of logs ordered by their `date`.
-
-    On the front end, logs show record and show actions done on the OSF. The complete list of loggable actions (in the format {identifier}: {description}) is as follows:
-
-    * 'project_created': A Node is created
-    * 'project_registered': A Node is registered
-    * 'project_deleted': A Node is deleted
-    * 'created_from': A Node is created using an existing Node as a template
-    * 'pointer_created': A Pointer is created
-    * 'pointer_forked': A Pointer is forked
-    * 'pointer_removed': A Pointer is removed
-    ---
-    * 'made_public': A Node is made public
-    * 'made_private': A Node is made private
-    * 'tag_added': A tag is added to a Node
-    * 'tag_removed': A tag is removed from a Node
-    * 'edit_title': A Node's title is changed
-    * 'edit_description': A Node's description is changed
-    * 'updated_fields': One or more of a Node's fields are changed
-    * 'external_ids_added': An external identifier is added to a Node (e.g. DOI, ARK)
-    ---
-    * 'contributor_added': A Contributor is added to a Node
-    * 'contributor_removed': A Contributor is removed from a Node
-    * 'contributors_reordered': A Contributor's position is a Node's biliography is changed
-    * 'permissions_update': A Contributor's permissions on a Node are changed
-    * 'made_contributor_visible': A Contributor is made bibliographically visible on a Node
-    * 'made_contributor_invisible': A Contributor is made bibliographically invisible on a Node
-    ---
-    * 'wiki_updated': A Node's wiki is updated
-    * 'wiki_deleted': A Node's wiki is deleted
-    * 'wiki_renamed': A Node's wiki is renamed
-    * 'made_wiki_public': A Node's wiki is made public
-    * 'made_wiki_private': A Node's wiki is made private
-    ---
-    * 'addon_added': An add-on is linked to a Node
-    * 'addon_removed': An add-on is unlinked from a Node
-    * 'addon_file_moved': A File in a Node's linked add-on is moved
-    * 'addon_file_copied': A File in a Node's linked add-on is copied
-    * 'addon_file_renamed': A File in a Node's linked add-on is renamed
-    * 'folder_created': A Folder is created in a Node's linked add-on
-    * 'file_added': A File is added to a Node's linked add-on
-    * 'file_updated': A File is updated on a Node's linked add-on
-    * 'file_removed': A File is removed from a Node's linked add-on
-    * 'file_restored': A File is restored in a Node's linked add-on
-    ---
-    * 'comment_added': A Comment is added to some item
-    * 'comment_removed': A Comment is removed from some item
-    * 'comment_updated': A Comment is updated on some item
-    ---
-    * 'embargo_initiated': An embargoed Registration is proposed on a Node
-    * 'embargo_approved': A proposed Embargo of a Node is approved
-    * 'embargo_cancelled': A proposed Embargo of a Node is cancelled
-    * 'embargo_completed': A proposed Embargo of a Node is completed
-    * 'retraction_initiated': A Retraction of a Registration is proposed
-    * 'retraction_approved': A Retraction of a Registration is approved
-    * 'retraction_cancelled': A Retraction of a Registration is cancelled
-    * 'registration_initiated': A Registration of a Node is proposed
-    * 'registration_approved': A proposed Registration is approved
-    * 'registration_cancelled': A proposed Registration is cancelled
-    ---
-    * 'node_created': A Node is created (_deprecated_)
-    * 'node_forked': A Node is forked (_deprecated_)
-    * 'node_removed': A Node is dele (_deprecated_)
-
-   ##Log Attributes
-
-    OSF Log entities have the "logs" `type`.
-
-        name           type                   description
-        ----------------------------------------------------------------------------
-        date           iso8601 timestamp      timestamp of Log creation
-        action         string                 Log action (see list above)
-
-    ##Relationships
-
-    ###Nodes
-
-    A list of all Nodes this Log is added to.
-
-    ###User
-
-    The user who performed the logged action.
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    ##Query Params
-
-    Logs may be filtered by their `action` and `date`.
-
-    #This Request/Response
-
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
-    )
-
-    required_read_scopes = [CoreScopes.NODE_LOG_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = NodeLogSerializer
-    ordering = ('-date', )  # default ordering
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        allowed_node_ids = Node.find(
-            Q('is_public', 'eq', True) &
-            Q('is_folder', 'eq', False)
-        ).get_keys()
-        user = self.request.user
-        if not user.is_anonymous():
-            allowed_node_ids = [n._id for n in get_visible_nodes_for_user(user)]
-        logs_query = Q('__backrefs.logged.node.logs', 'in', list(allowed_node_ids))
-        return logs_query
-
-    def get_queryset(self):
-        return NodeLog.find(self.get_query_from_request())
 
 class LogNodeList(generics.ListAPIView, ODMFilterMixin):
     """List of nodes that a given log is associated with. *Read-only*.

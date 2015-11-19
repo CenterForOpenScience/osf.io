@@ -5,7 +5,6 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.status import is_server_error
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
@@ -41,7 +40,7 @@ from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.files.models import FileNode
 from website.files.models import OsfStorageFileNode
-from website.models import Node, Pointer, Comment
+from website.models import Node, Pointer, Comment, NodeLog
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
 
@@ -1603,10 +1602,10 @@ class NodeLogList(generics.ListAPIView, NodeMixin, ODMFilterMixin):
 
     def get_default_odm_query(self):
         auth = get_user_auth(self.request)
-        return self.get_node().get_aggregate_logs_query(auth)
+        return NodeLog.find(self.get_node().get_aggregate_logs_query(auth))
 
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        return self.get_query_from_request()
 
 class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     """List of comments on a node. *Writeable*.
