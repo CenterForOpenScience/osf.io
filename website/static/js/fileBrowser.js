@@ -72,7 +72,10 @@ var FileBrowser = {
         self.showInfo = m.prop(false); // Show the info panel
         self.showSidebar = m.prop(true); // Show the links with collections etc. used in narrow views
         self.showCollectionMenu = m.prop(false); // Show hide ellipsis menu for collections
-        self.collectionMenuObject = m.prop({item : {label:null}, x : 0, y : 0}); // Collection object to complete actions on menu
+        self.collectionMenuObject = m.prop(); // Collection object to complete actions on menu
+        self.resetCollectionMenu = function () {
+            self.collectionMenuObject({item : {label:null}, x : 0, y : 0});
+        };
 
         // Default system collections
         self.collections = [
@@ -212,8 +215,8 @@ var FileBrowser = {
         };
 
         self.updateCollectionMenu = function (item, event) {
-            var x = event.x - 4;
-            var y = event.y-275;
+            var x = event.x;
+            var y = event.y-277;
             if (event.view.innerWidth < 767){
                 x = x-115;
                 y = y-80;
@@ -230,6 +233,7 @@ var FileBrowser = {
                 query : self.collections[0].data.query
             });
             self.updateList(loadUrl);
+            self.resetCollectionMenu();
         };
         self.init();
     },
@@ -283,14 +287,7 @@ var FileBrowser = {
                 }, [
                     m('span[aria-hidden="true"]','×'),
                 ])) : '',
-                m.component(Collections, {
-                    list : ctrl.collections,
-                    activeFilter : ctrl.activeFilter,
-                    updateFilter : ctrl.updateFilter,
-                    showCollectionMenu : ctrl.showCollectionMenu,
-                    updateCollectionMenu : ctrl.updateCollectionMenu,
-                    collectionMenuObject : ctrl.collectionMenuObject
-                }),
+                m.component(Collections, ctrl),
                 m.component(Filters, {
                     activeFilter : ctrl.activeFilter,
                     updateFilter : ctrl.updateFilter,
@@ -327,6 +324,7 @@ var Collections  = {
         self.newCollectionRename = m.prop('');
         self.dismissModal = function () {
             $('.modal').modal('hide');
+            args.resetCollectionMenu();
         };
         self.addCollection = function () {
             console.log( self.newCollectionName());
@@ -384,6 +382,7 @@ var Collections  = {
     },
     view : function (ctrl, args) {
         var selectedCSS;
+        var submenuTemplate;
         return m('.fb-collections', [
             m('h5', [
                 'Collections ',
@@ -395,16 +394,36 @@ var Collections  = {
                 m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
             ]),
             m('ul', [
-                args.list.map(function(item, index){
-                    selectedCSS = item.id === args.activeFilter() ? 'active' : '';
-                    return m('li', { className : selectedCSS, 'data-index' : index },
-                        [
-                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label),
-                            !item.data.systemCollection ? m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
+                args.collections.map(function(item, index){
+                    if (item.id === args.activeFilter()) {
+                        selectedCSS = 'active';
+                    } else if (item.id === args.collectionMenuObject().item.id) {
+                        selectedCSS = 'bg-color-hover';
+                    } else {
+                        selectedCSS = '';
+                    }
+                    if (!item.data.systemCollection) {
+                        if(item.id ===  args.collectionMenuObject().item.id){
+                            submenuTemplate = m('i.fa.fa-times.pull-right.text-muted.p-xs', {
+                                onclick : function (e) {
+                                    args.showCollectionMenu(false);
+                                    args.resetCollectionMenu();
+                                }
+                            });
+                        } else {
+                            submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
                                 onclick : function (e) {
                                     args.updateCollectionMenu(item, e);
                                 }
-                            }) : ''
+                            });
+                        }
+                    } else {
+                        submenuTemplate = '';
+                    }
+                    return m('li', { className : selectedCSS, 'data-index' : index },
+                        [
+                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label),
+                            submenuTemplate
                         ]
                     );
                 }),
