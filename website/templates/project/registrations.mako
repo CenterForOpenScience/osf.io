@@ -53,13 +53,16 @@
   </div>
   <div role="tabpanel" class="tab-pane" id="drafts">
     <div id="draftRegistrationsScope" class="row scripted" style="min-height: 150px;padding-top:20px;">
+      <div data-bind="visible: loading" class="spinner-loading-wrapper">
+        <div class="logo-spin logo-lg"></div>
+      </div>
       <form id="newDraftRegistrationForm" method="POST" style="display:none">
         <!-- ko if: selectedSchema() -->
         <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name">
         <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version">
         <!-- /ko -->
       </form>
-      <div data-bind="visible: !preview()">
+      <div>
         <div class="col-md-9">
           <div class="scripted" data-bind="foreach: drafts">
             <li class="project list-group-item list-group-item-node">
@@ -87,11 +90,8 @@
                 </small>
                 <div class="row">
                   <div class="col-md-10">
-                    <button class="btn btn-info"
-                       data-bind="disable: isPendingApproval,
-                                  click: $root.maybeWarn">
-                      <i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit
-                    </button>
+                    <a class="btn btn-info"
+                       data-bind="click: $root.editDraft"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</a>
                     <button class="btn btn-danger"
                             data-bind="click: $root.deleteDraft">
                       <i style="margin-right: 5px;" class="fa fa-times"></i>Delete
