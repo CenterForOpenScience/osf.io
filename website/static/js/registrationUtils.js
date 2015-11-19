@@ -329,19 +329,6 @@ var Page = function(schemaPage, schemaData) {
 
     // TODO: track currentQuestion based on browser focus
     self.currentQuestion = self.questions[0];
-
-    /*
-    self.nextComment = ko.computed({
-        read: function(){
-            return question.nextComment();
-        },
-        write: function(value) {
-            question.nextComment(value);
-        }
-    });
-    self.allowAddNext = question.allowAddNext.bind(question);
-    self.addComment = question.addComment.bind(question);
-    */
 };
 
 /**
@@ -675,8 +662,7 @@ Draft.prototype.submitForReview = function() {
  * @property {ko.observable[Question]} currentQuestion
  * @property {Object} extensions: mapping of extenstion names to their view models
  **/
-var RegistrationEditor = function(urls, editorId) {
-
+var RegistrationEditor = function(urls, editorId, preview) {
     var self = this;
 
     self.urls = urls;
@@ -784,13 +770,46 @@ var RegistrationEditor = function(urls, editorId) {
         'osf-upload': editorExtensions.Uploader,
         'osf-author-import': editorExtensions.AuthorImport
     };
+
+    preview = preview || false;
+    if (preview) {
+        ko.bindingHandlers.previewQuestion = {
+            init: function(elem, valueAccessor) {
+                var question = valueAccessor();
+                var $elem = $(elem);
+
+                if (question.type === 'object') {
+                    $elem.append(
+                        $.map(question.properties, function(subQuestion) {
+                            subQuestion = self.context(subQuestion);
+                            var value;
+                            if (self.extensions[subQuestion.type] ) {
+                                value = subQuestion.preview();
+                            } else {
+                                value = subQuestion.value();
+                            }
+                            return $('<p>').append(value);
+                        })
+                    );
+                } else {
+                    var value;
+                    if (self.extensions[question.type] ) {
+                        value = question.preview();
+                    } else {
+                        value = question.value();
+                    }
+                    $elem.append(value);
+                }
+            }
+        };
+    }
 };
 /**
  * Load draft data into the editor
  *
  * @param {Draft} draft
  **/
-RegistrationEditor.prototype.init = function(draft, preview) {
+RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
     self.draft(draft);
@@ -842,39 +861,6 @@ RegistrationEditor.prototype.init = function(draft, preview) {
     });
 
     self.currentQuestion(self.flatQuestions().shift());
-
-    preview = preview || false;
-    if (preview) {
-        ko.bindingHandlers.previewQuestion = {
-            init: function(elem, valueAccessor) {
-                var question = valueAccessor();
-                var $elem = $(elem);
-
-                if (question.type === 'object') {
-                    $elem.append(
-                        $.map(question.properties, function(subQuestion) {
-                            subQuestion = self.context(subQuestion);
-                            var value;
-                            if (self.extensions[subQuestion.type] ) {
-                                value = subQuestion.preview();
-                            } else {
-                                value = subQuestion.value();
-                            }
-                            return $('<p>').append(value);
-                        })
-                    );
-                } else {
-                    var value;
-                    if (self.extensions[question.type] ) {
-                        value = question.preview();
-                    } else {
-                        value = question.value();
-                    }
-                    $elem.append(value);
-                }
-            }
-        };
-    }
 };
 /**
  * @returns {Question[]} flat list of the current schema's questions

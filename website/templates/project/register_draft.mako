@@ -12,10 +12,10 @@
     <div class="row">
       <div class="col-lg-12 large-12" style="padding-left: 30px">
          <div data-bind="foreach: {data: draft.pages, as: 'page'}">
-             <h3 data-bind="attr.id: page.id, text: page.title"></h3>
+           <h3 data-bind="attr.id: page.id, text: page.title"></h3>
              <div data-bind="foreach: {data: page.questions, as: 'question'}">
                <p>
-                 <strong data-bind="attr.id: $data.id, text: $data.title"></strong>:
+                 <strong data-bind="attr.id: question.id, text: question.title"></strong>:
                  <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
                </p>
              </div>
@@ -43,35 +43,6 @@
         </button>
     </div>
 </div>
-
-<script type="text/html" id="preRegistrationTemplate">
-  <ul data-bind="foreach: preRegisterPrompts">
-    <li data-bind="html: $data"></li>
-  </ul>
-  <div class="form-group">
-    <label class="control-label">Registration Choice</label>
-    <select class="form-control" data-bind="options: registrationOptions,
-                                            value: registrationChoice,
-                                            optionsText: 'message',
-                                            optionsValue: 'value',
-                                            event: {change: checkShowEmbargoDatePicker}" ></select>
-  </div>
-  <span data-bind="visible: showEmbargoDatePicker">
-    <div class="form-group">
-      <label class="control-label">
-        Embargo End Date
-      </label>
-      <input type="text" class="form-control" data-bind="datePicker: {value: $root.pikaday, valid: isEmbargoEndDateValid}">
-    </div>
-  </span>
-  <em class="text-danger" data-bind="validationMessage: $root.pikaday"></em>
-  <div class="modal-footer">
-    <button class="btn btn-default" data-bind="click: close">Cancel</button>
-    <button class="btn btn-success" data-bind="click: register, enable: canRegister">
-      Continue
-    </button>
-  </div>
-</script>
 
 <%include file="project/registration_utils.mako" />
 <%include file="project/registration_editor_extensions.mako" />

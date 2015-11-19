@@ -220,7 +220,7 @@ var AuthorImport = function(data, $root) {
                         });
                         if (authors) {
                             var oldValue = self.question.value();
-                            if (!/^\s*$/.test(oldValue)) {
+                            if (!/^\s*$/.test(oldValue || '')) {
                                 self.question.value(oldValue + ', ' + authors.join(', '));
                             }
                             else {
