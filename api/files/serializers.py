@@ -99,7 +99,7 @@ class FileSerializer(JSONAPISerializer):
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
         'download': WaterbutlerLink(must_be_file=True),
-        'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder')
+        'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder'),
     })
 
     class Meta:
