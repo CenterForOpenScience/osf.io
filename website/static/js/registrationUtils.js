@@ -82,27 +82,20 @@ function Comment(data) {
     });
 
     /**
-     * Returns 'You' if the current user is the commenter, else the commenter's name
-     */
-    self.getAuthor = ko.pureComputed(function() {
-        if (self.user.id === $osf.currentUser().id) {
-            return 'You';
-        } else {
-            return self.user.fullname;
-        }
-    });
-
-    /**
      * Returns true if the current user is the comment creator
      **/
     self.canDelete = ko.pureComputed(function() {
+        return self.user.id === $osf.currentUser().id;
+    });
+
+    self.isOwner = ko.pureComputed(function() {
         return self.user.id === $osf.currentUser().id;
     });
     /**
      * Returns true if the comment is saved and the current user is the comment creator
      **/
     self.canEdit = ko.pureComputed(function() {
-        return !self.isDeleted() && self.saved() && self.user.id === $osf.currentUser().id;
+        return !self.isDeleted() && self.saved() && self.isOwner();
     });
 }
 /** Toggle the comment's save state **/

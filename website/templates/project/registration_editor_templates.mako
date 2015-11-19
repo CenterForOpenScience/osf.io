@@ -110,7 +110,7 @@
     <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
   </div>
   <div class="row" data-bind="if: $root.draft().requiresApproval">
-    <div class="col-md-12" data-bind="if: comments().length">
+    <div class="col-md-12" ><!--data-bind="if: comments().length">-->
       <div class="well" data-bind="template: {data: $data, name: 'commentable'}"></div>
     </div>
   </div>
@@ -126,35 +126,40 @@
               <strong><span data-bind="text: comment.getAuthor"></span></strong> deleted this comment on <em data-bind="text: comment.lastModified"></em>
             </div>
           </div>
-          <div class="row" data-bind="ifnot: comment.isDeleted">
-            <div class="col-md-12">
-              <div class="row">
-                <div class="col-sm-9">
-                  <strong><span data-bind="text: comment.getAuthor"></span></strong> said ...
-                </div>
-                <div class="col-sm-3">
-                  <div style="text-align: right;" class="btn-group">
-                    <button data-bind="disable: comment.saved,
-                                       click: comment.toggleSaved.bind(comment, $root.save.bind($root))" class="btn btn-success fa fa-save registration-editor-comment-save"></button>
-                    <button data-bind="enable: comment.canEdit,
-                                       click: comment.toggleSaved.bind(comment, $root.save.bind($root))" class="btn btn-info fa fa-pencil"></button>
-                    <button data-bind="enable: comment.canDelete,
-                                       click: comment.delete.bind(comment, $root.save.bind($root)) "
-                            class="btn btn-danger fa fa-times"></button>
+          <span class="row" data-bind="ifnot: comment.isDeleted">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="row">
+                  <div class="col-sm-9">
+                    <strong><span data-bind="text: comment.getAuthor"></span></strong> said ...
+                  </div>
+                  <div data-bind="if: comment.isOwner" class="col-sm-3">
+                    <div style="text-align: right;" class="btn-group">
+                      <button data-bind="disable: comment.saved,
+                                         click: comment.toggleSaved.bind(comment, $root.save.bind($root))" class="btn btn-success fa fa-save registration-editor-comment-save"></button>
+                      <button data-bind="enable: comment.canEdit,
+                                         click: comment.toggleSaved.bind(comment, $root.save.bind($root))" class="btn btn-info fa fa-pencil"></button>
+                      <button data-bind="enable: comment.canDelete,
+                                         click: comment.delete.bind(comment, $root.save.bind($root)) "
+                              class="btn btn-danger fa fa-times"></button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <br />
-              <div class="row">
-                <div class="col-md-12 form-group">
-                  <textarea class="form-control"
-                          style="resize: none; overflow: scroll"
-                            data-bind="disable: comment.saved,
-                                       value: comment.value" type="text"></textarea>
+                <br />
+                <div class="row" data-bind="if: comment.isOwner">
+                  <div class="col-md-12 form-group">
+                    <textarea class="form-control"
+                              style="resize: none; overflow: scroll"
+                              data-bind="disable: comment.saved,
+                                         value: comment.value" type="text"></textarea>
+                  </div>
+                </div>
+                <div class="col-md-12" data-bind="ifnot: comment.isOwner">
+                  <span data-bind="text: comment.value"></span>
                 </div>
               </div>
             </div>
-          </div>
+          </span>
         </li>
     </ul>
     <div class="input-group">
