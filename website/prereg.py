@@ -27,6 +27,7 @@ def drafts_for_user(user):
     return models.DraftRegistration.find(
         Q('registration_schema', 'eq', PREREG_CHALLENGE_METASCHEMA) &
         Q('approval', 'eq', None) &
+        Q('registered_node', 'eq', None) &
         Q('branched_from', 'in', [p._id for p in user_projects])
     )
 
