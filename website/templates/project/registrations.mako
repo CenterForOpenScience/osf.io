@@ -98,9 +98,11 @@
                     </button>
                   </div>
                   <div class="col-md-1">
+                    <!-- TODO(samchrisinger): pin down behavior here
                     <span data-bind="if: requiresApproval">
                       <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: registerWithoutReview">Register without review</button>
                     </span>
+                    -->
                     <span data-bind="ifnot: requiresApproval">
                      <a class="btn btn-success" data-bind="attr.href: urls.register_page,
                                                            css: {'disabled': !isApproved}">Register</a>
