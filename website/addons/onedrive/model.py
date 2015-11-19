@@ -18,7 +18,7 @@ from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettin
 from website.addons.base import StorageAddonBase
 
 from website.addons.onedrive import settings
-from website.addons.onedrive.utils import OnedriveNodeLogger, refresh_oauth_key
+from website.addons.onedrive.utils import OnedriveNodeLogger
 from website.addons.onedrive.serializer import OnedriveSerializer
 from website.oauth.models import ExternalProvider
 
@@ -126,12 +126,6 @@ class OnedriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             return None
 
         if not self._folder_data:
-            try:
-                refresh_oauth_key(self.external_account)
-                client = OnedriveClient(self.external_account.oauth_key)
-                self._folder_data = client.get_folder(self.folder_id)
-            except OnedriveClientException:
-                return
 
             self.folder_name = self._folder_data['name']
             self.folder_path = '/'.join(
@@ -185,11 +179,6 @@ class OnedriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        try:
-            refresh_oauth_key(self.external_account)
-            return {'token': self.external_account.oauth_key}
-        except OnedriveClientException as error:
-            raise HTTPError(error.status_code, data={'message_long': error.message})
 
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:

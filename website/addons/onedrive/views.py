@@ -20,7 +20,6 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
 )
 
-from website.addons.onedrive.utils import refresh_oauth_key
 from website.addons.onedrive.serializer import OnedriveSerializer
 
 
@@ -35,8 +34,6 @@ def onedrive_get_user_settings(auth):
 @must_have_permission(permissions.WRITE)
 def onedrive_get_config(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    if node_addon.external_account:
-        refresh_oauth_key(node_addon.external_account)
     return {
         'result': OnedriveSerializer().serialize_settings(node_addon, auth.user),
     }
@@ -153,7 +150,7 @@ def onedrive_folder_list(node_addon, **kwargs):
 
 #    try:
 #        refresh_oauth_key(node_addon.external_account)
-#        client = OnedriveClient(node_addon.external_account.oauth_key)
+    client = OnedriveClient(node_addon.external_account.oauth_key)
 #    except OnedriveClientException:
 #        raise HTTPError(http.FORBIDDEN)
 
