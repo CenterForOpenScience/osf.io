@@ -613,15 +613,15 @@ Draft.prototype.registerWithoutReview = function() {
         title: 'Notice',
         message: self.metaSchema.messages.beforeSkipReview,
         buttons: {
-            submit: {
-                label: 'Continue',
-                className: 'btn-primary',
-                callback: self.beforeRegister.bind(self, null)
-            },
             cancel: {
                 label: 'Cancel',
                 className: 'btn-default',
                 callback: bootbox.hideAll
+            },
+            submit: {
+                label: 'Continue',
+                className: 'btn-warning',
+                callback: self.beforeRegister.bind(self, null)
             }
         }
     });
@@ -1276,9 +1276,9 @@ RegistrationManager.prototype.init = function() {
                 return schema.name === 'Prereg Challenge';
             })[0];
             preregSchema.askConsent().then(function() {
-                self.selectedSchema(preregSchema);                
+                self.selectedSchema(preregSchema);
                 $('#newDraftRegistrationForm').submit();
-            }); 
+            });
         });
     }
 };
