@@ -11,7 +11,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_error, is_bulk_request
+from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer
 from api.comments.permissions import CanCommentOrPublic
@@ -246,12 +246,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
         if is_bulk_request(self.request):
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
 
-            user = self.request.user
-            if user.is_anonymous():
-                auth = Auth(None)
-            else:
-                auth = Auth(user)
-
+            auth = get_user_auth(self.request)
             nodes = Node.find(query)
             for node in nodes:
                 if not node.can_edit(auth):
@@ -291,8 +286,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         try:
             instance.remove_node(auth=auth)
         except NodeStateError as err:
@@ -435,8 +429,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_object()
         try:
             node.remove_node(auth=auth)
@@ -580,13 +573,12 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_node()
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError("Must have at least one visible contributor")
         if instance not in node.contributors:
-                raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+                raise NotFound('User cannot be found in the list of contributors.')
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError("Must have at least one registered admin contributor")
@@ -696,8 +688,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
         node = self.get_node()
-        current_user = self.request.user
-        auth = Auth(current_user)
+        auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError("Must have at least one visible contributor")
         removed = node.remove_contributor(instance, auth)
@@ -767,11 +758,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     # TODO: Filter out retractions by default
     def get_queryset(self):
         nodes = self.get_node().node__registrations
-        user = self.request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
+        auth = get_user_auth(self.request)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
 
@@ -878,11 +865,7 @@ class NodeChildrenList(bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilte
             req_query
         )
         nodes = Node.find(query)
-        user = self.request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
+        auth = get_user_auth(self.request)
         children = [each for each in nodes if each.can_view(auth)]
         return children
 
@@ -971,8 +954,7 @@ class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreate
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_node()
         try:
             node.rm_pointer(instance, auth=auth)
@@ -1055,8 +1037,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_node()
         pointer = self.get_object()
         try:
