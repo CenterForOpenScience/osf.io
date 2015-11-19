@@ -208,6 +208,11 @@ var Question = function(questionSchema, data) {
         self.value(val);
     };
 
+    if (self.type === 'object') {
+        $.each(self.properties, function(_, prop) {
+            self.required = self.required || prop.required;
+        });
+    }
     if (self.required) {
         self.value.extend({
             required: true
@@ -489,7 +494,7 @@ var Draft = function(params, metaSchema) {
         var ret = false;
         $.each(self.pages(), function(i, page) {
             $.each(page.comments(), function(idx, comment) {
-                if ( comment.seenBy().indexOf(user) === -1 )
+                if (comment.seenBy().indexOf(user) === -1 )
                     ret = true;
             });
         });
@@ -497,15 +502,17 @@ var Draft = function(params, metaSchema) {
     });
 
     self.completion = ko.computed(function() {
-        var total = 0;
         var complete = 0;
-        $.each(self.metaSchema.flatQuestions(), function(_, question) {
+        var questions = self.metaSchema.flatQuestions()
+                .filter(function(question) {
+                    return question.required;
+                });
+        $.each(questions, function(_, question) {
             if (question.isComplete()) {
                 complete++;
             }
-            total++;
         });
-        return Math.ceil(100 * (complete / total));
+        return Math.ceil(100 * (complete / questions.length));
     });
 };
 Draft.prototype.preRegisterPrompts = function(response, confirm) {
