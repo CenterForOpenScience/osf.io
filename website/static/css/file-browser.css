@@ -16,6 +16,7 @@
 .fb-breadcrumbs {
     display : inline-block;
     padding: 7px;
+    margin-left:-20px;
 }
 .fb-breadcrumbs ul, .fb-collections ul, .fb-filters ul {
     padding: 0;
@@ -79,10 +80,18 @@
     position: absolute;
     top: 0;
     right: 0;
-    width: 100px;
+    width: 105px;
     background: #fff;
     z-index: 9;
     box-shadow: 0 0 12px -2px #555;
+}
+
+.collectionMenu ul>li {
+    border-left: none;
+    padding: 7px 15px;
+}
+.collectionMenu ul>li:hover {
+    background-color: #d9edf7;
 }
 
 .fb-sidebar h5>.fa {

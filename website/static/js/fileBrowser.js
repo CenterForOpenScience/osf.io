@@ -80,7 +80,7 @@ var FileBrowser = {
             new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true }, systemCollection : true}, 'All My Registrations'),
         ];
 
-        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true}});
+        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'sort' : 'date_created'}});
         m.request({method : 'GET', url : collectionsUrl, config : xhrconfig}).then(function(result){
             console.log(result);
            result.data.forEach(function(node){
@@ -412,7 +412,7 @@ var Collections  = {
                     style : 'top: ' + args.collectionMenuObject().y + 'px;left: ' + args.collectionMenuObject().x + 'px;'
                 }, [
                     m('ul', [
-                        m('li[data-toggle="modal"][data-target="#renameColl"]',{
+                        m('li[data-toggle="modal"][data-target="#renameColl"].pointer',{
                             onclick : function (e) {
                                 args.showCollectionMenu(false);
                             }
@@ -420,7 +420,7 @@ var Collections  = {
                             m('i.fa.fa-pencil'),
                             ' Rename'
                         ]),
-                        m('li[data-toggle="modal"][data-target="#removeColl"]',{
+                        m('li[data-toggle="modal"][data-target="#removeColl"].pointer',{
                             onclick : function (e) {
                                 args.showCollectionMenu(false);
                             }
@@ -446,11 +446,11 @@ var Collections  = {
                                 m('.form-inline', [
                                     m('.form-group', [
                                         m('label[for="addCollInput]', 'Collection Name'),
-                                        m('input[type="text"].form-control#addCollInput', {onchange: m.withAttr('value', ctrl.newCollectionName), value: ctrl.newCollectionName()})
+                                        m('input[type="text"].form-control.m-l-sm#addCollInput', {onchange: m.withAttr('value', ctrl.newCollectionName), value: ctrl.newCollectionName()})
 
                                     ])
                                 ]),
-                                m('p', 'After you create your collection drag and drop projects to the collection. ')
+                                m('p.m-t-sm', 'After you create your collection drag and drop projects to the collection. ')
                             ]),
                             m('.modal-footer', [
                                 m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
@@ -473,7 +473,7 @@ var Collections  = {
                                 m('.form-inline', [
                                     m('.form-group', [
                                         m('label[for="addCollInput]', 'Collection Name'),
-                                        m('input[type="text"].form-control#renameCollInput',{
+                                        m('input[type="text"].form-control.m-l-sm#renameCollInput',{
                                             onkeyup: function(ev){
                                                 args.collectionMenuObject().item.label = $(this).val();
                                             },
