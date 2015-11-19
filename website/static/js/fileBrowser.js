@@ -340,22 +340,13 @@ var Collections  = {
                 console.log(result);
             });
             self.newCollectionName('');
-
-            //Method:        POST
-            //URL:           links.self
-            //Query Params:  <none>
-            //Body (JSON):   {
-            //    "data": {
-            //        "type": "collections", # required
-            //        "attributes": {
-            //            "title":       {title},          # required
-            //        }
-            //    }
-            //}
-            //Success:       201 CREATED + collection representation
-            //
-            //
-
+        };
+        self.deleteCollection = function(){
+          console.log(args.collectionMenuObject().item.data.node.id);
+            var url = args.collectionMenuObject().item.data.node.links.self;
+            m.request({method : 'DELETE', url : url, config : xhrconfig}).then(function(result){
+                console.log(url, result);
+            });
         };
     },
     view : function (ctrl, args) {
@@ -475,7 +466,9 @@ var Collections  = {
                             ]),
                             m('.modal-footer', [
                                 m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
-                                m('button[type="button"].btn.btn-danger', 'Delete')
+                                m('button[type="button"].btn.btn-danger', {
+                                    onclick : ctrl.deleteCollection
+                                },'Delete')
                             ])
                         ])
                     )
