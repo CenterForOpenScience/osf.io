@@ -4,6 +4,7 @@ import re
 import httplib as http
 
 import pymongo
+from modularodm import Q
 from modularodm.query import QueryBase
 from modularodm.exceptions import ValidationValueError, NoResultsFound, MultipleResultsFound
 
@@ -138,3 +139,16 @@ def autoload(Model, extract_key, inject_key, func):
         kwargs[inject_key] = instance
         return func(*args, **kwargs)
     return wrapper
+
+def paginated(model, query=None, increment=200):
+    last_id = ''
+    pages = (model.find(query).count() / increment) + 1
+    for i in xrange(pages):
+        q = Q('_id', 'gt', last_id)
+        if query:
+            q &= query
+        page = list(model.find(q).limit(increment))
+        for item in page:
+            yield item
+        if page:
+            last_id = item._id

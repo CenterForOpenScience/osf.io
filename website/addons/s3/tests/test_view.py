@@ -6,14 +6,14 @@ from nose.tools import *  # noqa
 from boto.exception import S3ResponseError
 
 from framework.auth import Auth
-from tests.base import OsfTestCase, DEFAULT_METASCHEMA
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import ProjectFactory, AuthUserFactory
 
 from website.addons.s3.settings import BUCKET_LOCATIONS
 from website.addons.s3.utils import validate_bucket_name, validate_bucket_location
 from website.util import api_url_for
 
-
+DEFAULT_METASCHEMA = get_default_metaschema()
 fake = Faker()
 
 

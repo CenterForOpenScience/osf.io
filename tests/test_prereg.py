@@ -1,7 +1,9 @@
-from nose.tools import *
+from nose.tools import *  # noqa
+
+from modularodm import Q
 
 from website.prereg import prereg_landing_page as landing_page
-from website.project.model import ensure_schemas
+from website.project.model import ensure_schemas, MetaSchema
 
 from tests.base import OsfTestCase
 from tests import factories
@@ -10,14 +12,15 @@ from tests import factories
 class PreregLandingPageTestCase(OsfTestCase):
     def setUp(self):
         super(PreregLandingPageTestCase, self).setUp()
+        ensure_schemas()
         self.user = factories.UserFactory()
 
     def test_no_projects(self):
         assert_equal(
             landing_page(user=self.user),
             {
-                'has_project': False,
-                'has_draft_registration': False,
+                'has_projects': False,
+                'has_draft_registrations': False,
             }
         )
 
@@ -27,19 +30,24 @@ class PreregLandingPageTestCase(OsfTestCase):
         assert_equal(
             landing_page(user=self.user),
             {
-                'has_project': True,
-                'has_draft_registration': False,
+                'has_projects': True,
+                'has_draft_registrations': False,
             }
         )
 
     def test_has_project_and_draft_registration(self):
-        ensure_schemas()
-        factories.DraftRegistrationFactory(initiator=self.user)
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge')
+        )
+        factories.DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema
+        )
 
         assert_equal(
             landing_page(user=self.user),
             {
-                'has_project': True,
-                'has_draft_registration': True,
+                'has_projects': True,
+                'has_draft_registrations': True,
             }
         )

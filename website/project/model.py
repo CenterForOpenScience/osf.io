@@ -6,7 +6,7 @@ import re
 import logging
 import pymongo
 import datetime
-from dateutil import parser as parse_date
+from dateutil.parser import parse as parse_date
 import urlparse
 from collections import OrderedDict
 import warnings
@@ -719,8 +719,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
 
-    draft_registrations = fields.ForeignField('draftregistration', backref='branched', list=True)
-
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
 
@@ -932,7 +930,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def draft_registrations_active(self):
-        return self.draft_registrations.find(
+        return DraftRegistration.find(
+            Q('branched_from', 'eq', self) &
             Q('registered_node', 'eq', None)
         )
 
@@ -2033,19 +2032,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def create_draft_registration(self, user, schema, data=None, save=False):
-        draft = DraftRegistration(
-            initiator=user,
-            branched_from=self,
-            registration_schema=schema,
-            registration_metadata=data or {},
-        )
-        draft.save()
-        self.draft_registrations.append(draft)
-        if save:
-            self.save()
-        return draft
-
     def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
 
@@ -2216,6 +2202,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def absolute_api_v2_url(self):
         if self.is_registration:
             return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': self._id})
+        if self.is_folder:
+            return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
 
     # used by django and DRF
@@ -3122,7 +3110,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 return True
         return False
 
-    def _initiate_embargo(self, user, end_date, for_existing_registration=False):
+    def _initiate_embargo(self, user, end_date, for_existing_registration=False, notify_initiator_on_complete=False):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param end_date: Date when the registration should be made public
@@ -3130,7 +3118,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         embargo = Embargo(
             initiated_by=user,
             end_date=datetime.datetime.combine(end_date, datetime.datetime.min.time()),
-            for_existing_registration=for_existing_registration
+            for_existing_registration=for_existing_registration,
+            notify_initiator_on_complete=notify_initiator_on_complete
         )
         embargo.save()  # Save embargo so it has a primary key
         self.embargo = embargo
@@ -3141,7 +3130,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         embargo.save()  # Save embargo's approval_state
         return embargo
 
-    def embargo_registration(self, user, end_date, for_existing_registration=False):
+    def embargo_registration(self, user, end_date, for_existing_registration=False, notify_initiator_on_complete=False):
         """Enter registration into an embargo period at end of which, it will
         be made public
         :param user: User initiating the embargo
@@ -3158,7 +3147,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self._is_embargo_date_valid(end_date):
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
-        embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration)
+        embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, notify_initiator_on_complete=notify_initiator_on_complete)
 
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
@@ -3172,11 +3161,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
-    def _initiate_approval(self, user):
+    def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME
         approval = RegistrationApproval(
             initiated_by=user,
             end_date=end_date,
+            notify_initiator_on_complete=notify_initiator_on_complete
         )
         approval.save()  # Save approval so it has a primary key
         self.registration_approval = approval
@@ -3187,13 +3177,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         approval.save()  # Save approval's approval_state
         return approval
 
-    def require_approval(self, user):
+    def require_approval(self, user, notify_initiator_on_complete=False):
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')
         if not self.has_permission(user, 'admin'):
             raise PermissionsError('Only admins can initiate a registration approval')
 
-        approval = self._initiate_approval(user)
+        approval = self._initiate_approval(user, notify_initiator_on_complete)
 
         self.registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
@@ -4006,23 +3996,25 @@ class DraftRegistrationApproval(Sanction):
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
-        auth = Auth(user) if user else None
+        auth = Auth(draft.initiator)
         registration = draft.register(
             auth=auth,
             save=True
         )
         registration_choice = self.meta['registration_choice']
+        sanction = None
+        if registration_choice == 'immediate':
+            sanction = functools.partial(registration.require_approval, draft.initiator)
+        elif registration_choice == 'embargo':
+            sanction = functools.partial(
+                registration.embargo_registration,
+                draft.initiator,
+                parse_date(self.meta.get('embargo_end_date'), ignoretz=True)
+            )
+        else:
+            raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
         try:
-            {
-                'immediate': functools.partial(registration.require_approval, user),
-                'embargo': functools.partial(
-                    user,
-                    registration.embargo_registration,
-                    parse_date(self.meta['embargo_end_date'], ignoretz=True)
-                )
-            }[registration_choice](notify_initiator_on_complete=True)
-        except KeyError:
-            raise ValueError("'registration_choice' must be either 'emebargo' or 'immediate'")
+            sanction(notify_initiator_on_complete=True)
         except NodeStateError as e:
             raise e
             # TODO(samchrisinger)
@@ -4052,9 +4044,9 @@ class DraftRegistration(StoredObject):
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
     # Original Node a draft registration is associated with
-    branched_from = fields.ForeignField('node')
+    branched_from = fields.ForeignField('node', index=True)
 
-    initiator = fields.ForeignField('user')
+    initiator = fields.ForeignField('user', index=True)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -4072,7 +4064,7 @@ class DraftRegistration(StoredObject):
     # }
     registration_metadata = fields.DictionaryField(default=dict)
     registration_schema = fields.ForeignField('metaschema')
-    registered_node = fields.ForeignField('node')
+    registered_node = fields.ForeignField('node', index=True)
 
     approval = fields.ForeignField('draftregistrationapproval', default=None)
 
@@ -4114,63 +4106,57 @@ class DraftRegistration(StoredObject):
         else:
             return True
 
+    @classmethod
+    def create_from_node(cls, node, user, schema, data=None):
+        draft = cls(
+            initiator=user,
+            branched_from=node,
+            registration_schema=schema,
+            registration_metadata=data or {},
+        )
+        draft.save()
+        return draft
+
     def get_authorizers(self):
         return authorizers.members_for(self.registration_schema.name)
 
     def update_metadata(self, metadata):
         changes = []
         for question_id, value in metadata.iteritems():
-
             old_value = self.registration_metadata.get(question_id)
-
             if old_value:
-                old_comments = old_value.get('comments', [])
-                new_comments = value.get('comments', [])
-
-                #  we are using the `created` attribute sort of as a primary key
-                old_comment_ids = [comment['created'] for comment in old_comments]
-
-                # Handle comment conflicts
-                for old_comment in old_comments:
-                    for new_comment in new_comments:
-                        new_id = new_comment.get('created', [])
-                        # if the primary key is already in use and the old comment is more recent,
-                        if new_id in old_comment_ids and old_comment['lastModified'] > new_comment['lastModified']:
-                            # use the old one instead
-                            loc = new_comments.index(new_comment)
-                            new_comments[loc] = old_comment
-
-            if not old_value or old_value.get('value') != value.get('value'):
+                old_comments = {
+                    comment['created']: comment
+                    for comment in old_value.get('comments', [])
+                }
+                new_comments = {
+                    comment['created']: comment
+                    for comment in value.get('comments', [])
+                }
+                old_comments.update(new_comments)
+                metadata[question_id]['comments'] = sorted(
+                    old_comments.values(),
+                    key=lambda c: c['created']
+                )
+                if old_value.get('value') != value.get('value'):
+                    changes.append(question_id)
+            else:
                 changes.append(question_id)
-
         self.registration_metadata.update(metadata)
         return changes
 
-    def find_question(self, qid):
-        for page in self.registration_schema.schema['pages']:
-            for question_id, question in page['questions'].iteritems():
-                if question_id == qid:
-                    return question
-
-    def get_comments(self):
-        """ Returns a list of all comments made on a draft in the format of :
-        [{
-          [QUESTION_ID]: {
-            'question': [QUESTION],
-            'comments': [LIST_OF_COMMENTS]
-           }
-        },]
-       """
-
-        all_comments = []
-        for question_id, value in self.registration_metadata.iteritems():
-            all_comments.append({
-                question_id: {
-                    'question': self.find_question(question_id),
-                    'comments': value['comments'] if 'comments' in value else ''
-                }
-            })
-        return all_comments
+    def submit_for_review(self, initiated_by, meta, save=False):
+        approval = DraftRegistrationApproval(
+            initiated_by=initiated_by,
+            meta=meta
+        )
+        authorizers = self.get_authorizers()
+        for user in authorizers:
+            approval.add_authorizer(user)
+        approval.save()
+        self.approval = approval
+        if save:
+            self.save()
 
     def register(self, auth, save=False):
         node = self.branched_from

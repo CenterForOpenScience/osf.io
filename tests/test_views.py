@@ -47,6 +47,7 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
 
 from tests.base import (
     OsfTestCase,
@@ -54,6 +55,7 @@ from tests.base import (
     capture_signals,
     assert_is_redirect,
     assert_datetime_equal,
+    get_default_metaschema
 )
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, ProjectFactory, WatchConfigFactory,
@@ -63,7 +65,7 @@ from tests.factories import (
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
-from tests.base import DEFAULT_METASCHEMA
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 class Addon(MockAddonNodeSettings):
     @property
@@ -4636,7 +4638,6 @@ class TestUserConfirmSignal(OsfTestCase):
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
-
 
 if __name__ == '__main__':
     unittest.main()

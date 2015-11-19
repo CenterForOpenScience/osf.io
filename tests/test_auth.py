@@ -396,13 +396,6 @@ class TestMustBeAddonAuthorizerDecorator(AuthAppTestCase):
         with assert_raises(HTTPError):
             self.decorated()
 
-class TestBasicAuth(OsfTestCase):
-
-    def test_basic_auth_returns_403(self):
-        url = web_url_for('dashboard')
-        ret = self.app.get(url, auth=('test', 'test'), expect_errors=True)
-        assert_equal(ret.status_code, 403)
-
 
 if __name__ == '__main__':
     unittest.main()

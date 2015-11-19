@@ -9,6 +9,7 @@ var registrationUtils = require('js/registrationUtils');
 var registrationEmbargo = require('js/registrationEmbargo');
 
 var ctx = window.contextVars;
+var node = ctx.node;
 
 require('pikaday-css');
 
@@ -19,9 +20,20 @@ $(function() {
     // if registering draft
     if (ctx.draft) {
         var draft = new registrationUtils.Draft(ctx.draft);
+        var editor = new registrationUtils.RegistrationEditor({
+            schemas: '/api/v1/project/schemas/',
+            create: node.urls.api + 'drafts/',
+            submit: node.urls.api + 'drafts/{draft_pk}/submit/',
+            update: node.urls.api + 'drafts/{draft_pk}/',
+            get: node.urls.api + 'drafts/{draft_pk}/',
+            draftRegistrations: node.urls.web + 'registrations/#drafts'
+        });
+        editor.init(draft, true);
         $osf.applyBindings({
-            draft: draft
+            draft: draft,
+            editor: editor
         }, '#draftRegistrationScope');
+
     }
     // if viewing registered metadata
     else {

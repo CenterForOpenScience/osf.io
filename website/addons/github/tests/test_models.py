@@ -7,7 +7,7 @@ from nose.tools import *  # noqa
 from github3 import GitHubError
 from github3.repos import Repository
 
-from tests.base import OsfTestCase, DEFAULT_METASCHEMA
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
@@ -21,6 +21,8 @@ from website.addons.github.model import AddonGitHubOauthSettings
 
 from .utils import create_mock_github
 mock_github = create_mock_github()
+
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 
 class TestCallbacks(OsfTestCase):

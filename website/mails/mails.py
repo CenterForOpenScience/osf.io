@@ -246,3 +246,5 @@ PREREG_CHALLENGE_ACCEPTED = Mail(
     'prereg_challenge_accepted',
     subject='Your research plan has been registered and accepted for the Preregistration Challenge'
 )
+
+EMPTY = Mail('empty', subject='${subject}')

@@ -28,6 +28,7 @@ from website.util.permissions import ADMIN
 from website.models import MetaSchema, NodeLog
 from website import language
 from website.project import signals as project_signals
+from website.project.metadata.schemas import _id_to_name
 from website import util
 from website.project.metadata.utils import serialize_meta_schema
 from website.archiver.decorators import fail_archive_on_error
@@ -118,10 +119,16 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
                 Q('_id', 'eq', metaschema_id)
             )
         except NoResultsFound:
-            raise HTTPError(http.NOT_FOUND, data={
-                'message_short': 'Invalid schema name',
-                'message_long': 'No registration schema with that name could be found.'
-            })
+            # backwards compatability for old urls, lookup by name
+            try:
+                meta_schema = MetaSchema.find(
+                    Q('name', 'eq', _id_to_name(metaschema_id))
+                ).sort('-schema_version')[0]
+            except IndexError:
+                raise HTTPError(http.NOT_FOUND, data={
+                    'message_short': 'Invalid schema name',
+                    'message_long': 'No registration schema with that name could be found.'
+                })
         if meta_schema not in node.registered_schema:
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'Invalid schema',

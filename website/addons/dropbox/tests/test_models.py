@@ -7,12 +7,14 @@ from framework.auth import Auth
 from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings
 )
-from tests.base import OsfTestCase, DEFAULT_METASCHEMA
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.dropbox.tests.factories import (
     DropboxUserSettingsFactory, DropboxNodeSettingsFactory,
 )
 from website.addons.base import exceptions
+
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 
 class TestUserSettingsModel(OsfTestCase):

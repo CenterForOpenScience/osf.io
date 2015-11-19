@@ -22,7 +22,8 @@ from website.project.decorators import (
 )
 from website import language, settings
 from website.project import utils as project_utils
-from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
+from website.project.model import MetaSchema, DraftRegistration
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 from website.util import rapply
@@ -43,7 +44,7 @@ def validate_embargo_end_date(end_date_string, node):
     :raises: HTTPError if end_date is less than the approval window or greater than the
     max embargo end date
     """
-    end_date = parse_date(end_date_string)
+    end_date = parse_date(end_date_string, ignoretz=True)
     today = datetime.datetime.utcnow()
     if (end_date - today) <= settings.DRAFT_REGISTRATION_APPROVAL_PERIOD:
         raise HTTPError(http.BAD_REQUEST, data={
@@ -55,6 +56,23 @@ def validate_embargo_end_date(end_date_string, node):
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid embargo end date',
             'message_long': 'Embargo end date must on or before {0}.'.format(max_end_date.isoformat())
+        })
+
+def check_draft_state(draft):
+    if draft.registered_node:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_short': 'This draft has already been registered',
+            'message_long': 'This draft has already been registered and cannot be modified.'
+        })
+    elif draft.is_pending_review:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_short': 'This draft is pending review',
+            'message_long': 'This draft is pending review and cannot be modified.'
+        })
+    elif draft.requires_approval and draft.is_approved:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_short': 'This draft has already been approved',
+            'message_long': 'This draft has already been approved and cannot be modified.'
         })
 
 @autoload_draft
@@ -73,19 +91,14 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     if registration_choice == 'embargo':
         # Initiate embargo
         end_date_string = data['embargoEndDate']
-        validate_embargo_end_date(end_date_string)
+        validate_embargo_end_date(end_date_string, node)
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
-    approval = DraftRegistrationApproval(
+    draft.submit_for_review(
         initiated_by=auth.user,
-        meta=meta
+        meta=meta,
+        save=True
     )
-    authorizers = draft.get_authorizers()
-    for user in authorizers:
-        approval.add_authorizer(user)
-    approval.save()
-    draft.approval = approval
-    draft.save()
 
     push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,
                         kind='info',
@@ -175,7 +188,6 @@ def get_draft_registrations(auth, node, *args, **kwargs):
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
     }, http.OK
 
-
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def new_draft_registration(auth, node, *args, **kwargs):
@@ -197,17 +209,17 @@ def new_draft_registration(auth, node, *args, **kwargs):
             }
         )
 
-    schema_version = data.get('schema_version', 1)
+    schema_version = data.get('schema_version', 2)
 
     meta_schema = get_schema_or_fail(
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', int(schema_version))
     )
-    draft = node.create_draft_registration(
+    draft = DraftRegistration.create_from_node(
+        node,
         user=auth.user,
         schema=meta_schema,
-        data={},
-        save=True,
+        data={}
     )
     return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id))
 
@@ -220,11 +232,7 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
     :return: serialized DraftRegistration
     :rtype: dict
     """
-    if draft.registered_node:
-        raise HTTPError(http.FORBIDDEN, data={
-            'message_short': 'This draft has already been registered.',
-            'message_long': 'This draft has already been registered and cannot be modified.'
-        })
+    check_draft_state(draft)
     ret = project_utils.serialize_node(node, auth, primary=True)
     ret['draft'] = serialize_draft_registration(draft, auth)
     return ret
@@ -239,11 +247,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     :rtype: dict
     :raises: HTTPError
     """
-    if draft.registered_node:
-        raise HTTPError(http.FORBIDDEN, data={
-            'message_short': 'This draft has already been registered.',
-            'message_long': 'This draft has already been registered and cannot be modified.'
-        })
+    check_draft_state(draft)
     data = request.get_json()
 
     schema_data = data.get('schema_data', {})
@@ -273,6 +277,14 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
     :return: None
     :rtype: NoneType
     """
+    if draft.registered_node:
+        raise HTTPError(
+            http.FORBIDDEN,
+            data={
+                'message_short': 'Can\'t delete draft',
+                'message_long': 'This draft has already been registered and cannot be deleted.'
+            }
+        )
     DraftRegistration.remove_one(draft)
     return None, http.NO_CONTENT
 
@@ -292,11 +304,19 @@ def get_metaschemas(*args, **kwargs):
     if include == 'latest':
         schema_names = meta_schema_collection.distinct('name')
         for name in schema_names:
-            meta_schema_set = MetaSchema.find(Q('name', 'eq', name))
-            meta_schemas = meta_schemas + [s for s in meta_schema_set.sort('-schema_version').limit(1)]
+            meta_schema_set = MetaSchema.find(
+                Q('name', 'eq', name) &
+                Q('schema_version', 'eq', 2)
+            )
+            meta_schemas = meta_schemas + [s for s in meta_schema_set]
     else:
         meta_schemas = MetaSchema.find()
-
+    meta_schemas = [
+        schema
+        for schema in meta_schemas
+        if schema.name in ACTIVE_META_SCHEMAS
+    ]
+    meta_schemas.sort(key=lambda a: ACTIVE_META_SCHEMAS.index(a.name))
     return {
         'meta_schemas': [
             serialize_meta_schema(ms) for ms in meta_schemas[:count]

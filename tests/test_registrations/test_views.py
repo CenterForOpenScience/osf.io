@@ -12,20 +12,81 @@ from nose.tools import *  # noqa PEP8 asserts
 
 from modularodm import Q
 
-from framework.mongo import database
+from framework.exceptions import HTTPError
+from framework.auth import Auth
 
 from website.models import Node, MetaSchema, DraftRegistration
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
+from website.util import permissions, api_url_for
+from website.project.views import drafts as draft_views
 
-from tests.base import OsfTestCase
 from tests.factories import (
-    NodeFactory, AuthUserFactory, DraftRegistrationFactory
+    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory
 )
 from tests.test_registrations.base import RegistrationsTestBase
 
+from tests.base import get_default_metaschema
+DEFAULT_METASCHEMA = get_default_metaschema()
 
-class TestRegistrationViews(OsfTestCase):
-    # TODO: do these already exist?
-    pass
+class TestRegistrationViews(RegistrationsTestBase):
+
+    def test_node_register_page_not_registration_redirects(self):
+        url = self.node.web_url_for('node_register_page')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.FOUND)
+
+    @mock.patch('website.archiver.tasks.archive')
+    def test_node_register_page_registration(self, mock_archive):
+        reg = self.node.register_node(DEFAULT_METASCHEMA, Auth(self.user), '', None)
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+
+    def test_non_admin_can_view_node_register_page(self):
+        non_admin = AuthUserFactory()
+        self.node.add_contributor(
+            non_admin,
+            permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            auth=Auth(self.user),
+            save=True
+        )
+        reg = RegistrationFactory(project=self.node)
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=non_admin.auth)
+        assert_equal(res.status_code, http.OK)
+
+    def test_is_public_node_register_page(self):
+        self.node.is_public = True
+        self.node.save()
+        reg = RegistrationFactory(project=self.node)
+        reg.is_public = True
+        reg.save()
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=None)
+        assert_equal(res.status_code, http.OK)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
+    def test_register_template_page_backwards_comptability(self):
+        # Historically metaschema's were referenced by a slugified version
+        # of their name.
+        reg = self.draft.register(
+            auth=Auth(self.user),
+            save=True
+        )
+        url = reg.web_url_for(
+            'node_register_template_page',
+            metaschema_id=_name_to_id(self.meta_schema.name),
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+
+    def test_register_template_page_redirects_if_not_registration(self):
+        url = self.node.web_url_for(
+            'node_register_template_page',
+            metaschema_id=self.meta_schema._id,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.FOUND)
 
 
 class TestDraftRegistrationViews(RegistrationsTestBase):
@@ -77,7 +138,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_template_make_public_creates_pending_registration(self, mock_enquque):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        res = self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.user.auth)
+        res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
@@ -93,7 +154,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         NodeFactory(parent=comp1)
 
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        res = self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.user.auth)
+        res = self.app.post_json(url, self.immediate_payload, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
@@ -201,40 +262,48 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         for draft in res.json['drafts']:
             assert_in(draft['pk'], [f._id for f in found])
 
-    def test_create_draft_registration(self):
-        target = NodeFactory(creator=self.user)
-        metadata = {
-            'summary': {'value': 'Some airy'}
-        }
-        payload = {
-            'schema_name': 'Open-Ended Registration',
-            'schema_version': 1,
-            'schema_data': metadata,
-        }
-        url = target.api_url_for('create_draft_registration')
-
-        res = self.app.post_json(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, http.CREATED)
-        draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
-        assert_equal(draft.registration_schema, self.meta_schema)
-        assert_equal(draft.registration_metadata, metadata)
-
-    def test_new_draft_registration(self):
+    def test_new_draft_registration_POST(self):
         target = NodeFactory(creator=self.user)
         payload = {
-            'schema_name': 'Open-Ended Registration',
-            'schema_version': 1
+            'schema_name': self.meta_schema.name,
+            'schema_version': self.meta_schema.schema_version
         }
         url = target.web_url_for('new_draft_registration')
 
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, http.FOUND)
+        target.reload()
         draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
         assert_equal(draft.registration_schema, self.meta_schema)
 
-    def test_update_draft_registration(self):
+    def test_update_draft_registration_cant_update_registered(self):
         metadata = {
             'summary': {'value': 'updated'}
+        }
+        assert_not_equal(metadata, self.draft.registration_metadata)
+        payload = {
+            'schema_data': metadata,
+            'schema_name': 'OSF-Standard Pre-Data Collection Registration',
+            'schema_version': 1
+        }
+        self.draft.register(Auth(self.user), save=True)
+        url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
+
+        res = self.app.put_json(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_edit_draft_registration_page_already_registered(self):
+        self.draft.register(Auth(self.user), save=True)
+        url = self.node.web_url_for('edit_draft_registration_page', draft_id=self.draft._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_update_draft_registration(self):
+        metadata = {
+            'summary': {
+                'value': 'updated',
+                'comments': []
+            }
         }
         assert_not_equal(metadata, self.draft.registration_metadata)
         payload = {
@@ -263,6 +332,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.NO_CONTENT)
         assert_equal(0, DraftRegistration.find().count())
 
+    @mock.patch('website.archiver.tasks.archive')
+    def test_delete_draft_registration_registered(self, mock_register_draft):
+        self.draft.register(auth=Auth(self.user), save=True)
+        url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
+
+        res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
     def test_only_admin_can_delete_registration(self):
         non_admin = AuthUserFactory()
         assert_equal(1, DraftRegistration.find().count())
@@ -273,12 +350,80 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(1, DraftRegistration.find().count())
 
     def test_get_metaschemas(self):
-        url = '/api/v1/project/drafts/schemas/'
+        url = api_url_for('get_metaschemas')
         res = self.app.get(url).json
-        schema_names = database['metaschema'].distinct('name')
-        assert_equal(len(res['meta_schemas']), len(schema_names))
-        url = '/api/v1/project/drafts/schemas/?include=all'
+        assert_equal(len(res['meta_schemas']), len(ACTIVE_META_SCHEMAS))
 
+        url = '/api/v1/project/drafts/schemas/?include=all'
         res = self.app.get(url)
         assert_equal(res.status_code, http.OK)
-        assert_equal(len(res.json['meta_schemas']), MetaSchema.find().count())
+        assert_equal(len(res.json['meta_schemas']), len(
+            [
+                schema for schema in MetaSchema.find()
+                if schema.name in ACTIVE_META_SCHEMAS
+            ]
+        ))
+
+    def test_validate_embargo_end_date_too_soon(self):
+        today = dt.datetime.today()
+        too_soon = today + dt.timedelta(days=5)
+        try:
+            draft_views.validate_embargo_end_date(too_soon.isoformat(), self.node)
+        except HTTPError as e:
+            assert_equal(e.code, http.BAD_REQUEST)
+        else:
+            self.fail()
+
+    def test_validate_embargo_end_date_too_late(self):
+        today = dt.datetime.today()
+        too_late = today + dt.timedelta(days=(4 * 365) + 1)
+        try:
+            draft_views.validate_embargo_end_date(too_late.isoformat(), self.node)
+        except HTTPError as e:
+            assert_equal(e.code, http.BAD_REQUEST)
+        else:
+            self.fail()
+
+    def test_validate_embargo_end_date_ok(self):
+        today = dt.datetime.today()
+        too_late = today + dt.timedelta(days=12)
+        try:
+            draft_views.validate_embargo_end_date(too_late.isoformat(), self.node)
+        except Exception:
+            self.fail()
+
+    def test_check_draft_state_registered(self):
+        reg = RegistrationFactory()
+        self.draft.registered_node = reg
+        self.draft.save()
+        try:
+            draft_views.check_draft_state(self.draft)
+        except HTTPError as e:
+            assert_equal(e.code, http.FORBIDDEN)
+        else:
+            self.fail()
+
+    def test_check_draft_state_pending_review(self):
+        self.draft.submit_for_review(self.user, self.immediate_payload, save=True)
+        try:
+            with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)):
+                draft_views.check_draft_state(self.draft)
+        except HTTPError as e:
+            assert_equal(e.code, http.FORBIDDEN)
+        else:
+            self.fail()
+
+    def test_check_draft_state_approved(self):
+        try:
+            with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)), mock.patch.object(DraftRegistration, 'is_approved', mock.PropertyMock(return_value=True)):
+                draft_views.check_draft_state(self.draft)
+        except HTTPError as e:
+            assert_equal(e.code, http.FORBIDDEN)
+        else:
+            self.fail()
+
+    def test_check_draft_state_ok(self):
+        try:
+            draft_views.check_draft_state(self.draft)
+        except Exception:
+            self.fail()

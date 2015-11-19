@@ -31,10 +31,9 @@
     ##      %endif
         % else:
         <p>
-          There have been no completed registrations of this ${node['node_type']}.
-          For a list of the most viewed and most recent public registrations on the
-          Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>,
-          or you start a new draft registration from the "Draft Registrations" tab.
+          There have been no completed registrations of this project. You can start a new registration by clicking the “New Registration” button, 
+          and you have the option of saving as a draft registration before submission. For a list of the most viewed and most recent public 
+          registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
         </p>
         % endif
         %if parent_node['exists'] and user['is_admin_parent']:
@@ -45,7 +44,7 @@
       </div>
       % if 'admin' in user['permissions'] and not disk_saving_mode:
       <div class="col-md-3">
-        <a data-bind="click: createDraftModal, disable: loading" id="registerNode" class="btn btn-default" type="button">
+        <a id="registerNode" class="btn btn-default" type="button">
           New Registration
         </a>
       </div>
@@ -74,9 +73,9 @@
                   </div>
                 </div>
                 <small>
-                <p>initiated by: <span data-bind="text: initiator.fullname"></span>
-                <p>started: <span data-bind="text: initiated"></span></p>
-                <p>last updated: <span data-bind="text: updated"></span></p>
+                <p>Initiated by: <span data-bind="text: initiator.fullname"></span>
+                <p>Started: <span data-bind="text: initiated"></span></p>
+                <p>Last updated: <span data-bind="text: updated"></span></p>
                 <span data-bind="if: requiresApproval">
                     <div data-bind="if: isPendingApproval">
                         <div class="draft-status-badge bg-warning"> Pending Review</div>
@@ -89,7 +88,8 @@
                 <div class="row">
                   <div class="col-md-10">
                     <button class="btn btn-info"
-                       data-bind="click: $root.maybeWarn">
+                       data-bind="disable: isPendingApproval,
+                                  click: $root.maybeWarn">
                       <i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit
                     </button>
                     <button class="btn btn-danger"
@@ -98,11 +98,7 @@
                     </button>
                   </div>
                   <div class="col-md-1">
-                    <a class="btn btn-success" data-bind="attr.href: urls.register_page,
-                                                          tooltip: {
-                                                            placement: 'top',
-                                                            title: isApproved ? 'Finalize this draft' : 'This draft must be approved before it can be registered'
-                                                           },
+                     <a class="btn btn-success" data-bind="attr.href: urls.register_page,
                                                            css: {'disabled': !isApproved}">Register</a>
                   </div>
                 </div>
@@ -128,7 +124,7 @@
     <span data-bind="foreach: schemas">
     <div class="radio">
         <label>
-          <input type="radio" name="selectedDraftSchema" 
+          <input type="radio" name="selectedDraftSchema"
                  data-bind="attr {value: id}, checked: $root.selectedSchemaId" />
           {{ schema.title }}
           <!-- ko if: schema.description -->

@@ -1,24 +1,31 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var m = require('mithril');
+var bootbox = require('bootbox');
 
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
 var $osf = require('js/osfHelpers');
+var waterbutler = require('js/waterbutler');
 
 var node = window.contextVars.node;
 
 var NO_FILE = 'No file selected';
 
-var limitOsfStorage = function(item) {
-    if (item.data.provider !== undefined && item.data.provider !== 'osfstorage') {
+var limitContents = function(item) {
+    if (item.data.provider !== undefined && item.data.provider !== 'osfstorage' || item.data.isPointer) {
         item.open = false;
         item.load = false;
         item.css = 'text-muted';
         item.data.permissions = item.data.permissions || {};
         item.data.permissions.edit = false;
         item.data.permissions.view = false;
-        if (item.data.name.indexOf(' (Only OSF Storage supported to ensure accurate versioning.)') === -1) {
+        if (item.data.isPointer) {
+            if (item.data.name.indexOf(' (Linked content is not allowed.)') === -1) {
+                item.data.name = item.data.name + ' (Linked content is not allowed.)';
+            }
+        }
+        else if (item.data.name.indexOf(' (Only OSF Storage supported to ensure accurate versioning.)') === -1) {
             item.data.name = item.data.name + ' (Only OSF Storage supported to ensure accurate versioning.)';
         }
     }
@@ -33,9 +40,9 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
         if (filePicker) {
             // A hack to flush the old mithril controller.
             // It's unclear to me exactly why this is happening (after 3hrs), but seems
-            // to be a KO-mithril interaction. We're programattically changing the div 
+            // to be a KO-mithril interaction. We're programattically changing the div
             // containing mithril mountings, and for some reason old controllers (and
-            // their bound settings) are persisting and being reused. This call 
+            // their bound settings) are persisting and being reused. This call
             // explicity removes the old controller.
             // see: http://lhorie.github.io/mithril/mithril.component.html#unloading-components
             m.mount(document.getElementById(filePicker.fangornOpts.divID), null);
@@ -61,18 +68,18 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
             onselectrow: function(item) {
                 if (item.kind === 'file') {
                     viewModel.value(item.data.path);
-                    viewModel.selectedFileName(item.data.name);
+                    viewModel.selectedFile(item);
                     item.css = 'fangorn-selected';
                 } else {
-                    viewModel.value('');
-                    viewModel.selectedFileName(NO_FILE);
+                    viewModel.value(NO_FILE);
+                    viewModel.selectedFile(null);
                 }
             },
             resolveRows: function(item) {
                 var tb = this;
                 item.css = '';
 
-                limitOsfStorage(item);
+                limitContents(item);
 
                 if (viewModel.value() !== null) {
                     if (item.data.path === viewModel.value()) {
@@ -93,23 +100,20 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                     }
                 }
 
-                if (item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')) {
-                    return Fangorn.Utils.uploadRowTemplate.call(tb, item);
-                }
-
                 var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                 return configOption || defaultColumns;
             },
             lazyLoadOnLoad: function(tree, event) {
-                limitOsfStorage(tree);
+                limitContents(tree);
 
                 tree.children.forEach(function(item) {
-                    limitOsfStorage(item);
+                    limitContents(item);
 
                     if (viewModel.value() !== null) {
                         if (item.data.path === viewModel.value()) {
                             item.css = 'fangorn-selected';
-                            viewModel.selectedFileName(item.data.name);
+                            item.data.nodeId = tree.data.nodeId;
+                            viewModel.selectedFile(item);
                         }
                     }
                     Fangorn.Utils.inheritFromParent(item, tree);
@@ -120,10 +124,11 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 if (tree.depth > 1) {
                     Fangorn.Utils.orderFolder.call(this, tree);
                 }
-            }
+            },
+            links: false
         });
-    filePicker = fw; 
-    fw.init(); 
+    filePicker = fw;
+    fw.init();
     viewModel.showUploader(false);
 };
 
@@ -136,14 +141,105 @@ var Uploader = function(data) {
     var self = this;
     self._orig = data;
 
-    self.selectedFileName = ko.observable('no file selected');
+    self.selectedFile = ko.observable(null);
+    self.selectedFile.subscribe(function(file) {
+        if (file) {
+            data.extra({
+                selectedFileName: file.data.name,
+                viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
+                hasSelectedFile: true
+            });
+        }
+        else {
+            data.extra({
+                selectedFileName: 'no file selected'
+            });
+            data.value('no file selected');
+        }
+    });
+    self.hasSelectedFile = ko.computed(function() {
+        return !!(data.extra().viewUrl);
+    });
+    self.unselectFile = self.selectedFile.bind(null, null);
+
     self.filePicker = null;
+
+    self.preview = function() {
+        var value = data.value();
+        if (!value || value === 'no file selected') {
+            return 'no file selected';
+        }
+        else {
+            var extra = data.extra();
+            return $('<a target="_blank" href="' + extra.viewUrl + '">' + extra.selectedFileName + '</a>');
+        }
+    };
+
+    $.extend(self, data);
+};
+
+var AuthorImport = function(data, $root) {
+    var self = this;
+
+    self.question = data;
+    self.contributors = $root.contributors();
+
+    self.setContributorBoxes = function(value) {
+        var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+        $.each(boxes, function(i, box) {
+            this.checked = value;
+        });
+    };
+    self.preview = function() {
+        return self.value();
+    };
+
+    self.authorDialog = function() {
+
+        bootbox.dialog({
+            title: 'Choose which contributors to import:',
+            message: function() {
+                ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
+            },
+            buttons: {
+                cancel: {
+                    label: 'Cancel',
+                    className: 'btn-default',
+                    callback: bootbox.hideAll
+                },
+                select: {
+                    label: 'Import',
+                    className: 'btn-primary',
+                    callback: function() {
+                        var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+                        var authors = [];
+                        $.each(boxes, function(i, box) {
+                            if( this.checked ) {
+                                authors.push(this.value);
+                            }
+                        });
+                        if (authors) {
+                            var oldValue = self.question.value();
+                            if (!/^\s*$/.test(oldValue)) {
+                                self.question.value(oldValue + ', ' + authors.join(', '));
+                            }
+                            else {
+                                self.question.value(authors.join(', '));
+                            }
+                        }
+                    }
+                }
+
+            }
+        });
+    };
 
     $.extend(self, data);
 };
 
 module.exports = {
+    AuthorImport: AuthorImport,
     Uploader: Uploader,
     osfUploader: osfUploader,
-    limitOsfStorage: limitOsfStorage
+    limitContents: limitContents
 };

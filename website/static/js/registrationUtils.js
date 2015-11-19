@@ -4,7 +4,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var moment = require('moment');
-var URI = require('URIjs');
+var History = require('exports?History!history');
 
 require('js/koHelpers');
 
@@ -62,7 +62,7 @@ function Comment(data) {
         }
     });
 
-    self.seenBy = ko.observableArray([]);
+    self.seenBy = ko.observableArray([self.user.id]);
     /**
      * Returns the author as the actual user, not 'You'
      **/
@@ -150,16 +150,6 @@ var Question = function(questionSchema, data) {
     self.id = questionSchema.qid;
 
     self.data = data || {};
-    if ($.isFunction(self.data.value)) {
-        // For subquestions, this could be an observable
-        _value = self.data.value();
-    } else {
-        _value = self.data.value || null;
-    }
-    self.value = ko.observable(_value);
-    self.setValue = function(val) {
-        self.value(val);
-    };
 
     self.title = questionSchema.title || 'Untitled';
     self.nav = questionSchema.nav || 'Untitled';
@@ -172,6 +162,52 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || {};
     self.match = questionSchema.match || '';
 
+    var _value;
+    if ($.isFunction(self.data.value)) {
+        // For subquestions, this could be an observable
+        _value = self.data.value();
+    } else {
+        _value = self.data.value || null;
+    }
+    if (self.type === 'choose' && self.format === 'multiselect') {
+        if (_value) {
+            if(!$.isArray(_value)) {
+                _value = [_value];
+            }
+            self.value = ko.observableArray(_value);
+        }
+        else {
+            self.value = ko.observableArray([]);
+        }
+    }
+    else if (self.type === 'object') {
+        $.each(self.properties, function(prop, field) {
+            field.qid = field.id || prop;
+            var subData = self.data.value ? self.data.value[prop] : {};
+            self.properties[prop] = new Question(field, subData);
+        });
+        self.value = ko.computed({
+            read: function() {
+                var value = {};
+                $.each(self.properties, function(name, prop) {
+                    value[name] = {
+                        value: prop.value(),
+                        comments: prop.comments(),
+                        extra: prop.extra
+                    };
+                });
+                return value;
+            },
+            deferred: true
+        });
+    }
+    else {
+        self.value = ko.observable(_value);
+    }
+    self.setValue = function(val) {
+        self.value(val);
+    };
+
     if (self.required) {
         self.value.extend({
             required: true
@@ -181,7 +217,7 @@ var Question = function(questionSchema, data) {
             required: false
         });
     }
-    self.extra = {};
+    self.extra = ko.observable(self.data.extra || {});
 
     self.showExample = ko.observable(false);
     self.showUploader = ko.observable(false);
@@ -207,37 +243,20 @@ var Question = function(questionSchema, data) {
             if (self.type === 'object') {
                 var ret = true;
                 $.each(self.properties, function(_, subQuestion) {
-                    if( subQuestion.type !== 'osf-upload') {
-                        if ((subQuestion.value() || '').trim() === '' ) {
-                            ret = false;
-                            return;
-                        }
-                    }
-                    else {
-                        // TODO
+                    var value = subQuestion.value();
+                    if (subQuestion.required && !(Boolean(value === true || (value && value.length)))) {
+                        ret = false;
+                        return;
                     }
                 });
                 return ret;
             } else {
-                return (self.value() || '').trim() !== '';
+                var value = self.value();
+                return !self.required || Boolean(value === true || (value && value.length));
             }
         },
         deferEvaluation: true
     });
-
-    self.init();
-};
-/**
- * Maps 'object' type Questions's properties to sub-Questions
- **/
-Question.prototype.init = function() {
-    var self = this;
-    if (self.type === 'object') {
-        $.each(self.properties, function(prop, field) {
-            field.qid = field.id;
-            self.properties[prop] = new Question(field, self.data[prop]);
-        });
-    }
 };
 /**
  * Creates a new comment from the current value of Question.nextComment and clears nextComment
@@ -282,6 +301,7 @@ var Page = function(schemaPage, schemaData) {
     var self = this;
     self.questions = ko.observableArray([]);
     self.title = schemaPage.title;
+    self.description = schemaPage.description || '';
     self.id = schemaPage.id;
 
     self.active = ko.observable(false);
@@ -303,11 +323,22 @@ var Page = function(schemaPage, schemaData) {
     });
 
     // TODO: track currentQuestion based on browser focus
-    var question = self.questions[0];
-    self.nextComment = question.nextComment.bind(question);
+    self.currentQuestion = self.questions[0];
+
+    /*
+    self.nextComment = ko.computed({
+        read: function(){
+            return question.nextComment();
+        },
+        write: function(value) {
+            question.nextComment(value);
+        }
+    });
     self.allowAddNext = question.allowAddNext.bind(question);
     self.addComment = question.addComment.bind(question);
+    */
 };
+
 /**
  * @class MetaSchema
  * Model for MetaSchema instances
@@ -366,12 +397,17 @@ MetaSchema.prototype.flatQuestions = function() {
     return flat;
 };
 
-MetaSchema.prototype.askConsent = function() {
+MetaSchema.prototype.askConsent = function(mustAgree) {
     var self = this;
 
     var ret = $.Deferred();
 
+    if (typeof mustAgree === 'undefined') {
+        mustAgree = true;
+    }
+
     var viewModel = {
+        mustAgree: mustAgree,
         message: self.consent,
         consent: ko.observable(false),
         submit: function() {
@@ -475,7 +511,10 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var viewModel = new ViewModel();
     viewModel.canRegister = ko.computed(function() {
         var embargoed = viewModel.showEmbargoDatePicker();
-        return (embargoed && viewModel.isEmbargoEndDateValid()) || !embargoed;
+        if (embargoed) {
+            return viewModel.pikaday.isValid();
+        }
+        return true;
     });
     var validation = [];
     if (self.metaSchema.requiresApproval) {
@@ -487,7 +526,7 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
         });
     }
     validation.push({
-        validator: viewModel.isEmbargoEndDateValid,
+        validator: function() {return viewModel.isEmbargoEndDateValid();},
         message: 'Embargo end date must be at least two days in the future.'
     });
     viewModel.pikaday.extend({
@@ -635,11 +674,20 @@ Draft.prototype.submitForReview = function() {
     var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';
 
     var submitForReview = function() {
-        bootbox.confirm({
+        bootbox.dialog({
             message: beforeSubmitForApprovalMessage,
-            callback: function(confirmed) {
-                if (confirmed) {
-                    self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
+            buttons: {
+                cancel: {
+                    label: 'Cancel',
+                    className: 'btn-default',
+                    callback: bootbox.hideAll
+                },
+                ok: {
+                    label: 'Continue',
+                    className: 'btn-primary',
+                    callback: function() {
+                        self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
+                    }
                 }
             }
         });
@@ -696,7 +744,9 @@ var RegistrationEditor = function(urls, editorId) {
             page.active(false);
         });
         currentPage.active(true);
+        History.replaceState({page: self.pages().indexOf(currentPage)});
     });
+
     self.onLastPage = ko.pureComputed(function() {
         return self.currentPage() === self.pages()[self.pages().length - 1];
     });
@@ -740,6 +790,22 @@ var RegistrationEditor = function(urls, editorId) {
         });
     });
 
+    self.validationErrors = ko.computed(function() {
+        if (self.onLastPage()) {
+            var errors = [];
+            var questions = self.flatQuestions() || [];
+            if (questions.length && questions.filter(function(question) {
+                return question.required && !question.isComplete();
+            }).length) {
+                return 'Some required questions are unanswered.';
+            }
+            else {
+                return '';
+            }
+        }
+        return '';
+    });
+
     self.canSubmit = ko.computed(function() {
         var canSubmit = true;
         var questions = self.flatQuestions();
@@ -756,7 +822,8 @@ var RegistrationEditor = function(urls, editorId) {
     self.iterObject = $osf.iterObject;
     // TODO: better extensions system?
     self.extensions = {
-        'osf-upload': editorExtensions.Uploader
+        'osf-upload': editorExtensions.Uploader,
+        'osf-author-import': editorExtensions.AuthorImport
     };
 };
 /**
@@ -764,7 +831,7 @@ var RegistrationEditor = function(urls, editorId) {
  *
  * @param {Draft} draft
  **/
-RegistrationEditor.prototype.init = function(draft) {
+RegistrationEditor.prototype.init = function(draft, preview) {
     var self = this;
 
     self.draft(draft);
@@ -798,7 +865,12 @@ RegistrationEditor.prototype.init = function(draft) {
     });
 
     // Set currentPage to the first page
-    self.currentPage(self.draft().pages()[0]);
+    var pages = self.draft().pages();
+    var index = History.getState().data.page || 0;
+    if (index > pages.length) {
+        index = 0;
+    }
+    self.currentPage(pages[index]);
 
     self.needsSave.subscribe(function(dirty) {
         if (dirty) {
@@ -811,6 +883,39 @@ RegistrationEditor.prototype.init = function(draft) {
     });
 
     self.currentQuestion(self.flatQuestions().shift());
+
+    preview = preview || false;
+    if (preview) {
+        ko.bindingHandlers.previewQuestion = {
+            init: function(elem, valueAccessor) {
+                var question = valueAccessor();
+                var $elem = $(elem);
+
+                if (question.type === 'object') {
+                    $elem.append(
+                        $.map(question.properties, function(subQuestion) {
+                            subQuestion = self.context(subQuestion);
+                            var value;
+                            if (self.extensions[subQuestion.type] ) {
+                                value = subQuestion.preview();
+                            } else {
+                                value = subQuestion.value();
+                            }
+                            return $('<p>').append(value);
+                        })
+                    );
+                } else {
+                    var value;
+                    if (self.extensions[question.type] ) {
+                        value = question.preview();
+                    } else {
+                        value = question.value();
+                    }
+                    $elem.append(value);
+                }
+            }
+        };
+    }
 };
 /**
  * @returns {Question[]} flat list of the current schema's questions
@@ -831,14 +936,14 @@ RegistrationEditor.prototype.flatQuestions = function() {
  * @param {Object} data: data in current editor template scope
  * @returns {Object|ViewModel}
  **/
-RegistrationEditor.prototype.context = function(data) {
+RegistrationEditor.prototype.context = function(data, $root) {
     $.extend(data, {
         save: this.save.bind(this),
         readonly: this.readonly
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data);
+        return new this.extensions[data.type](data, $root);
     }
     return data;
 };
@@ -1058,21 +1163,11 @@ RegistrationEditor.prototype.save = function() {
     $.each(metaSchema.pages, function(i, page) {
         $.each(page.questions, function(_, question) {
             var qid = question.id;
-            if (question.type === 'object') {
-                var value = {};
-                $.each(question.properties, function(prop, subQuestion) {
-                    value[prop] = {
-                        value: subQuestion.value(),
-                        comments: JSON.parse(ko.toJSON(subQuestion.comments()))
-                    };
-                });
-                data[qid] = value;
-            } else {
-                data[qid] = {
-                    value: question.value(),
-                    comments: JSON.parse(ko.toJSON(question.comments()))
-                };
-            }
+            data[qid] = ko.toJS({
+                value: question.value(),
+                comments: question.comments(),
+                extra: question.extra
+            });
         });
     });
     var request;
@@ -1085,7 +1180,6 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
-    self.lastSaveRequest = request;
     request.fail(function() {
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
@@ -1096,7 +1190,7 @@ RegistrationEditor.prototype.save = function() {
  */
 RegistrationEditor.prototype.makeContributorsRequest = function() {
     var self = this;
-    var contributorsUrl = window.contextVars.node.urls.api + 'contributors_abbrev/';
+    var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
     return $.getJSON(contributorsUrl);
 };
 /**
@@ -1106,53 +1200,12 @@ RegistrationEditor.prototype.getContributors = function() {
     var self = this;
     return self.makeContributorsRequest()
         .then(function(data) {
-            return $.map(data.contributors, function(c) { return c.user_fullname; });
+            return $.map(data.contributors, function(c) { return c.fullname; });
         }).fail(function() {
             $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
                        'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
                        'problem persists.');
         });
-};
-/**
- * Opens a bootbox dialog with a checkbox list of each contributor
- * the user has the option to import all contributors or to select
- * each one individually.
- **/
-RegistrationEditor.prototype.authorDialog = function() {
-    var self = this;
-
-    bootbox.dialog({
-        title: 'Choose which contributors to import:',
-        message: function() {
-            ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
-        },
-        buttons: {
-            select: {
-                label: 'Import',
-                className: 'btn-primary pull-left',
-                callback: function() {
-                    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-                    var authors = [];
-                    $.each(boxes, function(i, box) {
-                        if( this.checked ) {
-                            authors.push(this.value);
-                        }
-                    });
-                    if ( authors ) {
-                        self.currentQuestion().setValue(authors.join(', '));
-                        self.save();
-                    }
-                }
-            }
-
-        }
-    });
-};
-RegistrationEditor.prototype.setContributorBoxes = function(value) {
-    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-    $.each(boxes, function(i, box) {
-        this.checked = value;
-    });
 };
 
 /**
@@ -1245,9 +1298,24 @@ RegistrationManager.prototype.init = function() {
         );
     });
 
-    $.when(getSchemas, getDraftRegistrations).done(function() {
+    var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
         self.loading(false);
     });
+
+    var urlParams = $osf.urlParams();
+    if (urlParams.c && urlParams.c === 'prereg') {
+        $osf.block();
+        ready.done(function() {
+            $osf.unblock();
+            var preregSchema = self.schemas().filter(function(schema) {
+                return schema.name === 'Prereg Challenge';
+            })[0];
+            preregSchema.askConsent().then(function() {
+                self.selectedSchema(preregSchema);                
+                $('#newDraftRegistrationForm').submit();
+            }); 
+        });
+    }
 };
 /**
  * Confirm and delete a draft registration
@@ -1273,7 +1341,7 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
 /**
  * Show the draft registration preview pane
  **/
-RegistrationManager.prototype.createDraftModal = function() {
+RegistrationManager.prototype.createDraftModal = function(selected) {
     var self = this;
     if (!self.selectedSchema()){
         self.selectedSchema(self.schemas()[0]);
@@ -1296,7 +1364,7 @@ RegistrationManager.prototype.createDraftModal = function() {
                 callback: function(event) {
                     var selectedSchema = self.selectedSchema();
                     if (selectedSchema.requiresConsent) {
-                        selectedSchema.askConsent().then(function() {
+                        selectedSchema.askConsent(false).then(function() {
                             $('#newDraftRegistrationForm').submit();
                         });
                     }

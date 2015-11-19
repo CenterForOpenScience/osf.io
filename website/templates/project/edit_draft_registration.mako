@@ -30,7 +30,7 @@
                 <span data-bind="with: draft">
                     <div class="progress progress-bar-md">
                         <div data-bind="progress: completion"></div>
-                        <div class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                        <div class="progress-bar progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
                              data-bind="attr.aria-completion: completion,
                                         style: {width: completion() + '%'}">
                         </div>
@@ -38,22 +38,35 @@
                 </span>
                 % endif
                 <!-- EDITOR -->
-                <div data-bind="if: currentPage">                  
-                  <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
+                <div data-bind="if: currentPage">
+                  <div data-bind="if: currentPage">                  
+                    <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
+                  </div>
                 </div>
-                <p>Last saved: <span data-bind="text: $root.lastSaved"></span>
-                </p>
-                <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
-                </button>
-                <!-- ko if: onLastPage -->
-                <a data-bind="css: {disabled: !canSubmit()},
-                              click: $root.check"
-                   type="button" class="pull-right btn btn-success">Preview for submission
-                </a>
-                <!-- /ko -->
-                <!-- ko ifnot: onLastPage -->
-                <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
-                <!-- /ko -->
+                
+                <div class="row" style="margin-bottom: 10px;">
+                  <span>
+                    Last saved: <span data-bind="text: $root.lastSaved"></span>
+                  </span>
+                  <!-- ko if: onLastPage -->
+                  <span data-bind="if: validationErrors" class="pull-right">
+                    <span class="text text-warning" data-bind="text: validationErrors"></span>
+                  </span>
+                  <!-- /ko -->
+                </div>
+                <div class="row">
+                  <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
+                  </button>
+                  <!-- ko if: onLastPage -->
+                  <a data-bind="css: {disabled: !canSubmit()},
+                                click: $root.check"
+                     type="button" class="pull-right btn btn-success">Preview for submission
+                  </a>
+                  <!-- /ko -->
+                  <!-- ko ifnot: onLastPage -->
+                  <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
+                  <!-- /ko -->
+                </div>
               </div>
             </div>
           </div>

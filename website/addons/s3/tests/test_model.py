@@ -2,12 +2,13 @@ from nose.tools import *  # noqa
 import mock
 from boto.s3.connection import *  # noqa
 
-from tests.base import OsfTestCase, DEFAULT_METASCHEMA
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
 
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 class TestNodeSettings(OsfTestCase):
     def setUp(self):
