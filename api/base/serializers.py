@@ -3,6 +3,7 @@ import collections
 
 from rest_framework import exceptions
 from rest_framework import serializers as ser
+from django.core.urlresolvers import resolve, reverse
 from rest_framework.fields import SkipField
 
 from framework.auth import core as auth_core
@@ -241,6 +242,19 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             lookup_field = self_kwargs.values()[0]
 
         super(RelationshipField, self).__init__(view_name, lookup_url_kwarg=lookup_kwarg, lookup_field=lookup_field, **kwargs)
+
+    def resolve(self, resource):
+            embed_value = self.lookup_attribute(resource, self.lookup_field)
+            if getattr(self, 'kwargs', None):
+                kwargs = {attr_name: getattr(resource, attr) for (attr_name, attr) in self.kwargs}
+            else:
+                kwargs = {self.lookup_url_kwarg: embed_value}
+            return resolve(
+                reverse(
+                    self.view_name,
+                    kwargs=kwargs
+                )
+            )
 
     def get_meta_information(self, meta_data, value):
         """
