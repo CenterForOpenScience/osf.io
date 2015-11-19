@@ -6,7 +6,7 @@ from nose.tools import *  # noqa
 from boto.exception import S3ResponseError
 
 from framework.auth import Auth
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, DEFAULT_METASCHEMA
 from tests.factories import ProjectFactory, AuthUserFactory
 
 from website.addons.s3.settings import BUCKET_LOCATIONS
@@ -143,7 +143,7 @@ class TestS3ViewsConfig(OsfTestCase):
 
     def test_s3_set_bucket_registered(self):
         registration = self.project.register_node(
-            None, self.consolidated_auth, '', ''
+            DEFAULT_METASCHEMA, self.consolidated_auth, '', ''
         )
 
         url = registration.api_url_for('s3_post_node_settings')
