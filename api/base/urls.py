@@ -18,7 +18,6 @@ urlpatterns = [
                          url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
                          url(r'^users/', include('api.users.urls', namespace='users')),
                          url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
-                         url(r'^logs/', include('api.logs.urls', namespace='logs')),
                          url(r'^files/', include('api.files.urls', namespace='files')),
                          url(r'^docs/', include('rest_framework_swagger.urls')),
                          ))
