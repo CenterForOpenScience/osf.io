@@ -9,7 +9,6 @@ var $osf = require('js/osfHelpers');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var NodesPrivacy = require('js/nodesPrivacy');
 require('bootstrap-editable');
 require('knockout.punches');
 ko.punches.enableAll();
@@ -253,7 +252,6 @@ var defaults = {
 
 function NodeControl (selector, data, options) {
     var self = this;
-    new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data, self.nodeIsPublic);
     self.selector = selector;
     self.$element = $(self.selector);
     self.data = data;

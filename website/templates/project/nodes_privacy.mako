@@ -1,5 +1,6 @@
-<div id="nodesPrivacy" class="modal fade">
+<div id="nodesPrivacy" class="modal fade" div style="display: none;">
     <div class="modal-dialog modal-md">
+        <div style="display: none;" data-bind="visible: true">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" data-bind="click: clear" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -54,28 +55,31 @@
                 <div data-bind="if: page() == 'addon'">
 
                     <div class="m-b-md box p-xs" data-bind="visible: changedAddons().length > 0">
-                        <span class="text-bigger">The following addons will be effected by this change:</span>
+                        <span class="text-bigger" data-bind="html:message()['addons']"></span>
                         <ul data-bind="foreach: { data: changedAddons, as: 'item' }">
                             <li>
                                 <h4 class="f-w-lg" data-bind="text: item"></h4>
                             </li>
                         </ul>
+                        <hr>
                     </div>
                     <div class="m-b-md box p-xs" data-bind="visible: nodesChangedPublic().length > 0">
-                        <span  class="text-bigger">The following projects and/or components will be made public:</span>
+                        <span class="text-bigger" data-bind="html:message()['nodesPublic']"></span>
                         <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
-                        <li>
-                            <h4 class="f-w-lg" data-bind="text: item"></h4>
-                        </li>
-                    </ul>
+                            <li>
+                                <h4 class="f-w-lg" data-bind="text: item"></h4>
+                            </li>
+                        </ul>
+                        <hr>
                     </div>
                     <div class="m-b-md box p-xs" data-bind="visible: nodesChangedPrivate().length > 0">
-                        <span class="text-bigger">The following projects and/or components will be made private:</span>
+                        <span class="text-bigger" data-bind="html:message()['nodesPrivate']"></span>
                         <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
                             <li>
                                 <h4 class="f-w-lg" data-bind="text: item"></h4>
                             </li>
                         </ul>
+                        <hr>
                     </div>
                     <!-- end addon and projects changed warning page -->
 
@@ -85,7 +89,6 @@
             <div class="modal-footer">
 
                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
-
 
                 <span data-bind="if: page() == 'warning'">
                     <a class="btn btn-primary" data-bind="click:selectProjects">Next</a>
@@ -99,23 +102,10 @@
                     <a href="#" class="btn btn-primary" data-bind="click: confirmChanges" data-dismiss="modal">Confirm</a>
                 </span>
 
-
             </div><!-- end modal-footer -->
         </div><!-- end modal-content -->
+            </div>
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
 
 <link href="/static/css/nodes-privacy.css" rel="stylesheet">
-
-<%def name="javascript()">
-    <% import website %>
-    ${parent.javascript()}
-    <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'mailingList': ${website.settings.MAILCHIMP_GENERAL_LIST | sjson, n }});
-    </script>
-</%def>
-
-<%def name="javascript_bottom()">
-    ${parent.javascript_bottom()}
-    <script src="${"/static/public/js/notifications-config-page.js" | webpack_asset}"></script>
-</%def>
