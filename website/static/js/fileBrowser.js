@@ -453,7 +453,7 @@ var Collections  = {
                                 m('p', 'After you create your collection drag and drop projects to the collection. ')
                             ]),
                             m('.modal-footer', [
-                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
+                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
                                 m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
                             ])
                         ])
@@ -483,7 +483,7 @@ var Collections  = {
                                 ]),
                             ]),
                             m('.modal-footer', [
-                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
+                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
                                 m('button[type="button"].btn.btn-success', {
                                     onclick : ctrl.renameCollection
                                 },'Rename')
@@ -498,14 +498,14 @@ var Collections  = {
                                 m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                                     m('span[aria-hidden="true"]','×'),
                                 ]),
-                                m('h3.modal-title#removeCollLabel', 'Delete Collection ' + args.collectionMenuObject().item.label)
+                                m('h3.modal-title#removeCollLabel', 'Delete Collection "' + args.collectionMenuObject().item.label + '"?')
                             ]),
                             m('.modal-body', [
-                                m('p', 'You sure?'),
+                                m('p', 'This will delete your collection but your projects will not be deleted.'),
 
                             ]),
                             m('.modal-footer', [
-                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
+                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
                                 m('button[type="button"].btn.btn-danger', {
                                     onclick : ctrl.deleteCollection
                                 },'Delete')
