@@ -84,6 +84,9 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
 
+    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` of the user entities so that it points to
+    the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
+
     #This Request/Response
 
     """
@@ -98,8 +101,8 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     serializer_class = UserSerializer
 
     ordering = ('-date_registered')
-
-    view_name = 'users:user-list'
+    view_category = 'users'
+    view_name = 'user-list'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -145,15 +148,16 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
     ##Links
 
-        self:  the canonical api endpoint of this user
-        html:  this user's page on the OSF website
+        self:               the canonical api endpoint of this user
+        html:               this user's page on the OSF website
+        profile_image_url:  a url to the user's profile image
 
     ##Actions
 
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -171,7 +175,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
         Success:       200 OK + node representation
 
     To update your user profile, issue a PUT request to either the canonical URL of your user resource (as given in
-    `links.self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
+    `/links/self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
     and family names will not be inferred from the `full_name`.  Currently, only `full_name`, `given_name`,
     `middle_names`, `family_name`, and `suffix` are updateable.
 
@@ -183,7 +187,8 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
     ##Query Params
 
-    *None*.
+    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` so that it points the image scaled to the given
+    size in pixels.  If left blank, the size depends on the image provider.
 
     #This Request/Response
 
@@ -196,7 +201,8 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE]
-    view_name = 'users:user-detail'
+    view_category = 'users'
+    view_name = 'user-detail'
 
     serializer_class = UserDetailSerializer
 
@@ -207,7 +213,9 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     # overrides RetrieveUpdateAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
-        return {'request': self.request}
+        context = JSONAPIBaseView.get_serializer_context(self)
+        context['request'] = self.request
+        return context
 
 
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
@@ -233,7 +241,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
-        collection     boolean            is this node a collection of other nodes?
+        fork           boolean            is this node a fork of another node?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
@@ -270,8 +278,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = NodeSerializer
-
-    view_name = 'users:user-nodes'
+    view_category = 'users'
+    view_name = 'user-nodes'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):

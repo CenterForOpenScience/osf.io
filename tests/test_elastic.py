@@ -24,6 +24,7 @@ from tests.factories import (
     RegistrationFactory,
     NodeLicenseRecordFactory
 )
+from tests.utils import mock_archive
 
 TEST_INDEX = 'test'
 
@@ -271,17 +272,19 @@ class TestRegistrationRetractions(SearchTestCase):
             creator=self.user,
             is_public=True,
         )
-        self.registration = RegistrationFactory(
-            project=self.project,
-            title=self.title,
-            creator=self.user,
-            is_public=True,
-            is_registration=True
-        )
+        with mock_archive(
+                self.project,
+                autocomplete=True,
+                autoapprove=True
+        ) as registration:
+            self.registration = registration
 
     def test_retraction_is_searchable(self):
-
         self.registration.retract_registration(self.user)
+        self.registration.retraction.state = Retraction.APPROVED
+        self.registration.retraction.save()
+        self.registration.save()
+        self.registration.retraction._on_complete(self.user)
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 1)
 

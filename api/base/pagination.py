@@ -22,39 +22,36 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
     def page_number_query(self, url, page_number):
         """
-        Adds page param to paginated urls.
+        Builds uri and adds page param.
         """
-
-        url = replace_query_param(url, self.page_query_param, page_number)
+        url = self.request.build_absolute_uri(url)
+        paginated_url = replace_query_param(url, self.page_query_param, page_number)
 
         if page_number == 1:
-            return remove_query_param(url, self.page_query_param)
+            return remove_query_param(paginated_url, self.page_query_param)
 
-        return url
+        return paginated_url
 
     def get_first_real_link(self, url):
         if not self.page.has_previous():
             return None
-        return self.page_number_query(self.request.build_absolute_uri(url), 1)
+        return self.page_number_query(url, 1)
 
     def get_last_real_link(self, url):
         if not self.page.has_next():
             return None
-        url = self.request.build_absolute_uri(url)
         page_number = self.page.paginator.num_pages
         return self.page_number_query(url, page_number)
 
     def get_previous_real_link(self, url):
         if not self.page.has_previous():
             return None
-        url = self.request.build_absolute_uri(url)
         page_number = self.page.previous_page_number()
         return self.page_number_query(url, page_number)
 
     def get_next_real_link(self, url):
         if not self.page.has_next():
             return None
-        url = self.request.build_absolute_uri(url)
         page_number = self.page.next_page_number()
         return self.page_number_query(url, page_number)
 
@@ -66,8 +63,8 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         rather than the location used in the request.
         """
         kwargs = self.request.parser_context['kwargs'].copy()
-        embedded = kwargs.pop('no_embeds', None)
-        view_name = self.request.parser_context['view'].view_name
+        embedded = kwargs.pop('is_embedded', None)
+        view_name = self.request.parser_context['view'].view_fqn
         reversed_url = None
         if embedded:
             reversed_url = reverse(view_name, kwargs=kwargs)
@@ -93,7 +90,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
         If this is an embedded resource, returns first page, ignoring query params.
         """
-        if request.parser_context['kwargs'].get('no_embeds'):
+        if request.parser_context['kwargs'].get('is_embedded'):
             self._handle_backwards_compat(view)
             page_size = self.get_page_size(request)
             if not page_size:

@@ -162,8 +162,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         date_created   iso8601 timestamp  timestamp that the node was created
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
-        registration   boolean            is this is a registration?
-        collection     boolean            is this node a collection of other nodes?
+        registration   boolean            is this a registration?
+        fork           boolean            is this node a fork of another node?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
@@ -176,7 +176,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     ###Creating New Nodes
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -196,7 +196,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  `public` defaults
     to false.  All other fields not listed above will be ignored.  If the node creation is successful the API will
     return a 201 response with the representation of the new node in the body.  For the new node's canonical URL, see
-    the `links.self` field of the response.
+    the `/links/self` field of the response.
 
     ##Query Params
 
@@ -222,7 +222,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     model_class = Node
 
     serializer_class = NodeSerializer
-    view_name = 'nodes:node-list'
+    view_category = 'nodes'
+    view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
 
@@ -330,7 +331,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
-        collection     boolean            is this node a collection of other nodes?
+        fork           boolean            is this node a fork of another node?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
@@ -342,8 +343,9 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
     ###Contributors
 
-    List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
-    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
+    List of users who are contributors to this node. This endpoint is always embedded.  Contributors may have
+    "read", "write", or "admin" permissions.  A node must always have at least one "admin" contributor.  Contributors may
+    be added via this endpoint.
 
     ###Files
 
@@ -353,7 +355,12 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     ###Parent
 
     If this node is a child node of another node, the parent's canonical endpoint will be available in the
-    `parent.links.self.href` key.  Otherwise, it will be null.
+    `/parent/links/related/href` key.  Otherwise, it will be null.
+
+    ###Forked From
+
+    If this node was forked from another node, the canonical endpoint of the node that was forked from will be
+    available in the `/forked_from/links/related/href` key.  Otherwise, it will be null.
 
     ##Links
 
@@ -365,7 +372,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -382,7 +389,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
                        }
         Success:       200 OK + node representation
 
-    To update a node, issue either a PUT or a PATCH request against the `links.self` URL.  The `title` and `category`
+    To update a node, issue either a PUT or a PATCH request against the `/links/self` URL.  The `title` and `category`
     fields are mandatory if you PUT and optional if you PATCH.  The `tags` parameter must be an array of strings.
     Non-string values will be accepted and stringified, but we make no promises about the stringification output.  So
     don't do that.
@@ -390,11 +397,11 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     ###Delete
 
         Method:   DELETE
-        URL:      links.self
+        URL:      /links/self
         Params:   <none>
         Success:  204 No Content
 
-    To delete a node, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
+    To delete a node, issue a DELETE request against `/links/self`.  A successful delete will return a 204 No Content
     response. Attempting to delete a node you do not own will result in a 403 Forbidden.
 
     ##Query Params
@@ -415,7 +422,8 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = NodeDetailSerializer
-    view_name = 'nodes:node-detail'
+    view_category = 'nodes'
+    view_name = 'node-detail'
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -463,13 +471,13 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
 
     ###Users
 
-    This endpoint shows the contributor user detail.
+    This endpoint shows the contributor user detail and is automatically embedded.
     ##Actions
 
     ###Adding Contributors
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON): {
                       "data": {
@@ -497,7 +505,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     with a "data" member, containing the user `type` and user `id` must be included.  The id must be a valid user id.
     All other fields not listed above will be ignored.  If the request is successful the API will return
     a 201 response with the representation of the new node contributor in the body.  For the new node contributor's
-    canonical URL, see the `links.self` field of the response.
+    canonical URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -508,6 +516,9 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     NodeContributors may be filtered by `bibliographic`, or `permission` attributes.  `bibliographic` is a boolean, and
     can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in
     the query will cause the match to fail regardless.
+
+    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` of the user entities so that it points to
+    the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
 
     #This Request/Response
     """
@@ -523,7 +534,8 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     model_class = User
 
     serializer_class = NodeContributorsSerializer
-    view_name = 'nodes:node-contributors'
+    view_category = 'nodes'
+    view_name = 'node-contributors'
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -609,16 +621,16 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 
     ##Links
 
-        self:  the detail url for this node contributor
-        html:  this user's page on the OSF website
-        profile_image: this user's gravatar
+        self:           the canonical api endpoint of this contributor
+        html:           the contributing user's page on the OSF website
+        profile_image:  a url to the contributing user's profile image
 
     ##Actions
 
     ###Update Contributor
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -641,7 +653,7 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
     ###Remove Contributor
 
         Method:        DELETE
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Success:       204 No Content
 
@@ -651,7 +663,8 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 
     ##Query Params
 
-    *None*.
+    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` so that it points the image scaled to the given
+    size in pixels.  If left blank, the size depends on the image provider.
 
     #This Request/Response
 
@@ -667,7 +680,8 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
 
     serializer_class = NodeContributorDetailSerializer
-    view_name = 'nodes:node-contributor-detail'
+    view_category = 'nodes'
+    view_name = 'node-contributor-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -751,7 +765,8 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationSerializer
-    view_name = 'nodes:node-registrations'
+    view_category = 'nodes'
+    view_name = 'node-registrations'
 
     # overrides ListAPIView
     # TODO: Filter out retractions by default
@@ -788,7 +803,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
-        collection     boolean            is this node a collection of other nodes?
+        fork           boolean            is this node a fork of another node?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
@@ -803,7 +818,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     <!--- Copied Creating New Node from NodeList -->
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -821,7 +836,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     To create a child node of the current node, issue a POST request to this endpoint.  The `title` and `category`
     fields are mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  If the
     node creation is successful the API will return a 201 response with the representation of the new node in the body.
-    For the new node's canonical URL, see the `links.self` field of the response.
+    For the new node's canonical URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -845,12 +860,13 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
     )
-    view_name = 'nodes:node-children'
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
     required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
 
     serializer_class = NodeSerializer
+    view_category = 'nodes'
+    view_name = 'node-children'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -911,7 +927,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
 
     ###Adding Node Links
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON): {
                        "data": {
@@ -952,7 +968,8 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     model_class = Pointer
 
     serializer_class = NodeLinksSerializer
-    view_name = 'nodes:node-pointers'
+    view_category = 'nodes'
+    view_name = 'node-pointers'
 
     def get_queryset(self):
         return [
@@ -994,9 +1011,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
 
     ##Links
 
-        self:  the detail url for this node link
-        html:  this node's page on the OSF website
-        profile_image: this contributor's gravatar
+    *None*
 
     ##Relationships
 
@@ -1009,7 +1024,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     ###Remove Node Link
 
         Method:        DELETE
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Success:       204 No Content
 
@@ -1033,7 +1048,8 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
-    view_name = 'nodes:node-pointer-detail'
+    view_category = 'nodes'
+    view_name = 'node-pointer-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -1066,7 +1082,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
     If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenever
     this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
-    its `links.info` attribute).
+    its `/links/info` attribute).
 
     When a create/update/delete action is performed against the file or folder, the action is handled by an external
     service called WaterButler.  The WaterButler response format differs slightly from the OSF's.
@@ -1094,7 +1110,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
                                  equivalent to addon_short_name on the OSF
         size          integer    size of file in bytes
-        extra         object     may contain additional data beyond what's describe here,
+        extra         object     may contain additional data beyond what's described here,
                                  depending on the provider
           version     integer    version number of file. will be 1 on initial upload
           downloads   integer    count of the number times the file has been downloaded
@@ -1135,6 +1151,12 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                                          for Box.com.
         last_touched  iso8601 timestamp  last time the metadata for the file was retrieved. only applies to non-OSF
                                          storage providers.
+        date_modified iso8601 timestamp  timestamp of when this file was last updated
+        extra         object             may contain additional data beyond what's described here, depending on
+                                         the provider
+          hashes      object
+            md5       string             md5 hash of file, null for folders
+            sha256    string             SHA-256 hash of file, null for folders
 
     ##Links
 
@@ -1150,7 +1172,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     ###Get Info (*files, folders*)
 
         Method:   GET
-        URL:      links.info
+        URL:      /links/info
         Params:   <none>
         Success:  200 OK + file representation
 
@@ -1160,7 +1182,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     ###Download (*files*)
 
         Method:   GET
-        URL:      links.download
+        URL:      /links/download
         Params:   <none>
         Success:  200 OK + file body
 
@@ -1170,7 +1192,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     ###Create Subfolder (*folders*)
 
         Method:       PUT
-        URL:          links.new_folder
+        URL:          /links/new_folder
         Query Params: ?kind=folder&name={new_folder_name}
         Body:         <empty>
         Success:      201 Created + new folder representation
@@ -1184,7 +1206,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     ###Upload New File (*folders*)
 
         Method:       PUT
-        URL:          links.upload
+        URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
         Success:      201 Created or 200 OK + new file representation
@@ -1198,7 +1220,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     ###Update Existing File (*file*)
 
         Method:       PUT
-        URL:          links.upload
+        URL:          /links/upload
         Query Params: ?kind=file
         Body (Raw):   <file data (not form-encoded)>
         Success:      200 OK + updated file representation
@@ -1210,7 +1232,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     ###Rename (*files, folders*)
 
         Method:        POST
-        URL:           links.move
+        URL:           /links/move
         Query Params:  <none>
         Body (JSON):   {
                         "action": "rename",
@@ -1225,7 +1247,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     ###Move & Copy (*files, folders*)
 
         Method:        POST
-        URL:           links.move
+        URL:           /links/move
         Query Params:  <none>
         Body (JSON):   {
                         // mandatory
@@ -1237,7 +1259,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                         "resource": {node_id},        // defaults to current {node_id}
                         "provider": {provider}        // defaults to current {provider}
                        }
-        Success:        200 OK + new entity representation
+        Success:       200 OK or 201 Created + new entity representation
 
     Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for
     the `action` body parameters.  The `path` parameter is also required and should be the OSF `path` attribute of the
@@ -1256,10 +1278,13 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     node and folder already extant on that provider.  Both `resource` and `provider` default to the current node and
     providers.
 
+    If a moved/copied file is overwriting an existing file, a 200 OK response will be returned.  Otherwise, a 201
+    Created will be returned.
+
     ###Delete (*file, folders*)
 
         Method:        DELETE
-        URL:           links.delete
+        URL:           /links/delete
         Query Params:  <none>
         Success:       204 No Content
 
@@ -1284,12 +1309,15 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         base_permissions.TokenHasScope,
     )
 
+    ordering = ('materialized_path',)  # default ordering
+
     serializer_class = FileSerializer
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    view_name = 'nodes:node-files'
+    view_category = 'nodes'
+    view_name = 'node-files'
 
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
@@ -1321,7 +1349,8 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
-    view_name = 'nodes:node-file-detail'
+    view_category = 'nodes'
+    view_name = 'node-file-detail'
 
     def get_object(self):
         fobj = self.fetch_from_waterbutler()
@@ -1351,14 +1380,14 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """List of storage providers enabled for this node. *Read-only*.
 
     Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
-    integratations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
+    integrations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
     storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers that are
     configured for this node.  If you want to add more, you will need to do that in the Open Science Framework front end
     for now.
 
     In the OSF filesystem model, providers are treated as folders, but with special properties that distinguish them
     from regular folders.  Every provider folder is considered a root folder, and may not be deleted through the regular
-    file API.  To see the contents of the provider, issue a GET request to the `relationships.files.links.related.href`
+    file API.  To see the contents of the provider, issue a GET request to the `/relationships/files/links/related/href`
     attribute of the provider resource.  The `new_folder` and `upload` actions are handled by another service called
     WaterButler, whose response format differs slightly from the OSF's.
 
@@ -1385,7 +1414,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
                                  equivalent to addon_short_name on the OSF
         size          integer    size of file in bytes
-        extra         object     may contain additional data beyond what's describe here,
+        extra         object     may contain additional data beyond what's described here,
                                  depending on the provider
           version     integer    version number of file. will be 1 on initial upload
           downloads   integer    count of the number times the file has been downloaded
@@ -1429,7 +1458,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     ###Create Subfolder (*folders*)
 
         Method:       PUT
-        URL:          links.new_folder
+        URL:          /links/new_folder
         Query Params: ?kind=folder&name={new_folder_name}
         Body:         <empty>
         Success:      201 Created + new folder representation
@@ -1443,7 +1472,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     ###Upload New File (*folders*)
 
         Method:       PUT
-        URL:          links.upload
+        URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
         Success:      201 Created or 200 OK + new file representation
@@ -1471,7 +1500,8 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = NodeProviderSerializer
-    view_name = 'nodes:node-providers'
+    view_category = 'nodes'
+    view_name = 'node-providers'
 
     def get_provider_item(self, provider):
         return NodeProvider(provider, self.get_node())
@@ -1519,7 +1549,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     ###Create
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -1535,7 +1565,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     To create a comment on this node, issue a POST request against this endpoint. The `content` field is mandatory.
     The `deleted` field is optional and defaults to `False`. If the comment creation is successful the API will return
     a 201 response with the representation of the new comment in the body. For the new comment's canonical URL, see the
-    `links.self` field of the response.
+    `/links/self` field of the response.
 
     ##Query Params
 
@@ -1563,7 +1593,8 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentSerializer
-    view_name = 'nodes:node-comments'
+    view_category = 'nodes'
+    view_name = 'node-comments'
 
     ordering = ('-date_created', )  # default ordering
 
