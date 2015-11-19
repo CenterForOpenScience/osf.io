@@ -4,7 +4,7 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 from dateutil.parser import parse as parse_date
 
-from tests.base import DbTestCase, ApiTestCase, assert_datetime_equal
+from tests.base import DbTestCase, assert_datetime_equal
 from tests.utils import make_drf_request
 from tests.factories import UserFactory, NodeFactory, RegistrationFactory, ProjectFactory
 
