@@ -293,6 +293,7 @@ def root(request, format=None):
         'links': {
             'nodes': absolute_reverse('nodes:node-list'),
             'users': absolute_reverse('users:user-list'),
+            'logs': absolute_reverse('logs:log-list'),
         }
     }
     if settings.DEV_MODE:

@@ -5,6 +5,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.status import is_server_error
 
+from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
@@ -20,7 +21,6 @@ from api.nodes.serializers import (
     NodeSerializer,
     NodeLinksSerializer,
     NodeDetailSerializer,
-    NodeLogSerializer,
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
@@ -35,6 +35,7 @@ from api.nodes.permissions import (
     ReadOnlyIfRegistration,
 )
 from api.base.exceptions import ServiceUnavailableError
+from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
