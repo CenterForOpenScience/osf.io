@@ -13,7 +13,11 @@ from api.registrations.serializers import (
     RegistrationDetailSerializer
 )
 
-from api.nodes.views import NodeMixin, ODMFilterMixin
+from api.nodes.views import (
+    NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
+    NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
+    NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail)
+
 from api.nodes.permissions import (
     ContributorOrPublic,
     ReadOnlyIfRegistration)
@@ -213,3 +217,44 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
         return registration
+
+
+class RegistrationContributorsList(NodeContributorsList):
+    view_category = 'registrations'
+    view_name = 'registration-contributors'
+
+class RegistrationContributorDetail(NodeContributorDetail):
+    view_category = 'registrations'
+    view_name = 'registration-contributor-detail'
+
+class RegistrationChildrenList(NodeChildrenList):
+    view_category = 'registrations'
+    view_name = 'registration-children'
+
+class RegistrationCommentsList(NodeCommentsList):
+    view_category = 'registrations'
+    view_name = 'registration-comments'
+
+class RegistrationProvidersList(NodeProvidersList):
+    view_category = 'registrations'
+    view_name = 'registration-providers'
+
+class RegistrationNodeLinksList(NodeLinksList):
+    view_category = 'registrations'
+    view_name = 'registration-pointers'
+
+class RegistrationNodeLinksDetail(NodeLinksDetail):
+    view_category = 'registrations'
+    view_name = 'registration-pointer-detail'
+
+class RegistrationRegistrationsList(NodeRegistrationsList):
+    view_category = 'registrations'
+    view_name = 'registration-providers'
+
+class RegistrationFilesList(NodeFilesList):
+    view_category = 'registrations'
+    view_name = 'registration-files'
+
+class RegistrationFileDetail(NodeFileDetail):
+    view_category = 'registrations'
+    view_name = 'registration-file-detail'

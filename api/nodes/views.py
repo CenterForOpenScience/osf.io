@@ -1011,6 +1011,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         res['is_relationship'] = True
         return res
 
+
 class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixin):
     """Node Link details. *Writeable*.
 
