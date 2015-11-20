@@ -739,6 +739,11 @@ var ListViewModel = function(ContentModel, urls, modes) {
 };
 ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 
+ListViewModel.prototype.toggle = function(data, event) {
+    var el = event.toElement;
+    $(el.querySelector('.toggle-icon')).toggleClass('fa-angle-down fa-angle-up');
+};
+
 ListViewModel.prototype.addContent = function() {
     if (!this.institutionObjectsEmpty() && this.isValid()) {
         this.contents.push(new this.ContentModel(this));
@@ -870,10 +875,6 @@ var JobViewModel = function() {
         return validated.isValid();
     });
 
-    self.click = function(data, event) {
-        var el = event.toElement;
-        $(el.querySelector('.toggle-icon')).toggleClass('fa-angle-down fa-angle-up');
-    };
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -922,10 +923,6 @@ var SchoolViewModel = function() {
         return validated.isValid();
     });
 
-    self.click = function(data, event) {
-        var el = event.toElement;
-        $(el.querySelector('.toggle-icon')).toggleClass('fa-angle-down fa-angle-up');
-    };
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 

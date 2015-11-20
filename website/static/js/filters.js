@@ -38,6 +38,14 @@ var $ = require('jquery');
         var filterConstraints = {};
         var searchConstraints = {};
 
+
+        /**
+         * checks an element to see if it should be displayed based on the current searches
+         *
+         * @param el - the element being checked
+         *
+         * @returns {boolean}
+         */
         var search = function(el) {
             for (var key in searchConstraints) {
                 if (searchConstraints.hasOwnProperty(key)) {
@@ -51,6 +59,13 @@ var $ = require('jquery');
             return true;
         };
 
+        /**
+         * checks an element to see if it should be displayed based on the current filters
+         *
+         * @param el
+         *
+         * @returns {boolean}
+         */
         var filter = function(el) {
             for (var key in filterConstraints) {
                 if (filterConstraints.hasOwnProperty(key)) {
@@ -73,6 +88,14 @@ var $ = require('jquery');
             return true;
         };
 
+
+        /**
+         * called every time a search parameter changes or a filter is toggled
+         *
+         * fades out items that should now be hidden and fades in anything that was hidden and now isn't
+         *
+         * if there is a callback function, this function calls that with 'filtered' and 'empty' parameters
+         */
         var toggle = function() {
             var activeItems = $(itemsSelector);
             $(itemsSelector).each(function() {
@@ -100,7 +123,13 @@ var $ = require('jquery');
             }
         };
 
-        var clickFunction = function() {
+
+        /**
+         * called when a filter button is pressed
+         *
+         * updates the filter constraints and calls the 'toggle' function
+         */
+        var applyFilters = function() {
             var self = this;
             $(self).toggleClass('btn-primary btn-default');
             var group = self.parentElement.parentElement.id;
@@ -123,16 +152,25 @@ var $ = require('jquery');
             toggle();
         };
 
+        /**
+         * initializes the buttons to filter out certain groups on click
+         */
         for (var group in settings.groups) {
             if (settings.groups.hasOwnProperty(group)) {
                 for (var value in settings.groups[group].buttons) {
                     if (settings.groups[group].buttons.hasOwnProperty(value)) {
-                        $('#' + value).on('click', clickFunction);
+                        $('#' + value).on('click', applyFilters);
                     }
                 }
             }
         }
 
+
+        /**
+         * called when a search box is changed
+         *
+         * updates the search constraints and then calls the 'toggle' function
+         */
         function keyupFunction() {
             var self = this;
             var selector = settings.inputs[self.id];
@@ -140,6 +178,9 @@ var $ = require('jquery');
             toggle();
         }
 
+        /**
+         * initializes the search boxes
+         */
         for (var key in settings.inputs) {
             if (settings.inputs.hasOwnProperty(key)) {
                 $('#' + key).keyup(keyupFunction);

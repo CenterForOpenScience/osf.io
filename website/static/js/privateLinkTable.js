@@ -45,7 +45,7 @@ function LinkViewModel(data, $root) {
         return [openTag, text, closeTag].join('');
     });
 
-    self.click = function(data, event) {
+    self.toggle = function(data, event) {
         event.target.select();
     };
 }

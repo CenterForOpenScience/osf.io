@@ -74,7 +74,7 @@
                 data: 'contrib'
                 }">
     </table>
-    <div id="noContributors" class="no-items text-danger">
+    <div id="noContributors" class="no-items text-danger m-b-md">
         No contributors found
     </div>
     <span id="adminContributorsAnchor" class="project-page anchor"></span>
@@ -154,7 +154,7 @@
                             data-bind="attr: {data-clipboard-text: linkUrl}" >
                         <i class="fa fa-copy"></i>
                     </button>
-                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, click: click, clickBubble: false"  />
+                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, click: toggle, clickBubble: false"  />
                 </div>
             </div>
         </td>
