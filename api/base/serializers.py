@@ -344,6 +344,16 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
 
     """
     json_api_link = True  # serializes to a links object
+    view_map = {
+        'node': {
+            'view': 'nodes:node-detail',
+            'lookup_kwarg': 'node_id'
+        },
+        'comment': {
+            'view': 'comments:comment-detail',
+            'lookup_kwarg': 'comment_id'
+        },
+    }
 
     def __init__(self, **kwargs):
         self.meta = kwargs.pop('meta', {})
@@ -354,18 +364,14 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         """
         Resolves the view for target node or target comment when embedding.
         """
+        view_info = self.view_map.get(resource.target._name, None)
+        assert view_info is not None, 'Resource target is not node or comment.'
         embed_value = resource.target._id
-        if resource.target._name == 'node':
-            view_name = 'nodes:node-detail'
-            lookup_url_kwarg = 'node_id'
-        else:
-            view_name = 'comments:comment-detail'
-            lookup_url_kwarg = 'comment_id'
 
-        kwargs = {lookup_url_kwarg: embed_value}
+        kwargs = {view_info['lookup_kwarg']: embed_value}
         return resolve(
             reverse(
-                view_name,
+                view_info['view'],
                 kwargs=kwargs
             )
         )
