@@ -354,6 +354,23 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
 
+    def resolve(self, resource):
+        embed_value = resource.target._id
+        if resource.target._name == 'node':
+            view_name = 'nodes:node-detail'
+            lookup_url_kwarg = 'node_id'
+        else:
+            view_name = 'comments:comment-detail'
+            lookup_url_kwarg = 'comment_id'
+
+        kwargs = {lookup_url_kwarg: embed_value}
+        return resolve(
+            reverse(
+                view_name,
+                kwargs=kwargs
+            )
+        )
+
     def to_representation(self, value):
         """
         Returns nested dictionary in format {'links': {'self.link_type': ... }
