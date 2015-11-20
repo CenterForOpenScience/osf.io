@@ -355,6 +355,9 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
 
     def resolve(self, resource):
+        """
+        Resolves the view for target node or target comment when embedding.
+        """
         embed_value = resource.target._id
         if resource.target._name == 'node':
             view_name = 'nodes:node-detail'

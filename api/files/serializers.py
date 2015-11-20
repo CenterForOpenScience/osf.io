@@ -31,14 +31,17 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         super(CheckoutField, self).__init__('users:user-detail', **kwargs)
 
     def resolve(self, resource):
-            embed_value = resource.stored_object.checkout.pk
-            kwargs = {self.lookup_url_kwarg: embed_value}
-            return resolve(
-                reverse(
-                    self.view_name,
-                    kwargs=kwargs
-                )
+        """
+        Resolves the view when embedding.
+        """
+        embed_value = resource.stored_object.checkout.pk
+        kwargs = {self.lookup_url_kwarg: embed_value}
+        return resolve(
+            reverse(
+                self.view_name,
+                kwargs=kwargs
             )
+        )
 
     def get_queryset(self):
         return User.find(Q('_id', 'eq', self.context['request'].user._id))
