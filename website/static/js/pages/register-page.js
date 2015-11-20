@@ -10,42 +10,42 @@ var registrationEmbargo = require('js/registrationEmbargo');
 
 var ctx = window.contextVars;
 var node = ctx.node;
+var nodeApiUrl = node.urls.api;
 
 require('pikaday-css');
+
 
 $(function() {
     // opt into tooltip
     $('[data-toggle="tooltip"]').tooltip();
 
-    var viewModel;
-    var selector;
-    var editor = new registrationUtils.RegistrationEditor({
-        schemas: '/api/v1/project/schemas/',
-        create: node.urls.api + 'drafts/',
-        submit: node.urls.api + 'drafts/{draft_pk}/submit/',
-        update: node.urls.api + 'drafts/{draft_pk}/',
-        get: node.urls.api + 'drafts/{draft_pk}/',
-        draftRegistrations: node.urls.web + 'registrations/'
-    }, null, true);
-
-    if (ctx.draft) { // if registering draft
+    // if registering draft
+    if (ctx.draft) {
         var draft = new registrationUtils.Draft(ctx.draft);
-        viewModel = {
+        var editor = new registrationUtils.RegistrationEditor({
+            schemas: '/api/v1/project/schemas/',
+            create: node.urls.api + 'drafts/',
+            submit: node.urls.api + 'drafts/{draft_pk}/submit/',
+            update: node.urls.api + 'drafts/{draft_pk}/',
+            get: node.urls.api + 'drafts/{draft_pk}/',
+            draftRegistrations: node.urls.web + 'registrations/#drafts'
+        });
+        editor.init(draft, true);
+        $osf.applyBindings({
             draft: draft,
             editor: editor
-        };
-        selector = '#draftRegistrationScope';
+        }, '#draftRegistrationScope');
+
     }
-    else { // if viewing registered metadata
-        var metaSchema = new registrationUtils.MetaSchema(
-            ctx.node.registrationMetaSchema,
-            ctx.node.registrationMetaData[ctx.node.registrationMetaSchema.id] || {}
-        );
-        viewModel = {
-            editor: editor,
-            metaSchema: metaSchema
+    // if viewing registered metadata
+    else {
+        var metaSchema = new registrationUtils.MetaSchema(ctx.node.registrationMetaSchema);
+
+        var metaDataViewModel = {
+            metaSchema: metaSchema,
+            schemaData: ctx.node.registrationMetaData[metaSchema.id] || {}
         };
-        selector = '#registrationMetaDataScope';
+        $osf.applyBindings(metaDataViewModel, '#registrationMetaDataScope');
     }
-    $osf.applyBindings(viewModel, selector);
+
 });
