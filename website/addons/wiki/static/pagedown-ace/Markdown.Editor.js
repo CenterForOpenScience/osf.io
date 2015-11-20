@@ -218,6 +218,7 @@ var $osf = require('js/osfHelpers');
     };
 
     var addDragNDrop = function(editor, panels, getString) {
+        var state, chunk;
         var element = editor.container;
         editor.getPosition = function(x, y) {
             var config = editor.renderer.$markerFront.config;
@@ -264,10 +265,11 @@ var $osf = require('js/osfHelpers');
             editor.marker.cursor = editor.getPosition(event.offsetX, event.offsetY);
             editor.marker.redraw();
             var effect;
-                try {
-                  effect = event.dataTransfer.effectAllowed;
-                } catch (_error) {}
-                event.dataTransfer.dropEffect = 'move' === effect || 'linkMove' === effect ? 'move' : 'copy';
+            try {
+              effect = event.dataTransfer.effectAllowed;
+            } catch (_error) {}
+            event.dataTransfer.dropEffect = 'move' === effect || 'linkMove' === effect ? 'move' : 'copy';
+
         }, false);
 
         editor.marker.put = function(url, file) {
@@ -285,39 +287,57 @@ var $osf = require('js/osfHelpers');
             event.preventDefault();
             event.stopPropagation();
             var re = /(?:\.([^.]+))?$/;
-            var extensions = ['jpg', 'png', 'gif', 'bmp'];
+            var extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
             var ext;
             var position = editor.session.screenToDocumentPosition(editor.marker.cursor.row, editor.marker.cursor.column);
-            var url = event.dataTransfer.getData('text/html');
+            var url = event.dataTransfer.getData('text/html') || event.dataTransfer.getData('URL')
+            var test = $(url).filter('img').attr('src');
             if (!!url) {
                 var getImage = /(src=")(.*?)(")/;
-                var imgURL = getImage.exec(url)[2];
-                if (imgURL.substring(0,10) === 'data:image') {
-                    imgURL = event.dataTransfer.getData('URL');
-                    var exp = /(imgurl=)(.*?)(&)/;
-                    if (!!exp.exec(imgURL)) {
-                        imgURL = exp.exec(imgURL)[2];
+                var imgURL = getImage.exec(url);
+                if (!!imgURL) {
+                    if (imgURL[2].substring(0, 10) === 'data:image') {
+                        imgURL = event.dataTransfer.getData('URL');
+                        var exp = /(imgurl=)(.*?)(&)/;
+                        if (!!exp.exec(imgURL)) {
+                            imgURL = exp.exec(imgURL)[2];
+                        }
+                        else {
+                            $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
+                            imgURL = undefined;
+                        }
                     }
                     else {
-                        $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
-                        imgURL = undefined;
+                        imgURL = imgURL[2];
                     }
                 }
                 else {
-                    ext = re.exec(imgURL)[1];
+                    imgURL = undefined;
+                    url = event.dataTransfer.getData('URL');
+                    ext = re.exec(url)[1];
                     if (extensions.indexOf(ext) <= -1) {
-                        $osf.growl('Error', 'File type not supported', 'danger');
-                        imgURL = undefined;
+                        editor.session.insert(position, linkDescription(getString("linkdescription"), false, false));
                     }
-                }
-                if (!!imgURL) {
-                    var state = new TextareaState(panels);
+                    else {
+                        editor.session.insert(position, linkDescription(getString("imagedescription"), true, false))
+                    }
+                    state = new TextareaState(panels);
                     if (!state) {
                         return;
                     }
-                    var chunk = state.getChunks();
-                    commandProto.updateLinkDefs(chunk, [imgURL], editor);
+                    chunk = state.getChunks();
+                    chunk.selection = '';
+                    commandProto.updateLinkDefs(chunk, [url], editor);
+                }
+                if (!!imgURL) {
                     editor.session.insert(position, linkDescription(getString("imagedescription"), true, false));
+                    state = new TextareaState(panels);
+                    if (!state) {
+                        return;
+                    }
+                    chunk = state.getChunks();
+                    chunk.selection = '';
+                    commandProto.updateLinkDefs(chunk, [imgURL], editor);
                 }
             }
             else {
@@ -326,7 +346,7 @@ var $osf = require('js/osfHelpers');
                 var deferred = [];
                 $.each(event.dataTransfer.files, function(i, file){
                     ext = re.exec(file.name)[1];
-                    if (extensions.indexOf(ext) <= -1) {
+                    if (extensions.indexOf(ext.toLowerCase()) <= -1) {
                         $osf.growl('Error', 'File type not supported', 'danger');
                     }
                     else {
@@ -369,6 +389,7 @@ var $osf = require('js/osfHelpers');
                     commandProto.updateLinkDefs(chunk, urls, editor);
                 })
             }
+            console.log('done');
             editor.marker.session.removeMarker(editor.marker.id);
             editor.marker.redraw();
             editor.marker.active = false;
@@ -415,7 +436,8 @@ var $osf = require('js/osfHelpers');
         $.ajax({
             url: folder_url,
             type: 'GET',
-            async: false
+            async: false,
+            beforeSend: $osf.setXHRAuthorization
         }).done(function(data, responseText, response) {
             var json = response.responseJSON;
             var exists = false;
