@@ -91,7 +91,6 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         If this is an embedded resource, returns first page, ignoring query params.
         """
         if request.parser_context['kwargs'].get('is_embedded'):
-            self._handle_backwards_compat(view)
             page_size = self.get_page_size(request)
             if not page_size:
                 return None
