@@ -742,6 +742,10 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             }
         });
     }
+    var u = item.data;
+    var url = u.nodeUrl + 'files/' + u.provider + u.path;
+    if (!treebeard.options.uploadStates) { treebeard.options.uploadStates = []; }
+    treebeard.options.uploadStates.push({'name': file.name, 'success': true, 'link': url, 'message': 'It worked'});
     treebeard.redraw();
 }
 
@@ -788,6 +792,9 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             );
     }
     treebeard.options.uploadInProgress = false;
+    if (!treebeard.options.uploadStates) { treebeard.options.uploadStates = []; }
+    treebeard.options.uploadStates.push({'name': file.name, 'success': false, 'link': false, 'message': 'Because you suck'});
+
 }
 
 /**
@@ -1987,6 +1994,27 @@ function _fangornOver(event, ui) {
     }
 }
 
+function _fangornQueueComplete(treebeard) {
+    var fileStatus = treebeard.options.uploadStates;
+    treebeard.options.uploadStates = [];
+    if (fileStatus.length > 2) {
+        treebeard.modal.update(m('div', [
+            m('h3.break-word.modal-title', ['Upload Status', m('br')]),
+            m('div.container', [
+                fileStatus.map(function(status){
+                    if (status.link) {
+                        return m('', [m('.row.col-12', [ m('.col-xs-2', m(status.success ? '.fa.fa-check' : '.fa.fa-times')), m('a[href="' + status.link + '"].col-xs-8', status.name)]), m('hr.row.col-12')])
+                    } else {
+                        return m('', [m('.row.col-12', [m('.col-xs-2', m(status.success ? '.fa.fa-check' : '.fa.fa-times')), m('.col-xs-8', status.name)]), m('hr.row.col-12')])
+                        // return m('.row.col-12', [m('', status.name), m('.col-xs-2', m(status.success ? '.fa.fa-check' : '.fa.fa-times'))])
+                    }
+                })
+            ])
+            ])
+        );
+    }
+}
+
 /**
  * Where the drop actions happen
  * @param event jQuery UI drop event
@@ -2225,6 +2253,8 @@ tbOptions = {
                     displaySize = Math.round(file.size / 10000) / 100;
                     msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
                     item.notify.update(msgText, 'warning', undefined, 3000);
+                    if (!treebeard.options.uploadStates) { treebeard.options.uploadStates = []; }
+                    treebeard.options.uploadStates.push({'name': file.name, 'success': false, 'link': false, 'message': 'Becayse you suck'});
                     return false;
                 }
             }
@@ -2248,7 +2278,7 @@ tbOptions = {
         parallelUploads: 5,
         acceptDirectories: false,
         createImageThumbnails: false,
-        fallback: function(){},
+        fallback: function(){}
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
@@ -2267,7 +2297,8 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile,
-        drop : _fangornDropzoneDrop
+        drop : _fangornDropzoneDrop,
+        queuecomplete: _fangornQueueComplete
     },
     resolveRefreshIcon : function() {
         return m('i.fa.fa-refresh.fa-spin');
