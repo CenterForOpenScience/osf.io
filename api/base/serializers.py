@@ -364,7 +364,7 @@ class TargetField(ser.Field):
         """
         Resolves the view for target node or target comment when embedding.
         """
-        view_info = self.view_map.get('zip', None)
+        view_info = self.view_map.get(resource.target._name, None)
         if not view_info:
             raise InvalidTargetError
         embed_value = resource.target._id
