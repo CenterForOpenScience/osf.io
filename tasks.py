@@ -57,6 +57,22 @@ def server(host=None, port=5000, debug=True, live=False):
 
 
 @task
+def debug_server(host=None, port=5000, debug=True, live=False):
+    """Run the app server with debugging"""
+
+    def run_app():
+
+        from website.app import init_app
+        app = init_app(set_backends=True, routes=True)
+        settings.API_SERVER_PORT = port
+
+        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
+
+    import pdb
+    pdb.run('run_app()', globals(), locals())
+
+
+@task
 def apiserver(port=8000, live=False):
     """Run the API server."""
     cmd = 'python manage.py runserver {} --nothreading'.format(port)

@@ -58,3 +58,4 @@ class EvernoteUserSettings(AddonOAuthUserSettingsBase):
 
 class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = Evernote
+    serializer = EvernoteSerializer

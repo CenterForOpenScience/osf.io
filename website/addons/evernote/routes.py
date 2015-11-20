@@ -13,6 +13,17 @@ api_routes = {
             views.evernote_get_user_accounts,
             json_renderer,
         ),
+
+        Rule(
+            [
+                '/project/<pid>/evernote/settings/',
+                '/project/<pid>/node/<nid>/evernote/settings/'
+            ],
+            'get',
+            views.evernote_get_config,
+            json_renderer,
+        ),
+        
     ],
     'prefix': '/api/v1',
 }
