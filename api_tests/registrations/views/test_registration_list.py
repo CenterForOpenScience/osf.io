@@ -101,11 +101,11 @@ class TestRegistrationFiltering(ApiTestCase):
         self.project_two.add_tag('tag1', Auth(self.project_two.creator), save=True)
         self.project_two.save()
 
-        self.project_one_reg = RegistrationFactory(creator=self.user_one, project=self.project_one)
-        self.project_two_reg = RegistrationFactory(creator=self.user_one, project=self.project_two)
-        self.project_three_reg = RegistrationFactory(creator=self.user_two, project=self.project_three)
-        self.private_project_user_one_reg = RegistrationFactory(creator=self.user_one, project=self.private_project_user_one)
-        self.private_project_user_two_reg = RegistrationFactory(creator=self.user_two, project=self.private_project_user_two)
+        self.project_one_reg = RegistrationFactory(creator=self.user_one, project=self.project_one, is_public=True)
+        self.project_two_reg = RegistrationFactory(creator=self.user_one, project=self.project_two, is_public=True)
+        self.project_three_reg = RegistrationFactory(creator=self.user_two, project=self.project_three, is_public=True)
+        self.private_project_user_one_reg = RegistrationFactory(creator=self.user_one, project=self.private_project_user_one, is_public=False)
+        self.private_project_user_two_reg = RegistrationFactory(creator=self.user_two, project=self.private_project_user_two, is_public=False)
 
         self.folder = FolderFactory()
         self.dashboard = DashboardFactory()
