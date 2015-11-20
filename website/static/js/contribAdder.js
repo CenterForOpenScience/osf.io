@@ -39,9 +39,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.parentTitle = parentTitle;
         self.async = options.async;
         self.callback = options.callback;
-        if(self.async) {
-            self._promise = $.Deferred();
-        }
 
         //list of permission objects for select.
         self.permissionList = [
@@ -315,7 +312,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             if (self.async) {
                 $('.modal').modal('hide');
                 $osf.unblock();
-                self._promise.resolve(self.callback(response));
+                self.callback(response);
             } else {
                 window.location.reload();
             }

@@ -688,7 +688,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
 
-    self.contributors = ko.observable([]);
 
     self.pages = ko.computed(function () {
         // empty array if self.draft is not set.
@@ -870,10 +869,6 @@ RegistrationEditor.prototype.init = function(draft) {
                 }
             }.bind(self, self.dirtyCount()));
         }
-    });
-
-    self.getContributors().done(function(data) {
-        self.contributors(data);
     });
 
     self.currentQuestion(self.flatQuestions().shift());
@@ -1117,28 +1112,6 @@ RegistrationEditor.prototype.save = function() {
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
     return request;
-};
-/**
- * Makes ajax request for a project's contributors
- */
-RegistrationEditor.prototype.makeContributorsRequest = function() {
-    var self = this;
-    var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
-    return $.getJSON(contributorsUrl);
-};
-/**
- * Returns the `user_fullname` of each contributor attached to a node.
- **/
-RegistrationEditor.prototype.getContributors = function() {
-    var self = this;
-    return self.makeContributorsRequest()
-        .then(function(data) {
-            return $.map(data.contributors, function(c) { return c.fullname; });
-        }).fail(function() {
-            $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
-                       'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                       'problem persists.');
-        });
 };
 
 /**

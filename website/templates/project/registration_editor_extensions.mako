@@ -30,7 +30,7 @@
 
 <!--Author Import -->
 <script type="text/html" id="osf-author-import">
-    <h3 data-bind="text: contributors.join(', ')"></h3>
+    <h3 data-bind="text: value"></h3>
     <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-md pull-right" >Add &plus;</a>
 </script>
 
