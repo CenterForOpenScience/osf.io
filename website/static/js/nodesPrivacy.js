@@ -119,7 +119,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
 
     self.loadingResults(true); // enables spinner
     /**
-     * get node free for treebeard from API V1
+     * get node tree for treebeard from API V1
      */
     $.ajax({
         url: treebeardUrl,
