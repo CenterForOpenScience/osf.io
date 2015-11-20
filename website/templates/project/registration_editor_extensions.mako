@@ -1,6 +1,6 @@
 <!-- OSF Upload -->
 <script type="text/html" id="osf-upload">
-    <span data-bind="template: {data: $data, name: format}"></span>
+  <span data-bind="template: {data: $data, name: format}"></span>
 </script>
 
 <script type="text/html" id="osf-upload-open">

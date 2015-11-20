@@ -16,6 +16,13 @@ var Draft = registrationUtils.Draft;
 var RegistrationEditor = registrationUtils.RegistrationEditor;
 var RegistrationManager = registrationUtils.RegistrationManager;
 
+function makeComment(data){
+    data = $.extend({}, {
+        value: 'foo'
+    }, data || {});
+    return [new Comment(data), data];
+}
+
 function makeQuestion(props, data) {
     props = $.extend({}, {
         qid: faker.internet.ip(),
@@ -27,7 +34,7 @@ function makeQuestion(props, data) {
         help: faker.lorem.sentence(),
         required: true,
         options: [faker.internet.domainWord(), faker.internet.domainWord(), faker.internet.domainWord()]
-    }, props);
+    }, props || {});
     data = data || {
         value: 'Foobar'
     };
@@ -314,6 +321,39 @@ describe('Question', () => {
             }, {});
             assert.equal(obj.properties.foo.id, 'foo');
             assert.isDefined(obj.properties.foo.value);
+        });
+        it('maps comments into Comment instances', () => {
+            var question = makeQuestion(null, {
+                comments: [makeComment()[1], makeComment()[1]]
+            })[0];
+            var comments = question.comments();
+            assert.equal(comments.length, 2);
+            assert.equal(comments[0].user.id, $osf.currentUser().id);
+            assert.equal($.type(comments[0].created), 'date');
+        });
+        it('is required if is not object type and required', () => {
+            var question = makeQuestion({
+                required: false
+            })[0];
+            assert.isFalse(question.required);
+            question = makeQuestion({
+                required: true
+            })[0];
+            assert.isTrue(question.required);
+        });
+        it('is required if object type and and property is required', () => {
+            var p1 = makeQuestion({required: true})[1];
+            var p2 = makeQuestion({required: false})[1];
+
+            var question = makeQuestion({
+                required: false,
+                type: 'object',
+                properties: {
+                    p1: p1,
+                    p2: p2
+                }
+            })[0];
+            assert.isTrue(question.required);
         });
     });
     describe('#allowAddNext', () => {

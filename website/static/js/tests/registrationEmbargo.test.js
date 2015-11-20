@@ -8,7 +8,7 @@ var registrationEmbargo = require('js/registrationEmbargo');
 sinon.assert.expose(assert, {prefix: ''});
 
 describe('registrationEmbargo', () => {
-
+    sinon.collection.restore();
     describe('RegistrationEmbargoViewModel', () => {
         var vm;
         var MAKE_PUBLIC = 'immediate';

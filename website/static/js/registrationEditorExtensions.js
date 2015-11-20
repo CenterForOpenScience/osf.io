@@ -136,46 +136,46 @@ ko.bindingHandlers.osfUploader = {
     init: osfUploader
 };
 
-var Uploader = function(data) {
+var Uploader = function(question) {
 
     var self = this;
-    self._orig = data;
 
+    question.showUploader = ko.observable(false);
     self.selectedFile = ko.observable(null);
     self.selectedFile.subscribe(function(file) {
         if (file) {
-            data.extra({
+            question.extra({
                 selectedFileName: file.data.name,
                 viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
                 hasSelectedFile: true
             });
         }
         else {
-            data.extra({
+            question.extra({
                 selectedFileName: 'no file selected'
             });
-            data.value('no file selected');
+            question.value('no file selected');
         }
     });
     self.hasSelectedFile = ko.computed(function() {
-        return !!(data.extra().viewUrl);
+        return !!(question.extra().viewUrl);
     });
     self.unselectFile = self.selectedFile.bind(null, null);
 
     self.filePicker = null;
 
     self.preview = function() {
-        var value = data.value();
+        var value = question.value();
         if (!value || value === 'no file selected') {
             return 'no file selected';
         }
         else {
-            var extra = data.extra();
+            var extra = question.extra();
             return $('<a target="_blank" href="' + extra.viewUrl + '">' + extra.selectedFileName + '</a>');
         }
     };
 
-    $.extend(self, data);
+    $.extend(self, question);
 };
 
 var AuthorImport = function(data, $root) {

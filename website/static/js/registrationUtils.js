@@ -159,19 +159,29 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || {};
     self.match = questionSchema.match || '';
 
-    var _value;
-    if ($.isFunction(self.data.value)) {
-        // For subquestions, this could be an observable
-        _value = self.data.value();
+    self.extra = ko.observable(self.data.extra || {});
+    self.showExample = ko.observable(false);
+
+    self.comments = ko.observableArray(
+        $.map(self.data.comments || [], function(comment) {
+            return new Comment(comment);
+        })
+    );
+    self.nextComment = ko.observable('');
+
+    var value;
+    if (ko.isObservable(self.data.value)) {
+        value = self.data.value();
     } else {
-        _value = self.data.value || null;
+        value = self.data.value || null;
     }
+
     if (self.type === 'choose' && self.format === 'multiselect') {
-        if (_value) {
-            if(!$.isArray(_value)) {
-                _value = [_value];
+        if (value) {
+            if(!$.isArray(value)) {
+                value = [value];
             }
-            self.value = ko.observableArray(_value);
+            self.value = ko.observableArray(value);
         }
         else {
             self.value = ko.observableArray([]);
@@ -185,31 +195,34 @@ var Question = function(questionSchema, data) {
         });
         self.value = ko.computed({
             read: function() {
-                var value = {};
-                $.each(self.properties, function(name, prop) {
-                    value[name] = {
-                        value: prop.value(),
-                        comments: prop.comments(),
-                        extra: prop.extra
-                    };
-                });
-                return value;
+                var compositeValue = {};
+                $.each(
+                    $.map(self.properties, function(prop, name) {
+                        var ret = {};
+                        ret[name] = {
+                            value: prop.value(),
+                            comments: prop.comments(),
+                            extra: prop.extra
+                        };
+                        return ret;
+                    }),
+                    $.extend.bind(null, compositeValue)
+                );
+                return compositeValue;
             },
             deferred: true
         });
+
+        self.required = self.required || $osf.any(
+            $.map(self.properties, function(prop) {
+                return prop.required;
+            })
+        );
     }
     else {
-        self.value = ko.observable(_value);
+        self.value = ko.observable(value);
     }
-    self.setValue = function(val) {
-        self.value(val);
-    };
 
-    if (self.type === 'object') {
-        $.each(self.properties, function(_, prop) {
-            self.required = self.required || prop.required;
-        });
-    }
     if (self.required) {
         self.value.extend({
             required: true
@@ -219,17 +232,7 @@ var Question = function(questionSchema, data) {
             required: false
         });
     }
-    self.extra = ko.observable(self.data.extra || {});
 
-    self.showExample = ko.observable(false);
-    self.showUploader = ko.observable(false);
-
-    self.comments = ko.observableArray(
-        $.map(self.data.comments || [], function(comment) {
-            return new Comment(comment);
-        })
-    );
-    self.nextComment = ko.observable('');
     /**
      * @returns {Boolean} true if the nextComment <input> is not blank
      **/
