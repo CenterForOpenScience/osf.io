@@ -3,6 +3,8 @@
 import os
 import httplib as http
 
+import logging
+
 from flask import request
 # from OneDriveSDK
 import onedrivesdk
@@ -22,6 +24,9 @@ from website.project.decorators import (
 
 from website.addons.onedrive.serializer import OnedriveSerializer
 
+logger = logging.getLogger(__name__)
+
+logging.getLogger('onedrive1').setLevel(logging.WARNING)
 
 @must_be_logged_in
 def onedrive_get_user_settings(auth):
@@ -147,7 +152,11 @@ def onedrive_folder_list(node_addon, **kwargs):
                 'folders': node.api_url_for('onedrive_folder_list', folderId=0),
             }
         }]
-
+    
+#    logger.error('Onedrive::kwargs' + repr(kwargs))
+    logger.error('Onedrive::node_addon' + repr(node_addon))
+    logger.error('Onedrive::node_addon.owner' + repr(node_addon.owner))
+    raise ValueError('lets stop here')
 #    try:
 #        refresh_oauth_key(node_addon.external_account)
     client = OnedriveClient(node_addon.external_account.oauth_key)
