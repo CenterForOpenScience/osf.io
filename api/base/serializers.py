@@ -265,7 +265,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.related_meta = related_meta
         self.self_meta = self_meta
         self.always_embed = always_embed
-        
+
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
             assert related_kwargs is not None, 'Must provide related view kwargs.'
@@ -679,14 +679,14 @@ class JSONAPISerializer(ser.Serializer):
                 attribute = field.get_attribute(obj)
             except SkipField:
                 continue
-                
+
             nested_field = getattr(field, 'field', None)
 
             if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
                 # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
                 # results rather than adding a relationship link
                 if attribute is None:
-                    continue                
+                    continue
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
                     result = self.context['embed'][field.field_name](obj)
                     if result:
