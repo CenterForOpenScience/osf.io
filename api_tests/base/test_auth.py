@@ -50,8 +50,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         res = self.app.get(self.unreachable_url, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
 
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_valid_credential_but_twofactor_required(self, mock_push_status_message):
+    def test_valid_credential_but_twofactor_required(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
         user1_addon.totp_drift = 1
         user1_addon.totp_secret = self.TOTP_SECRET
@@ -63,8 +62,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         assert_equal(res.headers['X-OSF-OTP'], 'required; app')
         assert_equal(res.json.get("errors")[0]['detail'], 'Must specify two-factor authentication OTP code.')
 
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_valid_credential_twofactor_invalid_otp(self, mock_push_status_message):
+    def test_valid_credential_twofactor_invalid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
         user1_addon.totp_drift = 1
         user1_addon.totp_secret = self.TOTP_SECRET
@@ -76,8 +74,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         assert_true('X-OSF-OTP' not in res.headers)
         assert_equal(res.json.get("errors")[0]['detail'], 'Invalid two-factor authentication OTP code.')
 
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_valid_credential_twofactor_valid_otp(self, mock_push_status_message):
+    def test_valid_credential_twofactor_valid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
         user1_addon.totp_drift = 1
         user1_addon.totp_secret = self.TOTP_SECRET

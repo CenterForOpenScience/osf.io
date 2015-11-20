@@ -737,6 +737,11 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     });
 
     self.loading = ko.observable(true);
+    self.loading.subscribe(function(loading) {
+        if (!loading) {
+            createButton.removeClass('disabled');
+        }
+    });
 
     self.preview = ko.observable(false);
 
@@ -745,6 +750,7 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     self.getSchemas = $.getJSON.bind(null, self.urls.schemas);
 
     if (createButton) {
+        createButton.addClass('disabled');
         createButton.on('click', self.createDraftModal.bind(self));
     }
 };
@@ -838,27 +844,11 @@ RegistrationManager.prototype.createDraftModal = function() {
     });
 };
 /**
- * Redirect to the draft register page
+ * Redirect to the draft edit page
  **/
-RegistrationManager.prototype.maybeWarn = function(draft) {
-    var redirect = function() {
-        window.location.assign(draft.urls.edit);
-    };
-    var callback = function(confirmed) {
-        if (confirmed) {
-            redirect();
-        }
-    };
-    // TODO: Uncomment to support approvals
-    // if (draft.isApproved) {
-    //     bootbox.confirm(language.beforeEditIsApproved, callback);
-    // }
-    // else if (draft.isPendingReview) {
-    //     bootbox.confirm(language.beforeEditIsPendingReview, callback);
-    // }
-    // else {
-    redirect();
-    // }
+RegistrationManager.prototype.editDraft = function(draft) {
+    $osf.block();
+    window.location.assign(draft.urls.edit);
 };
 
 module.exports = {
