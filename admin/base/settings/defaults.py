@@ -25,6 +25,9 @@ ALLOWED_HOSTS = [
     '.osf.io'
 ]
 
+# Custom user model (extends AbstractBaseUser)
+AUTH_USER_MODEL = 'common_auth.MyUser'
+
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'openscienceframeworktest@gmail.com'
@@ -45,6 +48,7 @@ INSTALLED_APPS = (
     'admin.spam',
 
     # 3rd party
+    'django_extensions',
     'raven.contrib.django.raven_compat',
     'webpack_loader',
 )
