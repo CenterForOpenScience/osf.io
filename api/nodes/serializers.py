@@ -102,7 +102,7 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'},
         always_embed=True
-    ))
+    )))
 
     parent = HideIfRetraction(RelationshipField(
         related_view='nodes:node-detail',

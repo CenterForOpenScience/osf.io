@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
+from website.project.model import MetaSchema, Q
 from api.nodes.serializers import NodeSerializer
 from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, HideIfRegistration, DevOnly
 
@@ -34,24 +35,24 @@ class RegistrationSerializer(NodeSerializer):
     ))
 
     children = HideIfRetraction(RelationshipField(
-        related_view='registrations:registration-children',
+        related_view='nodes:node-children',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_node_count'},
     ))
 
     comments = HideIfRetraction(RelationshipField(
-        related_view='registrations:registration-comments',
+        related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'unread': 'get_unread_comments_count'}))
 
     contributors = RelationshipField(
-        related_view='registrations:registration-contributors',
+        related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_contrib_count'}
     )
 
     files = HideIfRetraction(RelationshipField(
-        related_view='registrations:registration-providers',
+        related_view='nodes:node-providers',
         related_view_kwargs={'node_id': '<pk>'}
     ))
 
@@ -61,7 +62,7 @@ class RegistrationSerializer(NodeSerializer):
     ))
 
     node_links = DevOnly(HideIfRetraction(RelationshipField(
-        related_view='registrations:registration-pointers',
+        related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'}
     )))
@@ -72,7 +73,7 @@ class RegistrationSerializer(NodeSerializer):
     ))
 
     registrations = DevOnly(HideIfRegistration(RelationshipField(
-        related_view='registrations:registration-registrations',
+        related_view='nodes:node-registrations',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_registration_count'}
     )))
