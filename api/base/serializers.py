@@ -210,7 +210,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     )
 
     """
-    embeddable = True
     json_api_link = True  # serializes to a links object
 
     def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
