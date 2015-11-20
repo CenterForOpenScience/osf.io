@@ -83,7 +83,8 @@ class NodeSerializer(JSONAPISerializer):
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'count': 'get_contrib_count'}
+        related_meta={'count': 'get_contrib_count'},
+        always_embed=True
     )
 
     files = HideIfRetraction(RelationshipField(
@@ -99,8 +100,9 @@ class NodeSerializer(JSONAPISerializer):
     node_links = DevOnly(HideIfRetraction(RelationshipField(
         related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'count': 'get_pointers_count'}
-    )))
+        related_meta={'count': 'get_pointers_count'},
+        always_embed=True
+    ))
 
     parent = HideIfRetraction(RelationshipField(
         related_view='nodes:node-detail',
@@ -221,7 +223,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     users = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<pk>'}
+        related_view_kwargs={'user_id': '<pk>'},
+        always_embed=True
     )
 
     def profile_image_url(self, user):
@@ -358,7 +361,8 @@ class NodeProviderSerializer(JSONAPISerializer):
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
         related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
-        kind='folder'
+        kind='folder',
+        never_embed=True
     )
     links = LinksField({
         'upload': WaterbutlerLink(),

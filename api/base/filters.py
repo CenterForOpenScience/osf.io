@@ -243,7 +243,10 @@ class ODMFilterMixin(FilterMixin):
         raise NotImplementedError('Must define get_default_odm_query')
 
     def get_query_from_request(self):
-        param_query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
+        if self.request.parser_context['kwargs'].get('is_embedded'):
+            param_query = None
+        else:
+            param_query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
         default_query = self.get_default_odm_query()
 
         if param_query:
@@ -299,7 +302,7 @@ class ListFilterMixin(FilterMixin):
 
     def get_queryset_from_request(self):
         default_queryset = self.get_default_queryset()
-        if self.request.QUERY_PARAMS:
+        if not self.kwargs.get('is_embedded') and self.request.QUERY_PARAMS:
             param_queryset = self.param_queryset(self.request.QUERY_PARAMS, default_queryset)
             return param_queryset
         else:

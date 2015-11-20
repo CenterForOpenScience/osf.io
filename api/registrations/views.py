@@ -5,6 +5,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.project.model import Q, Node
 from api.base import permissions as base_permissions
+from api.base.views import JSONAPIBaseView
 
 from api.base.serializers import HideIfRetraction
 from api.registrations.serializers import (
@@ -27,7 +28,7 @@ class RegistrationMixin(NodeMixin):
     node_lookup_url_kwarg = 'registration_id'
 
 
-class RegistrationList(generics.ListAPIView, ODMFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
@@ -94,6 +95,8 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationSerializer
+    view_category = 'registrations'
+    view_name = 'registration-list'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -132,7 +135,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         return nodes
 
 
-class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
+class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view shows details about the given registration.
@@ -201,6 +204,8 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationDetailSerializer
+    view_category = 'registrations'
+    view_name = 'registration-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
