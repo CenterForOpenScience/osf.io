@@ -694,9 +694,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
     self.showValidation = ko.observable(false);
 
     self.contributors = ko.observable([]);
-    self.getContributors().done(function(data) {
-        self.contributors(data);
-    });
 
     self.pages = ko.computed(function () {
         // empty array if self.draft is not set.
@@ -878,6 +875,10 @@ RegistrationEditor.prototype.init = function(draft) {
                 }
             }.bind(self, self.dirtyCount()));
         }
+    });
+
+    self.getContributors().done(function(data) {
+        self.contributors(data);
     });
 
     self.currentQuestion(self.flatQuestions().shift());

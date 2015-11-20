@@ -745,10 +745,10 @@ var any = function(listOfBools) {
     for(var i = 0; i < listOfBools.length; i++){
         someTruthy = someTruthy || Boolean(listOfBools[i]);
         if (someTruthy) {
-            break;
+            return someTruthy;
         }
     }
-    return someTruthy;
+    return false;
 };
 
 // Also export these to the global namespace so that these can be used in inline

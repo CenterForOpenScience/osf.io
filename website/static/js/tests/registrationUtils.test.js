@@ -75,6 +75,7 @@ function makeMetaSchema() {
 }
 
 describe('Comment', () => {
+    sinon.collection.restore();
     beforeEach(() => {
         window.contextVars.currentUser = {
             fullname: faker.name.findName(),
@@ -277,6 +278,7 @@ describe('Comment', () => {
 });
 
 describe('Question', () => {
+    sinon.collection.restore();
     var q;
     var question;
     var data;
@@ -299,7 +301,6 @@ describe('Question', () => {
             assert.equal(q.options, question.options);
             assert.equal(q.value(), data.value);
         });
-        /* TODO(samchrisinger): update me
         it('maps object-type Question\'s properties property to sub-Questions', () => {
             var props = {
                 foo: {
@@ -314,7 +315,6 @@ describe('Question', () => {
             assert.equal(obj.properties.foo.id, 'foo');
             assert.isDefined(obj.properties.foo.value);
         });
-         */
     });
     describe('#allowAddNext', () => {
         it('is true if the Question\'s nextComment is not blank', () => {
@@ -364,6 +364,7 @@ describe('Question', () => {
 });
 
 describe('MetaSchema', () => {
+    sinon.collection.restore();
     describe('#constructor', () => {
         it('loads optional instantion data and maps question data to Question instances', () => {
 
@@ -400,6 +401,7 @@ describe('MetaSchema', () => {
 });
 
 describe('Draft', () => {
+    sinon.collection.restore();
     var ms = makeMetaSchema()[0];
 
     var beforeRegisterUrl = faker.internet.ip();
@@ -560,6 +562,7 @@ describe('Draft', () => {
 });
 
 describe('RegistrationEditor', () => {
+    sinon.collection.restore();
     var ms = makeMetaSchema()[0];
     var questions = ms.flatQuestions();
 
