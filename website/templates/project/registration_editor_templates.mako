@@ -110,7 +110,7 @@
     <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
   </div>
   <div class="row" data-bind="if: $root.draft().requiresApproval">
-    <div class="col-md-12" data-bind="if: comments().length">
+    <div class="col-md-12" --data-bind="if: comments().length">
       <div class="well" data-bind="template: {data: $data, name: 'commentable'}"></div>
     </div>
   </div>
@@ -121,12 +121,12 @@
     <h4> Comments </h4>
     <ul class="list-group" id="commentList" data-bind="foreach: {data: comments, as: 'comment'}">
         <li class="list-group-item">
-          <div class="row" data-bind="if: comment.isDeleted">
+          <div class="row" data-bind="visible: comment.isDeleted">
             <div class="col-md-12">
               <strong><span data-bind="text: comment.getAuthor"></span></strong> deleted this comment on <em data-bind="text: comment.lastModified"></em>
             </div>
           </div>
-          <span class="row" data-bind="ifnot: comment.isDeleted">
+          <span class="row" data-bind="visible: !comment.isDeleted()">
             <div class="row">
               <div class="col-md-12">
                 <div class="row">

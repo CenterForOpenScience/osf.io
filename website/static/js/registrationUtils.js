@@ -44,18 +44,13 @@ function Comment(data) {
 
     data = data || {};
     self.user = data.user || $osf.currentUser();
-    self.lastModified = new Date(data.lastModified) || new Date();
     self.value = ko.observable(data.value || '');
     self.value.subscribe(function() {
         self.lastModified = new Date();
     });
 
-    if (data.created) {
-        self.created = new Date(data.created);
-    }
-    else {
-        self.created = new Date();
-    }
+    self.created = data.created ? new Date(data.created) : new Date();
+    self.lastModified = data.lastModified ? new Date(data.lastModified) : new Date();
 
     self.isDeleted = ko.observable(data.isDeleted || false);
     self.isDeleted.subscribe(function(isDeleted) {
@@ -343,7 +338,7 @@ Page.prototype.viewComments = function() {
 Page.prototype.getUnseenComments = function() {
     var self = this;
     return self.comments().filter(function(comment) {
-        return comment.indexOf($osf.currentUser().id) === -1;
+        return comment.seenBy.indexOf($osf.currentUser().id) === -1;
     });
 };
 
