@@ -24,7 +24,7 @@ class TestRegistrationList(ApiTestCase):
         self.url = '/{}registrations/'.format(API_BASE)
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project)
+        self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project, is_public=True)
         self.user_two = AuthUserFactory()
 
     def tearDown(self):

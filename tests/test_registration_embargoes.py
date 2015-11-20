@@ -10,7 +10,7 @@ from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
-    RegistrationFactory, UserFactory, UnconfirmedUserFactory
+    RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
 )
 
 from framework.exceptions import PermissionsError
@@ -615,11 +615,12 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             registration.web_url_for('view_project', token=rejection_token),
             auth=self.user.auth,
-        )        
+        )
         registration.embargo.reload()
         assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_false(registration.is_pending_embargo)
         assert_equal(res.status_code, 302)
+        assert_true(project._id in res.location)
 
     @mock.patch('flask.redirect')
     def test_GET_disapprove_for_existing_registration_with_valid_token_redirects_to_registration(self, mock_redirect):
@@ -641,12 +642,14 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_false(self.registration.is_pending_embargo)
         assert_true(mock_redirect.called_with(self.registration.web_url_for('view_project')))
 
+
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationEmbargoViewsTestCase, self).setUp()
         ensure_schemas()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
+        self.draft = DraftRegistrationFactory(branched_from=self.project)
         self.registration = RegistrationFactory(project=self.project, creator=self.user)
 
         current_month = datetime.datetime.now().strftime("%B")
@@ -676,14 +679,14 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         })
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_POST_register_make_public_immediately_creates_registration_approval(self, mock_enqueue):
+    def test_register_draft_without_embargo_creates_registration_approval(self, mock_enqueue):
         res = self.app.post(
-            self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_make_public_payload,
             content_type='application/json',
             auth=self.user.auth
         )
-        assert_equal(res.status_code, 201)
+        assert_equal(res.status_code, 202)
 
         registration = Node.find().sort('-registered_date')[0]
 
@@ -713,17 +716,17 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             is_public=True
         )
         res = self.app.post(
-            public_project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            public_project.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_make_public_payload,
             content_type='application/json',
             auth=self.user.auth
         )
         public_project.reload()
-        assert_equal(res.status_code, 201)
+        assert_equal(res.status_code, 202)
         assert_equal(res.json['urls']['registrations'], public_project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
-        registration = Node.load(public_project.node__registrations[-1])
+        registration = Node.find().sort('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
@@ -750,7 +753,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
 
         res = self.app.post(
-            self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_make_public_payload,
             content_type='application/json',
             auth=self.user.auth
@@ -766,13 +769,13 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_POST_register_embargo_is_not_public(self, mock_enqueue):
         res = self.app.post(
-            self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_embargo_payload,
             content_type='application/json',
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 201)
+        assert_equal(res.status_code, 202)
 
         registration = Node.find().sort('-registered_date')[0]
 
@@ -804,17 +807,17 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             is_public=True
         )
         res = self.app.post(
-            public_project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            public_project.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_embargo_payload,
             content_type='application/json',
             auth=self.user.auth
         )
         public_project.reload()
-        assert_equal(res.status_code, 201)
+        assert_equal(res.status_code, 202)
         assert_equal(res.json['urls']['registrations'], public_project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
-        registration = Node.load(public_project.node__registrations[-1])
+        registration = Node.find().sort('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
@@ -828,7 +831,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_POST_invalid_embargo_end_date_returns_HTTPBad_Request(self, mock_enqueue):
         res = self.app.post(
-            self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.invalid_embargo_date_payload,
             content_type='application/json',
             auth=self.user.auth,
@@ -841,7 +844,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def test_valid_POST_embargo_adds_to_parent_projects_log(self, mock_enquque):
         initial_project_logs = len(self.project.logs)
         res = self.app.post(
-            self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_embargo_payload,
             content_type='application/json',
             auth=self.user.auth
