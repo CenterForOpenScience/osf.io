@@ -10,7 +10,7 @@ api_routes = {
                 '/settings/evernote/accounts/',
             ],
             'get',
-            views.evernote_get_user_accounts,
+            views.evernote_get_user_settings,
             json_renderer,
         ),
 
@@ -23,7 +23,18 @@ api_routes = {
             views.evernote_get_config,
             json_renderer,
         ),
-        
+
+        Rule(
+            [
+                '/project/<pid>/evernote/user_auth/',
+                '/project/<pid>/node/<nid>/evernote/user_auth/'
+            ],
+            'put',
+            views.evernote_add_user_auth,
+            json_renderer,
+        ),
+
+
     ],
     'prefix': '/api/v1',
 }

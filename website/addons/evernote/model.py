@@ -59,3 +59,11 @@ class EvernoteUserSettings(AddonOAuthUserSettingsBase):
 class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = Evernote
     serializer = EvernoteSerializer
+
+    def set_user_auth(self, user_settings):
+        """Import a user's Evernote authentication and create a NodeLog.
+        :param EvernoteUserSettings user_settings: The user settings to link.
+        """
+        self.user_settings = user_settings
+        #nodelogger = BoxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
+        #nodelogger.log(action="node_authorized", save=True)

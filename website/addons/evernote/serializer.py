@@ -8,14 +8,14 @@ class EvernoteSerializer(OAuthAddonSerializer):
         node = self.node_settings.owner
 
         return {
-            'accounts': node.api_url_for('evernote_get_user_accounts'),
+            'accounts': node.api_url_for('evernote_get_user_settings'),
         }
 
 
     def serialize_settings(self, node_settings, current_user, client=None):
         """View helper that returns a dictionary representation of a
         EvernoteNodeSettings record. Provides the return value for the
-        box config endpoints.
+        evernote config endpoints.
         """
         valid_credentials = True
         user_settings = node_settings.user_settings
@@ -25,7 +25,7 @@ class EvernoteSerializer(OAuthAddonSerializer):
 
         # if user_settings:
         #     try:
-        #         client = client or BoxClient(user_settings.external_accounts[0].oauth_key)
+        #         client = client or evernoteClient(user_settings.external_accounts[0].oauth_key)
         #         client.get_user_info()
         #     except (BoxClientException, IndexError):
         #         valid_credentials = False
@@ -57,5 +57,18 @@ class EvernoteSerializer(OAuthAddonSerializer):
         #             'path': path,
         #             'name': path.replace('All Files', '', 1) if path != 'All Files' else '/ (Full Box)'
         #         }
-        
+
         return result
+
+    @property
+    def addon_serialized_urls(self):
+        node = self.node_settings.owner
+
+        return {
+            'auth': api_url_for('oauth_connect',
+                                service_name='evernote'),
+            'importAuth': node.api_url_for('evernote_add_user_auth'),
+            # 'config': node.api_url_for('evernote_set_config'),
+            # 'deauthorize': node.api_url_for('evernote_remove_user_auth'),
+            'accounts': node.api_url_for('evernote_get_user_settings'),
+        }
