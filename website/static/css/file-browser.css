@@ -6,7 +6,7 @@
     font-family: "Open Sans", 'Helvetica Neue', sans-serif;
 }
 
-/* Header with breadcrumbs and cuttons */
+/* Header with breadcrumbs and buttons */
 
 .fb-header {
     background-color: #f8f8f8;
@@ -94,7 +94,7 @@
 .fb-main {
     float: left;
     padding: 0 0 1px 0;
-    /* width is set as inline style in file-browser.js because is changes based on informatin panel visibility */
+    /* width is set as inline style in file-browser.js because it changes based on information panel visibility */
 }
 
 /* Information Panel */
