@@ -94,6 +94,8 @@ class RegistrationSerializer(NodeSerializer):
             meta_values = obj.registered_meta.values()[0]
             try:
                 return json.loads(meta_values)
+            except TypeError:
+                return meta_values
             except ValueError:
                 return meta_values
         return None
