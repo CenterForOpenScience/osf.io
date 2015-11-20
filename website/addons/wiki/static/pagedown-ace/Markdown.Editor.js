@@ -217,8 +217,43 @@ var $osf = require('js/osfHelpers');
 
     };
 
+    var getImage = function(url, extensions, re) {
+        var exp = /(imgurl=)(.*?)(&)/;
+        try {
+            return exp.exec(url)[2];
+        } catch (err) {
+            var ext = re.exec(url)[1];
+            try {
+                if (extensions.indexOf(ext.toLowerCase()) >= 0) {
+                    return url;
+                }
+            } catch (err) {
+                return undefined;
+            }
+            return undefined;
+        }
+    };
+
+    var getChunk = function(panels) {
+        var state = new TextareaState(panels);
+        if (!state) {
+            return;
+        }
+        var chunk = state.getChunks();
+        //debugger;
+        chunk.selection = '';
+        return chunk;
+    };
+
+    var insertLink = function(url, str, panels, getString, editor, position) {
+        editor.session.insert(position, linkDescription(str, false, getString));
+        var chunk = getChunk(panels);
+        commandProto.updateLinkDefs(chunk, [url], editor);
+    };
+
+
+
     var addDragNDrop = function(editor, panels, getString) {
-        var state, chunk;
         var element = editor.container;
         editor.getPosition = function(x, y) {
             var config = editor.renderer.$markerFront.config;
@@ -284,68 +319,48 @@ var $osf = require('js/osfHelpers');
         };
 
         element.addEventListener('drop', function(event) {
+            var initState = new TextareaState(panels);
+            //debugger;
             event.preventDefault();
             event.stopPropagation();
             var re = /(?:\.([^.]+))?$/;
             var extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
-            var ext;
             var position = editor.session.screenToDocumentPosition(editor.marker.cursor.row, editor.marker.cursor.column);
-            var url = event.dataTransfer.getData('text/html') || event.dataTransfer.getData('URL')
-            var test = $(url).filter('img').attr('src');
-            if (!!url) {
-                var getImage = /(src=")(.*?)(")/;
-                var imgURL = getImage.exec(url);
-                if (!!imgURL) {
-                    if (imgURL[2].substring(0, 10) === 'data:image') {
-                        imgURL = event.dataTransfer.getData('URL');
-                        var exp = /(imgurl=)(.*?)(&)/;
-                        if (!!exp.exec(imgURL)) {
-                            imgURL = exp.exec(imgURL)[2];
-                        }
-                        else {
+            var html = event.dataTransfer.getData('text/html');
+            var url = event.dataTransfer.getData('URL');
+            if (!!html || !!url) {
+                var imgURL;
+                try {
+                    var src = /(src=")(.*?)(")/;
+                    imgURL = src.exec(url)[2];
+                    if (imgURL.substring(0, 10) === 'data:image') {
+                        imgURL = getImage(url, extensions, re);
+                        if (!imgURL) {
                             $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
-                            imgURL = undefined;
                         }
                     }
-                    else {
-                        imgURL = imgURL[2];
+                    if (!!imgURL) {
+                        insertLink(imgURL, "imagedescription", panels, getString, editor, position);
                     }
                 }
-                else {
-                    imgURL = undefined;
-                    url = event.dataTransfer.getData('URL');
-                    ext = re.exec(url)[1];
-                    if (extensions.indexOf(ext) <= -1) {
-                        editor.session.insert(position, linkDescription(getString("linkdescription"), false, false));
+                catch (err) {
+                    imgURL = getImage(url, extensions, re);
+                    if (!!imgURL) {
+                        insertLink(imgURL, "imagedescription", panels, getString, editor, position);
                     }
                     else {
-                        editor.session.insert(position, linkDescription(getString("imagedescription"), true, false))
+                        insertLink(url, "linkdescription", panels, getString, editor, position);
                     }
-                    state = new TextareaState(panels);
-                    if (!state) {
-                        return;
-                    }
-                    chunk = state.getChunks();
-                    chunk.selection = '';
-                    commandProto.updateLinkDefs(chunk, [url], editor);
-                }
-                if (!!imgURL) {
-                    editor.session.insert(position, linkDescription(getString("imagedescription"), true, false));
-                    state = new TextareaState(panels);
-                    if (!state) {
-                        return;
-                    }
-                    chunk = state.getChunks();
-                    chunk.selection = '';
-                    commandProto.updateLinkDefs(chunk, [imgURL], editor);
                 }
             }
             else {
-                var multiple = event.dataTransfer.files.length > 1;
+                var files = event.dataTransfer.files;
+                var multiple = files.length > 1;
                 var urls = [];
                 var deferred = [];
-                $.each(event.dataTransfer.files, function(i, file){
-                    ext = re.exec(file.name)[1];
+                //
+                $.each(files, function(i, file){
+                    var ext = re.exec(file.name)[1];
                     if (extensions.indexOf(ext.toLowerCase()) <= -1) {
                         $osf.growl('Error', 'File type not supported', 'danger');
                     }
@@ -365,7 +380,7 @@ var $osf = require('js/osfHelpers');
                                 }).done(function(response){
                                     url = response.data.links.download + '?mode=render';
                                     urls.splice(i, 0, url);
-                                    editor.session.insert(position, linkDescription(getString("imagedescription"), true, multiple));
+                                    editor.session.insert(position, linkDescription("imagedescription", multiple, getString));
                                 }).fail(function(data) {
                                     $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
                                     'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
@@ -381,15 +396,11 @@ var $osf = require('js/osfHelpers');
                     }
                 });
                 $.when.apply(null, deferred).done(function() {
-                    var state = new TextareaState(panels);
-                    if (!state) {
-                        return;
-                    }
-                    var chunk = state.getChunks();
+                    var chunk = getChunk(panels);
                     commandProto.updateLinkDefs(chunk, urls, editor);
+                    //editor.selection.moveCursorToPosition(position);
                 })
             }
-            console.log('done');
             editor.marker.session.removeMarker(editor.marker.id);
             editor.marker.redraw();
             editor.marker.active = false;
@@ -404,14 +415,17 @@ var $osf = require('js/osfHelpers');
         });
     };
 
-    var linkDescription = function(str, isImage, multiple) {
-        if (!isImage) {
-            return '[' + str + '][ ]';
+    var linkDescription = function(str, multiple, getString) {
+        if (!!multiple) {
+            return '![' + getString(str) + '][ ]\n';
         }
-        else if (!!multiple) {
-            return '![' + str + '][ ]\n';
+        else {
+            var isImage = (str === 'imagedescription');
+            if (isImage) {
+                return '![' + getString(str) + '][ ]';
+            }
         }
-        return '![' + str + '][ ]';
+        return '[' + getString(str) + '][ ]';
     };
 
     var createFolder = function() {
@@ -2058,6 +2072,63 @@ var $osf = require('js/osfHelpers');
         return text;
     };
 
+    commandProto.addLinkDef = function (chunk, linkDef) {
+
+        var refNumber = 0; // The current reference number
+        var defsToAdd = {}; //
+        // Start with a clean slate by removing all previous link definitions.
+        chunk.before = this.stripLinkDefs(chunk.before, defsToAdd);
+        chunk.selection = this.stripLinkDefs(chunk.selection, defsToAdd);
+        chunk.after = this.stripLinkDefs(chunk.after, defsToAdd);
+
+        var defs = "";
+        var regex = /(\[)((?:\[[^\]]*\]|[^\[\]])*)(\][ ]?(?:\n[ ]*)?\[)(\d+)(\])/g;
+
+        var addDefNumber = function (def) {
+            refNumber++;
+            def = def.replace(/^[ ]{0,3}\[(\d+)\]:/, "  [" + refNumber + "]:");
+            defs += "\n" + def;
+        };
+
+        // note that
+        // a) the recursive call to getLink cannot go infinite, because by definition
+        //    of regex, inner is always a proper substring of wholeMatch, and
+        // b) more than one level of nesting is neither supported by the regex
+        //    nor making a lot of sense (the only use case for nesting is a linked image)
+        var getLink = function (wholeMatch, before, inner, afterInner, id, end) {
+            inner = inner.replace(regex, getLink);
+            if (defsToAdd[id]) {
+                addDefNumber(defsToAdd[id]);
+                return before + inner + afterInner + refNumber + end;
+            }
+            return wholeMatch;
+        };
+
+        chunk.before = chunk.before.replace(regex, getLink);
+
+        if (linkDef) {
+            addDefNumber(linkDef);
+        }
+        else {
+            chunk.selection = chunk.selection.replace(regex, getLink);
+        }
+
+        var refOut = refNumber;
+
+        chunk.after = chunk.after.replace(regex, getLink);
+
+        if (chunk.after) {
+            chunk.after = chunk.after.replace(/\n*$/, "");
+        }
+        if (!chunk.after) {
+            chunk.selection = chunk.selection.replace(/\n*$/, "");
+        }
+
+        chunk.after += "\n\n" + defs;
+
+        return refOut;
+    };
+
     commandProto.updateLinkDefs = function(chunk, urls, editor) {
         var refNumber = 0;
         var defsToAdd = {};
@@ -2143,11 +2214,11 @@ var $osf = require('js/osfHelpers');
 
             chunk.startTag = chunk.startTag.replace(/!?\[/, "");
             chunk.endTag = "";
-            this.updateLinkDefs(chunk, null, this.editor);
+            this.addLinkDef(chunk, null);
 
         }
         else {
-            
+
             // We're moving start and end tag back into the selection, since (as we're in the else block) we're not
             // *removing* a link, but *adding* one, so whatever findTags() found is now back to being part of the
             // link text. linkEnteredCallback takes care of escaping any brackets.
@@ -2155,7 +2226,7 @@ var $osf = require('js/osfHelpers');
             chunk.startTag = chunk.endTag = "";
 
             if (/\n\n/.test(chunk.selection)) {
-                this.updateLinkDefs(chunk, null, this.editor);
+                this.addLinkDef(chunk, null);
                 return;
             }
             var that = this;
@@ -2186,16 +2257,22 @@ var $osf = require('js/osfHelpers');
                     // the first bracket could then not act as the "not a backslash" for the second.
                     chunk.selection = (" " + chunk.selection).replace(/([^\\](?:\\\\)*)(?=[[\]])/g, "$1\\").substr(1);
 
+                    var linkDef = " [999]: " + properlyEncoded(link);
+
+                    var num = that.addLinkDef(chunk, linkDef);
+                    chunk.startTag = isImage ? "![" : "[";
+                    chunk.endTag = "][" + num + "]";
+
                     if (!chunk.selection) {
                         if (isImage) {
-                            chunk.selection = linkDescription(that.getString("imagedescription"), true, false);
+                            chunk.selection = that.getString("imagedescription");
                         }
                         else {
-                            chunk.selection = linkDescription(that.getString("linkdescription"), false, false);
+                            chunk.selection = that.getString("linkdescription");
                         }
                     }
-                    that.updateLinkDefs(chunk, [link], that.editor);
                 }
+                postProcessing();
             };
 
             background = ui.createBackground();
