@@ -119,7 +119,7 @@ class TestApiBaseSerializers(ApiTestCase):
     def test_invalid_embed_value_raise_bad_request(self):
         res = self.app.get(self.url, params={'embed': 'foo'}, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_equal(res.json['errors'][0]['detail'], "Field 'foo' is not embeddable.")
+        assert_equal(res.json['errors'][0]['detail'], "The following fields are not embeddable: foo")
 
 
 class TestRelationshipField(DbTestCase):
