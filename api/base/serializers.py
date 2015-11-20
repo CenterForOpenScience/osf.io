@@ -234,27 +234,24 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         view_name = related_view
         if view_name:
-            lookup_kwarg = related_kwargs.keys()[0]
-            lookup_field = related_kwargs.values()[0]
+            lookup_kwargs = related_kwargs
         else:
             view_name = self_view
-            lookup_kwarg = self_kwargs.keys()[0]
-            lookup_field = self_kwargs.values()[0]
+            lookup_kwargs = self_kwargs
 
-        super(RelationshipField, self).__init__(view_name, lookup_url_kwarg=lookup_kwarg, lookup_field=lookup_field, **kwargs)
+        super(RelationshipField, self).__init__(view_name, lookup_url_kwarg=lookup_kwargs, **kwargs)
 
     def resolve(self, resource):
-            embed_value = self.lookup_attribute(resource, self.lookup_field)
-            if getattr(self, 'kwargs', None):
-                kwargs = {attr_name: getattr(resource, attr) for (attr_name, attr) in self.kwargs}
-            else:
-                kwargs = {self.lookup_url_kwarg: embed_value}
-            return resolve(
-                reverse(
-                    self.view_name,
-                    kwargs=kwargs
-                )
+        """
+        Resolves the view when embedding.
+        """
+        kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in self.lookup_url_kwarg.items()}
+        return resolve(
+            reverse(
+                self.view_name,
+                kwargs=kwargs
             )
+        )
 
     def get_meta_information(self, meta_data, value):
         """
