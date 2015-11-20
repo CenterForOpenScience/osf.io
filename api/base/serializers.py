@@ -14,7 +14,7 @@ from rest_framework.fields import get_attribute as get_nested_attributes
 
 from api.base import utils
 from api.base.settings import BULK_SETTINGS
-from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException
+from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, InvalidTargetError
 
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
@@ -333,14 +333,14 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return ret
 
 
-class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
+class TargetField(ser.Field):
     """
     Field that returns a nested dict with the url (constructed based
     on the object's type), optional meta information, and link_type.
 
     Example:
 
-        target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
+        target = TargetField(link_type='related', meta={'type': 'get_target_type'})
 
     """
     json_api_link = True  # serializes to a links object
@@ -358,14 +358,15 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
     def __init__(self, **kwargs):
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
-        super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
+        super(TargetField, self).__init__(read_only=True, **kwargs)
 
     def resolve(self, resource):
         """
         Resolves the view for target node or target comment when embedding.
         """
-        view_info = self.view_map.get(resource.target._name, None)
-        assert view_info is not None, 'Resource target is not node or comment.'
+        view_info = self.view_map.get('zip', None)
+        if not view_info:
+            raise InvalidTargetError
         embed_value = resource.target._id
 
         kwargs = {view_info['lookup_kwarg']: embed_value}
