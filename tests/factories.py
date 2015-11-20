@@ -265,15 +265,16 @@ class RetractedRegistrationFactory(AbstractNodeFactory):
     def _create(cls, *args, **kwargs):
 
         registration = kwargs.pop('registration', None)
+        registration.is_public = True
         user = kwargs.pop('user', registration.creator)
 
         registration.retract_registration(user)
         retraction = registration.retraction
         token = retraction.approval_state.values()[0]['approval_token']
         retraction.approve_retraction(user, token)
-        registration.save()
+        retraction.save()
 
-        return registration
+        return retraction
 
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer
