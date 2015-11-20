@@ -177,8 +177,6 @@ class FilterMixin(object):
         :param basestring field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
-        if getattr(field, 'field', None):
-            return field.field.source or field_name
         return field.source or field_name
 
     def convert_value(self, value, field):
