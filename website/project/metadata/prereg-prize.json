@@ -119,7 +119,7 @@
             "format": "textarea",
             "title": "Sample size",
             "description": "Describe the sample size of your study. How many units will be analyzed in the study? This could be the number of people, birds, classrooms, plots, interactions, or countries included. If the units are not individuals, then describe the size requirements for each unit. If you are using a clustered or multilevel design, how many units are you collecting at each level of the analysis?",
-            "help": "Our target sample size is 280 participants. We will attempt to recruit up to 320, assuming that not all will complete the total task. <br />< br /> How responses will be evaluated: For some studies, this will simply be the number of samples or the number of clusters. For others, this could be an expected range, minimum, or maximum number.",
+            "help": "Our target sample size is 280 participants. We will attempt to recruit up to 320, assuming that not all will complete the total task. <br /><br /> How responses will be evaluated: For some studies, this will simply be the number of samples or the number of clusters. For others, this could be an expected range, minimum, or maximum number.",
             "required": true
         }, {
             "qid": "q9",
