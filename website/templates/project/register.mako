@@ -52,7 +52,7 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    % if node.get('registered_schema'):
+    % if node.get('registered_schema') and not node.get('is_retracted'):
       <script type="text/javascript">
         window.contextVars.node.registrationMetaSchema = ${ node['registered_schema'] | sjson, n };
       </script>
