@@ -2,7 +2,9 @@
 {% load render_bundle from webpack_loader %}
 
 {% load static %}
-{% block title %}List of Spam{% endblock title %}
+{% block title %}
+    <title>List of Spam</title>
+{% endblock title %}
 {# stylesheets #}
 {% block content %}
     {{ block.super }}
