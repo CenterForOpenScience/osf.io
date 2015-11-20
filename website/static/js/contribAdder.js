@@ -28,7 +28,7 @@ function Contributor(data) {
 }
 
 var AddContributorViewModel = oop.extend(Paginator, {
-    constructor: function(title, nodeId, parentId, parentTitle) {
+    constructor: function(title, nodeId, parentId, parentTitle, options) {
         this.super.constructor.call(this);
         var self = this;
 
@@ -37,6 +37,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
         self.parentId = parentId;
         self.parentTitle = parentTitle;
+        self.async = options.async;
+        self.callback = options.callback;
+        if(self.async) {
+            self._promise = $.Deferred();
+        }
 
         //list of permission objects for select.
         self.permissionList = [
@@ -306,8 +311,14 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 }),
                 node_ids: self.nodesToChange()
             }
-        ).done(function() {
-            window.location.reload();
+        ).done(function(response) {
+            if (self.async) {
+                $('.modal').modal('hide');
+                $osf.unblock();
+                self._promise.resolve(self.callback(response));
+            } else {
+                window.location.reload();
+            }
         }).fail(function() {
             $('.modal').modal('hide');
             $osf.unblock();
@@ -355,7 +366,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle) {
+function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, options) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
@@ -363,15 +374,17 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle) {
     self.nodeId = nodeId;
     self.parentId = parentId;
     self.parentTitle = parentTitle;
+    self.options = options;
+
     self.viewModel = new AddContributorViewModel(
         self.nodeTitle,
         self.nodeId,
         self.parentId,
-        self.parentTitle
+        self.parentTitle,
+        self.options
     );
     self.init();
 }
-
 ContribAdder.prototype.init = function() {
     var self = this;
     self.viewModel.getContributors();

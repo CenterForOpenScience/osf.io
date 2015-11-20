@@ -31,18 +31,12 @@
 <!--Author Import -->
 <script type="text/html" id="osf-author-import">
     <h3 data-bind="text: contributors.join(', ')"></h3>
-    <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm pull-right" >Add &plus;</a>
+    <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-md pull-right" >Add &plus;</a>
 </script>
 
 
 
 <!-- Add User Modal-->
-<script type="text/html" id="osf-add-users">
-    <a data-bind="click: function(){console.log('You did it!')} > 1">Add user to this project</a>
-
-    <span data-bind="template: {data: $data, name: format}"></span>
-
-</script>
 <div id="manageContributors">
     <div id="addContributors" class="modal fade">
         <div class="modal-dialog modal-lg">
