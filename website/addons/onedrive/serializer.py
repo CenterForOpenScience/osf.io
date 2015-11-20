@@ -65,7 +65,7 @@ class OnedriveSerializer(OAuthAddonSerializer):
         """
         
         logger.error('addon_serialized_settings-1')
-        
+        #TODO: review onedrive serilaized settings to determine if we need to add more
         valid_credentials = True
         user_settings = node_settings.user_settings
         self.node_settings = node_settings
