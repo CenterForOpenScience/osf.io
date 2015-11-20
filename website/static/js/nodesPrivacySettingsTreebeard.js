@@ -78,6 +78,7 @@ function NodesPrivacyTreebeard(data, nodesState, nodesOriginal) {
                     filter : false,
                     custom : function () {
                         return m('input[type=checkbox]', {
+                            disabled : !item.data.node.can_write,
                             onclick : function() {
                                 item.data.node.is_public = !item.data.node.is_public;
                                 item.open = true;

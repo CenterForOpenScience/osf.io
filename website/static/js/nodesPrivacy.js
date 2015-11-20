@@ -20,19 +20,19 @@ var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard');
 var API_BASE = 'http://localhost:8000/v2/nodes/';
 
 var MESSAGES = {
-    makeProjectPublicWarning: 'Please review your project for sensitive or restricted information before making it public.  ' +
-                        'Once a project is made public, you should assume it will always be public. You can ' +
-                        'return it to private later, but search engines or others may access files before you do so.  ' +
-                        '<br><br>Making a project private will prevent users from viewing it on this site, ' +
+    makeProjectPublicWarning:
+                        'Please review your project, component, and add-ons, for sensitive or restricted information before making them public.  ' +
+                        'Once a they are made public, you should assume they will always be public. You can ' +
+                        'return them to private later, but search engines or others may access files before you do so.  ' +
+                        '<br><br>Making a project or component private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Are you sure you would like to continue?',
 
-    selectNodes: 'Please select the components you’d like to make <b>public</b> by checking the boxes below. ' +
-                        'Checked components will be <b>public</b>; unchecked components will be <b>private</b>.',
+    selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
+                        '<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.',
     addonWarning: {
-        addons: 'The following <b>addons</b> will be effected by this change:',
-        nodesPublic: 'The following <b>projects</b> and/or <b>components</b> will be made public:',
-        nodesPrivate: 'The following <b>projects</b> and/or <b>components</b> will be made private:'
+        nodesPublic: 'The following <b>projects</b> and <b>components</b> will be made <br>public.</br>',
+        nodesPrivate: 'The following <b>projects</b> and <b>components</b> will be made <br>private</br>'
     }
 };
 
@@ -48,6 +48,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         id: nodeTree.node.id,
         addons: nodeTree.node.addons,
         title: nodeTree.node.title,
+        canWrite: nodeTree.node.can_write,
         changed: false
     };
 
@@ -149,7 +150,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         return {
             warning: 'Warning',
             select: 'Change Privacy Settings',
-            addon: 'Projects, Components, and Addons Effected'
+            addon: 'Projects, Components, and Addons Affected'
         }[self.page()];
     });
 
@@ -213,12 +214,14 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     self.selectAll = function() {
         var nodesState = ko.toJS(self.nodesState());
         for (var node in nodesState) {
-            nodesState[node].public = true;
-            if (nodesState[node].public !== nodesOriginal[node].public) {
-                nodesState[node].changed = true;
-            }
-            else {
-                nodesState[node].changed = false;
+            if (nodesState[node].canWrite) {
+                nodesState[node].public = true;
+                if (nodesState[node].public !== nodesOriginal[node].public) {
+                    nodesState[node].changed = true;
+                }
+                else {
+                    nodesState[node].changed = false;
+                }
             }
         }
         self.nodesState(nodesState);
@@ -228,12 +231,15 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     self.selectNone = function() {
         var nodesState = ko.toJS(self.nodesState());
         for (var node in nodesState) {
-            nodesState[node].public = false;
-            if (nodesState[node].public !== nodesOriginal[node].public) {
-                nodesState[node].changed = true;
-            }
-            else {
-                nodesState[node].changed = false;
+            if (nodesState[node].canWrite) {
+                nodesState[node].public = false;
+                if (nodesState[node].public !== nodesOriginal[node].public) {
+                    nodesState[node].changed = true;
+                }
+                else {
+                    nodesState[node].changed = false;
+                }
+
             }
         }
         self.nodesState(nodesState);

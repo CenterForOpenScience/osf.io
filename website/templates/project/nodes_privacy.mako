@@ -27,9 +27,9 @@
                     </div>
                     <div>
                         Select:&nbsp;
-                        <a data-bind="click:selectAll">Make all public</a>
+                        <a class="text-bigger" data-bind="click:selectAll">Make all public</a>
                         &nbsp;|&nbsp;
-                        <a data-bind="click:selectNone">Make all private</a>
+                        <a class="text-bigger" data-bind="click:selectNone">Make all private</a>
                     </div>
                         <div class="tb-row-titles">
                             <div style="width: 100%" data-tb-th-col="0" class="tb-th">
@@ -54,32 +54,22 @@
 
                 <div data-bind="if: page() == 'addon'">
 
-                    <div class="m-b-md box p-xs" data-bind="visible: changedAddons().length > 0">
-                        <span class="text-bigger" data-bind="html:message()['addons']"></span>
-                        <ul data-bind="foreach: { data: changedAddons, as: 'item' }">
-                            <li>
-                                <h4 class="f-w-lg" data-bind="text: item"></h4>
-                            </li>
-                        </ul>
-                        <hr>
-                    </div>
-                    <div class="m-b-md box p-xs" data-bind="visible: nodesChangedPublic().length > 0">
-                        <span class="text-bigger" data-bind="html:message()['nodesPublic']"></span>
+                    <div class="m-b-xs box p-xs" data-bind="visible: nodesChangedPublic().length > 0">
+                        <h4 class="privacyTitle" data-bind="html:message()['nodesPublic']"></h4>
                         <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
                             <li>
                                 <h4 class="f-w-lg" data-bind="text: item"></h4>
                             </li>
                         </ul>
-                        <hr>
                     </div>
-                    <div class="m-b-md box p-xs" data-bind="visible: nodesChangedPrivate().length > 0">
-                        <span class="text-bigger" data-bind="html:message()['nodesPrivate']"></span>
+<hr>
+                    <div class="m-b-xs box p-xs" data-bind="visible: nodesChangedPrivate().length > 0">
+                        <h4 class="privacyTitle" data-bind="html:message()['nodesPrivate']"></h4>
                         <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
                             <li>
                                 <h4 class="f-w-lg" data-bind="text: item"></h4>
                             </li>
                         </ul>
-                        <hr>
                     </div>
                     <!-- end addon and projects changed warning page -->
 

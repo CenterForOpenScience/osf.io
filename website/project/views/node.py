@@ -1008,7 +1008,7 @@ def get_children(auth, node, **kwargs):
     return _render_nodes(nodes, auth)
 
 
-def node_privacy_tree(user, node_ids):
+def node_child_tree(user, node_ids):
     """ Format data to test for node privacy settings for use in treebeard.
     """
     items = []
@@ -1027,8 +1027,8 @@ def node_privacy_tree(user, node_ids):
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-
-        children.extend(node_privacy_tree(
+        can_write = node.has_permission(user, 'admin')
+        children.extend(node_child_tree(
             user,
             [
                 n._id
@@ -1043,8 +1043,10 @@ def node_privacy_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
-                'addons': addons
+                'addons': addons,
+                'can_write': can_write
             },
+            'user_id': user._id,
             'children': children,
             'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
@@ -1063,7 +1065,7 @@ def node_privacy_tree(user, node_ids):
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    return node_privacy_tree(auth.user, [node._id])
+    return node_child_tree(auth.user, [node._id])
 
 
 @must_be_contributor_or_public
