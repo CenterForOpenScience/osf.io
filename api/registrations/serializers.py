@@ -102,8 +102,9 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_supplement(self, obj):
-        if obj.registered_meta:
-            return obj.registered_meta.keys()[0]
+        if obj.registered_schema:
+            schema = obj.registered_schema[0]
+            return schema.name
         return None
 
     def update(self, *args, **kwargs):
