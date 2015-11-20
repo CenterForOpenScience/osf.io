@@ -65,9 +65,11 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         api = Figshare.from_settings(self.user_settings)
         items = []
         if self.figshare_type in ('article', 'fileset'):
-            items = api.article(self, self.figshare_id)['items']
+            article = api.article(self, self.figshare_id)
+            items = article['items'] if article else []
         else:
-            items = api.project(self, self.figshare_id)['articles']
+            project = api.project(self, self.figshare_id)
+            items = project['articles'] if project else []
         private = any(
             [item for item in items if item['status'] != 'Public']
         )

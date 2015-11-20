@@ -9,6 +9,8 @@ require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var m = require('mithril');
+
 
 var FolderPicker = require('js/folderpicker');
 var ZeroClipboard = require('zeroclipboard');
@@ -177,13 +179,13 @@ var FolderPickerViewModel = oop.defclass({
         self.folderName = ko.pureComputed(function() {
             var nodeHasAuth = self.nodeHasAuth();
             var folder = self.folder();
-            return (nodeHasAuth && folder && folder.name) ? folder.name.trim() : '';
+            return (nodeHasAuth && folder && folder.name) ? decodeURIComponent(folder.name.trim()) : '';
         });
 
         self.selectedFolderName = ko.pureComputed(function() {
             var userIsOwner = self.userIsOwner();
             var selected = self.selected();
-            var name = selected.name || 'None';
+            var name = selected.name ? decodeURIComponent(selected.name) : 'None';
             name = name.replace('All Files', 'Full ' + addonName);
             return userIsOwner ? name : '';
         });
@@ -319,11 +321,12 @@ var FolderPickerViewModel = oop.defclass({
             .fail(onSubmitError);
     },
     onImportSuccess: function(response) {
-        var self = this;
+        var self = this;       
         var msg = response.message || self.messages.tokenImportSuccess();
         // Update view model based on response
         self.changeMessage(msg, 'text-success', 3000);
         self.updateFromData(response.result);
+        self.loadedFolders(false);
         self.activatePicker();
     },
     onImportError: function(xhr, status, error) {
@@ -478,6 +481,25 @@ var FolderPickerViewModel = oop.defclass({
                 self.loading(false);
                 // Set flag to prevent repeated requests
                 self.loadedFolders(true);
+            },
+            resolveRows: function(item) {
+                item.css = '';
+                return [
+                {
+                    data : 'name',  // Data field name
+                    folderIcons : true,
+                    filter : false,
+                    custom : function(item, col) {
+                        //This is bad, but probably necessary. GoogleDrive returns URI encoded folder names, but (most/all?) others don't
+                        return m('span', decodeURIComponent(item.data.name));
+                    }
+                },
+                {
+                    css : 'p-l-xs',
+                    sortInclude : false,
+                    custom : FolderPicker.selectView
+                }
+            ];
             }
         }, self.treebeardOptions);
         self.currentDisplay(self.PICKER);

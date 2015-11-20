@@ -13,8 +13,8 @@
                 <ul class="nav nav-stacked nav-pills " style="min-width: 210px">
                     <li><a class="active" href="#about">About</a></li>
                     <li><a href="#using">Using the OSF</a></li>
-                    <li><a href="#security">Privacy and Security</a></li>
-                    <li><a href="#common">Common Issues</a></li>
+                    <li><a href="#security">Privacy and security</a></li>
+                    <li><a href="#common">Common issues</a></li>
                 </ul>
             </div>
         </div>
@@ -84,7 +84,7 @@
             </div>
 
             <div id="security" class="anchor row">
-                <h2 class="text-center">Privacy and Security</h2>
+                <h2 class="text-center">Privacy and security</h2>
                     <h4 class="m-t-lg f-w-lg">What if I don't want to make anything available publicly in the OSF?</h4>
                         <p>
                             The OSF is designed to support both private and public workflows. You can
@@ -112,7 +112,7 @@
                         <p>You should refer to your institutional policies regarding specific security requirements for your research.</p>
 
                     <h4 class="m-t-lg f-w-lg">How can I license my data/code/etc.?</h4>
-                        <p>If you’d like to attach a license to your materials hosted on the OSF, you can put this information in your project’s wiki or upload a README file. Typically, users wish to license their materials using Creative Commons licenses. Information about Creative Commons licenses can be found <a href="https://creativecommons.org/licenses/">here.</a> </p>
+                        <p>To apply a license to your OSF project, visit the project's overview page and select one from the "License picker," below the project's description. You can select from a variety of commonly used licenses or upload your own.</p>
 
 
                     <h4 class="m-t-lg f-w-lg">How does the OSF store and backup files that I upload to the site?</h4>
@@ -126,7 +126,7 @@
             </div>
 
             <div id="common" class="anchor row">
-                <h2 class="text-center">Common Issues</h2>
+                <h2 class="text-center">Common issues</h2>
                     <h4 class="m-t-lg f-w-lg">What do I do if I lost my email confirmation for OSF registration, or I never received it?</h4>
                         <p>Log into the OSF with the email address and password of the account you created, and there will be a link to resend the confirmation email.</p>
 
