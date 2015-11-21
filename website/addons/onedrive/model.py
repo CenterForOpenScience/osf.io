@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import requests
 
 from flask import abort, request
 
@@ -48,7 +49,14 @@ class Onedrive(ExternalProvider):
         logger.error('Onedrive::handle_callback')
         logger.error('Onedrive::response' + repr(response))
         code = request.args.get('code')
-                
+        uid = str(response['user_id'])
+        
+        r = requests.get('https://apis.live.net/v5.0/b3b92fbe54bee8b6?access_token='+response['access_token'])
+        logger.error('https://apis.live.net/v5.0/'+uid+'?access_token=EwCIAq1DBAAUGCCXc8wU/zFu9QnLdZXy+YnElFkAAWG1tIiEesh52LlMfTJYF8ZS3v5wYnQ8Gy+y6cmRu19JAC7tOKAw0pv58/wM8rsZlFSby28ahai2xrHwhWa78JfMQ7UvnKQwnK4UEYSX/3Cz/qJniHHMnBP56Z9xG+Ek2+G2udjfUm/5NNtpLgA62msHuWwVSfDgWXgAzAkgXRrGHtxwW6VeryQfLLN++wBzV6SJ34tbumB7Fu3IzCEMxkh642Ww+JvsZhKbj9I8xH4HC83y8b2pJ6Erh5afmmRl5JbtiIY94tBAHRIGsHQRnVjJoQpZVivDFh+EaGw9w6za00zRrAqqx5DAPGT4PaeluhLGF3CVi8ZxaNQjOUKwDCoDZgAACOfvLIBOAAO5WAEtTon0n4NeTw4slGh0sNQFD067s311bInKEuIm/id1ZBoMXqUvbin2lKVZy+CKPORBqiXDMnzK0DM1IyfQcp4cliM3VLoDlAaU6AfDNM1qRskmQhL/S6p600bsFyF15XLc23QdYKFzSY/nFtRAyKY7mUmE82DijwaQZSmBmH8l07xN+kza06MLI72gmTiGDiTeqTMVSaNmrn5/mpnAIeGFflqxUNJ+S9wMpeA58u+L3xH2BydoKxJFrCFwSzk+UleBlm4Yim5Tl+w6WbKPpb9oALxM0nhiYV7GMUx0wAXJAf9Z07dLUPyHu/fCU/8abccf21k1/oZEXiHA+uHaAsH+fRvHJ6Q+UUVkTLllgRMBDUY2ZzhOdqWKEGqnAef/cPX3epZaG94jtgkt9A9EQvhgbb5zgWX2DA1ozzuOsHclXLdfk6KBSsTKLwKXpc/8zH2QZXgLTf0f1XQB')
+        
+        logger.error('Onedrive::full url' + repr(r))
+        logger.error('Onedrive::json' + repr(r.json()))
+        #grabbed the JSON from the profile
         #raise ValueError('lets stop here, code:' + code)
 #         client = OnedriveClient(CredentialsV2(
 #             response['access_token'],
@@ -60,11 +68,11 @@ class Onedrive(ExternalProvider):
 #         about = client.get_user_info()
 
         return {
-            'user_id': response['user_id'],
+            'user_id': r.json()['id'],
             'provider_id': response['user_id'],
             'code': code,
-            'display_name': 'TBD',
-            'profile_url': 'https://app.onedrive.com/profile/{0}'.format(response['user_id'])
+            'display_name': r.json()['name'],
+            'profile_url': r.json()['link']
         }
 
 class OnedriveUserSettings(AddonOAuthUserSettingsBase):
@@ -72,6 +80,7 @@ class OnedriveUserSettings(AddonOAuthUserSettingsBase):
     """
     oauth_provider = Onedrive
     serializer = OnedriveSerializer
+    myBase = AddonOAuthUserSettingsBase
 
 
 class OnedriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
