@@ -24,12 +24,14 @@ class CommentSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'deleted',
         'date_created',
-        'date_modified'
+        'date_modified',
+        'page'
     ])
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     content = AuthorizedCharField(source='get_content')
+    page = ser.SerializerMethodField()
 
     user = JSONAPIHyperlinkedRelatedField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related', read_only=True)
     node = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id', link_type='related', read_only=True)
@@ -41,6 +43,7 @@ class CommentSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
+    hidden = ser.BooleanField(read_only=True, source='is_hidden', default=False)
 
     # LinksField.to_representation adds link to "self"
     links = LinksField({})
@@ -74,9 +77,20 @@ class CommentSerializer(JSONAPISerializer):
 
     def get_target_type(self, obj):
         object_type = obj._name
-        if not object_type or object_type not in ['comment', 'node']:
+        if not object_type or object_type not in ['comment', 'node', 'storedfilenode']:
             raise InvalidModelValueError('Invalid comment target.')
         return object_type
+
+    def get_page(self, obj):
+        root_target = obj.root_target
+        if not root_target:
+            raise InvalidModelValueError('Invalid root target.')
+        else:
+            name = root_target._name
+            if name == 'node':
+                return 'node'
+            elif name == 'storedfilenode':
+                return 'files'
 
 
 class CommentDetailSerializer(CommentSerializer):

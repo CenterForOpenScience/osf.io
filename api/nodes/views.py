@@ -1564,7 +1564,7 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('target', 'eq', self.get_node())
+        return Q('node', 'eq', self.get_node()) & (Q('root_target', 'ne', None))
 
     def get_queryset(self):
         return Comment.find(self.get_query_from_request())

@@ -12,6 +12,7 @@ from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
 
+from api.base.utils import absolute_reverse
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
@@ -166,6 +167,10 @@ class StoredFileNode(StoredObject):
             if not create:
                 return None
         return Guid.generate(self)
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
 
 
 class FileNodeMeta(type):
