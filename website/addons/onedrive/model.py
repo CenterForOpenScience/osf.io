@@ -67,13 +67,17 @@ class Onedrive(ExternalProvider):
             'display_name': userInfo['name'],
             'profile_url': userInfo['link']
         }
+        
+    def fetch_access_token(self, force_refresh=False):
+#         self.refresh_access_token(force=force_refresh)
+        return self.account.oauth_key
 
 class OnedriveUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific onedrive information
     """
     oauth_provider = Onedrive
     serializer = OnedriveSerializer
-    myBase = AddonOAuthUserSettingsBase
+#     myBase = AddonOAuthUserSettingsBase
 
 
 class OnedriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):

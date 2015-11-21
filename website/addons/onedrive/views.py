@@ -140,6 +140,12 @@ def onedrive_folder_list(node_addon, **kwargs):
 
     node = node_addon.owner
     folder_id = request.args.get('folderId')
+    logger.debug('oauth_provider::' +  repr(node_addon.oauth_provider))
+    logger.debug('fetch_access_token::' +  repr(node_addon))
+    logger.debug('node_addon.external_account::' +  repr(node_addon.external_account))
+    logger.debug('node_addon.external_account::oauth_key' +  repr(node_addon.external_account.oauth_key))
+#     raise ValueError('node_addon.external_account::oauth_key' +  repr(node_addon.external_account.oauth_key))
+    
 
     if folder_id is None:
         return [{
@@ -152,14 +158,13 @@ def onedrive_folder_list(node_addon, **kwargs):
                 'folders': node.api_url_for('onedrive_folder_list', folderId=0),
             }
         }]
+
+#    TODO: refresh token
+
     
-#    logger.error('Onedrive::kwargs' + repr(kwargs))
-    logger.error('Onedrive::node_addon' + repr(node_addon))
-    logger.error('Onedrive::node_addon.owner' + repr(node_addon.owner))
-    raise ValueError('lets stop here')
 #    try:
 #        refresh_oauth_key(node_addon.external_account)
-    client = OnedriveClient(node_addon.external_account.oauth_key)
+#     client = OnedriveClient(node_addon.external_account.oauth_key)
 #    except OnedriveClientException:
 #        raise HTTPError(http.FORBIDDEN)
 
