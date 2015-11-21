@@ -7,8 +7,9 @@ import logging
 
 from flask import request
 # from OneDriveSDK
-import onedrivesdk
-from onedrivesdk.helpers import GetAuthCodeServer
+# import onedrivesdk
+# from onedrivesdk.helpers import GetAuthCodeServer
+from website.addons.onedrive.client import OneDriveClient
 from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError, PermissionsError
@@ -144,6 +145,8 @@ def onedrive_folder_list(node_addon, **kwargs):
     logger.debug('fetch_access_token::' +  repr(node_addon))
     logger.debug('node_addon.external_account::' +  repr(node_addon.external_account))
     logger.debug('node_addon.external_account::oauth_key' +  repr(node_addon.external_account.oauth_key))
+    logger.debug('node_addon.external_account::access_token' +  repr(node_addon.external_account.access_token)) #
+    logger.debug('node_addon.external_account::expires_at' +  repr(node_addon.external_account.expires_at)) #
 #     raise ValueError('node_addon.external_account::oauth_key' +  repr(node_addon.external_account.oauth_key))
     
 
@@ -159,8 +162,14 @@ def onedrive_folder_list(node_addon, **kwargs):
             }
         }]
 
-#    TODO: refresh token
-
+#    TODO: must refresh token https://dev.onedrive.com/auth/msa_oauth.htm#step-3-get-a-new-access-token-or-refresh-token
+    
+    oneDriveClient = OneDriveClient(node_addon.external_account.access_token)
+    # refresh token
+    folders = oneDriveClient.folders()
+    logger.debug('folders::' +  repr(folders))
+    
+    raise ValueError('made it past onedrive api call::' + repr(folders))
     
 #    try:
 #        refresh_oauth_key(node_addon.external_account)
@@ -176,8 +185,8 @@ def onedrive_folder_list(node_addon, **kwargs):
 #        raise HTTPError(http.BAD_REQUEST)
 
     # Raise error if folder was deleted
-    if metadata.get('is_deleted'):
-        raise HTTPError(http.NOT_FOUND)
+#     if metadata.get('is_deleted'):
+#         raise HTTPError(http.NOT_FOUND)
 
     folder_path = '/'.join(
         [
