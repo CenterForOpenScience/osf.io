@@ -46,9 +46,7 @@ class Onedrive(ExternalProvider):
         record to the user and saves the user's access token and account info.
         """
 
-
-        
-        userInfoRequest = requests.get(settings.MSLIVE_API_URL + 'me?access_token='+response['access_token'])
+        userInfoRequest = requests.get(("{}me?access_token={}").format(settings.MSLIVE_API_URL, response['access_token']))
         
         logger.debug("userInfoRequest:: %s", repr(userInfoRequest))
         
@@ -65,9 +63,7 @@ class Onedrive(ExternalProvider):
 #         about = client.get_user_info()
 
         return {
-            #'user_id': userInfo['id'],
             'provider_id': userInfo['id'],
-#            'code': code,
             'display_name': userInfo['name'],
             'profile_url': userInfo['link']
         }
