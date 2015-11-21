@@ -46,24 +46,12 @@ class Onedrive(ExternalProvider):
         record to the user and saves the user's access token and account info.
         """
 
-        logger.error('Onedrive::handle_callback')
-        logger.error('Onedrive::response' + repr(response))
-        code = request.args.get('code')
-        #uid = str(response['user_id'])
+
         
-        r = requests.get('https://apis.live.net/v5.0/me?access_token='+response['access_token'])
-        logger.error('Onderive::me URL: https://apis.live.net/v5.0/me?access_token='+response['access_token'])
+        userInfoRequest = requests.get('https://apis.live.net/v5.0/me?access_token='+response['access_token'])
         
-        #'https://profile.live.com/', u'id': u'75bfe374ebeb1211
-        logger.error('Onedrive::live response' + repr(r))
-        logger.error('Onedrive::livejson' + repr(r.json()))
+        userInfo = userInfoRequest.json()
         
-        #r = requests.get('https://apis.live.net/v5.0/'+ r.json()['id'] +'?access_token='+response['access_token'])
-        
-        #logger.error('Onedrive::live response' + repr(r))
-        #logger.error('Onedrive::livejson' + repr(r.json()))
-        #grabbed the JSON from the profile
-        #raise ValueError('lets stop here, code:' + code)
 #         client = OnedriveClient(CredentialsV2(
 #             response['access_token'],
 #             response['refresh_token'],
@@ -74,11 +62,11 @@ class Onedrive(ExternalProvider):
 #         about = client.get_user_info()
 
         return {
-            'user_id': r.json()['id'],
-            'provider_id': response['user_id'],
-            'code': code,
-            'display_name': r.json()['name'],
-            'profile_url': r.json()['link']
+            #'user_id': userInfo['id'],
+            'provider_id': userInfo['id'],
+#            'code': code,
+            'display_name': userInfo['name'],
+            'profile_url': userInfo['link']
         }
 
 class OnedriveUserSettings(AddonOAuthUserSettingsBase):
