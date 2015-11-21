@@ -1998,20 +1998,24 @@ function _fangornQueueComplete(treebeard) {
     var fileStatus = treebeard.options.uploadStates;
     treebeard.options.uploadStates = [];
     if (fileStatus.length > 2) {
-        treebeard.modal.update(m('div', [
-            m('h3.break-word.modal-title', ['Upload Status', m('br')]),
-            m('div.container', [
+        treebeard.modal.update(m('', [
+            m('', [
                 fileStatus.map(function(status){
-                    if (status.link) {
-                        return m('', [m('.row.col-12', [ m('.col-xs-2', m(status.success ? '.fa.fa-check' : '.fa.fa-times')), m('a[href="' + status.link + '"].col-xs-8', status.name)]), m('hr.row.col-12')])
-                    } else {
-                        return m('', [m('.row.col-12', [m('.col-xs-2', m(status.success ? '.fa.fa-check' : '.fa.fa-times')), m('.col-xs-8', status.name)]), m('hr.row.col-12')])
-                        // return m('.row.col-12', [m('', status.name), m('.col-xs-2', m(status.success ? '.fa.fa-check' : '.fa.fa-times'))])
-                    }
+                    return m('',
+                        [
+                            m('.row', [
+                                m((status.link ? 'a[href="' + status.link + '"]' : status.name) + '.col-sm-10', status.name),
+                                m('.col-sm-2', m(status.success ? '.fa.fa-check' : '.fa.fa-times'))
+                            ]),
+                            m('hr')
+                        ]
+                    );
                 })
             ])
-            ])
-        );
+        ]), m('', [
+            m('a.btn.btn-primary', {onclick: function() {treebeard.modal.dismiss();}}, 'Done'), //jshint ignore:line
+        ]), m('h3.break-word.modal-title', 'Upload Status'));
+
     }
 }
 
