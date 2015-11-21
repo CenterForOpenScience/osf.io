@@ -48,9 +48,12 @@ class Onedrive(ExternalProvider):
 
 
         
-        userInfoRequest = requests.get('https://apis.live.net/v5.0/me?access_token='+response['access_token'])
+        userInfoRequest = requests.get(settings.MSLIVE_API_URL + 'me?access_token='+response['access_token'])
+        
+        logger.debug("userInfoRequest:: %s", repr(userInfoRequest))
         
         userInfo = userInfoRequest.json()
+        logger.debug("userInfo:: %s", repr(userInfo))
         
 #         client = OnedriveClient(CredentialsV2(
 #             response['access_token'],
