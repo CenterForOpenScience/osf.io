@@ -17,6 +17,7 @@ from website.project import new_dashboard
 
 from api.base.settings.defaults import API_BASE
 
+
 class LogsTestCase(ApiTestCase):
 
     def setUp(self):
@@ -45,6 +46,7 @@ class LogsTestCase(ApiTestCase):
                 Auth(self.public_node.creator),
                 save=True
             )
+
     def tearDown(self):
         NodeLog.remove()
         Node.remove()

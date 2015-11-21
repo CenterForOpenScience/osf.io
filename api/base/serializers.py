@@ -1,7 +1,7 @@
 import re
 import collections
 
-from rest_framework import exceptions
+from rest_framework import exceptions, serializers, serializers
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 
@@ -608,3 +608,23 @@ def DevOnly(field):
         experimental_field = DevMode(CharField(required=False))
     """
     return field if settings.DEV_MODE else None
+
+
+class RestrictedDictSerializer(ser.Serializer):
+    def to_representation(self, obj):
+        data = {}
+        fields = [field for field in self.fields.values() if not field.write_only]
+
+        for field in fields:
+            try:
+                attribute = field.get_attribute(obj)
+            except ser.SkipField:
+                continue
+
+            if attribute is None:
+                # We skip `to_representation` for `None` values so that
+                # fields do not have to explicitly deal with that case.
+                data[field.field_name] = None
+            else:
+                data[field.field_name] = field.to_representation(attribute)
+        return data
