@@ -138,19 +138,20 @@ BaseComment.prototype.fetch = function() {
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {});
+    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: 'embed=user'});
     if (self.id() !== undefined) {
-        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {});
+        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {query: 'embed=user'});
     }
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
         {'isCors': true});
     request.done(function(response) {
-        var index = 0;
-        if (response.data.length !== 0) {
-            updateCommentUserData(response, index, self);
-        }
+        self.comments(
+            ko.utils.arrayMap(response.data, function(comment) {
+                return new CommentModel(comment, self, self.$root);
+            })
+        );
         setUnreadCommentCount(self);
         deferred.resolve(self.comments());
         self._loaded = true;
@@ -158,35 +159,6 @@ BaseComment.prototype.fetch = function() {
     return deferred;
 };
 
-var updateCommentUserData = function(commentsData, index, self) {
-    var commentJSON = commentsData.data[index];
-    if (index === -1) {
-        commentJSON = commentsData.data;
-    }
-    var userRequest = osfHelpers.ajaxJSON(
-        'GET',
-        commentJSON.relationships.user.links.related.href,
-        {'isCors': true});
-    userRequest.done(function(response) {
-        if (index === -1) {
-            commentsData.data.relationships.user = response;
-            self.comments.unshift(new CommentModel(commentsData.data, self, self.$root));
-        }
-        else {
-            commentsData.data[index].relationships.user = response;
-            if (index !== commentsData.data.length - 1) {
-                updateCommentUserData(commentsData, (index + 1), self);
-            }
-            else {
-                self.comments(
-                    ko.utils.arrayMap(commentsData.data, function(comment) {
-                        return new CommentModel(comment, self, self.$root);
-                    })
-                );
-            }
-        }
-    });
-};
 
 var setUnreadCommentCount = function(self) {
     var request = osfHelpers.ajaxJSON(
@@ -210,9 +182,9 @@ BaseComment.prototype.submitReply = function() {
         return;
     }
     self.submittingReply(true);
-    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {});
+    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: 'embed=user'});
     if (self.id() !== undefined) {
-        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {});
+        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {query: 'embed=user'});
     }
     var request = osfHelpers.ajaxJSON(
         'POST',
@@ -231,8 +203,7 @@ BaseComment.prototype.submitReply = function() {
     request.done(function(response) {
         self.cancelReply();
         self.replyContent(null);
-        self.onSubmitSuccess(response);
-        updateCommentUserData(response, -1, self);
+        self.comments.unshift(new CommentModel(response.data, self, self.$root));
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
@@ -243,6 +214,7 @@ BaseComment.prototype.submitReply = function() {
             self.$root.fetchDiscussion();
             self.$root.commented(true);
         }
+        self.onSubmitSuccess(response);
     });
     request.fail(function() {
         self.cancelReply();
@@ -255,7 +227,7 @@ var CommentModel = function(data, $parent, $root) {
     BaseComment.prototype.constructor.call(this);
 
     var self = this;
-    var userData = data.relationships.user.data;
+    var userData = data.embeds.user.data;
 
     self.$parent = $parent;
     self.$root = $root;
@@ -270,7 +242,7 @@ var CommentModel = function(data, $parent, $root) {
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
     self.author = {
-        'id': data.relationships.user.data.id,
+        'id': userData.id,
         'url': userData.links.html,
         'name': userData.attributes.full_name,
         'gravatarUrl': userData.links.profile_image
