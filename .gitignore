@@ -94,7 +94,11 @@ website/static/img/badges
 # Scripts
 scripts/guid_blacklist.txt
 scripts/hide_extra_registration_logs.json
+scripts/osfstorage/usage_whitelist.json
 
 # Celery dbs
 celerybeat-schedule.db
 celery_beat.py.db
+#
+# GUIDS
+scripts/guid_blacklist.txt

@@ -32,7 +32,8 @@ from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
 
 from website.project.model import (
-    Node, NodeLog, Tag, WatchConfig,
+    Node, NodeLog, Tag, WatchConfig, MetaSchema,
+    ensure_schemas,
 )
 from website import settings
 
@@ -44,6 +45,12 @@ from website.project.signals import contributor_added
 from website.app import init_app
 from website.addons.base import AddonConfig
 from website.project.views.contributor import notify_added_contributor
+
+try:
+    DEFAULT_METASCHEMA = MetaSchema.find()[0]
+except IndexError:
+    ensure_schemas()
+    DEFAULT_METASCHEMA = MetaSchema.find()[0]
 
 # Just a simple app without routing set up or backends
 test_app = init_app(
@@ -182,7 +189,31 @@ class ApiAppTestCase(unittest.TestCase):
         self.app = TestAppJSONAPI(django_app)
 
 
-class TestAppJSONAPI(TestApp):
+class JSONAPIWrapper(object):
+    """
+    Creates wrapper with stated content_type.
+    """
+    def make_wrapper(self, url, method, content_type, params=NoDefault, **kw):
+        """
+        Helper method for generating wrapper method.
+        """
+
+        if params is not NoDefault:
+            params = dumps(params, cls=self.JSONEncoder)
+        kw.update(
+            params=params,
+            content_type=content_type,
+            upload_files=None,
+        )
+        wrapper = self._gen_request(method, url, **kw)
+
+        subst = dict(lmethod=method.lower(), method=method)
+        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
+
+        return wrapper
+
+
+class TestAppJSONAPI(TestApp, JSONAPIWrapper):
     """
     Extends TestApp to add json_api_methods(post, put, patch, and delete)
     which put content_type 'application/vnd.api+json' in header. Adheres to
@@ -196,27 +227,17 @@ class TestAppJSONAPI(TestApp):
 
     def json_api_method(method):
 
-        def wrapper(self, url, params=NoDefault, **kw):
+        def wrapper(self, url, params=NoDefault, bulk=False, **kw):
             content_type = 'application/vnd.api+json'
-            if params is not NoDefault:
-                params = dumps(params, cls=self.JSONEncoder)
-            kw.update(
-                params=params,
-                content_type=content_type,
-                upload_files=None,
-            )
-            return self._gen_request(method, url, **kw)
-
-        subst = dict(lmethod=method.lower(), method=method)
-        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
-
+            if bulk:
+                content_type = 'application/vnd.api+json; ext=bulk'
+            return JSONAPIWrapper.make_wrapper(self, url, method, content_type , params, **kw)
         return wrapper
 
     post_json_api = json_api_method('POST')
     put_json_api = json_api_method('PUT')
     patch_json_api = json_api_method('PATCH')
     delete_json_api = json_api_method('DELETE')
-
 
 class UploadTestCase(unittest.TestCase):
 

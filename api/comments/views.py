@@ -7,6 +7,7 @@ from modularodm.exceptions import NoResultsFound
 from api.base.exceptions import Gone
 from api.base.filters import ODMFilterMixin
 from api.base import permissions as base_permissions
+from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
     CanCommentOrPublic,
     CommentDetailPermissions,
@@ -44,7 +45,7 @@ class CommentMixin(object):
         return comment
 
 
-class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixin):
+class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin, ODMFilterMixin):
     """List of replies to a comment. *Writeable*.
 
     Paginated list of comment replies ordered by their `date_created.` Each resource contains the full representation
@@ -80,7 +81,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixi
     ###Create
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -96,7 +97,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixi
     To create a comment reply, issue a POST request against this endpoint.  The `content` field is mandatory. The
     `deleted` field is optional and defaults to `False`. If the comment reply creation is successful the API will return
     a 201 response with the representation of the new comment reply in the body. For the new comment reply's canonical
-    URL, see the `links.self` field of the response.
+    URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -124,6 +125,8 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixi
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
+    view_category = 'comments'
+    view_name = 'comment-replies'
     serializer_class = CommentSerializer
 
     ordering = ('-date_created', )  # default ordering
@@ -144,7 +147,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixi
         serializer.save()
 
 
-class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
+class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixin):
     """Details about a specific comment. *Writeable*.
 
     ###Permissions
@@ -199,7 +202,7 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -213,13 +216,13 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
                        }
         Success:       200 OK + comment representation
 
-    To update a comment, issue either a PUT or a PATCH request against the `links.self` URL.  The `content`
+    To update a comment, issue either a PUT or a PATCH request against the `/links/self` URL.  The `content`
     and `deleted` fields are mandatory if you PUT and optional if you PATCH. Non-string values will be accepted and
     stringified, but we make no promises about the stringification output.  So don't do that.
 
-    To delete a comment, issue a PATCH request against the `links.self` URL, with `deleted: True`:
+    To delete a comment, issue a PATCH request against the `/links/self` URL, with `deleted: True`:
 
-    To undelete a comment, issue a PATCH request against the `links.self` URL, with `deleted: False`.
+    To undelete a comment, issue a PATCH request against the `/links/self` URL, with `deleted: False`.
 
     ##Query Params
 
@@ -238,13 +241,15 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentDetailSerializer
+    view_category = 'comments'
+    view_name = 'comment-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_comment()
 
 
-class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
+class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin):
     """List of reports made for a comment. *Writeable*.
 
     Paginated list of reports for a comment. Each resource contains the full representation of the
@@ -273,7 +278,7 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
     ###Create
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -289,7 +294,7 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
     To create a report for this comment, issue a POST request against this endpoint. The `category` field is mandatory,
     and must be one of the following: "spam", "hate" or "violence" . The `message` field is optional. If the comment
     report creation is successful the API will return a 201 response with the representation of the new comment report
-    in the body. For the new comment report's canonical URL, see the `links.self` field of the response.
+    in the body. For the new comment report's canonical URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -308,6 +313,9 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
 
     serializer_class = CommentReportSerializer
 
+    view_category = 'comments'
+    view_name = 'comment-reports'
+
     def get_queryset(self):
         user_id = self.request.user._id
         comment = self.get_comment()
@@ -319,7 +327,7 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
         return serialized_reports
 
 
-class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
+class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     """Details about a specific comment report. *Writeable*.
 
     ###Permissions
@@ -344,7 +352,7 @@ class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -365,11 +373,11 @@ class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
 
     ###Delete
         Method:        DELETE
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Success:       204 + No content
 
-    To delete a comment report, issue a DELETE request against `links.self`.  A successful delete will return a
+    To delete a comment report, issue a DELETE request against `/links/self`.  A successful delete will return a
     204 No Content response.
 
     ##Query Params
@@ -388,6 +396,8 @@ class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
     serializer_class = CommentReportDetailSerializer
+    view_category = 'comments'
+    view_name = 'report-detail'
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):

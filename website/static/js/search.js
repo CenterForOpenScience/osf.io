@@ -18,6 +18,10 @@ ko.punches.enableAll();
 // Disable IE Caching of JSON
 $.ajaxSetup({ cache: false });
 
+var eqInsensitive = function(str1, str2) {
+    return str1.toUpperCase() === str2.toUpperCase();
+};
+
 var Category = function(name, count, display){
     var self = this;
 
@@ -99,6 +103,7 @@ var ViewModel = function(params) {
         $.map(licenses, function(license) {
             var l = new License(license.name, license.id, 0);
             l.active.subscribe(function() {
+                self.currentPage(1);
                 self.search();
             });
             return l;
@@ -128,7 +133,7 @@ var ViewModel = function(params) {
         });
     });
     self.selectedLicenses = ko.pureComputed(function() {
-        return self.licenses().filter(function(license) {
+        return (self.licenses() || []).filter(function(license) {
             return license.active();
         });
     });
@@ -163,7 +168,7 @@ var ViewModel = function(params) {
     });
 
     self.totalPages = ko.pureComputed(function() {
-        var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
+        var resultsCount = Math.max(self.resultsPerPage(), 1); // No Divide by Zero
         var countOfPages = Math.ceil(self.totalResults() / resultsCount);
         return countOfPages;
     });
@@ -221,7 +226,7 @@ var ViewModel = function(params) {
                 }
             };
             if (selectedLicenses.filter(function(l) {
-                return l.id === DEFAULT_LICENSE.id;
+                return eqInsensitive(l.id, DEFAULT_LICENSE.id);
             }).length) {
                 filters = {
                     or: [
@@ -304,8 +309,8 @@ var ViewModel = function(params) {
         var query = self.query();
         var tagRegExp = /(?:AND)?\s*tags\:\([\'\"](.+?)[\'\"]\)/g;
         var dirty = false;
-        while (tagRegExp.test(query)) {
-            var match = tagRegExp.exec(query);
+        var match;
+        while ((match = tagRegExp.exec(query))) {
             var block = match.shift();
             var tag = match.shift().trim();
             if (tag === tagName) {
@@ -361,7 +366,7 @@ var ViewModel = function(params) {
             for(var i = 0; i < licenseCounts.length; i++) {
                 var l = licenseCounts[i];
                 l.count(0);
-                if (l.id === DEFAULT_LICENSE.id) {
+                if (eqInsensitive(l.id, DEFAULT_LICENSE.id)) {
                     noneLicense = l;
                 }
             }
@@ -370,7 +375,7 @@ var ViewModel = function(params) {
             if ((data.aggs || {}).licenses)  {
                 $.each(data.aggs.licenses, function(key, value) {
                     licenseCounts.filter(function(l) {
-                        return l.id === key;
+                        return eqInsensitive(l.id, key);
                     })[0].count(value);
                     nullLicenseCount -= value;
                 });
@@ -407,8 +412,18 @@ var ViewModel = function(params) {
             self.categories(self.categories().sort(self.sortCategories));
 
             // If our category is named attempt to load its total else set it to the total total
+            var selectedLicenses = self.selectedLicenses();
             if (self.category().name !== undefined) {
-                self.totalResults(data.counts[self.category().name] || 0);
+                if (selectedLicenses.length) {
+                    var total = 0;
+                    $.each(selectedLicenses, function(i, license) {
+                        total += license.count();
+                    });
+                    self.totalResults(total);
+                }
+                else {
+                    self.totalResults(data.counts[self.category().name] || 0);
+                }
             } else {
                 self.totalResults(self.self.categories()[0].count);
             }
@@ -447,7 +462,7 @@ var ViewModel = function(params) {
 
     self.paginate = function(val) {
         window.scrollTo(0, 0);
-        self.currentPage(self.currentPage()+val);
+        self.currentPage(self.currentPage() + val);
         self.search();
     };
 

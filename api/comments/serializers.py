@@ -6,9 +6,8 @@ from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse
 from api.base.settings import osf_settings
 from api.base.serializers import (JSONAPISerializer,
-                                  JSONAPIHyperlinkedRelatedField,
-                                  JSONAPIHyperlinkedGuidRelatedField,
-                                  JSONAPIHyperlinkedIdentityField,
+                                  TargetField,
+                                  RelationshipField,
                                   IDField, TypeField, LinksField,
                                   AuthorizedCharField)
 
@@ -32,11 +31,11 @@ class CommentSerializer(JSONAPISerializer):
     type = TypeField()
     content = AuthorizedCharField(source='get_content', max_length=osf_settings.COMMENT_MAXLENGTH)
 
-    user = JSONAPIHyperlinkedRelatedField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related', read_only=True)
-    node = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id', link_type='related', read_only=True)
-    target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
-    replies = JSONAPIHyperlinkedIdentityField(view_name='comments:comment-replies', lookup_field='pk', link_type='self', lookup_url_kwarg='comment_id')
-    reports = JSONAPIHyperlinkedIdentityField(view_name='comments:comment-reports', lookup_field='pk', lookup_url_kwarg='comment_id', link_type='related', read_only=True)
+    target = TargetField(link_type='related', meta={'type': 'get_target_type'})
+    user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
+    node = RelationshipField(related_view='nodes:node-detail', related_view_kwargs={'node_id': '<node._id>'})
+    replies = RelationshipField(self_view='comments:comment-replies', self_view_kwargs={'comment_id': '<pk>'})
+    reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<pk>'})
 
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
