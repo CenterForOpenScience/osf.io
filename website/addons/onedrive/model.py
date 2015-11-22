@@ -58,15 +58,6 @@ class Onedrive(ExternalProvider):
         
         userInfo = userInfoRequest.json()
         logger.debug("userInfo:: %s", repr(userInfo))
-        
-#         client = OnedriveClient(CredentialsV2(
-#             response['access_token'],
-#             response['refresh_token'],
-#             settings.ONEDRIVE_KEY,
-#             settings.ONEDRIVE_SECRET,
-#         ))
-# 
-#         about = client.get_user_info()
 
         return {
             'provider_id': userInfo['id'],
