@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import logging
+
+#import requests #TODO: remove this after determining onedrive connection issues w/make_request
 
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import InvalidGrantError
@@ -9,6 +12,11 @@ from website.util.client import BaseClient
 #from website.addons.googledrive import settings
 from website.addons.googledrive import exceptions
 from website.addons.onedrive import settings
+
+logger = logging.getLogger(__name__)
+
+logging.getLogger('onedrive1').setLevel(logging.WARNING)
+
 
 class OneDriveAuthClient(BaseClient):
 
@@ -72,11 +80,13 @@ class OneDriveClient(BaseClient):
 #             'trashed = false',
 #             "mimeType = 'application/vnd.google-apps.folder'",
 #         ])
+        logger.debug('folders::made it1')
         res = self._make_request(
             'GET',
             self._build_url(settings.ONEDRIVE_API_URL, 'drive'),
             params={}, #'q': query
-            expects=(200,401),
+            expects=(200, ),
             throws=HTTPError(401)
         )
+        logger.debug('res::' + repr(res))
         return res.json()#['items']
