@@ -169,11 +169,12 @@ def onedrive_folder_list(node_addon, **kwargs):
     logger.debug('access_token::' +  repr(access_token))
     
     oneDriveClient = OneDriveClient(access_token)#node_addon.external_account.refresh_token)
-    # refresh token
-    folders = oneDriveClient.folders()
-    logger.debug('folders::' +  repr(folders))
+    items = oneDriveClient.folders()
+    logger.debug('folders::' +  repr(items))
     
-    raise ValueError('made it past onedrive api call::' + repr(folders))
+#     return folders
+    
+#     raise ValueError('made it past onedrive api call::' + repr(folders))
     
 #    try:
 #        refresh_oauth_key(node_addon.external_account)
@@ -192,12 +193,12 @@ def onedrive_folder_list(node_addon, **kwargs):
 #     if metadata.get('is_deleted'):
 #         raise HTTPError(http.NOT_FOUND)
 
-    folder_path = '/'.join(
-        [
-            x['name']
-            for x in metadata['path_collection']['entries']
-        ] + [metadata['name']]
-    )
+#     folder_path = '/'.join(
+#         [
+#             x['name']
+#             for x in items['path_collection']['entries']
+#         ] + [items['name']]
+#     )
 
     return [
         {
@@ -205,11 +206,11 @@ def onedrive_folder_list(node_addon, **kwargs):
             'kind': 'folder',
             'id': item['id'],
             'name': item['name'],
-            'path': os.path.join(folder_path, item['name']),
+            'path': item['name'], #os.path.join(folder_path, item['name']),
             'urls': {
                 'folders': node.api_url_for('onedrive_folder_list', folderId=item['id']),
             }
         }
-        for item in metadata['item_collection']['entries']
-        if item['type'] == 'folder'
+        for item in items
+        #if item['id'] == 'folder' #TODO ADD FOLDER FILTER
     ]
