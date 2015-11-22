@@ -31,8 +31,8 @@ var MESSAGES = {
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
                         '<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.',
     addonWarning: {
-        nodesPublic: 'The following <b>projects</b> and <b>components</b> will be made <br>public.</br>',
-        nodesPrivate: 'The following <b>projects</b> and <b>components</b> will be made <br>private</br>'
+        nodesPublic: 'The following projects and components will be made <b>public</b>.',
+        nodesPrivate: 'The following projects and components will be made <b>private</b>.'
     }
 };
 
@@ -74,7 +74,8 @@ function patchNodesPrivacy(nodes) {
             'attributes': {
                 'public': node.public
             }
-        }});
+        };
+    });
     return $.ajax({
         url: API_BASE,
         type: 'PATCH',
@@ -91,7 +92,7 @@ function patchNodesPrivacy(nodes) {
             return;
         }
         return patchNodesPrivacy(nodes);
-    })
+    });
 }
 
 var NodesPrivacyViewModel = function(data, parentIsPublic) {
@@ -150,7 +151,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         return {
             warning: 'Warning',
             select: 'Change Privacy Settings',
-            addon: 'Projects, Components, and Addons Affected'
+            addon: 'Projects and Components Affected'
         }[self.page()];
     });
 
@@ -197,7 +198,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         var nodesState = ko.toJS(self.nodesState());
         //patchNodesPrivacy(nodesState);
         nodesState = Object.keys(nodesState).map(function(key) {
-            return nodesState[key]
+            return nodesState[key];
         });
         var nodesChanged = nodesState.filter(function(node) {
             return node.changed;

@@ -2,13 +2,3 @@
 #nodesPrivacy #tb-tbody {
     max-height: 300px;
 }
-/* Override some treebeard styles */
-#privacyTitle {
-    margin-top: 5px;
-    margin-bottom: 15px;}
-
-hr {
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-

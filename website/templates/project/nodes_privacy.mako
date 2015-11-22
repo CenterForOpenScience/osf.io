@@ -53,25 +53,35 @@
                 <!-- addon and projects changed warning page -->
 
                 <div data-bind="if: page() == 'addon'">
-
-                    <div class="m-b-xs box p-xs" data-bind="visible: nodesChangedPublic().length > 0">
-                        <h4 class="privacyTitle" data-bind="html:message()['nodesPublic']"></h4>
-                        <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
-                            <li>
-                                <h4 class="f-w-lg" data-bind="text: item"></h4>
-                            </li>
-                        </ul>
+                    <div data-bind="visible: nodesChangedPublic().length > 0">
+                        <div class="panel panel-default">
+                            <div class="panel-heading clearfix">
+                                <h3 class="panel-title" data-bind="html:message()['nodesPublic']"></h3>
+                            </div>
+                            <div class="panel-body">
+                                <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
+                                    <li>
+                                        <h4 class="f-w-lg" data-bind="text: item"></h4>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-<hr>
-                    <div class="m-b-xs box p-xs" data-bind="visible: nodesChangedPrivate().length > 0">
-                        <h4 class="privacyTitle" data-bind="html:message()['nodesPrivate']"></h4>
-                        <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
-                            <li>
-                                <h4 class="f-w-lg" data-bind="text: item"></h4>
-                            </li>
-                        </ul>
+                    <div data-bind="visible: nodesChangedPrivate().length > 0">
+                        <div class="panel panel-default">
+                            <div class="panel-heading clearfix">
+                                <h3 class="panel-title" data-bind="html:message()['nodesPrivate']"></h3>
+                            </div>
+                            <div class="panel-body">
+                                <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
+                                    <li>
+                                        <h4 class="f-w-lg" data-bind="text: item"></h4>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <!-- end addon and projects changed warning page -->
+                    <!-- end projects changed warning page -->
 
                 </div>
             </div><!-- end modal-body -->
