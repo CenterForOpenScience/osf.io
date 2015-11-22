@@ -3,9 +3,11 @@ import logging
 import requests
 
 from flask import abort, request
+from datetime import datetime
 
-import onedrivesdk
-from onedrivesdk.helpers import GetAuthCodeServer
+
+# import onedrivesdk
+# from onedrivesdk.helpers import GetAuthCodeServer
 
 #from onedrivesdk import CredentialsV2, OnedriveClient
 #from onedrivesdk.client import OnedriveClientException
@@ -21,6 +23,9 @@ from website.addons.base import StorageAddonBase
 from website.addons.onedrive import settings
 from website.addons.onedrive.utils import OnedriveNodeLogger
 from website.addons.onedrive.serializer import OnedriveSerializer
+from website.addons.onedrive.client import OneDriveAuthClient
+from website.addons.onedrive.client import OneDriveClient
+
 from website.oauth.models import ExternalProvider
 
 logger = logging.getLogger(__name__)
@@ -39,28 +44,20 @@ class Onedrive(ExternalProvider):
     auto_refresh_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
     default_scopes = ['wl.basic wl.signin onedrive.readwrite wl.offline_access']
 
-    
+    _auth_client = OneDriveAuthClient()
+    _drive_client = OneDriveClient()
 
     def handle_callback(self, response):        
         """View called when the Oauth flow is completed. Adds a new OnedriveUserSettings
         record to the user and saves the user's access token and account info.
         """
-
+        
         userInfoRequest = requests.get(("{}me?access_token={}").format(settings.MSLIVE_API_URL, response['access_token']))
         
         logger.debug("userInfoRequest:: %s", repr(userInfoRequest))
         
         userInfo = userInfoRequest.json()
         logger.debug("userInfo:: %s", repr(userInfo))
-        
-#         client = OnedriveClient(CredentialsV2(
-#             response['access_token'],
-#             response['refresh_token'],
-#             settings.ONEDRIVE_KEY,
-#             settings.ONEDRIVE_SECRET,
-#         ))
-# 
-#         about = client.get_user_info()
 
         return {
             'provider_id': userInfo['id'],
@@ -68,9 +65,40 @@ class Onedrive(ExternalProvider):
             'profile_url': userInfo['link']
         }
         
+    def _refresh_token(self, access_token, refresh_token):
+        """ Handles the actual request to refresh tokens
+
+        :param str access_token: Access token (oauth key) associated with this account
+        :param str refresh_token: Refresh token used to request a new access token
+        :return dict token: New set of tokens
+        """
+        client = self._auth_client
+        if refresh_token:
+            token = client.refresh(access_token, refresh_token)
+            return token
+        else:
+            return False
+        
     def fetch_access_token(self, force_refresh=False):
-#         self.refresh_access_token(force=force_refresh)
+        self.refresh_access_token(force=force_refresh)
         return self.account.oauth_key
+
+    def refresh_access_token(self, force=False):
+        """ If the token has expired or will soon, handles refreshing and the storage of new tokens
+
+        :param bool force: Indicates whether or not to force the refreshing process, for the purpose of ensuring that authorization has not been unexpectedly removed.
+        """
+        if self._needs_refresh() or force:
+            token = self._refresh_token(self.account.oauth_key, self.account.refresh_token)
+            self.account.oauth_key = token['access_token']
+            self.account.refresh_token = token['refresh_token']
+            self.account.expires_at = datetime.utcfromtimestamp(token['expires_at'])
+            self.account.save()
+
+    def _needs_refresh(self):
+        if self.account.expires_at is None:
+            return False
+        return (self.account.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
 
 class OnedriveUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific onedrive information
@@ -206,6 +234,10 @@ class OnedriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 },
             },
         )
+
+    def fetch_access_token(self):
+        return self.api.fetch_access_token()
+
 
     ##### Callback overrides #####
     def after_delete(self, node=None, user=None):
