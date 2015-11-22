@@ -74,7 +74,7 @@ class OneDriveClient(BaseClient):
             throws=HTTPError(401)
         ).json()
 
-    def folders(self, folder_id='root'):
+    def folders(self, folder_id='root/children'):
 #         query = ' and '.join([
 #             "'{0}' in parents".format(folder_id),
 #             'trashed = false',
@@ -83,10 +83,10 @@ class OneDriveClient(BaseClient):
         logger.debug('folders::made it1')
         res = self._make_request(
             'GET',
-            self._build_url(settings.ONEDRIVE_API_URL, 'drive'),
+            self._build_url(settings.ONEDRIVE_API_URL, 'drive/', folder_id),
             params={}, #'q': query
             expects=(200, ),
             throws=HTTPError(401)
         )
         logger.debug('res::' + repr(res))
-        return res.json()#['items']
+        return res.json()['value']
