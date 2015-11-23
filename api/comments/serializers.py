@@ -1,7 +1,6 @@
 from rest_framework import serializers as ser
 from framework.auth.core import Auth
 from website.project.model import Comment, Node
-from website.files.models import FileNode
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse
