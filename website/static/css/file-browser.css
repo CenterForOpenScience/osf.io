@@ -6,7 +6,7 @@
     font-family: "Open Sans", 'Helvetica Neue', sans-serif;
 }
 
-/* Header with breadcrumbs and cuttons */
+/* Header with breadcrumbs and buttons */
 
 .fb-header {
     background-color: #f8f8f8;
@@ -56,9 +56,7 @@
     background-color: #fff;
     padding: 0 10px;
 }
-.fb-collections ul {
-    position: relative;
-}
+
 .fb-collections ul li , .fb-filters ul li {
     padding: 3px 0;
     border-left: 3px solid #FFFFFF;
@@ -103,7 +101,7 @@
 .fb-main {
     float: left;
     padding: 0 0 1px 0;
-    /* width is set as inline style in file-browser.js because is changes based on informatin panel visibility */
+    /* width is set as inline style in file-browser.js because it changes based on information panel visibility */
 }
 
 /* Information Panel */
