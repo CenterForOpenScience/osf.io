@@ -172,34 +172,6 @@ def onedrive_folder_list(node_addon, **kwargs):
     oneDriveClient = OneDriveClient(access_token)#node_addon.external_account.refresh_token)
     items = oneDriveClient.folders(folder_id)
     logger.debug('folders::' +  repr(items))
-    
-#     return folders
-    
-#     raise ValueError('made it past onedrive api call::' + repr(folders))
-    
-#    try:
-#        refresh_oauth_key(node_addon.external_account)
-#     client = OnedriveClient(node_addon.external_account.oauth_key)
-#    except OnedriveClientException:
-#        raise HTTPError(http.FORBIDDEN)
-
-#    try:
-#        metadata = client.get_folder(folder_id)
-#    except OnedriveClientException:
-#        raise HTTPError(http.NOT_FOUND)
-#    except MaxRetryError:
-#        raise HTTPError(http.BAD_REQUEST)
-
-    # Raise error if folder was deleted
-#     if metadata.get('is_deleted'):
-#         raise HTTPError(http.NOT_FOUND)
-
-#     folder_path = '/'.join(
-#         [
-#             x['name']
-#             for x in items['path_collection']['entries']
-#         ] + [items['name']]
-#     )
 
     return [
         {
@@ -212,6 +184,7 @@ def onedrive_folder_list(node_addon, **kwargs):
                 'folders': node.api_url_for('onedrive_folder_list', folderId=item['id']),
             }
         }
-        for item in items
-        #if item['id'] == 'folder' #TODO ADD FOLDER FILTER
+        for item in items        
+#         if item['folder'] is not None # 'folder' #TODO ADD FOLDER FILTER
+        
     ]
