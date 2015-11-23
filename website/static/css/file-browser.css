@@ -99,8 +99,10 @@
 .collectionMenu .menuClose {
     float: left;
     width: 20px;
-    padding: 7px;
+    padding: 3px 7px;
     display: block;
+    font-size:18px;
+    cursor: pointer;
 }
 .fb-sidebar h5>.fa {
     color: #999;

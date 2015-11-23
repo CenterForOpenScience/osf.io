@@ -425,7 +425,7 @@ var Collections  = {
                             args.showCollectionMenu(false);
                             args.resetCollectionMenu();
                         }
-                    }, m('.fa.fa-times.text-muted')),
+                    }, m('.text-muted','×')),
                     m('ul', [
                         m('li[data-toggle="modal"][data-target="#renameColl"].pointer',{
                             onclick : function (e) {
