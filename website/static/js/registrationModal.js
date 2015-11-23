@@ -1,5 +1,6 @@
 var ko = require('knockout');
 var pikaday = require('pikaday');
+require('pikaday-css');
 var bootbox = require('bootbox');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');

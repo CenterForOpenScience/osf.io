@@ -34,6 +34,10 @@ var limitContents = function(item) {
 var filePicker;
 var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindingContext) {
     viewModel.showUploader(true);
+    viewModel.toggleUploader = function() {
+        this.showUploader(!this.showUploader());
+    };
+
 
     var $root = bindingContext.$root;
     $root.currentPage.subscribe(function(question) {

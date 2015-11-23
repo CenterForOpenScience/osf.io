@@ -6,12 +6,9 @@ var $osf = require('js/osfHelpers');
 
 var language = require('js/osfLanguage').registrations;
 var registrationUtils = require('js/registrationUtils');
-var registrationEmbargo = require('js/registrationEmbargo');
 
 var ctx = window.contextVars;
 var node = ctx.node;
-
-require('pikaday-css');
 
 $(function() {
     // opt into tooltip
