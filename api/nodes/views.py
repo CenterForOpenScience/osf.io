@@ -1605,9 +1605,17 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     def get_queryset(self):
         return Comment.find(self.get_query_from_request())
 
+    # overrides ListCreateAPIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(NodeCommentsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
     def perform_create(self, serializer):
         node = self.get_node()
         serializer.validated_data['user'] = self.request.user
-        serializer.validated_data['target'] = node
         serializer.validated_data['node'] = node
         serializer.save()

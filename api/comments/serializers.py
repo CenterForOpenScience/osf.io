@@ -1,8 +1,9 @@
 from rest_framework import serializers as ser
 from framework.auth.core import Auth
-from website.project.model import Comment
+from website.project.model import Comment, Node
+from website.files.models import FileNode
 from rest_framework.exceptions import ValidationError, PermissionDenied
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse
 from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
@@ -47,10 +48,37 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
+    def check_target_type(self, target, target_type):
+        if isinstance(target, Node) and target_type != 'nodes':
+            raise Conflict()
+        elif isinstance(target, Comment) and target_type != 'comments':
+            raise Conflict()
+
+    def get_target(self, node_id, target_id):
+        node = Node.load(target_id)
+        if node and node_id != target_id:
+            raise ValueError('Cannot post comment to another node.')
+        elif target_id == node_id:
+            return Node.load(node_id)
+        else:
+            comment = Comment.load(target_id)
+            if comment:
+                return comment
+            else:
+                raise ValueError
+
     def create(self, validated_data):
         user = validated_data['user']
         auth = Auth(user)
         node = validated_data['node']
+
+        try:
+            target = self.get_target(node._id, self.context['request'].data.get('id'))
+        except ValueError:
+            raise InvalidModelValueError('Invalid target.')
+
+        validated_data['target'] = target
+        self.check_target_type(target, self.context['request'].data.get('target_type'))
 
         validated_data['content'] = validated_data.pop('get_content')
         if node and node.can_comment(auth):
