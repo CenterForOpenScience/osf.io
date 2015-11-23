@@ -1,5 +1,5 @@
 from website.addons.base.serializer import OAuthAddonSerializer
-from website.util import api_url_for
+from website.util import api_url_for, web_url_for
 
 class EvernoteSerializer(OAuthAddonSerializer):
 
@@ -38,25 +38,25 @@ class EvernoteSerializer(OAuthAddonSerializer):
             'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
         }
 
-        # if node_settings.has_auth:
-        #     # Add owner's profile URL
-        #     result['urls']['owner'] = web_url_for(
-        #         'profile_view_id',
-        #         uid=user_settings.owner._id
-        #     )
-        #     result['ownerName'] = user_settings.owner.fullname
-        #     # Show available folders
-        #     # path = node_settings.folder
-        #
-        #     if node_settings.folder_id is None:
-        #         result['folder'] = {'name': None, 'path': None}
-        #     elif valid_credentials:
-        #         path = node_settings.fetch_full_folder_path()
-        #
-        #         result['folder'] = {
-        #             'path': path,
-        #             'name': path.replace('All Files', '', 1) if path != 'All Files' else '/ (Full Box)'
-        #         }
+        if node_settings.has_auth:
+            # Add owner's profile URL
+            result['urls']['owner'] = web_url_for(
+                'profile_view_id',
+                uid=user_settings.owner._id
+            )
+            result['ownerName'] = user_settings.owner.fullname
+            # Show available folders
+            # path = node_settings.folder
+
+            if node_settings.folder_id is None:
+                result['folder'] = {'name': None, 'path': None}
+            elif valid_credentials:
+                path = node_settings.fetch_full_folder_path()
+
+                result['folder'] = {
+                    'path': path,
+                    'name': path.replace('All Files', '', 1) if path != 'All Files' else '/ (Full Evernote)'
+                }
 
         return result
 

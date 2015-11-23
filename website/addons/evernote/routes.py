@@ -34,6 +34,16 @@ api_routes = {
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/evernote/folders/',
+                '/project/<pid>/node/<nid>/evernote/folders/',
+            ],
+            'get',
+            views.evernote_folder_list,
+            json_renderer,
+        ),
+
 
     ],
     'prefix': '/api/v1',

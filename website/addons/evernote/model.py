@@ -6,6 +6,7 @@ from website.addons.evernote.serializer import EvernoteSerializer
 from website.oauth.models import (ExternalProvider, OAUTH1)
 
 from evernote.api.client import EvernoteClient
+from modularodm import fields
 
 import logging
 logger = logging.getLogger(__name__)
@@ -59,6 +60,11 @@ class EvernoteUserSettings(AddonOAuthUserSettingsBase):
 class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = Evernote
     serializer = EvernoteSerializer
+
+    folder_id = fields.StringField(default=None)
+    folder_name = fields.StringField()
+    folder_path = fields.StringField()
+
 
     def set_user_auth(self, user_settings):
         """Import a user's Evernote authentication and create a NodeLog.
