@@ -15,7 +15,8 @@ var language = osfLanguage.registrations;
 
 var SaveManager = require('js/saveManager');
 var editorExtensions = require('js/registrationEditorExtensions');
-var registrationEmbargo = require('js/registrationEmbargo');
+var RegistrationModal = require('js/registrationModal');
+
 // This value should match website.settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
 var DRAFT_REGISTRATION_MIN_EMBARGO_DAYS = 10;
 var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
@@ -286,12 +287,6 @@ Question.prototype.addComment = function(save) {
 Question.prototype.toggleExample = function() {
     this.showExample(!this.showExample());
 };
-/**
- * Shows/hides the Question uploader
- **/
-Question.prototype.toggleUploader = function() {
-    this.showUploader(!this.showUploader());
-};
 
 /**
  * @class Page
@@ -302,13 +297,14 @@ Question.prototype.toggleUploader = function() {
  * @property {ko.observableArray[Question]} questions
  * @property {String} title
  * @property {String} id
+ * @property {Question[]} questions
+ * @property {Question} current Question
  **/
 var Page = function(schemaPage, schemaData) {
     var self = this;
-    self.questions = ko.observableArray([]);
+    self.id = schemaPage.id;
     self.title = schemaPage.title;
     self.description = schemaPage.description || '';
-    self.id = schemaPage.id;
 
     self.active = ko.observable(false);
 
@@ -317,6 +313,9 @@ var Page = function(schemaPage, schemaData) {
         return new Question(questionSchema, schemaData[questionSchema.qid]);
     });
 
+    /** 
+     * Aggregate lists of comments from each question in questions. Sort by 'created'. 
+     **/
     self.comments = ko.computed(function() {
         var comments = [];
         $.each(self.questions, function(_, question) {
@@ -521,49 +520,21 @@ Draft.prototype.getUnseenComments = function() {
 };
 Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var self = this;
-    var ViewModel = registrationEmbargo.ViewModel;
-    var viewModel = new ViewModel();
-    viewModel.canRegister = ko.computed(function() {
-        var embargoed = viewModel.showEmbargoDatePicker();
-        if (embargoed) {
-            return viewModel.pikaday.isValid();
-        }
-        return true;
-    });
-    var validation = [];
+    var validator = null;
     if (self.metaSchema.requiresApproval) {
-        validation.push({
+        validator = {
             validator: function() {
                 return viewModel.embargoEndDate().getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
             },
             message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
-        });
-    }
-    validation.push({
-        validator: function() {return viewModel.isEmbargoEndDateValid();},
-        message: 'Embargo end date must be at least two days in the future.'
-    });
-    viewModel.pikaday.extend({
-        validation: validation
-    });
-    viewModel.close = function() {
-        bootbox.hideAll();
-    };
-    viewModel.register = function() {
-        confirm({
-            registrationChoice: viewModel.registrationChoice(),
-            embargoEndDate: viewModel.embargoEndDate()
-        });
-    };
-    viewModel.preRegisterPrompts = response.prompts || [];
-    bootbox.dialog({
-        // TODO: Check button language here
-        size: 'large',
-        title: language.registerConfirm,
-        message: function() {
-            ko.renderTemplate('preRegistrationTemplate', viewModel, {}, this);
-        }
-    });
+        };
+    }    
+    var preRegisterPrompts = response.prompts || [];
+    
+    var registrationModal = new RegistrationModal.ViewModel(
+        confirm, preRegisterPrompts, validator
+    );
+    registrationModal.show();
 };
 Draft.prototype.preRegisterErrors = function(response, confirm) {
     bootbox.confirm({
