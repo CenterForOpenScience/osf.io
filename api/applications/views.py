@@ -15,6 +15,7 @@ from website.models import ApiOAuth2Application
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
+from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.applications.serializers import ApiOAuth2ApplicationSerializer, ApiOAuth2ApplicationDetailSerializer, ApiOAuth2ApplicationResetSerializer
 
@@ -32,7 +33,7 @@ class ApplicationMixin(object):
         return app
 
 
-class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
+class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """
     Get a list of API applications (eg OAuth2) that the user has registered
     """
@@ -46,6 +47,8 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
     required_write_scopes = [CoreScopes.APPLICATIONS_WRITE]
 
     serializer_class = ApiOAuth2ApplicationSerializer
+    view_category = 'applications'
+    view_name = 'application-list'
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 
@@ -68,7 +71,7 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
         serializer.save()
 
 
-class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ApplicationMixin):
+class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ApplicationMixin):
     """
     Get information about a specific API application (eg OAuth2) that the user has registered
 
@@ -84,6 +87,8 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ApplicationMixin)
     required_write_scopes = [CoreScopes.APPLICATIONS_WRITE]
 
     serializer_class = ApiOAuth2ApplicationDetailSerializer
+    view_category = 'applications'
+    view_name = 'application-detail'
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 
@@ -106,7 +111,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ApplicationMixin)
         serializer.save(owner=self.request.user)
 
 
-class ApplicationReset(generics.CreateAPIView, ApplicationMixin):
+class ApplicationReset(JSONAPIBaseView, generics.CreateAPIView, ApplicationMixin):
     """
     Resets client secret of a specific API application (eg OAuth2) that the user has registered
 
@@ -124,6 +129,9 @@ class ApplicationReset(generics.CreateAPIView, ApplicationMixin):
     serializer_class = ApiOAuth2ApplicationResetSerializer
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
+
+    view_category = 'applications'
+    view_name = 'application-reset'
 
     def get_object(self):
         return self.get_app()
