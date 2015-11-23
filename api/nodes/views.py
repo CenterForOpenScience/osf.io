@@ -1623,10 +1623,13 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
 
     def get_default_odm_query(self):
         auth = get_user_auth(self.request)
-        return NodeLog.find(self.get_node().get_aggregate_logs_query(auth))
+        query = self.get_node().get_aggregate_logs_query(auth)
+        return query
 
     def get_queryset(self):
-        return self.get_query_from_request()
+        queryset = NodeLog.find(self.get_query_from_request())
+        return queryset
+
 
 class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     """List of comments on a node. *Writeable*.
