@@ -84,7 +84,7 @@ def _url_val(val, obj, serializer, **kwargs):
     else:
         url = val
 
-    if not url and url !=0:
+    if not url and url != 0:
         raise SkipField
     else:
         return url
