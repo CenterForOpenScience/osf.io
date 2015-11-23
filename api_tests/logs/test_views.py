@@ -58,6 +58,9 @@ class TestLogNodeList(LogsTestCase):
         assert_equal(res.status_code, http.NOT_FOUND)
 
     def test_log_detail_returns_data(self):
-        url = self.url + '{}/'.format(self.node.logs[0]._id)
+        test_log = self.node.logs[0]
+        url = self.url + '{}/'.format(test_log._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        json_data = res.json['data']
+        assert_equal(json_data['id'], test_log._id)

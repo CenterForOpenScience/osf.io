@@ -221,7 +221,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     links = LinksField(add_dev_only_items({
         'html': 'absolute_url',
-        'self': 'get_absolute_url'
+
     }, {
         'profile_image': 'profile_image_url',
     }))

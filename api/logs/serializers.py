@@ -3,7 +3,9 @@ from rest_framework import serializers as ser
 from api.base.serializers import (
     JSONAPISerializer,
     RelationshipField,
-    RestrictedDictSerializer)
+    RestrictedDictSerializer,
+    LinksField)
+from api.base.utils import absolute_reverse
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -41,6 +43,7 @@ class NodeLogSerializer(JSONAPISerializer):
     date = ser.DateTimeField(read_only=True)
     action = ser.CharField(read_only=True)
     params = NodeLogParamsSerializer(read_only=True)
+    links = LinksField({'self': 'get_absolute_url'})
 
     class Meta:
         type_ = 'logs'
@@ -58,3 +61,11 @@ class NodeLogSerializer(JSONAPISerializer):
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<params.pointer.id>'}
     )
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'logs:log-detail',
+            kwargs={
+                'log_id': obj._id,
+            }
+        )
