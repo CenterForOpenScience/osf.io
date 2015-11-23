@@ -254,7 +254,15 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         bracket_check = _tpl(lookup_field)
         if bracket_check:
             source_attrs = bracket_check.split('.')
-            return get_nested_attributes(obj, source_attrs)
+            # If you are using a nested attribute for lookup, and you get the attribute wrong, you will not get an
+            # error message, you will just not see that field. This allows us to have slightly more dynamic use of
+            # nested attributes in relationship fields.
+            try:
+                return_val = get_nested_attributes(obj, source_attrs)
+            except KeyError:
+                return None
+            return return_val
+
         return lookup_field
 
     def kwargs_lookup(self, obj, kwargs_dict):

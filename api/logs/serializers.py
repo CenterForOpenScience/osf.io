@@ -53,7 +53,8 @@ class NodeLogSerializer(JSONAPISerializer):
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'},
     )
-    # node_link = RelationshipField(
-    #     related_view='nodes:NodeLinksDetail',
-    #     related_view_kwargs={'node_id': '<params.pointer._id>'}
-    # )
+    # This would be a node_link, except that data isn't stored in the node log params
+    linked_node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<params.pointer.id>'}
+    )
