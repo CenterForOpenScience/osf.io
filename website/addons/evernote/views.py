@@ -7,6 +7,7 @@ from website.util import permissions
 from website.project.decorators import (
     must_have_addon,
     must_be_addon_authorizer,
+    must_not_be_registration,
     must_have_permission
 )
 
@@ -32,6 +33,33 @@ def evernote_get_config(node_addon, auth, **kwargs):
     return {
         'result': EvernoteSerializer().serialize_settings(node_addon, auth.user),
     }
+
+@must_not_be_registration
+@must_have_addon('evernote', 'user')
+@must_have_addon('evernote', 'node')
+@must_be_addon_authorizer('evernote')
+@must_have_permission(permissions.WRITE)
+def evernote_set_config(node_addon, user_addon, auth, **kwargs):
+    """View for changing a node's linked Evernote folder."""
+    folder = request.json.get('selected')
+    serializer = EvernoteSerializer(node_settings=node_addon)
+
+    uid = folder['id']
+    path = folder['path']
+
+    node_addon.set_folder(uid, auth=auth)
+
+    return {
+        'result': {
+            'folder': {
+                'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full Evernote)',
+                'path': path,
+            },
+            'urls': serializer.addon_serialized_urls,
+        },
+        'message': 'Successfully updated settings.',
+    }
+
 
 @must_have_addon('evernote', 'user')
 @must_have_addon('evernote', 'node')

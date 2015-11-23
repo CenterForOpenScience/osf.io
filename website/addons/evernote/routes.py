@@ -24,6 +24,17 @@ api_routes = {
             json_renderer,
         ),
 
+       Rule(
+            [
+                '/project/<pid>/evernote/settings/',
+                '/project/<pid>/node/<nid>/evernote/settings/'
+            ],
+            'put',
+            views.evernote_set_config,
+            json_renderer,
+        ),
+
+
         Rule(
             [
                 '/project/<pid>/evernote/user_auth/',

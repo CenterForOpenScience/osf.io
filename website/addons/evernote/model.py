@@ -47,8 +47,8 @@ class Evernote(ExternalProvider):
         user = userStore.getUser()
 
         return {
-            'provider_id': '',
-            'display_name': user.username,
+            'provider_id': user.id, # or user.username
+            'display_name': user.name,
             'profile_url': ''
         }
 
