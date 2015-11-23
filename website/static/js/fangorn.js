@@ -745,7 +745,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     var u = item.data;
     var url = u.nodeUrl + 'files/' + u.provider + u.path;
     if (!treebeard.options.uploadStates) { treebeard.options.uploadStates = []; }
-    treebeard.options.uploadStates.push({'name': file.name, 'success': true, 'link': url, 'message': 'It worked'});
+    treebeard.options.uploadStates.push({'name': file.name, 'success': true, 'link': url, 'message': false});
     treebeard.redraw();
 }
 
@@ -793,7 +793,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     }
     treebeard.options.uploadInProgress = false;
     if (!treebeard.options.uploadStates) { treebeard.options.uploadStates = []; }
-    treebeard.options.uploadStates.push({'name': file.name, 'success': false, 'link': false, 'message': 'Because you suck'});
+    treebeard.options.uploadStates.push({'name': file.name, 'success': false, 'link': false, 'message': msgText});
 
 }
 
@@ -2005,7 +2005,8 @@ function _fangornQueueComplete(treebeard) {
                         [
                             m('.row', [
                                 m((status.link ? 'a[href="' + status.link + '"]' : status.name) + '.col-sm-10', status.name),
-                                m('.col-sm-2', m(status.success ? '.fa.fa-check' : '.fa.fa-times'))
+                                m('.col-sm-1', m(status.success ? '.fa.fa-check' : '.fa.fa-times')),
+                                m('.col-sm-1', m(status.message ? '.fa.fa-info[data-toggle="tooltip"][data-placement="top"][title="'+ status.message +'"]' : ''))
                             ]),
                             m('hr')
                         ]
@@ -2015,7 +2016,7 @@ function _fangornQueueComplete(treebeard) {
         ]), m('', [
             m('a.btn.btn-primary', {onclick: function() {treebeard.modal.dismiss();}}, 'Done'), //jshint ignore:line
         ]), m('h3.break-word.modal-title', 'Upload Status'));
-
+        $('[data-toggle="tooltip"]').tooltip();
     }
 }
 
@@ -2258,7 +2259,9 @@ tbOptions = {
                     msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
                     item.notify.update(msgText, 'warning', undefined, 3000);
                     if (!treebeard.options.uploadStates) { treebeard.options.uploadStates = []; }
-                    treebeard.options.uploadStates.push({'name': file.name, 'success': false, 'link': false, 'message': 'Becayse you suck'});
+                    treebeard.options.uploadStates.push(
+                        {'name': file.name, 'success': false, 'link': false, 'message': 'File is too large. Max file size is' + item.data.accept.maxSize + ' MB.'}
+                    );
                     return false;
                 }
             }
