@@ -21,12 +21,9 @@ var API_BASE = 'http://localhost:8000/v2/nodes/';
 
 var MESSAGES = {
     makeProjectPublicWarning:
-                        'Please review your project, component, and add-ons, for sensitive or restricted information before making them public.  ' +
-                        'Once a they are made public, you should assume they will always be public. You can ' +
-                        'return them to private later, but search engines or others may access files before you do so.  ' +
-                        '<br><br>Making a project or component private will prevent users from viewing it on this site, ' +
-                        'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Are you sure you would like to continue?',
+                        'Please review your projects, components, and add-ons for sensitive or restricted information before making them public.' +
+                        '<br><br>Once they are made public, you should assume they will always be public. You can ' +
+                        'return them to private later, but search engines (including Google’s cache) or others may access files before you do.',
 
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
                         '<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.',
