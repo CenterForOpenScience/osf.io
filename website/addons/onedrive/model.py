@@ -9,8 +9,8 @@ from datetime import datetime
 # import onedrivesdk
 # from onedrivesdk.helpers import GetAuthCodeServer
 
-#from onedrivesdk import CredentialsV2, OnedriveClient
-#from onedrivesdk.client import OnedriveClientException
+#from onedrivesdk import CredentialsV2, OneDriveClient
+#from onedrivesdk.client import OneDriveClientException
 from modularodm import fields
 
 from framework.auth import Auth
@@ -21,8 +21,8 @@ from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettin
 from website.addons.base import StorageAddonBase
 
 from website.addons.onedrive import settings
-from website.addons.onedrive.utils import OnedriveNodeLogger
-from website.addons.onedrive.serializer import OnedriveSerializer
+from website.addons.onedrive.utils import OneDriveNodeLogger
+from website.addons.onedrive.serializer import OneDriveSerializer
 from website.addons.onedrive.client import OneDriveAuthClient
 from website.addons.onedrive.client import OneDriveClient
 
@@ -32,8 +32,8 @@ logger = logging.getLogger(__name__)
 
 logging.getLogger('onedrive1').setLevel(logging.WARNING)
 
-class Onedrive(ExternalProvider):
-    name = 'Onedrive'
+class OneDrive(ExternalProvider):
+    name = 'OneDrive'
     short_name = 'onedrive'
 
     client_id = settings.ONEDRIVE_KEY
@@ -48,7 +48,7 @@ class Onedrive(ExternalProvider):
     _drive_client = OneDriveClient()
 
     def handle_callback(self, response):        
-        """View called when the Oauth flow is completed. Adds a new OnedriveUserSettings
+        """View called when the Oauth flow is completed. Adds a new OneDriveUserSettings
         record to the user and saves the user's access token and account info.
         """
         
@@ -100,18 +100,18 @@ class Onedrive(ExternalProvider):
             return False
         return (self.account.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
 
-class OnedriveUserSettings(AddonOAuthUserSettingsBase):
+class OneDriveUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific onedrive information
     """
-    oauth_provider = Onedrive
-    serializer = OnedriveSerializer
+    oauth_provider = OneDrive
+    serializer = OneDriveSerializer
 #     myBase = AddonOAuthUserSettingsBase
 
 
-class OnedriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
+class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
-    oauth_provider = Onedrive
-    serializer = OnedriveSerializer
+    oauth_provider = OneDrive
+    serializer = OneDriveSerializer
 
     foreign_user_settings = fields.ForeignField(
         'onedriveusersettings', backref='authorized'
@@ -128,7 +128,7 @@ class OnedriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def api(self):
         """authenticated ExternalProvider instance"""
         if self._api is None:
-            self._api = Onedrive(self.external_account)
+            self._api = OneDrive(self.external_account)
         return self._api
 
     @property
@@ -149,7 +149,7 @@ class OnedriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def fetch_folder_name(self):
         self._update_folder_data()
-        return self.folder_name.replace('All Files', '/ (Full Onedrive)')
+        return self.folder_name.replace('All Files', '/ (Full OneDrive)')
 
     def fetch_full_folder_path(self):
         self._update_folder_data()
@@ -182,16 +182,16 @@ class OnedriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             self.user_settings.save()
 
         # Add log to node
-        nodelogger = OnedriveNodeLogger(node=self.owner, auth=auth)
+        nodelogger = OneDriveNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
 
     def set_user_auth(self, user_settings):
-        """Import a user's Onedrive authentication and create a NodeLog.
+        """Import a user's OneDrive authentication and create a NodeLog.
 
-        :param OnedriveUserSettings user_settings: The user settings to link.
+        :param OneDriveUserSettings user_settings: The user settings to link.
         """
         self.user_settings = user_settings
-        nodelogger = OnedriveNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
+        nodelogger = OneDriveNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)
 
     def deauthorize(self, auth=None, add_log=True):
@@ -200,7 +200,7 @@ class OnedriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if add_log:
             extra = {'folder_id': self.folder_id}
-            nodelogger = OnedriveNodeLogger(node=node, auth=auth)
+            nodelogger = OneDriveNodeLogger(node=node, auth=auth)
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
         self.folder_id = None

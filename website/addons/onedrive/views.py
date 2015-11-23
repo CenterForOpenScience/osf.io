@@ -23,7 +23,7 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
 )
 
-from website.addons.onedrive.serializer import OnedriveSerializer
+from website.addons.onedrive.serializer import OneDriveSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +31,8 @@ logging.getLogger('onedrive1').setLevel(logging.WARNING)
 
 @must_be_logged_in
 def onedrive_get_user_settings(auth):
-    """ Returns the list of all of the current user's authorized Onedrive accounts """
-    serializer = OnedriveSerializer(user_settings=auth.user.get_addon('onedrive'))
+    """ Returns the list of all of the current user's authorized OneDrive accounts """
+    serializer = OneDriveSerializer(user_settings=auth.user.get_addon('onedrive'))
     return serializer.serialized_user_settings
 
 
@@ -41,7 +41,7 @@ def onedrive_get_user_settings(auth):
 def onedrive_get_config(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
     return {
-        'result': OnedriveSerializer().serialize_settings(node_addon, auth.user),
+        'result': OneDriveSerializer().serialize_settings(node_addon, auth.user),
     }
 
 
@@ -53,7 +53,7 @@ def onedrive_get_config(node_addon, auth, **kwargs):
 def onedrive_set_config(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked onedrive folder."""
     folder = request.json.get('selected')
-    serializer = OnedriveSerializer(node_settings=node_addon)
+    serializer = OneDriveSerializer(node_settings=node_addon)
 
     uid = folder['id']
     path = folder['path']
@@ -63,7 +63,7 @@ def onedrive_set_config(node_addon, user_addon, auth, **kwargs):
     return {
         'result': {
             'folder': {
-                'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full Onedrive)',
+                'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full OneDrive)',
                 'path': path,
             },
             'urls': serializer.addon_serialized_urls,
@@ -94,7 +94,7 @@ def onedrive_add_user_auth(auth, node_addon, user_addon, **kwargs):
     node_addon.save()
 
     return {
-        'result': OnedriveSerializer().serialize_settings(node_addon, auth.user),
+        'result': OneDriveSerializer().serialize_settings(node_addon, auth.user),
         'message': 'Successfully imported access token from profile.',
     }
 
@@ -113,7 +113,7 @@ def onedrive_remove_user_auth(auth, node_addon, **kwargs):
 def onedrive_get_share_emails(auth, user_addon, node_addon, **kwargs):
     """Return a list of emails of the contributors on a project.
 
-    The current user MUST be the user who authenticated Onedrive for the node.
+    The current user MUST be the user who authenticated OneDrive for the node.
     """
     if not node_addon.user_settings:
         raise HTTPError(http.BAD_REQUEST)
@@ -135,7 +135,7 @@ def onedrive_get_share_emails(auth, user_addon, node_addon, **kwargs):
 @must_have_addon('onedrive', 'node')
 @must_be_addon_authorizer('onedrive')
 def onedrive_folder_list(node_addon, **kwargs):
-    """Returns a list of folders in Onedrive"""
+    """Returns a list of folders in OneDrive"""
     if not node_addon.has_auth:
         raise HTTPError(http.FORBIDDEN)
 
@@ -157,7 +157,7 @@ def onedrive_folder_list(node_addon, **kwargs):
             'path': 'All Files',
             'addon': 'onedrive',
             'kind': 'folder',
-            'name': '/ (Full Onedrive)',
+            'name': '/ (Full OneDrive)',
             'urls': {
                 'folders': node.api_url_for('onedrive_folder_list', folderId=0),
             }
