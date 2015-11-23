@@ -117,10 +117,10 @@ class TestNodeDetail(ApiTestCase):
         expected_url = self.public_url + 'files/'
         assert_equal(urlparse(url).path, expected_url)
 
-    def test_node_does_not_have_comments_link(self):
+    def test_node_has_comments_link(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_not_in('comments', res.json['data']['relationships'].keys())
+        assert_in('comments', res.json['data']['relationships'].keys())
 
     def test_node_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()
