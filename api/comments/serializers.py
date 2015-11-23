@@ -47,11 +47,38 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
-    def check_target_type(self, target, target_type):
-        if isinstance(target, Node) and target_type != 'nodes':
+    def update(self, comment, validated_data):
+        assert isinstance(comment, Comment), 'comment must be a Comment'
+        auth = Auth(self.context['request'].user)
+        if validated_data:
+            if 'get_content' in validated_data:
+                comment.edit(validated_data['get_content'], auth=auth, save=True)
+            if validated_data.get('is_deleted', None) is True:
+                comment.delete(auth, save=True)
+            elif comment.is_deleted:
+                comment.undelete(auth, save=True)
+        return comment
+
+    def get_target_type(self, obj):
+        if isinstance(obj, Node):
+            return 'nodes'
+        elif isinstance(obj, Comment):
+            return 'comments'
+        else:
+            raise InvalidModelValueError('Invalid comment target.')
+
+
+class CommentCreateSerializer(CommentSerializer):
+
+    target_type = ser.SerializerMethodField(method_name='check_target_type')
+
+    def check_target_type(self, obj):
+        target = obj.target
+        target_type = self.context['request'].data.get('target_type')
+        expected_target_type = self.get_target_type(target)
+        if target_type != expected_target_type:
             raise Conflict()
-        elif isinstance(target, Comment) and target_type != 'comments':
-            raise Conflict()
+        return target_type
 
     def get_target(self, node_id, target_id):
         node = Node.load(target_id)
@@ -77,32 +104,12 @@ class CommentSerializer(JSONAPISerializer):
             raise InvalidModelValueError('Invalid target.')
 
         validated_data['target'] = target
-        self.check_target_type(target, self.context['request'].data.get('target_type'))
-
         validated_data['content'] = validated_data.pop('get_content')
         if node and node.can_comment(auth):
             comment = Comment.create(auth=auth, **validated_data)
         else:
             raise PermissionDenied("Not authorized to comment on this project.")
         return comment
-
-    def update(self, comment, validated_data):
-        assert isinstance(comment, Comment), 'comment must be a Comment'
-        auth = Auth(self.context['request'].user)
-        if validated_data:
-            if 'get_content' in validated_data:
-                comment.edit(validated_data['get_content'], auth=auth, save=True)
-            if validated_data.get('is_deleted', None) is True:
-                comment.delete(auth, save=True)
-            elif comment.is_deleted:
-                comment.undelete(auth, save=True)
-        return comment
-
-    def get_target_type(self, obj):
-        object_type = obj._name
-        if not object_type or object_type not in ['comment', 'node']:
-            raise InvalidModelValueError('Invalid comment target.')
-        return object_type
 
 
 class CommentDetailSerializer(CommentSerializer):
