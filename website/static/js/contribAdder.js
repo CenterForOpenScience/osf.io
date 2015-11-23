@@ -306,7 +306,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 }),
                 node_ids: self.nodesToChange()
             };
-        debugger;
         return $osf.postJSON(
             self.nodeApiUrl + 'contributors/', {
                 users: ko.utils.arrayMap(self.selection(), function(user) {

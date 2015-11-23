@@ -1046,7 +1046,7 @@ def node_child_tree(user, node_ids):
                 'is_public': node.is_public,
                 'addons': addons,
                 'contributors': contributors,
-                'visible_contributors': node.visible_contributors,
+                'visible_contributors': node.visible_contributor_ids,
                 'is_admin': node.has_permission(user, ADMIN),
             },
             'children': children,
