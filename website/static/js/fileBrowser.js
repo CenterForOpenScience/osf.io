@@ -177,11 +177,12 @@ var FileBrowser = {
         };
 
         self.updateCollectionMenu = function (item, event) {
-            var x = event.x - 4;
-            var y = event.y-275;
+            var offset = $(event.target).offset();
+            var x = offset.left;
+            var y = offset.top;
             if (event.view.innerWidth < 767){
-                x = x-115;
-                y = y-80;
+                x = x-105; // width of this menu plus padding
+                y = y-270; // fixed height from collections parent to top with adjustments for this menu div
             }
             self.showCollectionMenu(true);
             self.collectionMenuObject({
@@ -312,7 +313,7 @@ var Collections  = {
                     );
                 }),
                 args.showCollectionMenu() ? m('.collectionMenu',{
-                    style : 'top: ' + args.collectionMenuObject().y + 'px;left: ' + args.collectionMenuObject().x + 'px;'
+                    style : 'position:absolute;top: ' + args.collectionMenuObject().y + 'px;left: ' + args.collectionMenuObject().x + 'px;'
                 }, [
                     m('ul', [
                         m('li[data-toggle="modal"][data-target="#renameColl"]',{

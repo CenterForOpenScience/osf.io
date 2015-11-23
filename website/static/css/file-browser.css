@@ -55,9 +55,7 @@
     background-color: #fff;
     padding: 0 10px;
 }
-.fb-collections ul {
-    position: relative;
-}
+
 .fb-collections ul li , .fb-filters ul li {
     padding: 3px 0;
     border-left: 3px solid #FFFFFF;
