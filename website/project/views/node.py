@@ -1024,9 +1024,6 @@ def node_child_tree(user, node_ids):
             contributors.append({
                 'id': contributor._id,
                 'is_admin': node.has_permission(user, ADMIN),
-
-
-
             })
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
@@ -1048,7 +1045,7 @@ def node_child_tree(user, node_ids):
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
                 'addons': addons,
-                'contributors': contributors_ids,
+                'contributors': contributors,
                 'visible_contributors': node.visible_contributors,
                 'is_admin': node.has_permission(user, ADMIN),
             },
