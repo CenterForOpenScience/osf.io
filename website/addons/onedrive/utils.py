@@ -1,22 +1,13 @@
 # -*- coding: utf-8 -*-
-import time
 import logging
-from datetime import datetime
-
-# from OneDriveSDK
-import onedrivesdk
-from onedrivesdk.helpers import GetAuthCodeServer
 
 from website.util import rubeus
-
-from website.addons.onedrive import settings
-
 
 logger = logging.getLogger(__name__)
 
 
-class OnedriveNodeLogger(object):
-    """Helper class for adding correctly-formatted Onedrive logs to nodes.
+class OneDriveNodeLogger(object):
+    """Helper class for adding correctly-formatted OneDrive logs to nodes.
 
     Usage: ::
 
@@ -24,7 +15,7 @@ class OnedriveNodeLogger(object):
 
         node = ...
         auth = ...
-        nodelogger = OnedriveNodeLogger(node, auth)
+        nodelogger = OneDriveNodeLogger(node, auth)
         nodelogger.log(NodeLog.FILE_REMOVED, save=True)
 
 

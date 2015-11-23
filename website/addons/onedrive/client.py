@@ -9,13 +9,10 @@ from oauthlib.oauth2 import InvalidGrantError
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
-#from website.addons.googledrive import settings
-from website.addons.googledrive import exceptions
+from website.addons.base import exceptions
 from website.addons.onedrive import settings
 
 logger = logging.getLogger(__name__)
-
-logging.getLogger('onedrive1').setLevel(logging.WARNING)
 
 
 class OneDriveAuthClient(BaseClient):
@@ -30,12 +27,12 @@ class OneDriveAuthClient(BaseClient):
                 'expires_in': '-30',
             }
         )
- 
+
         extra = {
             'client_id': settings.ONEDRIVE_KEY,
             'client_secret': settings.ONEDRIVE_SECRET,
         }
- 
+
         try:
             return client.refresh_token(
                 self._build_url(settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT),
@@ -43,12 +40,12 @@ class OneDriveAuthClient(BaseClient):
                 **extra
             )
         except InvalidGrantError:
-            raise exceptions.ExpiredAuthError()
- 
-    def userinfo(self, access_token):
+            raise exceptions.InvalidAuthError()
+
+    def user_info(self, access_token):
         return self._make_request(
             'GET',
-            self._build_url(settings.MSLIVE_API_URL, 'oauth2', 'v3', 'userinfo'),
+            self._build_url(settings.MSLIVE_API_URL, 'me'),
             params={'access_token': access_token},
             expects=(200, ),
             throws=HTTPError(401)
@@ -74,19 +71,22 @@ class OneDriveClient(BaseClient):
             throws=HTTPError(401)
         ).json()
 
-    def folders(self, folder_id='root/children'):
-#         query = ' and '.join([
-#             "'{0}' in parents".format(folder_id),
-#             'trashed = false',
-#             "mimeType = 'application/vnd.google-apps.folder'",
-#         ])
+    def folders(self, folder_id='root/'):
+
+        query = 'folder ne null'
+
+        if folder_id != 'root':
+            folder_id = "items/{}".format(folder_id)
+
         logger.debug('folders::made it1')
+        logger.debug('URLs:' + self._build_url(settings.ONEDRIVE_API_URL, 'drive/', folder_id, '/children/'))
         res = self._make_request(
             'GET',
-            self._build_url(settings.ONEDRIVE_API_URL, 'drive/', folder_id),
-            params={}, #'q': query
+            self._build_url(settings.ONEDRIVE_API_URL, 'drive/', folder_id, '/children/'),
+            params={'filter': query},
             expects=(200, ),
             throws=HTTPError(401)
         )
+        logger.debug('folder_id::' + repr(folder_id))
         logger.debug('res::' + repr(res))
         return res.json()['value']

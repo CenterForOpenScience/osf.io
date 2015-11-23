@@ -1,16 +1,11 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import os
 import httplib as http
 
 import logging
 
 from flask import request
-# from OneDriveSDK
-# import onedrivesdk
-# from onedrivesdk.helpers import GetAuthCodeServer
 from website.addons.onedrive.client import OneDriveClient
-from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.decorators import must_be_logged_in
@@ -23,7 +18,7 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
 )
 
-from website.addons.onedrive.serializer import OnedriveSerializer
+from website.addons.onedrive.serializer import OneDriveSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +26,8 @@ logging.getLogger('onedrive1').setLevel(logging.WARNING)
 
 @must_be_logged_in
 def onedrive_get_user_settings(auth):
-    """ Returns the list of all of the current user's authorized Onedrive accounts """
-    serializer = OnedriveSerializer(user_settings=auth.user.get_addon('onedrive'))
+    """ Returns the list of all of the current user's authorized OneDrive accounts """
+    serializer = OneDriveSerializer(user_settings=auth.user.get_addon('onedrive'))
     return serializer.serialized_user_settings
 
 
@@ -41,7 +36,7 @@ def onedrive_get_user_settings(auth):
 def onedrive_get_config(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
     return {
-        'result': OnedriveSerializer().serialize_settings(node_addon, auth.user),
+        'result': OneDriveSerializer().serialize_settings(node_addon, auth.user),
     }
 
 
@@ -53,18 +48,20 @@ def onedrive_get_config(node_addon, auth, **kwargs):
 def onedrive_set_config(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked onedrive folder."""
     folder = request.json.get('selected')
-    serializer = OnedriveSerializer(node_settings=node_addon)
+    serializer = OneDriveSerializer(node_settings=node_addon)
 
-    uid = folder['id']
-    path = folder['path']
+    logger.debug('folder::' + repr(folder))
+    logger.debug('serializer::' + repr(serializer))
 
-    node_addon.set_folder(uid, auth=auth)
+    name = folder['name']
+
+    node_addon.set_folder(folder, auth=auth)
 
     return {
         'result': {
             'folder': {
-                'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full Onedrive)',
-                'path': path,
+                'name': name,
+                'path': name,
             },
             'urls': serializer.addon_serialized_urls,
         },
@@ -94,7 +91,7 @@ def onedrive_add_user_auth(auth, node_addon, user_addon, **kwargs):
     node_addon.save()
 
     return {
-        'result': OnedriveSerializer().serialize_settings(node_addon, auth.user),
+        'result': OneDriveSerializer().serialize_settings(node_addon, auth.user),
         'message': 'Successfully imported access token from profile.',
     }
 
@@ -113,7 +110,7 @@ def onedrive_remove_user_auth(auth, node_addon, **kwargs):
 def onedrive_get_share_emails(auth, user_addon, node_addon, **kwargs):
     """Return a list of emails of the contributors on a project.
 
-    The current user MUST be the user who authenticated Onedrive for the node.
+    The current user MUST be the user who authenticated OneDrive for the node.
     """
     if not node_addon.user_settings:
         raise HTTPError(http.BAD_REQUEST)
@@ -135,21 +132,18 @@ def onedrive_get_share_emails(auth, user_addon, node_addon, **kwargs):
 @must_have_addon('onedrive', 'node')
 @must_be_addon_authorizer('onedrive')
 def onedrive_folder_list(node_addon, **kwargs):
-    """Returns a list of folders in Onedrive"""
+    """Returns a list of folders in OneDrive"""
     if not node_addon.has_auth:
         raise HTTPError(http.FORBIDDEN)
 
     node = node_addon.owner
     folder_id = request.args.get('folderId')
-    logger.debug('oauth_provider::' +  repr(node_addon.oauth_provider))
-    logger.debug('fetch_access_token::' +  repr(node_addon))
-    logger.debug('node_addon.external_account::' +  repr(node_addon.external_account))
-    logger.debug('node_addon.external_account::oauth_key' +  repr(node_addon.external_account.oauth_key))
-#     logger.debug('node_addon.external_account::access_token' +  repr(node_addon.external_account.access_token)) #exception - no access token
-    logger.debug('node_addon.external_account::expires_at' +  repr(node_addon.external_account.refresh_token)) 
-    logger.debug('node_addon.external_account::expires_at' +  repr(node_addon.external_account.expires_at)) #
-#     raise ValueError('node_addon.external_account::oauth_key' +  repr(node_addon.external_account.oauth_key))
-    
+    logger.debug('oauth_provider::' + repr(node_addon.oauth_provider))
+    logger.debug('fetch_access_token::' + repr(node_addon))
+    logger.debug('node_addon.external_account::' + repr(node_addon.external_account))
+    logger.debug('node_addon.external_account::oauth_key' + repr(node_addon.external_account.oauth_key))
+    logger.debug('node_addon.external_account::expires_at' + repr(node_addon.external_account.refresh_token))
+    logger.debug('node_addon.external_account::expires_at' + repr(node_addon.external_account.expires_at))
 
     if folder_id is None:
         return [{
@@ -157,48 +151,21 @@ def onedrive_folder_list(node_addon, **kwargs):
             'path': 'All Files',
             'addon': 'onedrive',
             'kind': 'folder',
-            'name': '/ (Full Onedrive)',
+            'name': '/ (Full OneDrive)',
             'urls': {
                 'folders': node.api_url_for('onedrive_folder_list', folderId=0),
             }
         }]
 
-#    TODO: must refresh token https://dev.onedrive.com/auth/msa_oauth.htm#step-3-get-a-new-access-token-or-refresh-token
-    
+    if folder_id == '0':
+        folder_id = 'root'
+
     access_token = node_addon.fetch_access_token()
-    logger.debug('access_token::' +  repr(access_token))
-    
-    oneDriveClient = OneDriveClient(access_token)#node_addon.external_account.refresh_token)
-    items = oneDriveClient.folders()
-    logger.debug('folders::' +  repr(items))
-    
-#     return folders
-    
-#     raise ValueError('made it past onedrive api call::' + repr(folders))
-    
-#    try:
-#        refresh_oauth_key(node_addon.external_account)
-#     client = OnedriveClient(node_addon.external_account.oauth_key)
-#    except OnedriveClientException:
-#        raise HTTPError(http.FORBIDDEN)
+    logger.debug('access_token::' + repr(access_token))
 
-#    try:
-#        metadata = client.get_folder(folder_id)
-#    except OnedriveClientException:
-#        raise HTTPError(http.NOT_FOUND)
-#    except MaxRetryError:
-#        raise HTTPError(http.BAD_REQUEST)
-
-    # Raise error if folder was deleted
-#     if metadata.get('is_deleted'):
-#         raise HTTPError(http.NOT_FOUND)
-
-#     folder_path = '/'.join(
-#         [
-#             x['name']
-#             for x in items['path_collection']['entries']
-#         ] + [items['name']]
-#     )
+    oneDriveClient = OneDriveClient(access_token)
+    items = oneDriveClient.folders(folder_id)
+    logger.debug('folders::' + repr(items))
 
     return [
         {
@@ -206,11 +173,11 @@ def onedrive_folder_list(node_addon, **kwargs):
             'kind': 'folder',
             'id': item['id'],
             'name': item['name'],
-            'path': item['name'], #os.path.join(folder_path, item['name']),
+            'path': item['name'],
             'urls': {
                 'folders': node.api_url_for('onedrive_folder_list', folderId=item['id']),
             }
         }
         for item in items
-        #if item['id'] == 'folder' #TODO ADD FOLDER FILTER
+
     ]
