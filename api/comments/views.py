@@ -45,7 +45,7 @@ class CommentMixin(object):
         return comment
 
 
-class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin, ODMFilterMixin):
+class CommentRepliesList(JSONAPIBaseView, generics.ListAPIView, CommentMixin, ODMFilterMixin):
     """List of replies to a comment. *Writeable*.
 
     Paginated list of comment replies ordered by their `date_created.` Each resource contains the full representation
@@ -72,29 +72,6 @@ class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
-
-    ###Create
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "comments",   # required
-                           "attributes": {
-                             "content":       {content},        # mandatory
-                             "deleted":       {is_deleted},     # optional
-                           }
-                         }
-                       }
-        Success:       201 CREATED + comment representation
-
-    To create a comment reply, issue a POST request against this endpoint.  The `content` field is mandatory. The
-    `deleted` field is optional and defaults to `False`. If the comment reply creation is successful the API will return
-    a 201 response with the representation of the new comment reply in the body. For the new comment reply's canonical
-    URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -134,14 +111,6 @@ class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
 
     def get_queryset(self):
         return Comment.find(self.get_query_from_request())
-
-    # overrides ListCreateAPIView
-    def perform_create(self, serializer):
-        target = self.get_comment()
-        serializer.validated_data['user'] = self.request.user
-        serializer.validated_data['target'] = target
-        serializer.validated_data['node'] = target.node
-        serializer.save()
 
 
 class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixin):
