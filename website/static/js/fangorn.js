@@ -1999,7 +1999,7 @@ function _fangornQueueComplete(treebeard) {
     treebeard.options.uploadStates = [];
     var total = fileStatus.length;
     var failed = 0;
-    if (fileStatus.length > 2) {
+    if (fileStatus.length > 3) {
         treebeard.modal.update(m('', [
             m('', [
                 fileStatus.map(function(status){
@@ -2263,7 +2263,7 @@ tbOptions = {
                     item.notify.update(msgText, 'warning', undefined, 3000);
                     if (!treebeard.options.uploadStates) { treebeard.options.uploadStates = []; }
                     treebeard.options.uploadStates.push(
-                        {'name': file.name, 'success': false, 'link': false, 'message': 'File is too large. Max file size is' + item.data.accept.maxSize + ' MB.'}
+                        {'name': file.name, 'success': false, 'link': false, 'message': 'File is too large. Max file size is ' + item.data.accept.maxSize + ' MB.'}
                     );
                     return false;
                 }
