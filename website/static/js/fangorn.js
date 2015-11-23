@@ -1997,10 +1997,13 @@ function _fangornOver(event, ui) {
 function _fangornQueueComplete(treebeard) {
     var fileStatus = treebeard.options.uploadStates;
     treebeard.options.uploadStates = [];
+    var total = fileStatus.length;
+    var failed = 0;
     if (fileStatus.length > 2) {
         treebeard.modal.update(m('', [
             m('', [
                 fileStatus.map(function(status){
+                    if (!status.success){ failed++; }
                     return m('',
                         [
                             m('.row', [
@@ -2015,7 +2018,7 @@ function _fangornQueueComplete(treebeard) {
             ])
         ]), m('', [
             m('a.btn.btn-primary', {onclick: function() {treebeard.modal.dismiss();}}, 'Done'), //jshint ignore:line
-        ]), m('h3.break-word.modal-title', 'Upload Status'));
+        ]), m('', [m('h3.break-word.modal-title', 'Upload Status'), m('p', total - failed + '/' + total + ' files succeeded.')]));
         $('[data-toggle="tooltip"]').tooltip();
     }
 }
@@ -2285,7 +2288,7 @@ tbOptions = {
         parallelUploads: 5,
         acceptDirectories: false,
         createImageThumbnails: false,
-        fallback: function(){}
+        fallback: function(){},
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
