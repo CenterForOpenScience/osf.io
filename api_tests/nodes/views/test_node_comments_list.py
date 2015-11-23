@@ -99,11 +99,21 @@ class TestNodeCommentCreate(ApiTestCase):
         self.user = AuthUserFactory()
         self.read_only_contributor = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
-        self.payload = {
+
+    def _set_up_payload(self, project_id):
+        return {
             'data': {
                 'type': 'comments',
                 'attributes': {
                     'content': 'This is a comment'
+                },
+                'relationships': {
+                    'comments': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': project_id
+                        }
+                    }
                 }
             }
         }
@@ -113,12 +123,14 @@ class TestNodeCommentCreate(ApiTestCase):
         self.private_project.add_contributor(self.read_only_contributor, permissions=['read'])
         self.private_project.save()
         self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
+        self.private_payload = self._set_up_payload(self.private_project._id)
 
     def _set_up_public_project(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_project.add_contributor(self.read_only_contributor, permissions=['read'])
         self.public_project.save()
         self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
+        self.public_payload = self._set_up_payload(self.public_project._id)
 
     def _set_up_public_project_with_public_comment_level(self):
         """ Public project configured so that any logged-in user can comment."""
@@ -126,11 +138,104 @@ class TestNodeCommentCreate(ApiTestCase):
         self.project_with_public_comment_level.comment_level = 'public'
         self.project_with_public_comment_level.save()
         self.public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project_with_public_comment_level._id)
+        self.public_comment_level_payload = self._set_up_payload(self.project_with_public_comment_level._id)
 
     def test_create_comment_invalid_data(self):
         self._set_up_private_project()
         res = self.app.post_json_api(self.private_url, "Incorrect data", auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+
+    def test_create_comment_no_relationship(self):
+        self._set_up_private_project()
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a comment'
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/relationships.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+
+    def test_create_comment_relationship_empty(self):
+        self._set_up_private_project()
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a comment'
+                },
+                'relationships': {}
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/relationships.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+
+    def test_create_comment_target_no_data(self):
+        self._set_up_private_project()
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a comment'
+                },
+                'relationships': {
+                    'target': {}
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], 'data/relationships/target/data')
+
+    def test_create_comment_blank_target_id(self):
+        self._set_up_private_project()
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a comment'
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': ''
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Invalid target.')
+
+    def test_create_comment_invalid_target_type(self):
+        self._set_up_private_project()
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a comment'
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'Invalid',
+                            'id': self.private_project._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
 
     def test_create_comment_no_type(self):
         self._set_up_private_project()
@@ -139,6 +244,14 @@ class TestNodeCommentCreate(ApiTestCase):
                 'type': '',
                 'attributes': {
                     'content': 'This is a comment'
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': self.private_project._id
+                        }
+                    }
                 }
             }
         }
@@ -154,6 +267,14 @@ class TestNodeCommentCreate(ApiTestCase):
                 'type': 'cookies',
                 'attributes': {
                     'content': 'This is a comment'
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': self.private_project._id
+                        }
+                    }
                 }
             }
         }
@@ -168,6 +289,14 @@ class TestNodeCommentCreate(ApiTestCase):
                 'type': 'comments',
                 'attributes': {
                     'content': ''
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': self.private_project._id
+                        }
+                    }
                 }
             }
         }
@@ -178,30 +307,31 @@ class TestNodeCommentCreate(ApiTestCase):
 
     def test_create_comment_invalid_target_node(self):
         url = '/{}nodes/{}/comments/'.format(API_BASE, 'abcde')
-        res = self.app.post_json_api(url, self.payload, auth=self.user.auth, expect_errors=True)
+        payload = self._set_up_payload('abcde')
+        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
         assert_equal(res.json['errors'][0]['detail'], 'Not found.')
 
     def test_private_node_logged_in_admin_can_comment(self):
         self._set_up_private_project()
-        res = self.app.post_json_api(self.private_url, self.payload, auth=self.user.auth)
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
 
     def test_private_node_logged_in_read_contributor_can_comment(self):
         self._set_up_private_project()
-        res = self.app.post_json_api(self.private_url, self.payload, auth=self.read_only_contributor.auth)
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.read_only_contributor.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
 
     def test_private_node_non_contributor_cannot_comment(self):
         self._set_up_private_project()
-        res = self.app.post_json_api(self.private_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_private_node_logged_out_user_cannot_comment(self):
         self._set_up_private_project()
-        res = self.app.post_json_api(self.private_url, self.payload, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_private_node_with_public_comment_level_non_contributor_cannot_comment(self):
@@ -211,39 +341,40 @@ class TestNodeCommentCreate(ApiTestCase):
         project.comment_level = 'public'
         project.save()
         url = '/{}nodes/{}/comments/'.format(API_BASE, project._id)
-        res = self.app.post_json_api(url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+        payload = self._set_up_payload(project._id)
+        res = self.app.post_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_public_node_any_logged_in_user_can_comment(self):
         """ Test non-contributors can comment on a public project when it is
             configured so any logged-in user can comment (comment_level == 'public') """
         self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_comments_url, self.payload, auth=self.non_contributor.auth)
+        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
 
     def test_public_node_contributor_can_comment(self):
         self._set_up_public_project()
         """ Test only contributors can comment on a public project when it is
             configured so only contributors can comment (comment_level == 'private') """
-        res = self.app.post_json_api(self.public_url, self.payload, auth=self.user.auth)
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
 
     def test_public_node_read_only_contributor_can_comment(self):
         self._set_up_public_project()
-        res = self.app.post_json_api(self.public_url, self.payload, auth=self.read_only_contributor.auth)
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.read_only_contributor.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
 
     def test_public_node_non_contributor_cannot_comment(self):
         self._set_up_public_project()
-        res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_public_node_logged_out_user_cannot_comment(self):
         self._set_up_public_project()
-        res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
+        res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
 
