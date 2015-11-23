@@ -162,14 +162,15 @@ def onedrive_folder_list(node_addon, **kwargs):
                 'folders': node.api_url_for('onedrive_folder_list', folderId=0),
             }
         }]
+        
+    if folder_id == '0':
+        folder_id = 'root'        
 
-#    TODO: must refresh token https://dev.onedrive.com/auth/msa_oauth.htm#step-3-get-a-new-access-token-or-refresh-token
-    
     access_token = node_addon.fetch_access_token()
     logger.debug('access_token::' +  repr(access_token))
     
     oneDriveClient = OneDriveClient(access_token)#node_addon.external_account.refresh_token)
-    items = oneDriveClient.folders()
+    items = oneDriveClient.folders(folder_id)
     logger.debug('folders::' +  repr(items))
     
 #     return folders
