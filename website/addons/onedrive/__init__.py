@@ -4,12 +4,12 @@ from website.addons.onedrive import model, routes, utils
 
 
 MODELS = [
-    model.OnedriveUserSettings,
-    model.OnedriveNodeSettings,
+    model.OneDriveUserSettings,
+    model.OneDriveNodeSettings,
 ]
 
-USER_SETTINGS_MODEL = model.OnedriveUserSettings
-NODE_SETTINGS_MODEL = model.OnedriveNodeSettings
+USER_SETTINGS_MODEL = model.OneDriveUserSettings
+NODE_SETTINGS_MODEL = model.OneDriveNodeSettings
 
 ROUTES = [routes.api_routes]
 
