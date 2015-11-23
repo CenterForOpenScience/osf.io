@@ -213,7 +213,7 @@ var FileBrowser = {
             }
         };
 
-        self.updateCollectionMenu = function (item, event, index) {
+        self.updateCollectionMenu = function (item, event) {
             var offset = $(event.target).offset();
             var x = offset.left;
             var y = offset.top;
@@ -226,8 +226,7 @@ var FileBrowser = {
             self.collectionMenuObject({
                 item : item,
                 x : x,
-                y : y,
-                index : index
+                y : y
             });
         };
         self.init = function () {
@@ -401,7 +400,7 @@ var Collections  = {
                 m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
             ]),
             m('ul', [
-                args.collections.map(function(item, index){
+                args.collections.map(function(item){
                     if (item.id === args.activeFilter()) {
                         selectedCSS = 'active';
                     } else if (item.id === args.collectionMenuObject().item.id) {
@@ -412,7 +411,7 @@ var Collections  = {
                     if (!item.data.systemCollection) {
                         submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
                             onclick : function (e) {
-                                args.updateCollectionMenu(item, e, index);
+                                args.updateCollectionMenu(item, e);
                             }
                         });
                     } else {
