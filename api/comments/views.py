@@ -7,6 +7,7 @@ from modularodm.exceptions import NoResultsFound
 from api.base.exceptions import Gone
 from api.base.filters import ODMFilterMixin
 from api.base import permissions as base_permissions
+from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
     CanCommentOrPublic,
     CommentDetailPermissions,
@@ -44,7 +45,7 @@ class CommentMixin(object):
         return comment
 
 
-class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixin):
+class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin, ODMFilterMixin):
     """List of replies to a comment. *Writeable*.
 
     Paginated list of comment replies ordered by their `date_created.` Each resource contains the full representation
@@ -121,6 +122,8 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixi
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
+    view_category = 'comments'
+    view_name = 'comment-replies'
     serializer_class = CommentSerializer
 
     ordering = ('-date_created', )  # default ordering
@@ -141,7 +144,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixi
         serializer.save()
 
 
-class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
+class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixin):
     """Details about a specific comment. *Writeable*.
 
     ###Permissions
@@ -232,13 +235,15 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentDetailSerializer
+    view_category = 'comments'
+    view_name = 'comment-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_comment()
 
 
-class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
+class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin):
     """List of reports made for a comment. *Writeable*.
 
     Paginated list of reports for a comment. Each resource contains the full representation of the
@@ -302,6 +307,9 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
 
     serializer_class = CommentReportSerializer
 
+    view_category = 'comments'
+    view_name = 'comment-reports'
+
     def get_queryset(self):
         user_id = self.request.user._id
         comment = self.get_comment()
@@ -313,7 +321,7 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
         return serialized_reports
 
 
-class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
+class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     """Details about a specific comment report. *Writeable*.
 
     ###Permissions
@@ -382,6 +390,8 @@ class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
     serializer_class = CommentReportDetailSerializer
+    view_category = 'comments'
+    view_name = 'report-detail'
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):

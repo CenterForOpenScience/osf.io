@@ -93,17 +93,15 @@ class TestNodeDetail(ApiTestCase):
         expected_url = self.public_url + 'children/'
         assert_equal(urlparse(url).path, expected_url)
 
-    def test_node_has_contributors_link(self):
+    def test_node_contributors_embedded(self):
         res = self.app.get(self.public_url)
-        url = res.json['data']['relationships']['contributors']['links']['related']['href']
-        expected_url = self.public_url + 'contributors/'
-        assert_equal(urlparse(url).path, expected_url)
+        returned_id = res.json['data']['embeds']['contributors']['data'][0]['id']
+        assert_equal(returned_id, self.user._id)
 
-    def test_node_has_pointers_link(self):
+    def test_node_has_pointers_embedded(self):
         res = self.app.get(self.public_url)
-        url = res.json['data']['relationships']['node_links']['links']['related']['href']
-        expected_url = self.public_url + 'node_links/'
-        assert_equal(urlparse(url).path, expected_url)
+        returned_node_link = res.json['data']['embeds']['node_links']['data']
+        assert_equal(returned_node_link, [])
 
     def test_node_has_registrations_link(self):
         res = self.app.get(self.public_url)
@@ -117,17 +115,12 @@ class TestNodeDetail(ApiTestCase):
         expected_url = self.public_url + 'files/'
         assert_equal(urlparse(url).path, expected_url)
 
-    def test_node_has_comments_link(self):
+    def test_node_does_not_have_comments_link(self):
         res = self.app.get(self.public_url)
-        url = res.json['data']['relationships']['comments']['links']['related']['href']
-        expected_url = self.public_url + 'comments/'
-        assert_equal(urlparse(url).path, expected_url)
+        assert_equal(res.status_code, 200)
+        assert_not_in('comments', res.json['data']['relationships'].keys())
 
     def test_node_has_correct_unread_comments_count(self):
-        res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
-        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
-        assert_equal(unread_comments, 0)
-
         contributor = AuthUserFactory()
         self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user), save=True)
         comment = CommentFactory(node=self.public_project, target=self.public_project, user=contributor)

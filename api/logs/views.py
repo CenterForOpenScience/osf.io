@@ -9,9 +9,10 @@ from api.base.filters import ODMFilterMixin
 from api.base.utils import get_user_auth
 from api.base import permissions as base_permissions
 from api.nodes.serializers import NodeSerializer
+from api.base.views import JSONAPIBaseView
 
 
-class LogNodeList(generics.ListAPIView, ODMFilterMixin):
+class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """List of nodes that a given log is associated with. *Read-only*.
 
     Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,

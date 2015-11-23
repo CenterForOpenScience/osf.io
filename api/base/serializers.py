@@ -3,17 +3,18 @@ import collections
 
 from rest_framework import exceptions, serializers, serializers
 from rest_framework import serializers as ser
+from django.core.urlresolvers import resolve, reverse
 from rest_framework.fields import SkipField
 
 from framework.auth import core as auth_core
 from website import settings
 from website.util.sanitize import strip_html
-from website.util import waterbutler_api_url_for
+from website import util as website_utils
 from rest_framework.fields import get_attribute as get_nested_attributes
 
 from api.base import utils
 from api.base.settings import BULK_SETTINGS
-from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException
+from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
 from website.util import rapply as _rapply
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
@@ -75,12 +76,18 @@ def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
     schema.
     """
+    url = None
     if isinstance(val, Link):  # If a Link is passed, get the url value
-        return val.resolve_url(obj, **kwargs)
+        url = val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
-        return getattr(serializer, val)(obj)
+        url = getattr(serializer, val)(obj)
     else:
-        return val
+        url = val
+
+    if not url:
+        raise SkipField
+    else:
+        return url
 
 
 class IDField(ser.CharField):
@@ -203,11 +210,10 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     )
 
     """
-
     json_api_link = True  # serializes to a links object
 
     def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-                 self_meta=None, related_meta=None, **kwargs):
+                 self_meta=None, related_meta=None, always_embed=False, **kwargs):
         related_view = related_view
         self_view = self_view
         related_kwargs = related_view_kwargs
@@ -216,13 +222,35 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.view_kwargs = {'related': related_kwargs, 'self': self_kwargs}
         self.related_meta = related_meta
         self.self_meta = self_meta
+        self.always_embed = always_embed
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
             assert related_kwargs is not None, 'Must provide related view kwargs.'
+            assert isinstance(related_kwargs, dict), "Related view kwargs must have format {'lookup_url_kwarg: lookup_field}."
         if self_view:
             assert self_kwargs is not None, 'Must provide self view kwargs.'
+            assert isinstance(self_kwargs, dict), "Self view kwargs must have format {'lookup_url_kwarg: lookup_field}."
 
-        super(RelationshipField, self).__init__(self.views, **kwargs)
+        view_name = related_view
+        if view_name:
+            lookup_kwargs = related_kwargs
+        else:
+            view_name = self_view
+            lookup_kwargs = self_kwargs
+
+        super(RelationshipField, self).__init__(view_name, lookup_url_kwarg=lookup_kwargs, **kwargs)
+
+    def resolve(self, resource):
+        """
+        Resolves the view when embedding.
+        """
+        kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in self.lookup_url_kwarg.items()}
+        return resolve(
+            reverse(
+                self.view_name,
+                kwargs=kwargs
+            )
+        )
 
     def get_meta_information(self, meta_data, value):
         """
@@ -233,7 +261,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             if key == 'count':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
                 if utils.is_truthy(show_related_counts):
-                    meta[key] = _rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
                 elif utils.is_falsy(show_related_counts):
                     continue
                 if not utils.is_truthy(show_related_counts):
@@ -242,7 +270,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                         parameter='related_counts'
                     )
             else:
-                meta[key] = _rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
 
     def lookup_attribute(self, obj, lookup_field):
@@ -301,7 +329,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     def to_representation(self, value):
         urls = super(RelationshipField, self).to_representation(value)
         if not urls:
-            ret = None
+            raise SkipField
         else:
             related_url = urls['related']
             related_meta = self.get_meta_information(self.related_meta, value)
@@ -312,22 +340,51 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return ret
 
 
-class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
+class TargetField(ser.Field):
     """
     Field that returns a nested dict with the url (constructed based
     on the object's type), optional meta information, and link_type.
 
     Example:
 
-        target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
+        target = TargetField(link_type='related', meta={'type': 'get_target_type'})
 
     """
     json_api_link = True  # serializes to a links object
+    view_map = {
+        'node': {
+            'view': 'nodes:node-detail',
+            'lookup_kwarg': 'node_id'
+        },
+        'comment': {
+            'view': 'comments:comment-detail',
+            'lookup_kwarg': 'comment_id'
+        },
+    }
 
     def __init__(self, **kwargs):
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
-        super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
+        super(TargetField, self).__init__(read_only=True, **kwargs)
+
+    def resolve(self, resource):
+        """
+        Resolves the view for target node or target comment when embedding.
+        """
+        view_info = self.view_map.get(resource.target._name, None)
+        if not view_info:
+            raise TargetNotSupportedError('{} is not a supported target type'.format(
+                resource.target._name
+            ))
+        embed_value = resource.target._id
+
+        kwargs = {view_info['lookup_kwarg']: embed_value}
+        return resolve(
+            reverse(
+                view_info['view'],
+                kwargs=kwargs
+            )
+        )
 
     def to_representation(self, value):
         """
@@ -336,7 +393,7 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
+        meta = website_utils.rapply(self.meta, _url_val, obj=value, serializer=self.parent)
         return {'links': {self.link_type: {'href': value.get_absolute_url(), 'meta': meta}}}
 
 
@@ -374,7 +431,14 @@ class LinksField(ser.Field):
         return obj
 
     def to_representation(self, obj):
-        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
+        ret = {}
+        for name, value in self.links.iteritems():
+            try:
+                url = _url_val(value, obj=obj, serializer=self.parent)
+            except SkipField:
+                continue
+            else:
+                ret[name] = url
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = obj.get_absolute_url()
         return ret
@@ -388,6 +452,7 @@ def _tpl(val):
     if match:
         return match.groups()[0]
     return None
+
 
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
@@ -430,7 +495,7 @@ class Link(object):
         # Presumably, if you have are expecting a value but the value is empty, then the link is invalid.
         for item in kwarg_values:
             if kwarg_values[item] is None:
-                return None
+                raise SkipField
         return utils.absolute_reverse(
             self.endpoint,
             args=arg_values,
@@ -453,20 +518,25 @@ class WaterbutlerLink(Link):
         """Reverse URL lookup for WaterButler routes
         """
         if self.must_be_folder is True and not obj.path.endswith('/'):
-            return None
+            raise SkipField
         if self.must_be_file is True and obj.path.endswith('/'):
-            return None
-        return waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+            raise SkipField
+        url = website_utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+        if not url:
+            raise SkipField
+        else:
+            return url
 
 
 class NodeFileHyperLinkField(RelationshipField):
-    def __init__(self, kind=None, **kws):
+    def __init__(self, kind=None, never_embed=False, **kws):
         self.kind = kind
+        self.never_embed = never_embed
         super(NodeFileHyperLinkField, self).__init__(**kws)
 
     def get_url(self, obj, view_name, request, format):
         if self.kind and obj.kind != self.kind:
-            return {}
+            raise SkipField
         return super(NodeFileHyperLinkField, self).get_url(obj, view_name, request, format)
 
 
@@ -519,7 +589,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         ret = super(JSONAPIListSerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
-            self._validated_data = _rapply(self.validated_data, strip_html)
+            self._validated_data = website_utils.rapply(self.validated_data, strip_html)
 
         for data in self._validated_data:
             data.pop('type', None)
@@ -552,10 +622,22 @@ class JSONAPISerializer(ser.Serializer):
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
 
-        data = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', collections.OrderedDict()),
-                                        ('relationships', collections.OrderedDict()), ('links', {})])
+        data = collections.OrderedDict([
+            ('id', ''),
+            ('type', type_),
+            ('attributes', collections.OrderedDict()),
+            ('relationships', collections.OrderedDict()),
+            ('embeds', {}),
+            ('links', {}),
+        ])
 
+        embeds = self.context.get('embed', {})
         fields = [field for field in self.fields.values() if not field.write_only]
+
+        invalid_embeds = set(embeds.keys()) - set([f.field_name for f in fields if getattr(f, 'json_api_link', False)])
+        if invalid_embeds:
+            raise InvalidQueryStringError(parameter='embed',
+                                          detail='The following fields are not embeddable: {}'.format(', '.join(invalid_embeds)))
 
         for field in fields:
             try:
@@ -564,9 +646,17 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             if getattr(field, 'json_api_link', False):
-                result = field.to_representation(attribute)
-                if result:
-                    data['relationships'][field.field_name] = result
+                # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
+                # results rather than adding a relationship link
+                if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
+                    result = self.context['embed'][field.field_name](obj)
+                    if result:
+                        data['embeds'][field.field_name] = result
+                else:
+                    try:
+                        data['relationships'][field.field_name] = field.to_representation(attribute)
+                    except SkipField:
+                        continue
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
@@ -581,6 +671,9 @@ class JSONAPISerializer(ser.Serializer):
 
         if not data['relationships']:
             del data['relationships']
+
+        if not data['embeds']:
+            del data['embeds']
 
         if envelope:
             ret[envelope] = data
@@ -599,7 +692,7 @@ class JSONAPISerializer(ser.Serializer):
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
-            self._validated_data = _rapply(self.validated_data, strip_html)
+            self._validated_data = website_utils.rapply(self.validated_data, strip_html)
 
         self._validated_data.pop('type', None)
         self._validated_data.pop('target_type', None)
