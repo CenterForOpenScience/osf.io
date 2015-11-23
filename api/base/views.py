@@ -6,6 +6,7 @@ from rest_framework import generics
 from api.users.serializers import UserSerializer
 from website import settings
 from .utils import absolute_reverse
+from .requests import EmbeddedRequest
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -26,8 +27,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
         def partial(item):
             # resolve must be implemented on the field
             view, view_args, view_kwargs = field.resolve(item)
+            request = EmbeddedRequest(self.request)
             view_kwargs.update({
-                'request': self.request,
+                'request': request,
                 'is_embedded': True
             })
             response = view(*view_args, **view_kwargs)
