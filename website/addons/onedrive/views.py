@@ -54,17 +54,21 @@ def onedrive_set_config(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked onedrive folder."""
     folder = request.json.get('selected')
     serializer = OneDriveSerializer(node_settings=node_addon)
+    
+    logger.debug('folder::' +  repr(folder))
+    logger.debug('serializer::' +  repr(serializer))
 
     uid = folder['id']
-    path = folder['path']
+    
+    name = folder['name']
 
     node_addon.set_folder(uid, auth=auth)
 
     return {
         'result': {
             'folder': {
-                'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full OneDrive)',
-                'path': path,
+                'name': name, 
+                'path': uid,  
             },
             'urls': serializer.addon_serialized_urls,
         },
