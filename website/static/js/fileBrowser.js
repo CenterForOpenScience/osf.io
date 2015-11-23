@@ -213,7 +213,7 @@ var FileBrowser = {
             }
         };
 
-        self.updateCollectionMenu = function (item, event) {
+        self.updateCollectionMenu = function (item, event, index) {
             var offset = $(event.target).offset();
             var x = offset.left;
             var y = offset.top;
@@ -222,10 +222,12 @@ var FileBrowser = {
                 y = y-270; // fixed height from collections parent to top with adjustments for this menu div
             }
             self.showCollectionMenu(true);
+            item.renamedLabel = item.label;
             self.collectionMenuObject({
                 item : item,
                 x : x,
-                y : y
+                y : y,
+                index : index
             });
         };
         self.init = function () {
@@ -324,7 +326,6 @@ var Collections  = {
         self.newCollectionRename = m.prop('');
         self.dismissModal = function () {
             $('.modal').modal('hide');
-            args.resetCollectionMenu();
         };
         self.addCollection = function () {
             console.log( self.newCollectionName());
@@ -364,7 +365,7 @@ var Collections  = {
             console.log(args.collectionMenuObject());
             var url = args.collectionMenuObject().item.data.node.links.self;
             var nodeId = args.collectionMenuObject().item.data.node.id;
-            var title = args.collectionMenuObject().item.label;
+            var title = args.collectionMenuObject().item.renamedLabel;
             var data = {
                 'data': {
                     'type': 'collections',
@@ -376,6 +377,12 @@ var Collections  = {
             };
             m.request({method : 'PATCH', url : url, config : xhrconfig, data : data}).then(function(result){
                 console.log(url, result);
+                args.collectionMenuObject().item.label = title;
+
+
+
+                    // [args.collectionMenuObject().index].label = title;
+                m.redraw(true);
             });
             self.dismissModal();
         };
@@ -405,7 +412,7 @@ var Collections  = {
                     if (!item.data.systemCollection) {
                         submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
                             onclick : function (e) {
-                                args.updateCollectionMenu(item, e);
+                                args.updateCollectionMenu(item, e, index);
                             }
                         });
                     } else {
@@ -484,15 +491,14 @@ var Collections  = {
                                 m('h3.modal-title#renameCollLabel', 'Rename Collection')
                             ]),
                             m('.modal-body', [
-                                m('p', 'Collections are groups of projects that help you organize your work. [Learn more] about how to use Collections to organize your workflow. '),
                                 m('.form-inline', [
                                     m('.form-group', [
-                                        m('label[for="addCollInput]', 'Collection Name'),
+                                        m('label[for="addCollInput]', 'Rename to: '),
                                         m('input[type="text"].form-control.m-l-sm#renameCollInput',{
                                             onkeyup: function(ev){
-                                                args.collectionMenuObject().item.label = $(this).val();
+                                                args.collectionMenuObject().item.renamedLabel = $(this).val();
                                             },
-                                            value: args.collectionMenuObject().item.label})
+                                            value: args.collectionMenuObject().item.renamedLabel})
 
                                     ])
                                 ]),
