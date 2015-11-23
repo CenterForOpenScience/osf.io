@@ -7,6 +7,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
+from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.collections.serializers import (
     CollectionSerializer,
@@ -49,7 +50,7 @@ class CollectionMixin(object):
         return node
 
 
-class CollectionList(generics.ListCreateAPIView, ODMFilterMixin):
+class CollectionList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """Organizer Collections organize projects and components. *Writeable*.
 
     Paginated list of Project Organizer Collections ordered by their `date_modified`.
@@ -81,7 +82,7 @@ class CollectionList(generics.ListCreateAPIView, ODMFilterMixin):
     ###Creating New Organizer Collections
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -96,7 +97,7 @@ class CollectionList(generics.ListCreateAPIView, ODMFilterMixin):
     New Organizer Collections are created by issuing a POST request to this endpoint.  The `title` field is
     mandatory. All other fields not listed above will be ignored.  If the Organizer Collection creation is successful
     the API will return a 201 response with the representation of the new node in the body.
-    For the new Collection's canonical URL, see the `links.self` field of the response.
+    For the new Collection's canonical URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -119,6 +120,8 @@ class CollectionList(generics.ListCreateAPIView, ODMFilterMixin):
     required_write_scopes = [CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE]
 
     serializer_class = CollectionSerializer
+    view_category = 'collections'
+    view_name = 'collection-list'
 
     ordering = ('-date_modified', )  # default ordering
 
@@ -152,7 +155,7 @@ class CollectionList(generics.ListCreateAPIView, ODMFilterMixin):
         serializer.save(creator=user)
 
 
-class CollectionDetail(generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     """Details about Organizer Collections. *Writeable*.
 
     The Project Organizer is a tool to allow the user to make Collections of projects, components, and registrations
@@ -187,7 +190,7 @@ class CollectionDetail(generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -200,7 +203,7 @@ class CollectionDetail(generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
                        }
         Success:       200 OK + node representation
 
-    To update an Organizer Collection, issue either a PUT or a PATCH request against the `links.self` URL.
+    To update an Organizer Collection, issue either a PUT or a PATCH request against the `/links/self` URL.
     The `title` field is mandatory if you PUT and optional if you PATCH, though there's no reason to PATCH if you aren't
     changing the name. Non-string values will be accepted and stringified, but we make no promises about the
     stringification output.  So don't do that.
@@ -208,11 +211,11 @@ class CollectionDetail(generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     ###Delete
 
         Method:   DELETE
-        URL:      links.self
+        URL:      /links/self
         Params:   <none>
         Success:  204 No Content
 
-    To delete a node, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
+    To delete a node, issue a DELETE request against `/links/self`.  A successful delete will return a 204 No Content
     response. Attempting to delete a node you do not own will result in a 403 Forbidden.
 
     ##Query Params
@@ -232,6 +235,8 @@ class CollectionDetail(generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     required_write_scopes = [CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE]
 
     serializer_class = CollectionDetailSerializer
+    view_category = 'collections'
+    view_name = 'collection-detail'
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -249,7 +254,7 @@ class CollectionDetail(generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
         node.save()
 
 
-class LinkedNodesList(generics.ListAPIView, CollectionMixin):
+class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
     """List of nodes linked to this node. *Read-only*.
 
     Linked nodes are the nodes pointed to by node links. This view will probably replace node_links in the near future.
@@ -309,6 +314,8 @@ class LinkedNodesList(generics.ListAPIView, CollectionMixin):
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeSerializer
+    view_category = 'collections'
+    view_name = 'linked-nodes'
 
     def get_queryset(self):
         return [
@@ -327,7 +334,7 @@ class LinkedNodesList(generics.ListAPIView, CollectionMixin):
         return res
 
 
-class NodeLinksList(generics.ListCreateAPIView, CollectionMixin):
+class NodeLinksList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -345,7 +352,7 @@ class NodeLinksList(generics.ListCreateAPIView, CollectionMixin):
 
     ###Create
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -380,6 +387,8 @@ class NodeLinksList(generics.ListCreateAPIView, CollectionMixin):
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = CollectionNodeLinkSerializer
+    view_category = 'collections'
+    view_name = 'node-pointers'
 
     def get_queryset(self):
         return [
@@ -398,7 +407,7 @@ class NodeLinksList(generics.ListCreateAPIView, CollectionMixin):
         return res
 
 
-class NodeLinksDetail(generics.RetrieveDestroyAPIView, CollectionMixin):
+class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, CollectionMixin):
     """Node Link details. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -419,11 +428,11 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, CollectionMixin):
     ###Delete
 
         Method:   DELETE
-        URL:      links.self
+        URL:      /links/self
         Params:   <none>
         Success:  204 No Content
 
-    To delete a node_link, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
+    To delete a node_link, issue a DELETE request against `/links/self`.  A successful delete will return a 204 No Content
     response. Attempting to delete a node you do not own will result in a 403 Forbidden.
 
     ##Query Params
@@ -443,6 +452,8 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, CollectionMixin):
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = CollectionNodeLinkSerializer
+    view_category = 'nodes'
+    view_name = 'node-pointer-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):

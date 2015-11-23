@@ -1232,45 +1232,46 @@ class User(GuidStoredObject, AddonModelMixin):
         # be sure to reconnect it at the end of this code block. Import done here to prevent circular import error.
         from website.project.signals import contributor_added
         from website.project.views.contributor import notify_added_contributor
-        contributor_added.disconnect(notify_added_contributor)
+        from website.util import disconnected_from
+
         # - projects where the user was a contributor
-        for node in user.node__contributed:
-            # Skip dashboard node
-            if node.is_dashboard:
-                continue
-            # if both accounts are contributor of the same project
-            if node.is_contributor(self) and node.is_contributor(user):
-                if node.permissions[user._id] > node.permissions[self._id]:
-                    permissions = node.permissions[user._id]
+        with disconnected_from(signal=contributor_added, listener=notify_added_contributor):
+            for node in user.node__contributed:
+                # Skip dashboard node
+                if node.is_dashboard:
+                    continue
+                # if both accounts are contributor of the same project
+                if node.is_contributor(self) and node.is_contributor(user):
+                    if node.permissions[user._id] > node.permissions[self._id]:
+                        permissions = node.permissions[user._id]
+                    else:
+                        permissions = node.permissions[self._id]
+                    node.set_permissions(user=self, permissions=permissions)
+
+                    visible1 = self._id in node.visible_contributor_ids
+                    visible2 = user._id in node.visible_contributor_ids
+                    if visible1 != visible2:
+                        node.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+
                 else:
-                    permissions = node.permissions[self._id]
-                node.set_permissions(user=self, permissions=permissions)
+                    node.add_contributor(
+                        contributor=self,
+                        permissions=node.get_permissions(user),
+                        visible=node.get_visible(user),
+                        log=False,
+                    )
 
-                visible1 = self._id in node.visible_contributor_ids
-                visible2 = user._id in node.visible_contributor_ids
-                if visible1 != visible2:
-                    node.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
-
-            else:
-                node.add_contributor(
-                    contributor=self,
-                    permissions=node.get_permissions(user),
-                    visible=node.get_visible(user),
-                    log=False,
-                )
-
-            try:
-                node.remove_contributor(
-                    contributor=user,
-                    auth=Auth(user=self),
-                    log=False,
-                )
-            except ValueError:
-                logger.error('Contributor {0} not in list on node {1}'.format(
-                    user._id, node._id
-                ))
-            node.save()
-        contributor_added.connect(notify_added_contributor)
+                try:
+                    node.remove_contributor(
+                        contributor=user,
+                        auth=Auth(user=self),
+                        log=False,
+                    )
+                except ValueError:
+                    logger.error('Contributor {0} not in list on node {1}'.format(
+                        user._id, node._id
+                    ))
+                node.save()
 
         # - projects where the user was the creator
         for node in user.node__created:

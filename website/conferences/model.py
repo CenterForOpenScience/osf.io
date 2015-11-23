@@ -41,6 +41,9 @@ class Conference(StoredObject):
         }
     )
 
+    # Cached number of submissions
+    num_submissions = fields.IntegerField(default=0)
+
     @classmethod
     def get_by_endpoint(cls, endpoint, active=True):
         query = Q('endpoint', 'iexact', endpoint)
