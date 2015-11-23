@@ -159,13 +159,17 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.folder_id is None:
             return None
 
+        logger.debug('self::' + repr(self))
+        request.json.get('selected')
+
         if not self._folder_data:
 
-            self.folder_name = self._folder_data['name']
-            self.folder_path = '/'.join(
-                [x['name'] for x in self._folder_data['path_collection']['entries']]
-                + [self._folder_data['name']]
-            )
+            self.folder_name = self.folder_id #request.json.get('selected')['name']  # 'Test TBD' #self._folder_data['name']
+            self.path = self.folder_id
+#             self.folder_path = '/'.join(
+#                 [x['name'] for x in self._folder_data['path_collection']['entries']]
+#                 + [self._folder_data['name']]
+#             )
             self.save()
 
     def set_folder(self, folder_id, auth):
