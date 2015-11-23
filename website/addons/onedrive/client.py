@@ -75,11 +75,8 @@ class OneDriveClient(BaseClient):
         ).json()
 
     def folders(self, folder_id='root/'):
-#         query = ' and '.join([
-#             "'{0}' in parents".format(folder_id),
-#             'trashed = false',
-#             "mimeType = 'application/vnd.google-apps.folder'",
-#         ])
+
+        query = 'folder ne null'
 
         if folder_id != 'root':
             folder_id = "items/{}".format(folder_id)
@@ -89,7 +86,7 @@ class OneDriveClient(BaseClient):
         res = self._make_request(
             'GET',
             self._build_url(settings.ONEDRIVE_API_URL, 'drive/', folder_id, '/children/'),
-            params={}, #'q': query
+            params={'filter': query}, 
             expects=(200, ),
             throws=HTTPError(401)
         )
