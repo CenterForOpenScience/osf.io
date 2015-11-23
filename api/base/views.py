@@ -7,7 +7,8 @@ from rest_framework import generics
 from api.users.serializers import UserSerializer
 
 from website import settings
-from .utils import absolute_reverse, is_truthy
+from .utils import absolute_reverse, is_truthy, is_falsy
+
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -57,6 +58,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
             return context
         embeds = self.request.query_params.getlist('embed')
         esi = self.request.query_params.get('esi', False)
+        enveloped = is_truthy(self.request.query_params.get('enveloped', True))
         fields = self.serializer_class._declared_fields
         for field in fields:
             if getattr(fields[field], 'always_embed', False) and field not in embeds:
@@ -69,7 +71,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
         context.update({
             'esi': is_truthy(esi),
-            'embed': embeds_partials
+            'embed': embeds_partials,
+            'enveloped': enveloped
         })
         return context
 

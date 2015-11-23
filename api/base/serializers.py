@@ -304,9 +304,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return urls
 
     def to_esi_representation(self, value):
-        url = super(RelationshipField, self).to_representation(value)
-        if url:
-            return '<esi:include src="{}?format=jsonapi"/>'.format(url)
+        relationships = super(RelationshipField, self).to_representation(value)
+        if relationships is not None:
+            for type, href in relationships.items():
+                if href and not href == '{}':
+                    return '<esi:include src="{}?format=jsonapi&enveloped=false"/>'.format(href)
         return self.to_representation(value)
 
     # Overrides HyperlinkedIdentityField
@@ -343,7 +345,7 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
 
     def to_esi_representation(self, value):
-        url = super(JSONAPIHyperlinkedGuidRelatedField, self).to_representation(value)
+        url = value.get_absolute_url()
         if url:
             return '<esi:include src="{}?format=jsonapi"/>'.format(url)
         return self.to_representation(value)
@@ -583,6 +585,7 @@ class JSONAPISerializer(ser.Serializer):
 
         embeds = self.context.get('embed', {})
         esi = self.context.get('esi', {})
+        enveloped = self.context.get('enveloped')
         fields = [field for field in self.fields.values() if not field.write_only]
 
         for item in set(embeds.keys()) - set([f.field_name for f in fields if getattr(f, 'json_api_link', False)]):
@@ -629,7 +632,10 @@ class JSONAPISerializer(ser.Serializer):
         if not data['embeds']:
             del data['embeds']
 
-        if envelope:
+        if not enveloped:
+            i = 0
+
+        if envelope and enveloped:
             ret[envelope] = data
         else:
             ret = data
