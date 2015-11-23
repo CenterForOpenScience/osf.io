@@ -78,12 +78,16 @@
     position: absolute;
     top: 0;
     right: 0;
-    width: 105px;
+    width: 125px;
     background: #fff;
     z-index: 9;
     box-shadow: 0 0 12px -2px #555;
 }
 
+.collectionMenu ul {
+    display: block;
+    float: left;
+}
 .collectionMenu ul>li {
     border-left: none;
     padding: 7px 15px;
@@ -92,6 +96,12 @@
     background-color: #E0EBF3;
 }
 
+.collectionMenu .menuClose {
+    float: left;
+    width: 20px;
+    padding: 7px;
+    display: block;
+}
 .fb-sidebar h5>.fa {
     color: #999;
     margin-right: 5px;
@@ -172,6 +182,10 @@
     }
     #poFilter {
         width: 300px;
+    }
+    .collectionMenu .menuClose {
+        float: right;
+        margin-right: 5px;
     }
 }
 @media only screen and (max-width : 320px) {
