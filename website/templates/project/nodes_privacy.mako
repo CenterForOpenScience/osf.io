@@ -87,11 +87,16 @@
             </div><!-- end modal-body -->
 
             <div class="modal-footer">
+                <!--ordering puts back button before cancel -->
+                <span data-bind="if: page() == 'addon'">
+                    <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
+                </span>
 
                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
 
                 <span data-bind="if: page() == 'warning'">
-                    <a class="btn btn-primary" data-bind="click:selectProjects">Next</a>
+                        <a class="btn btn-primary" data-bind="visible: hasChildren, click:selectProjects">Next</a>
+                        <a class="btn btn-primary" data-bind="visible: hasChildren() == false, click:confirmChanges">Confirm</a>
                 </span>
 
                 <span data-bind="if: page() == 'select'">

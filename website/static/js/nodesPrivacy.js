@@ -89,6 +89,11 @@ function patchNodesPrivacy(nodes) {
             return;
         }
         return patchNodesPrivacy(nodes);
+    }).fail(function(xhr, status, error) {
+        $osf.growl('Error', 'Unable to update project privacy');
+        Raven.captureMessage('Could not PATCH project settings.', {
+            url: API_BASE, status: status, error: error
+        });
     });
 }
 
@@ -112,6 +117,9 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     self.nodesOriginal.subscribe(function(newValue) {
     });
 
+    self.nodesChangedPublic = ko.observableArray([]);
+    self.nodesChangedPrivate = ko.observableArray([]);
+    self.hasChildren = ko.observable(false);
     $('#nodesPrivacy').on('hidden.bs.modal', function () {
         self.clear();
     });
@@ -125,8 +133,15 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         type: 'GET',
         dataType: 'json'
     }).done(function(response) {
+        var i = 0;
         nodesOriginal = getNodesOriginal(response[0], nodesOriginal);
         self.nodesOriginal(nodesOriginal);
+        for (var key in nodesOriginal) {
+            i++;
+        }
+        if (i > 1) {
+            self.hasChildren(true);
+        }
         var nodesState = $.extend(true, {}, nodesOriginal);
         var nodeParent = response[0].node.id;
         //change node state to reflect button push by user on project page (make public | make private)
@@ -166,17 +181,8 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
 
     self.addonWarning =  function() {
         var nodesState = ko.toJS(self.nodesState);
-        self.changedAddons = ko.observableArray([]);
-        self.nodesChangedPublic = ko.observableArray([]);
-        self.nodesChangedPrivate = ko.observableArray([]);
-        var changedAddons = {};
         for (var node in nodesState) {
             if (nodesState[node].changed) {
-                if (nodesState[node].addons.length) {
-                    for (var i=0; i < nodesState[node].addons.length; i++) {
-                        changedAddons[nodesState[node].addons[i]] = true;
-                    }
-                }
                 if (nodesState[node].public) {
                     self.nodesChangedPublic().push(nodesState[node].title);
                 }
@@ -185,9 +191,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
                 }
             }
         }
-        for (var addon in changedAddons) {
-            self.changedAddons().push(addon);
-        }
+
         self.page('addon');
     };
 
@@ -206,6 +210,8 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     };
 
     self.clear = function() {
+        self.nodesChangedPublic([]);
+        self.nodesChangedPrivate([]);
         self.page('warning');
     };
 
@@ -245,8 +251,10 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     };
 
     self.back = function() {
-           var self = this;
-            self.page('select');
+        var self = this;
+        self.nodesChangedPublic([]);
+        self.nodesChangedPrivate([]);
+        self.page('select');
     };
 
 };
