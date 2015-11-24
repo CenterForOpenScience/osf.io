@@ -3,10 +3,26 @@ import os
 import logging
 import httplib as http
 
+from dropbox.client import DropboxClient
+
 from framework.exceptions import HTTPError
+from website.addons.base.exceptions import AddonError
 from website.util import rubeus
 
 logger = logging.getLogger(__name__)
+
+
+def get_client(external_account):
+    """Return a :class:`dropbox.client.DropboxClient`, using a user's
+    access token.
+
+    :param ExternalAccount external_account: The external account to use for client creation.
+    :raises: AddonError if user does not have the Dropbox addon enabled.
+    """
+    if not external_account:
+        raise AddonError('User does not have the Dropbox addon enabled.')
+    return DropboxClient(external_account.oauth_key)
+
 
 def is_subdir(path, directory):
     if not (path and directory):

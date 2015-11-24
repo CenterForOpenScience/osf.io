@@ -8,6 +8,7 @@ from website.files.models import FileVersion
 
 from api.base.permissions import PermissionWithGetter
 from api.base.utils import get_object_or_error
+from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
@@ -34,7 +35,7 @@ class FileMixin(object):
         return obj.wrapped()
 
 
-class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
+class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     """Details about files and folders. *Writeable*.
 
     Welcome to the Files API.  Brace yourself, things are about to get *weird*.
@@ -76,7 +77,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
                                  equivalent to addon_short_name on the OSF
         size          integer    size of file in bytes
-        extra         object     may contain additional data beyond what's describe here,
+        extra         object     may contain additional data beyond what's described here,
                                  depending on the provider
           version     integer    version number of file. will be 1 on initial upload
           downloads   integer    count of the number times the file has been downloaded
@@ -116,6 +117,13 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
                                          for Box.com.
         last_touched  iso8601 timestamp  last time the metadata for the file was retrieved. only applies to non-OSF
                                          storage providers.
+        date_modified iso8601 timestamp  timestamp of when this file was last updated
+        extra         object             may contain additional data beyond what's described here, depending on
+                                         the provider
+          hashes      object
+            md5       string             md5 hash of file, null for folders
+            sha256    string             SHA-256 hash of file, null for folders
+
 
     ##Relationships
 
@@ -144,7 +152,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Get Info (*files, folders*)
 
         Method:   GET
-        URL:      links.info
+        URL:      /links/info
         Params:   <none>
         Success:  200 OK + file representation
 
@@ -154,7 +162,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Download (*files*)
 
         Method:   GET
-        URL:      links.download
+        URL:      /links/download
         Params:   <none>
         Success:  200 OK + file body
 
@@ -164,7 +172,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Create Subfolder (*folders*)
 
         Method:       PUT
-        URL:          links.new_folder
+        URL:          /links/new_folder
         Query Params: ?kind=folder&name={new_folder_name}
         Body:         <empty>
         Success:      201 Created + new folder representation
@@ -178,7 +186,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Upload New File (*folders*)
 
         Method:       PUT
-        URL:          links.upload
+        URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
         Success:      201 Created or 200 OK + new file representation
@@ -192,7 +200,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Update Existing File (*file*)
 
         Method:       PUT
-        URL:          links.upload
+        URL:          /links/upload
         Query Params: ?kind=file
         Body (Raw):   <file data (not form-encoded)>
         Success:      200 OK + updated file representation
@@ -204,7 +212,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Rename (*files, folders*)
 
         Method:        POST
-        URL:           links.move
+        URL:           /links/move
         Query Params:  <none>
         Body (JSON):   {
                         "action": "rename",
@@ -219,7 +227,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     ###Move & Copy (*files, folders*)
 
         Method:        POST
-        URL:           links.move
+        URL:           /links/move
         Query Params:  <none>
         Body (JSON):   {
                         // mandatory
@@ -231,7 +239,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
                         "resource": {node_id},        // defaults to current {node_id}
                         "provider": {provider}        // defaults to current {provider}
                        }
-        Succes:        200 OK + new entity representation
+        Success:       200 OK or 201 Created + new entity representation
 
     Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for
     the `action` body parameters.  The `path` parameter is also required and should be the OSF `path` attribute of the
@@ -250,10 +258,13 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     node and folder already extant on that provider.  Both `resource` and `provider` default to the current node and
     providers.
 
+    If a moved/copied file is overwriting an existing file, a 200 OK response will be returned.  Otherwise, a 201
+    Created will be returned.
+
     ###Delete (*file, folders*)
 
         Method:        DELETE
-        URL:           links.delete
+        URL:           /links/delete
         Query Params:  <none>
         Success:       204 No Content
 
@@ -280,6 +291,8 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileDetailSerializer
+    view_category = 'files'
+    view_name = 'file-detail'
 
     def get_node(self):
         return self.get_file().node
@@ -289,7 +302,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         return self.get_file()
 
 
-class FileVersionsList(generics.ListAPIView, FileMixin):
+class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
 
     Paginated list of file versions, ordered by the date each version was created/modified.
@@ -344,6 +357,8 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileVersionSerializer
+    view_category = 'files'
+    view_name = 'file-versions'
 
     def get_queryset(self):
         return self.get_file().versions
@@ -353,7 +368,7 @@ def node_from_version(request, view, obj):
     return view.get_file(check_permissions=False).node
 
 
-class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
+class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     """Details about a specific file version. *Read-only*.
 
     A specific version of an uploaded file.  Note that the version is tied to the id/path, so two versions of the same
@@ -402,6 +417,8 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileVersionSerializer
+    view_category = 'files'
+    view_name = 'version-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):

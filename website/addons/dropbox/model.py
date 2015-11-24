@@ -138,13 +138,13 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         folder = self.folder
-
-        self.folder = None
-        self.user_settings = None
+        self.clear_settings()
 
         if add_log:
             extra = {'folder': folder}
             self.nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+
+        self.clear_auth()
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:

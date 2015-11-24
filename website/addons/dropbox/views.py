@@ -16,10 +16,6 @@ from website.project.decorators import (
 from website.util import rubeus
 
 from website.addons.dropbox import utils
-from website.addons.dropbox.client import (
-    get_client_from_user_settings,
-    get_node_client
-)
 from website.addons.dropbox.serializer import DropboxSerializer
 from website.addons.base import generic_views
 
@@ -40,7 +36,7 @@ dropbox_import_auth = generic_views.import_auth(
 )
 
 def _get_folders(node_settings, folder_id):
-    client = get_client_from_user_settings(node_settings.user_settings)
+    client = utils.get_client(node_settings.external_account)
     return utils.get_folders(client)
 
 dropbox_folder_list = generic_views.folder_list(
@@ -104,7 +100,7 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
         'view': node.can_view(auth)
     }
 
-    client = get_node_client(node)
+    client = utils.get_client(node_addon.external_account)
     file_not_found = HTTPError(http.NOT_FOUND, data=dict(message_short='File not found',
                                                   message_long='The Dropbox file '
                                                   'you requested could not be found.'))

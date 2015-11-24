@@ -288,3 +288,206 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+
+
+class TestNodeChildrenBulkCreate(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeChildrenBulkCreate, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+
+        self.project = ProjectFactory(creator=self.user, is_public=True)
+
+        self.url = '/{}nodes/{}/children/'.format(API_BASE, self.project._id)
+        self.child = {
+                'type': 'nodes',
+                'attributes': {
+                    'title': 'child',
+                    'description': 'this is a child project',
+                    'category': 'project'
+                }
+        }
+        self.child_two = {
+                'type': 'nodes',
+                'attributes': {
+                    'title': 'second child',
+                    'description': 'this is my hypothesis',
+                    'category': 'hypothesis'
+                }
+        }
+
+    def test_bulk_children_create_blank_request(self):
+        res = self.app.post_json_api(self.url, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+
+    def test_bulk_creates_children_limits(self):
+        res = self.app.post_json_api(self.url, {'data': [self.child] * 11},
+                                     auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+
+    def test_bulk_creates_children_logged_out_user(self):
+        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 401)
+
+        self.project.reload()
+        assert_equal(len(self.project.nodes), 0)
+
+    def test_bulk_creates_children_logged_in_owner(self):
+        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user.auth, bulk=True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data'][0]['attributes']['title'], self.child['attributes']['title'])
+        assert_equal(res.json['data'][0]['attributes']['description'], self.child['attributes']['description'])
+        assert_equal(res.json['data'][0]['attributes']['category'], self.child['attributes']['category'])
+        assert_equal(res.json['data'][1]['attributes']['title'], self.child_two['attributes']['title'])
+        assert_equal(res.json['data'][1]['attributes']['description'], self.child_two['attributes']['description'])
+        assert_equal(res.json['data'][1]['attributes']['category'], self.child_two['attributes']['category'])
+
+        self.project.reload()
+        assert_equal(res.json['data'][0]['id'], self.project.nodes[0]._id)
+        assert_equal(res.json['data'][1]['id'], self.project.nodes[1]._id)
+
+        assert_equal(self.project.nodes[0].logs[0].action, NodeLog.PROJECT_CREATED)
+        assert_equal(self.project.nodes[1].logs[0].action, NodeLog.PROJECT_CREATED)
+
+
+    def test_bulk_creates_children_child_logged_in_write_contributor(self):
+        self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user), save=True)
+
+        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user_two.auth, bulk=True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data'][0]['attributes']['title'], self.child['attributes']['title'])
+        assert_equal(res.json['data'][0]['attributes']['description'], self.child['attributes']['description'])
+        assert_equal(res.json['data'][0]['attributes']['category'], self.child['attributes']['category'])
+        assert_equal(res.json['data'][1]['attributes']['title'], self.child_two['attributes']['title'])
+        assert_equal(res.json['data'][1]['attributes']['description'], self.child_two['attributes']['description'])
+        assert_equal(res.json['data'][1]['attributes']['category'], self.child_two['attributes']['category'])
+
+        self.project.reload()
+        child_id = res.json['data'][0]['id']
+        child_two_id = res.json['data'][1]['id']
+        assert_equal(child_id, self.project.nodes[0]._id)
+        assert_equal(child_two_id, self.project.nodes[1]._id)
+
+        assert_equal(Node.load(child_id).logs[0].action, NodeLog.PROJECT_CREATED)
+        assert_equal(self.project.nodes[1].logs[0].action, NodeLog.PROJECT_CREATED)
+
+    def test_bulk_creates_children_logged_in_read_contributor(self):
+        self.project.add_contributor(self.user_two, permissions=[permissions.READ], auth=Auth(self.user), save=True)
+        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user_two.auth,
+                                     expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(len(self.project.nodes), 0)
+
+    def test_bulk_creates_children_logged_in_non_contributor(self):
+        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]},
+                                     auth=self.user_two.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(len(self.project.nodes), 0)
+
+    def test_bulk_creates_children_and_sanitizes_html_logged_in_owner(self):
+        title = '<em>Cool</em> <strong>Project</strong>'
+        description = 'An <script>alert("even cooler")</script> child'
+
+        res = self.app.post_json_api(self.url, {
+            'data': [{
+                'type': 'nodes',
+                'attributes': {
+                    'title': title,
+                    'description': description,
+                    'category': 'project',
+                    'public': True
+                }
+            }]
+        }, auth=self.user.auth, bulk=True)
+        child_id = res.json['data'][0]['id']
+        assert_equal(res.status_code, 201)
+        url = '/{}nodes/{}/'.format(API_BASE, child_id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], strip_html(title))
+        assert_equal(res.json['data']['attributes']['description'], strip_html(description))
+        assert_equal(res.json['data']['attributes']['category'], 'project')
+
+        self.project.reload()
+        child_id = res.json['data']['id']
+        assert_equal(child_id, self.project.nodes[0]._id)
+        assert_equal(Node.load(child_id).logs[0].action, NodeLog.PROJECT_CREATED)
+
+    def test_cannot_bulk_create_children_on_a_registration(self):
+        registration = RegistrationFactory(project=self.project, creator=self.user)
+        url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
+        res = self.app.post_json_api(url, {
+            'data': [self.child_two, {
+                'type': 'nodes',
+                'attributes': {
+                    'title': fake.catch_phrase(),
+                    'description': fake.bs(),
+                    'category': 'project',
+                    'public': True,
+                }
+            }]
+        }, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(len(self.project.nodes), 0)
+
+    def test_bulk_creates_children_no_type(self):
+        child = {
+            'data': [self.child_two, {
+                'attributes': {
+                'title': 'child',
+                'description': 'this is a child project',
+                'category': 'project',
+                }
+            }]
+        }
+        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/type')
+
+        self.project.reload()
+        assert_equal(len(self.project.nodes), 0)
+
+    def test_bulk_creates_children_incorrect_type(self):
+        child = {
+            'data': [self.child_two, {
+                'type': 'Wrong type.',
+                'attributes': {
+                    'title': 'child',
+                    'description': 'this is a child project',
+                    'category': 'project',
+                }
+            }]
+        }
+        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+
+        self.project.reload()
+        assert_equal(len(self.project.nodes), 0)
+
+    def test_bulk_creates_children_properties_not_nested(self):
+        child = {
+            'data': [self.child_two, {
+                'title': 'child',
+                'description': 'this is a child project',
+                'category': 'project',
+            }]
+        }
+        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+
+        self.project.reload()
+        assert_equal(len(self.project.nodes), 0)

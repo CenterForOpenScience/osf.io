@@ -59,7 +59,7 @@ function Submissions(data) {
                 {
                     data: 'author',  // Data field name
                     sortInclude: true,
-                    custom: function() { return m('a', {href: item.data.authorUrl}, item.data.author); }
+                    custom: function() { return m('a', {href: item.data.authorUrl, target : '_blank'}, item.data.author); }
                 },
 
                 {
@@ -89,7 +89,7 @@ function Submissions(data) {
                 {
                     data: 'confName',
                     sortInclude: true,
-                    custom: function() { return m('a', {href: item.data.confUrl}, item.data.confName); }
+                    custom: function() { return m('a', {href: item.data.confUrl, target : '_blank'}, item.data.confName); }
                 }
             ];
         },
