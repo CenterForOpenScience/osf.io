@@ -30,23 +30,11 @@
 
 <!--Author Import -->
 <script type="text/html" id="osf-author-import">
-    <a data-bind="click: authorDialog, visible: contributors.length > 1">Import Contributors</a>
-
-    <span data-bind="template: {data: $data, name: format}"></span>
-
+    <h3 data-bind="text: value"></h3>
+    <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-md pull-right" >Add &plus;</a>
 </script>
 
-<script type="text/html" id="importContributors">
-    <div col-lg-12>
-        <p>Select: <a data-bind="click: setContributorBoxes(true) " >All</a> | <a data-bind="click: setContributorBoxes(false)">None</a></p>
-    </div>
-    <div data-bind="foreach: {data: contributors, as: 'contrib'}">
-        <div class="checkbox" id="contribBoxes">
-            <label>
-                <input type="checkbox" data-bind="value: contrib">
-                <span data-bind="text: contrib"></span>
-            </label>
-        </div>
-    </div>
-    <p>If you would like to add contributors to your OSF project, you can do that on your <a href="${web_url_for('node_contributors', pid=node['id'])}">Contributors Page</a> </p>
-</script>
+
+
+<!-- Add User Modal-->
+<%include file="/project/modal_add_contributor.mako"/>

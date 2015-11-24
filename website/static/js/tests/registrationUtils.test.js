@@ -834,4 +834,4 @@ describe('RegistrationEditor', () => {
         });
     });
 });
-1
+
