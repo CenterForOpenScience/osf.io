@@ -1,7 +1,7 @@
 import re
 import collections
 
-from rest_framework import exceptions, serializers, serializers
+from rest_framework import exceptions
 from rest_framework import serializers as ser
 from django.core.urlresolvers import resolve, reverse
 from rest_framework.fields import SkipField
@@ -15,7 +15,6 @@ from rest_framework.fields import get_attribute as get_nested_attributes
 from api.base import utils
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
-from website.util import rapply as _rapply
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
     """
