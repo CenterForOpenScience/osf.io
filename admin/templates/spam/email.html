@@ -10,7 +10,8 @@
     <div class="container-fluid">
         <div class="row">
             <div class="btn-group col-sm-12">
-                <a href="{% url 'spam:spam' %}" class="btn btn-primary">
+                <a href="javascript:window.history.go(-2);"
+                   class="btn btn-primary">
                     Back to list
                 </a>
                 <a href="{% url 'spam:detail' comment.id %}"

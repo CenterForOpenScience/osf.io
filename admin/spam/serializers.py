@@ -19,9 +19,6 @@ def serialize_comment(comment, full=False):
     comment.update(
         category=comment['reports'][0]['category'],
     )
-    # comment['author'].update(
-    #
-    # )
     return comment
 
 
@@ -33,10 +30,7 @@ def retrieve_comment(id, full_user=False):
 
 def serialize_comments():
     query = Q('reports', 'ne', {})
-    return [
-        serialize_comment(c)
-        for c in Comment.find(query)
-    ]
+    return map(serialize_comment, Comment.find(query))
 
 
 def serialize_reports(reports):
