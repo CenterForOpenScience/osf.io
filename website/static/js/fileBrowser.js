@@ -181,8 +181,7 @@ var FileBrowser = {
             }
             if(linkObject.ancestors.length > 0){
                 linkObject.ancestors.forEach(function(item){
-                    var ancestorLink =
-
+                    var ancestorLink = new LinkObject('node', item.data, item.data.name);
                     self.breadcrumbs().push(ancestorLink);
                 });
             }
@@ -418,7 +417,7 @@ var Collections  = {
                             }
                         });
                     } else {
-                        submenuTemplate = '';x
+                        submenuTemplate = '';
                     }
                     return m('li', { className : selectedCSS, 'data-index' : index },
                         [
