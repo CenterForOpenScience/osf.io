@@ -45,7 +45,7 @@ $('.filters').filters({
             $('#noAdminContribs').hide();
         }
         var isFiltered = $.inArray('.contrib', filtered) > -1;
-        ko.contextFor($('#contributors').get(0)).$parent.sortable(isFiltered);
+        ko.contextFor($('#contributors').get(0)).$parent.isSortable(!isFiltered);
     },
     groups: {
         permissionFilter: {
@@ -120,9 +120,7 @@ $(window).load(function() {
     });
 });
 
-$(window).resize(function() {
-    checkWindowWidth();
-});
+$(window).resize(checkWindowWidth);
 
 var toggleExpand = function(el) {
     var $self = $(el.querySelectorAll('td:not(:first-child):not(.table-only)>div'));

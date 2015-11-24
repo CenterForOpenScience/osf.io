@@ -208,11 +208,13 @@ var MessageModel = function(text, level) {
 
 };
 
-var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration) {
+var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, selector) {
 
     var self = this;
 
     self.original = ko.observableArray(contributors);
+
+    self.selector = selector;
 
     self.permissionDict = {
         read: 'Read',
@@ -231,20 +233,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         return ($.inArray('admin', user.permissions) > -1) && !isRegistration;
     });
 
-    self.sortable = function(filtered) {
-        if (!isRegistration && user.is_admin) {
-            if (filtered) {
-                $('#contributors').sortable('disable');
-                self.isSortable(false);
-            }
-            else {
-                $('#contributors').sortable('enable');
-                self.isSortable(true);
-            }
-        }
-    };
-
-    self.isSortable = ko.observable(false);
+    self.isSortable = ko.observable(self.canEdit());
 
     // Hack: Ignore beforeunload when submitting
     // TODO: Single-page-ify and remove this
@@ -398,30 +387,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     //TODO: investigate changing how sortable is added
     self.afterRender = function(elements) {
-        rt.responsiveTable(elements[0].parentElement.parentElement);
-        if (!isRegistration && user.is_admin) {
-            self.isSortable(true);
-            var filtered = elements.filter(function(el){
-                return el.nodeType === 1 && el.nodeName === 'TBODY';
-            });
-            if ($(filtered[0]).attr('id') === 'contributors') {
-                $(filtered[0]).sortable({
-                    update: function (event, ui) {
-                        var moved, targetIndex, currentIndex, i, contributor;
-                        moved = ko.contextFor(ui.item[0]).$data;
-                        targetIndex = ui.item.index();
-                        currentIndex = moved.index();
-                        moved.index(targetIndex);
-                        self.contributors().splice(currentIndex, 1);
-                        self.contributors().splice(targetIndex, 0, moved);
-                        for (i = 0; contributor = self.contributors()[i]; i++) {
-                            contributor.index(i);
-                        }
-                    },
-                    placeholder :'contrib-placeholder'
-                });
-            }
-        }
+        rt.responsiveTable($(self.selector)[0]);
     };
 };
 
@@ -435,7 +401,7 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
     self.$element = $(selector);
     self.contributors = contributors;
     self.adminContributors = adminContributors;
-    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration);
+    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, selector);
     self.init();
 }
 

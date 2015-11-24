@@ -226,10 +226,11 @@
         </tr>
     </thead>
     <!-- ko if: $data == 'contrib' -->
-    <tbody id="contributors" data-bind="template: {
-            name: 'contribRow',
-            foreach: $root.contributors,
-            as: 'contributor'
+    <tbody id="contributors" data-bind="sortable: {
+            template: 'contribRow',
+            data: $root.contributors,
+            as: 'contributor',
+            isEnabled: $root.isSortable
     }"></tbody>
     <!-- /ko -->
     <!--ko if: $data == 'admin' -->
