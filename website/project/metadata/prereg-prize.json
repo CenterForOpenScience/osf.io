@@ -21,7 +21,7 @@
             "info": "http://centerforopenscience.org/prereg/"
         }]
     },
-    "description": "Preregistration Challenge (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study. Publications that pre-register with this template may be eligible for a $1,000 prize. See project page for complete information.",
+    "description": "Preregistration Challenge (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study. Publications that pre register with this template may be eligible for a $1,000 prize. See project page for complete information.",
     "pages": [{
         "id": "page1",
         "title": "Study Information",
@@ -39,7 +39,7 @@
             "nav": "Authors",
             "type": "string",
             "title": "Authorship",
-            "description": "The first author of the pre-registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.",
+            "description": "The first author of the pre registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.",
             "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
             "type": "osf-author-import",
             "format": "textarea",
@@ -79,7 +79,7 @@
                 "Registration prior to any human observation of the data: As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study. Examples include museum specimens that have not been measured and data that have been collected by non-human collectors and are inaccessible.",
                 "Registration prior to accessing the data: As of the date of submission, the data exist, but have not been accessed by you or your collaborators. Commonly, this includes data that has been collected by another researcher or institution.",
                 "Registration prior to analysis of the data: As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). A common situation for this scenario when a large dataset exists that is used for many different studies over time, or when a data set is randomly split into a sample for exploratory analyses, and the other section of data is reserved for later confirmatory data analysis.",
-                "Registration following analysis of the data: As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Pre-Reg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
+                "Registration following analysis of the data: As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Prereg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
             ],
             "required": true
         }, {
@@ -202,8 +202,8 @@
             "options": [
                 "No blinding is involved in this study.",
                 "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
-                "Personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.",
-                "Personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
+                "Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.",
+                "Research personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
             ],
             "required": true
         }, {
@@ -243,15 +243,6 @@
         "type": "object",
         "description": "For some studies, you may only want to preregister a single confirmatory analysis. For others, there may be multiple sets of confirmatory analyses you wish to register. If you wish to register more than one analysis set, you may do so. If subsequent analyses are very similar to previous ones, you may copy their content and then edit accordingly. Remember, all analyses specified in this section must be reported in the final article, and analyses not specified in this section that are reported in the paper must be clearly labeled as exploratory.",
         "questions": [{
-            "qid": "q18",
-            "nav": "Title",
-            "title": "Analysis plan title",
-            "description": "To help you keep track of multiple analyses, you may label each for your reference.",
-            "help": "",
-            "required": true,
-            "type": "string",
-            "format": "textarea"
-        }, {
             "qid": "q19",
             "nav": "Statistical models",
             "type": "object",
