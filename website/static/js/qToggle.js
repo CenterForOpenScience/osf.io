@@ -6,6 +6,7 @@
 *         $('.my-item').qToggle({'animation' : 'fade', animationOptions : { duration : 200 }});
 *     });
 */
+var $ = require('jquery');
 
 // Create the defaults once
 var pluginName = 'qToggle';
