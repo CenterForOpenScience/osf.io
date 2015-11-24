@@ -57,6 +57,17 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
         }
     }, null, 'beforeChange');
 
+
+    var onSelectRow = function(item) {
+        if (item.kind === 'file') {
+            viewModel.value(item.data.path);
+            viewModel.selectedFile(item);
+            item.css = 'fangorn-selected';
+        } else {
+            viewModel.value(NO_FILE);
+            viewModel.selectedFile(null);
+        }
+    };
     var fw = new FilesWidget(
         element.id,
         node.urls.api + 'files/grid/', {
@@ -70,23 +81,18 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 parallelUploads: 1,
                 acceptDirectories: false
             },
-            onselectrow: function(item) {
-                if (item.kind === 'file') {
-                    viewModel.value(item.data.path);
-                    viewModel.selectedFile(item);
-                    item.css = 'fangorn-selected';
-                } else {
-                    viewModel.value(NO_FILE);
-                    viewModel.selectedFile(null);
-                }
+            oncreate: function(item) {
+                onSelectRow(item);
             },
+            onselectrow: onSelectRow,
             resolveRows: function(item) {
                 var tb = this;
+
                 item.css = '';
 
                 limitContents(item);
 
-                if (viewModel.value() !== null) {
+                if (viewModel.value()) {
                     if (item.data.path === viewModel.value()) {
                         item.css = 'fangorn-selected';
                     }
@@ -109,7 +115,9 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 return configOption || defaultColumns;
             },
             lazyLoadOnLoad: function(tree, event) {
-                limitContents(tree);
+                if (tree.data.nodeId === window.contextVars.node.id) {
+                    this.multiselected([tree]);
+                }
 
                 tree.children.forEach(function(item) {
                     limitContents(item);
