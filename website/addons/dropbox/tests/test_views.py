@@ -43,15 +43,21 @@ class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsT
     Serializer = DropboxSerializer
     client = mock_client
 
-    @mock.patch('website.addons.dropbox.client.get_client', return_value=mock_client)
+    @mock.patch('website.addons.dropbox.views.DropboxClient', return_value=mock_client)
     def test_folder_list(self, *args):
         super(TestConfigViews, self).test_folder_list()
 
 
 class TestFilebrowserViews(DropboxAddonTestCase):
 
+    def setUp(self):
+        super(TestFilebrowserViews, self).setUp()
+        self.user.add_addon('dropbox')
+        self.node_settings.external_account = self.user_settings.external_accounts[0]
+        self.node_settings.save()
+
     def test_dropbox_hgrid_data_contents(self):
-        with patch_client('website.addons.dropbox.client.get_node_addon_client'):
+        with patch_client('website.addons.dropbox.views.DropboxClient'):
             url = self.project.api_url_for(
                 'dropbox_hgrid_data_contents',
                 path=self.node_settings.folder,
@@ -64,7 +70,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
             assert_equal(first['path'], contents[0]['path'])
 
     def test_dropbox_hgrid_data_contents_if_folder_is_none_and_folders_only(self):
-        with patch_client('website.addons.dropbox.client.get_node_addon_client'):
+        with patch_client('website.addons.dropbox.views.DropboxClient'):
             self.node_settings.folder = None
             self.node_settings.save()
             url = self.project.api_url_for('dropbox_hgrid_data_contents', foldersOnly=True)
@@ -74,16 +80,16 @@ class TestFilebrowserViews(DropboxAddonTestCase):
             assert_equal(len(res.json), len(expected))
 
     def test_dropbox_hgrid_data_contents_folders_only(self):
-        with patch_client('website.addons.dropbox.client.get_node_addon_client'):
+        with patch_client('website.addons.dropbox.views.DropboxClient'):
             url = self.project.api_url_for('dropbox_hgrid_data_contents', foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
             expected = [each for each in contents if each['is_dir']]
             assert_equal(len(res.json), len(expected))
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    @mock.patch('website.addons.dropbox.views.DropboxClient.metadata')
     def test_dropbox_hgrid_data_contents_include_root(self, mock_metadata):
-        with patch_client('website.addons.dropbox.client.get_node_addon_client'):
+        with patch_client('website.addons.dropbox.views.DropboxClient'):
             url = self.project.api_url_for('dropbox_hgrid_data_contents', root=1)
 
             res = self.app.get(url, auth=self.user.auth)
@@ -114,7 +120,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
             )
         assert_is_none(root)
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    @mock.patch('website.addons.dropbox.views.DropboxClient.metadata')
     def test_dropbox_hgrid_data_contents_deleted(self, mock_metadata):
         # Example metadata for a deleted folder
         mock_metadata.return_value = {
@@ -137,7 +143,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
             res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.NOT_FOUND)
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    @mock.patch('website.addons.dropbox.views.DropboxClient.metadata')
     def test_dropbox_hgrid_data_contents_returns_error_if_invalid_path(self, mock_metadata):
         mock_response = mock.Mock()
         mock_metadata.side_effect = ErrorResponse(mock_response, body='File not found')
@@ -146,7 +152,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
             res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.NOT_FOUND)
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    @mock.patch('website.addons.dropbox.views.DropboxClient.metadata')
     def test_dropbox_hgrid_data_contents_handles_max_retry_error(self, mock_metadata):
         mock_response = mock.Mock()
         url = self.project.api_url_for('dropbox_hgrid_data_contents')
@@ -171,7 +177,7 @@ class TestRestrictions(DropboxAddonTestCase):
         self.node_settings.folder = 'foo bar/bar'
         self.node_settings.save()
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    @mock.patch('website.addons.dropbox.views.DropboxClient.metadata')
     def test_restricted_hgrid_data_contents(self, mock_metadata):
         mock_metadata.return_value = mock_responses['metadata_list']
 

@@ -3,13 +3,19 @@
 import os
 
 from nose.tools import *  # noqa (PEP8 asserts)
+from dropbox.client import DropboxClient
 
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
 from website.addons.dropbox import utils
-from website.addons.dropbox.utils import serialize_folder
+from website.addons.dropbox.utils import serialize_folder, get_client
+from website.addons.dropbox.tests.factories import DropboxAccountFactory
 
+
+def test_get_client_returns_a_dropbox_client():
+    client = get_client(DropboxAccountFactory())
+    assert_true(isinstance(client, DropboxClient))
 
 def test_get_file_name():
     assert_equal(utils.get_file_name('foo/bar/baz.txt'), 'baz.txt')
