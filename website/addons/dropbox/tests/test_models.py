@@ -2,7 +2,6 @@
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from tests.base import OsfTestCase
-
 from website.addons.dropbox.tests.factories import (
     DropboxUserSettingsFactory,
     DropboxNodeSettingsFactory,

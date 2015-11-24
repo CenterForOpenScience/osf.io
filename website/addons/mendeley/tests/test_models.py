@@ -16,6 +16,9 @@ from website.addons.mendeley.provider import MendeleyCitationsProvider
 
 import datetime
 
+from mendeley.exception import MendeleyApiException
+from framework.exceptions import HTTPError
+
 from website.addons.mendeley import model
 
 
@@ -77,6 +80,13 @@ class MendeleyProviderTestCase(OsfTestCase):
         res = self.provider.citation_lists(MendeleyCitationsProvider()._extract_folder)
         assert_equal(res[1]['name'], mock_folders[0].name)
         assert_equal(res[1]['id'], mock_folders[0].json['id'])
+
+    def test_mendeley_has_access(self):
+        mock_client = mock.Mock()
+        mock_client.folders.list.return_value = MendeleyApiException({'status_code': 403, 'text': 'Mocked 403 MendeleyApiException'})
+        self.provider._client = mock_client
+        res = self.provider._client
+        assert_raises(HTTPError(403))
 
 class MendeleyNodeSettingsTestCase(OsfTestCase):
 

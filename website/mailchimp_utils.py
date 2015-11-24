@@ -67,7 +67,7 @@ def subscribe_mailchimp(list_name, user_id):
 @queued_task
 @app.task
 @transaction()
-def unsubscribe_mailchimp(list_name, user_id, username=None):
+def unsubscribe_mailchimp(list_name, user_id, username=None, send_goodbye=True):
     """Unsubscribe a user from a mailchimp mailing list given its name.
 
     :param str list_name: mailchimp mailing list name
@@ -79,7 +79,7 @@ def unsubscribe_mailchimp(list_name, user_id, username=None):
     user = User.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    m.lists.unsubscribe(id=list_id, email={'email': username or user.username})
+    m.lists.unsubscribe(id=list_id, email={'email': username or user.username}, send_goodbye=send_goodbye)
 
     # Update mailing_list user field
     if user.mailchimp_mailing_lists is None:
