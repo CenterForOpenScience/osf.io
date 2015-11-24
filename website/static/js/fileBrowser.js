@@ -377,10 +377,6 @@ var Collections  = {
             m.request({method : 'PATCH', url : url, config : xhrconfig, data : data}).then(function(result){
                 console.log(url, result);
                 args.collectionMenuObject().item.label = title;
-
-
-
-                    // [args.collectionMenuObject().index].label = title;
                 m.redraw(true);
             });
             self.dismissModal();
@@ -400,7 +396,7 @@ var Collections  = {
                 m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
             ]),
             m('ul', [
-                args.collections.map(function(item){
+                args.collections.map(function(item, index){
                     if (item.id === args.activeFilter()) {
                         selectedCSS = 'active';
                     } else if (item.id === args.collectionMenuObject().item.id) {
