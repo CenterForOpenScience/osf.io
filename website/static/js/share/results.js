@@ -256,7 +256,7 @@ var Footer = {
 var RawNormalizedData = {
     view: function(ctrl, params) {
         var result = params.result || params.missingError;
-        var divID = params.missingError ? '' : (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,)/g, '-' );
+        var divID = params.missingError ? '' : (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,|\/)/g, '-' );
         return m('.row', [
             m('.col-md-12',
                 m('div', [

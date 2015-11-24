@@ -540,13 +540,23 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'SMM2015': {
+        'name': 'The Society for Marine Mammalogy',
+        'info_url': 'https://www.marinemammalscience.org/conference/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
         meeting = meeting.strip()
-        admin_emails = attrs.pop('admins')
+        admin_emails = attrs.pop('admins', [])
         admin_objs = []
         for email in admin_emails:
             try:

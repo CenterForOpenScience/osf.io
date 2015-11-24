@@ -296,4 +296,58 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
 
+class TestNodeFilesListPagination(ApiTestCase):
+    def setUp(self):
+        super(TestNodeFilesListPagination, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        httpretty.enable()
+
+    def tearDown(self):
+        super(TestNodeFilesListPagination, self).tearDown()
+        httpretty.disable()
+        httpretty.reset()
+
+    def check_file_order(self, resp):
+        previous_file_name = 0
+        for file in resp.json['data']:
+            int_file_name = int(file['attributes']['name'])
+            assert(int_file_name > previous_file_name, 'Files were not in order')
+            previous_file_name = int_file_name
+
+    def test_node_files_are_sorted_correctly(self):
+        prepare_mock_wb_response(
+            node=self.project,
+            provider='github',
+            files=[
+                {'name': '01', 'path': '/01/', 'materialized': '/01/', 'kind': 'folder'},
+                {'name': '02', 'path': '/02', 'materialized': '/02', 'kind': 'file'},
+                {'name': '03', 'path': '/03/', 'materialized': '/03/', 'kind': 'folder'},
+                {'name': '04', 'path': '/04', 'materialized': '/04', 'kind': 'file'},
+                {'name': '05', 'path': '/05/', 'materialized': '/05/', 'kind': 'folder'},
+                {'name': '06', 'path': '/06', 'materialized': '/06', 'kind': 'file'},
+                {'name': '07', 'path': '/07/', 'materialized': '/07/', 'kind': 'folder'},
+                {'name': '08', 'path': '/08', 'materialized': '/08', 'kind': 'file'},
+                {'name': '09', 'path': '/09/', 'materialized': '/09/', 'kind': 'folder'},
+                {'name': '10', 'path': '/10', 'materialized': '/10', 'kind': 'file'},
+                {'name': '11', 'path': '/11/', 'materialized': '/11/', 'kind': 'folder'},
+                {'name': '12', 'path': '/12', 'materialized': '/12', 'kind': 'file'},
+                {'name': '13', 'path': '/13/', 'materialized': '/13/', 'kind': 'folder'},
+                {'name': '14', 'path': '/14', 'materialized': '/14', 'kind': 'file'},
+                {'name': '15', 'path': '/15/', 'materialized': '/15/', 'kind': 'folder'},
+                {'name': '16', 'path': '/16', 'materialized': '/16', 'kind': 'file'},
+                {'name': '17', 'path': '/17/', 'materialized': '/17/', 'kind': 'folder'},
+                {'name': '18', 'path': '/18', 'materialized': '/18', 'kind': 'file'},
+                {'name': '19', 'path': '/19/', 'materialized': '/19/', 'kind': 'folder'},
+                {'name': '20', 'path': '/20', 'materialized': '/20', 'kind': 'file'},
+                {'name': '21', 'path': '/21/', 'materialized': '/21/', 'kind': 'folder'},
+                {'name': '22', 'path': '/22', 'materialized': '/22', 'kind': 'file'},
+                {'name': '23', 'path': '/23/', 'materialized': '/23/', 'kind': 'folder'},
+                {'name': '24', 'path': '/24', 'materialized': '/24', 'kind': 'file'},
+            ]
+        )
+        url = '/{}nodes/{}/files/github/?page[size]=100'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        self.check_file_order(res)
+
 

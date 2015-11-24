@@ -6,6 +6,7 @@ import datetime
 
 from django.core.exceptions import ValidationError
 from modularodm import Q
+from modularodm.query import queryset as modularodm_queryset
 from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
 
@@ -27,6 +28,11 @@ class ODMOrderingFilter(OrderingFilter):
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
         if ordering:
+            if not isinstance(queryset, modularodm_queryset.BaseQuerySet) and isinstance(ordering, (list, tuple)):
+                # for lists call sorted, list.sort doesn't take a key
+                order_key = ordering[0]
+                sorted_list = sorted(queryset, key=operator.attrgetter(order_key))
+                return sorted_list
             return queryset.sort(*ordering)
         return queryset
 
@@ -237,7 +243,10 @@ class ODMFilterMixin(FilterMixin):
         raise NotImplementedError('Must define get_default_odm_query')
 
     def get_query_from_request(self):
-        param_query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
+        if self.request.parser_context['kwargs'].get('is_embedded'):
+            param_query = None
+        else:
+            param_query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
         default_query = self.get_default_odm_query()
 
         if param_query:
@@ -293,7 +302,7 @@ class ListFilterMixin(FilterMixin):
 
     def get_queryset_from_request(self):
         default_queryset = self.get_default_queryset()
-        if self.request.QUERY_PARAMS:
+        if not self.kwargs.get('is_embedded') and self.request.QUERY_PARAMS:
             param_queryset = self.param_queryset(self.request.QUERY_PARAMS, default_queryset)
             return param_queryset
         else:

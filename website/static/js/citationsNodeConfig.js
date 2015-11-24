@@ -60,6 +60,22 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     return item.kind === 'folder';
                     });
                 },
+                ondataloaderror: function(err){
+                    self.loading(false);
+                    self.destroyPicker();
+                    if (err.status === 403) {
+                        var message;
+                        if (self.userIsOwner()) {
+                            message = self.messages.invalidCredOwner();
+                        }
+                        else {
+                            message = self.messages.invalidCredNotOwner();
+                        }
+                        self.changeMessage(message, 'text-danger');
+                    } else {
+                        self.changeMessage(self.messages.connectError(), 'text-danger');
+                    }
+                }.bind(this),
                 resolveLazyloadUrl: function(item) {
                     return this.urls().folders + item.data.id + '/?view=folders';
                 }.bind(this)

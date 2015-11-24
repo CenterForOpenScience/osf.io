@@ -17,8 +17,8 @@
     <div id="home-hero">
       <div class="container text-center">
         <div class="visible-xs-block visible-sm-block visible-md-block network-bg"></div>
-        <h1><strong>Simplified</strong> scientific collaboration</h1>
-        <h3>Powerful end-to-end support for your research.</h3>
+        <h1 class="hero-brand">Open Science Framework</h1>
+        <h3 class="hero-tagline">A scholarly commons to connect the entire research cycle</h3>
 
         <div id="canvas-container">
           <canvas id="demo-canvas"></canvas>
@@ -42,7 +42,7 @@
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
             <div class="col-sm-6">
-              <h2>Free. Get started today.</h2>
+              <h2>Free and open source. Start now.</h2>
 
              <div id="signUp" class="anchor"></div>
                 <div id="signUpScope">
@@ -90,7 +90,7 @@
 
       <div class="row space-bottom">
         <div class="col-xs-12 text-center">
-          <h2><strong>Open Science Framework</strong></h2>
+            <h2><strong>Simplified Scholarly Collaboration</strong></h2>
           <h3>Cloud-based management for your projects.</h3>
         </div>
       </div>

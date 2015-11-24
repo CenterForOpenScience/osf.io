@@ -53,6 +53,9 @@ class CoreScopes(object):
     TOKENS_READ = 'tokens_read'
     TOKENS_WRITE = 'tokens_write'
 
+    ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
+    ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
+
 
 class ComposedScopes(object):
     """
@@ -83,6 +86,11 @@ class ComposedScopes(object):
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE)
 
+    # Organizer Collections collection
+    # Using Organizer Collections and the node links they collect. Reads Node Metadata.
+    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ, NODE_METADATA_READ)
+    ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE)
+
     # Privileges relating to editing content uploaded under that node # TODO: Add wiki etc when implemented
     NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, )
     NODE_DATA_WRITE = NODE_DATA_READ + \
@@ -98,8 +106,8 @@ class ComposedScopes(object):
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ
-    FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ
+    FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE
