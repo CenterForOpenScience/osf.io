@@ -1249,6 +1249,10 @@ RegistrationManager.prototype.editDraft = function(draft) {
     $osf.block();
     window.location.assign(draft.urls.edit);
 };
+RegistrationManager.prototype.previewDraft = function(draft) {
+    $osf.block();
+    window.location.assign(draft.urls.register_page);
+};
 
 module.exports = {
     Comment: Comment,

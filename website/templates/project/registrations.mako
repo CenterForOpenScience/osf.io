@@ -91,7 +91,15 @@
                 <div class="row">
                   <div class="col-md-10">
                     <a class="btn btn-info"
-                       data-bind="click: $root.editDraft"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</a>
+                       data-bind="visible: !isPendingApproval,
+                                  click: $root.editDraft">
+                      <i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit
+                    </a>
+                    <a class="btn btn-info"
+                       data-bind="visible: isPendingApproval,
+                                  click: $root.previewDraft">
+                      <i style="margin-right: 5px;" class="fa fa-pencil"></i>Preview
+                    </a>
                     <button class="btn btn-danger"
                             data-bind="click: $root.deleteDraft">
                       <i style="margin-right: 5px;" class="fa fa-times"></i>Delete
