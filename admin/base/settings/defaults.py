@@ -25,9 +25,6 @@ ALLOWED_HOSTS = [
     '.osf.io'
 ]
 
-# Custom user model (extends AbstractBaseUser)
-AUTH_USER_MODEL = 'common_auth.MyUser'
-
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'openscienceframeworktest@gmail.com'
@@ -52,6 +49,9 @@ INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
     'webpack_loader',
 )
+
+# Custom user model (extends AbstractBaseUser)
+AUTH_USER_MODEL = 'common_auth.MyUser'
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
