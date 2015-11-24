@@ -33,7 +33,8 @@ def zotero_get_config(auth, node_addon, **kwargs):
         'result': provider.serializer(
             node_settings=node_addon,
             user_settings=auth.user.get_addon('zotero'),
-        ).serialized_node_settings
+        ).serialized_node_settings,
+        'validCredentials': provider.check_credentials(node_addon)
     }
 
 @must_have_permission('write')
