@@ -165,14 +165,7 @@ class NodeSerializer(JSONAPISerializer):
     def get_unread_file_comments(self, obj):
         auth = self.get_user_auth(self.context['request'])
         user = auth.user
-        file_timestamps = user.get_node_comment_timestamps(obj, 'files')
         n_unread = 0
-        if not file_timestamps:
-            user.comments_viewed_timestamp[obj._id]['files'] = dict()
-            file_timestamps = user.comments_viewed_timestamp[obj._id]['files']
-            for file_id in obj.commented_files:
-                file_timestamps[file_id] = datetime(1970, 1, 1, 12, 0, 0)
-            user.save()
         removed_files = []
         for file_id in obj.commented_files:
             file_obj = File.load(file_id)

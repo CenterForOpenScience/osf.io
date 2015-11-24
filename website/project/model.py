@@ -266,14 +266,7 @@ class Comment(GuidStoredObject):
 
     @classmethod
     def n_unread_file_comments(cls, user, node):
-        file_timestamps = user.get_node_comment_timestamps(node, 'files')
         n_unread = 0
-        if not file_timestamps:
-            user.comments_viewed_timestamp[node._id]['files'] = dict()
-            file_timestamps = user.comments_viewed_timestamp[node._id]['files']
-            for file_id in node.commented_files:
-                file_timestamps[file_id] = datetime.datetime(1970, 1, 1, 12, 0, 0)
-            user.save()
         removed_files = []
         for file_id in node.commented_files:
             file_obj = File.load(file_id)

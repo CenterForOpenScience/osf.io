@@ -1325,13 +1325,19 @@ class User(GuidStoredObject, AddonModelMixin):
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
         if self.comments_viewed_timestamp is None:
             self.comments_viewed_timestamp = {}
-        node_timestamps = self.comments_viewed_timestamp.get(node._id, dict())
+        node_timestamps = self.comments_viewed_timestamp.get(node._id, {})
         if not node_timestamps:
-            self.comments_viewed_timestamp[node._id] = dict()
+            self.comments_viewed_timestamp[node._id] = {}
         if page == 'node':
             page_timestamps = node_timestamps.get(page, default_timestamp)
         else:
-            page_timestamps = node_timestamps.get(page, dict())
+            page_timestamps = node_timestamps.get(page, {})
+            if not page_timestamps:
+                self.comments_viewed_timestamp[node._id][page] = {}
+                page_timestamps = self.comments_viewed_timestamp[node._id][page]
+                if page == 'files':
+                    for file_id in node.commented_files:
+                        page_timestamps[file_id] = dt.datetime(1970, 1, 1, 12, 0, 0)
         self.save()
         return page_timestamps
 
