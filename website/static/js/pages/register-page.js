@@ -35,7 +35,6 @@ $(function() {
             editor: editor
         };
         selector = '#draftRegistrationScope';
-        editor.init(draft, true);
     }
     else { // if viewing registered metadata
         var metaSchema = new registrationUtils.MetaSchema(
