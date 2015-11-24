@@ -313,8 +313,8 @@ var Page = function(schemaPage, schemaData) {
         return new Question(questionSchema, schemaData[questionSchema.qid]);
     });
 
-    /** 
-     * Aggregate lists of comments from each question in questions. Sort by 'created'. 
+    /**
+     * Aggregate lists of comments from each question in questions. Sort by 'created'.
      **/
     self.comments = ko.computed(function() {
         var comments = [];
@@ -528,9 +528,9 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
             },
             message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
         };
-    }    
+    }
     var preRegisterPrompts = response.prompts || [];
-    
+
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
     );
@@ -563,6 +563,7 @@ Draft.prototype.beforeRegister = function(url) {
 
     var request = $.getJSON(self.urls.before_register);
     request.done(function(response) {
+        $osf.unblock();
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(
                 response,
@@ -579,7 +580,7 @@ Draft.prototype.beforeRegister = function(url) {
                 self.register.bind(self, url)
             );
         }
-    }).always($osf.unblock);
+    }).fail($osf.unblock);
     return request;
 };
 Draft.prototype.registerWithoutReview = function() {
@@ -681,26 +682,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
         return self.currentPage() === self.pages()[self.pages().length - 1];
     });
 
-    self.serialized = ko.pureComputed(function () {
-        // TODO(lyndsysimon): Test this.
-        var self = this;
-        var data = {};
-
-        $.each(self.pages(), function (_, page) {
-            $.each(page.questions, function (_, question) {
-                data[question.id] = {
-                    value: question.value()
-                };
-            });
-        });
-
-        return {
-            schema_name: self.draft().metaSchema.name,
-            schema_version: self.draft().metaSchema.version,
-            schema_data: data
-        };
-    }.bind(self));
-
     // An incrementing dirty flag. The 0 state represents not-dirty.
     // States greater than 0 imply dirty, and incrementing the number
     // allows for reliable mutations of the ko.observable.
@@ -751,6 +732,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
     });
 
     self.iterObject = $osf.iterObject;
+
     // TODO: better extensions system?
     self.extensions = {
         'osf-upload': editorExtensions.Uploader,
@@ -799,10 +781,9 @@ RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
     self.draft(draft);
-    var metaSchema = draft.metaSchema;
+    var metaSchema = draft ? draft.metaSchema: null;
 
     self.saveManager = null;
-    var schemaData = {};
     if (draft) {
         self.saveManager = new SaveManager(
             self.urls.update.replace('{draft_pk}', draft.pk),
@@ -810,7 +791,6 @@ RegistrationEditor.prototype.init = function(draft) {
                 dirty: self.dirtyCount
             }
         );
-        schemaData = draft.schemaData || {};
     }
 
     self.lastSaveTime = ko.computed(function() {
@@ -1005,7 +985,7 @@ RegistrationEditor.prototype.submit = function() {
                             label: 'Return to registrations page',
                             className: 'btn-primary pull-right',
                             callback: function() {
-                                window.location.href = self.draft().urls.registrations;
+                                window.location.assign(self.draft().urls.registrations);
                             }
                         }
                     }
@@ -1300,6 +1280,7 @@ RegistrationManager.prototype.editDraft = function(draft) {
 module.exports = {
     Comment: Comment,
     Question: Question,
+    Page: Page,
     MetaSchema: MetaSchema,
     Draft: Draft,
     RegistrationEditor: RegistrationEditor,
