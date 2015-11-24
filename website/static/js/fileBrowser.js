@@ -88,14 +88,6 @@ var FileBrowser = {
             new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true }, systemCollection : true}, 'All My Registrations'),
         ];
 
-        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'sort' : 'date_created'}});
-        m.request({method : 'GET', url : collectionsUrl, config : xhrconfig}).then(function(result){
-            console.log(result);
-           result.data.forEach(function(node){
-               self.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
-           });
-        });
-
         self.breadcrumbs = m.prop([
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true }, systemCollection : true}, 'All My Projects'),
         ]);
