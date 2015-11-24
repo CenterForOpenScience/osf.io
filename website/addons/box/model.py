@@ -139,16 +139,15 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
+        folder_id = self.folder_id
+        self.clear_settings()
+
         if add_log:
-            extra = {'folder_id': self.folder_id}
+            extra = {'folder_id': folder_id}
             self.nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
-        self.folder_id = None
         self._update_folder_data()
-        self.user_settings = None
         self.clear_auth()
-
-        self.save()
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
