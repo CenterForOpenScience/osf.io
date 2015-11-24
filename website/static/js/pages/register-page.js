@@ -14,7 +14,6 @@ var nodeApiUrl = node.urls.api;
 
 require('pikaday-css');
 
-
 $(function() {
     // opt into tooltip
     $('[data-toggle="tooltip"]').tooltip();
@@ -35,7 +34,6 @@ $(function() {
             draft: draft,
             editor: editor
         }, '#draftRegistrationScope');
-
     }
     // if viewing registered metadata
     else {

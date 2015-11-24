@@ -372,7 +372,6 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, option
     self.parentId = parentId;
     self.parentTitle = parentTitle;
     self.options = options;
-
     self.viewModel = new AddContributorViewModel(
         self.nodeTitle,
         self.nodeId,
@@ -382,6 +381,7 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, option
     );
     self.init();
 }
+
 ContribAdder.prototype.init = function() {
     var self = this;
     self.viewModel.getContributors();

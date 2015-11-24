@@ -181,7 +181,6 @@ var Uploader = function(data) {
 
 var AuthorImport = function(data, $root) {
     var self = this;
-
     self.question = data;
 
     self.makeContributorsRequest = function() {
@@ -202,15 +201,12 @@ var AuthorImport = function(data, $root) {
                            'problem persists.');
             });
     };
-
     self.getContributors().done(function(data) {
         self.value(data);
     });
-
     self.preview = function() {
         return self.value();
     };
-
     var callback = function(data) {
         self.value(
             $.map(data.contributors, function(c){ return c.fullname; })

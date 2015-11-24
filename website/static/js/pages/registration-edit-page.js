@@ -8,7 +8,6 @@ var $osf = require('js/osfHelpers');
 var registrationUtils = require('js/registrationUtils');
 var RegistrationEditor = registrationUtils.RegistrationEditor;
 
-
 var ctx = window.contextVars;
 var node = window.contextVars.node;
 
@@ -24,10 +23,6 @@ $(function() {
 
     var draft = new registrationUtils.Draft(ctx.draft);
     draftEditor.init(draft);
-    $('.admin-info').popover({
-        trigger: 'hover'
-    });
 
     $osf.applyBindings(draftEditor, '#draftRegistrationScope');
-
 });
