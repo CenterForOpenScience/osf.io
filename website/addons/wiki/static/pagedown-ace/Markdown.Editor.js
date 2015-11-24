@@ -235,16 +235,6 @@ var Range = ace.require('ace/range').Range;
         }
     };
 
-    var getChunk = function(panels) {
-        var state = new TextareaState(panels);
-        if (!state) {
-            return;
-        }
-        var chunk = state.getChunks();
-        chunk.selection = '';
-        return chunk;
-    };
-
     var addDragNDrop = function(editor, panels, cm) {
         var element = editor.container;
         editor.getPosition = function(x, y) {
@@ -348,6 +338,7 @@ var Range = ace.require('ace/range').Range;
                         imgURL = getImage(url, extensions, re);
                         if (!imgURL) {
                             $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
+                            fixupInputArea();
                         }
                     }
                     if (!!imgURL) {
@@ -362,6 +353,7 @@ var Range = ace.require('ace/range').Range;
                     else {
                         if (url.substring(0, 10) === 'data:image') {
                             $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
+                            fixupInputArea();
                         }
                         else {
                             cm.doLinkOrImage(init, fixupInputArea, false, url);
@@ -373,55 +365,57 @@ var Range = ace.require('ace/range').Range;
                 var files = event.dataTransfer.files;
                 var multiple = files.length > 1;
                 var urls = [];
-                var num = cm.addLinkDef(init)  + 1;
+                var num = cm.addLinkDef(init) + 1;
                 var deferred = [];
-                $.each(files, function(i, file){
-                    var ext = re.exec(file.name)[1];
-                    if (extensions.indexOf(ext.toLowerCase()) <= -1) {
-                        $osf.growl('Error', 'File type not supported', 'danger');
+                checkFolder().fail(function() {
+                    notUploaded();
+                }).done(function(path) {
+                    if (!!path) {
+                        $.each(files, function (i, file) {
+                            var ext = re.exec(file.name)[1];
+                            if (extensions.indexOf(ext.toLowerCase()) <= -1) {
+                                $osf.growl('Error', 'File type not supported', 'danger');
+                            }
+                            else {
+                                var waterbutler_url = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path + '?name=' + encodeURI(file.name) + '&type=file';
+                                deferred.push(
+                                    $.ajax({
+                                        url: waterbutler_url,
+                                        type: 'PUT',
+                                        processData: false,
+                                        contentType: false,
+                                        beforeSend: $osf.setXHRAuthorization,
+                                        data: file
+                                    }).done(function (response) {
+                                        url = response.data.links.download + '?mode=render';
+                                        urls.splice(i, 0, url);
+                                    }).fail(function (data) {
+                                        $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
+                                            'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                                            'if the problem persists.', 'danger');
+                                    })
+                                )
+                            }
+                        });
+                        $.when.apply(null, deferred).done(function () {
+                            $.each(urls, function (i, url) {
+                                cm.doLinkOrImage(init, null, true, url, multiple, num + i);
+                            });
+                            fixupInputArea();
+                        })
                     }
                     else {
-                        var folder = checkFolder();
-                        if (!!folder) {
-                            var waterbutler_url = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + folder + '?name=' + encodeURI(file.name) + '&type=file';
-
-                            deferred.push(
-                                $.ajax({
-                                    url: waterbutler_url,
-                                    type: 'PUT',
-                                    processData: false,
-                                    contentType: false,
-                                    beforeSend: $osf.setXHRAuthorization,
-                                    data: file
-                                }).done(function(response){
-                                    url = response.data.links.download + '?mode=render';
-                                    urls.splice(i, 0, url);
-                                    //debugger;
-                                }).fail(function(data) {
-                                    $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
-                                    'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                                    'if the problem persists.', 'danger');
-                                })
-                            )
-                        }
-                        else {
-                            $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
-                                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                                'if the problem persists.', 'danger');
-                        }
+                        $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
+                            'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                            'if the problem persists.', 'danger');
                     }
                 });
-                $.when.apply(null, deferred).done(function() {
-                    $.each(urls, function(i, url) {
-                        cm.doLinkOrImage(init, null, true, url, multiple, num + i);
-                    });
-                    fixupInputArea();
-                })
+
             }
             editor.marker.session.removeMarker(editor.marker.id);
             editor.marker.redraw();
             editor.marker.active = false;
-        }, false);
+        }, true);
 
         element.addEventListener('dragleave', function(event) {
             event.preventDefault();
@@ -432,64 +426,43 @@ var Range = ace.require('ace/range').Range;
         });
     };
 
-    var linkDescription = function(str, multiple, getString) {
-        if (!!multiple) {
-            return '![' + getString(str) + '][ ]\n';
-        }
-        else {
-            var isImage = (str === 'imagedescription');
-            if (isImage) {
-                return '![' + getString(str) + '][ ]';
-            }
-        }
-        return '[' + getString(str) + '][ ]';
+    var notUploaded = function() {
+        $osf.growl('Error', 'File(s) not uploaded. Please refresh the page and try ' +
+            'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+            'if the problem persists.', 'danger');
     };
 
     var createFolder = function() {
-        var success;
-        var new_folder_url = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage/?name=Wiki+Image+Uploads&kind=folder';
-        $.ajax({
-            url: new_folder_url,
+        return $.ajax({
+            url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage/?name=Wiki+Image+Uploads&kind=folder',
             type:'PUT',
-            async: false,
             beforeSend: $osf.setXHRAuthorization
-        }).done(function(response) {
-            success = response.data.attributes.path;
-        }).fail(function() {
-            success = false;
         });
-        return success;
     };
 
     var checkFolder = function() {
-        var success;
         var folder_url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/files/osfstorage/?filter[kind]=folder&filter[name]=wiki+image+uploads';
-        debugger;
-        $.ajax({
+        return $.ajax({
             url: folder_url,
             type: 'GET',
-            async: false,
             beforeSend: $osf.setXHRAuthorization
-        }).done(function(data, responseText, response) {
+        }).then(function(data, responseText, response) {
             var json = response.responseJSON;
             var exists = false;
             if (json.data.length > 0) {
                 for (var i = 0, folder; folder = json.data[i]; i++) {
                     var name = folder.attributes.name;
                     if (name === 'Wiki Image Uploads') {
-                        exists = true;
-                        success = folder.attributes.path;
-                        break;
+                        return folder.attributes.path;
                     }
                 }
             }
             if (json.data.length === 0 || !exists) {
-                success = createFolder();
+                return createFolder().then(function(response) {
+                    return response.data.attributes.path;
+                });
             }
-        }).fail(function(data, responseText, response) {
-            success = false;
-        });
-        return success;
+        })
     };
 
     // before: contains all the text in the input box BEFORE the selection.
@@ -2231,7 +2204,6 @@ var Range = ace.require('ace/range').Range;
                         if (!!multiple) {
                             chunk.before += "![" + that.getString("imagedescription") + "][" + num + "]\n";
                         }
-                        //debugger;
                     }
 
                     if (!chunk.selection && !multiple) {
