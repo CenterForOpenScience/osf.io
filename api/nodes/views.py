@@ -472,6 +472,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     ###Users
 
     This endpoint shows the contributor user detail and is automatically embedded.
+
     ##Actions
 
     ###Adding Contributors
@@ -921,7 +922,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
 
     ### Target Node
 
-    This endpoint shows the target node detail.
+    This endpoint shows the target node detail and is automatically embedded.
 
     ##Actions
 
