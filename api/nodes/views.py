@@ -136,7 +136,7 @@ class WaterButlerMixin(object):
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
-    Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
+    Paginated list of nodes ordered by their `title`.  Each resource contains the full representation of the
     node, meaning additional requests to an individual node's detail view are not necessary.
 
     <!--- Copied Spiel from NodeDetail -->
@@ -225,7 +225,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_category = 'nodes'
     view_name = 'node-list'
 
-    ordering = ('-date_modified', )  # default ordering
+    ordering = ('title', )  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
