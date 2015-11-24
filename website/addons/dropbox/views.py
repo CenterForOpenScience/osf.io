@@ -5,6 +5,7 @@ import logging
 import httplib as http
 from flask import request
 from dropbox.rest import ErrorResponse
+from dropbox.client import DropboxClient
 from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError
@@ -36,7 +37,7 @@ dropbox_import_auth = generic_views.import_auth(
 )
 
 def _get_folders(node_settings, folder_id):
-    client = utils.get_client(node_settings.external_account)
+    client = DropboxClient(node_settings.external_account.oauth_key)
     return utils.get_folders(client)
 
 dropbox_folder_list = generic_views.folder_list(
@@ -100,7 +101,7 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
         'view': node.can_view(auth)
     }
 
-    client = utils.get_client(node_addon.external_account)
+    client = DropboxClient(node_addon.external_account.oauth_key)
     file_not_found = HTTPError(http.NOT_FOUND, data=dict(message_short='File not found',
                                                   message_long='The Dropbox file '
                                                   'you requested could not be found.'))
