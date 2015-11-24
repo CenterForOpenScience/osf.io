@@ -9,6 +9,12 @@ var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
 
 var LinkObject = function (type, data, label, index) {
+    if (type === undefined || data === undefined || label === undefined) {
+        throw new Error('LinkObject expects type, data and label to be defined.');
+    }
+    if (index !== undefined && ( typeof index !== 'number' || index <= 0)){
+        throw new Error('Index needs to be a number starting from 0; instead "' + index + '" was given.');
+    }
     var self = this;
     self.id = getUID();
     self.type = type;
@@ -175,7 +181,8 @@ var FileBrowser = {
             }
             if(linkObject.ancestors.length > 0){
                 linkObject.ancestors.forEach(function(item){
-                    var ancestorLink = new LinkObject('node', item.data, item.data.name);
+                    var ancestorLink =
+
                     self.breadcrumbs().push(ancestorLink);
                 });
             }
@@ -411,7 +418,7 @@ var Collections  = {
                             }
                         });
                     } else {
-                        submenuTemplate = '';
+                        submenuTemplate = '';x
                     }
                     return m('li', { className : selectedCSS, 'data-index' : index },
                         [
@@ -724,4 +731,4 @@ var Modals = {
     }
 };
 
-module.exports = FileBrowser;
+module.exports = { FileBrowser : FileBrowser, LinkObject: LinkObject };
