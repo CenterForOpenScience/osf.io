@@ -93,7 +93,9 @@ class WaterButlerMixin(object):
         node = self.get_node(check_object_permissions=False)
         path = self.kwargs[self.path_lookup_url_kwarg]
         provider = self.kwargs[self.provider_lookup_url_kwarg]
+        return self.get_file_object(node, path, provider)
 
+    def get_file_object(self, node, path, provider):
         if provider == 'osfstorage':
             # Kinda like /me for a user
             # The one odd case where path is not really path
@@ -1516,7 +1518,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         ]
 
 
-class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
+class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, NodeMixin, WaterButlerMixin):
     """List of comments on a node. *Writeable*.
 
     Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the
