@@ -95,7 +95,7 @@ class WaterButlerMixin(object):
         provider = self.kwargs[self.provider_lookup_url_kwarg]
         return self.get_file_object(node, path, provider)
 
-    def get_file_object(self, node, path, provider):
+    def get_file_object(self, node, path, provider, check_object_permissions=True):
         if provider == 'osfstorage':
             # Kinda like /me for a user
             # The one odd case where path is not really path
@@ -108,8 +108,8 @@ class WaterButlerMixin(object):
                     Q('_id', 'eq', path.strip('/')) &
                     Q('is_file', 'eq', not path.endswith('/'))
                 )
-
-            self.check_object_permissions(self.request, obj)
+            if check_object_permissions:
+                self.check_object_permissions(self.request, obj)
 
             return obj
 
@@ -304,7 +304,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         instance.save()
 
 
-class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
     """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -1518,7 +1518,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         ]
 
 
-class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, NodeMixin, WaterButlerMixin):
+class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     """List of comments on a node. *Writeable*.
 
     Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the

@@ -170,7 +170,7 @@ class NodeSerializer(JSONAPISerializer):
         for file_id in obj.commented_files:
             file_obj = File.load(file_id)
             try:
-                exists = self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider)
+                exists = self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider, check_object_permissions=False)
             except (exceptions.NotFound, exceptions.PermissionDenied):
                 removed_files.append(file_id)
         for file_id in removed_files:
