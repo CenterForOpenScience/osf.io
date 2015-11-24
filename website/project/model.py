@@ -5,6 +5,7 @@ import os
 import re
 import logging
 import pymongo
+import requests
 import datetime
 import urlparse
 from collections import OrderedDict
@@ -53,6 +54,8 @@ from website.exceptions import (
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
+from website.files.models.base import File
+from website.util import waterbutler_api_url_for
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -220,15 +223,71 @@ class Comment(GuidStoredObject):
         return self.content
 
     @classmethod
-    def find_unread(cls, user, node):
+    def find_unread(cls, user, node, page=None, root_id=None, check=False):
         default_timestamp = datetime.datetime(1970, 1, 1, 12, 0, 0)
         n_unread = 0
         if node.is_contributor(user):
-            view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
-            n_unread = Comment.find(Q('node', 'eq', node) &
-                                    Q('user', 'ne', user) &
-                                    Q('date_created', 'gt', view_timestamp) &
-                                    Q('date_modified', 'gt', view_timestamp)).count()
+            view_timestamp = user.get_node_comment_timestamps(node, page)
+            if not page:
+                return cls.n_unread_node_comments(user, node) + cls.n_unread_file_comments(user, node)
+            elif page == 'node':
+                return cls.n_unread_node_comments(user, node)
+            elif page == 'files':
+                if root_id is None:
+                    return cls.n_unread_file_comments(user, node)
+                else:
+                    if isinstance(view_timestamp, dict):
+                        view_timestamp = view_timestamp.get(root_id, default_timestamp)
+                    root_target = File.load(root_id)
+                    if check:
+                        if not (root_target and root_target.touch(request.headers.get('Authorization'))):
+                            return 0
+                    else:
+                        return Comment.find(Q('node', 'eq', node) &
+                                            Q('user', 'ne', user) &
+                                            Q('date_created', 'gt', view_timestamp) &
+                                            Q('date_modified', 'gt', view_timestamp) &
+                                            Q('is_deleted', 'eq', False) &
+                                            Q('is_hidden', 'eq', False) &
+                                            Q('root_target', 'eq', root_target)).count()
+
+        return n_unread
+
+    @classmethod
+    def n_unread_node_comments(cls, user, node):
+        view_timestamp = user.get_node_comment_timestamps(node, 'node')
+        return Comment.find(Q('node', 'eq', node) &
+                            Q('user', 'ne', user) &
+                            Q('date_created', 'gt', view_timestamp) &
+                            Q('date_modified', 'gt', view_timestamp) &
+                            Q('is_deleted', 'eq', False) &
+                            Q('is_hidden', 'eq', False) &
+                            Q('page', 'eq', 'node')).count()
+
+    @classmethod
+    def n_unread_file_comments(cls, user, node):
+        file_timestamps = user.get_node_comment_timestamps(node, 'files')
+        n_unread = 0
+        if not file_timestamps:
+            user.comments_viewed_timestamp[node._id]['files'] = dict()
+            file_timestamps = user.comments_viewed_timestamp[node._id]['files']
+            for file_id in node.commented_files:
+                file_timestamps[file_id] = datetime.datetime(1970, 1, 1, 12, 0, 0)
+            user.save()
+        removed_files = []
+        for file_id in node.commented_files:
+            file_obj = File.load(file_id)
+            exists = file_obj and file_obj.touch(request.headers.get('Authorization'))
+            if not exists:
+                removed_files.append(file_id)
+
+        for file_id in removed_files:
+            del node.commented_files[file_id]
+            node.save()
+
+        for file_id in node.commented_files:
+            n_unread += cls.find_unread(user, node, page='files', root_id=file_id)
+
         return n_unread
 
     @classmethod

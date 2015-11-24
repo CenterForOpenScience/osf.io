@@ -1320,10 +1320,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def get_node_comment_timestamps(self, node, page):
         """ Returns the timestamp for when comments were last viewed on a node or
-            a dictionary of timestamps for when comments were last viewed on files or
-            wiki pages.
+            a dictionary of timestamps for when comments were last viewed on files.
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
+        if self.comments_viewed_timestamp is None:
+            self.comments_viewed_timestamp = {}
         node_timestamps = self.comments_viewed_timestamp.get(node._id, dict())
         if not node_timestamps:
             self.comments_viewed_timestamp[node._id] = dict()
@@ -1331,6 +1332,7 @@ class User(GuidStoredObject, AddonModelMixin):
             page_timestamps = node_timestamps.get(page, default_timestamp)
         else:
             page_timestamps = node_timestamps.get(page, dict())
+        self.save()
         return page_timestamps
 
 

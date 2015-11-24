@@ -19,7 +19,6 @@ from website.files.models.base import File, StoredFileNode
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
-from website.project.views.node import n_unread_comments
 from website.profile.utils import serialize_user
 
 
@@ -193,13 +192,7 @@ def list_comments(auth, node, **kwargs):
 
     target = resolve_target(node, page, guid)
     comments = Comment.find(Q('target', 'eq', target)).sort('date_created')
-
-    n_unread = 0
-    if node.is_contributor(auth.user):
-        if auth.user.comments_viewed_timestamp is None:
-            auth.user.comments_viewed_timestamp = {}
-            auth.user.save()
-        n_unread = n_unread_comments(node, auth.user, page, root_id)
+    n_unread = Comment.find_unread(auth.user, node, page=page, root_id=root_id)
 
     ret = {
         'comments': [
