@@ -312,7 +312,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
             if (self.async) {
                 $('.modal').modal('hide');
                 $osf.unblock();
-                self.callback(response);
+                if (self.callback) {
+                    self.callback(response);
+                }
             } else {
                 window.location.reload();
             }
@@ -371,7 +373,7 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, option
     self.nodeId = nodeId;
     self.parentId = parentId;
     self.parentTitle = parentTitle;
-    self.options = options;
+    self.options = options || {};
     self.viewModel = new AddContributorViewModel(
         self.nodeTitle,
         self.nodeId,

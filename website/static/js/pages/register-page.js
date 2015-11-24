@@ -10,7 +10,6 @@ var registrationEmbargo = require('js/registrationEmbargo');
 
 var ctx = window.contextVars;
 var node = ctx.node;
-var nodeApiUrl = node.urls.api;
 
 require('pikaday-css');
 
@@ -18,32 +17,36 @@ $(function() {
     // opt into tooltip
     $('[data-toggle="tooltip"]').tooltip();
 
-    // if registering draft
-    if (ctx.draft) {
+    var viewModel;
+    var selector;
+    var editor = new registrationUtils.RegistrationEditor({
+        schemas: '/api/v1/project/schemas/',
+        create: node.urls.api + 'drafts/',
+        submit: node.urls.api + 'drafts/{draft_pk}/submit/',
+        update: node.urls.api + 'drafts/{draft_pk}/',
+        get: node.urls.api + 'drafts/{draft_pk}/',
+        draftRegistrations: node.urls.web + 'registrations/'
+    }, null, true);
+
+    if (ctx.draft) { // if registering draft
         var draft = new registrationUtils.Draft(ctx.draft);
-        var editor = new registrationUtils.RegistrationEditor({
-            schemas: '/api/v1/project/schemas/',
-            create: node.urls.api + 'drafts/',
-            submit: node.urls.api + 'drafts/{draft_pk}/submit/',
-            update: node.urls.api + 'drafts/{draft_pk}/',
-            get: node.urls.api + 'drafts/{draft_pk}/',
-            draftRegistrations: node.urls.web + 'registrations/#drafts'
-        });
-        editor.init(draft, true);
-        $osf.applyBindings({
+        viewModel = {
             draft: draft,
             editor: editor
-        }, '#draftRegistrationScope');
-    }
-    // if viewing registered metadata
-    else {
-        var metaSchema = new registrationUtils.MetaSchema(ctx.node.registrationMetaSchema);
-
-        var metaDataViewModel = {
-            metaSchema: metaSchema,
-            schemaData: ctx.node.registrationMetaData[metaSchema.id] || {}
         };
-        $osf.applyBindings(metaDataViewModel, '#registrationMetaDataScope');
+        selector = '#draftRegistrationScope';
+        editor.init(draft, true);
     }
-
+    else { // if viewing registered metadata
+        var metaSchema = new registrationUtils.MetaSchema(
+            ctx.node.registrationMetaSchema,
+            ctx.node.registrationMetaData[ctx.node.registrationMetaSchema.id] || {}
+        );
+        viewModel = {
+            editor: editor,
+            metaSchema: metaSchema
+        };
+        selector = '#registrationMetaDataScope';
+    }
+    $osf.applyBindings(viewModel, selector);
 });

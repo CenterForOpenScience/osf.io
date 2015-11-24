@@ -183,6 +183,11 @@ var AuthorImport = function(data, $root) {
     var self = this;
     self.question = data;
 
+    self.serializeContributors = function(data) {
+        return $.map(data.contributors, function(c) {
+            return c.fullname;
+        }).join(', ');
+    };
     self.makeContributorsRequest = function() {
         var self = this;
         var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
@@ -192,9 +197,7 @@ var AuthorImport = function(data, $root) {
         var self = this;
         return self.makeContributorsRequest()
             .then(function(data) {
-                return $.map(
-                    data.contributors, function(c) { return c.fullname; }
-                ).join(', ');
+                return self.serializeContributors(data);
             }).fail(function() {
                 $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
                            'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
@@ -208,9 +211,7 @@ var AuthorImport = function(data, $root) {
         return self.value();
     };
     var callback = function(data) {
-        self.value(
-            $.map(data.contributors, function(c){ return c.fullname; })
-                .join(', '));
+        self.value(self.serializeContributors(data));
     };
     var adder = new ContribAdder(
         '#addContributors',

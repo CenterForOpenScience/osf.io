@@ -19,8 +19,7 @@ $('body').on('nodeLoad', function(event, data) {
             data.node.title,
             data.node.id,
             data.parent_node.id,
-            data.parent_node.title,
-            {}
+            data.parent_node.title
         );
     }
 });
