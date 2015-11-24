@@ -122,6 +122,8 @@ def _url_val(val, obj, serializer, **kwargs):
     if isinstance(val, Link):  # If a Link is passed, get the url value
         url = val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
+        if getattr(serializer, 'field', None):
+            serializer = serializer.parent
         url = getattr(serializer, val)(obj)
     else:
         url = val
@@ -688,6 +690,7 @@ class JSONAPISerializer(ser.Serializer):
                 if attribute is None:
                     continue
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
+
                     result = self.context['embed'][field.field_name](obj)
                     if result:
                         data['embeds'][field.field_name] = result

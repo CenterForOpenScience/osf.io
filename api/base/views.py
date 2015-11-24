@@ -23,6 +23,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
         results for
         :return function object -> dict:
         """
+        if getattr(field, 'field', None):
+                field = field.field
         def partial(item):
             # resolve must be implemented on the field
             view, view_args, view_kwargs = field.resolve(item)
@@ -46,6 +48,11 @@ class JSONAPIBaseView(generics.GenericAPIView):
             return context
         embeds = self.request.query_params.getlist('embed')
         fields = self.serializer_class._declared_fields
+
+        for index, field in enumerate(fields):
+            if getattr(field, 'field', None):
+                fields[index] = field.field
+
         for field in fields:
             if getattr(fields[field], 'always_embed', False) and field not in embeds:
                 embeds.append(unicode(field))
