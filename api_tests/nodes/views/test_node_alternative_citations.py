@@ -628,7 +628,7 @@ class TestRegistrationAlternativeCitations(ApiTestCase):
         self.public.alternativeCitations.append(self.citation)
         self.public.save()
         self.public.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
-        self.registration = RegistrationFactory(project=self.public)
+        self.registration = RegistrationFactory(project=self.public, is_public=True)
         self.reg_url = '/{}nodes/{}/citations/'.format(API_BASE, self.registration._id)
         self.citation.reg_url = self.reg_url + '{}/'.format(self.citation._id)
 
