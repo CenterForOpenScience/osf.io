@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
+from rest_framework.mixins import ListModelMixin
 
 from api.users.serializers import UserSerializer
 from website import settings
@@ -27,6 +28,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
         def partial(item):
             # resolve must be implemented on the field
             view, view_args, view_kwargs = field.resolve(item)
+            if issubclass(view.cls, ListModelMixin) and field.always_embed:
+                raise Exception("Cannot auto-embed a list view.")
             request = EmbeddedRequest(self.request)
             view_kwargs.update({
                 'request': request,
