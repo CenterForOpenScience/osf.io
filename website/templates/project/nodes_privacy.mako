@@ -11,13 +11,13 @@
 
                 <!-- warning page -->
 
-                <div data-bind="if: page() == 'warning'">
+                <div data-bind="if: page() == WARNING">
                     <span data-bind="html:message"></span>
                 </div>
 
                 <!-- end warning page -->
 
-                <div data-bind='visible:page() === "select"'>
+                <div data-bind="visible:page() === SELECT">
                     <div class="row">
                         <div class="col-md-10">
                             <div class="m-b-md box p-sm">
@@ -37,7 +37,7 @@
                             </div>
                         </div>
                         <div class="osf-treebeard">
-                            <div id="grid">
+                            <div id="nodesPrivacyTreebeard">
                                 <div class="spinner-loading-wrapper">
                                     <div class="logo-spin logo-md"></div>
                                     <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
@@ -52,7 +52,7 @@
 
                 <!-- addon and projects changed warning page -->
 
-                <div data-bind="if: page() == 'addon'">
+                <div data-bind="if: page() == CONFIRM">
                     <div data-bind="visible: nodesChangedPublic().length > 0">
                         <div class="panel panel-default">
                             <div class="panel-heading clearfix">
@@ -88,22 +88,22 @@
 
             <div class="modal-footer">
                 <!--ordering puts back button before cancel -->
-                <span data-bind="if: page() == 'addon'">
+                <span data-bind="if: page() == CONFIRM">
                     <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
                 </span>
 
                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
 
-                <span data-bind="if: page() == 'warning'">
+                <span data-bind="if: page() == WARNING">
                         <a class="btn btn-primary" data-bind="visible: hasChildren, click:selectProjects">Next</a>
                         <a class="btn btn-primary" data-bind="visible: hasChildren() == false, click:confirmChanges">Confirm</a>
                 </span>
 
-                <span data-bind="if: page() == 'select'">
-                    <a class="btn btn-primary" data-bind="click:addonWarning">Next</a>
+                <span data-bind="if: page() == SELECT">
+                    <a class="btn btn-primary" data-bind="click:confirmWarning">Next</a>
                 </span>
 
-                <span data-bind="if: page() == 'addon'">
+                <span data-bind="if: page() == CONFIRM">
                     <a href="#" class="btn btn-primary" data-bind="click: confirmChanges" data-dismiss="modal">Confirm</a>
                 </span>
 

@@ -39,13 +39,13 @@ function openAncestors (tb, item) {
     }
 }
 
-function NodesPrivacyTreebeard(data, nodesState, nodesOriginal) {
+function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
     /**
      * nodesChanged and nodesState are knockout variables.  nodesChanged will keep track of the nodes that have
      *  changed state.  nodeState is all the nodes in their current state.
      * */
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
-        divID: 'grid',
+        divID: divID,
         filesData: data,
         naturalScrollLimit : 0,
         rowHeight : 35,

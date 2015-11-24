@@ -16,9 +16,6 @@ var m = require('mithril');
 var Treebeard = require('treebeard');
 var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard');
 
-//Todo (billyhunt): change url to dev or production as needed
-var API_BASE = 'http://localhost:8000/v2/nodes/';
-
 var MESSAGES = {
     makeProjectPublicWarning:
                         'Please review your projects, components, and add-ons for sensitive or restricted information before making them public.' +
@@ -27,23 +24,22 @@ var MESSAGES = {
 
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
                         '<br><br><b>Checked</b> projects and components will be <b>public</b>.  <br><b>Unchecked</b> components will be <b>private</b>.',
-    addonWarning: {
+    confirmWarning: {
         nodesPublic: 'The following projects and components will be made <b>public</b>.',
         nodesPrivate: 'The following projects and components will be made <b>private</b>.'
     }
 };
 
-function getNodesOriginal(nodeTree, nodesOriginal) {
     /**
      * take treebeard tree structure of nodes and get a dictionary of parent node and all its
      * children
      */
+function getNodesOriginal(nodeTree, nodesOriginal) {
     var i;
     var nodeId = nodeTree.node.id;
     nodesOriginal[nodeId] = {
         public: nodeTree.node.is_public,
         id: nodeTree.node.id,
-        addons: nodeTree.node.addons,
         title: nodeTree.node.title,
         canWrite: nodeTree.node.can_write,
         changed: false
@@ -57,14 +53,13 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     return nodesOriginal;
 }
 
-function patchNodesPrivacy(nodes) {
     /**
      * patches all the nodes in a changed state
      * uses API v2 bulk requests
      */
-    var nodesPatch = [];
-    var promise;
-    nodesPatch = nodes.splice(0,10).map(function (node) {
+function patchNodesPrivacy(nodes) {
+    var nodesV2Url = window.contextVars.apiV2Prefix + 'nodes/';
+    var nodesPatch = nodes.splice(0,10).map(function (node) {
         return {
             'type': 'nodes',
             'id': node.id,
@@ -74,7 +69,7 @@ function patchNodesPrivacy(nodes) {
         };
     });
     return $.ajax({
-        url: API_BASE,
+        url: nodesV2Url,
         type: 'PATCH',
         dataType: 'json',
         contentType: 'application/vnd.api+json; ext=bulk',
@@ -92,20 +87,25 @@ function patchNodesPrivacy(nodes) {
     }).fail(function(xhr, status, error) {
         $osf.growl('Error', 'Unable to update project privacy');
         Raven.captureMessage('Could not PATCH project settings.', {
-            url: API_BASE, status: status, error: error
+            url: nodesV2Url, status: status, error: error
         });
     });
 }
 
-var NodesPrivacyViewModel = function(data, parentIsPublic) {
     /**
      * view model which corresponds to nodes_privacy.mako (#nodesPrivacy)
      *
      * @type {NodesPrivacyViewModel}
      */
+var NodesPrivacyViewModel = function(data, parentIsPublic) {
     var self = this;
-    var nodesOriginal = {};
+    self.WARNING = 'warning';
+    self.SELECT = 'select';
+    self.CONFIRM = 'confirm';
+
+
     var treebeardUrl = data.node.api_url  + 'get_node_tree/';
+    self.nodesOriginal = {};
     self.loadingResults = ko.observable(false);
     //state of current nodes
     self.nodesState = ko.observableArray();
@@ -113,10 +113,6 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         m.redraw(true);
     });
     //original node state on page load
-    self.nodesOriginal = ko.observableArray();
-    self.nodesOriginal.subscribe(function(newValue) {
-    });
-
     self.nodesChangedPublic = ko.observableArray([]);
     self.nodesChangedPrivate = ko.observableArray([]);
     self.hasChildren = ko.observable(false);
@@ -128,42 +124,44 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     /**
      * get node tree for treebeard from API V1
      */
-    $.ajax({
-        url: treebeardUrl,
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
-        var i = 0;
-        nodesOriginal = getNodesOriginal(response[0], nodesOriginal);
-        self.nodesOriginal(nodesOriginal);
-        for (var key in nodesOriginal) {
-            i++;
-        }
-        if (i > 1) {
-            self.hasChildren(true);
-        }
-        var nodesState = $.extend(true, {}, nodesOriginal);
-        var nodeParent = response[0].node.id;
-        //change node state to reflect button push by user on project page (make public | make private)
-        nodesState[nodeParent].public = !parentIsPublic;
-        nodesState[nodeParent].changed = true;
-        self.nodesState(nodesState);
-        new NodesPrivacyTreebeard(response, self.nodesState, nodesOriginal);
-        self.loadingResults(false);
-    }).fail(function(xhr, status, error) {
-        $osf.growl('Error', 'Unable to retrieve project settings');
-        Raven.captureMessage('Could not GET project settings.', {
-            url: treebeardUrl, status: status, error: error
+    self.fetchNodeTree = function() {
+        return $.ajax({
+            url: treebeardUrl,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(response) {
+            var i = 0;
+            self.nodesOriginal = getNodesOriginal(response[0], self.nodesOriginal);
+            for (var key in self.nodesOriginal) {
+                i++;
+            }
+            if (i > 1) {
+                self.hasChildren(true);
+            }
+            var nodesState = $.extend(true, {}, self.nodesOriginal);
+            var nodeParent = response[0].node.id;
+            //change node state to reflect button push by user on project page (make public | make private)
+            nodesState[nodeParent].public = !parentIsPublic;
+            nodesState[nodeParent].changed = true;
+            self.nodesState(nodesState);
+            self.loadingResults(false);
+        }).fail(function(xhr, status, error) {
+            $osf.growl('Error', 'Unable to retrieve project settings');
+            Raven.captureMessage('Could not GET project settings.', {
+                url: treebeardUrl, status: status, error: error
+            });
         });
-    });
+    };
 
     self.page = ko.observable('warning');
+
+
 
     self.pageTitle = ko.computed(function() {
         return {
             warning: 'Warning',
-            select: 'Change Privacy Settings',
-            addon: 'Projects and Components Affected'
+            select: 'Change privacy settings',
+            confirm: 'Projects and components affected'
         }[self.page()];
     });
 
@@ -171,7 +169,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         return {
             warning: MESSAGES.makeProjectPublicWarning,
             select: MESSAGES.selectNodes,
-            addon: MESSAGES.addonWarning
+            confirm: MESSAGES.confirmWarning
         }[self.page()];
     });
 
@@ -179,7 +177,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         self.page('select');
     };
 
-    self.addonWarning =  function() {
+    self.confirmWarning =  function() {
         var nodesState = ko.toJS(self.nodesState);
         for (var node in nodesState) {
             if (nodesState[node].changed) {
@@ -192,7 +190,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
             }
         }
 
-        self.page('addon');
+        self.page('confirm');
     };
 
     self.confirmChanges =  function() {
@@ -220,7 +218,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         for (var node in nodesState) {
             if (nodesState[node].canWrite) {
                 nodesState[node].public = true;
-                if (nodesState[node].public !== nodesOriginal[node].public) {
+                if (nodesState[node].public !== self.nodesOriginal[node].public) {
                     nodesState[node].changed = true;
                 }
                 else {
@@ -237,7 +235,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         for (var node in nodesState) {
             if (nodesState[node].canWrite) {
                 nodesState[node].public = false;
-                if (nodesState[node].public !== nodesOriginal[node].public) {
+                if (nodesState[node].public !== self.nodesOriginal[node].public) {
                     nodesState[node].changed = true;
                 }
                 else {
@@ -265,6 +263,9 @@ function NodesPrivacy (selector, data, parentNodePrivacy) {
     self.$element = $(self.selector);
     self.data = data;
     self.viewModel = new NodesPrivacyViewModel(self.data, parentNodePrivacy);
+    self.viewModel.fetchNodeTree().done(function(response) {
+        new NodesPrivacyTreebeard('nodesPrivacyTreebeard', response, self.viewModel.nodesState, self.viewModel.nodesOriginal);
+    });
     self.init();
 
 }
