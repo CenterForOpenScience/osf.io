@@ -454,7 +454,9 @@ class User(GuidStoredObject, AddonModelMixin):
         user.add_unconfirmed_email(username)
         user.is_registered = False
         if campaign:
-            user.system_tags.append(campaign)
+            # needed to prevent cirular import
+            from framework.auth.campaigns import system_tag_for_campaign  # skipci
+            user.system_tags.append(system_tag_for_campaign(campaign))
         return user
 
     @classmethod

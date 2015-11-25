@@ -14,6 +14,10 @@ CAMPAIGNS = ImmutableDict({
     },
 })
 
+def system_tag_for_campaign(campaign):
+    if campaign in CAMPAIGNS:
+        return CAMPAIGNS[campaign]['system_tag']
+    return None
 
 def email_template_for_campaign(campaign, default=None):
     if campaign in CAMPAIGNS:
