@@ -1,3 +1,6 @@
+""" A script for testing DraftRegistrationApprovals. Automatically approves all pending
+DraftRegistrationApprovals.
+"""
 import sys
 import logging
 

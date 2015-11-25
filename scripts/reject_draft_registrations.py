@@ -1,3 +1,6 @@
+""" A script for testing DraftRegistrationApprovals. Automatically adds comments to and rejects
+pending DraftRegistrationApprovals
+"""
 import sys
 import logging
 import datetime as dt
