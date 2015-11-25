@@ -2,7 +2,10 @@
 """Unit tests for models and their factories."""
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
-import unittest
+
+from modularodm import Q
+
+import datetime as dt
 
 from website.models import MetaSchema, DraftRegistrationApproval
 
@@ -83,74 +86,40 @@ class TestDraftRegistrations(RegistrationsTestBase):
         for key in ['foo', 'c']:
             assert_in(key, changes)
 
-    @unittest.skip("TODO(samchrisinger): update this")
-    def test_update_metadata_handles_conflicting_comments(self):
-        self.draft.registration_metadata = {
-            'item01': {
-                'value': 'foo',
-                'comments': [{
-                    'author': 'Bar',
-                    'created': '1970-01-01T00:00:00.000Z',
-                    'lastModified': '2015-08-05T14:58:30.574Z',
-                    'value': 'qux'
-                }]
+    def test_update_metadata_interleaves_comments_by_created_timestamp(self):
+        now = dt.datetime.today()
+
+        comments = []
+        times = (now + dt.timedelta(minutes=i) for i in range(6))
+        for time in times:
+            comments.append({
+                'created': time.isoformat(),
+                'value': 'Foo'
+            })
+        orig_data = {
+            'foo': {
+                'value': 'bar',
+                'comments': [comments[i] for i in range(0, 6, 2)]
             }
         }
-
-        # outdated comment to be ignored
-        changes1 = self.draft.update_metadata({
-            'item01': {
-                'value': 'foo',
-                'comments': [{
-                    'author': 'Bar',
-                    'created': '1970-01-01T00:00:00.000Z',
-                    'lastModified': '2015-07-05T14:58:30.574Z',
-                    'value': 'foobarbaz'
-                }]
+        self.draft.update_metadata(orig_data)
+        self.draft.save()
+        assert_equal(
+            self.draft.registration_metadata['foo']['comments'],
+            [comments[i] for i in range(0, 6, 2)]
+        )
+        new_data = {
+            'foo': {
+                'value': 'bar',
+                'comments': [comments[i] for i in range(1, 6, 2)]
             }
-        })
-        assert_equal(changes1, [])
-        comment_one = self.draft.registration_metadata['item01']['comments'][0]
-        assert_equal(comment_one.get('value'), 'qux')
-        assert_equal(comment_one.get('author'), 'Bar')
-        assert_equal(comment_one.get('created'), '1970-01-01T00:00:00.000Z')
-        assert_equal(comment_one.get('lastModified'), '2015-08-05T14:58:30.574Z')
-
-        self.draft.update_metadata({})
-
-        # Totally new comment to be added
-        self.draft.update_metadata({
-            'item01': {
-                'value': 'foo',
-                'comments': [
-                    {
-                        'author': 'Bar',
-                        'created': '1970-01-01T00:00:00.000Z',
-                        'lastModified': '2015-08-05T14:58:30.574Z',
-                        'value': 'qux'
-                    },
-                    {
-                        'author': 'Baz',
-                        'created': '1971-01-01T00:00:00.000Z',
-                        'lastModified': '2014-07-09T14:58:30.574Z',
-                        'value': 'foobarbaz'
-                    }
-                ]
-            }
-        })
-        assert_equal(len(self.draft.registration_metadata['item01'].get('comments')), 2)
-        comment_one = self.draft.registration_metadata['item01']['comments'][0]
-        comment_two = self.draft.registration_metadata['item01']['comments'][1]
-
-        assert_equal(comment_one.get('value'), 'qux')
-        assert_equal(comment_one.get('author'), 'Bar')
-        assert_equal(comment_one.get('created'), '1970-01-01T00:00:00.000Z')
-        assert_equal(comment_one.get('lastModified'), '2015-08-05T14:58:30.574Z')
-
-        assert_equal(comment_two.get('value'), 'foobarbaz')
-        assert_equal(comment_two.get('author'), 'Baz')
-        assert_equal(comment_two.get('created'), '1971-01-01T00:00:00.000Z')
-        assert_equal(comment_two.get('lastModified'), '2014-07-09T14:58:30.574Z')
+        }
+        self.draft.update_metadata(new_data)
+        self.draft.save()
+        assert_equal(
+            self.draft.registration_metadata['foo']['comments'],
+            comments,
+        )
 
 
 class TestDraftRegistrationApprovals(RegistrationsTestBase):
