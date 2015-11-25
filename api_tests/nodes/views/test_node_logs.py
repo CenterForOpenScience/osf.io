@@ -69,7 +69,6 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(self.public_project.logs[OSF_FIRST].action,res.json['data'][API_LATEST]['attributes']['action'])
 
     def test_log_create_on_public_project(self):
-        datetime.datetime.strptime('2015-07-28 21:06:34.965114', '%Y-%m-%d %H:%M:%S.%f')
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), len(self.public_project.logs))
