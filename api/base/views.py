@@ -49,9 +49,9 @@ class JSONAPIBaseView(generics.GenericAPIView):
         embeds = self.request.query_params.getlist('embed')
         fields = self.serializer_class._declared_fields
 
-        for index, field in enumerate(fields):
-            if getattr(field, 'field', None):
-                fields[index] = field.field
+        for field in fields:
+            if getattr(fields[field], 'field', None):
+                fields[field] = fields[field].field
 
         for field in fields:
             if getattr(fields[field], 'always_embed', False) and field not in embeds:
