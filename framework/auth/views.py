@@ -114,7 +114,7 @@ def auth_login(auth, **kwargs):
     login form passsed; else send forgot password email.
 
     """
-    campaign = request.args.get('c')
+    campaign = request.args.get('campaign')
     next_url = request.args.get('next')
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
@@ -135,7 +135,7 @@ def auth_login(auth, **kwargs):
     if next_url:
         status.push_status_message(language.MUST_LOGIN)
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
-    # allows for next to be followed or a redirect to the dashboard.X
+    # allows for next to be followed or a redirect to the dashboard.
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
 
     data = {}

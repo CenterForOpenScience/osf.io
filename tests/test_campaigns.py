@@ -15,7 +15,7 @@ from tests.utils import mock_auth
 class TestCampaigns(OsfTestCase):
 
     def test_auth_login_with_campaign_logged_out(self):
-        url = web_url_for('auth_login', c='prereg')
+        url = web_url_for('auth_login', campaign='prereg')
         with self.app.app.test_request_context(url):
             data, status_code = auth_views.auth_login()
             assert_equal(status_code, http.OK)
@@ -25,7 +25,7 @@ class TestCampaigns(OsfTestCase):
 
     def test_auth_login_with_campaign_logged_in(self):
         ensure_schemas()
-        url = web_url_for('auth_login', c='prereg')
+        url = web_url_for('auth_login', campaign='prereg')
         user = factories.AuthUserFactory()
         with self.app.app.test_request_context(url), mock_auth(user):
             res = auth_views.auth_login()
