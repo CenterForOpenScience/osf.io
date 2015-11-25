@@ -647,6 +647,14 @@ class JSONAPISerializer(ser.Serializer):
         kwargs['child'] = cls()
         return JSONAPIListSerializer(*args, **kwargs)
 
+    def invalid_embeds(self, fields, embeds):
+        fields_check = fields[:]
+        for index, field in enumerate(fields_check):
+            if getattr(field, 'field', None):
+                fields_check[index] = field.field
+        invalid_embeds = set(embeds.keys()) - set([f.field_name for f in fields_check if getattr(f, 'json_api_link', False)])
+        return invalid_embeds
+
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
         """Serialize to final representation.
@@ -670,8 +678,7 @@ class JSONAPISerializer(ser.Serializer):
 
         embeds = self.context.get('embed', {})
         fields = [field for field in self.fields.values() if not field.write_only]
-
-        invalid_embeds = set(embeds.keys()) - set([f.field_name for f in fields if getattr(f, 'json_api_link', False)])
+        invalid_embeds = self.invalid_embeds(fields, embeds)
         if invalid_embeds:
             raise InvalidQueryStringError(parameter='embed',
                                           detail='The following fields are not embeddable: {}'.format(', '.join(invalid_embeds)))
