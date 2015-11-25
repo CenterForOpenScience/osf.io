@@ -16,6 +16,9 @@ from api.base import utils
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
 
+from website.models import PrivateLink
+from modularodm import Q
+
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
     """
@@ -43,6 +46,37 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
         })
 
     return ret
+
+
+def is_anonymized(request):
+    is_anonymous = False
+    private_key = request.query_params.get('view_only', None)
+    if private_key is not None:
+        link = PrivateLink.find_one(Q('key', 'eq', private_key))
+        if link is not None:
+            is_anonymous = link.anonymous
+    return is_anonymous
+
+
+class Anonymous(ser.Field):
+
+    def __init__(self, field, **kwargs):
+        super(Anonymous, self).__init__(**kwargs)
+        self.field = field
+
+    def to_representation(self,value):
+        return self.field.to_representation(value)
+
+    def bind(self, field_name, parent):
+        super(Anonymous, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def get_attribute(self, instance):
+        if is_anonymized(self.root.context['request']):
+            return None
+
+        attribute = self.field.get_attribute(instance)
+        return attribute
 
 
 class AllowMissing(ser.Field):
@@ -80,7 +114,7 @@ def _url_val(val, obj, serializer, **kwargs):
     if isinstance(val, Link):  # If a Link is passed, get the url value
         url = val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
-        url = getattr(serializer, val)(obj)
+        url = getattr(serializer, val)(obj) if obj is not None else None
     else:
         url = val
 
