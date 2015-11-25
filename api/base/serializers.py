@@ -59,7 +59,7 @@ class HideIfRetraction(ser.Field):
     def get_attribute(self, instance):
         if instance.is_retracted:
             return None
-        return self.field.get_attribute(instance)
+        return super(HideIfRetraction, self).get_attribute(instance)
 
     def bind(self, field_name, parent):
         super(HideIfRetraction, self).bind(field_name, parent)
