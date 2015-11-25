@@ -2,6 +2,7 @@
 """Unit tests for models and their factories."""
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
+import unittest
 
 from modularodm import Q
 
@@ -136,9 +137,11 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
             self.approval.add_authorizer(authorizer)
         self.approval.save()
 
+    @unittest.skip('Only reached by Prereg admin module, low priority')
     def test_on_complete(self):
         pass
 
+    @unittest.skip('Only reached by Prereg admin module, low priority')campaigns.email_template_for_campaign(campaign, default=mails.CONFIRM_EMAIL)
     def test_send_rejection_email(self):
         pass
 
