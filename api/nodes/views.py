@@ -343,9 +343,8 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
     ###Contributors
 
-    List of users who are contributors to this node. This endpoint is always embedded.  Contributors may have
-    "read", "write", or "admin" permissions.  A node must always have at least one "admin" contributor.  Contributors may
-    be added via this endpoint.
+    List of users who are contributors to this node. Contributors may have "read", "write", or "admin" permissions.
+    A node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
 
     ###Files
 
@@ -472,6 +471,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     ###Users
 
     This endpoint shows the contributor user detail and is automatically embedded.
+
     ##Actions
 
     ###Adding Contributors
@@ -921,7 +921,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
 
     ### Target Node
 
-    This endpoint shows the target node detail.
+    This endpoint shows the target node detail and is automatically embedded.
 
     ##Actions
 
@@ -1017,7 +1017,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
 
     ###Target node
 
-    This endpoint shows the target node detail.
+    This endpoint shows the target node detail and is automatically embedded.
 
     ##Actions
 
