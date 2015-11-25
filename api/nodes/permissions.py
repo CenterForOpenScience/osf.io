@@ -33,7 +33,9 @@ class AdminOrPublic(permissions.BasePermission):
 class ExcludeRetractions(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        if obj.is_retracted:
+        context = request.parser_context['kwargs']
+        node = Node.load(context[view.node_lookup_url_kwarg])
+        if node.is_retracted:
             return False
         return True
 
