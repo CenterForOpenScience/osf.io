@@ -62,7 +62,7 @@ class RegistrationsTestBase(OsfTestCase):
         }
 
     def draft_url(self, view_name):
-        return self.node.url_for(view_name, draft_id=self.draft._id)
+        return self.node.web_url_for(view_name, draft_id=self.draft._id)
 
     def draft_api_url(self, view_name):
         return self.node.api_url_for(view_name, draft_id=self.draft._id)

@@ -114,6 +114,11 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             u'embargo_end_date': unicode(self.embargo_payload['embargoEndDate'])
         })
 
+    def test_draft_before_register_page(self):
+        url = self.draft_url('draft_before_register_page')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+
     def test_submit_draft_for_review_non_admin(self):
         url = self.draft_api_url('submit_draft_for_review')
         res = self.app.post_json(
@@ -231,6 +236,22 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         assert_equal(res.status_code, http.BAD_REQUEST)
 
+    def test_get_draft_registration(self):
+        url = self.draft_api_url('get_draft_registration')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+        assert_equal(res.json['pk'], self.draft._id)
+
+    def test_get_draft_registration_invalid(self):
+        url = self.node.api_url_for('get_draft_registration', draft_id='13123123')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.NOT_FOUND)
+
+    def test_get_draft_registration_not_admin(self):
+        url = self.draft_api_url('get_draft_registration')
+        res = self.app.get(url, auth=self.non_admin.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
     def test_get_draft_registrations_only_gets_drafts_for_that_node(self):
         dummy = NodeFactory()
 
@@ -324,6 +345,24 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(open_ended_schema, self.draft.registration_schema)
         assert_equal(metadata, self.draft.registration_metadata)
 
+    def test_update_draft_registration_non_admin(self):
+        metadata = {
+            'summary': {
+                'value': 'updated',
+                'comments': []
+            }
+        }
+        assert_not_equal(metadata, self.draft.registration_metadata)
+        payload = {
+            'schema_data': metadata,
+            'schema_name': 'OSF-Standard Pre-Data Collection Registration',
+            'schema_version': 1
+        }
+        url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
+
+        res = self.app.put_json(url, payload, auth=self.non_admin.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
     def test_delete_draft_registration(self):
         assert_equal(1, DraftRegistration.find().count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
@@ -331,6 +370,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.delete(url, auth=self.user.auth)
         assert_equal(res.status_code, http.NO_CONTENT)
         assert_equal(0, DraftRegistration.find().count())
+
+    def test_delete_draft_registration_non_admin(self):
+        assert_equal(1, DraftRegistration.find().count())
+        url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
+
+        res = self.app.delete(url, auth=self.non_admin.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(1, DraftRegistration.find().count())
 
     @mock.patch('website.archiver.tasks.archive')
     def test_delete_draft_registration_registered(self, mock_register_draft):
