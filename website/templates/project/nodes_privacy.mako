@@ -95,12 +95,12 @@
                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
 
                 <span data-bind="if: page() == WARNING">
-                        <a class="btn btn-primary" data-bind="visible: hasChildren, click:selectProjects">Next</a>
+                        <a class="btn btn-primary" data-bind="visible: hasChildren, click:selectProjects">Continue</a>
                         <a class="btn btn-primary" data-bind="visible: hasChildren() == false, click:confirmChanges">Confirm</a>
                 </span>
 
                 <span data-bind="if: page() == SELECT">
-                    <a class="btn btn-primary" data-bind="click:confirmWarning">Next</a>
+                    <a class="btn btn-primary" data-bind="click:confirmWarning">Continue</a>
                 </span>
 
                 <span data-bind="if: page() == CONFIRM">
