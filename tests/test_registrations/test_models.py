@@ -34,7 +34,10 @@ class TestDraftRegistrations(RegistrationsTestBase):
         assert_equal(draft.branched_from, node)
         assert_equal(draft.initiator, node.creator)
 
-        schema = MetaSchema.find()[1]
+        # Pick an arbitrary v2 schema
+        schema = MetaSchema.find(
+            Q('schema_version', 'eq', 2)
+        )[0]
         data = {'some': 'data'}
         draft = DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
         assert_equal(draft.registration_schema, schema)
