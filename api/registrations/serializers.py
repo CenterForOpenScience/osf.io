@@ -4,7 +4,7 @@ from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
 from api.nodes.serializers import NodeSerializer
-from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, HideIfRegistration, DevOnly
+from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly
 
 
 class RegistrationSerializer(NodeSerializer):
