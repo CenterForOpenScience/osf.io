@@ -139,7 +139,7 @@ def auth_login(auth, **kwargs):
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
 
     data = {}
-    if campaign and campaign in campaigns.VALID_CAMPAIGNS:
+    if campaign and campaign in campaigns.CAMPAIGNS:
         data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
 
@@ -281,7 +281,7 @@ def register_user(**kwargs):
         full_name = strip_html(full_name)
 
         campaign = json_data.get('campaign')
-        if campaign and campaign not in campaigns.VALID_CAMPAIGNS:
+        if campaign and campaign not in campaigns.CAMPAIGNS:
             campaign = None
 
         user = framework.auth.register_unconfirmed(

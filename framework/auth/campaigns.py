@@ -1,22 +1,24 @@
 import httplib as http
 
+from werkzeug.datastructures import ImmutableDict
 from framework.exceptions import HTTPError
 
 from website import mails
 from website.util import web_url_for
 
-VALID_CAMPAIGNS = (
-    'prereg',
-)
+CAMPAIGNS = ImmutableDict({
+    'prereg_challenge': {
+        'system_tag': 'prereg_challenge_campaign',
+        'redirect_url': lambda: web_url_for('prereg_landing_page'),
+        'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
+    },
+})
 
-EMAIL_TEMPLATE_MAP = {
-    'prereg': mails.CONFIRM_EMAIL_PREREG
-}
 
 def email_template_for_campaign(campaign, default=None):
-    if campaign in VALID_CAMPAIGNS:
+    if campaign in CAMPAIGNS:
         try:
-            return EMAIL_TEMPLATE_MAP[campaign]
+            return CAMPAIGNS[campaign]['confirmation_email_template']
         except KeyError as e:
             if default:
                 return default
@@ -25,7 +27,7 @@ def email_template_for_campaign(campaign, default=None):
     return default
 
 def campaign_for_user(user):
-    campaigns = [tag for tag in user.system_tags if tag in VALID_CAMPAIGNS]
+    campaigns = [tag for tag in user.system_tags if tag in CAMPAIGNS]
     if campaigns:
         # TODO: This is a bit of a one-off to support the Prereg Challenge.
         # We should think more about the campaigns architecture and in
@@ -34,14 +36,7 @@ def campaign_for_user(user):
         return campaigns[0]
 
 def campaign_url_for(campaign):
-    # Defined inside this function to ensure a request context
-    REDIRECT_MAP = {
-        'prereg': web_url_for('prereg_landing_page')
-    }
-    if campaign not in VALID_CAMPAIGNS:
+    if campaign not in CAMPAIGNS:
         raise HTTPError(http.BAD_REQUEST)
     else:
-        try:
-            return REDIRECT_MAP[campaign]
-        except KeyError:
-            raise HTTPError(http.NOT_FOUND)
+        return CAMPAIGNS[campaign]['redirect_url']()
