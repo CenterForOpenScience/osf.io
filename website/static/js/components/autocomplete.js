@@ -6,12 +6,12 @@
  * objects other than nodes.
 **/
 'use strict';
+require('css/autocomplete.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('js/osfHelpers');
 require('typeahead.js');
-
-var MAX_RESULTS = 14;
 
 var MethodNotDefined = function(methodName) {
     this.name = 'MethodNotDefined';
@@ -128,8 +128,8 @@ $.extend(draftRegistrationsSearchViewModel.prototype, baseSearchViewModel.protot
     suggestionTemplate: function(item) {
         var dateUpdated = new $osf.FormattableDate(item.value.dateUpdated);
         var dateCreated = new $osf.FormattableDate(item.value.dateCreated);
-        return '<p>' + item.value.node.title + '</p>' +
-            '<p><small class="m-l-md text-muted">' + 'Initiated by: ' + item.value.initiator.name + '</small></p>' +
+        return '<p>' + $osf.htmlEscape(item.value.node.title) + '</p>' +
+            '<p><small class="m-l-md text-muted">' + 'Initiated by: ' + $osf.htmlEscape(item.value.initiator.name) + '</small></p>' +
             '<p><small class="m-l-md text-muted">' + 'Initiated: ' + dateCreated.local + '</small></p>' +
             '<p><small class="m-l-md text-muted">' + 'Last updated: ' + dateUpdated.local + '</small></p>';
     },
@@ -143,11 +143,6 @@ $.extend(draftRegistrationsSearchViewModel.prototype, baseSearchViewModel.protot
                 if (substrRegex.test(str.node.title)) {
                     count += 1;
                     matches.push({ value: str });
-
-                    //alex's hack to limit number of results
-                    if(count > MAX_RESULTS){
-                        return false;
-                    }
                 }
             });
 
