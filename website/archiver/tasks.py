@@ -1,12 +1,15 @@
 import requests
 import json
+import functools
 
 import celery
 from celery.utils.log import get_task_logger
+from modularodm import Q
 
 from framework.tasks import app as celery_app
 from framework.tasks.utils import logged
 from framework.exceptions import HTTPError
+from framework.auth import Auth
 
 from website.archiver import (
     ARCHIVER_SUCCESS,
@@ -22,6 +25,7 @@ from website.archiver.model import ArchiveJob
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
+from website.project.model import Node, MetaSchema
 from website import settings
 from website.app import init_addons, do_set_backends
 
@@ -266,3 +270,90 @@ def archive(job_pk):
             )
         ]
     )
+
+def memoize_do_get_file_map(func):
+    cache = {}
+    @functools.wraps(func)
+    def wrapper(file_tree, node, *args, **kwargs):
+        path = '{0}:{1}'.format(file_tree['path'], node._id)
+        if path not in cache:
+            cache[path] = func(file_tree, node, *args, **kwargs)
+        return cache[path]
+    return wrapper
+
+@memoize_do_get_file_map
+def do_get_file_map(file_tree, node):
+    file_map = {}
+    stack = [file_tree]
+    while len(stack):
+        node = stack.pop(0)
+        if node['kind'] == 'file':
+            file_map[node['extra']['hashes']['sha256']] = node
+        else:
+            stack = stack + node['children']
+    return file_map
+
+def get_file_map(node):
+    osf_storage = node.get_addon('osfstorage')
+    file_tree = osf_storage._get_file_tree(user=node.creator)
+    file_map = do_get_file_map(file_tree, node)
+    for key, value in file_map.items():
+        yield (key, value, node._id)
+    for child in node.nodes_primary:
+        for key, value, node_id in get_file_map(child):
+            yield (key, value, node_id)
+
+@celery_app.task
+def archive_success(dst_pk):
+    create_app_context()
+    dst = Node.load(dst_pk)
+    # The filePicker extension addded with the Prereg Challenge registration schema
+    # allows users to select files in OSFStorage as their response to some schema
+    # questions. These files are references to files on the unregistered Node, and
+    # consequently we must migrate those file paths after archiver has run. Using
+    # sha256 hashes is a convienent way to identify files post-archival.
+    prereg_schema = MetaSchema.find_one(
+        Q('name', 'eq', 'Prereg Challenge') &
+        Q('schema_version', 'eq', 2)
+    )
+    if prereg_schema in dst.registered_schema:
+        prereg_metadata = dst.registered_meta[prereg_schema._id]
+        updated_metadata = {}
+        for key, value in prereg_metadata.items():
+            if isinstance(value['value'], dict):
+                for subkey, subvalue in value['value'].items():
+                    if subvalue.get('extra', {}).get('sha256'):
+                        sha256 = subvalue['extra']['sha256']
+                        for fsha256, fvalue, node_id in get_file_map(dst):
+                            if fsha256 == sha256:
+                                registration_file = fvalue
+                                break
+                        if not registration_file:
+                            raise RuntimeError()
+                        subvalue['extra'].update({
+                            'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                                node_id,
+                                registration_file['path']
+                            )
+                        })
+                    value[subkey] = subvalue
+            else:
+                if value.get('extra', {}).get('sha256'):
+                    sha256 = value['extra']['sha256']
+                    for fsha256, fvalue, node_id in get_file_map(dst):
+                        if fsha256 == sha256:
+                            registration_file = fvalue
+                            break
+                    if not registration_file:
+                        raise RuntimeError()
+                    value['extra'].update({
+                        'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                            node_id,
+                            registration_file['path']
+                        )
+                    })
+            updated_metadata[key] = value
+        prereg_metadata.update(updated_metadata)
+        dst.registered_meta[prereg_schema._id] = prereg_metadata
+        dst.save()
+    dst.sanction.ask(dst.active_contributors())

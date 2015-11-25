@@ -159,6 +159,7 @@ var Uploader = function(question) {
             question.extra({
                 selectedFileName: file.data.name,
                 viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
+                sha256: file.data.extra.hashes.sha256,
                 hasSelectedFile: true
             });
         }
