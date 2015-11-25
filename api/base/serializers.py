@@ -55,6 +55,10 @@ class HideIfRegistration(ser.Field):
         self.source = field.source
         self.required = field.required
         self.read_only = field.read_only
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
 
     def get_attribute(self, instance):
         if instance.is_registration:
@@ -69,11 +73,6 @@ class HideIfRegistration(ser.Field):
         return self.field.to_internal_value(data)
 
     def to_representation(self, value):
-        if getattr(self.field.root, 'child', None):
-            self.field.parent = self.field.root.child
-        else:
-            self.field.parent = self.field.root
-
         return self.field.to_representation(value)
 
 
