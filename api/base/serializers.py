@@ -45,24 +45,24 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
     return ret
 
 
-class HideIfRetraction(ser.Field):
+class HideIfRegistration(ser.Field):
     """
-    If node is retracted, this field will return None.
+    If node is a registration, this field will return None.
     """
     def __init__(self, field, **kwargs):
-        super(HideIfRetraction, self).__init__(**kwargs)
+        super(HideIfRegistration, self).__init__(**kwargs)
         self.field = field
         self.source = field.source
         self.required = field.required
         self.read_only = field.read_only
 
     def get_attribute(self, instance):
-        if instance.is_retracted:
+        if instance.is_registration:
             return None
-        return super(HideIfRetraction, self).get_attribute(instance)
+        return self.field.get_attribute(instance)
 
     def bind(self, field_name, parent):
-        super(HideIfRetraction, self).bind(field_name, parent)
+        super(HideIfRegistration, self).bind(field_name, parent)
         self.field.bind(field_name, self)
 
     def to_internal_value(self, data):
@@ -77,12 +77,13 @@ class HideIfRetraction(ser.Field):
         return self.field.to_representation(value)
 
 
-class HideIfRegistration(HideIfRetraction):
+class HideIfRetraction(HideIfRegistration):
     """
-    If node is a registration, this field will return None.
+    If node is retracted, this field will return None.
     """
+
     def get_attribute(self, instance):
-        if instance.is_registration:
+        if instance.is_retracted:
             return None
         return self.field.get_attribute(instance)
 
