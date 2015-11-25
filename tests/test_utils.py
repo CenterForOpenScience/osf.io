@@ -398,26 +398,6 @@ class TestProjectUtils(OsfTestCase):
         regs = [r for r in project_utils.recent_public_registrations(7)]
         assert_equal(len(regs), 7)
 
-class DummyAttrAttr(object):
-
-    def __init__(self, key):
-        self.key = key
-
-
-class DummyAttr(object):
-
-    def __init__(self, key):
-        self.key = key
-        self.attr_attr = DummyAttrAttr(key.upper())
-
-
-class Dummy(object):
-
-    def __init__(self, key):
-        self.attr = DummyAttr(key)
-        self.hash = {
-            'bang': DummyAttr(key)
-        }
 
 class TestSignalUtils(unittest.TestCase):
 
