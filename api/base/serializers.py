@@ -58,25 +58,29 @@ def is_anonymized(request):
     return is_anonymous
 
 
-class Anonymous(ser.Field):
+class AnonymousFieldsMixin(object):
+    """
+    A serializer mixin that looks for a non_anonymous_field list on the object that controls
+    which fields should be displayed. Adapted from https://gist.github.com/dbrgn/4e6fc1fe5922598592d6 as
+    suggested by http://stackoverflow.com/questions/23643204/django-rest-framework-dynamically-return-subset-of-fields
+    Usage::
+        class MySerializer(AnonymousFieldsMixin, serializers.HyperlinkedModelSerializer):
+            class Meta:
+                model = MyModel
+    """
 
-    def __init__(self, field, **kwargs):
-        super(Anonymous, self).__init__(**kwargs)
-        self.field = field
+    def __init__(self, *args, **kwargs):
+        super(AnonymousFieldsMixin, self).__init__(*args, **kwargs)
+        if not is_anonymized(self.context['request']):
+            return
 
-    def to_representation(self,value):
-        return self.field.to_representation(value)
-
-    def bind(self, field_name, parent):
-        super(Anonymous, self).bind(field_name, parent)
-        self.field.bind(field_name, self)
-
-    def get_attribute(self, instance):
-        if is_anonymized(self.root.context['request']):
-            return None
-
-        attribute = self.field.get_attribute(instance)
-        return attribute
+        if self.non_anonymized_fields:
+            # Drop any fields that are not specified in the `non_anonymized_fields` variable.
+            allowed = set(self.non_anonymized_fields)
+            existing = set(self.fields.keys())
+            to_be_removed = existing - allowed
+            for field_name in to_be_removed:
+                self.fields.pop(field_name)
 
 
 class AllowMissing(ser.Field):
