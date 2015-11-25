@@ -3,6 +3,7 @@ import httplib as http
 from framework.exceptions import HTTPError
 
 from website import mails
+from website.util import web_url_for
 
 VALID_CAMPAIGNS = (
     'prereg',
@@ -35,7 +36,7 @@ def campaign_for_user(user):
 def campaign_url_for(campaign):
     # Defined inside this function to ensure a request context
     REDIRECT_MAP = {
-        'prereg': '/prereg/'
+        'prereg': web_url_for('prereg_landing_page')
     }
     if campaign not in VALID_CAMPAIGNS:
         raise HTTPError(http.BAD_REQUEST)
