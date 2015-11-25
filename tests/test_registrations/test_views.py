@@ -36,7 +36,7 @@ class TestRegistrationViews(RegistrationsTestBase):
 
     @mock.patch('website.archiver.tasks.archive')
     def test_node_register_page_registration(self, mock_archive):
-        reg = self.node.register_node(get_default_metaschema(), Auth(self.user), '', None)
+        reg = self.node.register_node(get_default_metaschema(), self.auth, '', None)
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
@@ -46,7 +46,7 @@ class TestRegistrationViews(RegistrationsTestBase):
         self.node.add_contributor(
             non_admin,
             permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            auth=Auth(self.user),
+            auth=self.auth,
             save=True
         )
         reg = RegistrationFactory(project=self.node)
@@ -69,7 +69,7 @@ class TestRegistrationViews(RegistrationsTestBase):
         # Historically metaschema's were referenced by a slugified version
         # of their name.
         reg = self.draft.register(
-            auth=Auth(self.user),
+            auth=self.auth,
             save=True
         )
         url = reg.web_url_for(
@@ -306,14 +306,14 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             'schema_name': 'OSF-Standard Pre-Data Collection Registration',
             'schema_version': 1
         }
-        self.draft.register(Auth(self.user), save=True)
+        self.draft.register(self.auth, save=True)
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
         res = self.app.put_json(url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_edit_draft_registration_page_already_registered(self):
-        self.draft.register(Auth(self.user), save=True)
+        self.draft.register(self.auth, save=True)
         url = self.node.web_url_for('edit_draft_registration_page', draft_id=self.draft._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
@@ -380,7 +380,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
     @mock.patch('website.archiver.tasks.archive')
     def test_delete_draft_registration_registered(self, mock_register_draft):
-        self.draft.register(auth=Auth(self.user), save=True)
+        self.draft.register(auth=self.auth, save=True)
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
