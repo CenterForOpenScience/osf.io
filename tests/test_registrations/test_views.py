@@ -26,7 +26,6 @@ from tests.factories import (
 from tests.test_registrations.base import RegistrationsTestBase
 
 from tests.base import get_default_metaschema
-DEFAULT_METASCHEMA = get_default_metaschema()
 
 class TestRegistrationViews(RegistrationsTestBase):
 
@@ -37,7 +36,7 @@ class TestRegistrationViews(RegistrationsTestBase):
 
     @mock.patch('website.archiver.tasks.archive')
     def test_node_register_page_registration(self, mock_archive):
-        reg = self.node.register_node(DEFAULT_METASCHEMA, Auth(self.user), '', None)
+        reg = self.node.register_node(get_default_metaschema(), Auth(self.user), '', None)
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)

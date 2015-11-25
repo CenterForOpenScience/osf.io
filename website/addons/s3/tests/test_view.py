@@ -13,7 +13,6 @@ from website.addons.s3.settings import BUCKET_LOCATIONS
 from website.addons.s3.utils import validate_bucket_name, validate_bucket_location
 from website.util import api_url_for
 
-DEFAULT_METASCHEMA = get_default_metaschema()
 fake = Faker()
 
 
@@ -143,7 +142,7 @@ class TestS3ViewsConfig(OsfTestCase):
 
     def test_s3_set_bucket_registered(self):
         registration = self.project.register_node(
-            DEFAULT_METASCHEMA, self.consolidated_auth, '', ''
+            get_default_metaschema(), self.consolidated_auth, '', ''
         )
 
         url = registration.api_url_for('s3_post_node_settings')

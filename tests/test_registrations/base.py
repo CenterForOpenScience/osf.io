@@ -22,7 +22,7 @@ class RegistrationsTestBase(OsfTestCase):
         self.node.add_contributor(
             self.non_admin,
             permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            auth=Auth(self.user),
+            auth=self.auth,
             save=True
         )
         self.non_contrib = AuthUserFactory()

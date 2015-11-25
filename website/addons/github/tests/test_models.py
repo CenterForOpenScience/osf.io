@@ -22,8 +22,6 @@ from website.addons.github.model import AddonGitHubOauthSettings
 from .utils import create_mock_github
 mock_github = create_mock_github()
 
-DEFAULT_METASCHEMA = get_default_metaschema()
-
 
 class TestCallbacks(OsfTestCase):
 
@@ -232,7 +230,7 @@ class TestCallbacks(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
-            schema=DEFAULT_METASCHEMA,
+            schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
             data='hodor',
         )

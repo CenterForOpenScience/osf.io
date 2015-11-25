@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''Unit tests for models and their factories.'''
+"""Unit tests for models and their factories."""
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
 import unittest
