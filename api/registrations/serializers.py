@@ -71,12 +71,6 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<parent_id>'}
     ))
 
-    registrations = DevOnly(HideIfRegistration(RelationshipField(
-        related_view='registrations:registration-registrations',
-        related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'count': 'get_registration_count'}
-    )))
-
     # TODO: Finish me
 
     # TODO: Override create?
