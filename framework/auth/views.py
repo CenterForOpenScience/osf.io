@@ -175,7 +175,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     if user is None:
         raise HTTPError(http.NOT_FOUND)
 
-    if auth and auth.user and auth.user in (user, user.merged_by):
+    if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
         if not is_merge:
             # determine if the user registered through a campaign
             campaign = campaigns.campaign_for_user(user)

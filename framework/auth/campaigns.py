@@ -7,7 +7,7 @@ from website import mails
 from website.util import web_url_for
 
 CAMPAIGNS = ImmutableDict({
-    'prereg_challenge': {
+    'prereg': {
         'system_tag': 'prereg_challenge_campaign',
         'redirect_url': lambda: web_url_for('prereg_landing_page'),
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
@@ -27,13 +27,13 @@ def email_template_for_campaign(campaign, default=None):
     return default
 
 def campaign_for_user(user):
-    campaigns = [tag for tag in user.system_tags if tag in CAMPAIGNS]
-    if campaigns:
+    for campaign, config in CAMPAIGNS.items():
         # TODO: This is a bit of a one-off to support the Prereg Challenge.
         # We should think more about the campaigns architecture and in
         # particular define the behavior if the user has more than one
         # campagin tag in their system_tags.
-        return campaigns[0]
+        if config['system_tag'] in user.system_tags:
+            return campaign
 
 def campaign_url_for(campaign):
     if campaign not in CAMPAIGNS:
