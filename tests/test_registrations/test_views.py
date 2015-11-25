@@ -196,7 +196,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.embargo_payload,
-            content_type='application/json',
             auth=self.user.auth
         )
 
@@ -210,7 +209,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.embargo_payload,
-            content_type='application/json',
             auth=self.user.auth
         )
 
@@ -228,7 +226,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.invalid_embargo_date_payload,
-            content_type='application/json',
             auth=self.user.auth,
             expect_errors=True
         )
@@ -400,7 +397,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.get(url).json
         assert_equal(len(res['meta_schemas']), len(ACTIVE_META_SCHEMAS))
 
-        url = '/api/v1/project/drafts/schemas/?include=all'
+    def test_get_metaschemas_all(self):
+        url = api_url_for('get_metaschemas', include='all')
         res = self.app.get(url)
         assert_equal(res.status_code, http.OK)
         assert_equal(len(res.json['meta_schemas']), len(
