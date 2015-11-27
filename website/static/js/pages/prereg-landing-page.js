@@ -23,7 +23,7 @@ $(function(){
             title: title,
             campaign: 'prereg'
         }).done(function(response) {
-            window.location = response.projectUrl + 'registrations/?c=prereg';
+            window.location = response.projectUrl + 'registrations/?campaign=prereg';
         }).fail(function() {
             $osf.growl('Project creation failed. Reload the page and try again.');
         });
