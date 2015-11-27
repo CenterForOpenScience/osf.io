@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Views tests for the OSF.'''
 
 from __future__ import absolute_import
 import datetime as dt
@@ -113,6 +112,26 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             u'embargo_end_date': unicode(self.embargo_payload['embargoEndDate'])
         })
 
+    def test_submit_draft_for_review_invalid_registrationChoice(self):
+        url = self.draft_api_url('submit_draft_for_review')
+        res = self.app.post_json(
+            url,
+            self.invalid_payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_submit_draft_for_review_already_registered(self):
+        reg = RegistrationFactory(user=self.user)
+        res = self.app.post_json(
+            reg.api_url_for('submit_draft_for_review', draft_id=self.draft._id),
+            self.invalid_payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
     def test_draft_before_register_page(self):
         url = self.draft_url('draft_before_register_page')
         res = self.app.get(url, auth=self.user.auth)
@@ -133,7 +152,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         res = self.app.post_json(url, {
-            'registrationChoice': 'Make registration public immediately'
+            'registrationChoice': 'immediate'
         }, auth=self.user.auth)
 
         assert_equal(res.status_code, http.ACCEPTED)
@@ -232,6 +251,25 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
 
         assert_equal(res.status_code, http.BAD_REQUEST)
 
+    def test_register_draft_registration_invalid_registrationChoice(self):
+        res = self.app.post_json(
+            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.invalid_payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_register_draft_registration_already_registered(self):
+        reg = RegistrationFactory(user=self.user)
+        res = self.app.post_json(
+            reg.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.invalid_payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
     def test_get_draft_registration(self):
         url = self.draft_api_url('get_draft_registration')
         res = self.app.get(url, auth=self.user.auth)
@@ -292,6 +330,16 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         target.reload()
         draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
         assert_equal(draft.registration_schema, self.meta_schema)
+
+    def test_new_draft_registration_on_registration(self):
+        target = RegistrationFactory(user=self.user)
+        payload = {
+            'schema_name': self.meta_schema.name,
+            'schema_version': self.meta_schema.schema_version
+        }
+        url = target.web_url_for('new_draft_registration')
+        res = self.app.post(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_update_draft_registration_cant_update_registered(self):
         metadata = {
