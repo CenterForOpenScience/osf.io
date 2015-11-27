@@ -19,16 +19,9 @@ def system_tag_for_campaign(campaign):
         return CAMPAIGNS[campaign]['system_tag']
     return None
 
-def email_template_for_campaign(campaign, default=None):
+def email_template_for_campaign(campaign):
     if campaign in CAMPAIGNS:
-        try:
-            return CAMPAIGNS[campaign]['confirmation_email_template']
-        except KeyError as e:
-            if default:
-                return default
-            else:
-                raise e
-    return default
+        return CAMPAIGNS[campaign]['confirmation_email_template']
 
 def campaign_for_user(user):
     for campaign, config in CAMPAIGNS.items():

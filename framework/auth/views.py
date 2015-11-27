@@ -243,8 +243,10 @@ def send_confirm_email(user, email):
     # Choose the appropriate email template to use
     if merge_target:
         mail_template = mails.CONFIRM_MERGE
+    elif campaign:
+        mail_template = campaigns.email_template_for_campaign(campaign)
     else:
-        mail_template = campaigns.email_template_for_campaign(campaign, default=mails.CONFIRM_EMAIL)
+        mail_template = mails.CONFIRM_EMAIL
 
     mails.send_mail(
         email,
