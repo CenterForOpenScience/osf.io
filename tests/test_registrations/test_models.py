@@ -129,21 +129,54 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
         super(TestDraftRegistrationApprovals, self).setUp()
         self.approval = DraftRegistrationApproval(
             initiated_by=self.user,
-            meta=self.immediate_payload
+            meta={
+                'registration_choice': 'immediate'
+            }
         )
         self.authorizer1 = AuthUserFactory()
         self.authorizer2 = AuthUserFactory()
         for authorizer in [self.authorizer1, self.authorizer2]:
             self.approval.add_authorizer(authorizer)
         self.approval.save()
+        self.draft.registration_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        self.draft.approval = self.approval
+        self.draft.save()
 
-    @unittest.skip('Only reached by Prereg admin module, low priority')
-    def test_on_complete(self):
-        pass
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_on_complete_immediate_creates_registration_for_draft_initiator(self, mock_enquque):
+        self.approval._on_complete(self.user)
 
-    @unittest.skip('Only reached by Prereg admin module, low priority')campaigns.email_template_for_campaign(campaign, default=mails.CONFIRM_EMAIL)
-    def test_send_rejection_email(self):
-        pass
+        registered_node = self.draft.registered_node
+        assert_is_not_none(registered_node)
+        assert_true(registered_node.is_pending_registration)
+        assert_equal(registered_node.registered_user, self.draft.initiator)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_on_complete_embargo_creates_registration_for_draft_initiator(self, mock_enquque):
+        end_date = dt.datetime.now() + dt.timedelta(days=366)  # <- leap year
+        self.approval = DraftRegistrationApproval(
+            initiated_by=self.user,
+            meta={
+                'registration_choice': 'embargo',
+                'embargo_end_date': end_date.isoformat()
+            }
+        )
+        self.authorizer1 = AuthUserFactory()
+        self.authorizer2 = AuthUserFactory()
+        for authorizer in [self.authorizer1, self.authorizer2]:
+            self.approval.add_authorizer(authorizer)
+        self.approval.save()
+        self.draft.approval = self.approval
+        self.draft.save()
+
+        self.approval._on_complete(self.user)
+        registered_node = self.draft.registered_node
+        assert_is_not_none(registered_node)
+        assert_true(registered_node.is_pending_embargo)
+        assert_equal(registered_node.registered_user, self.draft.initiator)
 
     def test_approval_requires_only_a_single_authorizer(self):
         token = self.approval.approval_state[self.authorizer1._id]['approval_token']
@@ -152,11 +185,10 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
             assert_true(mock_on_complete.called)
             assert_true(self.approval.is_approved)
 
-    def test_on_reject(self):
-        pass
-
-class TestPreregFunctionality(RegistrationsTestBase):
-
-    def test_on_complete(self):
-        pass
-
+    @mock.patch('website.mails.send_mail')
+    def test_on_reject(self, mock_send_mail):
+        self.approval._on_reject(self.user)
+        assert_equal(self.approval.meta, {})
+        assert_is_none(self.draft.approval)
+        assert_false(self.draft.is_pending_review)
+        assert_true(mock_send_mail.called_once)

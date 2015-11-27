@@ -60,6 +60,9 @@ class RegistrationsTestBase(OsfTestCase):
         self.immediate_payload = {
             'registrationChoice': 'immediate'
         }
+        self.invalid_payload = {
+            'registrationChoice': 'foobar'
+        }
 
     def draft_url(self, view_name):
         return self.node.web_url_for(view_name, draft_id=self.draft._id)

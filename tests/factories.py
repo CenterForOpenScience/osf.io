@@ -206,13 +206,17 @@ class RegistrationFactory(AbstractNodeFactory):
                 data=None, archive=False, embargo=None, registration_approval=None, retraction=None, is_public=False,
                 *args, **kwargs):
         save_kwargs(**kwargs)
+        if project:
+            user = project.creator
+        else:
+            user = user or kwargs.get('user') or kwargs.get('creator') or UserFactory()
+        kwargs['creator'] = user
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
         project.save()
 
         # Default registration parameters
         schema = schema or get_default_metaschema()
-        user = user or project.creator
         data = data or {'some': 'data'}
         auth = Auth(user=user)
         register = lambda: project.register_node(
