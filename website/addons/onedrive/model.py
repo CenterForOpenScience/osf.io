@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 logging.getLogger('onedrive1').setLevel(logging.WARNING)
 
 class OneDrive(ExternalProvider):
-    name = 'OneDrive'
+    name = 'onedrive'
     short_name = 'onedrive'
 
     client_id = settings.ONEDRIVE_KEY
@@ -160,7 +160,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             return None
 
         logger.debug('self::' + repr(self))
-        request.json.get('selected')
+        #request.json.get('selected')
 
         if not self._folder_data:
 
