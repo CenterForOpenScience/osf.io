@@ -117,6 +117,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         'onedriveusersettings', backref='authorized'
     )
     folder_id = fields.StringField(default=None)
+    onedrive_id = fields.StringField(default=None)
     folder_name = fields.StringField()
     folder_path = fields.StringField()
 
@@ -164,17 +165,20 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if not self._folder_data:
 
-            self.folder_name = self.folder_id #request.json.get('selected')['name']  # 'Test TBD' #self._folder_data['name']
-            self.path = self.folder_id
+            #self.folder_name = self.folder_id #request.json.get('selected')['name']  # 'Test TBD' #self._folder_data['name']
+            self.path = self.folder_name
 #             self.folder_path = '/'.join(
 #                 [x['name'] for x in self._folder_data['path_collection']['entries']]
 #                 + [self._folder_data['name']]
 #             )
             self.save()
 
-    def set_folder(self, folder_id, auth):
-        self.folder_id = str(folder_id)
-        self._update_folder_data()
+    def set_folder(self, folder, auth):
+        self.onedrive_id = folder['id']
+        self.folder_id = folder['name'] #folder['id']
+        self.folder_name = folder['name']
+        #self.path = 'TBD Path/'
+        #self._update_folder_data()
         self.save()
 
         if not self.complete:

@@ -62,13 +62,13 @@ def onedrive_set_config(node_addon, user_addon, auth, **kwargs):
     
     name = folder['name']
 
-    node_addon.set_folder(uid, auth=auth)
+    node_addon.set_folder(folder, auth=auth)
 
     return {
         'result': {
             'folder': {
                 'name': name, 
-                'path': uid,  
+                'path': name,  
             },
             'urls': serializer.addon_serialized_urls,
         },
