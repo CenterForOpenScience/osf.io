@@ -183,7 +183,7 @@ var Uploader = function(question) {
         }
         else {
             var extra = question.extra();
-            return $('<a target="_blank" href="' + extra.viewUrl + '">' + extra.selectedFileName + '</a>');
+            return $('<a target="_blank" href="' + extra.viewUrl + '">' + $osf.htmlEscape(extra.selectedFileName) + '</a>');
         }
     };
 

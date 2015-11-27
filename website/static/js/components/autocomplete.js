@@ -128,10 +128,33 @@ $.extend(draftRegistrationsSearchViewModel.prototype, baseSearchViewModel.protot
     suggestionTemplate: function(item) {
         var dateUpdated = new $osf.FormattableDate(item.value.dateUpdated);
         var dateCreated = new $osf.FormattableDate(item.value.dateCreated);
-        return '<p>' + $osf.htmlEscape(item.value.node.title) + '</p>' +
-            '<p><small class="m-l-md text-muted">' + 'Initiated by: ' + $osf.htmlEscape(item.value.initiator.name) + '</small></p>' +
-            '<p><small class="m-l-md text-muted">' + 'Initiated: ' + dateCreated.local + '</small></p>' +
-            '<p><small class="m-l-md text-muted">' + 'Last updated: ' + dateUpdated.local + '</small></p>';
+        // jQuery implicity escapes HTML
+        return $('<div>').append(
+            $('<p>', {
+                text: item.value.node.title
+            }).append(
+                [
+                    $('<p>').append(
+                        $('<small>', {
+                            className: 'm-l-md text-muted',
+                            text: 'Initiated by: ' + item.value.initiator.name
+                        })
+                    ),
+                    $('<p>').append(
+                        $('<small>', {
+                            className: 'm-l-md text-muted',
+                            text: 'Initiated: ' + dateCreated.local
+                        })
+                    ),
+                    $('<p>').append(
+                        $('<small>', {
+                            className: 'm-l-md text-muted',
+                            text: 'Last updated: ' + dateUpdated.local
+                        })
+                    )                    
+                ]
+            )                
+        ).html();
     },
     substringMatcher: function(strs) {
         return function findMatches(q, cb) {
