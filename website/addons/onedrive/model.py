@@ -222,9 +222,12 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         logger.debug("in serialize_waterbutler_credentials:: %s", repr(self))
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
+        return {'token': self.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
-        logger.debug("in serialize_waterbutler_settings:: %s", repr(self))
+        logger.debug("in serialize_waterbutler_settings:: {}".format(repr(self)))
+        logger.debug('onedrive_id::{}'.format(self.onedrive_id))
+        logger.debug('folder_id::{}'.format(self.folder_id))
         if self.folder_id is None:
             raise exceptions.AddonError('Folder is not configured')
         return {'folder': self.folder_id}
