@@ -100,8 +100,8 @@ class OneDriveSerializer(OAuthAddonSerializer):
             if node_settings.folder_id is None:
                 result['folder'] = {'name': None, 'path': None}
             elif valid_credentials:
-                path = node_settings.fetch_full_folder_path()
-
+                #path = node_settings.fetch_full_folder_path()
+                path = node_settings.folder_id
                 result['folder'] = {
                     'path': path,
                     'name': path.replace('All Files', '', 1) if path != 'All Files' else '/ (Full OneDrive)'
