@@ -230,7 +230,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         logger.debug('folder_id::{}'.format(self.folder_id))
         if self.folder_id is None:
             raise exceptions.AddonError('Folder is not configured')
-        return {'folder': self.folder_id}
+        return {'folder': self.onedrive_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
         self.owner.add_log(
