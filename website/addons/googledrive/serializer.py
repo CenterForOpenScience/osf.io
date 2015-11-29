@@ -1,5 +1,5 @@
 from website.addons.base.serializer import OAuthAddonSerializer
-from website.addons.googledrive.exceptions import ExpiredAuthError
+from website.addons.base.exceptions import InvalidAuthError
 
 
 class GoogleDriveSerializer(OAuthAddonSerializer):
@@ -24,7 +24,7 @@ class GoogleDriveSerializer(OAuthAddonSerializer):
         if self.node_settings.external_account is not None:
             try:
                 self.node_settings.fetch_access_token()
-            except ExpiredAuthError:
+            except InvalidAuthError:
                 valid_credentials = False
         result['validCredentials'] = valid_credentials
         return {'result': result}
