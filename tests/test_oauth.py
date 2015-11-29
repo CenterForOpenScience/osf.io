@@ -557,10 +557,11 @@ class TestExternalProviderOAuth2(OsfTestCase):
             })
         )
         
+        old_expiry = external_account.expires_at
         self.provider.account = external_account
         self.provider.refresh_oauth_key(force=True)
         external_account.reload()
 
         assert_equal(external_account.oauth_key, 'refreshed_access_token')
         assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
-        assert_equal(external_account.expires_at, 3600)
+        assert_not_equal(external_account.expires_at, old_expiry)
