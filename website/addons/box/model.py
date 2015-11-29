@@ -13,7 +13,7 @@ from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettin
 from website.addons.base import StorageAddonBase
 
 from website.addons.box import settings
-from website.addons.box.utils import BoxNodeLogger, refresh_oauth_key
+from website.addons.box.utils import BoxNodeLogger
 from website.addons.box.serializer import BoxSerializer
 from website.oauth.models import ExternalProvider
 
@@ -52,6 +52,12 @@ class Box(ExternalProvider):
             'display_name': about['name'],
             'profile_url': 'https://app.box.com/profile/{0}'.format(about['id'])
         }
+
+    def refresh_oauth_key(self, force=False):
+        extra = {
+            'grant_type': 'refresh_token'
+        }
+        super(self, ExternalProvider).refresh_oauth_key(extra=extra, force=force, resp_expiry_key='expires_in')
 
 class BoxUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific box information
@@ -113,7 +119,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if not self._folder_data:
             try:
-                refresh_oauth_key(self.external_account)
+                Box(self.external_account).refresh_oauth_key()
                 client = BoxClient(self.external_account.oauth_key)
                 self._folder_data = client.get_folder(self.folder_id)
             except BoxClientException:
@@ -172,7 +178,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
         try:
-            refresh_oauth_key(self.external_account)
+            Box(self.external_account).refresh_oauth_key()
             return {'token': self.external_account.oauth_key}
         except BoxClientException as error:
             raise HTTPError(error.status_code, data={'message_long': error.message})

@@ -76,23 +76,6 @@ class BoxNodeLogger(object):
         if save:
             self.node.save()
 
-
-def refresh_oauth_key(external_account, force=False):
-    """If necessary, refreshes the oauth key associated with
-    the external account.
-    """
-    if external_account.expires_at is None and not force:
-        return
-
-    if force or (external_account.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME:
-        key = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, external_account.refresh_token)
-
-        external_account.oauth_key = key['access_token']
-        external_account.refresh_token = key['refresh_token']
-        external_account.expires_at = datetime.utcfromtimestamp(time.time() + key['expires_in'])
-        external_account.save()
-
-
 def box_addon_folder(node_settings, auth, **kwargs):
     """Return the Rubeus/HGrid-formatted response for the root folder only."""
     # Quit if node settings does not have authentication

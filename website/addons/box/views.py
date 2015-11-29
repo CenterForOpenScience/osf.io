@@ -17,8 +17,7 @@ from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
 )
-
-from website.addons.box.utils import refresh_oauth_key
+from website.addons.box.model import Box
 from website.addons.box.serializer import BoxSerializer
 
 
@@ -34,7 +33,7 @@ def box_get_user_settings(auth):
 def box_get_config(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
     if node_addon.external_account:
-        refresh_oauth_key(node_addon.external_account)
+        Box(node_addon.external_account).refresh_oauth_key()
     return {
         'result': BoxSerializer().serialize_settings(node_addon, auth.user),
     }
@@ -150,7 +149,7 @@ def box_folder_list(node_addon, **kwargs):
         }]
 
     try:
-        refresh_oauth_key(node_addon.external_account)
+        Box(node_addon.external_account).refresh_oauth_key()
         client = BoxClient(node_addon.external_account.oauth_key)
     except BoxClientException:
         raise HTTPError(http.FORBIDDEN)
