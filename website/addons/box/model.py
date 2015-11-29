@@ -54,10 +54,7 @@ class Box(ExternalProvider):
         }
 
     def refresh_oauth_key(self, force=False):
-        extra = {
-            'grant_type': 'refresh_token'
-        }
-        super(self, ExternalProvider).refresh_oauth_key(extra=extra, force=force, resp_expiry_key='expires_in')
+        super(Box, self).refresh_oauth_key(force=force, resp_expiry_key='expires_in')
 
 class BoxUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific box information

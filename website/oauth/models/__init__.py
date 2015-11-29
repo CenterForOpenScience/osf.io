@@ -417,7 +417,7 @@ class ExternalProvider(object):
         else:
             self.account.oauth_key = token[resp_auth_token_key]
             self.account.refresh_token = token[resp_refresh_token_key]
-            self.account.expires_at = token[resp_expiry_key]
+            self.account.expires_at = datetime.datetime.fromtimestamp(float(token[resp_expiry_key]))
             self.account.save()
 
     def _needs_refresh(self):
