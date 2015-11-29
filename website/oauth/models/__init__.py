@@ -116,13 +116,15 @@ class ExternalProvider(object):
     # Default to OAuth v2.0.
     _oauth_version = OAUTH2
 
+    # Providers that have expiring tokens must override these
+    auto_refresh_url = None
+    refresh_time = 0
+
     def __init__(self, account=None):
         super(ExternalProvider, self).__init__()
 
         # provide an unauthenticated session by default
         self.account = account
-        self.auto_refresh_url = None
-        self.refresh_time = 0
 
     def __repr__(self):
         return '<{name}: {status}>'.format(
@@ -414,7 +416,7 @@ class ExternalProvider(object):
             raise InvalidAuthError()
         else:
             self.account.oauth_key = token[resp_auth_token_key]
-            self.account.oauth_secret = token[resp_refresh_token_key]
+            self.account.refresh_token = token[resp_refresh_token_key]
             self.account.expires_at = token[resp_expiry_key]
             self.account.save()
 

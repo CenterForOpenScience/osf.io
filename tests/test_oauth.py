@@ -534,3 +534,33 @@ class TestExternalProviderOAuth2(OsfTestCase):
             ExternalAccount.find().count(),
             1
         )
+
+    @httpretty.activate
+    def test_refresh_oauth_key(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=time.time() + 200
+        )
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'access_token': 'refreshed_access_token',
+                'expires_at': 3600,
+                'refresh_token': 'refreshed_refresh_token'
+            })
+        )
+        
+        self.provider.account = external_account
+        self.provider.refresh_oauth_key(force=True)
+        external_account.reload()
+
+        assert_equal(external_account.oauth_key, 'refreshed_access_token')
+        assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
+        assert_equal(external_account.expires_at, 3600)
