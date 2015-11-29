@@ -30,7 +30,7 @@ class TestConfigViews(BoxAddonTestCase):
         self.external_account = self.user.external_accounts[0]
         self.node_settings.external_account = self.external_account
         self.node_settings.save()
-        self.patcher = mock.patch("website.addons.box.model.refresh_oauth_key")
+        self.patcher = mock.patch("website.addons.box.model.Box.refresh_oauth_key")
         self.patcher.return_value = True
         self.patcher.start()
 
@@ -141,7 +141,7 @@ class TestConfigViews(BoxAddonTestCase):
 
     @mock.patch('website.addons.box.serializer.BoxClient.get_user_info')
     @mock.patch('website.addons.box.model.BoxClient.get_folder')
-    @mock.patch('website.addons.box.views.refresh_oauth_key')
+    @mock.patch('website.addons.box.views.Box.refresh_oauth_key')
     def test_box_get_config(self, mock_refresh, mock_get_folder, mock_account_info):
         mock_refresh.return_value = True
         mock_get_folder.return_value = {
@@ -291,7 +291,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
         self.patcher_fetch = mock.patch('website.addons.box.model.BoxNodeSettings.fetch_folder_name')
         self.patcher_fetch.return_value = 'Camera Uploads'
         self.patcher_fetch.start()
-        self.patcher_refresh = mock.patch('website.addons.box.views.refresh_oauth_key')
+        self.patcher_refresh = mock.patch('website.addons.box.views.Box.refresh_oauth_key')
         self.patcher_refresh.return_value = True
         self.patcher_refresh.start()
 

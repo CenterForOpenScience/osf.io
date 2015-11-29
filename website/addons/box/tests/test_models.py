@@ -268,7 +268,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_equal(log_params['node'], node_settings.owner._primary_key)
         assert_equal(last_log.user, user_settings.owner)
 
-    @mock.patch("website.addons.box.model.refresh_oauth_key")
+    @mock.patch("website.addons.box.model.Box.refresh_oauth_key")
     def test_serialize_credentials(self, mock_refresh):
         mock_refresh.return_value = True
         self.user_settings.access_token = 'key-11'
