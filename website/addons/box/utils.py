@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
-import time
 import logging
-from datetime import datetime
-
-from box import refresh_v2_token
 
 from website.util import rubeus
-
-from website.addons.box import settings
-
 
 logger = logging.getLogger(__name__)
 
