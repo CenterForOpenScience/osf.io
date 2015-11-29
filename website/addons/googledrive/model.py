@@ -29,6 +29,8 @@ class GoogleDriveProvider(ExternalProvider):
 
     auth_url_base = '{}{}'.format(drive_settings.OAUTH_BASE_URL, 'auth?access_type=offline&approval_prompt=force')
     callback_url = '{}{}'.format(drive_settings.API_BASE_URL, 'oauth2/v3/token')
+    auto_refresh_url = callback_url
+    refresh_time = drive_settings.REFRESH_TIME
 
     default_scopes = drive_settings.OAUTH_SCOPE
     _auth_client = GoogleAuthClient()
