@@ -16,7 +16,7 @@ from api.base import utils
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
 
-from website.models import PrivateLink
+from website.models import PrivateLink, User
 from modularodm import Q
 
 
@@ -71,6 +71,7 @@ class AnonymousFieldsMixin(object):
 
     def __init__(self, *args, **kwargs):
         super(AnonymousFieldsMixin, self).__init__(*args, **kwargs)
+        # TODO Handle embeds which don't have request context
         if not is_anonymized(self.context['request']):
             return
 
@@ -682,6 +683,9 @@ class JSONAPISerializer(ser.Serializer):
                     result = self.context['embed'][field.field_name](obj)
                     if result:
                         data['embeds'][field.field_name] = result
+                # If this is a relationship to an anonymized resource, don't show the relationship link
+                elif is_anonymized(self.context['request']) and isinstance(attribute, User):
+                    continue
                 else:
                     try:
                         data['relationships'][field.field_name] = field.to_representation(attribute)

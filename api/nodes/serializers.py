@@ -9,9 +9,9 @@ from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
+from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
-    TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
+    TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly, AnonymousFieldsMixin)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -196,9 +196,10 @@ class NodeDetailSerializer(NodeSerializer):
     id = IDField(source='_id', required=True)
 
 
-class NodeContributorsSerializer(JSONAPISerializer):
+class NodeContributorsSerializer(AnonymousFieldsMixin, JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
+    non_anonymized_fields = ['bibliographic', 'permission']
     filterable_fields = frozenset([
         'id',
         'bibliographic',
