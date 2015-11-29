@@ -105,9 +105,12 @@ function Comment(data) {
 Comment.prototype.toggleSaved = function(save) {
     var self = this;
 
-    self.saved(!self.saved());
-    if (self.saved()) {
-        save();
+    if (!self.saved()) {
+        // error handling handled implicitly in save
+        save.done(self.saved.bind(self, true));
+    }
+    else {
+        self.saved(false);
     }
 };
 /** Indicate that a comment is deleted **/
@@ -292,7 +295,8 @@ Question.prototype.toggleExample = function() {
  * @class Page
  * A single page within a draft registration
  *
- * @param {Object} data: serialized page from a registration schema
+ * @param {Object} schemaPage: page representation from a registration schema (see MetaSchema#pages)
+ * @param {Object} schemaData: user data to autoload into page, a key/value map of questionId: questionData
  *
  * @property {ko.observableArray[Question]} questions
  * @property {String} title
@@ -313,8 +317,8 @@ var Page = function(schemaPage, schemaData) {
         return new Question(questionSchema, schemaData[questionSchema.qid]);
     });
 
-    /** 
-     * Aggregate lists of comments from each question in questions. Sort by 'created'. 
+    /**
+     * Aggregate lists of comments from each question in questions. Sort by 'created'.
      **/
     self.comments = ko.computed(function() {
         var comments = [];
@@ -528,9 +532,9 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
             },
             message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
         };
-    }    
+    }
     var preRegisterPrompts = response.prompts || [];
-    
+
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
     );
@@ -645,6 +649,7 @@ Draft.prototype.submitForReview = function() {
  * @param {Object} urls
  * @param {String} urls.update: endpoint to update a draft instance
  * @param {String} editorId: id of editor DOM node
+ * @param {Boolean} preview: enable preview mode-- adds a KO binding handler to allow extensions to define custom preview behavior
  * @property {ko.observable[Boolean]} readonly
  * @property {ko.observable[Draft]} draft
  * @property {ko.observable[Question]} currentQuestion
@@ -774,7 +779,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
                             } else {
                                 value = subQuestion.value();
                             }
-                            return $('<p>').append(value);
+                            return $('<p>').append($osf.htmlEscape(value));
                         })
                     );
                 } else {
@@ -784,7 +789,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
                     } else {
                         value = question.value();
                     }
-                    $elem.append(value);
+                    $elem.append($osf.htmlEscape(value));
                 }
             }
         };
@@ -1109,9 +1114,7 @@ RegistrationEditor.prototype.getContributors = function() {
         .then(function(data) {
             return $.map(data.contributors, function(c) { return c.fullname; });
         }).fail(function() {
-            $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
-                       'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                       'problem persists.');
+            $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
         });
 };
 
@@ -1216,7 +1219,7 @@ RegistrationManager.prototype.init = function() {
     });
 
     var urlParams = $osf.urlParams();
-    if (urlParams.c && urlParams.c === 'prereg') {
+    if (urlParams.campaign && urlParams.campaign === 'prereg') {
         $osf.block();
         ready.done(function() {
             $osf.unblock();

@@ -6,7 +6,7 @@
 <%def name="title()">Registration of ${node['title']}</%def>
   <div id="registrationMetaDataScope" class="container scripted">
     <div class="row">
-      <div class="span8 col-md-2 columns eight large-8">
+      <div class="col-md-2">
         <ul class="nav nav-stacked list-group" data-bind="foreach: {data: metaSchema.schema.pages, as: 'page'}, visible: metaSchema.schema.pages.length > 1">
           <li class="re-navbar">
             <a class="registration-editor-page" id="top-nav" style="text-align: left; font-weight:bold;" data-bind="text: title, attr.href: '#' + page.id">
@@ -23,7 +23,7 @@
           </li>
         </ul>
       </div>
-      <div class="span8 col-md-9 columns eight large-8" style="padding-left: 30px">
+      <div class="col-md-9" style="padding-left: 30px">
         <div data-bind="foreach: {data: metaSchema.pages, as: 'page'}">
           <h3 data-bind="attr.id: page.id, text: page.title"></h3>
           <div class="row">

@@ -28,7 +28,8 @@
   <form>
     <osf-draft-registrations-search
        params="placeholder: 'Type to search for a project',
-               data: '/api/v1/prereg/draft_registrations/',
+               data: '${api_url_for("prereg_draft_registrations")}',
+
                submitText: 'Edit draft'">
     </osf-draft-registrations-search>
   </form>
