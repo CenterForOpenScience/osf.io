@@ -427,7 +427,7 @@ class ExternalProvider(object):
         return bool: True if needs_refresh
         """
         if self.refresh_time and self.account.expires_at:
-            return (self.account.expires_at - datetime.utcnow()).total_seconds() < self.refresh_time
+            return (self.account.expires_at - datetime.datetime.utcnow()).total_seconds() < self.refresh_time
         return False
 
 
