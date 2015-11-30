@@ -674,12 +674,10 @@ class JSONAPISerializer(ser.Serializer):
                     result = self.context['embed'][field.field_name](obj)
                     if result:
                         data['embeds'][field.field_name] = result
-                # If this is a relationship to an anonymized resource, don't show the relationship link
-                elif is_anonymized(self.context['request']) and isinstance(attribute, User):
-                    continue
                 else:
                     try:
-                        data['relationships'][field.field_name] = field.to_representation(attribute)
+                        if not (is_anonymous and hasattr(field, 'view_name') and field.view_name.find('users:') != -1):
+                            data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
                         continue
             elif field.field_name == 'id':
