@@ -147,11 +147,13 @@ class TestNodeContributorFiltering(ApiTestCase):
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
         # no filter
         res = self.app.get(base_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
         assert_true(res.json['data'][0]['attributes'].get('bibliographic', None))
 
@@ -169,6 +171,7 @@ class TestNodeContributorFiltering(ApiTestCase):
 
         # no filter
         res = self.app.get(base_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 2)
 
         # filter for bibliographic contributors
