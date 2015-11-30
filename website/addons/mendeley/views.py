@@ -20,7 +20,7 @@ def mendeley_get_user_accounts(auth):
 
     provider = MendeleyCitationsProvider()
     return provider.serializer(
-        user_settings=auth.user.get_addon('mendeley')
+        user_settings=auth.user.get_addon('mendeley'),
     ).serialized_user_settings
 
 
@@ -34,8 +34,9 @@ def mendeley_get_config(auth, node_addon, **kwargs):
     return {
         'result': provider.serializer(
             node_addon,
-            auth.user.get_addon('mendeley')
-        ).serialized_node_settings
+            auth.user.get_addon('mendeley'),
+        ).serialized_node_settings,
+        'validCredentials': provider.check_credentials(node_addon)
     }
 
 @must_have_permission('write')
