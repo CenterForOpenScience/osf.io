@@ -51,9 +51,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds = []
         else:
             embeds = self.request.query_params.getlist('embed')
-        
+
         esi = self.request.query_params.get('esi', False)
-        enveloped = is_truthy(self.request.query_params.get('enveloped', True))
 
         fields = self.serializer_class._declared_fields
         for field in fields:
@@ -68,7 +67,6 @@ class JSONAPIBaseView(generics.GenericAPIView):
         context.update({
             'esi': is_truthy(esi),
             'embed': embeds_partials,
-            'enveloped': enveloped
         })
         return context
 

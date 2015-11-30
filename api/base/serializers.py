@@ -640,7 +640,6 @@ class JSONAPISerializer(ser.Serializer):
 
         embeds = self.context.get('embed', {})
         esi = self.context.get('esi', {})
-        enveloped = self.context.get('enveloped')
         fields = [field for field in self.fields.values() if not field.write_only]
 
         invalid_embeds = set(embeds.keys()) - set([f.field_name for f in fields if getattr(f, 'json_api_link', False)])
@@ -690,10 +689,7 @@ class JSONAPISerializer(ser.Serializer):
         if not data['embeds']:
             del data['embeds']
 
-        if not enveloped:
-            i = 0
-
-        if envelope and enveloped:
+        if envelope:
             ret[envelope] = data
         else:
             ret = data
