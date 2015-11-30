@@ -80,9 +80,21 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 parallelUploads: 1,
                 acceptDirectories: false
             },
-            oncreate: function(item) {
-                onSelectRow(item);
-            },
+            dropzoneEvents: $.extend(
+                {},
+                Fangorn.DefaultOptions.dropzoneEvents,
+                {
+                    complete: function(tb, file, response) {
+                        var fileMeta = JSON.parse(file.xhr.response);
+                        fileMeta.nodeId = file.treebeardParent.data.nodeId;
+                        onSelectRow({
+                            kind: 'file',
+                            data: fileMeta
+                        });
+
+                    }
+                }
+            ),
             onselectrow: onSelectRow,
             resolveRows: function(item) {
                 var tb = this;
@@ -161,18 +173,24 @@ var Uploader = function(question) {
                 viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
                 hasSelectedFile: true
             });
+            question.value(file.data.name);
         }
         else {
             question.extra({
                 selectedFileName: 'no file selected'
             });
-            question.value('no file selected');
+            question.value(null);
         }
     });
     self.hasSelectedFile = ko.computed(function() {
         return !!(question.extra().viewUrl);
     });
-    self.unselectFile = self.selectedFile.bind(null, null);
+    self.unselectFile = function() {
+        self.selectedFile(null);
+        question.extra({
+            selectedFileName: 'no file selected'
+        });
+    };
 
     self.filePicker = null;
 
