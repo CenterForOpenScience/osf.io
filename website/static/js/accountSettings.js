@@ -208,7 +208,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                         this.emailInput('');
                         var addrText = $osf.htmlEscape(email.address());
                             bootbox.confirm({
-                                title: 'Merge Accounts?',
+                                title: 'Confirm Change?',
                                 message: 'Please check your email for confirmation of this change. ' + 
                                 'If there is another OSF account associated with ' + '<em>' + addrText + '</em>, ' +
                                 'you will have the ability to confirm an account merge.',
