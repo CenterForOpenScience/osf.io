@@ -18,7 +18,7 @@ def get_varnish_servers():
 
 @celery_app.task(base=VarnishTask, name='caching_tasks.ban_url')
 @logged('ban_url')
-def ban_url_from_varnish(url):
+def ban_url(url):
     parsed_url = urlparse.urlparse(url)
 
     for host in get_varnish_servers():
