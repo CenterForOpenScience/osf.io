@@ -2149,8 +2149,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             foreign_user=foreign_user,
             params=params,
         )
+
         if log_date:
             log.date = log_date
+
+        self.date_modified = log.date
+        self.save()
+
         log.save()
         self.logs.append(log)
         if save:
