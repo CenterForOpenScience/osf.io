@@ -68,6 +68,7 @@ class EvernoteSerializer(OAuthAddonSerializer):
             'auth': api_url_for('oauth_connect',
                                 service_name='evernote'),
             'importAuth': node.api_url_for('evernote_add_user_auth'),
+            'folders': node.api_url_for('evernote_folder_list'),
             # 'config': node.api_url_for('evernote_set_config'),
             # 'deauthorize': node.api_url_for('evernote_remove_user_auth'),
             'accounts': node.api_url_for('evernote_get_user_settings'),
