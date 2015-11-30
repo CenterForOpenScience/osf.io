@@ -1719,6 +1719,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanCommentOrPublic,
         base_permissions.TokenHasScope,
+        ExcludeRetractions
     )
 
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]

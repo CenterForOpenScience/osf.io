@@ -97,7 +97,7 @@ class TestNodeCommentsList(ApiTestCase):
         self.public_comment = CommentFactory(node=self.public_project, user=self.user)
         registration = RegistrationFactory(creator=self.user, project=self.public_project)
         url = '/{}nodes/{}/comments/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
