@@ -33,7 +33,7 @@ def _get_folders(node_addon, folder_id):
         return [{
             'id': '/',
             'path': '/',
-            'addon': 'box',
+            'addon': 'dropbox',
             'kind': 'folder',
             'name': '/ (Full Dropbox)',
             'urls': {
