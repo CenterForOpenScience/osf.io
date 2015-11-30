@@ -207,7 +207,22 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     if (emails[i].address() === email.address()) {
                         this.emailInput('');
                         var addrText = $osf.htmlEscape(email.address());
-                        $osf.growl('<em>' + addrText  + '</em> added to your account.','You will receive a confirmation email at <em>' + addrText  + '</em>. Please check your email and confirm.', 'success');
+                            bootbox.confirm({
+                                title: 'Merge Accounts?',
+                                message: 'Please check your email for confirmation of this change. ' + 
+                                'If there is another OSF account associated with ' + '<em>' + addrText + '</em>, ' +
+                                'you will have the ability to confirm an account merge.',
+                                callback: function (confirmed) {
+                                    if (confirmed) {
+                                        $osf.growl('<em>' + addrText  + '</em> added to your account.','You will receive a confirmation email at <em>' + addrText  + '</em>. Please check your email and confirm.', 'success');
+                                    }
+                                },
+                                buttons:{
+                                    confirm:{
+                                        label:'Confirm'
+                                    }
+                                }
+                            });
                         return;
                     }
                 }
