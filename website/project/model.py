@@ -3550,7 +3550,6 @@ class EmailApprovableSanction(Sanction):
         raise NotImplementedError
 
     def _on_complete(self, *args):
-        super(EmailApprovableSanction, self).on_complete(*args)
         if self.notify_initiator_on_complete:
             self._notify_initiator()
 
@@ -3698,6 +3697,7 @@ class Embargo(EmailApprovableSanction, PreregCallbackMixin):
         self.reject(user, token)
 
     def _on_complete(self, user):
+        super(Embargo, self)._on_complete(user)
         parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
@@ -3921,6 +3921,7 @@ class RegistrationApproval(EmailApprovableSanction, PreregCallbackMixin):
         src.save()
 
     def _on_complete(self, user):
+        super(RegistrationApproval, self)._on_complete(user)
         self.state = Sanction.APPROVED
         register = self._get_registration()
         registered_from = register.registered_from

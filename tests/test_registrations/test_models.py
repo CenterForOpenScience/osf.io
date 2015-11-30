@@ -2,7 +2,6 @@
 """Unit tests for models and their factories."""
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
-import unittest
 
 from modularodm import Q
 
