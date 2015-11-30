@@ -103,6 +103,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['nodeHasAuth'])
         assert_false(result['userHasAuth'])
         assert_false(result['userIsOwner'])
+        assert_true(res.json['validCredentials'])
         assert_equal(result['folder'], {'name': ''})
         assert_equal(result['ownerName'], self.user.fullname)
         assert_true(result['urls']['auth'])
