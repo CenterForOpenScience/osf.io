@@ -207,7 +207,7 @@ class ExternalProvider(object):
         """Name of the service to be used internally. e.g.: orcid, github"""
         pass
 
-    def auth_callback(self, user):
+    def auth_callback(self, user, **kwargs):
         """Exchange temporary credentials for permanent credentials
 
         This is called in the view that handles the user once they are returned
@@ -260,7 +260,6 @@ class ExternalProvider(object):
                 )
             except (MissingTokenError, RequestsHTTPError):
                 raise HTTPError(http.SERVICE_UNAVAILABLE)
-
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)
         # call the hook for subclasses to parse values from the response
@@ -428,6 +427,19 @@ class ApiOAuth2Application(StoredObject):
             self.save()
         return True
 
+    def reset_secret(self, save=False):
+        """
+        Reset the secret of an ApiOAuth2Application
+        Revokes all tokens
+        """
+        client = cas.get_client()
+        client.revoke_application_tokens(self.client_id, self.client_secret)
+        self.client_secret = generate_client_secret()
+
+        if save:
+            self.save()
+        return True
+
     @property
     def url(self):
         return '/settings/applications/{}/'.format(self.client_id)
@@ -440,6 +452,72 @@ class ApiOAuth2Application(StoredObject):
     @property
     def absolute_api_v2_url(self):
         return absolute_reverse('applications:application-detail', kwargs={'client_id': self.client_id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+class ApiOAuth2PersonalToken(StoredObject):
+    """Information for user-created personal access tokens
+
+    This collection is also used by CAS to create the master list of available tokens.
+    Any changes made to field names in this model must be echoed in the CAS implementation.
+    """
+    _id = fields.StringField(primary=True,
+                             default=lambda: str(ObjectId()))
+
+    # Name of the field being `token_id` is a CAS requirement.
+    # This is the actual value of the token that's used to authenticate
+    token_id = fields.StringField(default=functools.partial(random_string, length=70),
+                               unique=True)
+
+    owner = fields.ForeignField('User',
+                                backref='created',
+                                index=True,
+                                required=True)
+
+    name = fields.StringField(required=True, index=True)
+
+    # This field is a space delimited list of scopes, e.g. "osf.full_read osf.full_write"
+    scopes = fields.StringField(required=True)
+
+    is_active = fields.BooleanField(default=True, index=True)
+
+    def deactivate(self, save=False):
+        """
+        Deactivate an ApiOAuth2PersonalToken
+
+        Does not delete the database record, but hides this instance from API
+        """
+        client = cas.get_client()
+        # Will raise a CasHttpError if deletion fails for any reason other than the token
+        # not yet being created. This will also stop setting of active=False.
+        try:
+            resp = client.revoke_tokens({'token': self.token_id})  # noqa
+        except cas.CasHTTPError as e:
+            if e.code == 400:
+                pass  # Token hasn't been used yet, so not created in cas
+            else:
+                raise e
+
+        self.is_active = False
+
+        if save:
+            self.save()
+        return True
+
+    @property
+    def url(self):
+        return '/settings/tokens/{}/'.format(self._id)
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    # Properties used by Django and DRF "Links: self" field
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('tokens:token-detail', kwargs={'_id': self._id})
 
     # used by django and DRF
     def get_absolute_url(self):

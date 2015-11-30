@@ -127,7 +127,7 @@ def must_not_be_registration(func):
         _inject_nodes(kwargs)
         node = kwargs['node']
 
-        if not node.archiving and node.is_registration:
+        if node.is_registration and not node.archiving:
             raise HTTPError(
                 http.BAD_REQUEST,
                 data={
@@ -349,19 +349,6 @@ def must_have_permission(permission):
     # Return decorator
     return wrapper
 
-
-def dev_only(func):
-    """Attempting to access this view in production will yield 404 error"""
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        if settings.DEV_MODE is True:
-            return func(*args, **kwargs)
-        else:
-            raise HTTPError(http.NOT_FOUND)
-
-    return wrapped
-
-
 def must_have_write_permission_or_public_wiki(func):
     """ Checks if user has write permission or wiki is public and publicly editable. """
     @functools.wraps(func)
@@ -378,3 +365,18 @@ def must_have_write_permission_or_public_wiki(func):
 
     # Return decorated function
     return wrapped
+
+def http_error_if_disk_saving_mode(func):
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        _inject_nodes(kwargs)
+        node = kwargs['node']
+
+        if settings.DISK_SAVING_MODE:
+            raise HTTPError(
+                http.METHOD_NOT_ALLOWED,
+                redirect_url=node.url
+            )
+        return func(*args, **kwargs)
+    return wrapper
