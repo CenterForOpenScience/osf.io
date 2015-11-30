@@ -1,6 +1,6 @@
 Hello ${user.fullname},
 
-${author} has added you as a contributor to the project "${node.title}" on the Open Science Framework: ${node.absolute_url}
+${node.contributors[0]} has added you as a contributor to the project "${node.title}" on the Open Science Framework: ${node.absolute_url}
 
 If you are erroneously being associated with "${node.title}," then you may visit the project's "Contributors" page and remove yourself as a contributor.
 
