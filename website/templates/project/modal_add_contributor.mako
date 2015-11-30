@@ -5,13 +5,9 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
-
             <div class="modal-body">
-
                 <!-- Whom to add -->
-
                 <div data-bind="if: page() == 'whom'">
-
                     <!-- Find contributors -->
                     <form class='form' data-bind="submit: startSearch">
                         <div class="row">
@@ -25,23 +21,35 @@
                                     </span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row search-contributor-links">
-                            <div class="col-md-12">
-                                <div>
-                                    <!-- ko if:parentId -->
-                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
-                                    <!-- /ko -->
+                            <div class="row search-contributor-links">
+                                <div class="col-md-6">
+                                    <div>
+                                        <!-- ko if:parentId -->
+                                            <button class="btn btn-default" data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></button>
+                                        <!-- /ko -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- Link to add non-registered contributor -->
+                        <div class='help-block'>
+                            <div data-bind='if: foundResults'>
+                                <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                                    <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                                </ul>
+                                <p>
+                                    <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                </p>
+                            </div>
+                            <div data-bind="if: noResults">
+                                No results found. Try a more specific search or  <a href="#"
+                                data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                            </div>
+                        </div>
                     </form>
-
                     <hr />
-
                     <!-- Choose which to add -->
                     <div class="row">
-
                         <div class="col-md-6">
                             <div>
                                 <span class="modal-subheader">Results</span>
@@ -50,7 +58,6 @@
                             <!-- ko if: notification -->
                             <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
-
                             <table class="table-condensed">
                                 <thead data-bind="visible: foundResults">
                                 </thead>
@@ -77,61 +84,34 @@
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
                                             </a><br>
-
-
                                                 <span data-bind="if: contributor.employment">
                                                     <span
                                                         class = 'small'
                                                         data-bind="text: contributor.employment">
                                                     </span><br>
                                                 </span>
-
-
                                                 <span data-bind="if: contributor.education">
                                                     <span
                                                         class = 'small'
                                                         data-bind= "text: contributor.education">
                                                     </span><br>
                                                 </span>
-
                                                 <span class= 'small'
                                                       data-bind= "text: contributor.displayProjectsInCommon">
                                                 </span>
-
                                             <span
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
-
                                         </td>
-
                                     </tr>
-
-
                                 </tbody>
                             </table>
-                            <!-- Link to add non-registered contributor -->
-                            <div class='help-block'>
-                                <div data-bind='if: foundResults'>
-                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
-                                    </ul>
-                                    <p>
-                                        <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
-                                    </p>
-                                </div>
-                                <div data-bind="if: noResults">
-                                    No results found. Try a more specific search or  <a href="#"
-                                    data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
-                                </div>
-                            </div>
                         </div><!-- ./col-md -->
-
                         <div class="col-md-6">
                             <div>
                                 <span class="modal-subheader">Adding</span>
                                 <a data-bind="visible: removeAllVisible, click:removeAll">Remove all</a>
                             </div>
-
                             <!-- TODO: Duplication here: Put this in a KO template -->
                             <table class="table-condensed">
                                 <thead data-bind="visible: selection().length">
@@ -160,7 +140,6 @@
                                             <!-- height and width are explicitly specified for faster rendering -->
                                             <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35 />
                                         </td>
-
                                         <td>
                                             <span   data-bind="text: contributor.fullname"></span>
 
@@ -168,7 +147,6 @@
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
-
                                         <td>
                                             <select class="form-control input-sm" data-bind="
                                                 options: $root.permissionList,
@@ -180,28 +158,21 @@
                                 </tbody>
                             </table>
                         </div>
-
                     </div>
-
                 </div>
                 <!-- Component selection page -->
                 <div data-bind="if:page()=='which'">
-
                     <div>
                         Adding contributor(s)
                         <span data-bind="text:addingSummary()"></span>
                         to component
                         <span data-bind="text:title"></span>.
                     </div>
-
                     <hr />
-
                     <div style="margin-bottom:10px;">
                         Select any other components to which you would like to apply these settings.
                     </div>
-
                     <div class="row">
-
                         <div class="col-md-6">
                             <input type="checkbox" checked disabled />
                             <span data-bind="text:title"></span> (current component)
@@ -212,7 +183,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="col-md-6">
                             <div>
                                 <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
@@ -221,11 +191,8 @@
                                 <a data-bind="click:deselectNodes, css:{disabled:cantDeselectNodes()}">De-select all</a>
                             </div>
                         </div>
-
                     </div>
-
                 </div><!-- end component selection page -->
-
                 <!-- Invite user page -->
                 <div data-bind='if:page() === "invite"'>
                     <form class='form'>
@@ -245,32 +212,24 @@
                         </div>
                     </form>
                 </div><!-- end invite user page -->
-
             </div><!-- end modal-body -->
-
             <div class="modal-footer">
-
                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
-
                 <span data-bind="if: page() === 'invite'">
                     <button class="btn btn-primary" data-bind='click:selectWhom'>Back</button>
                     <button class='btn btn-success'
                          data-bind='click: postInvite'
                                     type="submit">Add</button>
                 </span>
-
                 <span data-bind="if:selection().length && page() == 'whom'">
                     <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Add</a>
                     <a class="btn btn-primary" data-bind="visible:nodes().length, click:selectWhich">Next</a>
                 </span>
-
                 <span data-bind="if: page() == 'which'">
                     <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
                     <a class="btn btn-success" data-bind="click:submit">Add</a>
                 </span>
-
             </div><!-- end modal-footer -->
         </div><!-- end modal-content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
-

@@ -55,6 +55,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         });
         self.query = ko.observable();
         self.results = ko.observableArray([]);
+        self.imported = ko.observable(false);
         self.contributors = ko.observableArray([]);
         self.selection = ko.observableArray();
         self.notification = ko.observable('');
@@ -97,6 +98,8 @@ var AddContributorViewModel = oop.extend(Paginator, {
             });
             return names.join(', ');
         });
+
+        self.hasImportedFromParent = ko.observable(false);
     },
     selectWhom: function() {
         this.page('whom');
@@ -178,18 +181,26 @@ var AddContributorViewModel = oop.extend(Paginator, {
     importFromParent: function() {
         var self = this;
         self.notification(false);
-        $.getJSON(
-            self.nodeApiUrl + 'get_contributors_from_parent/', {},
-            function(result) {
-                var contributors = result.contributors.map(function(user) {
-                    var added = (self.contributors().indexOf(user.id) !== -1);
-                    var updatedUser = $.extend({}, user, {added:added});
-                    return updatedUser;
-                });
-                self.results(contributors);
-            }
-        );
+        if (!self.imported())
+          {
+            $.getJSON(
+                self.nodeApiUrl + 'get_contributors_from_parent/', {},
+                function(result) {
+                    var contributors = result.contributors.map(function(user) {
+                        var added = (self.contributors().indexOf(user.id) !== -1);
+                        var updatedUser = $.extend({}, user, {added:added});
+                        return updatedUser;
+                    });
+                    self.results(contributors);
+                }
+            );
+         }
+         else {
+            self.results([]);
+         }
+       self.imported(!self.imported());
     },
+
     addTips: function(elements) {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
