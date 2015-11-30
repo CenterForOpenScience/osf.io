@@ -28,7 +28,7 @@ class UserSerializer(JSONAPISerializer):
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-    affiliated_institutions = ser.ListField(source='get_inst_ids', required=False, child=ser.CharField())
+    affiliated_institutions = ser.DictField(source='get_inst_ids', required=False, child=ser.CharField())
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
     gitHub = DevOnly(AllowMissing(ser.CharField(required=False, source='social.github',

@@ -53,9 +53,16 @@ if ($('#wgrid').length) {
         });
     });
 }
-
+var available_institutions = null;
+$.ajax({
+    url: ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/',
+    tye: 'GET',
+    dataType: 'json'
+}).done(function(response) {
+    available_institutions = response.data.attributes.affiliated_institutions;
+});
 $(document).ready(function() {
-
+    
     // Apply KO bindings for Project Settings
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);

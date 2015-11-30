@@ -273,6 +273,20 @@
                     </div>
 
                 </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Add Primary Institution</h3>
+                    </div>
+
+                    <div class="panel-body">
+
+                        <form class="form" id="commentSettings">
+
+                        </form>
+
+                    </div>
+
+                </div>
 
             % endif
 
