@@ -3566,7 +3566,7 @@ class PreregCallbackMixin(object):
                 registration_url=registration.url
             )
 
-class Embargo(EmailApprovableSanction, PreregCallbackMixin):
+class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
     COMPLETED = 'completed'
@@ -3839,7 +3839,7 @@ class Retraction(EmailApprovableSanction):
         self.reject(user, token)
 
 
-class RegistrationApproval(EmailApprovableSanction, PreregCallbackMixin):
+class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'

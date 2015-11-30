@@ -20,7 +20,7 @@ from website.exceptions import (
 )
 from website import tokens
 from website.models import Embargo, Node
-from website.project.model import ensure_schemas
+from website.project.model import ensure_schemas, PreregCallbackMixin
 
 
 DUMMY_TOKEN = tokens.encode({
@@ -351,7 +351,6 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_false(component_registration.is_deleted)
         assert_false(subcomponent_registration.is_deleted)
 
-
     # Embargo property tests
     def test_new_registration_is_pending_registration(self):
         self.registration.embargo_registration(
@@ -370,8 +369,20 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.save()
         assert_false(self.registration.is_pending_embargo_for_existing_registration)
 
+    def test_on_complete_notify_initiator(self):
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            notify_initiator_on_complete=True
+        )
+        self.registration.save()
+        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+            self.registration.embargo._on_complete(self.user)
+        mock_notify.assert_called()
+
 
 class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
+
     def setUp(self):
         super(RegistrationWithChildNodesEmbargoModelTestCase, self).setUp()
         self.user = AuthUserFactory()
