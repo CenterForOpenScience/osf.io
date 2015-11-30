@@ -1207,11 +1207,13 @@ RegistrationManager.prototype.init = function() {
 
     var getDraftRegistrations = self.getDraftRegistrations();
     getDraftRegistrations.done(function(response) {
-        self.drafts(
-            $.map(response.drafts, function(draft) {
-                return new Draft(draft);
-            })
-        );
+        var drafts = $.map(response.drafts, function(draft) {
+            return new Draft(draft);
+        });
+        drafts.sort(function(a, b) {
+            return a.initiated > b.initiated;
+        });
+        self.drafts(drafts);
     });
 
     var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
