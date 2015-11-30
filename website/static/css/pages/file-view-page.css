@@ -83,3 +83,7 @@
 #file-ext {
     white-space: nowrap;
 }
+/* also need this for above to avoid conflict in IE */
+h2.break-word {
+	word-wrap: normal;
+}
