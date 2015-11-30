@@ -11,3 +11,11 @@ def get_evernote_client(token=None):
             consumer_secret=settings.EVERNOTE_CLIENT_SECRET,
             sandbox=settings.EVERNOTE_SANDBOX
         )
+
+def get_notebooks(client):
+
+    noteStore = client.get_note_store()
+    return [{'name': notebook.name,
+             'guid': notebook.guid,
+             'stack': notebook.stack,
+             'defaultNotebook': notebook.defaultNotebook} for notebook in noteStore.listNotebooks()]
