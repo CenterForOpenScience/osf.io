@@ -323,7 +323,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             for type, href in relationships.items():
                 if href and not href == '{}':
                     return '<esi:include src="{}?format=jsonapi&enveloped=false"/>'.format(href)
-        return self.to_representation(value)
+        else:
+            raise SkipField
 
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
@@ -656,7 +657,10 @@ class JSONAPISerializer(ser.Serializer):
                 # results rather than adding a relationship link
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
                     if esi:
-                        result = field.to_esi_representation(attribute)
+                        try:
+                            result = field.to_esi_representation(attribute)
+                        except SkipField:
+                            continue
                     else:
                         result = self.context['embed'][field.field_name](obj)
                     if result:
