@@ -103,6 +103,23 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
+    def test_filtering_on_obsolete_fields(self):
+        # regression test for changes in filter fields
+        url_fullname = '{}?filter[fullname]=foo'.format(self.public_url)
+        res = self.app.get(url_fullname, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], u"'fullname' is not a valid field for this endpoint.")
+
+        # middle_name is now middle_names
+        url_middle_name = '{}?filter[middle_name]=foo'.format(self.public_url)
+        res = self.app.get(url_middle_name, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], "'middle_name' is not a valid field for this endpoint.")
+
 
 class TestNodeContributorFiltering(ApiTestCase):
 
@@ -130,11 +147,13 @@ class TestNodeContributorFiltering(ApiTestCase):
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
         # no filter
         res = self.app.get(base_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
         assert_true(res.json['data'][0]['attributes'].get('bibliographic', None))
 
@@ -152,6 +171,7 @@ class TestNodeContributorFiltering(ApiTestCase):
 
         # no filter
         res = self.app.get(base_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 2)
 
         # filter for bibliographic contributors
