@@ -11,7 +11,6 @@ from tests.factories import UserFactory, ProjectFactory
 from website.addons.mendeley.tests.factories import (
     MendeleyAccountFactory,
     MendeleyUserSettingsFactory,
-    ExternalAccountFactory,
 )
 from website.addons.mendeley.provider import MendeleyCitationsProvider
 
@@ -122,7 +121,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         assert_equal(api, 'testapi')
 
     def test_set_auth(self):
-        external_account = ExternalAccountFactory()
+        external_account = MendeleyAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
@@ -157,7 +156,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         )
 
     def test_set_auth_wrong_user(self):
-        external_account = ExternalAccountFactory()
+        external_account = MendeleyAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
@@ -168,7 +167,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
             )
 
     def test_deauthorize(self):
-        self.node_settings.external_account = ExternalAccountFactory()
+        self.node_settings.external_account = MendeleyAccountFactory()
         self.node_settings.mendeley_list_id = 'something'
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
@@ -186,7 +185,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         assert_in('project', params)
 
     def test_clear_auth(self):
-        self.node_settings.external_account = ExternalAccountFactory()
+        self.node_settings.external_account = MendeleyAccountFactory()
         self.node_settings.mendeley_list_id = 'something'
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
@@ -201,7 +200,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         folder_id = 'fake-folder-id'
         folder_name = 'fake-folder-name'
 
-        external_account = ExternalAccountFactory()
+        external_account = MendeleyAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
@@ -240,7 +239,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         assert_equal(log.params['folder_name'], folder_name)
 
     def test_has_auth_false(self):
-        external_account = ExternalAccountFactory()
+        external_account = MendeleyAccountFactory()
 
         assert_false(self.node_settings.has_auth)
 
@@ -258,7 +257,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         assert_false(self.node_settings.has_auth)
 
     def test_has_auth_true(self):
-        external_account = ExternalAccountFactory()
+        external_account = MendeleyAccountFactory()
         self.user.external_accounts.append(external_account)
 
         self.node_settings.set_auth(external_account, self.user)
@@ -307,8 +306,9 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
     @mock.patch('framework.status.push_status_message')
     def test_remove_contributor_authorizer(self, mock_push_status):
-        external_account = ExternalAccountFactory()
+        external_account = MendeleyAccountFactory()
         self.user.external_accounts.append(external_account)
+        self.user.save()
         self.node_settings.set_auth(external_account, self.user)
 
         contributor = UserFactory()
@@ -319,7 +319,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         assert_false(self.user_settings.verify_oauth_access(self.node, external_account))
 
     def test_remove_contributor_not_authorizer(self):
-        external_account = ExternalAccountFactory()
+        external_account = MendeleyAccountFactory()
         self.user.external_accounts.append(external_account)
         self.node_settings.set_auth(external_account, self.user)
 
@@ -332,7 +332,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
     @mock.patch('framework.status.push_status_message')
     def test_fork_by_authorizer(self, mock_push_status):
-        external_account = ExternalAccountFactory()
+        external_account = MendeleyAccountFactory()
         self.user.external_accounts.append(external_account)
         self.node_settings.set_auth(external_account, self.user)
 
@@ -343,7 +343,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
 
     @mock.patch('framework.status.push_status_message')
     def test_fork_not_by_authorizer(self, mock_push_status):
-        external_account = ExternalAccountFactory()
+        external_account = MendeleyAccountFactory()
         self.user.external_accounts.append(external_account)
         self.node_settings.set_auth(external_account, self.user)
 
@@ -361,7 +361,7 @@ class MendeleyUserSettingsTestCase(OsfTestCase):
         self.node = ProjectFactory()
         self.user = self.node.creator
 
-        self.external_account = ExternalAccountFactory()
+        self.external_account = MendeleyAccountFactory()
 
         self.user.external_accounts.append(self.external_account)
         self.user.save()
@@ -420,7 +420,7 @@ class MendeleyUserSettingsTestCase(OsfTestCase):
         assert_false(
             self.user_settings.verify_oauth_access(
                 node=self.node,
-                external_account=ExternalAccountFactory()
+                external_account=MendeleyAccountFactory()
             )
         )
 

@@ -13,7 +13,7 @@ from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettin
 from website.addons.base import StorageAddonBase
 
 from website.addons.box import settings
-from website.addons.box.utils import BoxNodeLogger, refresh_oauth_key
+from website.addons.box.utils import refresh_oauth_key
 from website.addons.box.serializer import BoxSerializer
 from website.oauth.models import ExternalProvider
 
@@ -86,21 +86,9 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder_id)
 
-    @property
-    def has_auth(self):
-        """Whether an access token is associated with this node."""
-        return bool(self.user_settings and self.user_settings.has_auth)
-
-    @property
-    def complete(self):
-        return bool(self.has_auth and self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-        ))
-
     def fetch_folder_name(self):
         self._update_folder_data()
-        return self.folder_name.replace('All Files', '/ (Full Box)')
+        return (getattr(self, 'folder_name') or '').replace('All Files', '/ (Full Box)')
 
     def fetch_full_folder_path(self):
         self._update_folder_data()
@@ -130,6 +118,8 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self._update_folder_data()
         self.save()
 
+        """ TODO: see if implicit authorization is necessary
+        (or a good idea in general?)
         if not self.complete:
             self.user_settings.grant_oauth_access(
                 node=self.owner,
@@ -137,35 +127,27 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 metadata={'folder': self.folder_id}
             )
             self.user_settings.save()
+        """
 
         # Add log to node
-        nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
-        nodelogger.log(action="folder_selected", save=True)
+        self.nodelogger.log(action="folder_selected", save=True)
 
-    def set_user_auth(self, user_settings):
-        """Import a user's Box authentication and create a NodeLog.
-
-        :param BoxUserSettings user_settings: The user settings to link.
-        """
-        self.user_settings = user_settings
-        nodelogger = BoxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
-        nodelogger.log(action="node_authorized", save=True)
+    def clear_settings(self):
+        self.folder_id = None
+        self.folder_name = None
+        self.folder_path = None
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
-        node = self.owner
+        folder_id = self.folder_id
+        self.clear_settings()
 
         if add_log:
-            extra = {'folder_id': self.folder_id}
-            nodelogger = BoxNodeLogger(node=node, auth=auth)
-            nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+            extra = {'folder_id': folder_id}
+            self.nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
-        self.folder_id = None
         self._update_folder_data()
-        self.user_settings = None
         self.clear_auth()
-
-        self.save()
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:

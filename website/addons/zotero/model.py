@@ -188,6 +188,18 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
     def provider_name(self):
         return 'zotero'
 
+    @property
+    def folder_id(self):
+        return self.zotero_list_id
+
+    @property
+    def folder_name(self):
+        return self.selected_folder_name
+
+    @property
+    def folder_path(self):
+        return self.selected_folder_name
+
     def set_auth(self, *args, **kwargs):
         self.zotero_list_id = None
         return super(ZoteroNodeSettings, self).set_auth(*args, **kwargs)

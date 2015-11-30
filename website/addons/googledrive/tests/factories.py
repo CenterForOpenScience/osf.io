@@ -2,10 +2,9 @@
 """Factory boy factories for the Google Drive addon."""
 import datetime
 
-from framework.auth import Auth
 from dateutil.relativedelta import relativedelta
 
-from factory import SubFactory, Sequence, post_generation
+from factory import SubFactory, Sequence
 from tests.factories import (
     ModularOdmFactory,
     UserFactory,

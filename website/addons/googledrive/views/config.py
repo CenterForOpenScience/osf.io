@@ -24,7 +24,9 @@ def googledrive_config_get(node_addon, auth, **kwargs):
         node_settings=node_addon,
         user_settings=auth.user.get_addon('googledrive')
     ).serialized_node_settings
-    return result
+    return {
+        'result': result
+    }
 
 
 @must_not_be_registration
