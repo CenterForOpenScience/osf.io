@@ -14,7 +14,7 @@ from rest_framework.fields import get_attribute as get_nested_attributes
 
 from api.base import utils
 from api.base.settings import BULK_SETTINGS
-from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, InvalidTargetError
+from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
 
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
@@ -84,7 +84,7 @@ def _url_val(val, obj, serializer, **kwargs):
     else:
         url = val
 
-    if not url:
+    if not url and url != 0:
         raise SkipField
     else:
         return url
@@ -375,7 +375,9 @@ class TargetField(ser.Field):
         """
         view_info = self.view_map.get(resource.target._name, None)
         if not view_info:
-            raise InvalidTargetError
+            raise TargetNotSupportedError('{} is not a supported target type'.format(
+                resource.target._name
+            ))
         embed_value = resource.target._id
 
         kwargs = {view_info['lookup_kwarg']: embed_value}

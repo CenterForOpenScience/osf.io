@@ -216,6 +216,6 @@ class InvalidModelValueError(JSONAPIException):
     default_detail = _('Invalid value in POST/PUT/PATCH request.')
 
 
-class InvalidTargetError(JSONAPIException):
-    status_code = 400
-    default_detail = _('Invalid target.')
+class TargetNotSupportedError(Exception):
+    """Raised if a TargetField is used for a resource that isn't supported."""
+    pass
