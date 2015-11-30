@@ -11,7 +11,7 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
-    TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly, AnonymousFieldsMixin)
+    TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -196,7 +196,7 @@ class NodeDetailSerializer(NodeSerializer):
     id = IDField(source='_id', required=True)
 
 
-class NodeContributorsSerializer(AnonymousFieldsMixin, JSONAPISerializer):
+class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
     non_anonymized_fields = ['bibliographic', 'permission']
