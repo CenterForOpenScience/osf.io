@@ -7,7 +7,9 @@ var LogInForm = require('js/signIn');
 
 new LogInForm.SignIn('#logInForm');
 
-new SignUp('#signUpScope', '/api/v1/register/', $('#campaign').val());
+var registerUrl = window.contextVars.registerUrl;
+
+new SignUp('#signUpScope', registerUrl, $('#campaign').val());
 
 var activateToggleBox = function () {
     var el = $(this);
