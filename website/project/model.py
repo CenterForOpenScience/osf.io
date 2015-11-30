@@ -3998,7 +3998,7 @@ class DraftRegistrationApproval(Sanction):
             save=True
         )
         registration_choice = self.meta['registration_choice']
-        sanction = None
+
         if registration_choice == 'immediate':
             sanction = functools.partial(registration.require_approval, draft.initiator)
         elif registration_choice == 'embargo':
