@@ -59,7 +59,13 @@ class DropboxProvider(ExternalProvider):
 
     # Overrides ExternalProvider
     def auth_callback(self, user):
-        access_token, dropbox_user_id, url_state = self.oauth_flow.finish(request.values)
+        try:
+            access_token, dropbox_user_id, url_state = self.oauth_flow.finish(request.values)
+        except DropboxOAuth2Flow.NotApprovedException:
+            # User cancelled, but client library raises exc.
+            # TODO: consider not using client library during auth flow
+            return
+
         self.client = DropboxClient(access_token)
 
         info = self.client.account_info()
