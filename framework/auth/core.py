@@ -15,6 +15,7 @@ from modularodm.exceptions import ValidationError, ValidationValueError
 from modularodm.validators import URLValidator
 
 import framework
+from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
 from framework import analytics
 from framework.auth import signals, utils
@@ -1313,8 +1314,30 @@ class User(GuidStoredObject, AddonModelMixin):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
+    def has_inst_auth(self, inst):
+        if inst in self.affiliated_institutions:
+            return True
+        if inst._id in [i._id for i in self.affiliated_institutions]:
+            return True
+        return False
+
+    affiliated_institutions = fields.ForeignField('institution', list=True)
+
+    def get_inst_ids(self):
+        inst_ids = [inst._id for inst in self.affiliated_institutions]
+        return inst_ids
 
 def _merge_into_reversed(*iterables):
     '''Merge multiple sorted inputs into a single output in reverse order.
     '''
     return sorted(itertools.chain(*iterables), reverse=True)
+
+class Institution(StoredObject):
+    _id = fields.StringField(index=True, unique=True, primary=True) # somehow generate unique id
+    name = fields.StringField(required=True)
+
+    def auth(self, user):
+        return user.has_inst_auth(self)
+
+    def view(self):
+        return 'Static paths for custom pages'

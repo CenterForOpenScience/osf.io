@@ -131,6 +131,7 @@ def add_poster_by_email(conference, message):
         is_spam=message.is_spam,
     )
     if node_created and user_created:
+        signals
         signals.osf4m_user_created.send(user, conference=conference, node=node)
 
 
