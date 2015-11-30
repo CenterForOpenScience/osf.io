@@ -742,10 +742,8 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             }
         });
     }
-    var u = item.data;
-    var url = u.nodeUrl + 'files/' + u.provider + u.path;
-    if (!treebeard.options.uploadStates) { treebeard.options.uploadStates = []; }
-    treebeard.options.uploadStates.push({'name': file.name, 'success': true, 'link': url, 'message': false});
+    var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
+    addStatus(treebeard, file, true, false, url);
     treebeard.redraw();
 }
 
@@ -768,7 +766,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else {
-        msgText = message || DEFAULT_ERROR_MESSAGE;
+        msgText = message.message || DEFAULT_ERROR_MESSAGE;
     }
     var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
@@ -784,17 +782,8 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    if (msgText !== 'Upload canceled.') {
-        $osf.growl(
-            'Error',
-            'Unable to reach the provider, please try again later. If the ' +
-            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
-            );
-    }
     treebeard.options.uploadInProgress = false;
-    if (!treebeard.options.uploadStates) { treebeard.options.uploadStates = []; }
-    treebeard.options.uploadStates.push({'name': file.name, 'success': false, 'link': false, 'message': msgText});
-
+    addStatus(treebeard, file, false, msgText, false);
 }
 
 /**
@@ -1994,12 +1983,33 @@ function _fangornOver(event, ui) {
     }
 }
 
+/**
+ * Adds a log of failure or success to treebeard
+ * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
+ * @param {Object} file File object that dropzone passes
+ * @param success Boolean on whether upload actually happened
+ * @param message String failure reason message, false if success === true
+ * @param link String with url to file, false if success === false
+ * @private
+ */
+function addStatus(treebeard, file, success, message, link){
+    treebeard.uploadStates.push(
+        {'name': file.name, 'success': success, 'link': link || false, 'message': message}
+    );
+}
+
+/**
+ * Triggers modal and growlboxs at end of uploads
+ * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
+ * @private
+ */
+var UPLOAD_MODAL_MIN_FILE_QUANTITY = 4;
 function _fangornQueueComplete(treebeard) {
-    var fileStatus = treebeard.options.uploadStates;
-    treebeard.options.uploadStates = [];
+    var fileStatus = treebeard.uploadStates;
+    treebeard.uploadStates = [];
     var total = fileStatus.length;
     var failed = 0;
-    if (fileStatus.length > 3) {
+    if (fileStatus.length >= UPLOAD_MODAL_MIN_FILE_QUANTITY) {
         treebeard.modal.update(m('', [
             m('', [
                 fileStatus.map(function(status){
@@ -2020,6 +2030,17 @@ function _fangornQueueComplete(treebeard) {
             m('a.btn.btn-primary', {onclick: function() {treebeard.modal.dismiss();}}, 'Done'), //jshint ignore:line
         ]), m('', [m('h3.break-word.modal-title', 'Upload Status'), m('p', total - failed + '/' + total + ' files succeeded.')]));
         $('[data-toggle="tooltip"]').tooltip();
+    } else {
+        fileStatus.map(function(status) {
+           if (!status.success) {
+                if (status.message !== 'Upload canceled.') {
+                    $osf.growl(
+                        'Error',
+                        status.message
+                    );
+                }
+           }
+        });
     }
 }
 
@@ -2213,6 +2234,7 @@ tbOptions = {
     onload : function () {
         var tb = this;
         _loadTopLevelChildren.call(tb);
+        tb.uploadStates = [];
         tb.pendingFileOps = [];
         tb.select('#tb-tbody').on('click', function(event){
             if(event.target !== this) {
@@ -2261,10 +2283,7 @@ tbOptions = {
                     displaySize = Math.round(file.size / 10000) / 100;
                     msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
                     item.notify.update(msgText, 'warning', undefined, 3000);
-                    if (!treebeard.options.uploadStates) { treebeard.options.uploadStates = []; }
-                    treebeard.options.uploadStates.push(
-                        {'name': file.name, 'success': false, 'link': false, 'message': 'File is too large. Max file size is ' + item.data.accept.maxSize + ' MB.'}
-                    );
+                    addStatus(treebeard, file, false, 'File is too large. Max file size is ' + item.data.accept.maxSize + ' MB.', false);
                     return false;
                 }
             }
