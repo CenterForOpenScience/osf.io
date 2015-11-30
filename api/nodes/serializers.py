@@ -11,7 +11,7 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
-    TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly, HideIfRegistration, HideIfRetraction)
+                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly, HideIfRegistration, HideIfRetraction)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -115,6 +115,11 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_registration_count'}
     )))
 
+    logs = RelationshipField(
+        related_view='nodes:node-logs',
+        related_view_kwargs={'node_id': '<pk>'},
+    )
+
     class Meta:
         type_ = 'nodes'
 
@@ -216,7 +221,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     links = LinksField(add_dev_only_items({
         'html': 'absolute_url',
-        'self': 'get_absolute_url'
+
     }, {
         'profile_image': 'profile_image_url',
     }))
