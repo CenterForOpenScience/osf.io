@@ -16,7 +16,7 @@ from api.base import utils
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
 
-from website.models import PrivateLink, User
+from website.models import PrivateLink
 from modularodm import Q
 
 
