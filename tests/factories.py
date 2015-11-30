@@ -164,7 +164,7 @@ class PrivateLinkFactory(ModularOdmFactory):
     FACTORY_FOR = PrivateLink
 
     name = "link"
-    key = "foobarblaz"
+    key = Sequence(lambda n: "foobarbaz-{0}".format(n))
     anonymous = False
     creator = SubFactory(AuthUserFactory)
 
