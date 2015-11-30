@@ -105,8 +105,10 @@ class TestRegistrationDetail(ApiTestCase):
         assert_equal(contributors, '/{}registrations/{}/contributors/'.format(API_BASE, registration._id))
 
         assert_not_in('children', res.json['data']['relationships'])
+        assert_not_in('comments', res.json['data']['relationships'])
         assert_not_in('node_links', res.json['data']['relationships'])
         assert_not_in('registrations', res.json['data']['relationships'])
         assert_not_in('parent', res.json['data']['relationships'])
         assert_not_in('forked_from', res.json['data']['relationships'])
         assert_not_in('files', res.json['data']['relationships'])
+        assert_not_in('logs', res.json['data']['relationships'])
