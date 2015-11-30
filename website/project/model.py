@@ -669,6 +669,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow, index=True)
+    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow, editable=True)
 
     # Privacy
     is_public = fields.BooleanField(default=False, index=True)
@@ -1775,16 +1776,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param int n: Number of logs to retrieve
         """
         return list(reversed(self.logs)[:n])
-
-    @property
-    def date_modified(self):
-        '''The most recent datetime when this node was modified, based on
-        the logs.
-        '''
-        try:
-            return self.logs[-1].date
-        except IndexError:
-            return self.date_created
 
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
