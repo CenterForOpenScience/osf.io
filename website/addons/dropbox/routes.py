@@ -62,18 +62,6 @@ api_routes = {
             json_renderer
         ),
 
-        ##### HGrid #####
-        Rule(
-            [
-                '/project/<pid>/dropbox/hgrid/',
-                '/project/<pid>/node/<nid>/dropbox/hgrid/',
-                '/project/<pid>/dropbox/hgrid/<path:path>',
-                '/project/<pid>/node/<nid>/dropbox/hgrid/<path:path>',
-            ],
-            'get',
-            views.dropbox_hgrid_data_contents,
-            json_renderer
-        ),
     ],
     'prefix': '/api/v1'
 }
