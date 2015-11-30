@@ -17,6 +17,17 @@ class CitationsProvider(object):
     def serializer(self):
         pass
 
+    def check_credentials(self, node_addon):
+        valid = True
+        try:
+            node_addon.api.client
+        except HTTPError as err:
+            if err.code == 403:
+                valid = False
+            else:
+                raise err
+        return valid
+
     def user_accounts(self, user):
         """ Gets a list of the accounts authorized by 'user' """
         return {

@@ -17,7 +17,7 @@ from website.addons.zotero.tests.factories import (
     ZoteroNodeSettingsFactory
 )
 
-from website.addons.zotero import views
+from website.addons.zotero.provider import ZoteroCitationsProvider
 from website.addons.zotero.serializer import ZoteroSerializer
 
 from utils import mock_responses
@@ -67,8 +67,10 @@ class ZoteroViewsTestCase(OsfTestCase):
         self.id_patcher.stop()
         self.secret_patcher.stop()
 
-    def test_serialize_settings_authorizer(self):
+    @mock.patch('website.addons.zotero.views.ZoteroCitationsProvider.check_credentials')
+    def test_serialize_settings_authorizer(self, mock_check_credentials):
         #"""dict: a serialized version of user-specific addon settings"""
+        mock_check_credentials.return_value = True
         res = self.app.get(
             self.project.api_url_for('zotero_get_config'),
             auth=self.user.auth,
@@ -77,6 +79,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['nodeHasAuth'])
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
+        assert_true(res.json['validCredentials'])
         assert_equal(result['folder'], {'name': ''})
         assert_equal(result['ownerName'], self.user.fullname)
         assert_true(result['urls']['auth'])
@@ -86,8 +89,10 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['urls']['importAuth'])
         assert_true(result['urls']['settings'])
 
-    def test_serialize_settings_non_authorizer(self):
+    @mock.patch('website.addons.zotero.views.ZoteroCitationsProvider.check_credentials')
+    def test_serialize_settings_non_authorizer(self, mock_credentials):
         #"""dict: a serialized version of user-specific addon settings"""
+        mock_credentials.return_value = True
         non_authorizing_user = AuthUserFactory()
         self.project.add_contributor(non_authorizing_user, save=True)
         res = self.app.get(
@@ -98,6 +103,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['nodeHasAuth'])
         assert_false(result['userHasAuth'])
         assert_false(result['userIsOwner'])
+        assert_true(res.json['validCredentials'])
         assert_equal(result['folder'], {'name': ''})
         assert_equal(result['ownerName'], self.user.fullname)
         assert_true(result['urls']['auth'])
