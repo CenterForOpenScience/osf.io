@@ -32,6 +32,7 @@ module.exports = assign({}, common, {
     resolve: {
         root: [websiteRoot, adminRoot]
     },
+    plugins: plugins,
     debug: true,
     devtool: 'source-map'
 });

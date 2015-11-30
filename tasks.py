@@ -17,6 +17,7 @@ from website import settings
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ADMIN_PATH = os.path.join(HERE, 'admin')
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 
 
@@ -57,19 +58,18 @@ def server(host=None, port=5000, debug=True, live=False):
 
 
 @task
-def apiserver(port=8000, live=False):
+def apiserver(port=8000):
     """Run the API server."""
-    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python manage.py runserver {}'.format(port)
-    if live:
-        cmd += ' livereload'
+    env = 'DJANGO_SETTINGS_MODULE="api.base.settings"'
+    cmd = '{} python manage.py runserver {} --nothreading'.format(env, port)
     run(cmd, echo=True, pty=True)
 
+
 @task
-def adminserver(port=8001, live=False):
+def adminserver(port=8001):
     """Run the Admin server."""
-    cmd = 'DJANGO_SETTINGS_MODULE="admin.base.settings" python manage.py runserver {} --nothreading'.format(port)
-    if live:
-        cmd += ' livereload'
+    env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
+    cmd = '{} python manage.py runserver {} --nothreading'.format(env, port)
     run(cmd, echo=True, pty=True)
 
 
@@ -897,6 +897,60 @@ def assets(dev=False, watch=False):
     # Always set clean=False to prevent possible mistakes
     # on prod
     webpack(clean=False, watch=watch, dev=dev)
+
+
+@task()
+def admin_assets(dev=False, watch=False):
+    """Install and build static assets for admin."""
+    if os.getcwd() != ADMIN_PATH:
+        os.chdir(ADMIN_PATH)
+    npm = 'npm install'
+    if not dev:
+        npm += ' --production'
+    run(npm, echo=True)
+    admin_bower_install()
+    # Always set clean=False to prevent possible mistakes
+    # on prod
+    admin_webpack(clean=False, watch=watch, dev=dev)
+
+
+@task(aliases=['admin-pack'])
+def admin_webpack(clean=False, watch=False, dev=False):
+    """Build static assets with webpack."""
+    if clean:
+        admin_clean_assets()
+    if os.getcwd() != ADMIN_PATH:
+        os.chdir(ADMIN_PATH)
+    webpack_bin = os.path.join(ADMIN_PATH, 'node_modules', 'webpack', 'bin',
+                               'webpack.js')
+    args = [webpack_bin]
+    if settings.DEBUG_MODE and dev:
+        args += ['--colors']
+    else:
+        args += ['--progress']
+    if watch:
+        args += ['--watch']
+    config_file = 'webpack.admin.config.js' if dev else 'webpack.prod.config.js'
+    args += ['--config {0}'.format(config_file)]
+    command = ' '.join(args)
+    run(command, echo=True)
+
+
+@task
+def admin_clean_assets():
+    """Remove built JS files."""
+    public_path = os.path.join(ADMIN_PATH, 'static', 'public')
+    js_path = os.path.join(public_path, 'js')
+    run('rm -rf {0}'.format(js_path), echo=True)
+
+
+@task(aliases=['adminbower'])
+def admin_bower_install():
+    if os.getcwd() != ADMIN_PATH:
+        os.chdir(ADMIN_PATH)
+    bower_bin = os.path.join(ADMIN_PATH, 'node_modules', 'bower', 'bin', 'bower')
+    run('{} prune'.format(bower_bin), echo=True)
+    run('{} install'.format(bower_bin), echo=True)
 
 
 @task
