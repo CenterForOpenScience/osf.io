@@ -265,7 +265,7 @@ class ExternalProvider(object):
         # call the hook for subclasses to parse values from the response
         info.update(self.handle_callback(response))
 
-        self._set_external_account(user, info)
+        return self._set_external_account(user, info)
 
     def _set_external_account(self, user, info):
         try:
