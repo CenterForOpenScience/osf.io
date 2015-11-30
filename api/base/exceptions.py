@@ -210,6 +210,12 @@ class TwoFactorRequiredError(AuthenticationFailed):
     default_detail = _('Must specify two-factor authentication OTP code.')
     pass
 
+
 class InvalidModelValueError(JSONAPIException):
     status_code = 400
     default_detail = _('Invalid value in POST/PUT/PATCH request.')
+
+
+class InvalidTargetError(JSONAPIException):
+    status_code = 400
+    default_detail = _('Invalid target.')

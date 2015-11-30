@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import contextlib
+import mock
 
 from nose.tools import *  # flake8: noqa
 
@@ -9,7 +11,60 @@ from tests.utils import make_drf_request
 
 from api.base.settings.defaults import API_BASE
 from api.base.serializers import JSONAPISerializer
+from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, RelationshipField
+
+
+class FakeModel(object):
+
+    def null_field(self):
+        return None
+
+    def valued_field(self):
+        return 'Some'
+
+    null = None
+    foo = 'bar'
+
+    pk = '1234'
+
+class FakeSerializer(base_serializers.JSONAPISerializer):
+
+    class Meta:
+        type_ = 'foos'
+
+    links = base_serializers.LinksField({
+        'null_field': 'null_field',
+        'valued_field': 'valued_field',
+    })
+    
+    null_link_field = base_serializers.RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<null>'},
+    )
+    
+    valued_link_field = base_serializers.RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<foo>'},
+    )
+          
+    def null_field(*args, **kwargs):
+        return None
+
+    def valued_field(*args, **kwargs):
+        return 'http://foo.com'
+
+class TestNullLinks(ApiTestCase):
+
+    def test_null_links_are_omitted(self):
+        req = make_drf_request()
+        rep = FakeSerializer(FakeModel, context={'request': req}).data['data']
+
+        assert_not_in('null_field', rep['links'])
+        assert_in('valued_field', rep['links'])
+        assert_not_in('null_link_field', rep['relationships'])
+        assert_in('valued_link_field', rep['relationships'])
+
 
 
 class TestApiBaseSerializers(ApiTestCase):
@@ -29,6 +84,8 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url)
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
+            if relation == {}:
+                continue
             link = relation['links'].values()[0]
             assert_not_in('count', link['meta'])
 
@@ -37,6 +94,8 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': True})
         relationships = res.json['data']['relationships']
         for key, relation in relationships.iteritems():
+            if relation == {}:
+                continue
             field = NodeSerializer._declared_fields[key]
             if (field.related_meta or {}).get('count'):
                 link = relation['links'].values()[0]
@@ -47,6 +106,8 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': False})
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
+            if relation == {}:
+                continue
             link = relation['links'].values()[0]
             assert_not_in('count', link['meta'])
 
@@ -58,7 +119,7 @@ class TestApiBaseSerializers(ApiTestCase):
     def test_invalid_embed_value_raise_bad_request(self):
         res = self.app.get(self.url, params={'embed': 'foo'}, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_equal(res.json['errors'][0]['detail'], "Field 'foo' is not embeddable.")
+        assert_equal(res.json['errors'][0]['detail'], "The following fields are not embeddable: foo")
 
 
 class TestRelationshipField(DbTestCase):
