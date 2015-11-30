@@ -777,9 +777,9 @@ var RegistrationEditor = function(urls, editorId, preview) {
                             if (self.extensions[subQuestion.type] ) {
                                 value = subQuestion.preview();
                             } else {
-                                value = subQuestion.value();
+                                value = $osf.htmlEscape(subQuestion.value() || '');
                             }
-                            return $('<p>').append($osf.htmlEscape(value));
+                            return $('<p>').append(value);
                         })
                     );
                 } else {
@@ -787,9 +787,9 @@ var RegistrationEditor = function(urls, editorId, preview) {
                     if (self.extensions[question.type] ) {
                         value = question.preview();
                     } else {
-                        value = question.value();
+                        value = $osf.htmlEscape(question.value() || '');
                     }
-                    $elem.append($osf.htmlEscape(value));
+                    $elem.append(value);
                 }
             }
         };
