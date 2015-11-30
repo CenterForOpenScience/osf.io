@@ -9,7 +9,7 @@ from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
+from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
 from api.base.exceptions import InvalidModelValueError
