@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<div id="alertBar"></div>
 
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
@@ -22,34 +23,44 @@
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
     <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
-      <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
-        <div id="filesSearch"></div>
-        <div id="toggleIcon" class="pull-right">
-          <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
-        </div>
-      </div>
-
       <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
           <div class="spinner-loading-wrapper">
-            <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+            <div class="logo-spin logo-lg"></div>
             <p class="m-t-sm fg-load-message"> Loading files...  </p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Menu toggle closed -->
-    <div class="panel panel-default osf-panel-show text-center reset-height"  style="display: none">
-      <div class="panel-heading">
-        <i class="fa fa-angle-right"></i>
+      <!-- Menu toggle closed -->
+      <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
+          <div class="row tb-header-row">
+              <i class="fa fa-file p-l-xs p-r-xs"></i>
+              <div class="fangorn-toolbar-icon">
+                  <i class="fa fa-angle-down"></i>
+              </div>
+          </div>
       </div>
-    </div>
+      %if (file_tags or 'write' in user['permissions']) and provider == 'osfstorage' and not error:
+       <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title">Tags</h3>
+            <div class="pull-right">
+            </div>
+        </div>
+        <div class="panel-body">
+            <input id="fileTags" value="${','.join(file_tags) if file_tags else ''}" />
+        </div>
+        </div>
+       %endif
   </div>
 
+<!-- The osf-logo spinner here is from mfr code base -->
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
-      <div id="mfrIframeParent" class="col-sm-9">
+        <div id="externalView" class="col-sm-9"></div>
+        <div id="mfrIframeParent" class="col-sm-9">
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
@@ -57,9 +68,7 @@
       <div class="file-view-panels col-sm-3"></div>
     </div>
   </div>
-
 </div>
-
 
 ## Begin Modals
 <div class="modal fade" id="connectedModal" tabindex="-1">
@@ -75,6 +84,9 @@
           contributors with write permission in real time. Changes will be stored
           but not published until you click the "Save" button.
         </p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -93,6 +105,9 @@
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -110,6 +125,9 @@
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -126,6 +144,9 @@
           Your browser does not support collaborative editing. You may continue to make edits.
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -147,39 +168,42 @@
     <script type="text/javascript">
       window.contextVars = $.extend(true, {}, window.contextVars, {
         file: {
-            size: ${size},
-            extra: ${extra},
-            error: '${error | js_str}',
-            name: '${file_name | js_str}',
-            path: '${file_path | js_str}',
-            provider: '${provider | js_str}',
-            safeName: '${file_name | h,js_str}',
-            materializedPath: '${materialized_path | js_str}',
+            size: ${size | sjson, n },
+            extra: ${extra | sjson, n },
+            error: ${ error | sjson, n },
+            privateRepo: ${ private | sjson, n },
+            name: ${ file_name | sjson, n },
+            path: ${ file_path | sjson, n },
+            provider: ${ provider | sjson, n },
+            safeName: ${ file_name | h, sjson},
+            materializedPath: ${ materialized_path | sjson, n },
+            file_tags: ${file_tags if file_tags else False| sjson, n},
           urls: {
         %if error is None:
-              render: '${urls['render']}',
+              render: ${ urls['render'] | sjson, n },
         %endif
-              sharejs: '${urls['sharejs'] | js_str}',
+              sharejs: ${ urls['sharejs'] | sjson, n },
             }
         },
         editor: {
             registration: true,
-            docId: '${sharejs_uuid}',
-            userId: '${user['id']}',
-            userName: '${user['fullname'] | js_str}',
-            userUrl: '/${user['id']}/',
-            userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
+            docId: ${ sharejs_uuid | sjson, n },
+            userId: ${ user['id'] | sjson, n },
+            userName: ${ user['fullname'] | sjson, n },
+            userUrl: ${ ('/' + user['id'] + '/') if user['id'] else None | sjson, n },
+            userGravatar: ${ urls['gravatar'].replace('&amp;', '&') | sjson, n }
         },
         node: {
           urls: {
-            files: '${urls['files'] | js_str}'
+            files: ${ urls['files'] | sjson, n }
           }
         },
         panelsUsed: ['edit', 'view'],
         currentUser: {
-          canEdit: ${int(user['can_edit'])}
+          canEdit: ${ int(user['can_edit']) | sjson, n }
         }
       });
+      window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
     </script>
 
     <link href="/static/css/pages/file-view-page.css" rel="stylesheet">

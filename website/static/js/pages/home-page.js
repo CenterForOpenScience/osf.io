@@ -10,8 +10,21 @@ $( document ).ready(function() {
     $('.youtube').YouTubeModal({autoplay:1, width:640, height:480});
 });
 
+var waitForFinalEvent = (function () {
+    var timers = {};
+    return function (callback, ms, uniqueId) {
+        if (!uniqueId) {
+          uniqueId = 'Don\'t call this twice without a uniqueId';
+        }
+        if (timers[uniqueId]) {
+          clearTimeout (timers[uniqueId]);
+        }
+        timers[uniqueId] = setTimeout(callback, ms);
+    };
+})();
 
 (function() {
+
     var width;
     var height;
     var largeHeader;
@@ -20,6 +33,7 @@ $( document ).ready(function() {
     var points;
     var target;
     var animateHeader = true;
+
     // Main
     initHeader();
     initAnimation();
@@ -27,13 +41,16 @@ $( document ).ready(function() {
 
     function initHeader() {
         width = window.innerWidth;
-        height = '800';
-        target = {x: width/2, y: height/2};
+        height = 800;
+        target = {
+            x: width/2,
+            y: 300
+        };
 
         largeHeader = document.getElementById('home-hero');
 
-        canvas = document.getElementById('demo-canvas');
-        canvas.width = width - 20;
+        canvas = $('#demo-canvas')[0];
+        canvas.width = width;
         canvas.height = height;
         ctx = canvas.getContext('2d');
 
@@ -49,25 +66,25 @@ $( document ).ready(function() {
         }
 
         // for each point find the 5 closest points
-        for(var i = 0; i < points.length; i++) {
+        for (var i = 0; i < points.length; i++) {
             var closest = [];
             var p1 = points[i];
-            for(var j = 0; j < points.length; j++) {
+            for (var j = 0; j < points.length; j++) {
                 var p2 = points[j];
-                if(p1 !== p2) {
+                if (p1 !== p2) {
                     var placed = false;
-                    for(var k = 0; k < 5; k++) {
-                        if(!placed) {
+                    for (var k = 0; k < 5; k++) {
+                        if (!placed) {
                             if(closest[k] === undefined) {
                                 closest[k] = p2;
                                 placed = true;
                             }
                         }
                     }
-                    for(var l = 0; l < 5; l++) {
-                        if(!placed) {
-                            if(getDistance(p1, p2) < getDistance(p1, closest[l])) {
-                                closest[l] = p2;
+                    for (var m = 0; m < 5; m++) {
+                        if (!placed) {
+                            if (getDistance(p1, p2) < getDistance(p1, closest[m])) {
+                                closest[m] = p2;
                                 placed = true;
                             }
                         }
@@ -78,9 +95,9 @@ $( document ).ready(function() {
         }
 
         // assign a circle to each point
-        for(var m in points) {
-            var c = new Circle(points[m], 2+Math.random()*2, 'rgba(255,255,255,0.3)');
-            points[m].circle = c;
+        for(var n in points) {
+            var c = new Circle(points[n], 2+Math.random()*2, 'rgba(255,255,255,0.3)');
+            points[n].circle = c;
         }
     }
 
@@ -97,7 +114,7 @@ $( document ).ready(function() {
     }
 
     function scrollCheck() {
-        if(document.body.scrollTop > height) {
+        if (document.body.scrollTop > height) {
             animateHeader = false;
         } else {
             animateHeader = true;
@@ -105,8 +122,14 @@ $( document ).ready(function() {
     }
 
     function resize() {
-        target.x = window.innerWidth/2;
-        canvas.width = window.innerWidth - 20;
+        if (window.innerWidth > 990) {
+            waitForFinalEvent(function(){
+                $('#demo-canvas').remove();
+                $('#canvas-container').append('<canvas id="demo-canvas"></canvas>');
+                initHeader();
+                initAnimation();
+            }, 300, 'resize');
+        }
     }
 
     // animation
@@ -152,7 +175,7 @@ $( document ).ready(function() {
 
     // Canvas manipulation
     function drawLines(p) {
-        if(!p.active) {
+        if (!p.active) {
             return;
         }
         for(var i in p.closest) {
@@ -175,7 +198,7 @@ $( document ).ready(function() {
         })();
 
         this.draw = function() {
-            if(!self.active) {
+            if (!self.active) {
                 return;
             }
             ctx.beginPath();

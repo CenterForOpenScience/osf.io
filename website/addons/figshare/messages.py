@@ -15,15 +15,15 @@ BEFORE_FORK_NOT_OWNER = 'Because this figshare add-on has been authenticated by 
 
 AFTER_FORK_OWNER = 'figshare authorization copied to forked {category}. '
 
-AFTER_FORK_NOT_OWNER = 'figshare authorization not copied to forked {category}. You may authorize this fork on the <a href={url}>Settings</a> page. '
+AFTER_FORK_NOT_OWNER = 'figshare authorization not copied to forked {category}. You may authorize this fork on the <u><a href={url}>Settings</a></u> page. '
 
 BEFORE_REGISTER = 'The contents of figshare projects cannot be registered at this time. The figshare data associated with this {category} will not be included as part of this registration. '
 # END MODEL MESSAGES
 
 # MFR MESSAGES :views/crud.py
-FIGSHARE_VIEW_FILE_PRIVATE = 'Since this figshare file is unpublished we cannot render it. In order to access this content you will need to log into the <a href="{url}">figshare page</a> and view it there. '
+FIGSHARE_VIEW_FILE_PRIVATE = 'Since this figshare file is unpublished we cannot render it. In order to access this content you will need to log into the <u><a href="{url}">figshare page</a></u> and view it there. '
 
-FIGSHARE_VIEW_FILE_OVERSIZED = 'This figshare file is too large to render; <a href="{url}">download file</a> to view it. '
+FIGSHARE_VIEW_FILE_OVERSIZED = 'This figshare file is too large to render; <u><a href="{url}">download file</a></u> to view it. '
 
 '''
 Publishing this article is an irreversible operation. Once a figshare article is published it can never be deleted. Proceed with caution.

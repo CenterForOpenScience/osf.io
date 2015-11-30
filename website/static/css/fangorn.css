@@ -5,9 +5,9 @@
 }
 
 .alert-deleting {
-	background: #F5F5F5;
-color: #F00;
-text-align: center;
+  background: #F5F5F5;
+  color: #A94442;
+  text-align: center;
 }
 
 .tb-head {
@@ -28,6 +28,9 @@ text-align: center;
 }
 .fangorn-selected .text-muted {
     color: #eeeeee;
+}
+.fangorn-selected .text-danger {
+    color: #FFFFFF;
 }
 .fangorn-selected a {
 	color : white;
@@ -97,8 +100,8 @@ text-align: center;
 }
 .tb-notify {
 	white-space: nowrap;
-    height: 30px;
-    padding-top: 4px;
+  height: 34px;
+  padding-top: 4px;
 }
 
 .tb-row .progress {
@@ -112,6 +115,12 @@ text-align: center;
     vertical-align: middle;
 }
 
+.tb-private-row {
+    color: #888;
+}
+.fangorn-selected.tb-private-row {
+    color: #CCC;
+}
 .tb-expand-icon-holder > i {
 	font-size: 14px;
 	padding-left: 2px;
@@ -142,12 +151,6 @@ text-align: center;
 }
 .tb-modal-btn:hover {
 	background-color: #efefef;
-}
-.tb-modal-dismiss {
-  font-size: 24px;
-  margin-top: 4px;
-  margin-right: 11px;
-  cursor: pointer;
 }
 .tb-modal-footer {
 	padding: 10px 18px 16px 16px;
@@ -187,6 +190,9 @@ text-align: center;
     font-size: 13px;
     border-radius: 2px;
     margin-top: 4px;
+}
+a.fangorn-toolbar-icon {
+    text-decoration: none;
 }
 .fangorn-toolbar-icon .fa {
     font-size: 15px;

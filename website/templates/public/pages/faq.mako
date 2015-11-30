@@ -8,13 +8,13 @@
 <%def name="content()">
 <div class="nav-rows container">
     <div class="row">
-        <div class="col-sm-4 col-md-3 nav-list-spy">
-            <div data-spy="affix" class="gs-sidebar hidden-print hidden-xs panel panel-default" role="complementary">
-                <ul class="nav nav-stacked nav-pills gs-sidenav" style="min-width: 210px">
+        <div class="col-sm-4 affix-parent scrollspy col-md-3 nav-list-spy">
+            <div data-spy="affix" class="hidden-print hidden-xs panel panel-default affix osf-affix m-t-lg" data-offset-top="40" data-offset-bottom="268" role="complementary">
+                <ul class="nav nav-stacked nav-pills " style="min-width: 210px">
                     <li><a class="active" href="#about">About</a></li>
                     <li><a href="#using">Using the OSF</a></li>
-                    <li><a href="#security">Privacy and Security</a></li>
-                    <li><a href="#common">Common Issues</a></li>
+                    <li><a href="#security">Privacy and security</a></li>
+                    <li><a href="#common">Common issues</a></li>
                 </ul>
             </div>
         </div>
@@ -32,7 +32,7 @@
 
                     <h4 class="m-t-lg f-w-lg">How can it be free? How are you funded?</h4>
                         <p>The OSF is maintained and developed by the <a href="http://cos.io">Center for Open Science</a> (COS), a non-profit organization. COS is supported through grants from a variety of supporters, including <a href="http://centerforopenscience.org/about_sponsors/"> federal agencies, private foundations, and commercial entities</a>.</p>
-                    
+
                     <h4 class="m-t-lg f-w-lg">What if you run out of funding? What happens to my data?</h4>
                         <p>Data stored on the OSF is backed by a $250,000 preservation fund that will provide for persistence of your data, even if the Center for Open Science runs out of funding. The code base for the OSF is entirely <a href="https://github.com/CenterForOpenScience/osf.io">open source</a>, which enables other groups to continue maintaining and expanding it if we aren’t able to.</p>
 
@@ -84,7 +84,7 @@
             </div>
 
             <div id="security" class="anchor row">
-                <h2 class="text-center">Privacy and Security</h2>
+                <h2 class="text-center">Privacy and security</h2>
                     <h4 class="m-t-lg f-w-lg">What if I don't want to make anything available publicly in the OSF?</h4>
                         <p>
                             The OSF is designed to support both private and public workflows. You can
@@ -112,7 +112,7 @@
                         <p>You should refer to your institutional policies regarding specific security requirements for your research.</p>
 
                     <h4 class="m-t-lg f-w-lg">How can I license my data/code/etc.?</h4>
-                        <p>If you’d like to attach a license to your materials hosted on the OSF, you can put this information in your project’s wiki or upload a README file. Typically, users wish to license their materials using Creative Commons licenses. Information about Creative Commons licenses can be found <a href="https://creativecommons.org/licenses/">here.</a> </p>
+                        <p>To apply a license to your OSF project, visit the project's overview page and select one from the "License picker," below the project's description. You can select from a variety of commonly used licenses or upload your own.</p>
 
 
                     <h4 class="m-t-lg f-w-lg">How does the OSF store and backup files that I upload to the site?</h4>
@@ -121,11 +121,12 @@
                             <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>.
                             The OSF maintains several backup schemes, including off-site backups and
                             automated backups performed by our host every day, week, and fortnight.</p>
+                        <p>Rackspace and Amazon Glacier have their own methods to support data integrity (e.g., redundancy across 5+ locations), but the Open Science Framework takes the extra step of calculating multiple <a href="https://en.wikipedia.org/wiki/Checksum">checksums</a> and <a href="https://en.wikipedia.org/wiki/Parchive">parity archives</a> to account for even the most improbable errors.</p>
 
             </div>
 
             <div id="common" class="anchor row">
-                <h2 class="text-center">Common Issues</h2>
+                <h2 class="text-center">Common issues</h2>
                     <h4 class="m-t-lg f-w-lg">What do I do if I lost my email confirmation for OSF registration, or I never received it?</h4>
                         <p>Log into the OSF with the email address and password of the account you created, and there will be a link to resend the confirmation email.</p>
 
@@ -136,10 +137,13 @@
                         <p>Log into the account you wish to keep and navigate to your <a href="/settings/account/">account settings</a> page. There, enter the email address associated with your other OSF account. You will receive a confirmation link via email. Clicking the link will merge the projects and components into one account.</p>
 
                     <h4 class="m-t-lg f-w-lg">How do I deactivate my OSF account?</h4>
-                        <p>From your <a href="/settings/account/">account settings</a> page, you can request a deactivation of your OSF account. A member of the OSF admin must review your request and approve it. Once you deactivate your account, your account will no longer be associated with any OSF projects, and your work on the OSF will be inaccessible.</p>
+                        <p>From your <a href="/settings/account/">account settings</a> page, you can request a deactivation of your OSF account. A member of the OSF team will review your request and respond to confirm deactivation.</p>
 
                     <h4 class="m-t-lg f-w-lg">What is the difference between a component and a folder?</h4>
                         <p>A folder can be used to organize files within a project or component - just like a folder on your own computer groups files together. A component is like a sub-project to help you organize different parts of your research. Components have their own privacy and sharing settings as well as their own unique, persistent identifiers for citation, and their own wiki and add-ons. You can also register a component on its own, without registering the parent project.</p>
+
+                    <h4 class="m-t-lg f-w-lg">How do I delete a project or component?</h4>
+                        <p>To delete a project or component, navigate to the project or component and click on "Settings" in the gray navigation bar. There you will see a red "delete" button. You can only delete a project or component that does not contain other components, so you must delete any nested components first.</p>
 
                     <h4 class="m-t-lg f-w-lg">How do I move a file from one storage add-on to another? Or one component to another?</h4>
                         <p>You can move files between components and add-ons, provided the components and add-ons are a part of the same project, by simply dragging and dropping from within the files widget of the project overview page or the Files tab. The Dataverse add-on does not currently support this feature.</p>

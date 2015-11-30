@@ -12,6 +12,7 @@ from datetime import timedelta
 
 os_env = os.environ
 
+
 def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
@@ -30,9 +31,10 @@ BCRYPT_LOG_ROUNDS = 12
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
-# Hours before pending embargo/retraction automatically becomes active
+# Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
+REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
@@ -71,12 +73,11 @@ SHARE_ELASTIC_INDEX = 'share'
 SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
-# TODO: Override SECRET_KEY in local.py in production
+# TODO: Override OSF_COOKIE_DOMAIN in local.py in production
+OSF_COOKIE_DOMAIN = None
 COOKIE_NAME = 'osf'
+# TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
-
-# TODO: Remove after migration to OSF Storage
-COPY_GIT_REPOS = False
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None
@@ -101,6 +102,16 @@ MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
 ENABLE_EMAIL_SUBSCRIPTIONS = True
 MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
+
+#Triggered emails
+OSF_HELP_LIST = 'Open Science Framework Help'
+WAIT_BETWEEN_MAILS = timedelta(days=7)
+NO_ADDON_WAIT_TIME = timedelta(weeks=8)
+NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
+WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)
+NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
+NEW_PUBLIC_PROJECT_WAIT_TIME = timedelta(hours=24)
+WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
@@ -136,19 +147,19 @@ SESSION_HISTORY_IGNORE_RULES = [
 
 # TODO: Configuration should not change between deploys - this should be dynamic.
 CANONICAL_DOMAIN = 'openscienceframework.org'
-COOKIE_DOMAIN = '.openscienceframework.org' # Beaker
+COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
 COMMENT_MAXLENGTH = 500
 
-# Gravatar options
-GRAVATAR_SIZE_PROFILE = 70
-GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
-GRAVATAR_SIZE_DISCUSSION = 20
+# Profile image options
+PROFILE_IMAGE_LARGE = 70
+PROFILE_IMAGE_MEDIUM = 40
+PROFILE_IMAGE_SMALL = 20
 
 # Conference options
-CONFERNCE_MIN_COUNT = 5
+CONFERENCE_MIN_COUNT = 5
 
 WIKI_WHITELIST = {
     'tags': [
@@ -174,23 +185,6 @@ WIKI_WHITELIST = {
         'list-style',
     ]
 }
-
-##### Celery #####
-## Default RabbitMQ broker
-BROKER_URL = 'amqp://'
-
-# Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
-
-# Modules to import when celery launches
-CELERY_IMPORTS = (
-    'framework.tasks',
-    'framework.tasks.signals',
-    'framework.email.tasks',
-    'framework.analytics.tasks',
-    'website.mailchimp_utils',
-    'scripts.send_digest'
-)
 
 # Add-ons
 # Load addons from addons.json
@@ -238,8 +232,8 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 # and uploads in order to save disk space.
 DISK_SAVING_MODE = False
 
-# Add Contributors (most in common)
-MAX_MOST_IN_COMMON_LENGTH = 15
+# Seconds before another notification email can be sent to a contributor when added to a project
+CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
@@ -279,4 +273,53 @@ MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
 
 ENABLE_ARCHIVER = True
-###########################
+
+JWT_SECRET = 'changeme'
+JWT_ALGORITHM = 'HS256'
+
+##### CELERY #####
+
+# Default RabbitMQ broker
+BROKER_URL = 'amqp://'
+
+# Default RabbitMQ backend
+CELERY_RESULT_BACKEND = 'amqp://'
+
+#  Modules to import when celery launches
+CELERY_IMPORTS = (
+    'framework.tasks',
+    'framework.tasks.signals',
+    'framework.email.tasks',
+    'framework.analytics.tasks',
+    'website.mailchimp_utils',
+    'website.notifications.tasks',
+    'website.archiver.tasks',
+    'website.search.search',
+)
+
+# celery.schedule will not be installed when running invoke requirements the first time.
+try:
+    from celery.schedules import crontab
+except ImportError:
+    pass
+else:
+    #  Setting up a scheduler, essentially replaces an independent cron job
+    CELERYBEAT_SCHEDULE = {
+        '5-minute-emails': {
+            'task': 'notify.send_users_email',
+            'schedule': crontab(minute='*/5'),
+            'args': ('email_transactional',),
+        },
+        'daily-emails': {
+            'task': 'notify.send_users_email',
+            'schedule': crontab(minute=0, hour=0),
+            'args': ('email_digest',),
+        },
+    }
+
+WATERBUTLER_JWE_SALT = 'yusaltydough'
+WATERBUTLER_JWE_SECRET = 'CirclesAre4Squares'
+
+WATERBUTLER_JWT_SECRET = 'ILiekTrianglesALot'
+WATERBUTLER_JWT_ALGORITHM = 'HS256'
+WATERBUTLER_JWT_EXPIRATION = 15

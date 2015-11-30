@@ -13,6 +13,7 @@ from framework.auth.decorators import collect_auth
 from framework.mongo.utils import get_or_http_error
 
 from website.models import Node
+from website import settings
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
@@ -52,6 +53,24 @@ def _kwargs_to_nodes(kwargs):
 def _inject_nodes(kwargs):
     kwargs['parent'], kwargs['node'] = _kwargs_to_nodes(kwargs)
 
+
+def must_not_be_rejected(func):
+    """Ensures approval/disapproval requests can't reach Sanctions that have
+    already been rejected.
+    """
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+
+        node = get_or_http_error(Node, kwargs.get('nid', kwargs.get('pid')), allow_deleted=True)
+        if node.sanction and node.sanction.is_rejected:
+            raise HTTPError(http.GONE, data=dict(
+                message_long="This registration has been rejected"
+            ))
+
+        return func(*args, **kwargs)
+
+    return wrapped
 
 def must_be_valid_project(func=None, retractions_valid=False):
     """ Ensures permissions to retractions are never implicitly granted. """
@@ -108,7 +127,7 @@ def must_not_be_registration(func):
         _inject_nodes(kwargs)
         node = kwargs['node']
 
-        if not node.archiving and node.is_registration:
+        if node.is_registration and not node.archiving:
             raise HTTPError(
                 http.BAD_REQUEST,
                 data={
@@ -151,7 +170,7 @@ def check_can_access(node, user, key=None, api_node=None):
         return False
     if not node.can_view(Auth(user=user)) and api_node != node:
         if key in node.private_link_keys_deleted:
-            status.push_status_message("The view-only links you used are expired.")
+            status.push_status_message("The view-only links you used are expired.", trust=False)
         raise HTTPError(http.FORBIDDEN)
     return True
 
@@ -328,4 +347,36 @@ def must_have_permission(permission):
         return wrapped
 
     # Return decorator
+    return wrapper
+
+def must_have_write_permission_or_public_wiki(func):
+    """ Checks if user has write permission or wiki is public and publicly editable. """
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        # Ensure `project` and `node` kwargs
+        _inject_nodes(kwargs)
+
+        wiki = kwargs['node'].get_addon('wiki')
+
+        if wiki and wiki.is_publicly_editable:
+            return func(*args, **kwargs)
+        else:
+            return must_have_permission('write')(func)(*args, **kwargs)
+
+    # Return decorated function
+    return wrapped
+
+def http_error_if_disk_saving_mode(func):
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        _inject_nodes(kwargs)
+        node = kwargs['node']
+
+        if settings.DISK_SAVING_MODE:
+            raise HTTPError(
+                http.METHOD_NOT_ALLOWED,
+                redirect_url=node.url
+            )
+        return func(*args, **kwargs)
     return wrapper

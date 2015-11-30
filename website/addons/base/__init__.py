@@ -4,27 +4,22 @@ import glob
 import importlib
 import mimetypes
 from bson import ObjectId
-from flask import request
 from modularodm import fields
 from mako.lookup import TemplateLookup
 from time import sleep
 
-import furl
 import requests
 from modularodm import Q
-from modularodm.storage.base import KeyExistsException
 
-from framework.sessions import session
+from framework.auth.decorators import must_be_logged_in
 from framework.mongo import StoredObject
 from framework.routing import process_rules
-from framework.guid.model import GuidStoredObject
 from framework.exceptions import (
     PermissionsError,
     HTTPError,
 )
 
 from website import settings
-from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
 from website.util import waterbutler_url_for
@@ -50,10 +45,6 @@ lookup = TemplateLookup(
     ]
 )
 
-STATUS_EXCEPTIONS = {
-    410: exceptions.FileDeletedError,
-    404: exceptions.FileDoesntExistError
-}
 
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
@@ -203,177 +194,6 @@ class AddonConfig(object):
     @property
     def path(self):
         return os.path.join(settings.BASE_PATH, self.short_name)
-
-
-class GuidFile(GuidStoredObject):
-
-    _metadata_cache = None
-    _id = fields.StringField(primary=True)
-    node = fields.ForeignField('node', required=True, index=True)
-
-    _meta = {
-        'abstract': True,
-    }
-
-    @classmethod
-    def get_or_create(cls, **kwargs):
-        try:
-            obj = cls(**kwargs)
-            obj.save()
-            return obj, True
-        except KeyExistsException:
-            obj = cls.find_one(
-                reduce(
-                    lambda acc, query: acc & query,
-                    (Q(key, 'eq', value) for key, value in kwargs.iteritems())
-                )
-            )
-            return obj, False
-
-    @property
-    def provider(self):
-        raise NotImplementedError
-
-    @property
-    def waterbutler_path(self):
-        '''The waterbutler formatted path of the specified file.
-        Must being with a /
-        '''
-        raise NotImplementedError
-
-    @property
-    def guid_url(self):
-        return '/{0}/'.format(self._id)
-
-    @property
-    def name(self):
-        try:
-            return self._metadata_cache['name']
-        except (TypeError, KeyError):
-            # If name is not in _metadata_cache or metadata_cache is None
-            raise AttributeError('No attribute name')
-
-    @property
-    def size(self):
-        try:
-            return self._metadata_cache['size']
-        except (TypeError, KeyError):
-            raise AttributeError('No attribute size')
-
-    @property
-    def materialized(self):
-        try:
-            return self._metadata_cache['materialized']
-        except (TypeError, KeyError):
-            # If materialized is not in _metadata_cache or metadata_cache is None
-            raise AttributeError('No attribute materialized')
-
-    @property
-    def joinable_path(self):
-        return self.waterbutler_path.lstrip('/')
-
-    @property
-    def _base_butler_url(self):
-        url = furl.furl(settings.WATERBUTLER_URL)
-        url.args.update({
-            'nid': self.node._id,
-            'provider': self.provider,
-            'path': self.waterbutler_path,
-        })
-
-        if session and 'auth_user_access_token' in session.data:
-            url.args.add('token', session.data.get('auth_user_access_token'))
-
-        if request.args.get('view_only'):
-            url.args['view_only'] = request.args['view_only']
-
-        if self.revision:
-            url.args[self.version_identifier] = self.revision
-
-        return url
-
-    @property
-    def download_url(self):
-        url = self._base_butler_url
-        url.path.add('file')
-        return url.url
-
-    @property
-    def mfr_render_url(self):
-        url = furl.furl(settings.MFR_SERVER_URL)
-        url.path.add('render')
-        url.args['url'] = self.mfr_public_download_url
-        return url.url
-
-    @property
-    def mfr_public_download_url(self):
-        url = furl.furl(settings.DOMAIN)
-
-        url.path.add(self._id + '/')
-        url.args['mode'] = 'render'
-        url.args['action'] = 'download'
-        url.args['accept_url'] = 'false'
-
-        if self.revision:
-            url.args[self.version_identifier] = self.revision
-
-        if request.args.get('view_only'):
-            url.args['view_only'] = request.args['view_only']
-
-        return url.url
-
-    @property
-    def metadata_url(self):
-        url = self._base_butler_url
-        url.path.add('data')
-
-        return url.url
-
-    @property
-    def deep_url(self):
-        if self.node is None:
-            raise ValueError('Node field must be defined.')
-
-        url = os.path.join(
-            self.node.deep_url,
-            'files',
-            self.provider,
-            self.joinable_path
-        )
-
-        if url.endswith('/'):
-            return url
-        else:
-            return url + '/'
-
-    @property
-    def revision(self):
-        return getattr(self, '_revision', None)
-
-    def maybe_set_version(self, **kwargs):
-        self._revision = kwargs.get(self.version_identifier)
-
-    # TODO: why save?, should_raise or an exception try/except?
-    def enrich(self, save=True):
-        self._fetch_metadata(should_raise=True)
-
-    def _exception_from_response(self, response):
-        if response.ok:
-            return
-
-        if response.status_code in STATUS_EXCEPTIONS:
-            raise STATUS_EXCEPTIONS[response.status_code]
-
-        raise exceptions.AddonEnrichmentError(response.status_code)
-
-    def _fetch_metadata(self, should_raise=False):
-        # Note: We should look into caching this at some point
-        # Some attributes may change however.
-        resp = requests.get(self.metadata_url)
-
-        if should_raise:
-            self._exception_from_response(resp)
-        self._metadata_cache = resp.json()['data']
 
 
 class AddonSettingsBase(StoredObject):
@@ -550,13 +370,23 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         self.save()
 
-    def revoke_oauth_access(self, external_account):
+    @must_be_logged_in
+    def revoke_oauth_access(self, external_account, auth):
         """Revoke all access to an ``ExternalAccount``.
 
         TODO: This should accept node and metadata params in the future, to
             allow fine-grained revocation of grants. That's not yet been needed,
             so it's not yet been implemented.
         """
+        for node in self.get_nodes_with_oauth_grants(external_account):
+            try:
+                addon_settings = node.get_addon(external_account.provider)
+            except AttributeError:
+                # No associated addon settings despite oauth grant
+                pass
+            else:
+                addon_settings.deauthorize(auth=auth)
+
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
 
@@ -592,11 +422,10 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
     def get_nodes_with_oauth_grants(self, external_account):
         # Generator of nodes which have grants for this external account
-        return (
-            Node.load(node_id)
-            for node_id, grants in self.oauth_grants.iteritems()
-            if external_account._id in grants.keys()
-        )
+        for node_id, grants in self.oauth_grants.iteritems():
+            node = Node.load(node_id)
+            if external_account._id in grants.keys() and not node.is_deleted:
+                yield node
 
     def get_attached_nodes(self, external_account):
         for node in self.get_nodes_with_oauth_grants(external_account):
@@ -771,14 +600,42 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
     def before_fork(self, node, user):
-        """
-
+        """Return warning text to display if user auth will be copied to a
+        fork.
         :param Node node:
-        :param User user:
-        :returns: Alert message
-
+        :param Uder user
+        :returns Alert message
         """
-        pass
+
+        if hasattr(self, "user_settings"):
+            if self.user_settings is None:
+                return (
+                    u'Because you have not configured the authorization for this {addon} add-on, this '
+                    u'{category} will not transfer your authentication to '
+                    u'the forked {category}.'
+                ).format(
+                    addon=self.config.full_name,
+                    category=node.project_or_component,
+                )
+
+            elif self.user_settings and self.user_settings.owner == user:
+                return (
+                    u'Because you have authorized the {addon} add-on for this '
+                    u'{category}, forking it will also transfer your authentication to '
+                    u'the forked {category}.'
+                ).format(
+                    addon=self.config.full_name,
+                    category=node.project_or_component,
+                )
+            else:
+                return (
+                    u'Because the {addon} add-on has been authorized by a different '
+                    u'user, forking it will not transfer authentication to the forked '
+                    u'{category}.'
+                ).format(
+                    addon=self.config.full_name,
+                    category=node.project_or_component,
+                )
 
     def after_fork(self, node, fork, user, save=True):
         """
@@ -949,6 +806,14 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
         self.save()
 
+    def deauthorize(self, auth=None, add_log=False):
+        """Remove authorization from this node.
+
+        This method should be overridden for addon-specific behavior,
+        such as logging and clearing non-generalizable settings.
+        """
+        self.clear_auth()
+
     def clear_auth(self):
         """Disconnect the node settings from the user settings.
 
@@ -999,35 +864,10 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
-
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                u'Because you have authorized the {addon} add-on for this '
-                u'{category}, forking it will also transfer your authentication token to '
-                u'the forked {category}.'
-            ).format(
-                addon=self.config.full_name,
-                category=node.project_or_component,
-            )
-        return (
-            u'Because the {addon} add-on has been authorized by a different '
-            u'user, forking it will not transfer authentication token to the forked '
-            u'{category}.'
-        ).format(
-            addon=self.config.full_name,
-            category=node.project_or_component,
-        )
-
-    # backwards compatibility
-    before_fork = before_fork_message
 
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized
@@ -1050,7 +890,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         else:
             message = (
                 u'{addon} authorization not copied to forked {category}. You may '
-                u'authorize this fork on the <a href="{url}">Settings</a> '
+                u'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 u'page.'
             ).format(
                 addon=self.config.full_name,

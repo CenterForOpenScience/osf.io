@@ -31,7 +31,7 @@
                 </div>
 
             <div class="form-group">
-                <label>Automatic Forward: <input type="radio" name="forward"  data-bind="checked: redirectBool, checkedValue: true"/> &nbsp;Yes &nbsp;&nbsp;</label>
+                <label>Automatic Forward:&nbsp;<input type="radio" name="forward"  data-bind="checked: redirectBool, checkedValue: true"/> &nbsp;Yes &nbsp;&nbsp;</label>
                 <label><input type="radio" name="forward"  data-bind="checked: redirectBool, checkedValue: false"/> &nbsp;No &nbsp;&nbsp; </label>
             </div>
 

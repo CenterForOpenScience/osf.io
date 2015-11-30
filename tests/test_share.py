@@ -16,21 +16,18 @@ STANDARD_RETURN_VALUE = {
             "_source": {
                 "description": "Jobbers and society.",
                 "contributors": [{
-                    "given": "Zachary",
-                    "suffix": "",
-                    "family": "Ryder",
-                    "middle": "Woo Woo Woo",
-                    "prefix": "",
-                    "ORCID": "",
-                    "email": ""
+                    "name": "Zachary Ryder",
+                    "givenName": "Zachary",
+                    "familyName": "Ryder",
+                    "additionalNames": ["Woo Woo Woo"],
+                    "email": "",
+                    "sameAs": []
                 }],
                 "title": "Am I Still Employed",
-                "source": "squaredcircle",
-                "dateUpdated": "2014-11-24T00:00:00",
-                "id": {
-                    "url": "http://squaredcircle.com/zackryder/woowoowoo",
-                    "serviceID": "123456",
-                    "doi": "10.123/wrestlingDOIs"
+                "providerUpdatedDateTime": "2014-11-24T00:00:00",
+                "uris": {
+                    "canonicalUri": "http://squaredcircle.com/zackryder/woowoowoo",
+                    "objectUris": ["10.123/wrestlingDOIs"]
                 },
                 "tags": ['woo', 'woo', 'woo'],
             },
@@ -42,20 +39,13 @@ STANDARD_RETURN_VALUE = {
             "_source": {
                 "description": "Unlocking the universe with the Cosmic Key",
                 "contributors": [{
-                    "given": "Star",
-                    "suffix": "",
-                    "family": "Dust",
-                    "middle": "",
-                    "prefix": "",
-                    "ORCID": "",
-                    "email": ""
+                    "name": "Star Dust",
+                    "givenName": "Star",
+                    "familyName": "Dust",
                 }],
-                "source": "squaredcircle",
-                "dateUpdated": "2014-11-27T00:00:00",
-                "id": {
-                    "url": "http://squaredcircle.com/stardust/hisssssss",
-                    "serviceID": "12346",
-                    "doi": "10.123/wrestlingDOIs"
+                "providerUpdatedDateTime": "2014-11-27T00:00:00",
+                "uris": {
+                    "canonicalUri": "http://squaredcircle.com/stardust/hisssssss"
                 },
                 "tags": ['cody', 'is', 'noone']
             },

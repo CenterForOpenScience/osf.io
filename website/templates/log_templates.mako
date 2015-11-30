@@ -4,6 +4,7 @@
 ## log templates. An addon's log templates are located in
 ## website/addons/<addon_name>/templates/log_templates.mako.
 
+## Embargo related logs
 <script type="text/html" id="embargo_approved">
 approved embargo of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -16,7 +17,7 @@ Embargo for
 
 <script type="text/html" id="embargo_cancelled">
 cancelled embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="embargo_completed">
@@ -34,6 +35,7 @@ initiated an embargoed registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+## Retraction related logs
 <script type="text/html" id="retraction_approved">
 approved retraction of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -41,7 +43,7 @@ approved retraction of
 
 <script type="text/html" id="retraction_cancelled">
 cancelled retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
@@ -49,6 +51,28 @@ initiated retraction of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+## Registration related Logs
+<script type="text/html" id="registration_initiated">
+initiated registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="registration_cancelled">
+cancelled registration of
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+</script>
+
+<script type="text/html" id="registration_approved">
+approved registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle , attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="registration_approved_no_user">
+Registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> approved
+</script>
+
+## Project related logs
 <script type="text/html" id="project_created">
 created
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -61,7 +85,9 @@ deleted
 
 <script type="text/html" id="created_from">
 created
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> based on <a class="log-node-title-link overflow" data-bind="attr: {href: params.template_node.url}">another</a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+based on <a class="log-node-title-link overflow"
+data-bind="text: params.template_node.title || 'another', attr: {href: params.template_node.url}"></a>
 </script>
 
 <script type="text/html" id="node_created">
@@ -114,11 +140,11 @@ made
 
 <script type="text/html" id="tag_added">
 tagged
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> as <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> as <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 </script>
 
 <script type="text/html" id="tag_removed">
-removed tag <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+removed tag <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
@@ -126,12 +152,16 @@ from
 <script type="text/html" id="edit_title">
 changed the title from <span class="overflow" data-bind="text: params.title_original"></span>
 to
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{{ params.title_new }}}</a>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ params.title_new }}</a>
 </script>
 
 <script type="text/html" id="project_registered">
 registered
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="project_registered_no_user">
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> registered
 </script>
 
 <script type="text/html" id="node_forked">
@@ -141,6 +171,10 @@ created fork from
 
 <script type="text/html" id="edit_description">
 edited description of  <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="license_changed">
+updated the license of <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="updated_fields">
@@ -213,13 +247,13 @@ invisible on
 <script type="text/html" id="addon_file_copied">
   {{#if params.source.materialized.endsWith('/')}}
     copied <span class="overflow log-folder">{{ params.source.materialized }}</span> from {{ params.source.addon }} in
-    <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{{ params.source.node.title }}}</a>
+    <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
     to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
     <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/if}}
   {{#ifnot params.source.materialized.endsWith('/')}}
     copied <a href="{{ params.source.url }}" class="overflow">{{ params.source.materialized }}</a> from {{ params.source.addon }} in
-    <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{{ params.source.node.title }}}</a>
+    <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
     to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
     <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/ifnot}}
@@ -228,22 +262,33 @@ invisible on
 <script type="text/html" id="addon_file_moved">
   {{#if params.source.materialized.endsWith('/')}}
   moved <span class="overflow">{{ params.source.materialized }}</span> from {{ params.source.addon }} in
-  <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{{ params.source.node.title }}}</a>
+  <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
   to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
   <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/if}}
   {{#ifnot params.source.materialized.endsWith('/')}}
   moved <span class="overflow">{{ params.source.materialized }}</span> from {{ params.source.addon }} in
-  <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{{ params.source.node.title }}}</a>
+  <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
   to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
   <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/ifnot}}
 </script>
 
+<script type="text/html" id="addon_file_renamed">
+    renamed <span class="overflow">{{ params.source.materialized }}</span>
+  {{#if params.source.materialized.endsWith('/')}}
+  to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
+  {{/if}}
+  {{#ifnot params.source.materialized.endsWith('/')}}
+  to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
+  {{/ifnot}}
+    <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
 <script type="text/html" id="external_ids_added">
 created external identifiers
-<a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'doi:' + params.identifiers.doi"></a> and
-<a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'ark:' + params.identifiers.ark"></a>
+<span data-bind="text: 'doi:' + params.identifiers.doi"></span> and
+<span data-bind="text: 'ark:' + params.identifiers.ark"></span>
 on
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>

@@ -1,6 +1,6 @@
 <h3>${full_name} Add-on Terms</h3>
 
-<table class="table table-bordered">
+<table class="table table-bordered table-addon-terms">
 
     <thead>
         <tr>

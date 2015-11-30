@@ -47,7 +47,15 @@
     <script type="text/javascript">
         // Show capabilities modal on addon widget help
         $('.addon-capabilities').on('click', function() {
-            bootbox.alert($('#capabilities').html());
+            bootbox.alert({
+                message:$('#capabilities').html(),
+                buttons:{
+                    ok:{
+                        label:'Close',
+                        className:'btn-default'
+                    }
+                }
+            });
         });
     </script>
 

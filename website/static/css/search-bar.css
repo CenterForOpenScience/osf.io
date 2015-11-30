@@ -18,7 +18,7 @@
     box-shadow: 0 0 9px -2px #464545;
     left: 0;
     top: 50px;
-    z-index: 1028;
+    z-index: 1030; /* Should not less than 1030 */
 }
 
 .osf-search-input {

@@ -4,28 +4,21 @@
 }
 
 span.edit-profile-settings {
-    display: block;
-    position: absolute;
-    bottom: 0;
-    right: 0;
+    float:right;
 }
 
 div.profile-fullname{
     display: block;
-    position: relative;
     bottom: 0;
 }
 
 span#profileFullname{
-    position: absolute;
-    bottom: 0;
-    margin-bottom: 20px;
+    display: block;
 }
 
 .pointer {cursor: pointer;}
 
 table.table.table-plain th, table.table.table-plain td {
-  text-align: left;
   border-top: 0px solid #ddd;
 }
 
@@ -36,6 +29,12 @@ table.table.table-plain th, table.table.table-plain td {
 /* Profile gravatar
 -------------------------------------------------- */
 .profile-gravatar {
+    float: left;
     width:70px;
     height:70px;
+    margin-right: .5em;
+}
+
+#social td:first-child {
+    word-break: break-all;
 }

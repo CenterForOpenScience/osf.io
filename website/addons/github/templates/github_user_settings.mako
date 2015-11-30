@@ -6,9 +6,7 @@
         <small class="authorized-by">
             % if authorized:
                     authorized by
-                    <a href="https://github.com/${authorized_github_user}" target="_blank">
                         <em>${authorized_github_user}</em>
-                    </a>
                 <a id="githubDelKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
             % else:
                 <a id="githubAddKey" class="text-primary pull-right addon-auth">

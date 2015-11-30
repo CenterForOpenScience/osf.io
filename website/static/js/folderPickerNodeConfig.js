@@ -9,6 +9,8 @@ require('knockout.punches');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+var m = require('mithril');
+
 
 var FolderPicker = require('js/folderpicker');
 var ZeroClipboard = require('zeroclipboard');
@@ -82,8 +84,8 @@ var FolderPickerViewModel = oop.defclass({
             invalidCredOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
                     'this time. The credentials associated with this ' + self.addonName + ' account may no longer be valid.' +
-                    ' Try disconnecting and reconnecting the ' + self.addonName + 'account on your <a href="' +
-                    self.urls().settings + 'addons/">account settings page</a>.';
+                    ' Try disconnecting and reconnecting the ' + self.addonName + ' account on your <a href="' +
+                    self.urls().settings + '">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
@@ -102,13 +104,16 @@ var FolderPickerViewModel = oop.defclass({
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
-                return 'Disconnect ' + self.addonName + '.';
+                return 'Disconnected ' + self.addonName + '.';
             }),
             deauthorizeFail: ko.pureComputed(function() {
                 return 'Could not disconnect ' + self.addonName + ' account because of an error. Please try again later.';
             }),
             connectAccountSuccess: ko.pureComputed(function() {
                 return 'Successfully connected a ' + self.addonName + ' account';
+            }),
+            connectAccountDenied: ko.pureComputed(function() {
+                return 'Error while authorizing addon. Please log in to your ' + self.addonName + ' account and grant access to the OSF to enable this addon.';
             }),
             submitSettingsSuccess: ko.pureComputed(function() {
                 throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +
@@ -174,13 +179,14 @@ var FolderPickerViewModel = oop.defclass({
         self.folderName = ko.pureComputed(function() {
             var nodeHasAuth = self.nodeHasAuth();
             var folder = self.folder();
-            return (nodeHasAuth && folder && folder.name) ? folder.name.trim() : '';
+            return (nodeHasAuth && folder && folder.name) ? decodeURIComponent(folder.name.trim()) : '';
         });
 
         self.selectedFolderName = ko.pureComputed(function() {
             var userIsOwner = self.userIsOwner();
             var selected = self.selected();
-            var name = selected.name || 'None';
+            var name = selected.name ? decodeURIComponent(selected.name) : 'None';
+            name = name.replace('All Files', 'Full ' + addonName);
             return userIsOwner ? name : '';
         });
 
@@ -277,7 +283,7 @@ var FolderPickerViewModel = oop.defclass({
             ret.resolve(response.result);
         });
         request.fail(function(xhr, textStatus, error) {
-            self.changeMessage(self.messages.cantRetrieveSettings(), 'text-warning');
+            self.changeMessage(self.messages.cantRetrieveSettings(), 'text-danger');
             Raven.captureMessage('Could not GET ' + self.addonName + 'settings', {
                 url: self.url,
                 textStatus: textStatus,
@@ -315,11 +321,12 @@ var FolderPickerViewModel = oop.defclass({
             .fail(onSubmitError);
     },
     onImportSuccess: function(response) {
-        var self = this;
+        var self = this;       
         var msg = response.message || self.messages.tokenImportSuccess();
         // Update view model based on response
         self.changeMessage(msg, 'text-success', 3000);
         self.updateFromData(response.result);
+        self.loadedFolders(false);
         self.activatePicker();
     },
     onImportError: function(xhr, status, error) {
@@ -352,6 +359,11 @@ var FolderPickerViewModel = oop.defclass({
                 if (confirmed) {
                     self._importAuthConfirm();
                     self.loadingImport(true);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Import'
                 }
             }
         });
@@ -396,6 +408,12 @@ var FolderPickerViewModel = oop.defclass({
                 if (confirmed) {
                     self._deauthorizeConfirm();
                     self.loadingImport(false);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Disconnect',
+                    className:'btn-danger'
                 }
             }
         });
@@ -451,7 +469,7 @@ var FolderPickerViewModel = oop.defclass({
             ajaxOptions: {
                 error: function(xhr, textStatus, error) {
                     self.loading(false);
-                    self.changeMessage(self.messages.connectError(), 'text-warning');
+                    self.changeMessage(self.messages.connectError(), 'text-danger');
                     Raven.captureMessage('Could not GET get ' + self.addonName + ' contents.', {
                         textStatus: textStatus,
                         error: error
@@ -463,6 +481,25 @@ var FolderPickerViewModel = oop.defclass({
                 self.loading(false);
                 // Set flag to prevent repeated requests
                 self.loadedFolders(true);
+            },
+            resolveRows: function(item) {
+                item.css = '';
+                return [
+                {
+                    data : 'name',  // Data field name
+                    folderIcons : true,
+                    filter : false,
+                    custom : function(item, col) {
+                        //This is bad, but probably necessary. GoogleDrive returns URI encoded folder names, but (most/all?) others don't
+                        return m('span', decodeURIComponent(item.data.name));
+                    }
+                },
+                {
+                    css : 'p-l-xs',
+                    sortInclude : false,
+                    custom : FolderPicker.selectView
+                }
+            ];
             }
         }, self.treebeardOptions);
         self.currentDisplay(self.PICKER);

@@ -143,6 +143,12 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
                                     $osf.handleJSONError
                                 );
                             }
+                        },
+                        buttons:{
+                            confirm:{
+                                label:'Delete',
+                                className:'btn-danger'
+                            }
                         }
                     });
                 }).fail(
@@ -268,6 +274,8 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                     'error'
                 )
             );
+        } else {
+            self.messages([]);
         }
     });
 
@@ -372,6 +380,12 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                         );
                         self.forceSubmit(false);
                     });
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Save',
+                    className:'btn-success'
                 }
             }
         });

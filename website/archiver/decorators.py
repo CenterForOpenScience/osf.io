@@ -6,6 +6,7 @@ from website.project.decorators import _inject_nodes
 from website.archiver import ARCHIVER_NETWORK_ERROR
 from website.archiver import signals
 
+
 def fail_archive_on_error(func):
 
     @functools.wraps(func)

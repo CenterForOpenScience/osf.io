@@ -37,7 +37,7 @@ function ViewModel(url) {
                 self.changeMessage('Could not retrieve Dropbox settings at ' +
                     'this time. The Dropbox addon credentials may no longer be valid.' +
                     ' Please delete your access token and create a new one.',
-                    'text-warning');
+                    'text-danger');
             } else if (self.userHasAuth() && self.nNodesAuthorized === 0) {
                 self.changeMessage('Add-on successfully authorized. To link this add-on to an OSF project, ' +
                     'go to the settings page of the project, enable Dropbox, and choose content to connect.',
@@ -47,7 +47,7 @@ function ViewModel(url) {
         error: function(xhr, textStatus, error){
             self.changeMessage('Could not retrieve settings. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.', 'text-warning');
+                'problem persists.', 'text-danger');
             Raven.captureMessage('Could not GET Dropbox settings', {
                 url: url,
                 textStatus: textStatus,
@@ -96,11 +96,17 @@ function ViewModel(url) {
     /** Pop up confirm dialog for deleting user's access token. */
     self.deleteKey = function() {
         bootbox.confirm({
-            title: 'Delete Dropbox Token?',
+            title: 'Disconnect Dropbox Account?',
             message: language.confirmDeauth,
             callback: function(confirmed) {
                 if (confirmed) {
                     sendDeauth();
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Disconnect',
+                    className:'btn-danger'
                 }
             }
         });

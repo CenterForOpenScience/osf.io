@@ -54,6 +54,12 @@ var ExternalAccount = oop.defclass({
                 if (confirm) {
                     self._deauthorizeNodeConfirm(node);
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove',
+                    className:'btn-danger'
+                }
             }
         });
     }
@@ -76,22 +82,34 @@ var OAuthAddonSettingsViewModel = oop.defclass({
     connectAccount: function() {
         var self = this;
         window.oauthComplete = function() {
-            self.updateAccounts();
-            self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', 'text-success');
+            self.setMessage('');
+            var accountCount = self.accounts().length;
+            self.updateAccounts().done( function() {
+                (self.accounts().length > accountCount) ?
+                    self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', 'text-success') :
+                    self.setMessage('Error while authorizing addon. Please log in to your ' + self.properName + ' account and grant access to the OSF to enable this addon.', 'text-danger');
+                });
         };
         window.open('/oauth/connect/' + self.name + '/');
     },
     askDisconnect: function(account) {
         var self = this;
         bootbox.confirm({
-            title: 'Delete account?',
+            title: 'Disconnect Account?',
             message: '<p class="overflow">' +
-                'Are you sure you want to delete account <strong>' +
-                account.name + '</strong>?' +
+                'Are you sure you want to disconnect the ' + self.properName + ' account <strong>' +
+                account.name + '</strong>? This will revoke access to ' + self.properName + ' for all projects you have authorized.' +
                 '</p>',
             callback: function(confirm) {
                 if (confirm) {
                     self.disconnectAccount(account);
+                    self.setMessage('');
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Disconnect',
+                    className:'btn-danger'
                 }
             }
         });

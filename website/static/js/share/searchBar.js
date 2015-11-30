@@ -17,13 +17,14 @@ SearchBar.view = function(ctrl) {
                         'text-align': 'center'
                     }
             }, [
-                m('img[src=/static/img/share-logo-icon.png]', {
+                m('img', {
+                    src: '/static/img/share-logo-icon.png',
+                    alt: 'SHARE logo image',
                     style: {
                         height: 'auto',
                         'max-width': '15%',
                         '-webkit-animation-duration': '3s'
                     },
-                    // class: 'animated pulse'
                 }),
                 m('span.about-share-header', 'SHARE'),
                 m('div', {style: {color: 'darkgrey'}}, m('p.readable', [
@@ -69,11 +70,14 @@ SearchBar.controller = function(vm) {
     self.vm.latestDate = undefined;
     self.vm.showStats = true;
 
+    /* Dumps the json query for elasticsearch to a URI formatted string */
     self.atomParams = function(){
-        var d = {};
-        d.q = utils.buildQuery(self.vm);
-        d.sort = self.vm.sortMap[self.vm.sort()] || null;
-        return $.param(d);
+        var query = utils.buildQuery(vm);
+        delete query.aggregations;
+        delete query.highlight;
+        return $.param({
+            jsonQuery: encodeURIComponent(JSON.stringify(query))
+        });
     };
 
     self.search = function(e) {

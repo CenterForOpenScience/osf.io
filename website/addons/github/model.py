@@ -5,7 +5,6 @@ import urlparse
 import itertools
 import httplib as http
 
-import pymongo
 from github3 import GitHubError
 from modularodm import fields
 
@@ -14,7 +13,6 @@ from framework.mongo import StoredObject
 
 from website import settings
 from website.util import web_url_for
-from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import StorageAddonBase
@@ -22,69 +20,10 @@ from website.addons.base import StorageAddonBase
 from website.addons.github import utils
 from website.addons.github.api import GitHub
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
+from website.addons.github.exceptions import ApiError, NotFoundError
 
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
-
-
-class GithubGuidFile(GuidFile):
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('path', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-
-    path = fields.StringField(index=True)
-
-    def maybe_set_version(self, **kwargs):
-        # branches are always required for file requests, if not specified
-        # file server will assume default branch. e.g. master or develop
-        if not kwargs.get('ref'):
-            kwargs['ref'] = kwargs.pop('branch', None)
-        super(GithubGuidFile, self).maybe_set_version(**kwargs)
-
-    @property
-    def waterbutler_path(self):
-        return self.path
-
-    @property
-    def provider(self):
-        return 'github'
-
-    @property
-    def version_identifier(self):
-        return 'ref'
-
-    @property
-    def unique_identifier(self):
-        return self._metadata_cache['extra']['fileSha']
-
-    @property
-    def name(self):
-        return os.path.split(self.path)[1]
-
-    @property
-    def extra(self):
-        if not self._metadata_cache:
-            return {}
-
-        return {
-            'sha': self._metadata_cache['extra']['fileSha'],
-        }
-
-    def _exception_from_response(self, response):
-        try:
-            if response.json()['errors'][0]['code'] == 'too_large':
-                raise TooBigToRenderError(self)
-        except (KeyError, IndexError):
-            pass
-
-        super(GithubGuidFile, self)._exception_from_response(response)
 
 
 class AddonGitHubOauthSettings(StoredObject):
@@ -225,9 +164,6 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     def complete(self):
         return self.has_auth and self.repo is not None and self.user is not None
 
-    def find_or_create_file_guid(self, path):
-        return GithubGuidFile.get_or_create(node=self.owner, path=path)
-
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
         self.owner.add_log(
@@ -303,10 +239,9 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                         '{0} / {1}'.format(repo.owner.login, repo.name)
                         for repo in repos
                     ]
-                except GitHubError as error:
-                    if error.code == http.UNAUTHORIZED:
-                        repo_names = []
-                        valid_credentials = False
+                except GitHubError:
+                    repo_names = []
+                    valid_credentials = False
                 ret.update({'repo_names': repo_names})
             ret.update({
                 'node_has_auth': True,
@@ -421,7 +356,7 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             else:
                 message += (
                     ' The files in this GitHub repo can be viewed on GitHub '
-                    '<a href="https://github.com/{user}/{repo}/">here</a>.'
+                    '<u><a href="https://github.com/{user}/{repo}/">here</a></u>.'
                 ).format(
                     user=self.user,
                     repo=self.repo,
@@ -444,7 +379,7 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 'by {user}. Removing this user will also remove write access '
                 'to GitHub unless another contributor re-authenticates. You '
                 'can download the contents of this repository before removing '
-                'this contributor <a href="{url}">here</a>.'
+                'this contributor <u><a href="{url}">here</a></u>.'
             ).format(
                 category=node.project_or_component,
                 user=removed.fullname,
@@ -476,7 +411,7 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -520,30 +455,6 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             )
         )
 
-    def before_fork(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                'Because you have authenticated the GitHub add-on for this '
-                '{cat}, forking it will also transfer your authorization to '
-                'the forked {cat}.'
-            ).format(
-                cat=node.project_or_component,
-            )
-        return (
-            'Because this GitHub add-on has been authenticated by a different '
-            'user, forking it will not transfer authentication to the forked '
-            '{cat}.'
-        ).format(
-            cat=node.project_or_component,
-        )
-
     def after_fork(self, node, fork, user, save=True):
         """
 
@@ -569,7 +480,7 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         else:
             message = (
                 'GitHub authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href={url}>Settings</a> '
+                'authorize this fork on the <u><a href={url}>Settings</a></u> '
                 'page.'
             ).format(
                 cat=fork.project_or_component,

@@ -13,7 +13,12 @@
         </div><!-- end div -->
 
         <div class="project-organizer" id="projectOrganizerScope">
-            <div id="project-grid"></div>
+            <div id="project-grid">
+                <div class="spinner-loading-wrapper">
+                    <div class="logo-spin logo-lg"></div>
+                     <p class="m-t-sm fg-load-message"> Loading projects...  </p>
+                </div>
+            </div>
         </div><!-- end project-organizer -->
     </div><!-- end col -->
 
@@ -22,7 +27,7 @@
     <div class="col-sm-5">
         <div class="p-b-xs m-t-lg m-b-xs" id="obTabHead">
             <ul class="nav nav-tabs" role="tablist">
-            <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick Tasks</a></li>
+            <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick tasks</a></li>
             <li><a href="#watchlist" role="tab" data-toggle="tab">Watchlist</a></li>
             ## %if 'badges' in addons_enabled:
             ## <li><a href="#badges" role="tab" data-toggle="tab">Badges</a></li>

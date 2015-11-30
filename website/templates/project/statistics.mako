@@ -1,7 +1,8 @@
 <% import json %>
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Statistics</%def>
+<%def name="title()">${node['title']} Analytics</%def>
 
+<<<<<<< HEAD
 <div id="statistics" class="scripted">
     <div class="row">
         <div class="col-xs-6">

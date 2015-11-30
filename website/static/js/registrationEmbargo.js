@@ -1,5 +1,6 @@
 var ko = require('knockout');
 var pikaday = require('pikaday');
+var $osf = require('js/osfHelpers');
 
 var RegistrationEmbargoViewModel = function() {
 
@@ -26,6 +27,7 @@ var RegistrationEmbargoViewModel = function() {
     self.pikaday = ko.observable(today);
     var picker = new pikaday(
         {
+            bound: true,
             field: document.getElementById('endDatePicker'),
             onSelect: function() {
                 self.pikaday(picker.toString());

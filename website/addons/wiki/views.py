@@ -9,6 +9,7 @@ from flask import request
 from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
+from framework.auth.decorators import must_be_logged_in
 from framework.flask import redirect
 
 from website.addons.wiki import settings
@@ -21,7 +22,10 @@ from website.project.decorators import (
     must_have_addon, must_not_be_registration,
     must_be_valid_project,
     must_have_permission,
+    must_have_write_permission_or_public_wiki,
 )
+
+from website.exceptions import NodeStateError
 
 from .exceptions import (
     NameEmptyError,
@@ -80,7 +84,7 @@ def _get_wiki_versions(node, name, anonymous=False):
         {
             'version': version.version,
             'user_fullname': privacy_info_handle(version.user.fullname, anonymous, name=True),
-            'date': version.date.replace(microsecond=0).isoformat(),
+            'date': '{} UTC'.format(version.date.replace(microsecond=0).isoformat().replace('T', ' ')),
         }
         for version in reversed(versions)
     ]
@@ -90,7 +94,9 @@ def _get_wiki_pages_current(node):
     return [
         {
             'name': sorted_page.page_name,
-            'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True)
+            'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True),
+            'wiki_id': sorted_page._primary_key,
+            'wiki_content': wiki_page_content(sorted_page.page_name, node=node)
         }
         for sorted_page in [
             node.get_wiki_page(sorted_key)
@@ -107,6 +113,8 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'delete': node.api_url_for('project_wiki_delete', wname=name),
         'rename': node.api_url_for('project_wiki_rename', wname=name),
         'content': node.api_url_for('wiki_page_content', wname=name),
+        'settings': node.api_url_for('edit_wiki_settings'),
+        'grid': node.api_url_for('project_wiki_grid_data', wname=name)
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -123,25 +131,6 @@ def _get_wiki_web_urls(node, key, version=1, additional_urls=None):
     if additional_urls:
         urls.update(additional_urls)
     return urls
-
-
-def _serialize_wiki_toc(project, auth):
-    toc = [
-        {
-            'id': child._primary_key,
-            'title': child.title,
-            'category': child.category,
-            'pages_current': _get_wiki_pages_current(child),
-            'url': child.web_url_for('project_wiki_view', wname='home', _guid=True),
-            'is_pointer': not child.primary,
-            'link': auth.private_key
-        }
-        for child in project.nodes
-        if not child.is_deleted
-        and child.can_view(auth)
-        if child.has_addon('wiki')
-    ]
-    return toc
 
 
 @must_be_contributor_or_public
@@ -178,7 +167,7 @@ def wiki_widget(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('write')
+@must_have_write_permission_or_public_wiki
 @must_have_addon('wiki', 'node')
 def wiki_page_draft(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -232,8 +221,15 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     wiki_name = (wname or '').strip()
     wiki_key = to_mongo_key(wiki_name)
     wiki_page = node.get_wiki_page(wiki_name)
-    toc = _serialize_wiki_toc(node, auth=auth)
-    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    wiki_settings = node.get_addon('wiki')
+    can_edit = (
+        auth.logged_in
+        and not node.is_registration
+        and (
+            node.has_permission(auth.user, 'write')
+            or wiki_settings.is_publicly_editable
+        )
+    )
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
     # Determine panels used in view
@@ -291,6 +287,8 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         if wiki_key not in node.wiki_pages_current and wiki_key != 'home':
             raise WIKI_PAGE_NOT_FOUND_ERROR
         if 'edit' in request.args:
+            if wiki_settings.is_publicly_editable:
+                raise HTTPError(http.UNAUTHORIZED)
             raise HTTPError(http.FORBIDDEN)
         sharejs_uuid = None
 
@@ -307,7 +305,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'is_current': is_current,
         'version_settings': version_settings,
         'pages_current': _get_wiki_pages_current(node),
-        'toc': toc,
         'category': node.category,
         'panels_used': panels_used,
         'num_columns': num_columns,
@@ -321,11 +318,12 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         },
     }
     ret.update(_view_project(node, auth, primary=True))
+    ret['user']['can_edit_wiki_body'] = can_edit
     return ret
 
 
 @must_be_valid_project  # injects node or project
-@must_have_permission('write')  # injects user
+@must_have_write_permission_or_public_wiki  # injects user
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit_post(auth, wname, **kwargs):
@@ -352,6 +350,47 @@ def project_wiki_edit_post(auth, wname, **kwargs):
         ret = {'status': 'success'}
     return ret, http.FOUND, None, redirect_url
 
+@must_be_valid_project  # injects node or project
+@must_have_permission('admin')
+@must_not_be_registration
+@must_have_addon('wiki', 'node')
+def edit_wiki_settings(node, auth, **kwargs):
+    wiki_settings = node.get_addon('wiki')
+    permissions = request.get_json().get('permission', None)
+
+    if not wiki_settings:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='Cannot change wiki settings without a wiki'
+        ))
+
+    if permissions == 'public':
+        permissions = True
+    elif permissions == 'private':
+        permissions = False
+    else:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='Permissions flag used is incorrect.'
+        ))
+
+    try:
+        wiki_settings.set_editing(permissions, auth, log=True)
+    except NodeStateError as e:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short="Can't change privacy",
+            message_long=e.message
+        ))
+
+    return {
+        'status': 'success',
+        'permissions': permissions,
+    }
+
+@must_be_logged_in
+@must_be_valid_project
+def get_node_wiki_permissions(node, auth, **kwargs):
+    return wiki_utils.serialize_wiki_settings(auth.user, [node._id])
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
@@ -373,7 +412,7 @@ def project_wiki_id_page(auth, wid, **kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('write')
+@must_have_write_permission_or_public_wiki
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(wname, **kwargs):
@@ -428,8 +467,7 @@ def project_wiki_rename(auth, wname, **kwargs):
 @must_have_permission('write')  # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def project_wiki_validate_name(wname, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def project_wiki_validate_name(wname, auth, node, **kwargs):
     wiki_name = wname.strip()
     wiki_key = to_mongo_key(wiki_name)
 
@@ -438,4 +476,129 @@ def project_wiki_validate_name(wname, **kwargs):
             message_short='Wiki page name conflict.',
             message_long='A wiki page with that name already exists.'
         ))
+    else:
+        node.update_node_wiki(wiki_name, '', auth)
     return {'message': wiki_name}
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def project_wiki_grid_data(auth, node, **kwargs):
+    pages = []
+    project_wiki_pages = {
+        'title': 'Project Wiki Pages',
+        'kind': 'folder',
+        'type': 'heading',
+        'children': format_project_wiki_pages(node, auth)
+    }
+    pages.append(project_wiki_pages)
+
+    component_wiki_pages = {
+        'title': 'Component Wiki Pages',
+        'kind': 'folder',
+        'type': 'heading',
+        'children': format_component_wiki_pages(node, auth)
+    }
+    if len(component_wiki_pages['children']) > 0:
+        pages.append(component_wiki_pages)
+
+    return pages
+
+
+def format_home_wiki_page(node):
+    home_wiki = node.get_wiki_page('home')
+    home_wiki_page = {
+        'page': {
+            'url': node.web_url_for('project_wiki_home'),
+            'name': 'Home',
+            'id': 'None',
+        }
+    }
+    if home_wiki:
+        home_wiki_page = {
+            'page': {
+                'url': node.web_url_for('project_wiki_view', wname='home', _guid=True),
+                'name': 'Home',
+                'id': home_wiki._primary_key,
+            }
+        }
+    return home_wiki_page
+
+
+def format_project_wiki_pages(node, auth):
+    pages = []
+    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    project_wiki_pages = _get_wiki_pages_current(node)
+    home_wiki_page = format_home_wiki_page(node)
+    pages.append(home_wiki_page)
+    for wiki_page in project_wiki_pages:
+        if wiki_page['name'] != 'home':
+            has_content = bool(wiki_page['wiki_content'].get('wiki_content'))
+            page = {
+                'page': {
+                    'url': wiki_page['url'],
+                    'name': wiki_page['name'],
+                    'id': wiki_page['wiki_id'],
+                }
+            }
+            if can_edit or has_content:
+                pages.append(page)
+    return pages
+
+
+def format_component_wiki_pages(node, auth):
+    pages = []
+    for node in node.nodes:
+        if any([node.is_deleted,
+                not node.can_view(auth),
+                not node.has_addon('wiki')]):
+            continue
+        else:
+            serialized = serialize_component_wiki(node, auth)
+            if serialized:
+                pages.append(serialized)
+    return pages
+
+
+def serialize_component_wiki(node, auth):
+    children = []
+    url = node.web_url_for('project_wiki_view', wname='home', _guid=True)
+    home_has_content = bool(wiki_page_content('home', node=node).get('wiki_content'))
+    component_home_wiki = {
+        'page': {
+            'url': url,
+            'name': 'Home',
+            # Handle pointers
+            'id': node._primary_key if node.primary else node.node._primary_key,
+        }
+    }
+
+    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    if can_edit or home_has_content:
+        children.append(component_home_wiki)
+
+    for page in _get_wiki_pages_current(node):
+        if page['name'] != 'home':
+            has_content = bool(page['wiki_content'].get('wiki_content'))
+            component_page = {
+                'page': {
+                    'url': page['url'],
+                    'name': page['name'],
+                    'id': page['wiki_id'],
+                }
+            }
+            if can_edit or has_content:
+                children.append(component_page)
+
+    if len(children) > 0:
+        component = {
+            'page': {
+                'name': node.title,
+                'url': url,
+            },
+            'kind': 'component',
+            'category': node.category,
+            'pointer': not node.primary,
+            'children': children,
+        }
+        return component
+    return None

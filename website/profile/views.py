@@ -2,8 +2,7 @@
 
 import logging
 import httplib
-import httplib as http
-
+import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from flask import request
@@ -24,9 +23,10 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.models import User
+from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
+from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
-from website.util import web_url_for, paths
+from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
@@ -170,7 +170,9 @@ def update_user(auth):
             try:
                 user.add_unconfirmed_email(address)
             except (ValidationError, ValueError):
-                continue
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long="Invalid Email")
+                )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
@@ -205,7 +207,7 @@ def update_user(auth):
                             new_address=username)
 
             # Remove old primary email from subscribed mailing lists
-            for list_name, subscription in user.mailing_lists.iteritems():
+            for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
             user.username = username
@@ -228,7 +230,7 @@ def update_user(auth):
 
     # Update subscribed mailing lists with new primary email
     # TODO: move to user.save()
-    for list_name, subscription in user.mailing_lists.iteritems():
+    for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
         if subscription:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
@@ -343,7 +345,7 @@ def user_account_password(auth, **kwargs):
     except ChangePasswordError as error:
         push_status_message('<br />'.join(error.messages) + '.', kind='warning')
     else:
-        push_status_message('Password updated successfully.', kind='info')
+        push_status_message('Password updated successfully.', kind='success')
 
     return redirect(web_url_for('user_account'))
 
@@ -369,8 +371,79 @@ def user_addons(auth, **kwargs):
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
-        'mailing_lists': auth.user.mailing_lists
+        'mailing_lists': dict(auth.user.mailchimp_mailing_lists.items() + auth.user.osf_mailing_lists.items())
     }
+
+@must_be_logged_in
+def oauth_application_list(auth, **kwargs):
+    """Return app creation page with list of known apps. API is responsible for tying list to current user."""
+    app_list_url = api_v2_url("applications/")
+    return {
+        "app_list_url": app_list_url
+    }
+
+@must_be_logged_in
+def oauth_application_register(auth, **kwargs):
+    """Register an API application: blank form view"""
+    app_list_url = api_v2_url("applications/")  # POST request to this url
+    return {"app_list_url": app_list_url,
+            "app_detail_url": ''}
+
+@must_be_logged_in
+def oauth_application_detail(auth, **kwargs):
+    """Show detail for a single OAuth application"""
+    client_id = kwargs.get('client_id')
+
+    # The client ID must be an active and existing record, and the logged-in user must have permission to view it.
+    try:
+        #
+        record = ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND)
+    if record.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
+    if record.is_active is False:
+        raise HTTPError(http.GONE)
+
+    app_detail_url = api_v2_url("applications/{}/".format(client_id))  # Send request to this URL
+    return {"app_list_url": '',
+            "app_detail_url": app_detail_url}
+
+@must_be_logged_in
+def personal_access_token_list(auth, **kwargs):
+    """Return token creation page with list of known tokens. API is responsible for tying list to current user."""
+    token_list_url = api_v2_url("tokens/")
+    return {
+        "token_list_url": token_list_url
+    }
+
+@must_be_logged_in
+def personal_access_token_register(auth, **kwargs):
+    """Register a personal access token: blank form view"""
+    token_list_url = api_v2_url("tokens/")  # POST request to this url
+    return {"token_list_url": token_list_url,
+            "token_detail_url": '',
+            "scope_options": get_available_scopes()}
+
+@must_be_logged_in
+def personal_access_token_detail(auth, **kwargs):
+    """Show detail for a single personal access token"""
+    _id = kwargs.get('_id')
+
+    # The ID must be an active and existing record, and the logged-in user must have permission to view it.
+    try:
+        record = ApiOAuth2PersonalToken.find_one(Q('_id', 'eq', _id))
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND)
+    if record.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
+    if record.is_active is False:
+        raise HTTPError(http.GONE)
+
+    token_detail_url = api_v2_url("tokens/{}/".format(_id))  # Send request to this URL
+    return {"token_list_url": '',
+            "token_detail_url": token_detail_url,
+            "scope_options": get_available_scopes()}
 
 
 def collect_user_config_js(addon_configs):
@@ -408,18 +481,25 @@ def user_choose_mailing_lists(auth, **kwargs):
     json_data = escape_html(request.get_json())
     if json_data:
         for list_name, subscribe in json_data.items():
-            update_subscription(user, list_name, subscribe)
+            # TO DO: change this to take in any potential non-mailchimp, something like try: update_subscription(), except IndexNotFound: update_mailchimp_subscription()
+            if list_name == settings.OSF_HELP_LIST:
+                update_osf_help_mails_subscription(user=user, subscribe=subscribe)
+            else:
+                update_mailchimp_subscription(user, list_name, subscribe)
     else:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long="Must provide a dictionary of the format {'mailing list name': Boolean}")
         )
 
     user.save()
-    return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
+    all_mailing_lists = {}
+    all_mailing_lists.update(user.mailchimp_mailing_lists)
+    all_mailing_lists.update(user.osf_mailing_lists)
+    return {'message': 'Successfully updated mailing lists', 'result': all_mailing_lists}, 200
 
 
 @user_merged.connect
-def update_subscription(user, list_name, subscription):
+def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=True):
     """ Update mailing list subscription in mailchimp.
 
     :param obj user: current user
@@ -430,7 +510,7 @@ def update_subscription(user, list_name, subscription):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",
@@ -462,11 +542,11 @@ def sync_data_from_mailchimp(**kwargs):
             raise HTTPError(404, data=dict(message_short='User not found',
                                         message_long='A user with this username does not exist'))
         if action == 'unsubscribe':
-            user.mailing_lists[list_name] = False
+            user.mailchimp_mailing_lists[list_name] = False
             user.save()
 
         elif action == 'subscribe':
-            user.mailing_lists[list_name] = True
+            user.mailchimp_mailing_lists[list_name] = True
             user.save()
 
     else:
@@ -481,6 +561,10 @@ def impute_names(**kwargs):
     name = request.args.get('name', '')
     return auth_utils.impute_names(name)
 
+
+def update_osf_help_mails_subscription(user, subscribe):
+    user.osf_mailing_lists[settings.OSF_HELP_LIST] = subscribe
+    user.save()
 
 @must_be_logged_in
 def serialize_names(**kwargs):

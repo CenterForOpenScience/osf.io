@@ -8,20 +8,9 @@ var utils = require('./utils');
 
 var Stats = {};
 
-function get_source_length(elastic_data) {
-
-    var sources = elastic_data.raw_aggregations.sources.buckets;
-    var source_names = [];
-    for (var i=0; i<sources.length; i++) {
-        source_names.push(sources[i]);
-    }
-
-    return source_names.length;
-}
-
-function donutGraph (data, vm) {
-    data.charts.shareDonutGraph.onclick = function (d, element) {
-        utils.updateFilter(vm, 'source:' + d.name, true);
+function donutGraph(data, vm) {
+    data.charts.shareDonutGraph.onclick = function (d) {
+        utils.updateFilter(vm, 'match:shareProperties.source:' + d.name);
     };
     return c3.generate({
         bindto: '#shareDonutGraph',
@@ -30,10 +19,10 @@ function donutGraph (data, vm) {
         },
         data: data.charts.shareDonutGraph,
         donut: {
-            title: get_source_length(data) + ' Providers',
+            title: data.charts.shareDonutGraph.title,
             label: {
                 format: function (value, ratio, id) {
-                    return Math.round(ratio*100) + '%';
+                    return Math.round(ratio * 100) + '%';
                 }
             }
         },
@@ -42,57 +31,171 @@ function donutGraph (data, vm) {
         },
         tooltip: {
             format: {
-                name: function (name, ratio, id, index) {
-                    if (name === 'pubmed') {
-                        name = 'pubmed central';
-                    }
-                    return name; 
+                value: function (value, ratio, id) {
+                    return Math.round(ratio * 100) + '%';
                 }
             }
         }
     });
 }
 
-function timeGraph (data) {
+/**
+ * Creates a c3 time graph from the parsed elasticsearch data
+ *
+ * @param {Object} data The formatted elasticsearch results
+ * @param {Object} vm The state of the view model
+ */
+function timeGraph(data, vm) {
     return c3.generate({
         bindto: '#shareTimeGraph',
         size: {
-            height: 200
+            height: 250
         },
         data: data.charts.shareTimeGraph,
+        //subchart: { //TODO @bdyetton fix the aggregation that the subchart pulls from so it always has the global range results
+        //    show: true,
+        //    size: {
+        //        height: 30
+        //    },
+        //    onbrush: function(zoomWin){
+        //        clearTimeout(data.charts.shareTimeGraph.dateChangeCallbackId); //stop constant redraws
+        //        data.charts.shareTimeGraph.dateChangeCallbackId = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
+        //            function(){
+        //                utils.removeFilter(vm,vm.statsQueries.shareTimeGraph.filter);
+        //                vm.statsQueries.shareTimeGraph.filter = 'range:providerUpdatedDateTime:'+zoomWin[0].getTime()+':'+zoomWin[1].getTime();
+        //                utils.updateFilter(vm,vm.statsQueries.shareTimeGraph.filter, true);
+        //            }
+        //            ,1000);
+        //    }
+        //},
         axis: {
             x: {
-                type: 'category',
+                type: 'timeseries',
                 label: {
-                   text: 'Last Three Months',
-                   position: 'outer-center',
+                    text: 'Date',
+                    position: 'outer-center'
+                },
+                tick: {
+                    format: function (d) {return Stats.timeSinceEpochInMsToMMDDYY(d); }
                 }
             },
             y: {
                 label: {
-                   text: 'Number of Events',
-                   position: 'outer-middle'
+                    text: 'Number of Events',
+                    position: 'outer-middle'
+                },
+                tick: {
+                    count: 8,
+                    format: function (d) {return parseInt(d).toFixed(0); }
                 }
             }
+        },
+        padding: {
+          right: 15
         },
         legend: {
             show: false
         },
         tooltip: {
-            grouped: false,
-            format: {
-              name: function (name, ratio, id, index) {
-                  if (name === 'pubmed') {
-                      name = 'pubmed central';
-                  }
-                  return name; 
-              }
-            }
+            grouped: false
         }
     });
 }
 
-Stats.view = function(ctrl) {
+/* Creates an Elasticsearch aggregation by source */
+Stats.sourcesAgg = {
+    query: {match_all: {} },
+    aggregations: {
+        sources: utils.termsFilter('field', '_type')
+    }
+};
+
+/* Creates an Elasticsearch aggregation that breaks down sources by date (and number of things published on those dates) */
+Stats.sourcesByDatesAgg = function () {
+    var dateTemp = new Date(); //get current time
+    dateTemp.setMonth(dateTemp.getMonth() - 3);
+    var threeMonthsAgo = dateTemp.getTime();
+    var dateHistogramAgg = {
+        sourcesByTimes: utils.termsFilter('field', '_type')
+    };
+    dateHistogramAgg.sourcesByTimes.aggregations = {
+        articlesOverTime : {
+            filter: utils.rangeFilter('providerUpdatedDateTime', threeMonthsAgo),
+            aggregations: {
+                articlesOverTime: utils.dateHistogramFilter('providerUpdatedDateTime', threeMonthsAgo)
+            }
+        }
+    };
+    return {aggregations: dateHistogramAgg};
+};
+
+/* Helper function for dealing with epoch times returned by elasticsearch */
+Stats.timeSinceEpochInMsToMMDDYY = function (timeSinceEpochInMs) {
+    var d = new Date(timeSinceEpochInMs);
+    return (d.getMonth()+1).toString() + '/' + d.getDate().toString() + '/' + d.getFullYear().toString().substring(2);
+};
+
+/* Parses elasticsearch data so that it can be fed into a c3 donut graph */
+Stats.shareDonutGraphParser = function (data) {
+    var chartData = {};
+    chartData.name = 'shareDonutGraph';
+    chartData.columns = [];
+    chartData.colors = {};
+    chartData.type = 'donut';
+
+    var providerCount = 0;
+    var hexColors = utils.generateColors(data.aggregations.sources.buckets.length);
+    var i = 0;
+    data.aggregations.sources.buckets.forEach(
+        function (bucket) {
+            chartData.columns.push([bucket.key, bucket.doc_count]);
+            providerCount = providerCount + (bucket.doc_count ? 1 : 0);
+            chartData.colors[bucket.key] = hexColors[i];
+            i = i + 1;
+        }
+    );
+    chartData.title = providerCount.toString() + ' Provider' + (providerCount !== 1 ? 's' : '');
+    $('.c3-chart-arcs-title').text(chartData.title); //dynamically update chart title
+    return chartData;
+};
+
+/* Parses elasticsearch data so that it can be fed into a c3 time graph */
+Stats.shareTimeGraphParser = function (data) {
+    var chartData = {};
+    chartData.name = 'shareTimeGraph';
+    chartData.columns = [];
+    chartData.colors = {};
+    chartData.type = 'area-spline';
+    chartData.x = 'x';
+    chartData.groups = [];
+    var grouping = [];
+    grouping.push('x');
+    var hexColors = utils.generateColors(data.aggregations.sourcesByTimes.buckets.length);
+    var datesCol = [];
+    data.aggregations.sourcesByTimes.buckets.forEach( //TODO @bdyetton what would be nice is a helper function to do this for any agg returned by elastic
+        function (source, i) {
+            var total = 0;
+            chartData.colors[source.key] = hexColors[i];
+            var column = [source.key];
+            grouping.push(source.key);
+            source.articlesOverTime.articlesOverTime.buckets.forEach(function(date){
+                total = total + date.doc_count;
+                column.push(total);
+                if (i === 0) {
+                    datesCol.push(date.key);
+                }
+            });
+            chartData.columns.push(column);
+        }
+    );
+    chartData.groups.push(grouping);
+    datesCol.unshift('x');
+    chartData.columns.unshift(datesCol);
+    return chartData;
+};
+
+
+Stats.view = function (ctrl) {
     return [
         m('.row.search-helper', {style: {color: 'darkgrey'}},
             m('.col-xs-12.col-lg-8.col-lg-offset-2', [
@@ -104,36 +207,41 @@ Stats.view = function(ctrl) {
         m('.row', ctrl.vm.showStats ? [
             m('.col-md-12', [
                 m('.row', m('.col-md-12', [
-                    m('.row', (ctrl.vm.statsData && ctrl.vm.count > 0) ? [
-                        m('.col-sm-3', ctrl.drawGraph('shareDonutGraph', donutGraph)),
-                        m('.col-sm-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
+                    m('.row', (ctrl.vm.statsData) ? [
+                        m('.col-sm-3', (ctrl.vm.statsData.charts.shareDonutGraph) ? [ctrl.drawGraph('shareDonutGraph', donutGraph)] : []),
+                        m('.col-sm-9', (ctrl.vm.statsData.charts.shareTimeGraph) ? [ctrl.drawGraph('shareTimeGraph', timeGraph)] : [])
                     ] : [])
                 ]))
             ]),
-        ] : []),
-        m('.row', [
-            m('col-md-12', m('a.stats-expand', {
-                onclick: function() {ctrl.vm.showStats = !ctrl.vm.showStats;}
-            },
-                ctrl.vm.showStats ? m('i.fa.fa-angle-up') : m('i.fa.fa-angle-down')
-            ))
-        ])
+        ] : [])
     ];
 };
 
-Stats.controller = function(vm) {
+Stats.controller = function (vm) {
     var self = this;
 
     self.vm = vm;
+    self.vm.graphs = {}; //holds actual c3 chart objects
+    self.vm.statsData = {'charts': {}}; //holds data for charts
+    self.vm.loadStats = true; //we want to turn stats on
+    //request these querys/aggregations for charts
+    self.vm.statsQueries = {
+        'shareTimeGraph' : Stats.sourcesByDatesAgg(),
+        'shareDonutGraph' : Stats.sourcesAgg
+    };
 
-    self.vm.graphs = {};
+    //set each aggregation as the data source for each chart parser, and hence chart
+    self.vm.statsParsers = {
+        'sources' : Stats.shareDonutGraphParser,
+        'sourcesByTimes' : Stats.shareTimeGraphParser
+    };
 
     self.vm.totalCount = 0;
     self.vm.latestDate = undefined;
     self.vm.statsLoaded = m.prop(false);
 
-    self.drawGraph = function(divId, graphFunction) {
-        return m('div', {id: divId, config: function(e, i) {
+    self.drawGraph = function (divId, graphFunction) {
+        return m('div', {id: divId, config: function (e, i) {
             if (i) {
                 return;
             }
@@ -141,22 +249,14 @@ Stats.controller = function(vm) {
         }});
     };
 
-    self.loadStats = function(){
-        return utils.loadStats(self.vm);
-    };
-
-    utils.onSearch(self.loadStats);
-
     m.request({
         method: 'GET',
         background: true,
-        url: '/api/v1/share/search/?size=1&v=1',
-    }).then(function(data) {
+        url: '/api/v1/share/search/?size=1&sort=providerUpdatedDateTime'
+    }).then(function (data) {
         self.vm.totalCount = data.count;
-        self.vm.latestDate = new $osf.FormattableDate(data.results[0].dateUpdated).local;
+        self.vm.latestDate = new $osf.FormattableDate(data.results[0].providerUpdatedDateTime).local;
     }).then(m.redraw);
-
-    self.loadStats();
 };
 
 module.exports = Stats;

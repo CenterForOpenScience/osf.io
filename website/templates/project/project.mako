@@ -1,16 +1,13 @@
 <%inherit file="project/project_base.mako"/>
 
-
-
 <%
-    import json
     is_project = node['node_type'] == 'project'
 %>
 
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
-            <div class="col-sm-6 col-md-7 cite-container">
+            <div class="col-sm-5 col-md-7 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
@@ -26,12 +23,16 @@
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
-            <div class="col-sm-6 col-md-5">
-                <div class="btn-toolbar node-control pull-right">
+            <div class="col-sm-7 col-md-5">
+                <div class="btn-toolbar node-control pull-right"
+                    % if not user_name:
+                        data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
+                    % endif
+                        >
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions'] and not node['pending_embargo']:
+                        % if 'admin' in user['permissions'] and not node['is_pending_embargo']:
                             <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     % else:
@@ -42,18 +43,18 @@
                     % endif
                     </div>
                     <!-- ko if: canBeOrganized -->
-                    <div class="btn-group" style="display: none" data-bind="visible: true">
+                    <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
-                           <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
-                            placement: 'bottom'}" class="btn btn-default">
+                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to dashboard folder',
+                            placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
-                           <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
-                            placement: 'bottom'}" class="btn btn-default">
+                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from dashboard folder',
+                            placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-minus"></i>
                            </a>
@@ -61,14 +62,10 @@
 
                     </div>
                     <!-- /ko -->
-                    <div
-                        % if not user_name:
-                            data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
-                        % endif
-                            class="btn-group">
+                    <div class="btn-group">
                         <a
                         % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
-                            data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
+                            data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom', container : 'body'}"
                             class="btn btn-default" data-container="body"
                         % else:
                             class="btn btn-default disabled"
@@ -77,10 +74,12 @@
                             <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
+                    </div>
+                    <div class="btn-group">
                         <a
                         % if user_name:
                             class="btn btn-default"
-                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom', container : 'body'}"
                             data-target="#duplicateModal" data-toggle="modal"
                         % else:
                             class="btn btn-default disabled"
@@ -101,6 +100,7 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
+                <div id="contributorsList" style="height: 25px; overflow: hidden">
                 % if user['is_contributor']:
                     <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
                 % else:
@@ -116,53 +116,83 @@
                             "uri": "${node["api_url"]}get_contributors/",
                             "replace": true
                         }'></div>
-
                     </ol>
                 % endif
+                </div>
                 % if node['is_fork']:
-                    <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
+                    <p>
+                    Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
-                % endif
-                % if node['is_registration'] and node['registered_meta']:
-                    <br />Registration Supplement:
-                    % for meta in node['registered_meta']:
-                        <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
-                    % endfor
+                    </p>
                 % endif
                 % if node['is_registration']:
-                    <br />Date Registered:
+                    <p>
+                    Registration Supplement:
+                    % for meta_schema in node['registered_schemas']:                    
+                    <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a> 
+                      % if len(node['registered_schemas']) > 1:
+                      ,
+                      % endif
+                    % endfor
+                    </p>
+                % endif
+                % if node['is_registration']:
+                    <p>
+                    Date registered:
                     <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+                    </p>
                 % endif
-                    <br />Date Created:
+                    <p>
+                    Date created:
                     <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
-                % if not node['is_registration']:
-                    | Last Updated:
-                    <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
-                % endif
+                    % if not node['is_registration']:
+                        | Last Updated:
+                        <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                    % endif
+                    </p>
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
-                    DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
-                    ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
+                  DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
+                  ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
-                    <br />
+                    <p>
                       <i class="fa fa-spinner fa-lg fa-spin"></i>
                         <span class="text-info">Creating DOI and ARK. Please wait...</span>
+                    </p>
                   <!-- /ko -->
 
                   <!-- ko ifnot: idCreationInProgress() -->
-                  <br />
+                  <p>
                   <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
+                  </p>
                   <!-- /ko -->
                 </span>
-                <br />Category: <span class="node-category">${node['category']}</span>
+                <p>
+                Category: <span class="node-category">${node['category']}</span>
                 &nbsp;
                 <span data-bind="css: icon"></span>
+                </p>
+
                 % if node['description'] or 'write' in user['permissions']:
-                    <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <p>
+                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    </p>
                 % endif
+                % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
+                    <p>
+                      <license-picker params="saveUrl: '${node['update_url']}',
+                                              saveMethod: 'PUT',
+                                              license: window.contextVars.node.license,
+                                              saveLicenseKey: 'node_license',
+                                              readonly: ${ node['is_registration'] | sjson, n}">
+                        <span id="license">License:</span>
+                        <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
+                      </license-picker>
+                    </p>
+                 % endif
             </div>
         </div>
 
@@ -201,7 +231,7 @@
             <div class="panel-body">
                 <div id="treeGrid">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
+                        <div class="logo-spin logo-lg"></div>
                          <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>
@@ -315,9 +345,6 @@
         </div><!-- end addon-widget-body -->
     </div><!-- end components -->
 %endif
-% for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
-% endfor
 
 </%def>
 
@@ -334,7 +361,6 @@
 </%def>
 
 <%def name="javascript_bottom()">
-<% import json %>
 
 ${parent.javascript_bottom()}
 
@@ -346,14 +372,14 @@ ${parent.javascript_bottom()}
     // Hack to allow mako variables to be accessed to JS modules
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
-            name: '${user_full_name | js_str}',
-            canComment: ${json.dumps(user['can_comment'])},
-            canEdit: ${json.dumps(user['can_edit'])}
+            name: ${ user_full_name | sjson, n },
+            canComment: ${ user['can_comment'] | sjson, n },
+            canEdit: ${ user['can_edit'] | sjson, n }
         },
         node: {
-            hasChildren: ${json.dumps(node['has_children'])},
-            isRegistration: ${json.dumps(node['is_registration'])},
-            tags: ${json.dumps(node['tags'])}
+            hasChildren: ${ node['has_children'] | sjson, n },
+            isRegistration: ${ node['is_registration'] | sjson, n },
+            tags: ${ node['tags'] | sjson, n }
         }
     });
 </script>

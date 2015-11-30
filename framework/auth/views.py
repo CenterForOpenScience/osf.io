@@ -9,6 +9,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 import framework.auth
+
 from framework.auth import cas
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
@@ -49,7 +50,7 @@ def reset_password(auth, **kwargs):
         user_obj.verification_key = security.random_string(20)
         user_obj.set_password(form.password.data)
         user_obj.save()
-        status.push_status_message('Password reset')
+        status.push_status_message('Password reset', 'success')
         # Redirect to CAS and authenticate the user with a verification key.
         return redirect(cas.get_login_url(
             web_url_for('user_account', _absolute=True),
@@ -88,11 +89,9 @@ def forgot_password_post():
                 reset_link=reset_link
             )
         status.push_status_message(
-            'An email with instructions on how to reset the password for the '
-            'account associated with {0} has been sent. If you do not receive '
-            'an email and believe you should have please '
-            'contact OSF Support.'.format(email)
-        )
+            ('If there is an OSF account associated with {0}, an email with instructions on how to reset '
+             'the OSF password has been sent to {0}. If you do not receive an email and believe you should '
+             'have, please contact OSF Support. ').format(email), 'success')
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
@@ -125,7 +124,7 @@ def auth_login(auth, **kwargs):
         # redirect user to CAS for logout, return here w/o authentication
         return auth_logout(redirect_url=request.url)
     if kwargs.get('first', False):
-        status.push_status_message('You may now log in')
+        status.push_status_message('You may now log in', 'info')
 
     status_message = request.args.get('status', '')
     if status_message == 'expired':
@@ -147,14 +146,19 @@ def auth_login(auth, **kwargs):
 def auth_logout(redirect_url=None):
     """Log out and delete cookie.
     """
-    redirect_url = redirect_url or request.args.get('redirect_url')
+    redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
     logout()
-    resp = redirect(cas.get_logout_url(redirect_url if redirect_url else web_url_for('goodbye', _absolute=True)))
-    resp.delete_cookie(settings.COOKIE_NAME)
+    if 'reauth' in request.args:
+        cas_endpoint = cas.get_login_url(redirect_url)
+    else:
+        cas_endpoint = cas.get_logout_url(redirect_url)
+    resp = redirect(cas_endpoint)
+    resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
     return resp
 
 
-def confirm_email_get(**kwargs):
+@collect_auth
+def confirm_email_get(token, auth=None, **kwargs):
     """View for email confirmation links.
     Authenticates and redirects to user settings page if confirmation is
     successful, otherwise shows an "Expired Link" error.
@@ -162,12 +166,20 @@ def confirm_email_get(**kwargs):
     methods: GET
     """
     user = User.load(kwargs['uid'])
-    is_initial_confirmation = not user.date_confirmed
     is_merge = 'confirm_merge' in request.args
-    token = kwargs['token']
+    is_initial_confirmation = not user.date_confirmed
 
     if user is None:
         raise HTTPError(http.NOT_FOUND)
+
+    if auth and auth.user and auth.user in (user, user.merged_by):
+        if not is_merge:
+            status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+            # Go to dashboard
+            return redirect(web_url_for('dashboard'))
+
+        status.push_status_message(language.MERGE_COMPLETE, 'success')
+        return redirect(web_url_for('user_account'))
 
     try:
         user.confirm_email(token, merge=is_merge)
@@ -181,22 +193,20 @@ def confirm_email_get(**kwargs):
         user.date_last_login = datetime.datetime.utcnow()
         user.save()
 
-        # Go to settings page
-        status.push_status_message(language.WELCOME_MESSAGE, 'success')
-        redirect_url = web_url_for('user_profile', _absolute=True)
-    else:
-        redirect_url = web_url_for('user_account', _absolute=True)
-
-    if is_merge:
-        status.push_status_message(language.MERGE_COMPLETE, 'success')
-    else:
-        status.push_status_message(language.CONFIRMED_EMAIL, 'success')
+        # Send out our welcome message
+        mails.send_mail(
+            to_addr=user.username,
+            mail=mails.WELCOME,
+            mimetype='html',
+            user=user
+        )
 
     # Redirect to CAS and authenticate the user with a verification key.
     user.verification_key = security.random_string(20)
     user.save()
+
     return redirect(cas.get_login_url(
-        redirect_url,
+        request.url,
         auto=True,
         username=user.username,
         verification_key=user.verification_key
@@ -373,7 +383,7 @@ def merge_user_post(auth, **kwargs):
             master.merge_user(merged_user)
             master.save()
             if request.form:
-                status.push_status_message("Successfully merged {0} with this account".format(merged_username))
+                status.push_status_message("Successfully merged {0} with this account".format(merged_username), 'success')
                 return redirect("/settings/")
             return {"status": "success"}
         else:

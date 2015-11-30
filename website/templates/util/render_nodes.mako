@@ -1,5 +1,5 @@
 % if len(nodes):
-    <ul class="list-group m-md ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
+    <ul data-bind="stopBinding: true" class="list-group m-md ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
         <span id='${pluralized_node_type if pluralized_node_type is not UNDEFINED else 'osfNodeList'}' class="render-nodes-list scripted">
         % for each in nodes:
             <div mod-meta='{
@@ -25,7 +25,7 @@
               $('.sortable').sortable({
                   containment: '#containment',
                   tolerance: 'pointer',
-                  items: '> li',
+                  items: '#components > li',
                   stop: function(event, ui){
                       var sortListElm = this;
                       var idList = $(sortListElm).sortable(
@@ -46,7 +46,7 @@
             <a href="https://osf.io/getting-started/#privacy" target="_blank">public</a>.
         </p>
     </div>
-% elif profile is not UNDEFINED:  # On profile page and user has no public projects/components
+% elif profile is not UNDEFINED:  ## On profile page and user has no public projects/components
     <div class="help-block">This user has no public ${pluralized_node_type}.</div>
 % else:
     <div class="help-block">No ${pluralized_node_type} to display.</div>

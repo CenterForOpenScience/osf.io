@@ -75,8 +75,8 @@ function initTypeahead(element, nodes, viewModel, params){
         templates: {
             suggestion: function(data) {
                 return '<p>' + data.value.name + '</p> ' +
-                        '<p><small class="m-l-md text-muted">' +
-                        'modified ' + data.value.dateModified.local + '</small></p>';
+                        '<p><small class="m-l-md text-muted">'+
+                                        'modified ' + data.value.dateModified.local + '</small></p>';
             }
         },
         source: substringMatcher(myProjects)
@@ -104,7 +104,7 @@ function serializeNode(node) {
         urls: {
             web: node.url,
             api: node.api_url,
-            register: node.url + 'register/',
+            register: node.url + 'register',
             files: node.url + 'files/',
             children: node.api_url + 'get_children/?permissions=write'
         }
@@ -137,7 +137,7 @@ ko.bindingHandlers.projectSearch = {
         }
         if (Array.isArray(nodesOrURL)) {
             var nodes = params.data;
-            // Compute relevant URLs for each search result
+            // Compute relevant URLs for each search result.
             initTypeahead(element, nodes, viewModel, params);
         } else if (typeof nodesOrURL === 'string') { // params.data is a URL
             var url = nodesOrURL;
@@ -519,6 +519,7 @@ function OBUploaderViewModel(params) {
             };
         },
 
+        clickable: '#obDropzone',
         url: '/', // specified per upload
         autoProcessQueue: false,
         createImageThumbnails: false,
@@ -595,6 +596,11 @@ function OBUploaderViewModel(params) {
         }
     };
     self.dropzone = new Dropzone(self.selector, dropzoneOpts);
+
+    //Drag & drop is non-functional in IE; change instructional header to indicate this to the user.
+    if($osf.isIE()){
+        $('#obDropzone-header').replaceWith('<h4 id=\'obDropzone-header\'>1. Click below to select file</h4>');
+    }
 
     //stop user from leaving if file is staged for upload
     $(window).on('beforeunload', function() {

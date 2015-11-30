@@ -5,7 +5,7 @@
             <form class="form" role="form" action="${node['url']}newnode/" method="post" id="componentForm">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h3 class="modal-title">Add Component</h3>
+                    <h3 class="modal-title">Add component</h3>
                 </div><!-- end modal-header -->
                 <div class="modal-body">
                     <div class="form-group">

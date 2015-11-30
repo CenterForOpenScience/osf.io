@@ -1,13 +1,6 @@
 /* Getting Started */
 
-/* links */
-.gs-sidebar .nav a,
-.gs-sidebar .nav a:hover,
-.gs-sidebar .nav a:focus {
 
-    text-decoration: none;
-    background-color: transparent;
-}
 /* nested links */
 .gs-sidebar .nav .nav>li>a {
     font-size: 12px;
@@ -31,15 +24,11 @@
     display: inline-block;
 }
 /* active & hover links */
-.gs-sidebar .nav>.active>a,
-.gs-sidebar .nav>li>a:hover,
-.gs-sidebar .nav>li>a:focus {
+.gs-sidebar .nav>.active>a {
     font-weight: bold;
 }
 /* nested active links */
-.gs-sidebar .nav .nav>.active>a,
-.gs-sidebar .nav .nav>.active:hover>a,
-.gs-sidebar .nav .nav>.active:focus>a {
+.gs-sidebar .nav .nav>.active>a {
     font-weight: bold;
 }
 /* affixed sidebar */

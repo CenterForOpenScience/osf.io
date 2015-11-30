@@ -27,8 +27,8 @@
     content: "";
 }
 
-.contributor-name {
-    margin-right: -4px;
+#contributors p {
+    margin: 0;
 }
 
 /* Project Navigation */
@@ -68,6 +68,17 @@
     }
     .project-nav {
         overflow: hidden;
+    }
+
+    /* Allow project nav to move the content on small screen */
+    #projectBanner .osf-project-navbar {
+        position: relative;
+        top: 0;
+        margin-top: -55px;
+    }
+    #projectBanner {
+        margin-right: -15px;
+        margin-left: -15px;
     }
 }
 
@@ -118,3 +129,16 @@
     word-break: break-all;
     word-break: break-word; /* Non standard for webkit*/
 }
+
+/* Disable word-break in project addon-settings table */
+.table-addon-terms td:first-child {
+    word-break: normal;
+}
+
+
+/* Project Description */
+
+span#nodeDescriptionEditable{
+    white-space:nowrap;
+}
+

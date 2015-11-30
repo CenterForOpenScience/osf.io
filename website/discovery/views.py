@@ -38,7 +38,7 @@ def activity():
             if node.is_public and not node.is_registration and not node.is_deleted:
                 if len(popular_public_projects) < 10:
                     popular_public_projects.append(node)
-            elif node.is_public and node.is_registration and not node.is_deleted:
+            elif node.is_public and node.is_registration and not node.is_deleted and not node.is_retracted:
                 if len(popular_public_registrations) < 10:
                     popular_public_registrations.append(node)
             if len(popular_public_projects) >= 10 and len(popular_public_registrations) >= 10:

@@ -27,22 +27,21 @@
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
 
+                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
+                        % if addon_enabled_settings:
+                            <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
+                        % endif
 
-                        % if 'write' in user['permissions']:
-                            <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
-
-                            % if addon_enabled_settings:
-                                <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
-                            % endif
-
-                            <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
+                        % if include_wiki_settings:
+                            <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
                         % endif
 
                         % if 'admin' in user['permissions']:
                             <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                         % endif
 
+                        <li><a href="#configureNotificationsAnchor">Configure Email Notifications</a></li>
 
                     % endif
 
@@ -67,34 +66,43 @@
         % if 'write' in user['permissions']:  ## Begin Configure Project
 
             % if not node['is_registration']:
-
                 <div class="panel panel-default">
                     <span id="configureNodeAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
                         <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                     </div>
-                    <div id="nodeCategorySettings" class="panel-body">
-                        <h5>
-                            Category: <select data-bind="attr.disabled: disabled,
-                                                        options: categories,
-                                                        optionsValue: 'value',
-                                                        optionsText: 'label',
-                                                        value: selectedCategory"></select>
-                        </h5>
-                        <p data-bind="if: !disabled">
-                            <button data-bind="css: {disabled: !dirty()},
-                                               click: updateCategory"
-                                    class="btn btn-primary">Change</button>
-                            <button data-bind="css: {disabled: !dirty()},
-                                               click: cancelUpdateCategory"
-                                    class="btn btn-default">Cancel</button>
-                        </p>
-                        <span data-bind="css: messageClass, html: message"></span>
-                        <span data-bind="if: disabled" class="help-block">
-                            A top-level project's category cannot be changed
-                        </span>
-                    </div>
 
+                    <div id="projectSettings" class="panel-body">
+                        <div class="form-group">
+                            <label>Category:</label>
+                            <select data-bind="attr.disabled: disabled,
+                                                         options: categoryOptions,
+                                                         optionsValue: 'value',
+                                                         optionsText: 'label',
+                                                         value: selectedCategory"></select>
+                            <span data-bind="if: disabled" class="help-block">
+                              A top-level project's category cannot be changed
+                            </span>
+                        </div>
+                        <div class="form-group">
+                            <label for="title">Title:</label>
+                            <input class="form-control" type="text" maxlength="200" placeholder="Required" data-bind="value: title,
+                                                                                                      valueUpdate: 'afterkeydown'">
+                            <span class="text-danger" data-bind="validationMessage: title"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description:</label>
+                            <textarea placeholder="Optional" data-bind="value: description,
+                                             valueUpdate: 'afterkeydown'",
+                            class="form-control resize-vertical"></textarea>
+                        </div>
+                           <button data-bind="click: cancelAll"
+                            class="btn btn-default">Cancel</button>
+                            <button data-bind="click: updateAll"
+                            class="btn btn-success">Save changes</button>
+                        <div class="help-block">
+                            <span data-bind="css: messageClass, html: message"></span>
+                        </div>
                     % if 'admin' in user['permissions']:
                         <hr />
                         <div class="panel-body">
@@ -194,38 +202,38 @@
                 % endif
 
             % endif
+
         % endif  ## End Select Addons
 
-        % if user['has_read_permissions']:  ## Begin Configure Notifications
+        % if include_wiki_settings:  ## Begin Configure Wiki
 
             % if not node['is_registration']:
 
                 <div class="panel panel-default">
-                    <span id="configureNotificationsAnchor" class="anchor"></span>
+                    <span id="configureWikiAnchor" class="anchor"></span>
+
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Notifications</h3>
+                        <h3 class="panel-title">Configure Wiki</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        <p class="text-info">These settings control who can edit your wiki. To make a wiki editable by all OSF users, make your project/component public.</p>
                     </div>
-                    <form id="notificationSettings" class="osf-treebeard-minimal">
-                        <div id="grid">
-                            <div class="notifications-loading">
-                                <i class="fa fa-spinner notifications-spin"></i>
-                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                    <form id="wikiSettings" class="osf-treebeard-minimal">
+                        <div id="wgrid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
                             </div>
                         </div>
                         <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
+                            <p id="configureWikiMessage"></p>
                         </div>
                     </form>
                 </div>
 
             %endif
 
-        % endif End Configure Notifications
-
-
+        % endif ## End Configure Wiki
 
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting
 
@@ -270,7 +278,34 @@
 
         % endif  ## End Configure Commenting
 
+        % if user['has_read_permissions']:  ## Begin Configure Email Notifications
 
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="configureNotificationsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Configure Email Notifications</h3>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                    </div>
+                    <form id="notificationSettings" class="osf-treebeard-minimal">
+                        <div id="grid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                            </div>
+                        </div>
+                        <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                        </div>
+                    </form>
+                </div>
+
+            %endif
+
+        % endif ## End Configure Email Notifications
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
@@ -303,7 +338,7 @@
                                     registrations will be marked with a <strong>retracted</strong> tag.
                                 </div>
 
-                                %if not node['pending_retraction']:
+                                %if not node['is_pending_retraction']:
                                     <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
                                 % else:
                                     <p><strong>This registration is already pending a retraction.</strong></p>
@@ -331,11 +366,11 @@
        template_name = data['node_settings_template']
        tpl = data['template_lookup'].get_template(template_name).render(**data)
     %>
-    ${tpl}
+    ${ tpl | n }
 </%def>
 
 % for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+    <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
 % endfor
 
 
@@ -347,13 +382,13 @@
 
 
 <%def name="javascript_bottom()">
-    <% import json %>
     ${parent.javascript_bottom()}
     <script>
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
-      window.contextVars.node.nodeType = '${node['node_type']}';
-      window.contextVars.nodeCategories = ${json.dumps(categories)};
+      window.contextVars.node.description = ${node['description'] | sjson, n };
+      window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
+      window.contextVars.nodeCategories = ${ categories | sjson, n };
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>

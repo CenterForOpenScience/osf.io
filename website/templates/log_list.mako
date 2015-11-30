@@ -13,11 +13,11 @@
     %endif
         id="logScope">
 
-    <div class="logs m-t-lg">
+    <div class="logs">
 
         <div class="components panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Recent Activity </h3>
+                <h3 class="panel-title">Recent activity </h3>
                 <div class="pull-right">
                 </div>
             </div>
@@ -29,12 +29,12 @@
                 </p>
                 <span data-bind="if: loading()">
                     <div class="spinner-loading-wrapper">
-		                <div class="logo-spin logo-lg "><img src="/static/img/logo_spin.png" alt="loader"> </div>
+		                <div class="logo-spin logo-lg"></div>
 	                	<p class="m-t-sm text-center"> Loading logs...  </p>
 	                </div>
                 </span>
                 <p data-bind="if: !logs().length && !loading()" class="help-block">
-                    No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) icon on a
+                    No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) on a
                     project's page to get activity updates here.
                 </p>
                 <span data-bind="if: !loading()">
@@ -68,7 +68,7 @@
                             <!-- For debugging purposes: If a log template for a the Log can't be found, show
                                 an error message with its log action. -->
                             <!-- ko ifnot: log.hasTemplate() -->
-                            <span class="text-warning">Could not render log: "<span data-bind="text: log.action"></span>"</span>
+                            <span class="text-danger">Could not render log: "<span data-bind="text: log.action"></span>"</span>
                             <!-- /ko -->
                         </dd>
                     </dl><!-- end foreach logs -->
@@ -79,7 +79,7 @@
                     </ul>
                 </div>
 
-            </div> 
+            </div>
         </div>
 </div>
 </div><!-- end #logScope -->

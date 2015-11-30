@@ -101,8 +101,7 @@
                     <div class="comment-content">
 
                         <div data-bind="ifnot: editing">
-                            <span class="component-overflow"
-                              data-bind="html: contentDisplay, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent}"></span>
+                            <span class="component-overflow" data-bind="html: contentDisplay"></span>
                             <span class="pull-right" data-bind="if: hasChildren">
                                 <i data-bind="css: toggleIcon, click: toggle"></i>
                             </span>

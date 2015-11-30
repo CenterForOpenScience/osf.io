@@ -82,6 +82,10 @@ h6 {
     font-size: 3.5em;
     margin-bottom: -20px;
 }
+#home-hero h1, #home-hero h3 {
+    z-index: 9;
+    position: relative;
+}
 #home-hero h2 {
     margin-top: -50px;
     background-color: #ffffff;
@@ -101,7 +105,9 @@ h6 {
     top: 0;
     left: 0;
 }
-
+.hero-brand {
+    font-weight: bold;
+}
 #hero-signup {
     background: rgba(255, 255, 255, 0.15);
     position: absolute;
@@ -123,6 +129,10 @@ h6 {
 }
 #hero-signup a:hover {
     text-decoration: none;
+}
+#signUpScope button, #signUpScope input, #signUpScope .help-block {
+    z-index: 9;
+    position: relative;
 }
 #screenshot {
     margin-top: -10%;
@@ -175,9 +185,12 @@ h6 {
 #logo .circle:hover:after {
     bottom: -5px;
 }
+
 #logo.off {
-    transform: rotate(180deg);
     -webkit-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+    transform: rotate(180deg);
 }
 #logo.off .circle:before {
     top: -200px;
@@ -188,14 +201,18 @@ h6 {
     opacity: 0;
 }
 #logo #circle-1 {
-    transform: rotate(0deg);
     -webkit-transform: rotate(0deg);
+    -ms-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
     left: 75px;
     top: 0;
 }
 #logo #circle-2 {
-    transform: rotate(45deg);
     -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
     left: 128px;
     top: 22px;
 }
@@ -203,14 +220,18 @@ h6 {
     z-index: -1;
 }
 #logo #circle-3 {
-    transform: rotate(90deg);
     -webkit-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    -o-transform: rotate(90deg);
+    transform: rotate(90deg);
     left: 150px;
     top: 75px;
 }
 #logo #circle-4 {
-    transform: rotate(135deg);
     -webkit-transform: rotate(135deg);
+    -ms-transform: rotate(135deg);
+    -o-transform: rotate(135deg);
+    transform: rotate(135deg);
     left: 128px;
     top: 128px;
 }
@@ -218,14 +239,18 @@ h6 {
     z-index: -1;
 }
 #logo #circle-5 {
-    transform: rotate(180deg);
     -webkit-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+    transform: rotate(180deg);
     left: 75px;
     top: 150px;
 }
 #logo #circle-6 {
-    transform: rotate(225deg);
     -webkit-transform: rotate(225deg);
+    -ms-transform: rotate(225deg);
+    -o-transform: rotate(225deg);
+    transform: rotate(225deg);
     left: 22px;
     top: 128px;
 }
@@ -233,14 +258,18 @@ h6 {
     z-index: -1;
 }
 #logo #circle-7 {
-    transform: rotate(270deg);
     -webkit-transform: rotate(270deg);
+    -ms-transform: rotate(270deg);
+    -o-transform: rotate(270deg);
+    transform: rotate(270deg);
     left: 0;
     top: 75px;
 }
 #logo #circle-8 {
-    transform: rotate(315deg);
     -webkit-transform: rotate(315deg);
+    -ms-transform: rotate(315deg);
+    -o-transform: rotate(315deg);
+    transform: rotate(315deg);
     left: 22px;
     top: 22px;
 }
@@ -248,7 +277,7 @@ h6 {
     z-index: -1;
 }
 .student-image {
-    width: 90%;
+    width: 100%;
     padding-bottom: 100%;
     background: url("/static/img/front-page/student-1.png") no-repeat center bottom;
     background-size: contain;
@@ -290,7 +319,7 @@ h6 {
 }
 .grey-pullout {
     background: #eeeeee url("/static/img/front-page/circles.png") no-repeat bottom right;
-    border-bottom: 1px solid #777777;
+    border-bottom: 1px solid #CCCCCC;
     position: relative;
     z-index: 2;
 }
@@ -313,12 +342,12 @@ h6 {
     margin-bottom: 20px;
 }
 .feature-1 .icon {
-    font-size: 120px;
+    font-size: 100px;
     color: #e4e4e4;
     border-radius: 100px;
     background-color: #ffffff;
     position: relative;
-    left: -74px;
+    left: -34px;
     top: 14px;
     overflow: hidden;
 }
@@ -434,40 +463,54 @@ h6 {
 footer {
     margin-top: -20px;
 }
-@media (max-width: 767px) {
-    #hero-signup {
-        width: 100%;
-    }
-    .student-image {
-        margin: 20px 0 -25px 0;
-        margin-left: 5%;
-    }
+
+.network-bg {
+    background: url("/static/img/front-page/bg-web.png") repeat;
+    background-size: contain;
+    height: 1000px;
+    margin-bottom: -1000px;
+    opacity: 0.25;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
     .student-image .quote {
-        bottom: 0;
+        min-height: 100px;
+        width: 120%;
     }
-    .student-image .main {
-        font-size: 1.0em !important;
+    .student-image .quote:before {
+        left: 250px;
     }
-    .sign-in .btn-group {
-        width: 90%;
-        padding-left: 5%;
-    }
-    .sign-in .btn {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    #menuLogin {
-        padding: 0;
-        width: 100%;
-    }
-    .grey-pullout {
-        padding-bottom: 90px;
-    }
-    #home-hero {
-        height: 900px;
+    .copyright {
+        padding-top: 14px;
     }
 }
-@media (min-width: 768px) and (max-width: 991px)  {
+@media (min-width: 768px) and (max-width: 1199px) {
+    canvas {
+        display: none;
+    }
+    .student-wrap {
+        padding: 0 10%;
+    }
+    .student-image .quote {
+        bottom: -90px;
+        min-height: 100px;
+        width: 100%;
+    }
+    .student-image .quote:before {
+        left: 125px;
+    }
+    .network-bg {
+        height: 750px;
+        margin-bottom: -750px;
+    }
+    .feature-1 .icon {
+        font-size: 100px;
+        left: -40px;
+        top: 0;
+    }
+}
+@media (max-width: 991px) {
     .feature-4 .col-md-4:last-child {
         padding-top: 30px;
     }
@@ -488,26 +531,16 @@ footer {
     .integrations img {
         padding: 20px 10% 0 10%;
     }
-    .feature-1 .icon {
-        font-size: 40px;
-        left: 0;
-        top: 30px;
-    }
     .student-image {
-        margin: 0 0 125px 0;
-        margin-left: 25%;
-        width: 50%;
-        padding-bottom: 50%;
-        top: 0;
-    }
-    .student-image .quote {
-        top: 170px;
-    }
-    .student-image .main {
-        font-size: 1.0em !important;
+        margin: 30px 0 0 0;
+        width: 100%;
+        padding-bottom: 100%;
     }
     #home-hero {
-        padding-top: 35px;
+        padding-top: 0;
+    }
+    #hero-signup .icon {
+        top: -20px;
     }
     .space-top {
         padding-top: 20px;
@@ -519,32 +552,38 @@ footer {
         padding-bottom: 90px;
     }
 }
-@media (min-width: 768px) and (max-width: 1199px) {
-    .student-image {
-        top: 0;
+@media (max-width: 767px) {
+    canvas {
+        display: none;
+    }
+    #hero-signup {
+        width: 100%;
+    }
+    #home-hero canvas {
+        top: 80px;
+    }
+    .student-wrap {
+        padding: 0 5%;
     }
     .student-image .quote {
-        margin-top: 100px;
-        bottom: -58px;
+        bottom: -70px;
+        min-height: 100px;
+    }
+    .student-image .quote:before {
+        left: 80px;
+        border-width: 0 14px 26px 14px;
+        top: -26px;
+    }
+    .student-image .main {
+        font-size: 1.0em !important;
+    }
+    .grey-pullout {
+        padding-bottom: 90px;
+    }
+    .integrations .mob-clear {
+        clear: left;
     }
 }
-
-@media (min-width: 1200px) {
-    .container {
-        width: 1170px !important;
-    }
-}
-
-.signup-help {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 5px;
-}
-
-#signUpScope {
-    position: relative;
-    z-index: 10;
-}
-
 .alert-front {
     border-radius: 0;
     margin-bottom: 0;
