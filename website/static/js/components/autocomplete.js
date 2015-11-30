@@ -29,7 +29,7 @@ MethodNotDefined.prototype = Error.prototype;
  *  inputElement: the element upon which to call .typeahead(). Injected during
  *      component registration.
  */
-var baseSearchViewModel = function (params) {
+var BaseSearchViewModel = function (params) {
     // Parse params
     this.dataUrl = params.data;
     this.inputElement = params.inputElement;
@@ -49,7 +49,7 @@ var baseSearchViewModel = function (params) {
         this.initTypeahead.bind(this)
     );
 };
-$.extend(baseSearchViewModel.prototype, {
+$.extend(BaseSearchViewModel.prototype, {
     /************************************************
      * Abstract methods - subclasses must implement *
      ************************************************/
@@ -114,10 +114,10 @@ $.extend(baseSearchViewModel.prototype, {
 });
 
 
-var draftRegistrationsSearchViewModel = function (params) {
-    baseSearchViewModel.apply(this, arguments);
+var DraftRegistrationsSearchViewModel = function (params) {
+    BaseSearchViewModel.apply(this, arguments);
 };
-$.extend(draftRegistrationsSearchViewModel.prototype, baseSearchViewModel.prototype, {
+$.extend(DraftRegistrationsSearchViewModel.prototype, BaseSearchViewModel.prototype, {
     processData: function (data) {
         this.items(data.draftRegistrations);
     },
@@ -182,7 +182,7 @@ ko.components.register('osf-draft-registrations-search', {
             $.extend(params, {
                 inputElement: $(componentInfo.element).find('input.osf-typeahead')
             });
-            return new draftRegistrationsSearchViewModel(params);
+            return new DraftRegistrationsSearchViewModel(params);
         }
     },
     template: {element: 'osf-search'}
