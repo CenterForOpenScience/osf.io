@@ -3,53 +3,35 @@ var $ = require('jquery');
 var AddonHelper = require('js/addonHelper');
 
 
-/**
- * Module that controls the Dryad Service node settings. Includes Knockout view-model
- * for syncing data.
- */
-;(function (global, factory) {
-    if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'osfutils', 'knockoutpunches'], factory);
-    } else {
-        global.DryadNodeConfig  = factory(ko, jQuery);
-    }
-}(this, function(ko, $) {
-    // Enable knockout punches
-    ko.punches.enableAll();
+$(document).ready(function() {
 
-    var ViewModel = function(url) {
-        var self = this;
-        self.url = url;
-        // TODO: Initialize observables, computes, etc. here
-        self.nodeHasAuth = ko.observable(false);
-        self.userHasAuth = ko.observable(false);
-        // Flashed messages
-        self.message = ko.observable('');
+        $('#figshareAddKey').on('click', function() {
+                window.location.href = '/api/v1/settings/figshare/oauth/';
+        });
 
-        // Get data from the config GET endpoint
-        function onFetchSuccess(response) {
-            // Update view model
-            self.nodeHasAuth(response.result.nodeHasAuth);
-            self.userHasAuth(resposne.result.userHasAuth);
-        }
-        function onFetchError(xhr, textstatus, error) {
-            self.message('Could not fetch settings.');
-        }
-        function fetch() {
-            $.ajax({url: self.url, type: 'GET', dataType: 'json',
-                    success: onFetchSuccess,
-                    error: onFetchError
+        $('#figshareDelKey').on('click', function() {
+            bootbox.confirm({
+                title: 'Disconnect figshare Account?',
+                message: language.confirmDeauth,
+                callback: function(result) {
+                    if(result) {
+                        $.ajax({
+                            url: '/api/v1/settings/figshare/oauth/',
+                            type: 'DELETE',
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                                window.location.reload();
+                            }
+                        });
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Disconnect',
+                        className:'btn-danger'
+                    }
+                }
             });
-        }
-
-
-    };
-
-    function DryadNodeConfig(selector, url) {
-        // Initialization code
-        var self = this;
-        self.viewModel = new ViewModel(url);
-        $.osf.applyBindings(self.viewModel, selector);
-    }
-
-}));
+        });
+    });

@@ -53,6 +53,15 @@ page_routes = {'rules':
         ),
         Rule(
             [
+                '/project/<pid>/dryad/search',
+                '/project/<pid>/node/<nid>/dryad/search',
+            ],
+            'get',
+            views.dryad.dryad_search,
+            OsfWebRenderer('../addons/dryad/templates/dryad_page.mako'),
+        ),
+        Rule(
+            [
                 '/project/<pid>/dryad/add',
                 '/project/<pid>/node/<nid>/dryad/add',
             ],

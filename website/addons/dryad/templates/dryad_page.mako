@@ -14,10 +14,10 @@
 % else:
 <span>Next</span>
 % endif
-<form action="action_page.php">
+<form action="{href: urls().search}">
 Search:
-<input type="text" name="firstname" value="doi:10.5061/dryad.XXXX">
-<input type="submit" value="Submit">
+<input type="text" name="query" value="doi:10.5061/dryad.XXXX">
+<input type="submit" value="Search">
 </form>
 
 ${content}

@@ -1,4 +1,5 @@
 <!-- Authorization -->
+<%inherit file="project/addon/user_settings.mako" />
 <div>
     <h4 class="addon-title">
       <img class="addon-icon" src="${addon_icon_url}"></img>
