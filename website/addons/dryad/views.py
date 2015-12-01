@@ -49,7 +49,6 @@ def set_dryad_doi(node_addon, **kwargs):
     auth=kwargs['auth']
     d = Dryad_DataOne()
     try:
-
         m = d.metadata(doi)
     except HTTPError as e:
         return redirect("/project/{}".format(pid))

@@ -7,16 +7,6 @@ import os
 TEMPLATE_DIR='../addons/dryad/templates/'
 
 
-settings_routes = {
-    'rules':[
-
-    ],
-    'prefix': '/api/v1'
-}
-
-api_routes ={}
-
-
 page_routes = {'rules':
 [
         Rule(

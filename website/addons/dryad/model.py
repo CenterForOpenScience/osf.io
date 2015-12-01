@@ -94,6 +94,14 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	    self.user_settings = None
 
 	def set_doi(self, doi, title, auth):
+		#Verify the doi
+		try:
+			d=Dryad()
+			m = d.get_package(doi)
+		except HTTPError as e:
+			return
+
+
 		self.dryad_package_doi = doi
 		self.owner.add_log(
             action='dryad_doi_set',
@@ -111,7 +119,8 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	    ret.update(  {'dryad_package_doi': self.dryad_package_doi if self.dryad_package_doi else '',
 	        'add_dryad_package_url': self.owner.web_url_for('set_dryad_doi'),
 	        'browse_dryad_url': self.owner.web_url_for('dryad_browser'),
-	        'search_dryad_url': self.owner.web_url_for('search_dryad_page') } )
+	        'search_dryad_url': self.owner.web_url_for('search_dryad_page'), 
+	        'check_dryad_url': self.owner.web_url_for('check_dryad_doi'), } )
 	    return ret
 
 	def update_json(self):
@@ -120,5 +129,6 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	        'add_dryad_package_url': self.owner.web_url_for('set_dryad_doi'),
 	        'browse_dryad_url': self.owner.web_url_for('dryad_browser'),
 	        'search_dryad_url': self.owner.web_url_for('search_dryad_page'),
+	        'check_dryad_url': self.owner.web_url_for('check_dryad_doi'),
 	    }
 	    return ret
