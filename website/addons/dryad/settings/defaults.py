@@ -1,3 +1,6 @@
+import os
+from website import settings
+
 CLIENT_ID = None
 CLIENT_SECRET = None
 
@@ -25,3 +28,17 @@ DRYAD_SOLR_SEARCH="http://datadryad.org/solr/search/select/?q={}"
 
 
 CACHE = False
+
+
+
+WATERBUTLER_CREDENTIALS = {
+    'storage': {}
+}
+
+WATERBUTLER_SETTINGS = {
+    'storage': {
+        'provider': '',
+        'folder': os.path.join(settings.BASE_PATH, 'dryadcache'),
+    }
+}
+

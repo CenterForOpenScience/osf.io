@@ -12,4 +12,4 @@
 	<a href="http://www.google.com">Click to prepare package</a>
 </div>
 
-${test_content}
+<!--${test_content}-->

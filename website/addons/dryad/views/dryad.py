@@ -22,10 +22,49 @@ logger = logging.getLogger(__name__)
 
 import xml.etree.ElementTree as ET
 
+
+@must_be_valid_project
+@must_have_addon('dryad', 'node')
+def set_dryad_doi(node_addon, **kwargs):
+    doi = request.args["doi"]
+    node_addon.dryad_doi = doi
+    pid =  kwargs['pid']
+    d = Dryad_DataOne()
+    m = d.metadata(doi)
+    node_addon.dryad_title = m.getElementsByTagName("dcterms:title")[0].firstChild.wholeText
+    meta_data = {}
+    m_list = [  'dcterms:type',
+                'dcterms:creator',
+                'dcterms:title',
+                'dcterms:identifier',
+                'dcterms:subject',
+                'dwc:scientificName',
+                'dcterms:temporal',
+                'dcterms:dateSubmitted',
+                'dcterms:available',
+                'dcterms:provenance',
+                'dcterms:isPartOf']
+    for m_item in m_list:
+        m_elements = m.getElementsByTagName(m_item)
+        temp = []
+        for m_el in m_elements:
+            temp.append(m_el.firstChild.wholeText)
+        meta_data[m_item] = temp
+    node_addon.dryad_metadata = str(meta_data)
+
+
+    #now, set the dryad_metadata
+    node_addon.save()
+    #now, redirect back to the original homepage
+    return redirect("/project/{}".format(pid))
+    
+
+
 @must_be_valid_project
 @must_have_addon('dryad', 'node')
 def dryad_page(**kwargs):
-    node = kwargs['node'] or kwargs['project']
+    node = kwargs['node']
+    pid =  kwargs['pid']
     auth=kwargs['auth']
 
     count=25
@@ -46,6 +85,7 @@ def dryad_page(**kwargs):
     d = Dryad_DataOne()
     logger.info("Getting Package List from Dryad DataOne API")
     x = d.list(count=count, start_n=start)
+    logger.debug( x.toprettyxml() )
     count = int(x.getElementsByTagName("d1:objectList")[0].attributes["count"].value )
     start = int(x.getElementsByTagName("d1:objectList")[0].attributes["start"].value)
     total = int(x.getElementsByTagName("d1:objectList")[0].attributes["total"].value)
@@ -83,9 +123,12 @@ def dryad_page(**kwargs):
         authorel = ET.SubElement(sublist, "li")
         authorel.text = "Identifier:"+ident
         #now create the addon that will add this to the project
-        add_button = ET.SubElement(sublist,"li")
-        add_button.text = "Add To Project"
-        add_button.attrib["href"] = ""
+        add_item = ET.SubElement(sublist,"li")
+        add_button = ET.SubElement(add_item, "a")
+        add_button.text ="Set Node Data to This"
+        add_button.attrib["href"] = "/project/{}/dryad/add?doi={}".format(pid, doi)
+
+
 
     ret.update({"content": ET.tostring(objectList)})
     ret.update(dryad.config.to_json() )

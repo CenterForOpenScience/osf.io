@@ -60,6 +60,15 @@ page_routes = {'rules':
             views.dryad.set_dryad_doi,
             OsfWebRenderer('../addons/dryad/templates/dryad_page.mako'),
         ),
+        Rule(
+            [
+                '/project/<pid>/dryad/hgrid/root/',
+                '/project/<pid>/node/<nid>/dryad/hgrid/root/',
+            ],
+            'get',
+            views.hgrid.dryad_addon_folder,
+            json_renderer,
+        ),
 
 ]
 
