@@ -20,10 +20,14 @@ from website.addons.googledrive.serializer import GoogleDriveSerializer
 @must_have_permission(permissions.WRITE)
 def googledrive_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    result = GoogleDriveSerializer(
+    serializer = GoogleDriveSerializer(
         node_settings=node_addon,
         user_settings=auth.user.get_addon('googledrive')
-    ).serialized_node_settings
+    )
+    if node_addon.external_account:
+        result = serializer.serialize_settings(node_addon, auth.user)
+    else:
+        result = serializer.serialized_node_settings
     return {
         'result': result
     }
@@ -72,7 +76,7 @@ def googledrive_import_user_auth(auth, node_addon, **kwargs):
     result = GoogleDriveSerializer(
         node_settings=node_addon,
         user_settings=user.get_addon('googledrive'),
-    ).serialized_node_settings
+    ).serialize_settings(node_addon, user)
     return result
 
 @must_have_permission(permissions.WRITE)
