@@ -11,4 +11,3 @@ def log_object_saved(sender, guid_stored_object):
         typedModel = Guid.load(guid_stored_object._id).referent
         if hasattr(typedModel, 'absolute_api_v2_url'):
             ban_url.delay(typedModel.absolute_url)
-
