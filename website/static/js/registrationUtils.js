@@ -1243,7 +1243,7 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
 
     bootbox.dialog({
-        title: 'Please confim',
+        title: 'Please confirm',
         message: 'Are you sure you want to delete this draft registration?',
         buttons: {
             cancel: {
