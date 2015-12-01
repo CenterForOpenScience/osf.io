@@ -273,19 +273,28 @@
                     </div>
 
                 </div>
-                <div class="panel panel-default">
+                <div class="panel panel-default" id="Institutions">
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Add Primary Institution</h3>
                     </div>
 
                     <div class="panel-body">
 
-                        <form class="form" id="commentSettings">
-
-                        </form>
+                        <div class="radio" id="selectedInst">
+                            <div data-bind="foreach: availableInstitutions">
+                                <label>
+                                    <input type="radio" data-bind="value: $data.id" name="primaryInst">
+                                    <p data-bind="text: $data.title"></p>
+                                </label>
+                            </div>
+                            <label>
+                                <input type="radio" value="None" name="primaryInst">
+                                None
+                            </label>
+                        </div>
+                        <button data-bind="click: submitInst" class="btn btn-success">Submit</button>
 
                     </div>
-
                 </div>
 
             % endif
@@ -410,5 +419,6 @@
     % for js_asset in addon_js:
     <script src="${js_asset | webpack_asset}"></script>
     % endfor
+
 
 </%def>

@@ -12,6 +12,7 @@ require('css/addonsettings.css');
 
 var ctx = window.contextVars;
 
+
 // Initialize treebeard grid for notifications
 var ProjectNotifications = require('js/notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
@@ -53,17 +54,54 @@ if ($('#wgrid').length) {
         });
     });
 }
-var available_institutions = null;
-$.ajax({
-    url: ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/',
-    tye: 'GET',
-    dataType: 'json'
-}).done(function(response) {
-    available_institutions = response.data.attributes.affiliated_institutions;
-});
+
+
+var institutionsViewModel = function() {
+    ko.punches.enableAll();
+    var self = this;
+    self.test = ko.observable('Ayy lmao');
+    self.availableInstitutions = ko.observableArray();
+    $.ajax({
+        url: ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/',
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        for(var key in response.data.attributes.affiliated_institutions) {
+            self.availableInstitutions.push({'id': key, 'title': response.data.attributes.affiliated_institutions[key]});
+        }
+    });
+
+    self.submitInst = function() {
+        $osf.ajaxJSON(
+            'PUT',
+            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/',
+            {
+                'isCors': true,
+                'data': {
+                    'data': {
+                        'type': 'nodes',
+                        'id': ctx.node.id,
+                        'attributes': {
+                            'title': ctx.node.title,
+                            'category': ctx.node.category,
+                            'institution': $('input[name=primaryInst]:checked', '#selectedInst').val() || null
+                        }
+                    }
+                }
+            }
+        ).done(function(response){
+            $osf.growl('Nice!');
+        }).fail(function(response){
+            $osf.growl('Poop!');
+        });
+    }
+};
+
 $(document).ready(function() {
-    
+    var self = this;
+    self.instViewModel = new institutionsViewModel();
     // Apply KO bindings for Project Settings
+    $osf.applyBindings(self.instViewModel, '#Institutions');
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
     for (var i = 0; i < keys.length; i++) {
@@ -261,3 +299,4 @@ $(document).ready(function() {
     });
 
 });
+

@@ -193,6 +193,8 @@
                       </license-picker>
                     </p>
                  % endif
+                <span id="institution">Affiliated Institution:</span>
+                <span class="text-muted"> ${node['institution']} </span>
             </div>
         </div>
 

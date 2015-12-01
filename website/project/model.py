@@ -747,12 +747,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Primary institution node is attached to
     primary_institution = fields.ForeignField('institution', backref='node')
 
+    def institution_id(self):
+        return self.primary_institution._id if self.primary_institution else 'None'
+
     def add_primary_institution(self, user, inst):
         if inst.auth(user):
             self.primary_institution = inst
             self.save()
             return True
         return False
+
+    def remove_primary_institution(self):
+        self.primary_institution = None
+        self.save()
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }

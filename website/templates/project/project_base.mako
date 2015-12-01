@@ -96,7 +96,8 @@
             parentRegisterUrl: ${parent_registration_url | sjson, n },
             parentExists: ${ parent_exists | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
-            registrationMetaData: ${ node['registered_meta'] | sjson, n }
+            registrationMetaData: ${ node['registered_meta'] | sjson, n },
+            institution: ${ node['institution'] | sjson, n }
         }
     });
 

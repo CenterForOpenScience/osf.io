@@ -770,7 +770,8 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-            'has_draft_registrations': bool(node.draft_registrations_active)
+            'has_draft_registrations': bool(node.draft_registrations_active),
+            'institution': node.primary_institution.name if node.primary_institution else None,
         },
         'parent_node': {
             'exists': parent is not None,
