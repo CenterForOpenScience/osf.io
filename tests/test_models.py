@@ -3017,7 +3017,10 @@ class TestProject(OsfTestCase):
         )
 
     def test_date_modified(self):
-        self.project.logs.append(NodeLogFactory())
+        contrib = UserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator))
+        self.project.save()
+
         assert_equal(self.project.date_modified, self.project.logs[-1].date)
         assert_not_equal(self.project.date_modified, self.project.date_created)
 
