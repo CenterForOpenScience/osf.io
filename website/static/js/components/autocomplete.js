@@ -184,11 +184,10 @@ $.extend(DraftRegistrationsSearchViewModel.prototype, BaseSearchViewModel.protot
 ko.components.register('osf-draft-registrations-search', {
     viewModel: {
         createViewModel: function(params, componentInfo) {
-            // Inject the inputElement
-            $.extend(params, {
+            var opts = $.extend({}, {
                 inputElement: $(componentInfo.element).find('input.osf-typeahead')
-            });
-            return new DraftRegistrationsSearchViewModel(params);
+            }, params);
+            return new DraftRegistrationsSearchViewModel(opts);
         }
     },
     template: {element: 'osf-search'}
