@@ -1107,7 +1107,7 @@ RegistrationEditor.prototype.getContributors = function() {
     return self.makeContributorsRequest()
         .then(function(data) {
             return $.map(data.contributors, function(c) { return c.fullname; });
-        }).fail(function() {
+        }).fail(function(xhr, status, error) {
             Raven.captureMessage('Could not GET contributors', {
                 url: window.contextVars.node.urls.api + 'get_contributors/',
                 textStatus: status,
