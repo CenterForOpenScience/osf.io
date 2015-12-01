@@ -55,7 +55,7 @@ function Meeting(data) {
                     folderIcons : false,
                     filter : true,
                     sortInclude : true,
-                    custom : function() { return m('a', { href : item.data.authorUrl }, item.data.author ); }
+                    custom : function() { return m('a', { href : item.data.authorUrl, target : '_blank'}, item.data.author ); }
                 },
                 {
                     data : 'category',  // Data field name
