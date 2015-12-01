@@ -11,7 +11,7 @@ class GoogleDriveSerializer(StorageAddonSerializer):
     def credentials_are_valid(self, user_settings, client):
         try:
             self.node_settings.fetch_access_token()
-        except ExpiredAuthError:
+        except (ExpiredAuthError, AttributeError):
             return False
         return True
 

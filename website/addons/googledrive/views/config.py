@@ -24,12 +24,8 @@ def googledrive_config_get(node_addon, auth, **kwargs):
         node_settings=node_addon,
         user_settings=auth.user.get_addon('googledrive')
     )
-    if node_addon.external_account:
-        result = serializer.serialize_settings(node_addon, auth.user)
-    else:
-        result = serializer.serialized_node_settings
     return {
-        'result': result
+        'result': serializer.serialize_settings(node_addon, auth.user)
     }
 
 
