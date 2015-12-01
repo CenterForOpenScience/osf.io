@@ -19,3 +19,13 @@ def get_notebooks(client):
              'guid': notebook.guid,
              'stack': notebook.stack,
              'defaultNotebook': notebook.defaultNotebook} for notebook in noteStore.listNotebooks()]
+
+# https://dev.evernote.com/doc/reference/NoteStore.html#Fn_NoteStore_getNotebook
+
+def get_notebook(client, nb_guid):
+    noteStore = client.get_note_store()
+    notebook = noteStore.getNotebook(nb_guid)
+    return {'name': notebook.name,
+             'guid': notebook.guid,
+             'stack': notebook.stack,
+             'defaultNotebook': notebook.defaultNotebook} 
