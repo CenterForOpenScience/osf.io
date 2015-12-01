@@ -62,6 +62,10 @@ def is_anonymized(request):
     return is_anonymous
 
 
+class DoNotRelateWhenAnonymous(object):
+    pass
+
+
 class AllowMissing(ser.Field):
 
     def __init__(self, field, **kwargs):
@@ -680,7 +684,8 @@ class JSONAPISerializer(ser.Serializer):
                         data['embeds'][field.field_name] = result
                 else:
                     try:
-                        if not (is_anonymous and hasattr(field, 'view_name') and field.view_name.find('users:') != -1):
+                        if not (is_anonymous and hasattr(field, 'view_name') and
+                                        isinstance(field.root, DoNotRelateWhenAnonymous) != -1):
                             data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
                         continue

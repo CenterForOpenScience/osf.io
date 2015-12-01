@@ -7,12 +7,12 @@ from api.base.serializers import AllowMissing
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, DoNotRelateWhenAnonymous
 )
 from api.base.utils import add_dev_only_items
 
 
-class UserSerializer(JSONAPISerializer):
+class UserSerializer(DoNotRelateWhenAnonymous, JSONAPISerializer):
     filterable_fields = frozenset([
         'full_name',
         'given_name',
