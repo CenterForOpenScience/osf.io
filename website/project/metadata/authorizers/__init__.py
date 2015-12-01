@@ -6,11 +6,10 @@ logger = logging.getLogger(__name__)
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
-groups = json.load(
-    open(
-        os.path.join(HERE, 'defaults.json')
-    )
-)
+groups = None
+with open(os.path.join(HERE, 'defaults.json')) as defaults:
+    groups = json.load(defaults)
+
 fp = None
 try:
     fp = open('{0}/local.json'.format(HERE))
