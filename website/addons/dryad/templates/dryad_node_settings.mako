@@ -20,4 +20,3 @@
 <%def name="on_submit()"></%def>
 
 <%include file="profile/addon_permissions.mako" />
-
