@@ -394,13 +394,6 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
 };
 
 /**
- * Allows data-bind to be called without a div so the layout of the page is not effected.
- * Example:
- * <!-- ko stopBinding: true -->
- */
-ko.virtualElements.allowedBindings.stopBinding = true;
-
-/**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element (and child elements) if it was
   * previously hidden by applying the 'scripted' CSS class.
