@@ -15,7 +15,6 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon, must_be_valid_project, must_be_addon_authorizer
 from website.project.views.node import _view_project
 
-
 from website.util import api_url_for
 from website.util import rubeus
 
@@ -78,8 +77,6 @@ def remove_dryad_doi(node_addon, **kwargs):
 @must_have_addon('dryad', 'node')
 def dryad_browser(**kwargs):
     return dryad_page(**kwargs)
-
-
 
 @must_be_valid_project
 @must_have_addon('dryad', 'node')
@@ -215,7 +212,7 @@ def search_dryad_page(**kwargs):
         authorel.text = authors
 
         #pick out the identifier: dc.identifier
-        identifier = [ i.firstChild.firstChild.wholeText for i in  doc.getElementsByTagName("arr") if i.hasAttribute("name") and i.getAttribute("name")=="dc.identifier"  ]
+        identifier = [ i.firstChild.firstChild.wholeText for i in  doc.getElementsByTagName("arr") if i.hasAttribute("name") and i.getAttribute("name")=="dc.identifier"]
         identifier=identifier[0]
         id_item = ET.SubElement(sublist,"li")
         id_button = ET.SubElement(id_item, "a")
@@ -227,14 +224,13 @@ def search_dryad_page(**kwargs):
             add_button = ET.SubElement(add_item, "a")
             add_button.text ="Set Node Data to This"
             add_button.attrib["href"] = "/project/{}/dryad/add?doi={}".format(pid, identifier)
+
     ret.update({"content": ET.tostring(objectList)})
     ret.update(dryad.config.to_json() )
     ret.update(dryad.update_json() )
     ret.update(_view_project(node, auth, primary=True)) 
 
     return ret
-
-
 
 def dryad_addon_folder(node_settings, auth, **kwargs):    
     # Quit if no dataset linked

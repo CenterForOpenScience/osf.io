@@ -14,11 +14,14 @@
 % else:
 <span>Next</span>
 % endif
-<form action="{href: urls().search}">
+
+<form action="${search_dryad_url}">
 Search:
-<input type="text" name="query" value="doi:10.5061/dryad.XXXX">
+<input type="text" name="query" value="Enter Text Here">
 <input type="submit" value="Search">
 </form>
+<!--${context.keys()}
+${context.__dict__}-->
 
 ${content}
 

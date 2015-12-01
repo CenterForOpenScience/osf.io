@@ -95,43 +95,23 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	    # TODO: Any other addon-specific settings should be removed here.
 	    node = self.owner
 	    self.user_settings = None
-
-	def set_doi(self, doi, title, auth):
-		#Verify the doi
-		try:
-			d=Dryad()
-			m = d.get_package(doi)
-		except HTTPError as e:
-			return
-
-
-		self.dryad_package_doi = doi
-		self.owner.add_log(
-            action='dryad_doi_set',
-            params={
-		        'project': self.owner.parent_id,
-		        'node': self.owner._id,
-               	'dryad' :{'doi':self.dryad_package_doi,
-               				'title':title} 
-            },
-            auth=auth,
-        )
+	    self.owner.add_log(
+	        action='dryad_node_deauthorized',
+	        params={
+	            'project': node.parent_id,
+	            'node': node._id,
+	        },
+	        auth=auth,
+	    )
 
 	def to_json(self, user):
 	    ret = super(AddonDryadNodeSettings, self).to_json(user)
-	    ret.update(  {'dryad_package_doi': self.dryad_package_doi if self.dryad_package_doi else '',
-	        'add_dryad_package_url': self.owner.web_url_for('set_dryad_doi'),
-	        'browse_dryad_url': self.owner.web_url_for('dryad_browser'),
-	        'search_dryad_url': self.owner.web_url_for('search_dryad_page'), 
-	        'check_dryad_url': self.owner.web_url_for('check_dryad_doi'), } )
+	    ret.update(self.update_json)
 	    return ret
-
 	def update_json(self):
-	    ret={
+	    return {
 	        'dryad_package_doi': self.dryad_package_doi if self.dryad_package_doi else '',
 	        'add_dryad_package_url': self.owner.web_url_for('set_dryad_doi'),
 	        'browse_dryad_url': self.owner.web_url_for('dryad_browser'),
 	        'search_dryad_url': self.owner.web_url_for('search_dryad_page'),
-	        'check_dryad_url': self.owner.web_url_for('check_dryad_doi'),
 	    }
-	    return ret
