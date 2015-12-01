@@ -45,9 +45,9 @@ var _dryadItemButtons = {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            var fileurl = item.data.extra.webView;
-
-                            window.open(fileurl, '_blank');
+                            Fangorn.ButtonEvents._downloadEvent.call(tb, event, item);
+                            //var fileurl = item.data.extra.webView;
+                            //window.open(fileurl, '_blank');
                         },
                         icon: 'fa fa-download',
                         className: 'text-primary'

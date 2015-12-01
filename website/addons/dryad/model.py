@@ -18,7 +18,6 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
-from website.addons.dryad import utils
 from website.addons.dryad import settings as dryad_settings
 #from website.addons.dryad import serializer as serializer
 
@@ -53,7 +52,6 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	@property
 	def folder_name(self):
 		#get the name from dryad
-
 		return ''
 
 	def serialize_waterbutler_credentials(self):
@@ -66,8 +64,10 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
 
 	def create_waterbutler_log(self, auth, action, metadata):
+		print "This is the Metadata: ", metadata
+		print "This is the auth ", auth
+		print "This is the action ", action
 		path = metadata['path']
-
 		url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='dryad')
 		if not metadata.get('extra'):
 		    sha = None
