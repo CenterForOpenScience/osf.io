@@ -1,5 +1,5 @@
 """
-This will add a date_modified field to all nodes.  Date_modified will be set equal to the date of the last log.
+This will add a date_modified field to all nodes.  Date_modified will be equivalent to the date of the last log.
 """
 import sys
 import logging
