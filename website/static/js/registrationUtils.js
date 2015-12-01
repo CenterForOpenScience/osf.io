@@ -2,6 +2,7 @@ require('css/registrations.css');
 
 var $ = require('jquery');
 var ko = require('knockout');
+var Raven = require('raven-js');
 var bootbox = require('bootbox');
 var moment = require('moment');
 var History = require('exports?History!history');
@@ -976,8 +977,9 @@ RegistrationEditor.prototype.submit = function() {
     var currentUser = $osf.currentUser();
     var messages = self.draft().messages;
     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
+        var url = self.urls.submit.replace('{draft_pk}', self.draft().pk);
         if (result) {
-            var request = $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+            var request = $osf.postJSON(url, {
                 node: currentNode,
                 auth: currentUser
             });
@@ -996,7 +998,14 @@ RegistrationEditor.prototype.submit = function() {
                     }
                 });
             });
-        request.fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+            request.fail(function(xhr, status, error) {
+                Raven.captureMessage('Could not submit draft registration', {
+                    url: url,
+                    textStatus: status,
+                    error: error
+                });
+                $osf.growl('Error submitting for review', language.submitForReviewFail);
+            });
         }
     });
 };
@@ -1072,7 +1081,12 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
-    request.fail(function() {
+    request.fail(function(err, status, xhr) {
+        Raven.captureMessage('Could not save draft registration', {
+            url: self.urls.update.replace('{draft_pk}', self.draft().pk),
+            textStatus: status,
+            error: error
+        });
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
     return request;
@@ -1094,6 +1108,11 @@ RegistrationEditor.prototype.getContributors = function() {
         .then(function(data) {
             return $.map(data.contributors, function(c) { return c.fullname; });
         }).fail(function() {
+            Raven.captureMessage('Could not GET contributors', {
+                url: window.contextVars.node.urls.api + 'get_contributors/',
+                textStatus: status,
+                error: error
+            });
             $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
         });
 };
