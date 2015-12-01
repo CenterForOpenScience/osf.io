@@ -71,7 +71,7 @@ var ViewModel = function(submitUrl) {
             self.timeout = setTimeout(
                 function() {
                     message('');
-                    messageClass('text-info');
+                    messageClass('');
                 },
                 timeout
             );
@@ -87,7 +87,7 @@ var ViewModel = function(submitUrl) {
             self.flashMessage,
             self.flashMessageClass,
             response.message,
-            'text-info'
+            'text-info p-xs'
         );
         self.submitted(true);
     };
@@ -97,7 +97,7 @@ var ViewModel = function(submitUrl) {
             self.flashMessage,
             self.flashMessageClass,
             xhr.responseJSON.message_long,
-            'text-danger',
+            'text-danger p-xs',
             5000,
             self.flashTimeout
         );

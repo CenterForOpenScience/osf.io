@@ -151,8 +151,22 @@ var Contributor = {
             m('a', {
                 href: '#',
                 onclick: function() {
-                    utils.updateFilter(vm, 'match:contributors.familyName:' + contributor.familyName, true);
-                    utils.updateFilter(vm, 'match:contributors.givenName:' + contributor.givenName, true);
+                    var givenNameLength = contributor.givenName ? contributor.givenName.length : 0;
+                    var familyNameLength = contributor.familyName ? contributor.familyName.length : 0;
+                    if (givenNameLength <= 0 && familyNameLength <= 0) {
+                        utils.updateFilter(vm, 'match:contributors.name:' + contributor.name, true);
+                    } else {
+                        var filters = [];
+                        if (givenNameLength > 0) {
+                            filters.push('match:contributors.givenName:' + contributor.givenName);
+                        }
+                        if (familyNameLength > 0) {
+                            filters.push('match:contributors.familyName:' + contributor.familyName);
+                        }
+                        if(filters.length>0){
+                           utils.updateFilter(vm, filters, true);
+                        }
+                    }
                 }
             }, contributor.name)
         ]);
@@ -242,7 +256,7 @@ var Footer = {
 var RawNormalizedData = {
     view: function(ctrl, params) {
         var result = params.result || params.missingError;
-        var divID = params.missingError ? '' : (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,)/g, '-' );
+        var divID = params.missingError ? '' : (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,|\/)/g, '-' );
         return m('.row', [
             m('.col-md-12',
                 m('div', [

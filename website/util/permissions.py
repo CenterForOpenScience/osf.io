@@ -11,7 +11,7 @@ DEFAULT_CONTRIBUTOR_PERMISSIONS = [READ, WRITE]
 
 
 def expand_permissions(permission):
-    if permission is None:
+    if not permission:
         return []
     index = PERMISSIONS.index(permission) + 1
     return PERMISSIONS[:index]

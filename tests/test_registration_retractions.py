@@ -373,7 +373,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             parent=self.subproject,
             title='Subcomponent'
         )
-        self.registration = RegistrationFactory(project=self.project)
+        self.registration = RegistrationFactory(project=self.project, is_public=True)
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
 
@@ -522,7 +522,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
-    def test_GET_approve_registration_without_retraction_returns_HTTPError_GONE(self):
+    def test_GET_approve_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert_true(self.registration.is_pending_retraction)
         self.registration.retraction.reject(self.user, self.rejection_token)
         assert_false(self.registration.is_pending_retraction)
@@ -533,7 +533,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.GONE)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_GET_approve_with_invalid_token_returns_HTTPError_BAD_REQUEST(self):
         res = self.app.get(
@@ -572,7 +572,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
-    def test_GET_disapprove_registration_without_retraction_returns_HTTPError_GONE(self):
+    def test_GET_disapprove_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert_true(self.registration.is_pending_retraction)
         self.registration.retraction.reject(self.user, self.rejection_token)
         assert_false(self.registration.is_pending_retraction)
@@ -583,7 +583,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.GONE)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_GET_disapprove_with_invalid_token_HTTPError_BAD_REQUEST(self):
         res = self.app.get(
@@ -662,7 +662,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         super(RegistrationRetractionViewsTestCase, self).setUp()
         self.user = AuthUserFactory()
         self.registered_from = ProjectFactory(creator=self.user, is_public=True)
-        self.registration = RegistrationFactory(project=self.registered_from)
+        self.registration = RegistrationFactory(project=self.registered_from, is_public=True)
 
         self.retraction_post_url = self.registration.api_url_for('node_registration_retraction_post')
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
@@ -782,6 +782,21 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.registered_from.reload()
         # Logs: Created, registered, retraction initiated
         assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 1)
+
+    @mock.patch('website.mails.send_mail')
+    def test_valid_POST_retraction_when_pending_retraction_raises_400(self, mock_send):
+        self.app.post_json(
+            self.retraction_post_url,
+            {'justification': ''},
+            auth=self.user.auth,
+        )
+        res = self.app.post_json(
+            self.retraction_post_url,
+            {'justification': ''},
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
 
     @mock.patch('website.mails.send_mail')
     def test_valid_POST_calls_send_mail_with_username(self, mock_send):

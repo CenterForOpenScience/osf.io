@@ -6,6 +6,7 @@ import logging
 
 from bleach import linkify
 from bleach.callbacks import nofollow
+from website.models import NodeLog
 
 import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
@@ -19,6 +20,8 @@ from website.addons.base import AddonNodeSettingsBase
 from website.addons.wiki import utils as wiki_utils
 from website.addons.wiki.settings import WIKI_CHANGE_DATE
 from website.project.signals import write_permissions_revoked
+
+from website.exceptions import NodeStateError
 
 from .exceptions import (
     NameEmptyError,
@@ -34,6 +37,44 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
     complete = True
     has_auth = True
+    is_publicly_editable = fields.BooleanField(default=False, index=True)
+
+    def set_editing(self, permissions, auth=None, log=False):
+        """Set the editing permissions for this node.
+
+        :param auth: All the auth information including user, API key
+        :param bool permissions: True = publicly editable
+        :param bool save: Whether to save the privacy change
+        :param bool log: Whether to add a NodeLog for the privacy change
+            if true the node object is also saved
+        """
+        node = self.owner
+
+        if permissions and not self.is_publicly_editable:
+            if node.is_public:
+                self.is_publicly_editable = True
+            else:
+                raise NodeStateError('Private components cannot be made publicly editable.')
+        elif not permissions and self.is_publicly_editable:
+            self.is_publicly_editable = False
+        else:
+            raise NodeStateError('Desired permission change is the same as current setting.')
+
+        if log:
+            node.add_log(
+                action=(NodeLog.MADE_WIKI_PUBLIC
+                        if self.is_publicly_editable
+                        else NodeLog.MADE_WIKI_PRIVATE),
+                params={
+                    'project': node.parent_id,
+                    'node': node._primary_key,
+                },
+                auth=auth,
+                save=False,
+            )
+            node.save()
+
+        self.save()
 
     def after_register(self, node, registration, user, save=True):
         """Copy wiki settings to registrations."""
@@ -42,6 +83,23 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
         if save:
             clone.save()
         return clone, None
+
+    def after_set_privacy(self, node, permissions):
+        """
+
+        :param Node node:
+        :param str permissions:
+        :return str: Alert message
+
+        """
+        if permissions == 'private':
+            if self.is_publicly_editable:
+                self.set_editing(permissions=False, log=False)
+                return (
+                    'The wiki of {name} is now only editable by write contributors.'.format(
+                        name=node.title,
+                    )
+                )
 
     def to_json(self, user):
         return {}

@@ -233,6 +233,9 @@ function resolveIconView(item) {
  * @private
  */
 function _fangornResolveIcon(item) {
+    if (item.data.unavailable)
+        return m('div', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'inline-block', opacity: 0.4}}, '');
+
     var privateFolder =  m('i.fa.fa-lock', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
@@ -323,7 +326,10 @@ function inheritFromParent(item, parent, fields) {
  */
 function _fangornResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus', ' '),
-        togglePlus = m('i.fa.fa-plus', ' ');
+        togglePlus = m('i.fa.fa-plus', ' '),
+    // padding added so that this overlaps the toggle-icon div and prevent cursor change into pointer for checkout icons.
+        checkedByUser = m('i.fa.fa-sign-out.text-muted[style="font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', ''),
+        checkedByOther = m('i.fa.fa-sign-out[style="color: #d9534f; font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', '');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder' && item.depth > 1) {
         if(!item.data.permissions.view){
@@ -333,6 +339,14 @@ function _fangornResolveToggle(item) {
             return toggleMinus;
         }
         return togglePlus;
+    }
+    if (item.data.provider === 'osfstorage' && item.kind === 'file') {
+        if (item.data.extra.checkout) {
+            if (item.data.extra.checkout === window.contextVars.currentUser.id){
+                return checkedByUser;
+            }
+            return checkedByOther;
+        }
     }
     return '';
 }
@@ -408,7 +422,6 @@ function doItemOp(operation, to, from, rename, conflict) {
         tb.pendingFileOps.push(from.id);
     }
     orderFolder.call(tb, from.parent());
-
 
     $.ajax({
         type: 'POST',
@@ -1007,6 +1020,35 @@ function _removeEvent (event, items, col) {
     }
 }
 
+function doCheckout(item, checkout, showError) {
+    return $osf.ajaxJSON(
+        'PUT',
+        window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
+        {
+            isCors: true,
+            data: {
+                data: {
+                    id: item.data.path.replace('/', ''),
+                    type: 'files',
+                    attributes: {
+                        checkout: checkout
+                    }
+                }
+            }
+        }
+    ).done(function(xhr) {
+        if (showError) {
+            window.location.reload();
+        }
+    }).fail(function(xhr) {
+        if (showError) {
+            $osf.growl('Error', 'Unable to check out file. This is most likely due to the file being already checked-out' +
+                ' by another user.');
+        }
+    });
+}
+
+
 /**
  * Resolves lazy load url for fetching children
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1279,10 +1321,16 @@ function expandStateLoad(item) {
     var tb = this,
         i;
     if (item.children.length > 0 && item.depth === 1) {
-        for (i = 0; i < item.children.length; i++) {
-            // if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
+        // NOTE: On the RPP *only*: Load the top-level project's OSF Storage
+        // but do NOT lazy-load children in order to save hundreds of requests.
+        // TODO: We might want to do this for every project, but that's TBD.
+        // /sloria
+        if (window.contextVars && window.contextVars.node && window.contextVars.node.id === 'ezcuj') {
+            tb.updateFolder(null, item.children[0]);
+        } else {
+            for (i = 0; i < item.children.length; i++) {
                 tb.updateFolder(null, item.children[i]);
-            // }
+            }
         }
     }
     if (item.children.length > 0 && item.depth === 2) {
@@ -1394,10 +1442,12 @@ var FGButton = {
             opts['data-placement'] = 'bottom';
             opts.title = args.tooltip;
         }
-        return m('div', opts, [
-            m('i', {className: iconCSS}),
-            m('span', children)
-        ]);
+        var childrenElements = [];
+        childrenElements.push(m('i', {className: iconCSS}));
+        if(children) {
+            childrenElements.push(m('span', children));
+        }
+        return m('div', opts, childrenElements);
     }
 };
 
@@ -1457,86 +1507,126 @@ var FGItemButtons = {
         var item = args.item;
         var rowButtons = [];
         var mode = args.mode;
-        if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
-            rowButtons.push(
-                m.component(FGButton, {
-                    onclick: function(event) {_uploadEvent.call(tb, event, item); },
-                    icon: 'fa fa-upload',
-                    className : 'text-success'
-                }, 'Upload'),
-                m.component(FGButton, {
-                    onclick: function() {
-                        mode(toolbarModes.ADDFOLDER);
-                    },
-                    icon: 'fa fa-plus',
-                    className : 'text-success'
-                }, 'Create Folder'));
-            if(item.data.path){
+        if (tb.options.placement !== 'fileview') {
+            if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function(event) {_removeEvent.call(tb, event, [item]); },
-                        icon: 'fa fa-trash',
-                        className : 'text-danger'
-                    }, 'Delete Folder'));
-            }
-        }
-        if (item.kind === 'file'){
-            rowButtons.push(
-                m.component(FGButton, {
-                    onclick: function(event) { _downloadEvent.call(tb, event, item); },
-                    icon: 'fa fa-download',
-                    className : 'text-primary'
-                }, 'Download')
-            );
-            if (item.data.permissions && item.data.permissions.view) {
-                rowButtons.push(
+                        onclick: function(event) {_uploadEvent.call(tb, event, item); },
+                        icon: 'fa fa-upload',
+                        className : 'text-success'
+                    }, 'Upload'),
                     m.component(FGButton, {
-                        onclick: function(event) {
-                            gotoFileEvent.call(tb, item);
+                        onclick: function () {
+                            mode(toolbarModes.ADDFOLDER);
                         },
-                        icon: 'fa fa-file-o',
-                        className : 'text-info'
-                    }, 'View'));
+                        icon: 'fa fa-plus',
+                        className: 'text-success'
+                    }, 'Create Folder'));
+                if (item.data.path) {
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            onclick: function(event) {_removeEvent.call(tb, event, [item]); },
+                            icon: 'fa fa-trash',
+                            className : 'text-danger'
+                        }, 'Delete Folder'));
+                }
             }
-            if (item.data.permissions && item.data.permissions.edit) {
+            if (item.kind === 'file') {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function(event) { _removeEvent.call(tb, event, [item]); },
-                        icon: 'fa fa-trash',
-                        className : 'text-danger'
-                    }, 'Delete'));
+                        onclick: function (event) { _downloadEvent.call(tb, event, item); },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download')
+                );
+                if (item.data.permissions && item.data.permissions.view) {
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            onclick: function (event) {
+                                gotoFileEvent.call(tb, item);
+                            },
+                            icon: 'fa fa-file-o',
+                            className: 'text-info'
+                        }, 'View'));
+                }
+                if (item.data.permissions && item.data.permissions.edit) {
+                    if (item.data.provider === 'osfstorage') {
+                        if (!item.data.extra.checkout){
+                            rowButtons.push(
+                                m.component(FGButton, {
+                                    onclick: function(event) { _removeEvent.call(tb, event, [item]);  },
+                                    icon: 'fa fa-trash',
+                                    className : 'text-danger'
+                                }, 'Delete'));
+                            rowButtons.push(
+                                m.component(FGButton, {
+                                    onclick: function(event) {
+                                        tb.modal.update(m('', [
+                                            m('p', 'This would mean ' +
+                                                'other contributors cannot edit, delete or upload new versions of this file ' +
+                                                'as long as it is checked-out. You can check it back in at anytime.')
+                                        ]), m('', [
+                                            m('a.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                                            m('a.btn.btn-warning', {onclick: function() {
+                                                doCheckout(item, window.contextVars.currentUser.id, true);
+                                            }}, 'Check out file')
+                                        ]), m('h3.break-word.modal-title', 'Confirm file check-out?'));
+                                    },
+                                    icon: 'fa fa-sign-out',
+                                    className : 'text-warning'
+                                }, 'Check out file'));
+                        } else if (item.data.extra.checkout === window.contextVars.currentUser.id) {
+                            rowButtons.push(
+                                m.component(FGButton, {
+                                    onclick: function(event) {
+                                        doCheckout(item, null, true);
+                                    },
+                                    icon: 'fa fa-sign-in',
+                                    className : 'text-warning'
+                                }, 'Check in file')
+                            );
+                        }
+                    } else {
+                        rowButtons.push(
+                        m.component(FGButton, {
+                            onclick: function (event) { _removeEvent.call(tb, event, [item]); },
+                            icon: 'fa fa-trash',
+                            className: 'text-danger'
+                        }, 'Delete'));
 
-            }
-            if(storageAddons[item.data.provider].externalView) {
-                var providerFullName = storageAddons[item.data.provider].fullName;
+                    }
+                }
+                if(storageAddons[item.data.provider].externalView) {
+                    var providerFullName = storageAddons[item.data.provider].fullName;
+                    rowButtons.push(
+                        m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                            m('i.fa.fa-external-link'),
+                            m('span', 'View on ' + providerFullName)
+                        ])
+                    );
+                }
+            } else if (item.data.provider) {
                 rowButtons.push(
-                    m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
-                        m('i.fa.fa-external-link'),
-                        m('span', 'View on ' + providerFullName)
-                    ])
+                    m.component(FGButton, {
+                        onclick: function (event) { _downloadZipEvent.call(tb, event, item); },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download as zip')
                 );
             }
-        } else if(item.data.provider && item.children.length !== 0) {
-            rowButtons.push(
-                m.component(FGButton, {
-                    onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
-                    icon: 'fa fa-download',
-                    className : 'text-primary'
-                }, 'Download as zip')
-            );
+            if (item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit &&  (item.data.provider !== 'osfstorage' || !item.data.extra.checkout)) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function () {
+                            mode(toolbarModes.RENAME);
+                        },
+                        icon: 'fa fa-font',
+                        className: 'text-info'
+                    }, 'Rename')
+                );
+            }
+            return m('span', rowButtons);
         }
-        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
-            rowButtons.push(
-                m.component(FGButton, {
-                    onclick: function() {
-                        mode(toolbarModes.RENAME);
-                    },
-                    icon: 'fa fa-font',
-                    className : 'text-info'
-                }, 'Rename')
-            );
-        }
-        return m('span', rowButtons);
     }
 };
 
@@ -1583,73 +1673,75 @@ var FGToolbar = {
                     m('.fangorn-toolbar.pull-right', [dismissIcon])
                 )
             ];
-        templates[toolbarModes.ADDFOLDER] = [
-            m('.col-xs-9', [
-                m.component(FGInput, {
-                    onkeypress: function(event){
-                        if (ctrl.tb.pressedKey === ENTER_KEY) {
-                            _createFolder.call(ctrl.tb, event, ctrl.dismissToolbar);
-                        }
-                    },
-                    id : 'createFolderInput',
-                    helpTextId : 'createFolderHelp',
-                    placeholder : 'New folder name',
-                }, ctrl.helpText())
-            ]),
-            m('.col-xs-3.tb-buttons-col',
-                m('.fangorn-toolbar.pull-right',
-                    [
-                        m.component(FGButton, {
-                            onclick: ctrl.createFolder,
-                            icon : 'fa fa-plus',
-                            className : 'text-success'
-                        }, 'Create'),
-                        dismissIcon
-                    ]
+        if (ctrl.tb.options.placement !== 'fileview') {
+            templates[toolbarModes.ADDFOLDER] = [
+                m('.col-xs-9', [
+                    m.component(FGInput, {
+                        onkeypress: function (event) {
+                            if (ctrl.tb.pressedKey === ENTER_KEY) {
+                                _createFolder.call(ctrl.tb, event, ctrl.dismissToolbar);
+                            }
+                        },
+                        id: 'createFolderInput',
+                        helpTextId: 'createFolderHelp',
+                        placeholder: 'New folder name',
+                    }, ctrl.helpText())
+                ]),
+                m('.col-xs-3.tb-buttons-col',
+                    m('.fangorn-toolbar.pull-right',
+                        [
+                            m.component(FGButton, {
+                                onclick: ctrl.createFolder,
+                                icon: 'fa fa-plus',
+                                className: 'text-success'
+                            }, 'Create'),
+                            dismissIcon
+                        ]
+                    )
                 )
-            )
-        ];
-        templates[toolbarModes.RENAME] = [
-            m('.col-xs-9',
-                m.component(FGInput, {
-                    onkeypress: function (event) {
-                        ctrl.tb.inputValue($(event.target).val());
-                        if (ctrl.tb.pressedKey === ENTER_KEY) {
-                            _renameEvent.call(ctrl.tb);
-                        }
-                    },
-                    id : 'renameInput',
-                    helpTextId : 'renameHelpText',
-                    placeholder : null,
-                    value : ctrl.tb.inputValue(),
-                }, ctrl.helpText())
-            ),
-            m('.col-xs-3.tb-buttons-col',
-                m('.fangorn-toolbar.pull-right',
-                    [
-                        m.component(FGButton, {
-                            onclick: function () {
+            ];
+            templates[toolbarModes.RENAME] = [
+                m('.col-xs-9',
+                    m.component(FGInput, {
+                        onkeypress: function (event) {
+                            ctrl.tb.inputValue($(event.target).val());
+                            if (ctrl.tb.pressedKey === ENTER_KEY) {
                                 _renameEvent.call(ctrl.tb);
-                            },
-                            icon : 'fa fa-pencil',
-                            className : 'text-info'
-                        }, 'Rename'),
-                        dismissIcon
-                    ]
+                            }
+                        },
+                        id: 'renameInput',
+                        helpTextId: 'renameHelpText',
+                        placeholder: null,
+                        value: ctrl.tb.inputValue()
+                    }, ctrl.helpText())
+                ),
+                m('.col-xs-3.tb-buttons-col',
+                    m('.fangorn-toolbar.pull-right',
+                        [
+                            m.component(FGButton, {
+                                onclick: function () {
+                                    _renameEvent.call(ctrl.tb);
+                                },
+                                icon: 'fa fa-pencil',
+                                className: 'text-info'
+                            }, 'Rename'),
+                            dismissIcon
+                        ]
+                    )
                 )
-            )
-        ];
+            ];
+        }
         // Bar mode
         // Which buttons should show?
         if(items.length === 1){
             var addonButtons = resolveconfigOption.call(ctrl.tb, item, 'itemButtons', [item]);
             if (addonButtons) {
                 finalRowButtons = m.component(addonButtons, { treebeard : ctrl.tb, item : item }); // jshint ignore:line
-            } else {
+            } else if (ctrl.tb.options.placement !== 'fileview') {
                 finalRowButtons = m.component(FGItemButtons, {treebeard : ctrl.tb, mode : ctrl.mode, item : item }); // jshint ignore:line
             }
         }
-        if(ctrl.isUploading()){
+        if(ctrl.isUploading() && ctrl.tb.options.placement !== 'fileview') {
             generalButtons.push(
                 m.component(FGButton, {
                     onclick: function() {
@@ -1661,11 +1753,13 @@ var FGToolbar = {
             );
         }
         //multiple selection icons
-        if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github') {
+        if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
+            // Special cased to not show 'delete multiple' for github or published dataverses
             var showDelete = false;
+            var each, i, len;
             // Only show delete button if user has edit permissions on at least one selected file
-            for (var i = 0, len = items.length; i < len; i++) {
-                var each = items[i];
+            for (i = 0, len = items.length; i < len; i++) {
+                each = items[i];
                 if (each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
                     showDelete = true;
                     break;
@@ -1691,26 +1785,41 @@ var FGToolbar = {
                 },
                 icon: 'fa fa-search',
                 className : 'text-primary'
-            }, 'Search'),
-            m.component(FGButton, {
-                onclick: function(event){
-                    var mithrilContent = m('div', [
-                        m('p', [ m('b', 'Select Rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
-                        m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use Command or Shift keys to select multiple files.')]),
-                        m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
-                        m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
-                        m('p', [ m('b', 'Copy Files:'), m('span', ' Press Option (or Alt in Windows) while dragging a file to a new folder or component.')])
-                    ]);
-                    var mithrilButtons = m('button', {
-                            'type':'button',
-                            'class' : 'btn btn-default',
-                            onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close');
-                    ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', 'How to Use the File Browser'));
-                },
-                icon: 'fa fa-info',
-                className : 'text-info'
-            }, '')
-        );
+            }, 'Search'));
+            if (ctrl.tb.options.placement !== 'fileview') {
+                generalButtons.push(m.component(FGButton, {
+                    onclick: function(event){
+                        var mithrilContent = m('div', [
+                            m('p', [ m('b', 'Select rows:'), m('span', ' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.')]),
+                            m('p', [ m('b', 'Open files:'), m('span', ' Click a file name to go to view the file in the OSF.')]),
+                            m('p', [ m('b', 'Open files in new tab:'), m('span',  ' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.')]),
+                            m('p', [ m('b', 'Download as zip:'), m('span', ' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.'), m('i', ' Not available for all storage add-ons.')]),
+                            m('p', [ m('b', 'Copy files:'), m('span', ' Press Option (Alt in Windows) while dragging a file to a new folder or component.'), m('i', ' Only for contributors with write access.')])
+                        ]);
+                        var mithrilButtons = m('button', {
+                                'type':'button',
+                                'class' : 'btn btn-default',
+                                onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close');
+                        ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', 'How to Use the File Browser'));
+                    },
+                    icon: 'fa fa-info',
+                    className : 'text-info'
+                }, ''));
+            }
+        if (ctrl.tb.options.placement === 'fileview') {
+            generalButtons.push(m.component(FGButton, {
+                    onclick: function(event){
+                        var panelToggle = $('.panel-toggle');
+                        var panelExpand = $('.panel-expand');
+                        var panelVisible = panelToggle.find('.osf-panel-hide');
+                        var panelHidden = panelToggle.find('.osf-panel-show');
+
+                        panelVisible.hide();
+                        panelHidden.show();
+                    },
+                    icon: 'fa fa-angle-up'
+                }, ''));
+        }
 
         if (item && item.connected !== false){ // as opposed to undefined, avoids unnecessary setting of this value
             templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
@@ -2210,7 +2319,7 @@ Fangorn.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
-    },
+    }
 };
 
 Fangorn.Components = {

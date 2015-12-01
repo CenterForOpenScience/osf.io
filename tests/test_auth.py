@@ -8,10 +8,12 @@ import datetime
 import httplib as http
 
 from flask import Flask
+from modularodm import Q
 from werkzeug.wrappers import BaseResponse
 
 from framework import auth
 from framework.auth import cas
+from framework.sessions import Session
 from framework.exceptions import HTTPError
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import (
@@ -22,6 +24,8 @@ from tests.factories import (
 from framework.auth import User, Auth
 from framework.auth.decorators import must_be_logged_in
 
+from website import mails
+from website import settings
 from website.util import web_url_for
 from website.project.decorators import (
     must_have_permission, must_be_contributor,
@@ -41,6 +45,52 @@ class TestAuthUtils(OsfTestCase):
         )
 
         assert_true(user.get_confirmation_token(user.username))
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_confirm_email(self, mock_mail):
+        user = UnregUserFactory()
+
+        auth.register_unconfirmed(
+            username=user.username,
+            password='gattaca',
+            fullname='Rosie',
+        )
+
+        token = user.get_confirmation_token(user.username)
+
+        res = self.app.get('/confirm/{}/{}'.format(user._id, token), allow_redirects=False)
+        res = res.follow()
+
+        assert_equal(res.status_code, 302)
+        assert_in('login?service=', res.location)
+
+        user.reload()
+        assert_equal(len(mock_mail.call_args_list), 1)
+        empty, kwargs = mock_mail.call_args
+        kwargs['user'].reload()
+
+        assert_equal(empty, ())
+        assert_equal(kwargs, {
+            'user': user,
+            'mimetype': 'html',
+            'mail': mails.WELCOME,
+            'to_addr': user.username,
+        })
+
+        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie())
+        res = self.app.get('/confirm/{}/{}'.format(user._id, token))
+
+        res = res.follow()
+
+        assert_equal(res.status_code, 302)
+        assert_in('dashboard', res.location)
+        assert_equal(len(mock_mail.call_args_list), 1)
+        session = Session.find(
+            Q('data.auth_user_id', 'eq', user._id)
+        ).sort(
+            '-date_modified'
+        ).limit(1)[0]
+        assert_equal(len(session.data['status']), 1)
 
     def test_get_user_by_id(self):
         user = UserFactory()
@@ -345,13 +395,6 @@ class TestMustBeAddonAuthorizerDecorator(AuthAppTestCase):
     def test_must_be_authorizer_no_node_settings(self):
         with assert_raises(HTTPError):
             self.decorated()
-
-class TestBasicAuth(OsfTestCase):
-
-    def test_basic_auth_returns_403(self):
-        url = web_url_for('dashboard')
-        ret = self.app.get(url, auth=('test', 'test'), expect_errors=True)
-        assert_equal(ret.status_code, 403)
 
 
 if __name__ == '__main__':
