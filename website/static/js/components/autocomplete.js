@@ -10,6 +10,7 @@ require('css/autocomplete.css');
 
 var $ = require('jquery');
 var ko = require('knockout');
+var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 require('typeahead.js');
 
@@ -75,9 +76,14 @@ $.extend(BaseSearchViewModel.prototype, {
     },
     /** Get the data at the provided URL, return a promise */
     fetchData: function () {
-        return $.get(this.dataUrl).fail(
-            function() {
-                console.log('failed to retrieve data');
+        var self = this;
+        return $.get(self.dataUrl).fail(
+            function(xhr, status, error) {
+                Raven.captureMessage('Could not GET autocomplete data', {
+                    url: self.dataUrl,
+                    textStatus: status,
+                    error: error
+                });
             });
     },
     /** Initialize the Typeahead widget for the component */
