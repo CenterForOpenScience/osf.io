@@ -23,19 +23,17 @@ logger = logging.getLogger(__name__)
 import xml.etree.ElementTree as ET
 
 @must_be_valid_project
-@must_have_addon('wiki', 'node')
+@must_have_addon('dryad', 'node')
 def dryad_page(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth=kwargs['auth']
-    
 
-
-    count=40
+    count=25
     start=0
     try:
         count = int(request.args["count"])
     except Exception:
-        count=40
+        count=25
     try:
         start = int(request.args["start"] )
     except Exception:
@@ -46,6 +44,7 @@ def dryad_page(**kwargs):
     
 
     d = Dryad_DataOne()
+    logger.info("Getting Package List from Dryad DataOne API")
     x = d.list(count=count, start_n=start)
     count = int(x.getElementsByTagName("d1:objectList")[0].attributes["count"].value )
     start = int(x.getElementsByTagName("d1:objectList")[0].attributes["start"].value)
@@ -54,8 +53,11 @@ def dryad_page(**kwargs):
     ret = {"end": start+count,
             "start": start,
             "total":total,
-            "content": "" }
-    #Now to create the browser tree
+            "content": "",
+            'next_dryad':request.path+"?count={}&start={}".format(count, start+count),
+            'previous_dryad':request.path+"?count={}&start={}".format(count, start-count) }
+    #Compute out the next and previous buttons
+
 
     objectList = ET.Element("ul")
 
@@ -66,7 +68,7 @@ def dryad_page(**kwargs):
         
         objInfo = ET.SubElement(objectList, "li")
         objInfo.text = doi
-        
+        logger.info("Getting MetaData for {} from Dryad DataOne API".format(doi) )      
         meta = d.metadata(doi)
         objInfo.text = meta.toprettyxml()
         title = meta.getElementsByTagName("dcterms:title")[0].firstChild.wholeText
@@ -75,17 +77,18 @@ def dryad_page(**kwargs):
 
         sublist = ET.SubElement(objInfo,"ul")
 
-        authorel = ET.SubElement(sublist, "p")
+        authorel = ET.SubElement(sublist, "li")
         authorel.text = authors
 
-        authorel = ET.SubElement(sublist, "p")
+        authorel = ET.SubElement(sublist, "li")
         authorel.text = "Identifier:"+ident
         #now create the addon that will add this to the project
+        add_button = ET.SubElement(sublist,"li")
+        add_button.text = "Add To Project"
+        add_button.attrib["href"] = ""
 
     ret.update({"content": ET.tostring(objectList)})
     ret.update(dryad.config.to_json() )
     ret.update(_view_project(node, auth, primary=True)) 
 
     return ret
-    #return redirect(node.web_url_for('dryad_browser', wname='home', _guid=True))
-    #return redirect(node.web_url_for('project_wiki_view', wname='home', _guid=True))

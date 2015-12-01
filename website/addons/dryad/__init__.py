@@ -5,7 +5,7 @@ from . import routes, views, model
 MODELS = [
     model.AddonDryadUserSettings,
     model.AddonDryadNodeSettings,
-    model.DryadGuidFile,
+
 ]
 USER_SETTINGS_MODEL = model.AddonDryadUserSettings
 NODE_SETTINGS_MODEL = model.AddonDryadNodeSettings
@@ -18,17 +18,10 @@ ADDED_MANDATORY = []
 VIEWS = ['widget','page']
 CONFIGS = ['accounts', 'node']
 CATEGORIES = ['storage']
-INCLUDE_JS = {
-    'widget': [],
-    'page': [],
-}
-
-INCLUDE_CSS = {
-    'widget': [],
-    'page': [],
-}
-HAS_HGRID_FILES = False
-GET_HGRID_DATA = None
+INCLUDE_JS = {}
+INCLUDE_CSS = {}
+HAS_HGRID_FILES = True
+GET_HGRID_DATA = views.hgrid.dryad_addon_folder
 MAX_FILE_SIZE=1000
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'dryad_node_settings.mako')

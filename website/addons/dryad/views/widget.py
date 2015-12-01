@@ -13,7 +13,7 @@ def dryad_widget( **kwargs):
     node = kwargs['node'] or kwargs['project']
     pid = kwargs['pid']
     dryad = node.get_addon('dryad')
-    widget_url = '/project/{}/dryad/browser'.format(pid)#node.api_url_for('browser.dryad_browser')
+    widget_url = '/{}/dryad/'.format(pid)#node.api_url_for('browser.dryad_browser')
 
     ret = {'complete': True,
             'browser_url': widget_url,

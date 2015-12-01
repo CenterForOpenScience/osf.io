@@ -89,8 +89,9 @@ class Dryad_DataOne:
 	@staticmethod
 	def list(start_n=0, count=20):
 		val = {'start': str(start_n ),
-			   'count': str(count) }
-		url ="http://www.datadryad.org/mn/object"
+			   'count': str(count),
+			   'formatId':u'http://www.openarchives.org/ore/terms' }
+		url ="http://api.datadryad.org/mn/object"
 
 		data = urllib.urlencode(val)
 		req = urllib2.Request(url+'?'+data)

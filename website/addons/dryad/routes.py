@@ -50,8 +50,17 @@ page_routes = {'rules':
             'get',
             views.dryad.dryad_page,
             OsfWebRenderer('../addons/dryad/templates/dryad_page.mako'),
-
         ),
+        Rule(
+            [
+                '/project/<pid>/dryad/add',
+                '/project/<pid>/node/<nid>/dryad/add',
+            ],
+            'get',
+            views.dryad.set_dryad_doi,
+            OsfWebRenderer('../addons/dryad/templates/dryad_page.mako'),
+        ),
+
 ]
 
 }
