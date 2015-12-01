@@ -14,4 +14,3 @@ class DryadFolder(DryadFileNode, Folder):
 
 class DryadFile(DryadFileNode, File):
     pass
-

@@ -2,13 +2,12 @@
 from framework.routing import Rule, json_renderer
 from website.addons.dryad import views
 from website.routes import OsfWebRenderer
-import os
 
-TEMPLATE_DIR='../addons/dryad/templates/'
+TEMPLATE_DIR = '../addons/dryad/templates/'
 
 
 page_routes = {'rules':
-[
+    [
         Rule(
             [
                 '/project/<pid>/dryad/browser',
@@ -73,7 +72,5 @@ page_routes = {'rules':
             views.dryad_addon_folder,
             json_renderer,
         ),
-
-],
-    'prefix': '/api/v1'
+    ]
 }

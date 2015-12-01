@@ -20,14 +20,14 @@ var AddonHelper = require('js/addonHelper');
 			    success : function(response) {
 			        if(response =="True"){
 
-                    $.ajax({
-                        type: "GET",   
-                        url: add_url,   
-                        data: {'doi' : doi},
-                        success : function(response) {
-                        bootbox.alert("Successfully added  "+doi+" to project.");
-                        }
-                    });
+                        $.ajax({
+                            type: "GET",   
+                            url: add_url,   
+                            data: {'doi' : doi},
+                            success : function(response) {
+                                bootbox.alert("Successfully added  "+doi+" to project.");
+                            }
+                        });
 
 
                     }
