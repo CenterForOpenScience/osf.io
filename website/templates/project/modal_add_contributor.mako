@@ -13,9 +13,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group m-b-sm">
-                                    <input class='form-control'
-                                            data-bind="value:query"
-                                            placeholder='Search by name' autofocus/>
+                                    <input class='form-control' data-bind="value:query" placeholder='Search by name' autofocus/>
                                     <span class="input-group-btn">
                                         <input type="submit" value="Search" class="btn btn-default">
                                     </span>
@@ -64,17 +62,12 @@
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td class="p-r-sm osf-icon-td" >
-                                            <a
-                                                    class="btn btn-success contrib-button btn-mini"
-                                                    data-bind="visible: !contributor.added,
-                                                               click:$root.add,
-                                                               tooltip: {title: 'Add contributor'}"
-                                                ><i class="fa fa-fw fa-plus"></i></a>
-                                            <div data-bind="visible: contributor.added,
-                                                            tooltip: {title: 'Already added'}"
-                                                ><div
-                                                    class="btn btn-default contrib-button btn-mini disabled"
-                                                    ><i class="fa fa-fw fa-check"></i></div></div>
+                                            <a class="btn btn-success contrib-button btn-mini" data-bind="visible: !contributor.added, click:$root.add, tooltip: {title: 'Add contributor'}">
+                                                <i class="fa fa-fw fa-plus"></i></a>
+                                            <div data-bind="visible: contributor.added, tooltip: {title: 'Already added'}">
+                                                <div class="btn btn-default contrib-button btn-mini disabled">
+                                                    <i class="fa fa-fw fa-check"></i></div>
+                                            </div>
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
@@ -83,25 +76,18 @@
                                         <td width="75%">
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
-                                            </a><br>
-                                                <span data-bind="if: contributor.employment">
-                                                    <span
-                                                        class = 'small'
-                                                        data-bind="text: contributor.employment">
-                                                    </span><br>
-                                                </span>
-                                                <span data-bind="if: contributor.education">
-                                                    <span
-                                                        class = 'small'
-                                                        data-bind= "text: contributor.education">
-                                                    </span><br>
-                                                </span>
-                                                <span class= 'small'
-                                                      data-bind= "text: contributor.displayProjectsInCommon">
-                                                </span>
-                                            <span
-                                                    class='text-muted'
-                                                    data-bind="visible: !contributor.registered">(unregistered)</span>
+                                            </a>
+                                            <br>
+                                            <span data-bind="if: contributor.employment">
+                                                <span class = 'small' data-bind="text: contributor.employment"></span>
+                                                <br>
+                                            </span>
+                                            <span data-bind="if: contributor.education">
+                                                <span class = 'small' data-bind= "text: contributor.education"></span>
+                                                <br>
+                                            </span>
+                                            <span class= 'small' data-bind= "text: contributor.displayProjectsInCommon"></span>
+                                            <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -124,17 +110,15 @@
                                                 data-toggle="popover"
                                                 data-title="Permission Information"
                                                 data-container="#addContributors"
-                                                data-html="true"
-                                            ></i>
+                                                data-html="true">
+                                        </i>
                                     </th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:selection, as: 'contributor', afterRender:makeAfterRender()}">
                                     <tr>
                                         <td class="p-r-sm" class="osf-icon-td">
-                                            <a
-                                                    class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
-                                                ><i class="fa fa-minus"></i></a>
+                                            <a class="btn btn-default contrib-button btn-mini" data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}">
+                                                <i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
@@ -142,16 +126,10 @@
                                         </td>
                                         <td>
                                             <span   data-bind="text: contributor.fullname"></span>
-
-                                            <span
-                                                    class='text-muted'
-                                                    data-bind="visible: !contributor.registered">(unregistered)</span>
+                                            <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
                                         <td>
-                                            <select class="form-control input-sm" data-bind="
-                                                options: $root.permissionList,
-                                                value: permission,
-                                                optionsText: 'text'">
+                                            <select class="form-control input-sm" data-bind="options: $root.permissionList, value: permission, optionsText: 'text'">
                                             </select>
                                         </td>
                                     </tr>
