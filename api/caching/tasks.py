@@ -2,6 +2,8 @@ import urlparse
 import celery
 from celery.utils.log import get_task_logger
 import requests
+from django.conf import settings
+
 
 from framework.tasks import app as celery_app
 from framework.tasks.utils import logged
@@ -14,7 +16,7 @@ class VarnishTask(celery.Task):
 
 def get_varnish_servers():
     #  TODO: this should get the varnish servers from HAProxy or a setting
-    return ['http://localhost:8193']
+    return settings.VARNISH_SERVERS
 
 @celery_app.task(base=VarnishTask, name='caching_tasks.ban_url')
 @logged('ban_url')

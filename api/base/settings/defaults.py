@@ -169,3 +169,4 @@ DEBUG_TRANSACTIONS = DEBUG
 
 RUN_VARNISH_IN_DEV = False
 ENABLE_ESI = True
+VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
