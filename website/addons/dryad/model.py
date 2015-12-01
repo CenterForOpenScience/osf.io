@@ -20,16 +20,12 @@ from website.addons.base import StorageAddonBase
 
 from website.addons.dryad import utils
 from website.addons.dryad import settings as dryad_settings
-from website.addons.dryad import serializer as serializer
-from website.addons.dryad.utils import DryadNodeLogger
-
+#from website.addons.dryad import serializer as serializer
 
 from pyDryad import Dryad
 
 
 class AddonDryadUserSettings(AddonUserSettingsBase):
-	serializer = serializer.DryadSerializer
-	#TODO: Put in the user settings here:
 	def delete(self, **kwargs):
 		super(AddonDryadUserSettings, self).delete()
 	@property
@@ -41,12 +37,7 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	"""
 	A Dryad node is a collection of packages. Each package is specified by a DOI, and the title is saved automatically
 	"""
-	#packages = fields.ForeignField('AddonDryadPackage', list=True)
-	serializer = serializer.DryadSerializer
-	dryad_metadata = fields.StringField(list=True)
-	dryad_title = fields.StringField()
-	dryad_doi = fields.StringField()
-	dryad_doi_list = fields.StringField(list=True)
+	dryad_package_doi = fields.StringField()
 	complete = True
 	has_auth = True
 	provider_name = 'dryad'
@@ -56,26 +47,26 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	)
 
 	def delete(self, **kwargs):
-		dryad_doi_list = None
+		dryad_package_doi = None
 		super(AddonDryadNodeSettings, self).delete()
 
 	@property
 	def folder_name(self):
+		#get the name from dryad
 
-		return ""
+		return ''
 
 	def serialize_waterbutler_credentials(self):
 		return {'storage':{}}
 	def serialize_waterbutler_settings(self):
 		settings=dryad_settings.WATERBUTLER_SETTINGS
 		#modify the settings here.
-		settings['doi_list'] = self.dryad_doi_list
+		settings['doi'] = self.dryad_package_doi
 		return settings
 
 
 	def create_waterbutler_log(self, auth, action, metadata):
 		path = metadata['path']
-		print path
 
 		url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='dryad')
 		if not metadata.get('extra'):

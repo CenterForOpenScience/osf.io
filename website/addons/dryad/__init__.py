@@ -2,20 +2,20 @@ import os
 
 from . import routes, views, model
 
-MODELS = [
-    model.AddonDryadUserSettings,
-    model.AddonDryadNodeSettings,
 
+MODELS = [
+    model.AddonDryadNodeSettings,
+    model.AddonDryadUserSettings,
 ]
 USER_SETTINGS_MODEL = model.AddonDryadUserSettings
 NODE_SETTINGS_MODEL = model.AddonDryadNodeSettings
-ROUTES = [ routes.page_routes]
+ROUTES = [routes.settings_routes, routes.page_routes]
 SHORT_NAME = 'dryad'
 FULL_NAME = 'Dryad'
 OWNERS = ['user', 'node']
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
-VIEWS = ['widget','page']
+VIEWS = ['page']
 CONFIGS = ['accounts', 'node']
 CATEGORIES = ['storage']
 INCLUDE_JS = {}

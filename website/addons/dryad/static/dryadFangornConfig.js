@@ -1,9 +1,7 @@
 'use strict';
 
 var m = require('mithril');
-
 var Fangorn = require('js/fangorn');
-
 
 // Define Fangorn Button Actions
 var _dryadItemButtons = {
@@ -13,17 +11,6 @@ var _dryadItemButtons = {
         var item = args.item;
         if (tb.options.placement !== 'fileview') {
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
-            if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit && item.kind === 'folder') {
-                buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
-                        },
-                        icon: 'fa fa-upload',
-                        className: 'text-success'
-                    }, 'Upload')
-                );
-            }
             if (item.kind === 'file' && item.data.extra && item.data.extra.status === 'public') {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
@@ -34,6 +21,14 @@ var _dryadItemButtons = {
                         className: 'text-primary'
                     }, 'Download')
                 );
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className: 'text-info'
+                    }, 'View'));
             }
             // Files can be deleted if private or if it is in a dataset that contains more than one file
             var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
@@ -50,24 +45,13 @@ var _dryadItemButtons = {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            var fileurl = "http://www.datadryad.org/mn/object/"+item.data.extra.doi+"/1/bitstream";
+                            var fileurl = item.data.extra.webView;
 
                             window.open(fileurl, '_blank');
                         },
                         icon: 'fa fa-download',
                         className: 'text-primary'
                     }, 'Download')
-                );
-            }
-            if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
-                buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            Fangorn.ButtonEvents._removeEvent.call(tb, event, tb.multiselected());
-                        },
-                        icon: 'fa fa-trash',
-                        className: 'text-danger'
-                    }, 'Delete')
                 );
             }
             if (item.kind === 'file' && item.data.permissions && item.data.permissions.view && item.data.extra.status === 'public') {

@@ -1,2 +1,1 @@
-urllib==1.17
-urllib2==2.7
+git+https://github.com/kwierman/pyDryad.git
