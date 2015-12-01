@@ -1050,7 +1050,7 @@ RegistrationEditor.prototype.saveForLater = function() {
         .always($osf.unblock)
         .then(function() {
             self.dirtyCount(0);
-            window.location.assign(self.urls.draftRegistrations + '?tab=drafts');
+            window.location.assign(self.urls.draftRegistrations);
         });
 };
 
