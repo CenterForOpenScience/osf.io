@@ -9,7 +9,7 @@ MODELS = [
 ]
 USER_SETTINGS_MODEL = model.AddonDryadUserSettings
 NODE_SETTINGS_MODEL = model.AddonDryadNodeSettings
-ROUTES = [routes.api_routes, routes.settings_routes, routes.page_routes]
+ROUTES = [ routes.page_routes]
 SHORT_NAME = 'dryad'
 FULL_NAME = 'Dryad'
 OWNERS = ['user', 'node']

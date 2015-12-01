@@ -7,30 +7,6 @@ import os
 TEMPLATE_DIR='../addons/dryad/templates/'
 
 
-settings_routes = {
-    'rules':[
-
-    ],
-    'prefix': '/api/v1'
-}
-
-api_routes ={
-    'rules': [
-        Rule(
-            [
-                '/project/<pid>/dryad/widget/',
-                '/project/<pid>/node/<nid>/dryad/widget/',
-            ],
-            'get',
-            views.widget.dryad_widget,
-            OsfWebRenderer('../addons/dryad/templates/dryad_widget.mako'),
-        ),
-
-    ],
-    'prefix': '/api/v1'
-}
-
-
 page_routes = {'rules':
 [
         Rule(
@@ -63,6 +39,15 @@ page_routes = {'rules':
         ),
         Rule(
             [
+                '/project/<pid>/dryad/check',
+                '/project/<pid>/node/<nid>/dryad/check',
+            ],
+            'get',
+            views.check_dryad_doi,
+            OsfWebRenderer('../addons/dryad/templates/dryad_check_doi.mako'),
+        ),
+        Rule(
+            [
                 '/project/<pid>/dryad/add',
                 '/project/<pid>/node/<nid>/dryad/add',
             ],
@@ -89,6 +74,6 @@ page_routes = {'rules':
             json_renderer,
         ),
 
-]
-
+],
+    'prefix': '/api/v1'
 }

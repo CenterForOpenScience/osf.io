@@ -26,16 +26,36 @@ logger = logging.getLogger(__name__)
 
 import xml.etree.ElementTree as ET
 
+from urllib2 import HTTPError
+
+@must_be_valid_project
+@must_have_addon('dryad', 'node')
+def check_dryad_doi(node_addon, **kwargs):
+    doi = request.args["doi"]
+    pid =  kwargs['pid']
+    auth=kwargs['auth']
+    try:
+        d = Dryad_DataOne()
+        m = d.metadata(doi)
+    except HTTPError as e:
+        return {'result': False}
+    return {'result' : True}
+
+
 @must_be_valid_project
 @must_have_addon('dryad', 'node')
 def set_dryad_doi(node_addon, **kwargs):
     doi = request.args["doi"]
     pid =  kwargs['pid']
     auth=kwargs['auth']
-
     d = Dryad_DataOne()
-    m = d.metadata(doi)
 
+    try:
+
+        m = d.metadata(doi)
+    except HTTPError as e:
+        return redirect("/project/{}".format(pid))
+        
     node_addon.set_doi(doi,m.getElementsByTagName("dcterms:title")[0].firstChild.wholeText, auth)
     
     node_addon.save()
