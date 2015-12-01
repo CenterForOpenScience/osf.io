@@ -6,7 +6,11 @@ logger = logging.getLogger(__name__)
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
-groups = json.load(open('{0}/defaults.json'.format(HERE)))
+groups = json.load(
+    open(
+        os.path.join(HERE, 'defaults.json')
+    )
+)
 fp = None
 try:
     fp = open('{0}/local.json'.format(HERE))
@@ -18,6 +22,7 @@ if fp:
             groups[group] = members
         else:
             groups[group] = set(groups[group]) | set(members)
+    fp.close()
 
 def members_for(group):
     global_members = set(groups['global'])
