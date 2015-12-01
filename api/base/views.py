@@ -68,6 +68,11 @@ def root(request, format=None):
 
         /nodes/?filter[registered]=true
 
+    You can filter with case-sensitivity or case-insensitivity by using `contains` and `icontains` respectively.
+
+        /nodes/?filter[tags][icontains]=help
+
+
     ###Pagination
 
     All entity collection endpoints respond to the `page` query parameter behavior as described in the [JSON-API
