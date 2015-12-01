@@ -2018,7 +2018,7 @@ function _fangornQueueComplete(treebeard) {
                         [
                             m('.row', [
                                 m((status.link ? 'a[href="' + status.link + '"]' : status.name) + '.col-sm-10', status.name),
-                                m('.col-sm-1', m(status.success ? '.fa.fa-check' : '.fa.fa-times')),
+                                m('.col-sm-1', m(status.success ? '.fa.fa-check[style="color: green"]' : '.fa.fa-times[style="color: red"]')),
                                 m('.col-sm-1', m(status.message ? '.fa.fa-info[data-toggle="tooltip"][data-placement="top"][title="'+ status.message +'"]' : ''))
                             ]),
                             m('hr')
