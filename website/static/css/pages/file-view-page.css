@@ -81,9 +81,9 @@
 
 /* Style for file name */
 #file-ext {
-    white-space: nowrap;
+	white-space: nowrap;
 }
-/* also need this for above to avoid conflict in IE */
+/* This is needed to avoid conflict in IE with the change made above. */
 h2.break-word {
 	word-wrap: normal;
 }
