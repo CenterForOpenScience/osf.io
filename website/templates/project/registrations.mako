@@ -14,7 +14,7 @@
 <div class="tab-content registrations-view">
   <div role="tabpanel" class="tab-pane active" id="registrations">
     <div class="row" style="min-height: 150px; padding-top:20px;">
-      <div class="col-md-9">
+      <div class="col-xs-9 col-sm-8">
         % if node["registration_count"]:
         <div mod-meta='{
             "tpl": "util/render_nodes.mako",
@@ -44,8 +44,8 @@
         %endif
       </div>
       % if 'admin' in user['permissions'] and not disk_saving_mode:
-      <div class="col-md-3">
-        <a id="registerNode" class="btn btn-default" type="button">
+      <div class="col-xs-3 col-sm-4">
+        <a id="registerNode" class="btn btn-success" type="button">
           New Registration
         </a>
       </div>
