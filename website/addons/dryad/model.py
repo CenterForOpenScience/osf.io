@@ -97,20 +97,24 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 		    },
 		)
 
-
 	def deauthorize(self, auth):
 	    """Remove user authorization from this node and log the event."""
 	    # TODO: Any other addon-specific settings should be removed here.
 	    node = self.owner
 	    self.user_settings = None
-	    self.owner.add_log(
-	        action='dryad_node_deauthorized',
-	        params={
-	            'project': node.parent_id,
-	            'node': node._id,
-	        },
-	        auth=auth,
-	    )
+
+	def set_doi(self, doi, title, auth):
+		self.dryad_package_doi = doi
+		self.owner.add_log(
+            action='dryad_doi_set',
+            params={
+		        'project': self.owner.parent_id,
+		        'node': self.owner._id,
+               	'dryad' :{'doi':self.dryad_package_doi,
+               				'title':title} 
+            },
+            auth=auth,
+        )
 
 	def to_json(self, user):
 	    ret = super(AddonDryadNodeSettings, self).to_json(user)
@@ -128,5 +132,3 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	        'search_dryad_url': self.owner.web_url_for('search_dryad_page'),
 	    }
 	    return ret
-
-

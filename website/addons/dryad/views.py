@@ -31,32 +31,13 @@ import xml.etree.ElementTree as ET
 def set_dryad_doi(node_addon, **kwargs):
     doi = request.args["doi"]
     pid =  kwargs['pid']
-    #now we gotta 
+    auth=kwargs['auth']
+
     d = Dryad_DataOne()
     m = d.metadata(doi)
-    node_addon.dryad_title = m.getElementsByTagName("dcterms:title")[0].firstChild.wholeText
-    node_addon.dryad_doi = doi
-    meta_data = {}
-    m_list = [  'dcterms:type',
-                'dcterms:creator',
-                'dcterms:title',
-                'dcterms:identifier',
-                'dcterms:subject',
-                'dwc:scientificName',
-                'dcterms:temporal',
-                'dcterms:dateSubmitted',
-                'dcterms:available',
-                'dcterms:provenance',
-                'dcterms:isPartOf']
-    for m_item in m_list:
-        m_elements = m.getElementsByTagName(m_item)
-        temp = []
-        for m_el in m_elements:
-            temp.append(m_el.firstChild.wholeText)
-        meta_data[m_item] = temp
-    node_addon.dryad_metadata.append( str(meta_data) )
-    node_addon.dryad_doi_list.append(doi)
 
+    node_addon.set_doi(doi,m.getElementsByTagName("dcterms:title")[0].firstChild.wholeText, auth)
+    
     node_addon.save()
     #now, redirect back to the original homepage
     return redirect("/project/{}".format(pid))
