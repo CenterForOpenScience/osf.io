@@ -45,7 +45,7 @@ def set_dryad_doi(node_addon, **kwargs):
     node_addon.save()
     #now, redirect back to the original homepage
     return redirect("/project/{}".format(pid))
-    
+
 @must_be_valid_project
 @must_have_addon('dryad', 'node')
 def remove_dryad_doi(node_addon, **kwargs):
