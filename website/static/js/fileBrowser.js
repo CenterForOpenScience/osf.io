@@ -102,6 +102,7 @@ var FileBrowser = {
             new Activity('2015-08-19 01:34 PM', 'Caner Uguz added a comment to Dashboard Redesign Proposal', {}),
         ]);
 
+        /* filesData is the link that loads tree data. This function refreshes that information. */
         self.updateFilesData = function(linkObject) {
             if (linkObject.link !== self.currentLink) {
                 self.updateBreadcrumbs(linkObject);
@@ -112,6 +113,7 @@ var FileBrowser = {
         };
 
         // INFORMATION PANEL
+        /* Defines the current selected item so appropriate information can be shown */
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
             // If single project is selected, get activity
@@ -131,35 +133,46 @@ var FileBrowser = {
             self.updateFilesData(filter);
         };
 
+        self.updateListSuccess = function(value) {
+            value.data.map(function (item) {
+                item.kind = 'folder';
+                item.uid = item.id;
+                item.name = item.attributes.title;
+                item.date = new $osf.FormattableDate(item.attributes.date_modified);
 
-        // Refresh the Grid
-        self.updateList = function(url){
-            m.request({method : 'GET', url : url, config : xhrconfig})
-                .then(function(value){
-                    value.data.map(function(item){
-                        item.kind = 'folder';
-                        item.uid = item.id;
-                        item.name = item.attributes.title;
-                        item.date = new $osf.FormattableDate(item.attributes.date_modified);
-
-                        // TODO: Dummy data, remove this when api is ready
-                        item.contributors = [{
-                            id: '8q36f',
-                            name : 'Dummy User'
-                        }];
-                    });
-                self.data(value);
-                self.reload(true);
-            }, function(result){
-                    self.nonLoadTemplate(m('.fb-error.text-danger', [
-                        m('p','Projects couldn\'t load.'),
-                        m('p', m('.btn.btn-link', { onclick : self.updateFilter.bind(null, self.collections[0])},' Reload \'All My Projects\''))
-                    ]));
-                    console.error(result);
-                    throw new Error('Receiving initial data for File Browser failed. Please check your url');
-                });
+                // TODO: Dummy data, remove this when api is ready
+                item.contributors = [{
+                    id: '8q36f',
+                    name: 'Dummy User'
+                }];
+            });
+            self.data(value);
+            self.reload(true);
         };
 
+        self.updateListError = function(result){
+            self.nonLoadTemplate(m('.fb-error.text-danger', [
+                m('p','Projects couldn\'t load.'),
+                m('p', m('.btn.btn-link', { onclick : self.updateFilter.bind(null, self.collections[0])},' Reload \'All My Projects\''))
+            ]));
+            console.error(result);
+            throw new Error('Receiving initial data for File Browser failed. Please check your url');
+        };
+
+        // Refresh the Grid
+        self.updateList = function(url, success, error){
+            if (success === undefined){
+                success = self.updateListSuccess;
+            }
+            if (error === undefined){
+                error = self.updateListError;
+            }
+            if (typeof url !== 'string'){
+                throw new Error('Url argument for updateList needs to be string');
+            }
+            m.request({method : 'GET', url : url, config : xhrconfig})
+                .then(success, error);
+        };
 
         // BREADCRUMBS
         self.updateBreadcrumbs = function(linkObject){
@@ -338,7 +351,7 @@ var Collections  = {
             m.request({method : 'POST', url : url, config : xhrconfig, data : data}).then(function(result){
                 console.log(result);
                 var node = result.data;
-                args.list.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
+                args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
             });
             self.newCollectionName('');
 
@@ -348,10 +361,10 @@ var Collections  = {
             var url = args.collectionMenuObject().item.data.node.links.self;
             m.request({method : 'DELETE', url : url, config : xhrconfig}).then(function(result){
                 console.log(url, result);
-                for ( var i = 0; i < args.list.length; i++) {
-                    var item = args.list[i];
+                for ( var i = 0; i < args.collections.length; i++) {
+                    var item = args.collections[i];
                     if (item.data.node && item.data.node.id === args.collectionMenuObject().item.data.node.id){
-                        args.list.splice(i, 1);
+                        args.collections.splice(i, 1);
                         break;
                     }
                 }
