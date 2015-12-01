@@ -25,16 +25,32 @@
                                     </span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row search-contributor-links">
-                            <div class="col-md-12">
-                                <div>
-                                    <!-- ko if:parentId -->
-                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
-                                    <!-- /ko -->
+                            <div class="row search-contributor-links">
+                                <div class="col-md-6">
+                                    <div>
+                                        <!-- ko if:parentId -->
+                                            <button class="btn btn-default" data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></button>
+                                        <!-- /ko -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- Link to add non-registered contributor -->
+                        <div class='help-block'>
+                            <div data-bind='if: foundResults'>
+                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                                    </ul>
+                                    <p>
+                                        <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                    </p>
+                            </div>
+                            <div data-bind="if: noResults">
+                                    No results found. Try a more specific search or  <a href="#"
+                                    data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                            </div>
+                        </div>
+
                     </form>
 
                     <hr />
@@ -57,17 +73,12 @@
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td class="p-r-sm osf-icon-td" >
-                                            <a
-                                                    class="btn btn-success contrib-button btn-mini"
-                                                    data-bind="visible: !contributor.added,
-                                                               click:$root.add,
-                                                               tooltip: {title: 'Add contributor'}"
-                                                ><i class="fa fa-fw fa-plus"></i></a>
-                                            <div data-bind="visible: contributor.added,
-                                                            tooltip: {title: 'Already added'}"
-                                                ><div
-                                                    class="btn btn-default contrib-button btn-mini disabled"
-                                                    ><i class="fa fa-fw fa-check"></i></div></div>
+                                            <a class="btn btn-success contrib-button btn-mini" data-bind="visible: !contributor.added, click:$root.add, tooltip: {title: 'Add contributor'}">
+                                                <i class="fa fa-fw fa-plus"></i></a>
+                                            <div data-bind="visible: contributor.added, tooltip: {title: 'Already added'}">
+                                                <div class="btn btn-default contrib-button btn-mini disabled">
+                                                    <i class="fa fa-fw fa-check"></i></div>
+                                            </div>
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
@@ -78,52 +89,25 @@
                                                 <span data-bind= "text:contributor.fullname"></span>
                                             </a><br>
 
-
                                                 <span data-bind="if: contributor.employment">
-                                                    <span
-                                                        class = 'small'
-                                                        data-bind="text: contributor.employment">
-                                                    </span><br>
+                                                    <span class = 'small' data-bind="text: contributor.employment"></span>
+                                                    <br>
                                                 </span>
-
 
                                                 <span data-bind="if: contributor.education">
-                                                    <span
-                                                        class = 'small'
-                                                        data-bind= "text: contributor.education">
-                                                    </span><br>
+                                                    <span class = 'small' data-bind= "text: contributor.education"></span>
+                                                    <br>
                                                 </span>
 
-                                                <span class= 'small'
-                                                      data-bind= "text: contributor.displayProjectsInCommon">
+                                                <span class= 'small' data-bind= "text: contributor.displayProjectsInCommon">
                                                 </span>
 
-                                            <span
-                                                    class='text-muted'
-                                                    data-bind="visible: !contributor.registered">(unregistered)</span>
-
+                                            <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
 
                                     </tr>
-
-
                                 </tbody>
                             </table>
-                            <!-- Link to add non-registered contributor -->
-                            <div class='help-block'>
-                                <div data-bind='if: foundResults'>
-                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
-                                    </ul>
-                                    <p>
-                                        <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
-                                    </p>
-                                </div>
-                                <div data-bind="if: noResults">
-                                    No results found. Try a more specific search or  <a href="#"
-                                    data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
-                                </div>
-                            </div>
                         </div><!-- ./col-md -->
 
                         <div class="col-md-6">
