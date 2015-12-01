@@ -30,16 +30,17 @@ api_routes ={
     'prefix': '/api/v1'
 }
 
+
 page_routes = {'rules':
 [
         Rule(
             [
-                '/project/<pid>/dryad/browser/',
-                '/project/<pid>/node/<nid>/dryad/browser/',
+                '/project/<pid>/dryad/browser',
+                '/project/<pid>/node/<nid>/dryad/browser',
             ],
             'get',
-            views.browser.dryad_browser,
-            OsfWebRenderer('../addons/dryad/templates/dryad_browser.mako'),
+            views.dryad_browser,
+            OsfWebRenderer('../addons/dryad/templates/dryad_page.mako'),
 
         ),
         Rule(
@@ -48,7 +49,7 @@ page_routes = {'rules':
                 '/project/<pid>/node/<nid>/dryad/',
             ],
             'get',
-            views.dryad.dryad_page,
+            views.dryad_page,
             OsfWebRenderer('../addons/dryad/templates/dryad_page.mako'),
         ),
         Rule(
@@ -57,7 +58,7 @@ page_routes = {'rules':
                 '/project/<pid>/node/<nid>/dryad/search',
             ],
             'get',
-            views.dryad.dryad_search,
+            views.search_dryad_page,
             OsfWebRenderer('../addons/dryad/templates/dryad_page.mako'),
         ),
         Rule(
@@ -66,7 +67,7 @@ page_routes = {'rules':
                 '/project/<pid>/node/<nid>/dryad/add',
             ],
             'get',
-            views.dryad.set_dryad_doi,
+            views.set_dryad_doi,
             OsfWebRenderer('../addons/dryad/templates/dryad_page.mako'),
         ),
         Rule(
@@ -75,7 +76,7 @@ page_routes = {'rules':
                 '/project/<pid>/node/<nid>/dryad/rm',
             ],
             'get',
-            views.dryad.remove_dryad_doi,
+            views.remove_dryad_doi,
             json_renderer,
         ),
         Rule(
@@ -84,7 +85,7 @@ page_routes = {'rules':
                 '/project/<pid>/node/<nid>/dryad/hgrid/root/',
             ],
             'get',
-            views.hgrid.dryad_addon_folder,
+            views.dryad_addon_folder,
             json_renderer,
         ),
 

@@ -111,3 +111,17 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	        },
 	        auth=auth,
 	    )
+
+	def to_json(self, user):
+	    ret = super(AddonDryadNodeSettings, self).to_json(user)
+	    ret.update(self.update_json)
+	    return ret
+	def update_json(self):
+	    return {
+	        'dryad_package_doi': self.dryad_package_doi if self.dryad_package_doi else '',
+	        'add_dryad_package_url': self.owner.web_url_for('set_dryad_doi'),
+	        'browse_dryad_url': self.owner.web_url_for('dryad_browser'),
+	        'search_dryad_url': self.owner.web_url_for('search_dryad_page'),
+	    }
+
+
