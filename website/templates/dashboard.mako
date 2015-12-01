@@ -8,6 +8,8 @@
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
 
+<div id="addProjectWrap"></div>
+
     <div class="p-md">
       <h3>Projects </h3>
       <p>Browse and organize all your projects</p>

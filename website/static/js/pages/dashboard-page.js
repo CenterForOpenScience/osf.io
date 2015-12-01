@@ -10,6 +10,7 @@ var jstz = require('jstimezonedetect').jstz;
 
 var $osf = require('js/osfHelpers');
 var FileBrowser = require('js/fileBrowser.js').FileBrowser;
+var AddProject = require('js/addProjectPlugin');
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
@@ -41,5 +42,6 @@ $(document).ready(function() {
     m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {wrapperSelector : '#fileBrowser'}));
     // TODO: new data does not have timezone information
     //ensureUserTimezone(result.timezone, result.locale, result.id);
+    m.mount(document.getElementById('addProjectWrap'), m.component(AddProject, {}));
 });
 
