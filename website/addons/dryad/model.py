@@ -10,6 +10,7 @@ from modularodm import fields
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
+from website.oauth.models import ExternalProvider
 
 from website import settings
 from website.util import web_url_for
@@ -20,6 +21,8 @@ from website.addons.base import StorageAddonBase
 from website.addons.dryad import utils
 from website.addons.dryad import settings as dryad_settings
 from website.addons.dryad import serializer as serializer
+from website.addons.dryad.utils import DryadNodeLogger
+
 
 
 class AddonDryadUserSettings(AddonUserSettingsBase):
@@ -33,41 +36,67 @@ class AddonDryadUserSettings(AddonUserSettingsBase):
 
 
 class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
+	"""
+	A Dryad node is a collection of packages. Each package is specified by a DOI, and the title is saved automatically
+	"""
+	#packages = fields.ForeignField('AddonDryadPackage', list=True)
+	serializer = serializer.DryadSerializer
+	dryad_metadata = fields.StringField(list=True)
 	dryad_title = fields.StringField()
 	dryad_doi = fields.StringField()
-	dryad_metadata = fields.StringField()
-	serializer = serializer.DryadSerializer
+	dryad_doi_list = fields.StringField(list=True)
 	complete = True
 	has_auth = True
+	provider_name = 'dryad'
 
 	user_settings = fields.ForeignField(
 	    'addondryadusersettings', backref='authorized'
 	)
 
 	def delete(self, **kwargs):
-		self.dryad_doi=None
+		dryad_doi_list = None
 		super(AddonDryadNodeSettings, self).delete()
 
 	@property
 	def folder_name(self):
-		return self.dryad_title
+
+		return ""
 
 	def serialize_waterbutler_credentials(self):
-		return dryad_settings.WATERBUTLER_CREDENTIALS
+		return {'storage':{}}
 	def serialize_waterbutler_settings(self):
-		return dryad_settings.WATERBUTLER_SETTINGS
+		settings=dryad_settings.WATERBUTLER_SETTINGS
+		#modify the settings here.
+		settings['doi_list'] = self.dryad_doi_list
+		return settings
+
+
 	def create_waterbutler_log(self, auth, action, metadata):
+		path = metadata['path']
+		print path
+
+		url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='dryad')
+		if not metadata.get('extra'):
+		    sha = None
+		    urls = {}
+		else:
+		    sha = metadata['extra']['commit']['sha']
+		    urls = {
+		        'view': '{0}?ref={1}'.format(url, sha),
+		        'download': '{0}?action=download&ref={1}'.format(url, sha)
+		    }
+
 		self.owner.add_log(
-				'dryad_{0}'.format(action),
-				auth=auth,
-				params={},
-	   		)
+		    'dryad_{0}'.format(action),
+		    auth=auth,
+		    params={
+		        'project': self.owner.parent_id,
+		        'node': self.owner._id,
+		        'path': path,
+		        'urls': urls,
+		    },
+		)
 
-
-	@property
-	def has_auth(self):
-	    """Whether an access token is associated with this node."""
-	    return bool(self.user_settings and self.user_settings.has_auth)
 
 	def deauthorize(self, auth):
 	    """Remove user authorization from this node and log the event."""
@@ -82,92 +111,3 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	        },
 	        auth=auth,
 	    )
-
-	##### Callback overrides #####
-
-	def before_register_message(self, node, user):
-	    """Return warning text to display if user auth will be copied to a
-	    registration.
-	    """
-	    category, title = node.project_or_component, node.title
-	    if self.user_settings and self.user_settings.has_auth:
-	        # TODO:
-	        pass
-
-	# backwards compatibility
-	before_register = before_register_message
-
-	def before_fork_message(self, node, user):
-	    """Return warning text to display if user auth will be copied to a
-	    fork.
-	    """
-	    # TODO
-	    pass
-
-	# backwards compatibility
-	before_fork = before_fork_message
-
-	def before_remove_contributor_message(self, node, removed):
-	    """Return warning text to display if removed contributor is the user
-	    who authorized the Dryad addon
-	    """
-	    if self.user_settings and self.user_settings.owner == removed:
-	        # TODO
-	        pass
-
-	# backwards compatibility
-	before_remove_contributor = before_remove_contributor_message
-
-	def after_register(self, node, registration, user, save=True):
-	    """After registering a node, copy the user settings and save the
-	    chosen folder.
-
-	    :return: A tuple of the form (cloned_settings, message)
-	    """
-	    clone, message = super(DryadNodeSettings, self).after_register(
-	        node, registration, user, save=False
-	    )
-	    # Copy user_settings and add registration data
-	    if self.has_auth and self.folder is not None:
-	        clone.user_settings = self.user_settings
-	        clone.registration_data['folder'] = self.folder
-	    if save:
-	        clone.save()
-	    return clone, message
-
-	def after_fork(self, node, fork, user, save=True):
-	    """After forking, copy user settings if the user is the one who authorized
-	    the addon.
-
-	    :return: A tuple of the form (cloned_settings, message)
-	    """
-	    clone, _ = super(DryadNodeSettings, self).after_fork(
-	        node=node, fork=fork, user=user, save=False
-	    )
-
-	    if self.user_settings and self.user_settings.owner == user:
-	        clone.user_settings = self.user_settings
-	        message = 'Dryad Service authorization copied to fork.'
-	    else:
-	        message = ('Dryad Service authorization not copied to fork. You may '
-	                    'authorize this fork on the <a href="{url}">Settings</a>'
-	                    'page.').format(
-	                    url=fork.web_url_for('node_setting'))
-	    if save:
-	        clone.save()
-	    return clone, message
-
-	def after_remove_contributor(self, node, removed):
-	    """If the removed contributor was the user who authorized the Dryad
-	    addon, remove the auth credentials from this node.
-	    Return the message text that will be displayed to the user.
-	    """
-	    if self.user_settings and self.user_settings.owner == removed:
-	        self.user_settings = None
-	        self.save()
-	        name = removed.fullname
-	        url = node.web_url_for('node_setting')
-	        return ('Because the Dryad Service add-on for this project was authenticated'
-	                'by {name}, authentication information has been deleted. You '
-	                'can re-authenticate on the <a href="{url}">Settings</a> page'
-	                ).format(**locals())

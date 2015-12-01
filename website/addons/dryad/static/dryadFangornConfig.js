@@ -47,6 +47,17 @@ var _dryadItemButtons = {
                         icon: 'fa fa-file-o',
                         className: 'text-info'
                     }, 'View'));
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            var fileurl = "http://www.datadryad.org/mn/object/"+item.data.extra.doi+"/1/bitstream";
+
+                            window.open(fileurl, '_blank');
+                        },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download')
+                );
             }
             if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
                 buttons.push(
@@ -71,7 +82,6 @@ var _dryadItemButtons = {
         return m('span', buttons); // Tell fangorn this function is used.
     }
 };
-
 
 Fangorn.config.dryad = {
     // Fangorn options are called if functions, so return a thunk that returns the column builder

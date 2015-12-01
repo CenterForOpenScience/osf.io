@@ -22,16 +22,16 @@ logger = logging.getLogger(__name__)
 
 import xml.etree.ElementTree as ET
 
-
 @must_be_valid_project
 @must_have_addon('dryad', 'node')
 def set_dryad_doi(node_addon, **kwargs):
     doi = request.args["doi"]
-    node_addon.dryad_doi = doi
     pid =  kwargs['pid']
+    #now we gotta 
     d = Dryad_DataOne()
     m = d.metadata(doi)
     node_addon.dryad_title = m.getElementsByTagName("dcterms:title")[0].firstChild.wholeText
+    node_addon.dryad_doi = doi
     meta_data = {}
     m_list = [  'dcterms:type',
                 'dcterms:creator',
@@ -50,14 +50,26 @@ def set_dryad_doi(node_addon, **kwargs):
         for m_el in m_elements:
             temp.append(m_el.firstChild.wholeText)
         meta_data[m_item] = temp
-    node_addon.dryad_metadata = str(meta_data)
+    node_addon.dryad_metadata.append( str(meta_data) )
+    node_addon.dryad_doi_list.append(doi)
 
-
-    #now, set the dryad_metadata
     node_addon.save()
     #now, redirect back to the original homepage
     return redirect("/project/{}".format(pid))
     
+@must_be_valid_project
+@must_have_addon('dryad', 'node')
+def remove_dryad_doi(node_addon, **kwargs):
+    doi = request.args["doi"]
+    pid =  kwargs['pid']
+    #remove item from list
+    node_addon.dryad_doi_list.remove(doi)
+
+    node_addon.save()
+    #now, redirect back to the original homepage
+    return {}
+    
+
 
 
 @must_be_valid_project
@@ -67,12 +79,12 @@ def dryad_page(**kwargs):
     pid =  kwargs['pid']
     auth=kwargs['auth']
 
-    count=25
+    count=10
     start=0
     try:
         count = int(request.args["count"])
     except Exception:
-        count=25
+        count=10
     try:
         start = int(request.args["start"] )
     except Exception:

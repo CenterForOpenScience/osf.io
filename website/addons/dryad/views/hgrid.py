@@ -17,6 +17,16 @@ def dryad_addon_folder(node_settings, auth, **kwargs):
         return []
 
     node = node_settings.owner
+
+    urls = {
+        #'upload': node_settings.owner.api_url + 'dryad/file/' + node_settings.dryad_doi,
+        #'fetch': node_settings.owner.api_url + 'dryad/hgrid/' + node_settings.dryad_doi,
+        #'branch': node_settings.owner.api_url + 'dryad/hgrid/root/',
+        #'zip': node_settings.owner.api_url + 'dryad/zipball/' + node_settings.dryad_doi,
+        'repo': 'http://api.datadryad.org/mn/object/'+node_settings.dryad_doi
+    }
+    
+
     root = rubeus.build_addon_root(
         node_settings=node_settings,
         name=node_settings.folder_name,
@@ -25,6 +35,8 @@ def dryad_addon_folder(node_settings, auth, **kwargs):
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
     )
+    print root
+
     return [root]
     
 """

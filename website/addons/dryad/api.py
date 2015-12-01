@@ -123,16 +123,56 @@ class Dryad_DataOne:
 		"""
 		return html
 
-if __name__ == "__main__":
-	dryad = Dryad()
-	print dryad.identify().toprettyxml()
-	print dryad.list_set().toprettyxml()
-	print dryad.list_metadataformat().toprettyxml()
-	print dryad.list_identifiers("2010-01-01","oai_dc","hdl_10255_3").toprettyxml()
-	print dryad.list_records("2010-01-01","oai_dc","hdl_10255_3").toprettyxml()
+from sword2 import Connection
 
-	dataone = Dryad_DataOne()
-	print dataone.list().toprettyxml()
-	print dataone.metadata().toprettyxml()
-	print dataone.download()
 
+class Dryad_Sword(object):
+	def __init__(self, owner):
+		c = Connection(SD_URI, user_name = owner.username, user_pass=owner.password)
+		c.get_service_document()
+
+		# pick the first collection within the first workspace:
+		workspace_1_title, workspace_1_collections = c.workspaces[0]
+		collection = workspace_1_collections[0]
+
+		# upload "package.zip" to this collection as a new (binary) resource:
+		with open("package.zip", "r") as pkg:
+		    receipt = c.create(col_iri = collection.href,
+		                                payload = pkg,
+		                                mimetype = "application/zip",
+		                                filename = "package.zip",
+		                                packaging = 'http://purl.org/net/sword/package/Binary',
+		                                in_progress = True)    # As the deposit isn't yet finished
+
+
+		# Add a metadata record to this newly created resource (or 'container')
+		from sword2 import Entry
+		# Entry can be passed keyword parameters to add metadata to the entry (namespace + '_' + tagname)
+		e = Entry(id="atomid", 
+		          title="atom-title",
+		          dcterms_abstract = "Info about the resource....",
+		          )
+		# to add a new namespace:
+		e.register_namespace('skos', 'http://www.w3.org/2004/02/skos/core#')
+		e.add_field("skos_Concept", "...")
+
+
+		# Update the metadata entry to the resource:
+		updated_receipt = c.update(metadata_entry = e,
+		                           dr = receipt,   # use the receipt to discover the right URI to use
+		                           in_progress = False)  # finish the deposit
+
+	def upload(self, local_dat):
+		e = Entry()   # it can be opened blank, but more usefully...
+		e = Entry(id=owner.id,
+              title=owner.title,
+              dcterms_identifier=owner.terms,
+              )
+
+		with open(local_dat, "rb") as data:
+			receipt = c.create_resource(col_iri = collection.href,
+                                    payload = data,
+                                    mimetype = self.owner.type,
+                                    filename = local_dat,
+                                    packaging = "http://purl.org/net/sword/package/Binary",
+                                    metadata_entry = e)   # Adding in the entry

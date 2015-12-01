@@ -14,6 +14,11 @@
 % else:
 <span>Next</span>
 % endif
+<form action="action_page.php">
+Search:
+<input type="text" name="firstname" value="doi:10.5061/dryad.XXXX">
+<input type="submit" value="Submit">
+</form>
 
 ${content}
 

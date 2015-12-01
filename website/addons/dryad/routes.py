@@ -62,6 +62,15 @@ page_routes = {'rules':
         ),
         Rule(
             [
+                '/project/<pid>/dryad/rm',
+                '/project/<pid>/node/<nid>/dryad/rm',
+            ],
+            'get',
+            views.dryad.remove_dryad_doi,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/dryad/hgrid/root/',
                 '/project/<pid>/node/<nid>/dryad/hgrid/root/',
             ],
