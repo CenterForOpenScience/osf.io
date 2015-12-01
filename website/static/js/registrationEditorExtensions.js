@@ -124,7 +124,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 return configOption || defaultColumns;
             },
             lazyLoadOnLoad: function(tree, event) {
-                if (tree.data.nodeId === window.contextVars.node.id) {
+                if (tree.data.provider === 'osfstorage' && tree.data.nodeId === window.contextVars.node.id) {
                     this.multiselected([tree]);
                 }
 
