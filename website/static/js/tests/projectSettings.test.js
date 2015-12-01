@@ -4,6 +4,7 @@ var assert = require('chai').assert;
 var utils = require('tests/utils');
 var faker = require('faker');
 
+var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var language = require('js/osfLanguage').projectSettings;
@@ -21,10 +22,20 @@ window.contextVars = {
         urls: {
             api: faker.internet.ip()
         }
+    },
+    currentUser: {
+        fullname: 'John Cena'
     }
 };
-
+sinon.stub($, 'ajax', function() {
+    var ret = $.Deferred();
+    ret.resolve({
+        contributors: []
+    });
+    return ret.promise();
+});
 var ProjectSettings = require('js/projectSettings.js');
+$.ajax.restore();
 
 var ProjectSettings = ProjectSettings.ProjectSettings;
 

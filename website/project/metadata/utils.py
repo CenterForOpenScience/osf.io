@@ -10,6 +10,7 @@ def serialize_meta_schema(meta_schema):
         'schema': meta_schema.schema,
         'fulfills': meta_schema.fulfills,
         'requires_approval': meta_schema.requires_approval,
+        'requires_consent': meta_schema.requires_consent,
         'messages': meta_schema.messages
     }
 
@@ -24,7 +25,7 @@ def serialize_draft_registration(draft, auth=None):
 
     return {
         'pk': draft._id,
-        'branched_from': serialize_node(draft.branched_from, auth),
+        'branched_from': serialize_node(node, auth),
         'initiator': serialize_user(draft.initiator, full=True),
         'registration_metadata': draft.registration_metadata,
         'registration_schema': serialize_meta_schema(draft.registration_schema),
@@ -33,6 +34,7 @@ def serialize_draft_registration(draft, auth=None):
         'flags': draft.flags,
         'urls': {
             'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id),
+            'submit': node.api_url_for('submit_draft_for_review', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),
             'register': node.api_url_for('register_draft_registration', draft_id=draft._id),
             'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id),

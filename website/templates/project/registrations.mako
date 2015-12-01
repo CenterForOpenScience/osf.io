@@ -31,10 +31,9 @@
     ##      %endif
         % else:
         <p>
-          There have been no completed registrations of this ${node['node_type']}.
-          For a list of the most viewed and most recent public registrations on the
-          Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>,
-          or you start a new draft registration from the "Draft Registrations" tab.
+          There have been no completed registrations of this project. You can start a new registration by clicking the “New Registration” button, 
+          and you have the option of saving as a draft registration before submission. For a list of the most viewed and most recent public 
+          registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
         </p>
         % endif
         %if parent_node['exists'] and user['is_admin_parent']:
@@ -81,27 +80,41 @@
                 <p>Started: <span data-bind="text: initiated"></span></p>
                 <p>Last updated: <span data-bind="text: updated"></span></p>
                 <span data-bind="if: requiresApproval">
-                    <div data-bind="if: isApproved">
-                        <div class="draft-status-badge bg-success"> Approved</div>
-                    </div>
-                    <div data-bind="ifnot: isApproved">
-                        <div class="draft-status-badge bg-warning"> Pending Approval </div>
-                    </div>
-                    <div data-bind="if: isPendingReview">
+                    <div data-bind="if: isPendingApproval">
                         <div class="draft-status-badge bg-warning"> Pending Review</div>
+                    </div>
+                    <div data-bind="if: userHasUnseenComment">
+                        <div class="draft-status-badge bg-warning"> Unseen Comments</div>
                     </div>
                 </span>
                 </small>
                 <div class="row">
                   <div class="col-md-10">
                     <a class="btn btn-info"
-                       data-bind="click: $root.editDraft"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</a>
+                       data-bind="visible: !isPendingApproval,
+                                  click: $root.editDraft">
+                      <i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit
+                    </a>
+                    <a class="btn btn-info"
+                       data-bind="visible: isPendingApproval,
+                                  click: $root.previewDraft">
+                      <i style="margin-right: 5px;" class="fa fa-pencil"></i>Preview
+                    </a>
                     <button class="btn btn-danger"
-                            data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
+                            data-bind="click: $root.deleteDraft">
+                      <i style="margin-right: 5px;" class="fa fa-times"></i>Delete
+                    </button>
                   </div>
                   <div class="col-md-1">
+                    <!-- TODO(samchrisinger): pin down behavior here
+                    <span data-bind="if: requiresApproval">
+                      <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: registerWithoutReview">Register without review</button>
+                    </span>
+                    -->
+                    <span data-bind="ifnot: requiresApproval">
                      <a class="btn btn-success" data-bind="attr.href: urls.register_page,
                                                            css: {'disabled': !isApproved}">Register</a>
+                    </span>
                   </div>
                 </div>
               </h4>
@@ -143,3 +156,4 @@
 </%def>
 
 <%include file="project/registration_preview.mako" />
+<%include file="project/registration_utils.mako" />
