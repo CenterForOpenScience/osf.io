@@ -1223,16 +1223,29 @@ RegistrationManager.prototype.init = function() {
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
 
-    bootbox.confirm('Are you sure you want to delete this draft registration?', function(confirmed) {
-        if (confirmed) {
-            $.ajax({
-                url: self.urls.delete.replace('{draft_pk}', draft.pk),
-                method: 'DELETE'
-            }).then(function() {
-                self.drafts.remove(function(item) {
-                    return item.pk === draft.pk;
-                });
-            });
+    bootbox.dialog({
+        title: 'Please confim',
+        message: 'Are you sure you want to delete this draft registration?',
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default',
+                callback: bootbox.hideAll
+            },
+            submit: {
+                label: 'Delete',
+                className: 'btn-danger',
+                callback: function() {
+                    $.ajax({
+                        url: self.urls.delete.replace('{draft_pk}', draft.pk),
+                        method: 'DELETE'
+                    }).then(function() {
+                        self.drafts.remove(function(item) {
+                            return item.pk === draft.pk;
+                        });
+                    });
+                }
+            }
         }
     });
 };
