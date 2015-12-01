@@ -8,10 +8,7 @@ from framework.exceptions import PermissionsError
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
-from website.addons.zotero.tests.factories import (
-    ZoteroAccountFactory,
-    ZoteroUserSettingsFactory
-)
+from website.addons.zotero.tests.factories import ZoteroAccountFactory
 from website.addons.zotero.provider import ZoteroCitationsProvider
 
 from pyzotero.zotero_errors import UserNotAuthorised

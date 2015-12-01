@@ -8,10 +8,7 @@ from framework.exceptions import PermissionsError
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
-from website.addons.mendeley.tests.factories import (
-    MendeleyAccountFactory,
-    MendeleyUserSettingsFactory,
-)
+from website.addons.mendeley.tests.factories import MendeleyAccountFactory
 from website.addons.mendeley.provider import MendeleyCitationsProvider
 
 import datetime
