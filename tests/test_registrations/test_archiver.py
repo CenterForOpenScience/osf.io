@@ -313,6 +313,10 @@ class TestArchiverTasks(ArchiverTestCase):
             )
         ))
 
+    def test_archive_success(self):
+        pass
+
+
 class TestArchiverUtils(ArchiverTestCase):
 
     # TODO (samchrisinger, HarryRybacki): implement new tests for registration approvals
