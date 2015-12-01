@@ -2153,7 +2153,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if log_date:
             log.date = log_date
 
-        self.date_modified = log.date
+        self.date_modified = log.date.replace(tzinfo=None)
         self.save()
 
         log.save()
