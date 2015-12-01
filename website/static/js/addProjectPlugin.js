@@ -7,6 +7,11 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
+// XHR configuration to get apiserver connection to work
+var xhrconfig = function (xhr) {
+    xhr.withCredentials = true;
+};
+
 
 var AddProject = {
     controller : function (options) {
@@ -14,12 +19,48 @@ var AddProject = {
         self.defaults = {
             parent : null
         };
-        self.viewState = m.prop('form'); // 'processing', 'done', 'error';
+        self.viewState = m.prop('form'); // 'processing', 'success', 'error';
+        self.nodeTitle = m.prop('');
         self.options = $.extend(self.defaults, options);
         self.init = function _init () {
 
         };
         self.add = function _add () {
+            var url = $osf.apiV2Url('nodes/', { query : {}});
+            var data = {
+                    'data' : {
+                        'type': 'nodes',
+                        'attributes': {
+                            'title': self.nodeTitle,
+                            'category': 'project'
+                        }
+                    }
+                };
+            var success = function _success () {
+                self.viewState('success');
+            };
+            var error = function _error () {
+                self.viewState('error');
+            };
+            m.request({method : 'POST', url : url, data : data, config : xhrconfig})
+                .then(success, error);
+
+            //Method:        POST
+            //URL:           links.self
+            //Query Params:  <none>
+            //Body (JSON):   {
+            //    "data": {
+            //        "type": "nodes", # required
+            //        "attributes": {
+            //            "title":       {title},          # required
+            //            "category":    {category},       # required
+            //            "description": {description},    # optional
+            //            "tags":        [{tag1}, {tag2}], # optional
+            //            "public":      true|false        # optional
+            //        }
+            //    }
+            //}
+            //Success:       201 CREATED + node representation
 
         };
     },
