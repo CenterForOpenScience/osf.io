@@ -19,8 +19,5 @@
 <%def name="on_submit()"></%def>
 
 <%include file="profile/addon_permissions.mako" />
-<!--${context.keys()}
-${context.__dict__}-->
-
 
 

@@ -179,7 +179,6 @@ def search_dryad_page(**kwargs):
 
     d = Dryad_SOLR()
     x = d.basic_query(query)
-    print x.toprettyxml()
 
     docs = x.getElementsByTagName("doc")
 
@@ -197,7 +196,6 @@ def search_dryad_page(**kwargs):
 
     objectList = ET.Element("ul")
     for doc in docs:
-        #print doc.toprettyxml()
          
         title_elements = [ i.firstChild.firstChild.wholeText for i in  doc.getElementsByTagName("arr") if i.hasAttribute("name") and i.getAttribute("name")=="dc.title_ac"  ]
         title_element=""
@@ -210,15 +208,13 @@ def search_dryad_page(**kwargs):
 
         author_list = [ i for i in  doc.getElementsByTagName("arr") if i.hasAttribute("name") and i.getAttribute("name")=="dc.contributor.author_ac"  ][0]
         author_list = [ i.firstChild.wholeText for i in  author_list.getElementsByTagName("str")   ]
-        authors=", ".join(author_list)
+        authors="Authors: "+", ".join(author_list)
 
         authorel = ET.SubElement(sublist, "li")
         authorel.text = authors
 
         #pick out the identifier: dc.identifier
         identifier = [ i.firstChild.firstChild.wholeText for i in  doc.getElementsByTagName("arr") if i.hasAttribute("name") and i.getAttribute("name")=="dc.identifier"  ]
-        print "KEVIN SEE HERE"
-        print identifier
         identifier=identifier[0]
         id_item = ET.SubElement(sublist,"li")
         id_button = ET.SubElement(id_item, "a")
@@ -230,7 +226,6 @@ def search_dryad_page(**kwargs):
             add_button = ET.SubElement(add_item, "a")
             add_button.text ="Set Node Data to This"
             add_button.attrib["href"] = "/project/{}/dryad/add?doi={}".format(pid, identifier)
-    #ret.update({"content": "KEVIN LOOK HERE:"+title_element})
     ret.update({"content": ET.tostring(objectList)})
     ret.update(dryad.config.to_json() )
     ret.update(dryad.update_json() )
@@ -238,8 +233,6 @@ def search_dryad_page(**kwargs):
 
     return ret
 
-def view_dryad_repo(node_settings, auth, **kwargs):
-    pass
 
 
 def dryad_addon_folder(node_settings, auth, **kwargs):    
@@ -249,14 +242,9 @@ def dryad_addon_folder(node_settings, auth, **kwargs):
 
     node = node_settings.owner
     urls = {
-        #'upload': node_settings.owner.api_url + 'dryad/file/' + node_settings.dryad_doi,
-        #'fetch': node_settings.owner.api_url + 'dryad/hgrid/' + node_settings.dryad_doi,
-        #'branch': node_settings.owner.api_url + 'dryad/hgrid/root/',
-        #'zip': node_settings.owner.api_url + 'dryad/zipball/' + node_settings.dryad_doi,
         'download': 'http://api.datadryad.org/mn/object/'+node_settings.dryad_package_doi.replace('/http://dx.doi.org/', 'doi:')+'/bitstream',
         'view': 'http://api.datadryad.org/mn/object/'+node_settings.dryad_package_doi.replace('/http://dx.doi.org/', 'doi:')
     }
-    print urls
     
 
     root = rubeus.build_addon_root(
