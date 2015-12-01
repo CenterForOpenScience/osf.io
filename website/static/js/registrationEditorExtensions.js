@@ -59,11 +59,9 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
 
     var onSelectRow = function(item) {
         if (item.kind === 'file') {
-            viewModel.value(item.data.path);
             viewModel.selectedFile(item);
             item.css = 'fangorn-selected';
         } else {
-            viewModel.value(NO_FILE);
             viewModel.selectedFile(null);
         }
     };
@@ -165,7 +163,7 @@ var Uploader = function(question) {
     var self = this;
 
     question.showUploader = ko.observable(false);
-    self.selectedFile = ko.observable(null);
+    self.selectedFile = ko.observable({});
     self.selectedFile.subscribe(function(file) {
         if (file) {
             question.extra({
@@ -177,7 +175,7 @@ var Uploader = function(question) {
         }
         else {
             question.extra({
-                selectedFileName: 'no file selected'
+                selectedFileName: NO_FILE
             });
             question.value(null);
         }
@@ -188,7 +186,7 @@ var Uploader = function(question) {
     self.unselectFile = function() {
         self.selectedFile(null);
         question.extra({
-            selectedFileName: 'no file selected'
+            selectedFileName: NO_FILE
         });
     };
 
@@ -196,7 +194,7 @@ var Uploader = function(question) {
 
     self.preview = function() {
         var value = question.value();
-        if (!value || value === 'no file selected') {
+        if (!value || value === NO_FILE) {
             return 'no file selected';
         }
         else {

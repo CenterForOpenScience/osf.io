@@ -686,26 +686,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
         return self.currentPage() === self.pages()[self.pages().length - 1];
     });
 
-    self.serialized = ko.pureComputed(function () {
-        // TODO(lyndsysimon): Test this.
-        var self = this;
-        var data = {};
-
-        $.each(self.pages(), function (_, page) {
-            $.each(page.questions, function (_, question) {
-                data[question.id] = {
-                    value: question.value()
-                };
-            });
-        });
-
-        return {
-            schema_name: self.draft().metaSchema.name,
-            schema_version: self.draft().metaSchema.version,
-            schema_data: data
-        };
-    }.bind(self));
-
     // An incrementing dirty flag. The 0 state represents not-dirty.
     // States greater than 0 imply dirty, and incrementing the number
     // allows for reliable mutations of the ko.observable.
