@@ -558,6 +558,8 @@ def addon_view_file(auth, node, file_node, version):
         },
         'error': error,
         'file_name': file_node.name,
+        'file_name_title': os.path.splitext(file_node.name)[0],
+        'file_name_ext': os.path.splitext(file_node.name)[1],
         'file_path': file_node.path,
         'sharejs_uuid': sharejs_uuid,
         'provider': file_node.provider,
