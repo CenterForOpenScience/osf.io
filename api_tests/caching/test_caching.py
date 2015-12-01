@@ -1,12 +1,11 @@
+from __future__ import unicode_literals
 import copy
-import json
-from django.conf import settings
 
+import requests
 from datadiff import diff
+from django.conf import settings
 from requests.auth import HTTPBasicAuth
 
-from tests.base import ApiTestCase
-import requests
 
 class TestVarnish(object):
 
@@ -16,39 +15,39 @@ class TestVarnish(object):
     def setUp(self):
         if not settings.RUN_VARNISH_IN_DEV:
             return
-        self.authorization = HTTPBasicAuth(u'mocha@osf.io', u'password')
+        self.authorization = HTTPBasicAuth('mocha@osf.io', 'password')
 
     def test_compare_python_responses_to_varnish_responses(self):
         if not settings.RUN_VARNISH_IN_DEV:
             return
         querystrings = dict(
             nodes=[
-                u'comments',
-                u'children',
-                u'files',
-                u'registrations',
-                u'contributors',
-                u'node_links',
-                u'parent',
+                'comments',
+                'children',
+                'files',
+                'registrations',
+                'contributors',
+                'node_links',
+                'parent',
             ],
             users=[
-                u'nodes',
+                'nodes',
             ],
             registrations=[
-                u'comments',
-                u'children',
-                u'files',
-                u'registrations',
-                u'contributors',
-                u'node_links',
-                u'parent',
-                u'registrations',
-                u'registered_by',
-                u'registered_from',
+                'comments',
+                'children',
+                'files',
+                'registrations',
+                'contributors',
+                'node_links',
+                'parent',
+                'registrations',
+                'registered_by',
+                'registered_from',
             ]
         )
 
-        querystring_suffix = u'page[size]=10&format=jsonapi'
+        querystring_suffix = 'page[size]=10&format=jsonapi'
 
         data_dict = dict(
             nodes=dict(),
@@ -66,7 +65,7 @@ class TestVarnish(object):
             embed_values.sort()
             original_embed_values = embed_values
             while len(embed_values) > 0:
-                generated_qs = u'&embed='.join(embed_values)
+                generated_qs = '&embed='.join(embed_values)
                 python_url = '{}{}/?embed={}&{}'.format(self.local_python_base_url, key, generated_qs, querystring_suffix)
                 varnish_url = '{}{}/?embed={}&{}&esi=true'.format(self.local_varnish_base_url, key, generated_qs,
                                                                                          querystring_suffix)
