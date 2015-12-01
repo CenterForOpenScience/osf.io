@@ -322,7 +322,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if relationships is not None:
             for type, href in relationships.items():
                 if href and not href == '{}':
-                    return '<esi:include src="{}?format=jsonapi&enveloped=false"/>'.format(href)
+                    return '<esi:include src="{}?format=jsonapi"/>'.format(href)
         else:
             raise SkipField
 
