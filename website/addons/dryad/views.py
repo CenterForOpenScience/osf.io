@@ -213,6 +213,7 @@ def search_dryad_page(**kwargs):
 
         #pick out the identifier: dc.identifier
         identifier = [ i.firstChild.firstChild.wholeText for i in  doc.getElementsByTagName("arr") if i.hasAttribute("name") and i.getAttribute("name")=="dc.identifier"]
+
         identifier=identifier[0]
         id_item = ET.SubElement(sublist,"li")
         id_button = ET.SubElement(id_item, "a")
