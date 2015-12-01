@@ -48,7 +48,6 @@ def set_dryad_doi(node_addon, **kwargs):
     pid =  kwargs['pid']
     auth=kwargs['auth']
     d = Dryad_DataOne()
-
     try:
 
         m = d.metadata(doi)

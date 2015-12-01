@@ -64,9 +64,6 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
 
 	def create_waterbutler_log(self, auth, action, metadata):
-		print "This is the Metadata: ", metadata
-		print "This is the auth ", auth
-		print "This is the action ", action
 		path = metadata['path']
 		url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='dryad')
 		if not metadata.get('extra'):
@@ -95,14 +92,19 @@ class AddonDryadNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 	    # TODO: Any other addon-specific settings should be removed here.
 	    node = self.owner
 	    self.user_settings = None
-	    self.owner.add_log(
-	        action='dryad_node_deauthorized',
-	        params={
-	            'project': node.parent_id,
-	            'node': node._id,
-	        },
-	        auth=auth,
-	    )
+
+	def set_doi(self, doi, title, auth):
+		self.dryad_package_doi = doi
+		self.owner.add_log(
+            action='dryad_doi_set',
+            params={
+		        'project': self.owner.parent_id,
+		        'node': self.owner._id,
+               	'dryad' :{'doi':self.dryad_package_doi,
+               				'title':title} 
+            },
+            auth=auth,
+        )
 
 	def to_json(self, user):
 	    ret = super(AddonDryadNodeSettings, self).to_json(user)
