@@ -161,6 +161,17 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_not_in(self.contributing_read_user._id, body)
         assert_not_in(self.creation_user._id, body)
 
+    def test_bad_view_only_link_does_not_modify_permissions(self):
+        res = self.app.get(self.private_node_one_url+'logs/', {
+            'view_only': 'thisisnotarealprivatekey',
+        }, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        res = self.app.get(self.private_node_one_url+'logs/', {
+            'view_only': 'thisisnotarealprivatekey',
+        }, auth=self.creation_user.auth)
+        assert_equal(res.status_code, 200)
+
+
 class TestNodeListViewOnlyLinks(ViewOnlyTestCase):
 
     def test_private_link_does_not_show_node_in_list(self):

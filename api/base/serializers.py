@@ -18,6 +18,7 @@ from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIExcept
 
 from website.models import PrivateLink
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
@@ -52,7 +53,10 @@ def is_anonymized(request):
     is_anonymous = False
     private_key = request.query_params.get('view_only', None)
     if private_key is not None:
-        link = PrivateLink.find_one(Q('key', 'eq', private_key))
+        try:
+            link = PrivateLink.find_one(Q('key', 'eq', private_key))
+        except NoResultsFound:
+            link = None
         if link is not None:
             is_anonymous = link.anonymous
     return is_anonymous
