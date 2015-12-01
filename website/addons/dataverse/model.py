@@ -82,6 +82,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def nodelogger(self):
+        # TODO: Use this for all log actions
         auth = None
         if self.user_settings:
             auth = Auth(self.user_settings.owner)
