@@ -58,7 +58,6 @@ from tests.factories import (
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
 
-DEFAULT_METASCHEMA = get_default_metaschema()
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
 
@@ -1883,7 +1882,7 @@ class TestNode(OsfTestCase):
         node = NodeFactory(creator=user)
         node.is_public = True
         node.save()
-        registration = node.register_node(DEFAULT_METASCHEMA, Auth(user), '', None)
+        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
         assert_false(registration.is_public)
 
     def test_register_node_makes_private_child_registrations(self):
@@ -1897,7 +1896,7 @@ class TestNode(OsfTestCase):
         childchild = NodeFactory(parent=child)
         childchild.is_public = True
         childchild.save()
-        registration = node.register_node(DEFAULT_METASCHEMA, Auth(user), '', None)
+        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
         for node in registration.node_and_primary_descendants():
             assert_false(node.is_public)
 
@@ -3498,7 +3497,7 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration2.registered_from, self.project)
         assert_equal(registration2.registered_user, user2)
         assert_equal(
-            registration2.registered_meta[DEFAULT_METASCHEMA._id],
+            registration2.registered_meta[get_default_metaschema()._id],
             {'some': 'data'}
         )
 

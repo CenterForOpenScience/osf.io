@@ -22,7 +22,7 @@ class RegistrationsTestBase(OsfTestCase):
         self.node.add_contributor(
             self.non_admin,
             permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            auth=Auth(self.user),
+            auth=self.auth,
             save=True
         )
         self.non_contrib = AuthUserFactory()
@@ -60,9 +60,12 @@ class RegistrationsTestBase(OsfTestCase):
         self.immediate_payload = {
             'registrationChoice': 'immediate'
         }
+        self.invalid_payload = {
+            'registrationChoice': 'foobar'
+        }
 
     def draft_url(self, view_name):
-        return self.node.url_for(view_name, draft_id=self.draft._id)
+        return self.node.web_url_for(view_name, draft_id=self.draft._id)
 
     def draft_api_url(self, view_name):
         return self.node.api_url_for(view_name, draft_id=self.draft._id)

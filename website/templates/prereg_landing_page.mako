@@ -28,7 +28,8 @@
   <form>
     <osf-draft-registrations-search
        params="placeholder: 'Type to search for a project',
-               data: '/api/v1/prereg/draft_registrations/',
+               data: '${api_url_for("prereg_draft_registrations")}',
+
                submitText: 'Edit draft'">
     </osf-draft-registrations-search>
   </form>
@@ -51,7 +52,7 @@
 <%def name="content()">
 <div class="prereg-container">
     <h1 class="m-t-xl m-b-lg text-center">Welcome to the Preregistration Challenge!</h1>
-    <p>The process of <a href="http://www.cos.io/prereg">pre-registering </a> your plans is beneficial to both the scientific field and to you, the scientist. By writing out detailed data collection methods, analysis plans, and rules for excluding or missing data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
+    <p>The process of <a href="http://www.cos.io/prereg">preregistering</a> your plans is beneficial to both the scientific field and to you, the scientist. By writing out detailed data collection methods, analysis plans, and rules for excluding or missing data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
     <p class="m-t-lg f-w-lg">Ready for the Challenge?</p>
     <p>
         <ol>

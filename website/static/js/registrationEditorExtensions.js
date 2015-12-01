@@ -59,11 +59,9 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
 
     var onSelectRow = function(item) {
         if (item.kind === 'file') {
-            viewModel.value(item.data.path);
             viewModel.selectedFile(item);
             item.css = 'fangorn-selected';
         } else {
-            viewModel.value(NO_FILE);
             viewModel.selectedFile(null);
         }
     };
@@ -80,9 +78,21 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 parallelUploads: 1,
                 acceptDirectories: false
             },
-            oncreate: function(item) {
-                onSelectRow(item);
-            },
+            dropzoneEvents: $.extend(
+                {},
+                Fangorn.DefaultOptions.dropzoneEvents,
+                {
+                    complete: function(tb, file, response) {
+                        var fileMeta = JSON.parse(file.xhr.response);
+                        fileMeta.nodeId = file.treebeardParent.data.nodeId;
+                        onSelectRow({
+                            kind: 'file',
+                            data: fileMeta
+                        });
+
+                    }
+                }
+            ),
             onselectrow: onSelectRow,
             resolveRows: function(item) {
                 var tb = this;
@@ -153,7 +163,7 @@ var Uploader = function(question) {
     var self = this;
 
     question.showUploader = ko.observable(false);
-    self.selectedFile = ko.observable(null);
+    self.selectedFile = ko.observable({});
     self.selectedFile.subscribe(function(file) {
         if (file) {
             question.extra({
@@ -162,29 +172,35 @@ var Uploader = function(question) {
                 sha256: file.data.extra.hashes.sha256,
                 hasSelectedFile: true
             });
+            question.value(file.data.name);
         }
         else {
             question.extra({
-                selectedFileName: 'no file selected'
+                selectedFileName: NO_FILE
             });
-            question.value('no file selected');
+            question.value(null);
         }
     });
     self.hasSelectedFile = ko.computed(function() {
         return !!(question.extra().viewUrl);
     });
-    self.unselectFile = self.selectedFile.bind(null, null);
+    self.unselectFile = function() {
+        self.selectedFile(null);
+        question.extra({
+            selectedFileName: NO_FILE
+        });
+    };
 
     self.filePicker = null;
 
     self.preview = function() {
         var value = question.value();
-        if (!value || value === 'no file selected') {
+        if (!value || value === NO_FILE) {
             return 'no file selected';
         }
         else {
             var extra = question.extra();
-            return $('<a target="_blank" href="' + extra.viewUrl + '">' + extra.selectedFileName + '</a>');
+            return $('<a target="_blank" href="' + extra.viewUrl + '">' + $osf.htmlEscape(extra.selectedFileName) + '</a>');
         }
     };
 

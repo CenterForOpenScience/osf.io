@@ -8,7 +8,6 @@ from tests.factories import UserFactory, ProjectFactory
 from framework.auth import Auth
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
 
-DEFAULT_METASCHEMA = get_default_metaschema()
 
 class TestNodeSettings(OsfTestCase):
     def setUp(self):
@@ -178,7 +177,7 @@ class TestCallbacks(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
-            schema=DEFAULT_METASCHEMA,
+            schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
             data='hodor',
         )

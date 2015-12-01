@@ -3190,7 +3190,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
             save=True,
         )
-        # TODO make private?
+
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
@@ -3302,14 +3302,9 @@ class Sanction(StoredObject):
     state = fields.StringField(
         default=UNAPPROVED,
         validate=validators.choice_in((
-            # Allowed values according to source code comment
-            'unapproved',
-            'approved',
-            'rejected',
-            # Possible values, origin unclear. May be required, incl for unit tests TODO: review later
-            'active',
-            'cancelled',
-            'completed',
+            UNAPPROVED,
+            APPROVED,
+            REJECTED
         ))
     )
 
@@ -3555,7 +3550,6 @@ class EmailApprovableSanction(Sanction):
         raise NotImplementedError
 
     def _on_complete(self, *args):
-        super(EmailApprovableSanction, self).on_complete(*args)
         if self.notify_initiator_on_complete:
             self._notify_initiator()
 
@@ -3572,7 +3566,7 @@ class PreregCallbackMixin(object):
                 registration_url=registration.url
             )
 
-class Embargo(EmailApprovableSanction, PreregCallbackMixin):
+class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
     COMPLETED = 'completed'
@@ -3703,6 +3697,7 @@ class Embargo(EmailApprovableSanction, PreregCallbackMixin):
         self.reject(user, token)
 
     def _on_complete(self, user):
+        super(Embargo, self)._on_complete(user)
         parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
@@ -3844,7 +3839,7 @@ class Retraction(EmailApprovableSanction):
         self.reject(user, token)
 
 
-class RegistrationApproval(EmailApprovableSanction, PreregCallbackMixin):
+class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
@@ -3926,6 +3921,7 @@ class RegistrationApproval(EmailApprovableSanction, PreregCallbackMixin):
         src.save()
 
     def _on_complete(self, user):
+        super(RegistrationApproval, self)._on_complete(user)
         self.state = Sanction.APPROVED
         register = self._get_registration()
         registered_from = register.registered_from
@@ -3998,7 +3994,7 @@ class DraftRegistrationApproval(Sanction):
             save=True
         )
         registration_choice = self.meta['registration_choice']
-        sanction = None
+
         if registration_choice == 'immediate':
             sanction = functools.partial(registration.require_approval, draft.initiator)
         elif registration_choice == 'embargo':
@@ -4009,16 +4005,7 @@ class DraftRegistrationApproval(Sanction):
             )
         else:
             raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
-        try:
-            sanction(notify_initiator_on_complete=True)
-        except NodeStateError as e:
-            raise e
-            # TODO(samchrisinger)
-            #  raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-        except ValidationValueError as e:
-            raise e
-            # TODO(samchrisinger):
-            # raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+        sanction(notify_initiator_on_complete=True)
 
     def _on_reject(self, user, *args, **kwargs):
         # clear out previous registration options

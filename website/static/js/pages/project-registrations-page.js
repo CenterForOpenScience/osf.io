@@ -18,6 +18,17 @@ $(document).ready(function() {
         $(this).tab('show');
     });
 
+    var urlParams = $osf.urlParams();
+    var tab = urlParams.tab;
+    if (tab) {
+        if(tab === 'drafts') {
+            $('#draftsControl').tab('show');
+        }
+        else {
+            $('#registrationsControl').tab('show');
+        }
+    }
+
     var draftManager = new RegistrationManager(node, '#draftRegistrationsScope', {
         list: node.urls.api + 'drafts/',
         submit: node.urls.api + 'draft/{draft_pk}/submit/',
@@ -27,5 +38,4 @@ $(document).ready(function() {
         create: node.urls.web + 'registrations/'
     }, $('#registerNode'));
     draftManager.init();
-
 });

@@ -2,6 +2,7 @@ require('css/registrations.css');
 
 var $ = require('jquery');
 var ko = require('knockout');
+var Raven = require('raven-js');
 var bootbox = require('bootbox');
 var moment = require('moment');
 var History = require('exports?History!history');
@@ -105,9 +106,12 @@ function Comment(data) {
 Comment.prototype.toggleSaved = function(save) {
     var self = this;
 
-    self.saved(!self.saved());
-    if (self.saved()) {
-        save();
+    if (!self.saved()) {
+        // error handling handled implicitly in save
+        save.done(self.saved.bind(self, true));
+    }
+    else {
+        self.saved(false);
     }
 };
 /** Indicate that a comment is deleted **/
@@ -292,7 +296,8 @@ Question.prototype.toggleExample = function() {
  * @class Page
  * A single page within a draft registration
  *
- * @param {Object} data: serialized page from a registration schema
+ * @param {Object} schemaPage: page representation from a registration schema (see MetaSchema#pages)
+ * @param {Object} schemaData: user data to autoload into page, a key/value map of questionId: questionData
  *
  * @property {ko.observableArray[Question]} questions
  * @property {String} title
@@ -313,8 +318,8 @@ var Page = function(schemaPage, schemaData) {
         return new Question(questionSchema, schemaData[questionSchema.qid]);
     });
 
-    /** 
-     * Aggregate lists of comments from each question in questions. Sort by 'created'. 
+    /**
+     * Aggregate lists of comments from each question in questions. Sort by 'created'.
      **/
     self.comments = ko.computed(function() {
         var comments = [];
@@ -528,9 +533,9 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
             },
             message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
         };
-    }    
+    }
     var preRegisterPrompts = response.prompts || [];
-    
+
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
     );
@@ -645,6 +650,7 @@ Draft.prototype.submitForReview = function() {
  * @param {Object} urls
  * @param {String} urls.update: endpoint to update a draft instance
  * @param {String} editorId: id of editor DOM node
+ * @param {Boolean} preview: enable preview mode-- adds a KO binding handler to allow extensions to define custom preview behavior
  * @property {ko.observable[Boolean]} readonly
  * @property {ko.observable[Draft]} draft
  * @property {ko.observable[Question]} currentQuestion
@@ -680,26 +686,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
     self.onLastPage = ko.pureComputed(function() {
         return self.currentPage() === self.pages()[self.pages().length - 1];
     });
-
-    self.serialized = ko.pureComputed(function () {
-        // TODO(lyndsysimon): Test this.
-        var self = this;
-        var data = {};
-
-        $.each(self.pages(), function (_, page) {
-            $.each(page.questions, function (_, question) {
-                data[question.id] = {
-                    value: question.value()
-                };
-            });
-        });
-
-        return {
-            schema_name: self.draft().metaSchema.name,
-            schema_version: self.draft().metaSchema.version,
-            schema_data: data
-        };
-    }.bind(self));
 
     // An incrementing dirty flag. The 0 state represents not-dirty.
     // States greater than 0 imply dirty, and incrementing the number
@@ -772,7 +758,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
                             if (self.extensions[subQuestion.type] ) {
                                 value = subQuestion.preview();
                             } else {
-                                value = subQuestion.value();
+                                value = $osf.htmlEscape(subQuestion.value() || '');
                             }
                             return $('<p>').append(value);
                         })
@@ -782,7 +768,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
                     if (self.extensions[question.type] ) {
                         value = question.preview();
                     } else {
-                        value = question.value();
+                        value = $osf.htmlEscape(question.value() || '');
                     }
                     $elem.append(value);
                 }
@@ -991,8 +977,9 @@ RegistrationEditor.prototype.submit = function() {
     var currentUser = $osf.currentUser();
     var messages = self.draft().messages;
     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
+        var url = self.urls.submit.replace('{draft_pk}', self.draft().pk);
         if (result) {
-            var request = $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+            var request = $osf.postJSON(url, {
                 node: currentNode,
                 auth: currentUser
             });
@@ -1011,7 +998,14 @@ RegistrationEditor.prototype.submit = function() {
                     }
                 });
             });
-        request.fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+            request.fail(function(xhr, status, error) {
+                Raven.captureMessage('Could not submit draft registration', {
+                    url: url,
+                    textStatus: status,
+                    error: error
+                });
+                $osf.growl('Error submitting for review', language.submitForReviewFail);
+            });
         }
     });
 };
@@ -1056,7 +1050,7 @@ RegistrationEditor.prototype.saveForLater = function() {
         .always($osf.unblock)
         .then(function() {
             self.dirtyCount(0);
-            window.location.assign(self.urls.draftRegistrations);
+            window.location.assign(self.urls.draftRegistrations + '?tab=drafts');
         });
 };
 
@@ -1087,7 +1081,12 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
-    request.fail(function() {
+    request.fail(function(err, status, xhr) {
+        Raven.captureMessage('Could not save draft registration', {
+            url: self.urls.update.replace('{draft_pk}', self.draft().pk),
+            textStatus: status,
+            error: error
+        });
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
     return request;
@@ -1108,10 +1107,13 @@ RegistrationEditor.prototype.getContributors = function() {
     return self.makeContributorsRequest()
         .then(function(data) {
             return $.map(data.contributors, function(c) { return c.fullname; });
-        }).fail(function() {
-            $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
-                       'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                       'problem persists.');
+        }).fail(function(xhr, status, error) {
+            Raven.captureMessage('Could not GET contributors', {
+                url: window.contextVars.node.urls.api + 'get_contributors/',
+                textStatus: status,
+                error: error
+            });
+            $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
         });
 };
 
@@ -1204,11 +1206,13 @@ RegistrationManager.prototype.init = function() {
 
     var getDraftRegistrations = self.getDraftRegistrations();
     getDraftRegistrations.done(function(response) {
-        self.drafts(
-            $.map(response.drafts, function(draft) {
-                return new Draft(draft);
-            })
-        );
+        var drafts = $.map(response.drafts, function(draft) {
+            return new Draft(draft);
+        });
+        drafts.sort(function(a, b) {
+            return a.initiated < b.initiated;
+        });
+        self.drafts(drafts);
     });
 
     var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
@@ -1216,7 +1220,7 @@ RegistrationManager.prototype.init = function() {
     });
 
     var urlParams = $osf.urlParams();
-    if (urlParams.c && urlParams.c === 'prereg') {
+    if (urlParams.campaign && urlParams.campaign === 'prereg') {
         $osf.block();
         ready.done(function() {
             $osf.unblock();
@@ -1238,16 +1242,29 @@ RegistrationManager.prototype.init = function() {
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
 
-    bootbox.confirm('Are you sure you want to delete this draft registration?', function(confirmed) {
-        if (confirmed) {
-            $.ajax({
-                url: self.urls.delete.replace('{draft_pk}', draft.pk),
-                method: 'DELETE'
-            }).then(function() {
-                self.drafts.remove(function(item) {
-                    return item.pk === draft.pk;
-                });
-            });
+    bootbox.dialog({
+        title: 'Please confirm',
+        message: 'Are you sure you want to delete this draft registration?',
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default',
+                callback: bootbox.hideAll
+            },
+            submit: {
+                label: 'Delete',
+                className: 'btn-danger',
+                callback: function() {
+                    $.ajax({
+                        url: self.urls.delete.replace('{draft_pk}', draft.pk),
+                        method: 'DELETE'
+                    }).then(function() {
+                        self.drafts.remove(function(item) {
+                            return item.pk === draft.pk;
+                        });
+                    });
+                }
+            }
         }
     });
 };
