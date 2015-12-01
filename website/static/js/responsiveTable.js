@@ -15,11 +15,15 @@ var responsiveRow = function(row, headers) {
         headers = row.parentElement.parentElement.querySelectorAll('th');
     }
     for (var k = 0, cell; cell = row.cells[k]; k++) {
-        if ($(cell).has('*').length === 0) {
+        var $cell = $(cell);
+        if ($cell.has('*').length === 0) {
             cell.innerHTML = '<p>' + cell.innerHTML + '</p>';
         }
-        if ($(cell).has('div.header').length === 0  && !$(headers[k]).hasClass('responsive-table-hide') && headers[k].innerHTML !== '') {
-            $(cell).prepend('<div class=\'header\'>' + headers[k].innerHTML.replace(/\r?\n|\r/, '') + '</div>');
+        if ($cell.has('div.header').length === 0  && !$(headers[k]).hasClass('responsive-table-hide') && headers[k].innerHTML !== '') {
+            $cell.prepend('<div class=\'header\'>' + headers[k].innerHTML.replace(/\r?\n|\r/, '') + '</div>');
+        }
+        else if ($cell.has('div.header').length === 1) {
+            $cell.children().filter('div.header').html(headers[k].innerHTML.replace(/\r?\n|\r/, ''));
         }
     }
 };

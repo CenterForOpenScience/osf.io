@@ -48,9 +48,15 @@ function LinkViewModel(data, $root) {
     self.toggle = function(data, event) {
         event.target.select();
     };
+
+    self.toggleExpand = function() {
+        self.expanded(!self.expanded());
+    };
+
+    self.expanded = ko.observable(false);
 }
 
-function ViewModel(url, nodeIsPublic) {
+function ViewModel(url, nodeIsPublic, table) {
     var self = this;
     self.nodeIsPublic = nodeIsPublic || false;
     self.url = url;
@@ -147,8 +153,13 @@ function ViewModel(url, nodeIsPublic) {
         });
     };
 
+    self.collapsed = ko.observable();
+
     self.afterRenderLink = function(elm, data) {
         var $tr = $(elm);
+        if (self.privateLinks().indexOf(ko.dataFor($tr[1])) === 0) {
+            self.checkWindowWidth();
+        }
         var target = $tr.find('button>i.fa.fa-copy')[0].parentElement;
         clipboard(target);
         $tr.find('.remove-private-link').tooltip();
@@ -156,11 +167,17 @@ function ViewModel(url, nodeIsPublic) {
         $('.private-link-list').osfToggleHeight({height: 50});
     };
 
+    self.table = $(table);
+
+    self.checkWindowWidth = function () {
+        self.collapsed(self.table.children().filter('thead').is(':hidden'));
+    };
+
 }
 
-function PrivateLinkTable (selector, url, nodeIsPublic) {
+function PrivateLinkTable (selector, url, nodeIsPublic, table) {
     var self = this;
-    self.viewModel = new ViewModel(url, nodeIsPublic);
+    self.viewModel = new ViewModel(url, nodeIsPublic, table);
     $osf.applyBindings(self.viewModel, selector);
 
 }

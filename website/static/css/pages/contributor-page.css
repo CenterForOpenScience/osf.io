@@ -61,14 +61,6 @@
     cursor: pointer;
 }
 
-#noContributors {
-    display: none;
-}
-
-#noAdminContribs {
-    display: none;
-}
-
 select.input-sm {
     white-space: nowrap;
     min-width: 111px;
@@ -201,7 +193,6 @@ table.responsive-table tbody tr td .card-header > span{
     }
 
     table.responsive-table-xxs tbody tr td:not(:first-child)>div {
-        display: none;
         padding: 6px;
     }
 
@@ -296,7 +287,6 @@ table.responsive-table tbody tr td .card-header > span{
     }
 
     table.responsive-table-xs tbody tr td:not(:first-child)>div {
-        display: none;
         padding: 6px;
     }
 

@@ -29,56 +29,15 @@ $('body').on('nodeLoad', function(event, data) {
     }
 });
 
-$('.filters').filters({
-    items: ['.contrib', '.admin'],
-    callback: function (filtered, empty) {
-        if ($.inArray('.contrib', empty) > -1) {
-            $('#noContributors').show();
-        }
-        else {
-            $('#noContributors').hide();
-        }
-        if ($.inArray('.admin', empty) > -1) {
-            $('#noAdminContribs').show();
-        }
-        else {
-            $('#noAdminContribs').hide();
-        }
-        var isFiltered = $.inArray('.contrib', filtered) > -1;
-        ko.contextFor($('#contributors').get(0)).$parent.isSortable(!isFiltered);
-    },
-    groups: {
-        permissionFilter: {
-            filter: '.permission-filter',
-            type: 'text',
-            buttons: {
-                admins: 'Administrator',
-                write: 'Read + Write',
-                read: 'Read'
-                }
-        },
-        visibleFilter: {
-            filter: '.visible-filter',
-            type: 'checkbox',
-            buttons: {
-                visible: true,
-                notVisible: false
-            }
-        }
-    },
-    inputs: {
-        nameSearch: '.name-search'
-    }
-});
-
-new ContribManager('#manageContributors', ctx.contributors, ctx.adminContributors, ctx.user, ctx.isRegistration);
+var cm = new ContribManager('#manageContributors', ctx.contributors, ctx.adminContributors, ctx.user, ctx.isRegistration, '#manageContributorsTable', '#adminContributorsTable');
 
 if ($.inArray('admin', ctx.user.permissions) !== -1) {
     // Controls the modal
     var configUrl = ctx.node.urls.api + 'get_editable_children/';
     var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
     var tableUrl = nodeApiUrl + 'private_link/';
-    var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl, ctx.node.isPublic);
+    var linkTable = $('#privateLinkTable');
+    var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl, ctx.node.isPublic, linkTable);
 }
 
 $(function() {
@@ -87,57 +46,18 @@ $(function() {
     });
 });
 
-var checkWindowWidth = function() {
-    if ($('table.responsive-table-xxs thead').is(':hidden')) {
-        $('table.responsive-table-xxs tbody tr td:first-child.expanded').siblings().children().css('display', 'block');
-        $('table.responsive-table-xxs tbody tr td:first-child').attr('role','button').off().on('click', function() {
-            toggleExpand(this.parentElement);
-        });
-    }
-    else {
-        $('table.responsive-table-xxs tbody tr:not(:hidden) td>div').css('display', '');
-        $('table.responsive-table-xxs tbody tr td:first-child').removeAttr('role');
-    }
-    if ($('table.responsive-table-xs thead').is(':hidden')) {
-        $('table.responsive-table-xs tbody tr td:first-child').attr('role','button').off().on('click', function() {
-            toggleExpand(this.parentElement);
-        });
-    }
-    else {
-        $('table.responsive-table-xs tbody td>div.header').css('display', '');
-        $('table.responsive-table-xs tbody tr td:first-child').removeAttr('role');
-    }
-};
-
 $(window).load(function() {
-    checkWindowWidth();
-    var linkTable = $('#privateLinkTable')[0];
+    cm.viewModel.checkWindowWidth();
+    privateLinkTable.viewModel.checkWindowWidth();
     if (linkTable !== undefined) {
-        rt.responsiveTable(linkTable);
+        rt.responsiveTable(linkTable[0]);
     }
     $('table.responsive-table td:first-child a,button').on('click', function(e) {
         e.stopImmediatePropagation();
     });
 });
 
-$(window).resize(checkWindowWidth);
-
-var toggleExpand = function(el) {
-    var $self = $(el.querySelectorAll('td:not(:first-child):not(.table-only)>div'));
-    if ($self.is(':hidden')) {
-        $(el.firstElementChild).toggleClass('expanded');
-        $self.slideToggle();
-    }
-    else {
-        $self.slideToggle(function() {
-            if ($(el.firstElementChild).is('.expanded')){
-                $(el.firstElementChild).toggleClass('expanded');
-            }
-        });
-    }
-    toggleIcon(el);
-};
-
-var toggleIcon = function(el) {
-    $(el.querySelector('.toggle-icon')).toggleClass('fa-angle-down fa-angle-up');
-};
+$(window).resize(function() {
+    privateLinkTable.viewModel.checkWindowWidth();
+    cm.viewModel.checkWindowWidth();
+});

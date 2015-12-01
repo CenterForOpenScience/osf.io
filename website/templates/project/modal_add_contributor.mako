@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <a href="#" class='close' data-bind="click: clear" data-dismiss="modal">&times;</a>
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
 

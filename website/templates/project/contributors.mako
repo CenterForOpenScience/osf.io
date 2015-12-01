@@ -62,23 +62,48 @@
             <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
         % endif
 
-
-    <table  id="manageContributorsTable"
-            class="table responsive-table responsive-table-xxs"
-            data-bind="template: {
-                name: 'contribTable',
-                afterRender: afterRender,
-                options: {
-                    containment: '#manageContributors'
+    <div data-bind="filters: {
+            items: ['.contrib', '.admin'],
+            groups: {
+                permissionFilter: {
+                    filter: '.permission-filter',
+                    type: 'text',
+                    buttons: {
+                        admins: 'Administrator',
+                        write: 'Read + Write',
+                        read: 'Read'
+                    }
                 },
-                data: 'contrib'
-                }">
-    </table>
-    <div id="noContributors" class="no-items text-danger m-b-md">
+                visibleFilter: {
+                    filter: '.visible-filter',
+                    type: 'checkbox',
+                    buttons: {
+                        visible: true,
+                        notVisible: false
+                    }
+                }
+            },
+            inputs: {
+                nameSearch: '.name-search'
+            }
+        }">
+        <table  id="manageContributorsTable"
+                class="table responsive-table responsive-table-xxs"
+                data-bind="template: {
+                    name: 'contribTable',
+                    afterRender: afterRender,
+                    options: {
+                        containment: '#manageContributors'
+                    },
+                    data: 'contrib'
+                    }">
+        </table>
+    </div>
+    <div id="noContributors" data-bind="visible: $root.empty" class="no-items text-danger m-b-md">
         No contributors found
     </div>
     <span id="adminContributorsAnchor" class="project-page anchor"></span>
-    <div id="adminContributors" data-bind="if: adminContributors.length">
+    <div id="adminContributors" data-bind="if: adminContributors().length">
         <h4>
             Admins on Parent Projects
             <i class="fa fa-question-circle admin-info"
@@ -103,7 +128,7 @@
                     data: 'admin'
                 }">
         </table>
-        <div id="noAdminContribs" class="text-danger no-items">
+        <div id="noAdminContribs" data-bind="visible: $root.adminEmpty" class="text-danger no-items m-b-md">
             No administrators from parent project found.
         </div>
     </div>
@@ -145,9 +170,11 @@
 
 <script id="linkTbl" type="text/html">
     <tr>
-        <td>
+        <td data-bind="attr: {class: expanded() ? 'expanded' : null,
+                                role: $root.collapsed() ? 'button' : null},
+                       click: $root.collapsed() ? toggleExpand : null">
             <span class="link-name m-b-xs" data-bind="text: name"></span>
-            <span class="fa fa-angle-down toggle-icon"></span>
+            <span data-bind="attr: {class: expanded() ? 'fa toggle-icon fa-angle-up' : 'fa toggle-icon fa-angle-down'}"></span>
             <div>
                 <div class="btn-group">
                     <button title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button"
@@ -158,9 +185,9 @@
                 </div>
             </div>
         </td>
-
         <td>
-            <div class="td-content">
+            <div class="header" data-bind="visible: expanded() || !$root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
                 <ul class="private-link-list narrow-list" data-bind="foreach: nodesList">
                     <li data-bind="style:{marginLeft: $data.scale}">
                         <span data-bind="getIcon: $data.category"></span>
@@ -170,17 +197,20 @@
             </div>
         </td>
         <td>
-            <div class="td-content">
+            <div class="header" data-bind="visible: expanded() || !$root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
                 <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
             </div>
         </td>
         <td>
-            <div class="td-content">
+            <div class="header" data-bind="visible: expanded() || !$root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
                 <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block"></a>
             </div>
         </td>
         <td>
-            <div class="td-content">
+            <div class="header" data-bind="visible: expanded() || !$root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
                 <span data-bind="html: anonymousDisplay"></span>
                 <!-- ko if: $root.nodeIsPublic && anonymous -->
                 <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="fa fa-question-circle fa-sm"></i>
@@ -188,7 +218,7 @@
             </div>
         </td>
         <td>
-            <div class="td-content">
+            <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
                 <button data-bind="click:  $root.removeLink" type="button" class="btn btn-danger to-top-element">Remove</button>
             </div>
         </td>
@@ -245,7 +275,9 @@
 
 <script id="contribRow" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': $parent.deleteStaged}, attr: {class: $parent}">
-        <td>
+        <td data-bind="attr: {class: contributor.expanded() ? 'expanded' : null,
+                                role: $root.collapsed() ? 'button' : null},
+                       click: $root.collapsed() ? toggleExpand : null">
             <!-- ko if: ($parent === 'contrib' && $root.isSortable()) -->
                 <span class="fa fa-bars sortable-bars"></span>
                 <img class="m-l-md" data-bind="attr: {src: contributor.gravatar_url}" />
@@ -253,7 +285,7 @@
             <!-- ko ifnot: ($parent === 'contrib' && $root.isSortable()) -->
                 <img data-bind="attr: {src: contributor.gravatar_url}" />
             <!-- /ko -->
-            <span class="fa fa-angle-down toggle-icon"></span>
+            <span data-bind="attr: {class: contributor.expanded() ? 'fa toggle-icon fa-angle-up' : 'fa toggle-icon fa-angle-down'}"></span>
             <div class="card-header">
                 <span data-bind="ifnot: profileUrl">
                     <span class="name-search" data-bind="text: contributor.shortname"></span>
@@ -273,7 +305,8 @@
             </span>
         </td>
         <td class="permissions">
-            <div class="td-content">
+            <div class="header" data-bind="visible: contributor.expanded() || !$root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: contributor.expanded() || !$root.collapsed()">
                 <!-- ko if: contributor.canEdit() -->
                     <span data-bind="visible: !deleteStaged()">
                         <select class="form-control input-sm" data-bind="
@@ -287,6 +320,7 @@
                     <span data-bind="visible: deleteStaged">
                         <span data-bind="text: permissionText()"></span>
                     </span>
+                    </span>
                 <!-- /ko -->
                 <!-- ko ifnot: contributor.canEdit() -->
                     <span data-bind="text: permissionText()"></span>
@@ -294,7 +328,8 @@
             </div>
         </td>
         <td>
-            <div class="td-content">
+            <div class="header" data-bind="visible: contributor.expanded() || !$root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: contributor.expanded() || !$root.collapsed()">
                 <input
                     type="checkbox" class="biblio visible-filter"
                     data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin && !deleteStaged()"
@@ -302,7 +337,7 @@
             </div>
         </td>
         <td>
-            <div class="td-content">
+            <div class="td-content" data-bind="visible: contributor.expanded() || !$root.collapsed()">
                 <!-- ko if: contributor.canEdit() -->
                     <!-- ko ifnot: deleteStaged -->
                         <!-- Note: Prevent clickBubble so that removing a

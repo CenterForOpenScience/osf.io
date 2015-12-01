@@ -8,6 +8,7 @@ require('knockout-sortable');
 
 var rt = require('js/responsiveTable');
 var $osf = require('./osfHelpers');
+require('js/filters');
 
 //http://stackoverflow.com/questions/12822954/get-previous-value-of-an-observable-in-subscribe-of-same-observable
 ko.subscribable.fn.subscribeChanged = function (callback) {
@@ -18,6 +19,25 @@ ko.subscribable.fn.subscribeChanged = function (callback) {
         savedValue = latestValue;
         callback(latestValue, oldValue);
     });
+};
+
+ko.bindingHandlers.filters = {
+    init: function(element, valueAccessor, allBindingsAccessor, data, context) {
+        var $element = $(element);
+        var value = ko.utils.unwrapObservable(valueAccessor()) || {};
+        value.callback = function (filtered, empty, activeItems) {
+            $.each(activeItems, function (i, contributor) {
+                activeItems[i] = ko.dataFor(contributor);
+            });
+            $.each(data.contributors(), function (i, contributor) {
+                contributor.filtered($.inArray(contributor, activeItems) === -1);
+            });
+            $.each(data.adminContributors(), function (i, contributor) {
+                contributor.filtered($.inArray(contributor, activeItems) === -1);
+            });
+        };
+        $element.filters(value);
+    }
 };
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
@@ -32,6 +52,14 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         visible: contributor.visible,
         index: index
     };
+
+    self.toggleExpand = function() {
+        self.expanded(!self.expanded());
+    };
+
+    self.expanded = ko.observable(false);
+
+    self.filtered = ko.observable(false);
 
     self.permission = ko.observable(contributor.permission);
 
@@ -74,10 +102,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         }
         self.permission(self.originals.permission);
         self.visible(self.originals.visible);
-        self.index(self.originals.index);
     };
-
-    self.index = ko.observable(index);
 
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
@@ -124,8 +149,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.isDirty = ko.pureComputed(function() {
         return self.permissionChange() ||
-            self.visible() !== self.originals.visible ||
-            self.index() !== self.originals.index || self.deleteStaged();
+            self.visible() !== self.originals.visible || self.deleteStaged();
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl
@@ -208,13 +232,14 @@ var MessageModel = function(text, level) {
 
 };
 
-var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, selector) {
+var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, table, adminTable) {
 
     var self = this;
 
     self.original = ko.observableArray(contributors);
 
-    self.selector = selector;
+    self.table = $(table);
+    self.adminTable = $(adminTable);
 
     self.permissionDict = {
         read: 'Read',
@@ -226,14 +251,36 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     self.contributors = ko.observableArray();
 
-    self.adminContributors = adminContributors;
+    self.adminContributors = ko.observableArray();
+
+    self.filteredContribs = ko.computed(function() {
+        return ko.utils.arrayFilter(self.contributors(), function(item) {
+            return item.filtered();
+        });
+    });
+
+    self.filteredAdmins = ko.computed(function() {
+        return ko.utils.arrayFilter(self.adminContributors(), function(item) {
+            return item.filtered();
+        });
+    });
+
+    self.empty = ko.computed(function() {
+        return (self.contributors().length - self.filteredContribs().length) === 0;
+    });
+
+    self.adminEmpty = ko.computed(function() {
+        return (self.adminContributors().length - self.filteredAdmins().length === 0);
+    });
 
     self.user = ko.observable(user);
     self.canEdit = ko.computed(function() {
         return ($.inArray('admin', user.permissions) > -1) && !isRegistration;
     });
 
-    self.isSortable = ko.observable(self.canEdit());
+    self.isSortable = ko.computed(function() {
+        return self.canEdit() && self.filteredContribs().length === 0;
+    });
 
     // Hack: Ignore beforeunload when submitting
     // TODO: Single-page-ify and remove this
@@ -241,7 +288,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     self.changed = ko.computed(function() {
         for (var i = 0, contributor; contributor = self.contributors()[i]; i++) {
-            if (contributor.isDirty()){
+            if (contributor.isDirty() || contributor.originals.index !== i){
                 return true;
             }
         }
@@ -295,12 +342,12 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             }
             return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, false, index, self);
         }));
-        self.adminContributors = adminContributors.map(function(contributor) {
+        self.adminContributors(adminContributors.map(function(contributor) {
           if (contributor.permission === 'admin') {
                 self.adminCount(self.adminCount() + 1);
             }
           return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true, index, self);
-        });
+        }));
     };
 
     // Warn on add contributors if pending changes
@@ -325,9 +372,6 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.init();
 
     self.serialize = function() {
-        self.contributors(self.contributors.sort(function(left, right) {
-            return left.index() > right.index() ? 1 : -1;
-        }));
         return ko.utils.arrayMap(
             ko.utils.arrayFilter(self.contributors(), function(contributor) {
                 return !contributor.deleteStaged();
@@ -339,15 +383,12 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     };
 
     self.cancel = function() {
-        var $tbody = $('#contributors'),
-            $rows = $tbody.children();
-        $rows.sort(function(left, right) {
-          return ko.contextFor(left).$data.originals.index < ko.contextFor(right).$data.originals.index ? -1 : 1;
-        });
-        $rows.detach().appendTo($tbody);
         self.contributors().forEach(function(contributor) {
             contributor.reset();
         });
+        self.contributors(self.contributors.sort(function(left, right) {
+            return left.originals.index > right.originals.index ? 1 : -1;
+        }));
     };
 
     self.submit = function() {
@@ -385,9 +426,24 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         });
     };
 
-    //TODO: investigate changing how sortable is added
-    self.afterRender = function(elements) {
-        rt.responsiveTable($(self.selector)[0]);
+    self.afterRender = function(elements, data) {
+        var table;
+        if (data === 'contrib') {
+            table = self.table[0];
+        }
+        else if (data === 'admin') {
+            table = self.adminTable[0];
+        }
+        if (!!table) {
+            rt.responsiveTable(table);
+        }
+    };
+
+    self.collapsed = ko.observable(true);
+
+    self.checkWindowWidth = function() {
+        self.collapsed(self.table.children().filter('thead').is(':hidden'));
+        self.table.find('tbody>tr').css('display', '');
     };
 };
 
@@ -395,13 +451,13 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 // Public API //
 ////////////////
 
-function ContribManager(selector, contributors, adminContributors, user, isRegistration) {
+function ContribManager(selector, contributors, adminContributors, user, isRegistration, table, adminTable) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
     self.contributors = contributors;
     self.adminContributors = adminContributors;
-    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, selector);
+    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, table, adminTable);
     self.init();
 }
 

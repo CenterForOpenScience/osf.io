@@ -98,19 +98,19 @@ var $ = require('jquery');
          */
         var toggle = function() {
             var activeItems = $(itemsSelector);
-            $(itemsSelector).each(function() {
+            activeItems.slice().each(function() {
                 var self = this;
                 if (!search(self) || !filter(self)) {
                     activeItems.splice(activeItems.index(self), 1);
                     $(self).fadeOut();
                 }
             });
-            $(activeItems).fadeIn();
+            activeItems.fadeIn();
             if (settings.callback !== undefined) {
                 var empty = [];
                 var filtered = [];
                 for (var i = 0, selector; selector = settings.items[i]; i ++) {
-                    var active = $(activeItems).filter(selector);
+                    var active = activeItems.filter(selector);
                     var items = $(selector);
                     if (active.length < items.length) {
                         filtered.push(selector);
@@ -119,7 +119,7 @@ var $ = require('jquery');
                         empty.push(selector);
                     }
                 }
-                settings.callback(filtered, empty);
+                settings.callback(filtered, empty, activeItems);
             }
         };
 
