@@ -57,4 +57,22 @@ describe('fileBrowser', function() {
             });
         });
     });
+
+    describe('fileBrowserModule', function(){
+        var fb;
+        before(function() {
+            fb = m.mount(document.body, m.component(FileBrowser, {wrapperSelector : 'body'}));
+        });
+        describe('mainModule', function () {
+            it('should throw error when url is not string', function () {
+                assert.throws(function(){
+                    FileBrowser.controller.updateList(234234);
+                }, Error);
+            });
+            it('should load data with url', function () {
+                var loadURL = 'users/me/nodes/?related_counts=true';
+                FileBrowser.controller.updateList(loadURL, done);
+            });
+        });
+    });
 });
