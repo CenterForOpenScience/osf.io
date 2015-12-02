@@ -9,6 +9,7 @@ from website.addons.evernote.serializer import EvernoteSerializer
 from website.oauth.models import ExternalAccount
 from website.util import permissions
 from website.project.decorators import (
+    must_be_contributor_or_public,
     must_have_addon,
     must_be_addon_authorizer,
     must_not_be_registration,
@@ -141,3 +142,19 @@ def evernote_folder_list(node_addon, **kwargs):
         } for notebook in notebooks]
     else:
         return []
+
+@must_be_contributor_or_public
+@must_have_addon('evernote', 'node')
+def evernote_widget(node_addon, **kwargs):
+    """Collects and serializes settting needed to build the widget."""
+
+    #provider = ZoteroCitationsProvider()
+    #return provider.widget(node_addon)
+
+    ret = node_addon.config.to_json()
+    ret.update({
+        'complete': node_addon.complete,
+        'folder_id': node_addon.folder_id
+    })
+
+    return ret
