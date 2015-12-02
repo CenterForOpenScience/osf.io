@@ -97,6 +97,7 @@ def _set_folder(node_addon, folder, auth):
 box_set_config = generic_views.set_config(
     SHORT_NAME,
     FULL_NAME,
+    BoxSerializer,
     _set_folder
 )
 

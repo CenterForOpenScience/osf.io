@@ -101,7 +101,7 @@ def get_config(addon_short_name, Serializer):
     _get_config.__name__ = '{0}_get_config'.format(addon_short_name)
     return _get_config
 
-def set_config(addon_short_name, addon_full_name, set_folder):
+def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
     @must_not_be_registration
     @must_have_addon(addon_short_name, 'user')
     @must_have_addon(addon_short_name, 'node')
@@ -120,7 +120,8 @@ def set_config(addon_short_name, addon_full_name, set_folder):
                         addon_full_name
                     ),
                     'path': path,
-                }
+                },
+                'urls': Serializer(node_settings=node_addon).addon_serialized_urls,
             },
             'message': 'Successfully updated settings.',
         }
