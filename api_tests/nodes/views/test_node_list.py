@@ -144,7 +144,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two._id, ids)
         assert_equal(len(ids), 1)
 
-    def test_filtering_by_multiple_ids_incorrect_syntax_in_query_params(self):
+    def test_filtering_by_multiple_ids_brackets_in_query_params(self):
         url = '/{}nodes/?filter[id]=[{},   {}]'.format(API_BASE, self.project_one._id, self.project_two._id)
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
