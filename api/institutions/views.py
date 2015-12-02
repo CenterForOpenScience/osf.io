@@ -63,7 +63,8 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView)
     view_name = 'institution-nodes'
 
     def get_default_odm_query(self):
-        query = Q('primary_institution', 'ne', None)
+        inst = Institution.load(self.kwargs['institution_id'])
+        query = Q('primary_institution', 'eq', inst)
         return query
 
     def get_queryset(self):
@@ -101,7 +102,8 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView)
     view_name = 'institution-users'
 
     def get_default_odm_query(self):
-        query = Q('affiliated_institutions', 'ne', None)
+        inst = Institution.load(self.kwargs['institution_id'])
+        query = Q('affiliated_institutions', 'eq', inst)
         return query
 
     def get_queryset(self):

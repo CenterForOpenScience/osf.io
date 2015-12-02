@@ -1336,6 +1336,10 @@ class Institution(StoredObject):
     _id = fields.StringField(index=True, unique=True, primary=True) # somehow generate unique id
     name = fields.StringField(required=True)
 
+    @property
+    def pk(self):
+        return self._id
+
     def auth(self, user):
         return user.has_inst_auth(self)
 
