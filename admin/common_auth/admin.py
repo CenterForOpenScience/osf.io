@@ -1,7 +1,6 @@
-from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import Permission
 from .models import MyUser
 
 from django.contrib.auth.forms import PasswordResetForm, UserCreationForm
@@ -13,7 +12,7 @@ class CustomUserRegistrationForm(UserCreationForm):
     class Meta:
             model = MyUser
             fields = ['password', 'first_name', 'last_name', 'email', 'is_active', 'is_staff',
-            'is_superuser', 'groups', 'user_permissions', 'last_login',]
+            'is_superuser', 'groups', 'user_permissions', 'last_login', ]
     def __init__(self, *args, **kwargs):
         super(CustomUserRegistrationForm, self).__init__(*args, **kwargs)
         self.fields['first_name'].required = True

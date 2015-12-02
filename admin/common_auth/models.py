@@ -17,8 +17,7 @@ class MyUserManager(BaseUserManager):
 
     def create_superuser(self, email, password):
         user = self.create_user(email,
-            password=password,
-        )
+            password=password, )
         user.is_superuser = True
         user.is_admin = True
         user.is_staff = True
@@ -43,10 +42,6 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     objects = MyUserManager()
 
     USERNAME_FIELD = 'email'
-
-    class Meta:
-        verbose_name = ('user')
-        verbose_name_plural = ('users')
 
     def get_full_name(self):
         # The user is identified by their email address
