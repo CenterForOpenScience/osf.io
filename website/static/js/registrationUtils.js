@@ -1210,7 +1210,7 @@ RegistrationManager.prototype.init = function() {
             return new Draft(draft);
         });
         drafts.sort(function(a, b) {
-            return a.initiated < b.initiated;
+            return a.initiated.getTime() < b.initiated.getTime();
         });
         self.drafts(drafts);
     });
