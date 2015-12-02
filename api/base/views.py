@@ -124,7 +124,7 @@ def root(request, format=None):
 
         /nodes/?filter[registered]=true
 
-    You can request multiple resources through filtering.
+    You can request multiple resources with comma-separated values in your query parameter.
 
         /nodes/?filter[id]=aegu6,me23a
 
