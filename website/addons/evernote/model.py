@@ -5,7 +5,6 @@ from website.addons.evernote import (settings, utils)
 from website.addons.evernote.serializer import EvernoteSerializer
 from website.oauth.models import (ExternalProvider, OAUTH1)
 
-from evernote.api.client import EvernoteClient
 from modularodm import fields
 
 import logging
@@ -35,7 +34,6 @@ class Evernote(ExternalProvider):
 
     _oauth_version = OAUTH1
 
-
     def handle_callback(self, response):
         """View called when the Oauth flow is completed. Adds a new BoxUserSettings
         record to the user and saves the user's access token and account info.
@@ -47,7 +45,7 @@ class Evernote(ExternalProvider):
         user = userStore.getUser()
 
         return {
-            'provider_id': user.id, # or user.username
+            'provider_id': user.id,  # or user.username
             'display_name': user.name,
             'profile_url': ''
         }
@@ -67,7 +65,6 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     # to hold data about current Notebook
     _folder_data = None
-
 
     def set_user_auth(self, user_settings):
         """Import a user's Evernote authentication and create a NodeLog.

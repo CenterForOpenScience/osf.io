@@ -3,15 +3,6 @@ from website.util import api_url_for, web_url_for
 
 class EvernoteSerializer(OAuthAddonSerializer):
 
-    @property
-    def addon_serialized_urls(self):
-        node = self.node_settings.owner
-
-        return {
-            'accounts': node.api_url_for('evernote_get_user_settings'),
-        }
-
-
     def serialize_settings(self, node_settings, current_user, client=None):
         """View helper that returns a dictionary representation of a
         EvernoteNodeSettings record. Provides the return value for the

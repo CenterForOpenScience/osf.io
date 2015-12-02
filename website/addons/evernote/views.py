@@ -1,6 +1,9 @@
 from flask import request
+import httplib as http
 
 from framework.auth.decorators import must_be_logged_in
+from framework.exceptions import HTTPError, PermissionsError
+
 from website.addons.evernote import utils
 from website.addons.evernote.serializer import EvernoteSerializer
 from website.oauth.models import ExternalAccount
@@ -99,7 +102,6 @@ def evernote_folder_list(node_addon, **kwargs):
     folder_id = request.args.get('notebookId')
 
     # now grab the notebook list
-
 
     # figure out how to recast into the format that the folderpicker likes
 

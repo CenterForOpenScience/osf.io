@@ -24,7 +24,7 @@ api_routes = {
             json_renderer,
         ),
 
-       Rule(
+        Rule(
             [
                 '/project/<pid>/evernote/settings/',
                 '/project/<pid>/node/<nid>/evernote/settings/'

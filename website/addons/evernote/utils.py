@@ -28,4 +28,4 @@ def get_notebook(client, nb_guid):
     return {'name': notebook.name,
              'guid': notebook.guid,
              'stack': notebook.stack,
-             'defaultNotebook': notebook.defaultNotebook} 
+             'defaultNotebook': notebook.defaultNotebook}
