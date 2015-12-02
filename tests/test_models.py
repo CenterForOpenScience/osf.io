@@ -3135,16 +3135,25 @@ class TestUltimateParent(OsfTestCase):
         assert_equal(new_project_grandchild.ultimate_parent, new_project._id)
 
     def test_node_find_returns_correct_nodes(self):
+        # Build up a family of nodes
         child_node_one = NodeFactory(parent=self.project)
         child_node_two = NodeFactory(parent=self.project)
-        grandchild_from_one = NodeFactory(parent=child_node_one)
-        grandchild_from_two = NodeFactory(parent=child_node_two)
+        NodeFactory(parent=child_node_one)
+        NodeFactory(parent=child_node_two)
+        # Create a rogue node that's not related at all
+        NodeFactory()
 
         family_ids = [self.project._id] + [r._id for r in self.project.get_descendants_recursive()]
         family_nodes = Node.find(Q('ultimate_parent', 'eq', self.project._id))
         number_of_nodes = family_nodes.count()
 
         assert_equal(number_of_nodes, 5)
+        found_ids = []
+        for node in family_nodes:
+            assert_in(node._id, family_ids)
+            found_ids.append(node._id)
+        for node_id in family_ids:
+            assert_in(node_id, found_ids)
 
 
 class TestTemplateNode(OsfTestCase):
