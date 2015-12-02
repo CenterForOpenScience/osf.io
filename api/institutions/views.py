@@ -127,4 +127,3 @@ class InstitutionUserDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             display_name='user'
         )
         return user
-

@@ -1330,7 +1330,7 @@ def _merge_into_reversed(*iterables):
     return sorted(itertools.chain(*iterables), reverse=True)
 
 class Institution(StoredObject):
-    _id = fields.StringField(index=True, unique=True, primary=True) # somehow generate unique id
+    _id = fields.StringField(index=True, unique=True, primary=True)
     name = fields.StringField(required=True)
 
     @property

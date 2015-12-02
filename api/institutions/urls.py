@@ -10,4 +10,3 @@ urlpatterns = [
     url(r'^(?P<institution_id>\w+)/users/$', views.InstitutionUserList.as_view(), name=views.InstitutionUserList.view_name),
     url(r'^(?P<institution_id>\w+)/users/(?P<user_id>\w+)/$', views.InstitutionUserDetail.as_view(), name=views.InstitutionUserDetail.view_name),
 ]
-

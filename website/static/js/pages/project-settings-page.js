@@ -95,7 +95,7 @@ var institutionsViewModel = function() {
         }).fail(function(response){
             $osf.growl('Poop!');
         });
-    }
+    };
 };
 
 $(document).ready(function() {
