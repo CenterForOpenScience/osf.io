@@ -70,9 +70,9 @@ class CommentSerializer(JSONAPISerializer):
 
 class CommentCreateSerializer(CommentSerializer):
 
-    target_type = ser.SerializerMethodField(method_name='check_target_type')
+    target_type = ser.SerializerMethodField(method_name='get_validated_target_type')
 
-    def check_target_type(self, obj):
+    def get_validated_target_type(self, obj):
         target = obj.target
         target_type = self.context['request'].data.get('target_type')
         expected_target_type = self.get_target_type(target)
