@@ -282,10 +282,12 @@
 
                         <div class="radio" id="selectedInst">
                             <div data-bind="foreach: availableInstitutions">
+                                <div>
                                 <label>
                                     <input type="radio" data-bind="value: id" name="primaryInst">
                                     <p data-bind="text: attributes.name"></p>
                                 </label>
+                                </div>
                             </div>
                             <label>
                                 <input type="radio" value="None" name="primaryInst">
