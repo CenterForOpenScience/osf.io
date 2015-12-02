@@ -6,6 +6,7 @@ MODELS = [
     model.AddonFigShareUserSettings,
     model.AddonFigShareNodeSettings,
 ]
+
 USER_SETTINGS_MODEL = model.AddonFigShareUserSettings
 NODE_SETTINGS_MODEL = model.AddonFigShareNodeSettings
 

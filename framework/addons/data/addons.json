@@ -150,6 +150,36 @@
                 "text": "Dataverse content will be registered, but version history will not be copied to the registration."
             }
         },
+        "Dryad": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of making a Dryad package public or private. The OSF allows you to utlize the archived unembargoed version of Dryad Packages."
+            },
+            "View / download file versions": {
+                "status": "partial",
+                "text": "Files from the latest release of the selected Dryad package can be viewed/downloaded."
+            },
+            "Add / update files": {
+                "status": "NA",
+                "text": "Adding/updating files in the project via OSF is currently not allowed."
+            },
+            "Delete files": {
+                "status": "NA",
+                "text": "Files deleted via OSF will not be deleted in Dryad."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "The OSF keeps track of changes you make to your Dryad packages through the OSF, but not for changes made using Dryad directly."
+            },
+            "Forking": {
+                "status": "NA",
+                "text": ""
+            },
+            "Registering": {
+                "status": "NA",
+                "text": ""
+            }
+        },
         "Google Drive": {
             "Permissions": {
                 "status": "partial",
