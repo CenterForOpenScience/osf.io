@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import re
 from dateutil import parser
 
 from nose.tools import *  # flake8: noqa
@@ -15,7 +16,6 @@ from api.base.exceptions import (
     InvalidFilterOperator,
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
-
 )
 
 class FakeSerializer(ser.Serializer):
