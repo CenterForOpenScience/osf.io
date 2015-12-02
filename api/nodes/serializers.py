@@ -9,9 +9,9 @@ from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
+from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
-    TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
+                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -119,7 +119,12 @@ class NodeSerializer(JSONAPISerializer):
 
     primary_institution = RelationshipField(
         related_view='nodes:node-institution-detail',
-        related_view_kwargs={'institution_id': '<pk>'}
+        related_view_kwargs={'node_id': '<pk>'}
+    )
+
+    logs = RelationshipField(
+        related_view='nodes:node-logs',
+        related_view_kwargs={'node_id': '<pk>'},
     )
 
     class Meta:
@@ -231,22 +236,15 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
-    links = LinksField(add_dev_only_items({
-        'html': 'absolute_url',
+    links = LinksField({
         'self': 'get_absolute_url'
-    }, {
-        'profile_image': 'profile_image_url',
-    }))
+    })
 
     users = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<pk>'},
         always_embed=True
     )
-
-    def profile_image_url(self, user):
-        size = self.context['request'].query_params.get('profile_image_size')
-        return user.profile_image_url(size=size)
 
     class Meta:
         type_ = 'contributors'
