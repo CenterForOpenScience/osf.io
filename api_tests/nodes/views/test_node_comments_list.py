@@ -293,6 +293,7 @@ class TestNodeCommentCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Invalid target type. Expected "nodes", got "Invalid."')
 
     def test_create_comment_no_target_type_in_relationships(self):
         self._set_up_private_project()
