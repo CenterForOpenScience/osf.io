@@ -1,6 +1,5 @@
 import requests
 import json
-import functools
 
 import celery
 from celery.utils.log import get_task_logger
@@ -9,7 +8,6 @@ from modularodm import Q
 from framework.tasks import app as celery_app
 from framework.tasks.utils import logged
 from framework.exceptions import HTTPError
-from framework.auth import Auth
 
 from website.archiver import (
     ARCHIVER_SUCCESS,
