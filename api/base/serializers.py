@@ -99,11 +99,12 @@ class IDField(ser.CharField):
 
     # Overrides CharField
     def to_internal_value(self, data):
-        request = self.context['request']
-        if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
-            id_field = getattr(self.root.instance, self.source, '_id')
-            if id_field != data:
-                raise Conflict()
+        request = self.context.get('request')
+        if request:
+            if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
+                id_field = getattr(self.root.instance, self.source, '_id')
+                if id_field != data:
+                    raise Conflict()
         return super(IDField, self).to_internal_value(data)
 
 
