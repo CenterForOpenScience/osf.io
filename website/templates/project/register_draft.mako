@@ -26,15 +26,17 @@
         <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
         <button id="register-submit" type="button" class="btn btn-success pull-right"
                 style="margin-left: 5px;"
-                data-bind="visible: draft.requiresApproval, 
+                data-bind="visible: draft.requiresApproval,
                            click: draft.submitForReview,
                            enable: editor.canSubmit">
           Submit for review
         </button>
 
+        <!-- TODO(samchrisinger): Enable when post-registration file path updating is in
         <span data-bind="if: draft.metaSchema.name === 'Prereg Challenge'">
           <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview">Register without review</button>
         </span>
+        -->
 
         <button id="register-submit" type="button" class="btn btn-success pull-right"
                 style="margin-left: 5px;"
