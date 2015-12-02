@@ -21,27 +21,33 @@ var AddProject = {
             parent : null
         };
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
-        self.nodeTitle = m.prop('');
         self.options = $.extend(self.defaults, options);
         self.init = function _init () {
 
         };
+        self.newProjectName = m.prop('');
+        self.goToProjectLink = m.prop('');
         self.add = function _add () {
+            self.viewState('processing');
             var url = $osf.apiV2Url('nodes/', { query : {}});
             var data = {
                     'data' : {
                         'type': 'nodes',
                         'attributes': {
-                            'title': self.nodeTitle,
+                            'title': self.newProjectName(),
                             'category': 'project'
                         }
                     }
                 };
-            var success = function _success () {
+            var success = function _success (result) {
                 self.viewState('success');
+                console.log('success', result);
+                self.goToProjectLink(result.data.links.html);
             };
-            var error = function _error () {
+            var error = function _error (result) {
                 self.viewState('error');
+                console.log('error', result);
+
             };
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);
@@ -75,18 +81,61 @@ var AddProject = {
                     m('h3.modal-title#addProject', 'Add New Project')
                 ]),
                 m('.modal-body', [
-                    m('p', 'You are adding project '),
-
-                    m('p.m-t-sm', 'After you create your collection drag and drop projects to the collection. ')
+                    m('.form-inline', [
+                        m('.form-group', [
+                            m('label[for="addCollInput]', 'Project Name'),
+                            m('input[type="text"].form-control.m-l-sm#addCollInput', {onchange: m.withAttr('value', ctrl.newProjectName), value: ctrl.newProjectName()})
+                        ])
+                    ]),
                 ]),
                 m('.modal-footer', [
                     m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
                     m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Add')
                 ])
             ]),
-            processing : m('.modal-content', []),
-            done : m('.modal-content', []),
-            error : m('.modal-content', [])
+            processing : m('.modal-content',
+                m('.modal-content',
+                    m('.modal-header', [
+                        m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                            m('span[aria-hidden="true"]','×'),
+                        ]),
+                    ]),
+                    m('.modal-body', [
+                            m('.add-project-processing', 'Saving your project...')
+                        ]
+                    )
+                )
+            ),
+            success : m('.modal-content', [
+                m('.modal-content',
+                    m('.modal-header', [
+                        m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                            m('span[aria-hidden="true"]','×'),
+                        ]),
+                    ]),
+                    m('.modal-body', [
+                            m('.add-project-success', 'Success...')
+                        ]
+                    ),
+                    m('.modal-footer', [
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Keep Working Here'),
+                        m('a.btn.btn-success', { href : ctrl.goToProjectLink() },'Go to New Project')
+                    ])
+                )
+            ]),
+            error : m('.modal-content', [
+                m('.modal-content',
+                    m('.modal-header', [
+                        m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                            m('span[aria-hidden="true"]','×'),
+                        ]),
+                    ]),
+                    m('.modal-body', [
+                            m('.add-project-error', 'There was a problem...')
+                        ]
+                    )
+                )
+            ])
         };
 
         return  m('#addProjectWrap', [
