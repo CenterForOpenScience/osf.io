@@ -112,7 +112,7 @@
                         <p>You should refer to your institutional policies regarding specific security requirements for your research.</p>
 
                     <h4 class="m-t-lg f-w-lg">How can I license my data/code/etc.?</h4>
-                        <p>If you’d like to attach a license to your materials hosted on the OSF, you can put this information in your project’s wiki or upload a README file. Typically, users wish to license their materials using Creative Commons licenses. Information about Creative Commons licenses can be found <a href="https://creativecommons.org/licenses/">here.</a> </p>
+                        <p>To apply a license to your OSF project, visit the project's overview page and select one from the "License picker," below the project's description. You can select from a variety of commonly used licenses or upload your own.</p>
 
 
                     <h4 class="m-t-lg f-w-lg">How does the OSF store and backup files that I upload to the site?</h4>

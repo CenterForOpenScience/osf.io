@@ -4,7 +4,7 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 from dateutil.parser import parse as parse_date
 
-from tests.base import DbTestCase, ApiTestCase, assert_datetime_equal
+from tests.base import DbTestCase, assert_datetime_equal
 from tests.utils import make_drf_request
 from tests.factories import UserFactory, NodeFactory, RegistrationFactory, ProjectFactory
 
@@ -38,7 +38,7 @@ class TestNodeSerializer(DbTestCase):
         assert_equal(attributes['category'], node.category)
         assert_equal(attributes['registration'], node.is_registration)
         assert_equal(attributes['fork'], node.is_fork)
-        assert_equal(attributes['collection'], node.is_fork)
+        assert_equal(attributes['collection'], node.is_folder)
 
         # Relationships
         relationships = data['relationships']
@@ -52,10 +52,8 @@ class TestNodeSerializer(DbTestCase):
             '/{}nodes/{}/'.format(API_BASE, parent._id)
         )
         assert_in('registrations', relationships)
-        assert_in('forked_from', relationships)
-        forked_from = relationships['forked_from']['links']['related']['href']
-        # None because node is not a fork
-        assert_is_none(forked_from)
+        # Not a fork, so forked_from is removed entirely
+        assert_not_in('forked_from', relationships)
 
     def test_fork_serialization(self):
         node = NodeFactory(creator=self.user)

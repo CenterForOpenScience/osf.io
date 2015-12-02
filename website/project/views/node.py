@@ -14,26 +14,28 @@ from framework.mongo import StoredObject
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import from_mongo, get_or_http_error
+from framework.mongo.utils import get_or_http_error
 
 from website import language
 
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
-from website.project import clean_template_name, new_node, new_private_link
+from website.project import new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
+    http_error_if_disk_saving_mode
 )
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
+from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
@@ -248,12 +250,8 @@ def project_before_template(auth, node, **kwargs):
 
 @must_be_logged_in
 @must_be_valid_project
+@http_error_if_disk_saving_mode
 def node_fork_page(auth, node, **kwargs):
-    if settings.DISK_SAVING_MODE:
-        raise HTTPError(
-            http.METHOD_NOT_ALLOWED,
-            redirect_url=node.url
-        )
     try:
         fork = node.fork_node(auth)
     except PermissionsError:
@@ -375,6 +373,7 @@ def view_project(auth, node, **kwargs):
 
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
+
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
     ret['addon_widget_js'] = list(collect_addon_js(
@@ -469,10 +468,6 @@ def project_statistics_redirect(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 def project_before_set_public(node, **kwargs):
     prompt = node.callback('before_make_public')
-    anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
-    if anonymous_link_warning:
-        prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
-                      'contributors after a project or component is made public.')
 
     return {
         'prompts': prompt
@@ -753,13 +748,8 @@ def _view_project(node, auth, primary=False):
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id,
-            'registered_meta': [
-                {
-                    'name_no_ext': from_mongo(meta),
-                    'name_clean': clean_template_name(meta),
-                }
-                for meta in node.registered_meta or []
-            ],
+            'registered_meta': node.registered_meta,
+            'registered_schemas': serialize_meta_schemas(node.registered_schema),
             'registration_count': len(node.node__registrations),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
@@ -780,6 +770,7 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
+            'has_draft_registrations': bool(node.draft_registrations_active)
         },
         'parent_node': {
             'exists': parent is not None,
@@ -1051,8 +1042,6 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     nodes = [Node.load(node_id) for node_id in node_ids]
 
-    has_public_node = any(node.is_public for node in nodes)
-
     try:
         new_link = new_private_link(
             name=name, user=auth.user, nodes=nodes, anonymous=anonymous
@@ -1061,13 +1050,6 @@ def project_generate_private_link_post(auth, node, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long=e.message)
-        )
-
-    if anonymous and has_public_node:
-        status.push_status_message(
-            'Anonymized view-only links <b>DO NOT</b> '
-            'anonymize contributors of public projects or components.',
-            trust=True
         )
 
     return new_link
