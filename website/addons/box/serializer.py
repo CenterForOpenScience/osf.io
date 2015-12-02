@@ -1,6 +1,6 @@
 from website.addons.base.serializer import StorageAddonSerializer
 
-from website.util import api_url_for, web_url_for
+from website.util import api_url_for
 
 from box.client import BoxClient, BoxClientException
 
@@ -38,5 +38,4 @@ class BoxSerializer(StorageAddonSerializer):
             'config': node.api_url_for('box_set_config'),
             'deauthorize': node.api_url_for('box_deauthorize_node'),
             'accounts': node.api_url_for('box_account_list'),
-            'settings': web_url_for('user_addons'),
         }

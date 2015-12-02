@@ -161,7 +161,7 @@ class StorageAddonSerializer(OAuthAddonSerializer):
         result = {
             'userIsOwner': user_is_owner,
             'nodeHasAuth': node_settings.has_auth,
-            'urls': self.addon_serialized_urls,
+            'urls': self.serialized_urls,
             'validCredentials': valid_credentials,
             'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
         }

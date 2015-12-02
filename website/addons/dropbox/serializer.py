@@ -2,7 +2,7 @@ from dropbox.rest import ErrorResponse
 from dropbox.client import DropboxClient
 
 
-from website.util import api_url_for, web_url_for
+from website.util import api_url_for
 from website.addons.base.serializer import StorageAddonSerializer
 
 class DropboxSerializer(StorageAddonSerializer):
@@ -38,5 +38,4 @@ class DropboxSerializer(StorageAddonSerializer):
             'config': node.api_url_for('dropbox_set_config'),
             'deauthorize': node.api_url_for('dropbox_deauthorize_node'),
             'accounts': node.api_url_for('dropbox_account_list'),
-            'settings': web_url_for('user_addons'),
         }
