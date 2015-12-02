@@ -745,7 +745,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked', index=True)
     registered_from = fields.ForeignField('node', backref='registrations', index=True)
-    ultimate_parent = fields.ForeignField('node', backref='ultimate_parent', index=True)
+    ultimate_parent = fields.StringField(index=True)
 
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
