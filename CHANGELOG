@@ -5,7 +5,9 @@ Changelog
 0.59.0 (unreleased)
 ===================
 
+- Add Prereg Challenge workflow.
 - APIv2: Omit relationship objects for null and missing relationships.
+- APIv2: Support embedded resources.
 - Add button to reset client secret for developer applications.
 
 0.58.0 (2015-11-18)
