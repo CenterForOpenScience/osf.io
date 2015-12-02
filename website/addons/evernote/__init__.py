@@ -12,7 +12,11 @@ MODELS = []
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
-VIEWS = []
+# make the evernote addon show up as a widget like Zotero, Mendeley
+VIEWS = ['widget']
+
+# does this setting make it show up in the Files section?
+HAS_HGRID_FILES = False
 
 # SHOULD be one of documentation, storage, citations, security, bibliography, and other
 # Additional categories can be added to ADDON_CATEGORIES in website.settings.defaults
