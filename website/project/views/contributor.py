@@ -376,7 +376,7 @@ def project_manage_contributors(auth, node, **kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def project_remove_contributor(auth, contributor, nodes, **kwargs):
+def project_remove_contributor(auth, **kwargs):
     """Remove a contributor from a list of nodes.
 
     :param Auth auth: Consolidated authorization
@@ -387,11 +387,14 @@ def project_remove_contributor(auth, contributor, nodes, **kwargs):
         or if no admin users would remain after changes were applied
 
     """
-    contributors = request.json.get('contributors')
-    for node in nodes:
+    contributor_id = request.json.get('contributorID');
+    node_ids = request.json.get('nodeIDs')
+    contributor = User.load(contributor_id)
+    for node_id in node_ids:
         # Update permissions and order
+        node = Node.load(node_id)
         try:
-            node.manage_contributors(contributors, auth=auth, save=True)
+            node.remove_contributor(contributor, auth=auth)
         except ValueError as error:
             raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
 
@@ -415,7 +418,7 @@ def project_remove_contributor(auth, contributor, nodes, **kwargs):
                 trust=False
             )
         # Else stay on current page
-        return {}
+    return {}
 
 
 def get_timestamp():

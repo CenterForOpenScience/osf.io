@@ -440,6 +440,7 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
                 data.parent_node.id,
                 data.parent_node.title,
                 data.user.username,
+                data.user.id,
                 shouter
             );
 

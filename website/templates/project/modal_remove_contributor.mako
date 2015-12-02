@@ -8,17 +8,18 @@
             </div>
 
             <div class="modal-body">
+                {{ko.toJSON($data)}}
                 <!-- remove page -->
                 <div data-bind='if:page() === "remove"'>
                         <div class="form-group" data-bind="if:contributorToRemove">
-                           <span>Do you want to remove {{contributorToRemove()["fullname"]}} from  <span class="f-w-lg" data-bind="text: title"></span>, or from <span class="f-w-lg" data-bind="text: title"></span> and every project and component underneath it.</span>
+                           <span>Do you want to remove {{contributorToRemove()["fullname"]}} from  <span class="f-w-lg" data-bind="text: title"></span>, or from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</span>
                         </div>
                         <div id="remove-page-radio-buttons" data-bind="if:contributorToRemove" class="col-md-8" align="left">
                             <div class="radio" data-bind="visible:nodeHasChildren">
                                 <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>Remove  <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from  <span class="f-w-lg" data-bind="text: title"></span></label>
                             </div>
                             <div class="radio" data-bind="visible:nodeHasChildren">
-                                <label><input  type="radio" name="radioBoxGroup" data-bind="checked: deleteAll, checkedValue: true" >Remove <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from <span class="f-w-lg" data-bind="text: title"></span> and everything underneath it</label>
+                                <label><input  type="radio" name="radioBoxGroup" data-bind="checked: deleteAll, checkedValue: true" >Remove <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</label>
                             </div>
                         </div>
 
@@ -47,12 +48,8 @@
                         <div class="row">
                             <div  class="col-md-4 remove-page-buttons">
                                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
-                                <a class="btn btn-danger" data-bind="click:submit, visible: !deleteAll()">
-                                    <i class="fa fa-trash-o fa-lg"></i> Remove
-                                </a>
-                                <a class="btn btn-danger" data-bind="click:deleteAllNodes, visible: deleteAll">
-                                    <i class="fa fa-trash-o fa-lg"></i> Remove
-                                </a>
+                                <a class="btn btn-danger" data-bind="click:submit, visible: !deleteAll()">Remove</a>
+                                <a class="btn btn-default" data-bind="click:deleteAllNodes, visible: deleteAll">Continue</a>
                             </div>
                     </div>
                     </div>
@@ -63,9 +60,7 @@
                            <div  class="col-md-4 remove-page-buttons" align="right">
                                 <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
                                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
-                                <a class="btn btn-danger" data-bind="click:submit">
-                                    <i class="fa fa-trash-o fa-lg"></i> Remove
-                                </a>
+                                <a class="btn btn-danger" data-bind="click:submit">Remove</a>
                             </div>
                     </div>
                     </div>

@@ -97,7 +97,6 @@
                 ${buttonGroup()}
             </div>
 
-
     % if 'admin' in user['permissions']:
         <h3>View-only Links
             <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
@@ -227,7 +226,7 @@
                                 <i class="fa fa-times text-danger no-sort"></i>
                     </a>
            -->
-                        <a href="#removeContributor" data-bind="click: remove" data-toggle="modal">
+                        <a href="#removeContributor" data-bind="click: remove,  css: {'disabled': $parent.changed},  tooltip: {title: 'Remove contributor'}" data-toggle="modal">
                             <i class="fa fa-times text-danger no-sort"></i>
                         </a>
 
@@ -239,8 +238,8 @@
 
             <!-- ko ifnot: contributor.canEdit() -->
                 <!-- ko if: canRemove -->
-                    <a
-                            data-bind="click: function() { $data.removeSelf($parent)}, tooltip: {title: 'Remove contributor'}"
+                    <a   href="#removeContributor"
+                            data-bind="click: function() { $data.removeSelf($parent)}, tooltip: {title: 'Remove contributor'}, css: {'disabled': $parent.changed}, tooltip: {title: 'Remove contributor'}"
                         >
                         <i class="fa fa-times text-danger no-sort"></i>
                     </a>
@@ -249,7 +248,6 @@
         </td>
     </tr>
 </script>
-
 
 <%def name="buttonGroup()">
     % if 'admin' in user['permissions']:
