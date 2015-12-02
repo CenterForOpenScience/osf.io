@@ -1223,7 +1223,6 @@ RegistrationManager.prototype.init = function() {
     if (urlParams.campaign && urlParams.campaign === 'prereg') {
         $osf.block();
         ready.done(function() {
-            $osf.unblock();
             var preregSchema = self.schemas().filter(function(schema) {
                 return schema.name === 'Prereg Challenge';
             })[0];
@@ -1231,7 +1230,7 @@ RegistrationManager.prototype.init = function() {
                 self.selectedSchema(preregSchema);
                 $('#newDraftRegistrationForm').submit();
             });
-        });
+        }).always($osf.unblock);
     }
 };
 /**
