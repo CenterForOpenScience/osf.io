@@ -528,8 +528,8 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var validator = null;
     if (self.metaSchema.requiresApproval) {
         validator = {
-            validator: function() {
-                return viewModel.embargoEndDate().getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
+            validator: function(value) {
+                return (new Date(value)).getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
             },
             message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
         };

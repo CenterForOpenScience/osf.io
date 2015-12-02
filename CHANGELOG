@@ -6,12 +6,12 @@ Changelog
 ===================
 
 - APIv2: Omit relationship objects for null and missing relationships.
+- Add button to reset client secret for developer applications.
 
 0.58.0 (2015-11-18)
 ===================
 
 - Add draft registrations.
-- Add button to reset client secret for developer applications.
 
 0.57.0 (2015-11-17)
 ===================
