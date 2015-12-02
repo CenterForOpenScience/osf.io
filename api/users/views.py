@@ -15,6 +15,7 @@ from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
+from api.institutions.serializers import InstitutionSerializer
 
 from .serializers import UserSerializer, UserDetailSerializer
 from .permissions import ReadOnlyOrCurrentUser
@@ -301,3 +302,20 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
         raw_nodes = Node.find(self.get_default_odm_query() & query)
         nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
         return nodes
+
+class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    permission_classes = ()
+
+    required_read_scopes = []
+    required_write_scopes = []
+
+    serializer_class = InstitutionSerializer
+    view_category = 'users'
+    view_name = 'user-institutions'
+
+    def get_default_odm_query(self):
+        return None
+
+    def get_queryset(self):
+        user = self.get_user()
+        return user.affiliated_institutions

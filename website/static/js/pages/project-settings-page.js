@@ -60,15 +60,16 @@ var institutionsViewModel = function() {
     ko.punches.enableAll();
     var self = this;
     self.test = ko.observable('Ayy lmao');
-    self.availableInstitutions = ko.observableArray();
+    self.availableInstitutions = ko.observable();
     $.ajax({
-        url: ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/',
+        url: ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/?embed=institutions',
         type: 'GET',
         dataType: 'json'
     }).done(function(response) {
-        for(var key in response.data.attributes.affiliated_institutions) {
+        self.availableInstitutions(response.data.embeds.institutions.data);
+        /*for(var key in response.data.attributes.affiliated_institutions) {
             self.availableInstitutions.push({'id': key, 'title': response.data.attributes.affiliated_institutions[key]});
-        }
+        }*/
     });
 
     self.submitInst = function() {

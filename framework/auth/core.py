@@ -1322,10 +1322,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return False
 
     affiliated_institutions = fields.ForeignField('institution', list=True)
-
-    def get_inst_ids(self):
-        inst_ids = {inst._id : inst.name for inst in self.affiliated_institutions}
-        return inst_ids
+    
 
 def _merge_into_reversed(*iterables):
     '''Merge multiple sorted inputs into a single output in reverse order.
