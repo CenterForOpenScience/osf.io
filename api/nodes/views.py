@@ -5,13 +5,13 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.status import is_server_error
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_error, is_bulk_request
+from api.base.views import JSONAPIBaseView
+from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer
 from api.comments.permissions import CanCommentOrPublic
@@ -35,12 +35,13 @@ from api.nodes.permissions import (
     ReadOnlyIfRegistration,
 )
 from api.base.exceptions import ServiceUnavailableError
+from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.files.models import FileNode
 from website.files.models import OsfStorageFileNode
-from website.models import Node, Pointer, Comment
+from website.models import Node, Pointer, Comment, NodeLog
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
 
@@ -132,7 +133,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -221,6 +222,8 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
     model_class = Node
 
     serializer_class = NodeSerializer
+    view_category = 'nodes'
+    view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
 
@@ -245,12 +248,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
         if is_bulk_request(self.request):
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
 
-            user = self.request.user
-            if user.is_anonymous():
-                auth = Auth(None)
-            else:
-                auth = Auth(user)
-
+            auth = get_user_auth(self.request)
             nodes = Node.find(query)
             for node in nodes:
                 if not node.can_edit(auth):
@@ -290,8 +288,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         try:
             instance.remove_node(auth=auth)
         except NodeStateError as err:
@@ -299,7 +296,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
         instance.save()
 
 
-class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -340,8 +337,9 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     ###Contributors
 
-    List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
-    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
+    List of users who are contributors to this node. This endpoint is always embedded.  Contributors may have
+    "read", "write", or "admin" permissions.  A node must always have at least one "admin" contributor.  Contributors may
+    be added via this endpoint.
 
     ###Files
 
@@ -418,6 +416,8 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = NodeDetailSerializer
+    view_category = 'nodes'
+    view_name = 'node-detail'
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -427,15 +427,8 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         return node
 
     # overrides RetrieveUpdateDestroyAPIView
-    def get_serializer_context(self):
-        # Serializer needs the request in order to make an update to privacy
-        # TODO: The method it overrides already returns request (plus more stuff). Why does this method exist?
-        return {'request': self.request}
-
-    # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_object()
         try:
             node.remove_node(auth=auth)
@@ -444,7 +437,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -471,7 +464,7 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
 
     ###Users
 
-    This endpoint shows the contributor user detail.
+    This endpoint shows the contributor user detail and is automatically embedded.
     ##Actions
 
     ###Adding Contributors
@@ -534,6 +527,8 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
     model_class = User
 
     serializer_class = NodeContributorsSerializer
+    view_category = 'nodes'
+    view_name = 'node-contributors'
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -579,19 +574,18 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_node()
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError("Must have at least one visible contributor")
         if instance not in node.contributors:
-                raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+                raise NotFound('User cannot be found in the list of contributors.')
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError("Must have at least one registered admin contributor")
 
 
-class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
+class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node. *Writeable*.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -678,6 +672,8 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
 
     serializer_class = NodeContributorDetailSerializer
+    view_category = 'nodes'
+    view_name = 'node-contributor-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -695,8 +691,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
         node = self.get_node()
-        current_user = self.request.user
-        auth = Auth(current_user)
+        auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError("Must have at least one visible contributor")
         removed = node.remove_contributor(instance, auth)
@@ -705,8 +700,8 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
 
 # TODO: Support creating registrations
-class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
-    """Node Registrations.
+class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+    """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
 
@@ -761,21 +756,19 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationSerializer
+    view_category = 'nodes'
+    view_name = 'node-registrations'
 
     # overrides ListAPIView
     # TODO: Filter out retractions by default
     def get_queryset(self):
         nodes = self.get_node().node__registrations
-        user = self.request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
+        auth = get_user_auth(self.request)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
 
 
-class NodeChildrenList(bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
+class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -859,6 +852,8 @@ class NodeChildrenList(bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilte
     required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
 
     serializer_class = NodeSerializer
+    view_category = 'nodes'
+    view_name = 'node-children'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -877,11 +872,7 @@ class NodeChildrenList(bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilte
             req_query
         )
         nodes = Node.find(query)
-        user = self.request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
+        auth = get_user_auth(self.request)
         children = [each for each in nodes if each.can_view(auth)]
         return children
 
@@ -894,7 +885,7 @@ class NodeChildrenList(bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilte
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
-class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
+class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -960,6 +951,8 @@ class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreate
     model_class = Pointer
 
     serializer_class = NodeLinksSerializer
+    view_category = 'nodes'
+    view_name = 'node-pointers'
 
     def get_queryset(self):
         return [
@@ -970,8 +963,7 @@ class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreate
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_node()
         try:
             node.rm_pointer(instance, auth=auth)
@@ -989,7 +981,7 @@ class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreate
         return res
 
 
-class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
+class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixin):
     """Node Link details. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -1039,6 +1031,8 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
+    view_category = 'nodes'
+    view_name = 'node-pointer-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -1054,8 +1048,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_node()
         pointer = self.get_object()
         try:
@@ -1065,7 +1058,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
+class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
     """Files attached to a node for a given provider. *Read-only*.
 
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
@@ -1305,6 +1298,9 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
+    view_category = 'nodes'
+    view_name = 'node-files'
+
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
@@ -1323,7 +1319,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
         return self.get_queryset_from_request()
 
 
-class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
+class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -1335,6 +1331,8 @@ class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+    view_category = 'nodes'
+    view_name = 'node-file-detail'
 
     def get_object(self):
         fobj = self.fetch_from_waterbutler()
@@ -1360,7 +1358,7 @@ class NodeProvider(object):
         self.pk = node._id
 
 
-class NodeProvidersList(generics.ListAPIView, NodeMixin):
+class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """List of storage providers enabled for this node. *Read-only*.
 
     Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
@@ -1484,6 +1482,8 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = NodeProviderSerializer
+    view_category = 'nodes'
+    view_name = 'node-providers'
 
     def get_provider_item(self, provider):
         return NodeProvider(provider, self.get_node())
@@ -1498,7 +1498,140 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         ]
 
 
-class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
+class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+    """List of Logs associated with a given Node. *Read-only*.
+
+    <!--- Copied Description from LogList -->
+
+    Paginated list of Logs ordered by their `date`. This includes the Logs of the specified Node as well as the logs of that Node's children that the current user has access to.
+
+    On the front end, logs show record and show actions done on the OSF. The complete list of loggable actions (in the format {identifier}: {description}) is as follows:
+
+    * 'project_created': A Node is created
+    * 'project_registered': A Node is registered
+    * 'project_deleted': A Node is deleted
+    * 'created_from': A Node is created using an existing Node as a template
+    * 'pointer_created': A Pointer is created
+    * 'pointer_forked': A Pointer is forked
+    * 'pointer_removed': A Pointer is removed
+    ---
+    * 'made_public': A Node is made public
+    * 'made_private': A Node is made private
+    * 'tag_added': A tag is added to a Node
+    * 'tag_removed': A tag is removed from a Node
+    * 'edit_title': A Node's title is changed
+    * 'edit_description': A Node's description is changed
+    * 'updated_fields': One or more of a Node's fields are changed
+    * 'external_ids_added': An external identifier is added to a Node (e.g. DOI, ARK)
+    ---
+    * 'contributor_added': A Contributor is added to a Node
+    * 'contributor_removed': A Contributor is removed from a Node
+    * 'contributors_reordered': A Contributor's position is a Node's biliography is changed
+    * 'permissions_update': A Contributor's permissions on a Node are changed
+    * 'made_contributor_visible': A Contributor is made bibliographically visible on a Node
+    * 'made_contributor_invisible': A Contributor is made bibliographically invisible on a Node
+    ---
+    * 'wiki_updated': A Node's wiki is updated
+    * 'wiki_deleted': A Node's wiki is deleted
+    * 'wiki_renamed': A Node's wiki is renamed
+    * 'made_wiki_public': A Node's wiki is made public
+    * 'made_wiki_private': A Node's wiki is made private
+    ---
+    * 'addon_added': An add-on is linked to a Node
+    * 'addon_removed': An add-on is unlinked from a Node
+    * 'addon_file_moved': A File in a Node's linked add-on is moved
+    * 'addon_file_copied': A File in a Node's linked add-on is copied
+    * 'addon_file_renamed': A File in a Node's linked add-on is renamed
+    * 'folder_created': A Folder is created in a Node's linked add-on
+    * 'file_added': A File is added to a Node's linked add-on
+    * 'file_updated': A File is updated on a Node's linked add-on
+    * 'file_removed': A File is removed from a Node's linked add-on
+    * 'file_restored': A File is restored in a Node's linked add-on
+    ---
+    * 'comment_added': A Comment is added to some item
+    * 'comment_removed': A Comment is removed from some item
+    * 'comment_updated': A Comment is updated on some item
+    ---
+    * 'embargo_initiated': An embargoed Registration is proposed on a Node
+    * 'embargo_approved': A proposed Embargo of a Node is approved
+    * 'embargo_cancelled': A proposed Embargo of a Node is cancelled
+    * 'embargo_completed': A proposed Embargo of a Node is completed
+    * 'retraction_initiated': A Retraction of a Registration is proposed
+    * 'retraction_approved': A Retraction of a Registration is approved
+    * 'retraction_cancelled': A Retraction of a Registration is cancelled
+    * 'registration_initiated': A Registration of a Node is proposed
+    * 'registration_approved': A proposed Registration is approved
+    * 'registration_cancelled': A proposed Registration is cancelled
+    ---
+    * 'node_created': A Node is created (_deprecated_)
+    * 'node_forked': A Node is forked (_deprecated_)
+    * 'node_removed': A Node is dele (_deprecated_)
+
+   ##Log Attributes
+
+    <!--- Copied Attributes from LogList -->
+
+    OSF Log entities have the "logs" `type`.
+
+        name           type                   description
+        ----------------------------------------------------------------------------
+        date           iso8601 timestamp      timestamp of Log creation
+        action         string                 Log action (see list above)
+
+    ##Relationships
+
+    ###Nodes
+
+    A list of all Nodes this Log is added to.
+
+    ###User
+
+    The user who performed the logged action.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ##Query Params
+
+    <!--- Copied Query Params from LogList -->
+
+    Logs may be filtered by their `action` and `date`.
+
+    #This Request/Response
+
+    """
+
+    serializer_class = NodeLogSerializer
+    view_category = 'nodes'
+    view_name = 'node-logs'
+
+    required_read_scopes = [CoreScopes.NODE_LOG_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    log_lookup_url_kwarg = 'node_id'
+
+    ordering = ('-date', )
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        base_permissions.TokenHasScope,
+    )
+
+    def get_default_odm_query(self):
+        auth = get_user_auth(self.request)
+        query = self.get_node().get_aggregate_logs_query(auth)
+        return query
+
+    def get_queryset(self):
+        queryset = NodeLog.find(self.get_query_from_request())
+        return queryset
+
+
+class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     """List of comments on a node. *Writeable*.
 
     Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the
@@ -1575,6 +1708,8 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentSerializer
+    view_category = 'nodes'
+    view_name = 'node-comments'
 
     ordering = ('-date_created', )  # default ordering
 

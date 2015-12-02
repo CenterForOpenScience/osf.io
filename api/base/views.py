@@ -1,14 +1,68 @@
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import generics
 
 from api.users.serializers import UserSerializer
 from website import settings
 from .utils import absolute_reverse
 
+class JSONAPIBaseView(generics.GenericAPIView):
+
+    def __init__(self, **kwargs):
+        assert getattr(self, 'view_name', None), 'Must specify view_name on view.'
+        assert getattr(self, 'view_category', None), 'Must specify view_category on view.'
+        self.view_fqn = ':'.join([self.view_category, self.view_name])
+        super(JSONAPIBaseView, self).__init__(**kwargs)
+
+    def _get_embed_partial(self, field_name, field):
+        """Create a partial function to fetch the values of an embedded field. A basic
+        example is to include a Node's children in a single response.
+
+        :param str field_name: Name of field of the view's serializer_class to load
+        results for
+        :return function object -> dict:
+        """
+        def partial(item):
+            # resolve must be implemented on the field
+            view, view_args, view_kwargs = field.resolve(item)
+            view_kwargs.update({
+                'request': self.request,
+                'is_embedded': True
+            })
+            response = view(*view_args, **view_kwargs)
+            return response.data
+        return partial
+
+    def get_serializer_context(self):
+        """Inject request into the serializer context. Additionally, inject partial functions
+        (request, object -> embed items) if the query string contains embeds, and this
+        is the topmost call to this method (the embed partials call view functions which has
+        the potential to create infinite recursion hence the inclusion of the is_embedded
+        view kwarg to prevent this).
+        """
+        context = super(JSONAPIBaseView, self).get_serializer_context()
+        if self.kwargs.get('is_embedded'):
+            return context
+        embeds = self.request.query_params.getlist('embed')
+        fields = self.serializer_class._declared_fields
+        for field in fields:
+            if getattr(fields[field], 'always_embed', False) and field not in embeds:
+                embeds.append(unicode(field))
+            if getattr(fields[field], 'never_embed', False) and field in embeds:
+                embeds.remove(field)
+        embeds_partials = {}
+        for embed in embeds:
+            embed_field = fields.get(embed)
+            embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
+        context.update({
+            'embed': embeds_partials
+        })
+        return context
+
 @api_view(('GET',))
 def root(request, format=None):
-    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, and files
+    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
     from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
     maintained by the [Center for Open Science](http://cos.io/).
 
@@ -68,6 +122,34 @@ def root(request, format=None):
     Boolean fields should be queried with `true` or `false`.
 
         /nodes/?filter[registered]=true
+
+    ###Embedding
+
+    All related resources that appear in the `relationships` attribute are embeddable, meaning that
+    by adding a query parameter like:
+
+        /nodes/?embed=contributors
+
+    it is possible to fetch a Node and its contributors in a single request. The embedded results will have the following
+    structure:
+
+        {relationship_name}: {full_embedded_response}
+
+    Where `full_embedded_response` means the full API response resulting from a GET request to the `href` link of the
+    corresponding related resource. This means if there are no errors in processing the embedded request the response will have
+    the format:
+
+        data: {response}
+
+    And if there are errors processing the embedded request the response will have the format:
+
+        errors: {errors}
+
+    Multiple embeds can be achieved with multiple query parameters separated by "&".
+
+        /nodes/?embed=contributors&embed=comments
+
+    Some endpoints are automatically embedded.
 
     ###Pagination
 
@@ -174,6 +256,10 @@ def root(request, format=None):
         }
 
     If there are no related entities, `href` will be null.
+
+    + `embeds`
+
+    Please see `Embedding` documentation under `Requests`.
 
     + `links`
 

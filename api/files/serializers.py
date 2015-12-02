@@ -2,6 +2,7 @@ import furl
 from modularodm import Q
 
 from rest_framework import serializers as ser
+from django.core.urlresolvers import resolve, reverse
 
 from website import settings
 from framework.auth.core import User
@@ -25,8 +26,22 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
         self.meta = {'id': 'user_id'}
         self.link_type = 'related'
+        self.always_embed = kwargs.pop('always_embed', False)
 
         super(CheckoutField, self).__init__('users:user-detail', **kwargs)
+
+    def resolve(self, resource):
+        """
+        Resolves the view when embedding.
+        """
+        embed_value = resource.stored_object.checkout.pk
+        kwargs = {self.lookup_url_kwarg: embed_value}
+        return resolve(
+            reverse(
+                self.view_name,
+                kwargs=kwargs
+            )
+        )
 
     def get_queryset(self):
         return User.find(Q('_id', 'eq', self.context['request'].user._id))
@@ -99,7 +114,7 @@ class FileSerializer(JSONAPISerializer):
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
         'download': WaterbutlerLink(must_be_file=True),
-        'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder')
+        'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder'),
     })
 
     class Meta:
