@@ -57,11 +57,13 @@ class TestNodeCommentsList(ApiTestCase):
         self._set_up_private_project_with_comment()
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_return_private_node_comments_logged_in_non_contributor(self):
         self._set_up_private_project_with_comment()
         res = self.app.get(self.private_url, auth=self.non_contributor, expect_errors=True)
         assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_return_private_node_comments_logged_in_contributor(self):
         self._set_up_private_project_with_comment()
@@ -407,11 +409,13 @@ class TestNodeCommentCreate(ApiTestCase):
         self._set_up_private_project()
         res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_private_node_logged_out_user_cannot_comment(self):
         self._set_up_private_project()
         res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_private_node_with_public_comment_level_non_contributor_cannot_comment(self):
         """ Test non-contributors cannot comment on a private project
@@ -450,11 +454,13 @@ class TestNodeCommentCreate(ApiTestCase):
         self._set_up_public_project()
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_public_node_logged_out_user_cannot_comment(self):
         self._set_up_public_project()
         res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
 
 class TestCommentRepliesCreate(ApiTestCase):
@@ -512,11 +518,13 @@ class TestCommentRepliesCreate(ApiTestCase):
         self._set_up_private_project_comment_reply()
         res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_private_node_logged_out_user_cannot_reply(self):
         self._set_up_private_project_comment_reply()
         res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_private_node_with_public_comment_level_non_contributor_cannot_reply(self):
         project = ProjectFactory(is_public=False, comment_level='public')
@@ -526,6 +534,7 @@ class TestCommentRepliesCreate(ApiTestCase):
         payload = self._set_up_payload(reply._id)
         res = self.app.post_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_public_node_contributor_can_reply(self):
         project = ProjectFactory(is_public=True, comment_level='public')
@@ -555,6 +564,7 @@ class TestCommentRepliesCreate(ApiTestCase):
         payload = self._set_up_payload(reply._id)
         res = self.app.post_json_api(url, payload, expect_errors=True)
         assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_public_node_only_logged_in_contributors_can_reply(self):
         self._set_up_public_project_comment_reply()
@@ -566,6 +576,7 @@ class TestCommentRepliesCreate(ApiTestCase):
         self._set_up_public_project_comment_reply()
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
 
 class TestCommentFiltering(ApiTestCase):
