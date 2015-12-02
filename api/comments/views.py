@@ -46,10 +46,11 @@ class CommentMixin(object):
 
 
 class CommentRepliesList(JSONAPIBaseView, generics.ListAPIView, CommentMixin, ODMFilterMixin):
-    """List of replies to a comment. *Writeable*.
+    """List of replies to a comment. *Read-only*.
 
-    Paginated list of comment replies ordered by their `date_created.` Each resource contains the full representation
+    Paginated list of comment replies ordered by their `date_created`. Each resource contains the full representation
     of the comment, meaning additional requests to an individual comment's detail view are not necessary.
+    Comment replies can be created via the NodeCommentsList endpoint `/v2/nodes/node_id/comments`.
 
     ###Permissions
 
