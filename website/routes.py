@@ -10,7 +10,6 @@ from framework import sentry
 from framework.auth import cas
 from framework.routing import Rule
 from framework.flask import redirect
-from framework.sessions import session
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
@@ -73,7 +72,6 @@ def get_globals():
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
-        'access_token': session.data.get('auth_user_access_token') or '',
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
     }
@@ -215,6 +213,13 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/api/v1/meetings/submissions/',
+            'get',
+            conference_views.conference_submissions,
+            json_renderer,
+        ),
+
+        Rule(
             '/presentations/',
             'get',
             conference_views.redirect_to_meetings,
@@ -222,7 +227,6 @@ def make_url_map(app):
         ),
 
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
-
     ])
 
     # Site-wide API routes
@@ -272,7 +276,6 @@ def make_url_map(app):
             OsfWebRenderer('util/oauth_complete.mako'),
         ),
     ])
-
     process_rules(app, [
         Rule(
             [
@@ -582,6 +585,28 @@ def make_url_map(app):
             OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
         ),
 
+        Rule(
+            '/settings/tokens/',
+            'get',
+            profile_views.personal_access_token_list,
+            OsfWebRenderer('profile/personal_tokens_list.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/create/',
+            'get',
+            profile_views.personal_access_token_register,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/<_id>/',
+            'get',
+            profile_views.personal_access_token_detail,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
@@ -843,14 +868,13 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/register/<template>/',
-                '/project/<pid>/node/<nid>/register/<template>/',
+                '/project/<pid>/register/<metaschema_id>/',
+                '/project/<pid>/node/<nid>/register/<metaschema_id>/',
             ],
             'get',
             project_views.register.node_register_template_page,
             OsfWebRenderer('project/register.mako', trust=False)
         ),
-
         Rule(
             [
                 '/project/<pid>/registrations/',
@@ -860,6 +884,30 @@ def make_url_map(app):
             project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako', trust=False)
         ),
+        Rule(
+            [
+                '/project/<pid>/registrations/',
+                '/project/<pid>/node/<nid>/registrations/',
+            ],
+            'post',
+            project_views.drafts.new_draft_registration,
+            OsfWebRenderer('project/edit_draft_registration.mako', trust=False)),
+        Rule(
+            [
+                '/project/<pid>/drafts/<draft_id>/',
+                '/project/<pid>/node/<nid>/drafts/<draft_id>/',
+            ],
+            'get',
+            project_views.drafts.edit_draft_registration_page,
+            OsfWebRenderer('project/edit_draft_registration.mako', trust=False)),
+        Rule(
+            [
+                '/project/<pid>/drafts/<draft_id>/register/',
+                '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
+            ],
+            'get',
+            project_views.drafts.draft_before_register_page,
+            OsfWebRenderer('project/register_draft.mako', trust=False)),
 
         # TODO: Can't create a registration locally, so can't test this one..?
         Rule(
@@ -926,6 +974,15 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/project/<pid>/files/deleted/<trashed_id>/',
+                '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
+            ],
+            'get',
+            addon_views.addon_deleted_file,
+            OsfWebRenderer('project/view_file.mako', trust=False)
+        ),
+        Rule(
+            [
                 # Legacy Addon view file paths
                 '/project/<pid>/<provider>/files/<path:path>/',
                 '/project/<pid>/node/<nid>/<provider>/files/<path:path>/',
@@ -986,9 +1043,6 @@ def make_url_map(app):
             addon_views.addon_view_or_download_file_legacy,
             json_renderer
         ),
-
-
-
     ])
 
     # API
@@ -1117,6 +1171,28 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/get_registrations/',
         ], 'get', project_views.node.get_registrations, json_renderer),
 
+        # Draft Registrations
+        Rule([
+            '/project/<pid>/drafts/',
+        ], 'get', project_views.drafts.get_draft_registrations, json_renderer),
+        Rule([
+            '/project/<pid>/drafts/<draft_id>/',
+        ], 'get', project_views.drafts.get_draft_registration, json_renderer),
+        Rule([
+            '/project/<pid>/drafts/<draft_id>/',
+        ], 'put', project_views.drafts.update_draft_registration, json_renderer),
+        Rule([
+            '/project/<pid>/drafts/<draft_id>/',
+        ], 'delete', project_views.drafts.delete_draft_registration, json_renderer),
+        Rule([
+            '/project/<pid>/drafts/<draft_id>/submit/',
+        ], 'post', project_views.drafts.submit_draft_for_review, json_renderer),
+
+        # Meta Schemas
+        Rule([
+            '/project/drafts/schemas/',
+        ], 'get', project_views.drafts.get_metaschemas, json_renderer),
+
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
 
         Rule([
@@ -1144,16 +1220,6 @@ def make_url_map(app):
             project_views.contributor.project_manage_contributors,
             json_renderer,
         ),
-
-        Rule([
-            '/project/<pid>/get_most_in_common_contributors/',
-            '/project/<pid>/node/<nid>/get_most_in_common_contributors/',
-        ], 'get', project_views.contributor.get_most_in_common_contributors, json_renderer),
-
-        Rule([
-            '/project/<pid>/get_recently_added_contributors/',
-            '/project/<pid>/node/<nid>/get_recently_added_contributors/',
-        ], 'get', project_views.contributor.get_recently_added_contributors, json_renderer),
 
         Rule([
             '/project/<pid>/get_editable_children/',
@@ -1267,7 +1333,6 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/pointer/fork/',
             ], 'post', project_views.node.fork_pointer, json_renderer,
         ),
-
         # View forks
         Rule([
             '/project/<pid>/forks/',
@@ -1280,19 +1345,17 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/beforeregister',
         ], 'get', project_views.register.project_before_register, json_renderer),
         Rule([
+            '/project/<pid>/drafts/<draft_id>/register/',
+            '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
+        ], 'post', project_views.drafts.register_draft_registration, json_renderer),
+        Rule([
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'get', project_views.register.node_register_template_page, json_renderer),
-
         Rule([
             '/project/<pid>/retraction/',
             '/project/<pid>/node/<nid>/retraction/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/register/<template>/',
-            '/project/<pid>/node/<nid>/register/<template>/',
-        ], 'post', project_views.register.node_register_template_page_post, json_renderer),
 
         Rule(
             [

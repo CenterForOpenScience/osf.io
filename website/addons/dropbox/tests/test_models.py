@@ -1,102 +1,18 @@
 # -*- coding: utf-8 -*-
-import os
 import mock
 
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
 from website.addons.dropbox.model import (
-    DropboxUserSettings, DropboxNodeSettings, DropboxFile
+    DropboxUserSettings, DropboxNodeSettings
 )
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, DEFAULT_METASCHEMA
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.dropbox.tests.factories import (
     DropboxUserSettingsFactory, DropboxNodeSettingsFactory,
 )
 from website.addons.base import exceptions
-
-
-class TestFileGuid(OsfTestCase):
-    def setUp(self):
-        super(OsfTestCase, self).setUp()
-        self.user = UserFactory()
-        self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('dropbox', auth=Auth(self.user))
-        self.node_addon = self.project.get_addon('dropbox')
-        self.node_addon.folder = '/baz'
-        self.node_addon.save()
-
-    def test_provider(self):
-        assert_equal('dropbox', DropboxFile().provider)
-
-    def test_correct_path(self):
-        guid = DropboxFile(node=self.project, path='baz/foo/bar')
-
-        assert_equals(guid.path, 'baz/foo/bar')
-        assert_equals(guid.waterbutler_path, '/foo/bar')
-
-    def test_path_doesnt_crash_without_addon(self):
-        guid = DropboxFile(node=self.project, path='baz/foo/bar')
-        self.project.delete_addon('dropbox', Auth(self.user))
-
-        assert_is(self.project.get_addon('dropbox'), None)
-
-        assert_true(guid.path)
-        assert_true(guid.waterbutler_path)
-
-    def test_path_doesnt_crash_nonconfig_addon(self):
-        guid = DropboxFile(node=self.project, path='baz/foo/bar')
-        self.node_addon.folder = None
-        self.node_addon.save()
-        self.node_addon.reload()
-
-        assert_true(guid.path)
-        assert_true(guid.waterbutler_path)
-
-    @mock.patch('website.addons.base.requests.get')
-    def test_unique_identifier(self, mock_get):
-        mock_response = mock.Mock(ok=True, status_code=200)
-        mock_get.return_value = mock_response
-        mock_response.json.return_value = {
-            'data': {
-                'name': 'Morty',
-                'extra': {
-                    'revisionId': 'Ricksy'
-                }
-            }
-        }
-
-        guid = DropboxFile(node=self.project, path='/foo/bar')
-
-        guid.enrich()
-        assert_equals('Ricksy', guid.unique_identifier)
-
-    def test_node_addon_get_or_create(self):
-        guid, created = self.node_addon.find_or_create_file_guid('/foo/bar')
-
-        assert_true(created)
-        assert_equal(guid.path, 'baz/foo/bar')
-        assert_equal(guid.waterbutler_path, '/foo/bar')
-
-    def test_node_addon_get_or_create_finds(self):
-        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
-        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
-
-        assert_true(created1)
-        assert_false(created2)
-        assert_equals(guid1, guid2)
-
-    def test_node_addon_get_or_create_finds_changed(self):
-        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
-
-        self.node_addon.folder = '/baz/foo'
-        self.node_addon.save()
-        self.node_addon.reload()
-        guid2, created2 = self.node_addon.find_or_create_file_guid('/bar')
-
-        assert_true(created1)
-        assert_false(created2)
-        assert_equals(guid1, guid2)
 
 
 class TestUserSettingsModel(OsfTestCase):
@@ -319,6 +235,8 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
     def test_create_log(self):
         action = 'file_added'
         path = 'pizza.nii'
+        self.node_settings.folder = '/SomeOddPath'
+        self.node_settings.save()
         nlog = len(self.project.logs)
         self.node_settings.create_waterbutler_log(
             auth=Auth(user=self.user),
@@ -339,9 +257,8 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
-            schema=None,
+            schema=DEFAULT_METASCHEMA,
             auth=Auth(user=self.project.creator),
-            template='Template1',
             data='hodor'
         )
         assert_false(registration.has_addon('dropbox'))

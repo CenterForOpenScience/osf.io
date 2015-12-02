@@ -91,6 +91,32 @@ describe('osfHelpers', () => {
         });
     });
 
+    describe('handleEditableError', () => {
+
+        var ravenStub;
+        beforeEach(() => {
+            ravenStub = new sinon.stub(Raven, 'captureMessage');
+        });
+
+        afterEach(() => {
+            ravenStub.restore();
+        });
+        var response = {
+            responseJSON: {
+                message_short: 'Oh no!',
+                message_long: 'Something went wrong'
+            }
+        };
+        it('uses the response text if available', () => {
+            assert.equal('Error: ' + response.responseJSON.message_long, $osf.handleEditableError(response));
+        });
+
+        it('logs error with Raven', () => {
+            $osf.handleEditableError(response);
+            assert.called(ravenStub);
+        });
+    });
+
     describe('block', () => {
         var stub;
         beforeEach(() => {
@@ -387,6 +413,58 @@ describe('osfHelpers', () => {
         it('should trigger bootbox', () => {
             $osf.confirmDangerousAction({callback: callbackStub});
             assert.calledOnce(bootboxStub);
+        });
+    });
+
+    describe('iterObject', () => {
+        var get = function(obj, key) {
+            return obj[key];
+        };
+
+        it('maps an object to an array {key: KEY, value: VALUE} pairs', () => {
+            var obj = {
+                foo: 'bar',
+                cat: 'dog'
+            };
+            var keys = Object.keys(obj);
+            var values = keys.map(get.bind(null, obj));
+            var iterable = $osf.iterObject(obj);
+            for(var i = 0; i < iterable.length; i++) {
+                var item = iterable[i];
+                assert.include(keys, item.key);
+                assert.include(values, item.value);
+                assert.equal(item.value, get(obj, keys[i]));
+            }
+        });
+    });
+
+    describe('indexOf', () => {
+        it('returns a positive integer index if it finds a matching item', () => {
+            var list = [];
+            for(var i = 0; i < 5; i++){
+                list.push({
+                    foo: 'bar' + i
+                });
+            }
+            var idx = Math.floor(Math.random() * 5);
+            var search = function(item) {
+                return item.foo === 'bar' + idx;
+            };
+            var found = $osf.indexOf(list, search);
+            assert.equal(idx, found);
+        });
+        it('returns -1 if no item is matched', () => {
+            var list = [];
+            for(var i = 0; i < 5; i++){
+                list.push({
+                    foo: 'bar' + i
+                });
+            }
+            var search = function(item) {
+                return item.foo === 42;
+            };
+            var found = $osf.indexOf(list, search);
+            assert.equal(-1, found);
         });
     });
 });

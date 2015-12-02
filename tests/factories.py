@@ -14,26 +14,39 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
 import datetime
+import functools
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
 from mock import patch, Mock
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
-from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider
+from website.oauth.models import (
+    ApiOAuth2Application,
+    ApiOAuth2PersonalToken,
+    ExternalAccount,
+    ExternalProvider
+)
 from website.project.model import (
-    Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig
+    Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
+    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig,
+    ensure_schemas
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.archiver import ARCHIVER_SUCCESS
+from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
 
+from tests.base import DEFAULT_METASCHEMA
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
 def save_kwargs(**kwargs):
@@ -137,6 +150,16 @@ class ApiOAuth2ApplicationFactory(ModularOdmFactory):
     callback_url = 'http://example.uk'
 
 
+class ApiOAuth2PersonalTokenFactory(ModularOdmFactory):
+    FACTORY_FOR = ApiOAuth2PersonalToken
+
+    owner = SubFactory(UserFactory)
+
+    scopes = 'osf.full_write osf.full_read'
+
+    name = Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
+
+
 class PrivateLinkFactory(ModularOdmFactory):
     FACTORY_FOR = PrivateLink
 
@@ -181,27 +204,22 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, archive=False, embargo=None, registration_approval=None, retraction=None, *args, **kwargs):
+                data=None, archive=False, embargo=None, registration_approval=None, retraction=None, is_public=False,
+                *args, **kwargs):
         save_kwargs(**kwargs)
-
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
         project.save()
 
         # Default registration parameters
-        #schema = schema or MetaSchema.find_one(
-        #    Q('name', 'eq', 'Open-Ended_Registration')
-        #)
-        schema = None
+        schema = schema or DEFAULT_METASCHEMA
         user = user or project.creator
-        template = template or "Template1"
-        data = data or "Some words"
+        data = data or {'some': 'data'}
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            template=template,
-            data=data,
+            data=data
         )
 
         def add_approval_step(reg):
@@ -234,6 +252,8 @@ class RegistrationFactory(AbstractNodeFactory):
             dst_node=reg,
             initiator=user,
         )
+        if is_public:
+            reg.is_public = True
         reg.save()
         return reg
 
@@ -260,10 +280,11 @@ class SanctionFactory(ModularOdmFactory):
 
     @classmethod
     def _create(cls, target_class, approve=False, *args, **kwargs):
-        user = UserFactory()
+        user = kwargs.get('user') or UserFactory()
         sanction = ModularOdmFactory._create(target_class, initiated_by=user, *args, **kwargs)
         reg_kwargs = {
-            'owner': user,
+            'creator': user,
+            'user': user,
             sanction.SHORT_NAME: sanction
         }
         RegistrationFactory(**reg_kwargs)
@@ -532,3 +553,52 @@ class ArchiveTargetFactory(ModularOdmFactory):
 
 class ArchiveJobFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveJob
+
+
+class DraftRegistrationFactory(ModularOdmFactory):
+    FACTORY_FOR = DraftRegistration
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        branched_from = kwargs.get('branched_from')
+        initiator = kwargs.get('initiator')
+        registration_schema = kwargs.get('registration_schema')
+        registration_metadata = kwargs.get('registration_metadata')
+        if not branched_from:
+            project_params = {}
+            if initiator:
+                project_params['creator'] = initiator
+            branched_from = ProjectFactory(**project_params)
+        initiator = branched_from.creator
+        try:
+            registration_schema = registration_schema or MetaSchema.find()[0]
+        except IndexError:
+            ensure_schemas()
+        registration_metadata = registration_metadata or {}
+        draft = DraftRegistration.create_from_node(
+            branched_from,
+            user=initiator,
+            schema=registration_schema,
+            data=registration_metadata,
+        )
+        return draft
+
+
+class NodeLicenseRecordFactory(ModularOdmFactory):
+    FACTORY_FOR = NodeLicenseRecord
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        try:
+            NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        except NoResultsFound:
+            ensure_licenses()
+        kwargs['node_license'] = kwargs.get(
+            'node_license',
+            NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        )
+        return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)

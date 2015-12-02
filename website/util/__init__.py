@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import collections
 import re
+import urllib
 import logging
 import urlparse
+from contextlib import contextmanager
 
 import furl
 
@@ -28,6 +31,26 @@ waterbutler_action_map = {
     'metadata': 'data',
     'create_folder': 'file',
 }
+
+
+# Function courtesty of @brianjgeiger and @abought, moved from API utils
+def rapply(data, func, *args, **kwargs):
+    """Recursively apply a function to all values in an iterable
+    :param dict | list | basestring data: iterable to apply func to
+    :param function func:
+    """
+    if isinstance(data, collections.Mapping):
+        return {
+            key: rapply(value, func, *args, **kwargs)
+            for key, value in data.iteritems()
+        }
+    elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
+        desired_type = type(data)
+        return desired_type(
+            rapply(item, func, *args, **kwargs) for item in data
+        )
+    else:
+        return func(data, *args, **kwargs)
 
 def conjunct(words, conj='and'):
     words = list(words)
@@ -117,7 +140,8 @@ def is_json_request():
 
 
 def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
-    """Reverse URL lookup for WaterButler routes
+    """DEPRECATED Use waterbutler_api_url_for
+    Reverse URL lookup for WaterButler routes
     :param str route: The action to preform, upload, download, delete...
     :param str provider: The name of the requested provider
     :param str path: The path of the requested file or folder
@@ -149,3 +173,18 @@ def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
 
     url.args.update(kwargs)
     return url.url
+
+def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
+    assert path.startswith('/'), 'Path must always start with /'
+    url = furl.furl(website_settings.WATERBUTLER_URL)
+    segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
+    url.path.segments.extend([urllib.quote(x.encode('utf-8')) for x in segments])
+    url.args.update(kwargs)
+    return url.url
+
+@contextmanager
+def disconnected_from(signal, listener):
+    """Temporarily disconnect a Blinker signal."""
+    signal.disconnect(listener)
+    yield
+    signal.connect(listener)

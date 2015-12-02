@@ -1,77 +1,14 @@
-from nose.tools import *
+from nose.tools import *  # noqa
 import mock
 
+from tests.base import DEFAULT_METASCHEMA
 from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
 from framework.exceptions import PermissionsError
 
-from website.addons.dataverse.model import (
-    AddonDataverseNodeSettings, DataverseFile
-)
+from website.addons.dataverse.model import AddonDataverseNodeSettings
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 from website.addons.dataverse.tests.utils import create_external_account
-
-
-class TestDataverseFile(DataverseAddonTestCase):
-
-    def test_constants(self):
-        dvf = DataverseFile()
-        assert_equal('dataverse', dvf.provider)
-        assert_equal('version', dvf.version_identifier)
-
-    def test_path_doesnt_crash_without_addon(self):
-        dvf = DataverseFile(node=self.project, file_id='12345')
-        self.project.delete_addon('dataverse', Auth(self.user))
-
-        assert_is(self.project.get_addon('dataverse'), None)
-
-        assert_true(dvf.file_id)
-        assert_true(dvf.waterbutler_path)
-
-    def test_waterbutler_path(self):
-        dvf = DataverseFile(node=self.project, file_id='12345')
-
-        assert_equals(dvf.file_id, '12345')
-        assert_equals(dvf.waterbutler_path, '/12345')
-
-    def test_unique_identifier(self):
-        dvf = DataverseFile(node=self.project, file_id='12345')
-
-        assert_true(dvf.file_id, '12345')
-        assert_equals(dvf.unique_identifier, '12345')
-
-    def test_node_addon_get_or_create(self):
-        dvf, created = self.node_settings.find_or_create_file_guid('12345')
-
-        assert_true(created)
-        assert_equal(dvf.file_id, '12345')
-        assert_equal(dvf.waterbutler_path, '/12345')
-
-    def test_node_addon_get_or_create_finds(self):
-        dvf1, created1 = self.node_settings.find_or_create_file_guid('12345')
-        dvf2, created2 = self.node_settings.find_or_create_file_guid('12345')
-
-        assert_true(created1)
-        assert_false(created2)
-        assert_equals(dvf1, dvf2)
-
-    @mock.patch('website.addons.dataverse.model._get_current_user')
-    @mock.patch('website.addons.base.requests.get')
-    def test_name(self, mock_get, mock_get_user):
-        mock_get_user.return_value = self.user
-        mock_response = mock.Mock(ok=True, status_code=200)
-        mock_get.return_value = mock_response
-        mock_response.json.return_value = {
-            'data': {
-                'name': 'Morty.foo',
-                'path': '/12345',
-            },
-        }
-
-        dvf, created = self.node_settings.find_or_create_file_guid('12345')
-        dvf.enrich()
-
-        assert_equal(dvf.name, 'Morty.foo')
 
 
 class TestDataverseUserSettings(DataverseAddonTestCase):
@@ -310,9 +247,8 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
-            schema=None,
+            schema=DEFAULT_METASCHEMA,
             auth=Auth(user=self.project.creator),
-            template='Template1',
-            data='hodor'
+            data='hodor',
         )
         assert_false(registration.has_addon('dataverse'))

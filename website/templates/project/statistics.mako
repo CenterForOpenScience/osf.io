@@ -19,7 +19,7 @@
         )
 %>
 
-% if not node['piwik_site_id']:
+% if not piwik_host or not node['piwik_site_id']:
     <div class="row m-lg">
         <div class="col-xs-12 text-center">
             <img src="/static/img/no_analytics.png">

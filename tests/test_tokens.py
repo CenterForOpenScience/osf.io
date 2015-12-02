@@ -12,7 +12,8 @@ from tests import factories
 from framework.exceptions import HTTPError
 
 from website import settings
-from website.models import Node, Sanction, Embargo, RegistrationApproval, Retraction
+from website.models import Node, Embargo, RegistrationApproval, Retraction
+from website.project.model import Sanction
 from website.tokens import decode, encode, TokenHandler
 from website.tokens.exceptions import TokenHandlerNotFound
 
@@ -23,7 +24,7 @@ REJECTED_MSG = "This registration {0} has been rejected."
 class MockAuth(object):
 
     def __init__(self, user):
-        self.user = user        
+        self.user = user
         self.logged_in = True
 
 mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))

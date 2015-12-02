@@ -54,9 +54,9 @@ class TestSanction(SanctionsTestCase):
         self.sanction.add_authorizer(self.user, save=True)
 
     def test_pending_approval(self):
-        assert_true(self.sanction.pending_approval)
+        assert_true(self.sanction.is_pending_approval)
         self.sanction.state = Sanction.APPROVED
-        assert_false(self.sanction.pending_approval)
+        assert_false(self.sanction.is_pending_approval)
 
     def test_validate_authorizer(self):
         assert_false(self.sanction._validate_authorizer(self.invalid_user))
@@ -83,12 +83,14 @@ class TestSanction(SanctionsTestCase):
 
     def test_remove_authorizer(self):
         removed = self.sanction.remove_authorizer(self.user)
+        self.sanction.save()
         assert_true(removed)
         assert_not_in(self.user._id, self.sanction.approval_state.keys())
 
     def test_remove_authorizer_not_added(self):
         not_added = factories.UserFactory()
         removed = self.sanction.remove_authorizer(not_added)
+        self.sanction.save()
         assert_false(removed)
         assert_not_in(not_added, self.sanction.approval_state.keys())
 
@@ -254,3 +256,16 @@ class TestRegistrationApproval(OsfTestCase):
         assert_equal(http.FORBIDDEN, res.status_code)
         assert_true(self.registration.is_pending_registration)
         assert_false(self.registration.is_registration_approved)
+
+
+class TestRegistrationApprovalHooks(OsfTestCase):
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4940
+    def test_on_complete_sets_state_to_approved(self):
+        user = factories.UserFactory()
+        registration = factories.RegistrationFactory(creator=user)
+        registration.require_approval(user)
+
+        assert_true(registration.registration_approval.is_pending_approval)  # sanity check
+        registration.registration_approval._on_complete(None)
+        assert_false(registration.registration_approval.is_pending_approval)
