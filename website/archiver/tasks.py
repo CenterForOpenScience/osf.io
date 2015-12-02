@@ -271,40 +271,24 @@ def archive(job_pk):
         ]
     )
 
-def memoize_do_get_file_map(func):
-    cache = {}
-    @functools.wraps(func)
-    def wrapper(file_tree, node, *args, **kwargs):
-        path = '{0}:{1}'.format(file_tree['path'], node._id)
-        if path not in cache:
-            cache[path] = func(file_tree, node, *args, **kwargs)
-        return cache[path]
-    return wrapper
-
-@memoize_do_get_file_map
-def do_get_file_map(file_tree, node):
-    file_map = {}
-    stack = [file_tree]
-    while len(stack):
-        node = stack.pop(0)
-        if node['kind'] == 'file':
-            file_map[node['extra']['hashes']['sha256']] = node
-        else:
-            stack = stack + node['children']
-    return file_map
-
-def get_file_map(node):
-    osf_storage = node.get_addon('osfstorage')
-    file_tree = osf_storage._get_file_tree(user=node.creator)
-    file_map = do_get_file_map(file_tree, node)
-    for key, value in file_map.items():
-        yield (key, value, node._id)
-    for child in node.nodes_primary:
-        for key, value, node_id in get_file_map(child):
-            yield (key, value, node_id)
-
 @celery_app.task
 def archive_success(dst_pk):
+    """Archiver's final callback. For the time being the use case for this task
+    is to rewrite references to files selected in a registration schema (the Prereg
+    Challenge being the first to expose this feature). The created references point
+    to files on the registered_from Node (needed for previewing schema data), and
+    must be re-associated with the corresponding files in the newly created registration.
+
+    :param str dst_pk: primary key of registration Node
+
+    note:: At first glance this task makes redundant calls to utils.get_file_map (which
+    returns a generator yielding  (<sha256>, <file_metadata>) pairs) on the dst Node. Two
+    notes about utils.get_file_map: 1) this function memoizes previous results to reduce
+    overhead and 2) this function returns a generator that lazily fetches the file metadata
+    of child Nodes (it is possible for a selected file to belong to a child Node) using a
+    non-recursive DFS. Combined this allows for a relatively effient implementation with
+    seemingly redundant calls.
+    """
     create_app_context()
     dst = Node.load(dst_pk)
     # The filePicker extension addded with the Prereg Challenge registration schema
@@ -323,10 +307,10 @@ def archive_success(dst_pk):
             if isinstance(value['value'], dict):
                 for subkey, subvalue in value['value'].items():
                     if subvalue.get('extra', {}).get('sha256'):
-                        sha256 = subvalue['extra']['sha256']
-                        for fsha256, fvalue, node_id in get_file_map(dst):
-                            if fsha256 == sha256:
-                                registration_file = fvalue
+                        orig_sha256 = subvalue['extra']['sha256']
+                        for sha256, value, node_id in utils.get_file_map(dst):
+                            if sha256 == orig_sha256:
+                                registration_file = value
                                 break
                         if not registration_file:
                             raise RuntimeError()
@@ -340,7 +324,7 @@ def archive_success(dst_pk):
             else:
                 if value.get('extra', {}).get('sha256'):
                     sha256 = value['extra']['sha256']
-                    for fsha256, fvalue, node_id in get_file_map(dst):
+                    for fsha256, fvalue, node_id in utils.get_file_map(dst):
                         if fsha256 == sha256:
                             registration_file = fvalue
                             break

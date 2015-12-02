@@ -1,3 +1,5 @@
+import functools
+
 from framework.auth import Auth
 
 from website.archiver import (
@@ -94,7 +96,6 @@ def has_archive_provider(node, user):
     """
     return node.has_addon(settings.ARCHIVE_PROVIDER)
 
-
 def link_archive_provider(node, user):
     """A generic function for linking some node, user pair with the configured
     archive provider
@@ -139,3 +140,33 @@ def before_archive(node, user):
         initiator=user
     )
     job.set_targets()
+
+def _do_get_file_map(file_tree):
+    file_map = {}
+    stack = [file_tree]
+    while len(stack):
+        tree_node = stack.pop(0)
+        if tree_node['kind'] == 'file':
+            file_map[tree_node['extra']['hashes']['sha256']] = tree_node
+        else:
+            stack = stack + tree_node['children']
+    return file_map
+
+def _memoize_get_file_map(func):
+    cache = {}
+    @functools.wraps(func)
+    def wrapper(node):
+        if node._id not in cache:
+            osf_storage = node.get_addon('osfstorage')
+            file_tree = osf_storage._get_file_tree(user=node.creator)
+            cache[node._id] = _do_get_file_map(file_tree)
+        return func(node, cache[node._id])
+    return wrapper
+
+@_memoize_get_file_map
+def get_file_map(node, file_map):
+    for key, value in file_map.items():
+        yield (key, value, node._id)
+    for child in node.nodes_primary:
+        for key, value, node_id in get_file_map(child):
+            yield (key, value, node_id)

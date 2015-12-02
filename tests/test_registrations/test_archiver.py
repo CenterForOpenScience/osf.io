@@ -4,6 +4,7 @@ import functools
 import json
 import logging
 import itertools
+import random
 
 import celery
 import mock  # noqa
@@ -11,7 +12,6 @@ from contextlib import nested
 from mock import call
 from nose.tools import *  # noqa PEP8 asserts
 import httpretty
-from modularodm import Q
 
 from scripts import cleanup_failed_registrations as scripts
 
@@ -41,7 +41,7 @@ from website.addons.base import StorageAddonBase
 from website.util import api_url_for
 
 from tests import factories
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, fake
 
 
 SILENT_LOGGERS = (
@@ -50,6 +50,45 @@ SILENT_LOGGERS = (
 )
 for each in SILENT_LOGGERS:
     logging.getLogger(each).setLevel(logging.CRITICAL)
+
+def file_factory(path_above):
+    fname = fake.file_name()
+    return {
+        'path': os.path.join(path_above.rstrip('/'), fname),
+        'name': fname,
+        'kind': 'file',
+        'size': random.randint(4, 4000),
+        'extra': {
+            'hashes': {
+                'sha256': fake.sha256()
+            }
+        }
+    }
+
+def folder_factory(depth, num_files, num_folders, path_above):
+    new_path = os.path.join(path_above.rstrip('/'), fake.word())
+    return {
+        'path': new_path,
+        'kind': 'folder',
+        'children': [
+            file_factory(new_path)
+            for i in range(num_files)
+        ] + [
+            folder_factory(depth - 1, num_files, num_folders, new_path)
+        ] if depth > 0 else []
+    }
+
+def file_tree_factory(depth, num_files, num_folders):
+    return {
+        'path': '/',
+        'kind': 'folder',
+        'children': [
+            file_factory('/')
+            for i in range(num_files)
+        ] + [
+            folder_factory(depth - 1, num_files, num_folders, '/')
+        ] if depth > 0 else []
+    }
 
 FILE_TREE = {
     'path': '/',
@@ -319,16 +358,6 @@ class TestArchiverTasks(ArchiverTestCase):
 
 class TestArchiverUtils(ArchiverTestCase):
 
-    # TODO (samchrisinger, HarryRybacki): implement new tests for registration approvals
-    #@mock.patch('framework.tasks.handlers.enqueue_task')
-    #def test_archive_success_adds_registered_logs(self, mock_enqueue):
-    #    proj = factories.ProjectFactory()
-    #    len_logs = len(proj.logs)
-    #    reg = factories.RegistrationFactory(project=proj, archive=True)
-    #    archiver_utils.archive_success(reg, proj.creator)
-    #    assert_equal(len(proj.logs), len_logs + 1)
-    #    assert_equal([p for p in proj.logs][-1].action, NodeLog.PROJECT_REGISTERED)
-
     @mock.patch('website.mails.send_mail')
     def test_handle_archive_fail(self, mock_send_mail):
         archiver_utils.handle_archive_fail(
@@ -423,6 +452,104 @@ class TestArchiverUtils(ArchiverTestCase):
         wo.delete_addon(settings.ARCHIVE_PROVIDER, auth=self.auth, _force=True)
         archiver_utils.link_archive_provider(wo, self.user)
         assert_true(archiver_utils.has_archive_provider(wo, self.user))
+
+    def test_get_file_map(self):
+        node = factories.NodeFactory(creator=self.user)
+        file_tree = file_tree_factory(3, 3, 3)
+        with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
+            file_map = archiver_utils.get_file_map(node)
+        stack = [file_tree]
+        file_map = {
+            sha256: value
+            for sha256, value, _ in file_map
+        }
+        while len(stack):
+            item = stack.pop(0)
+            if item['kind'] == 'file':
+                sha256 = item['extra']['hashes']['sha256']
+                assert_in(sha256, file_map)
+                map_file = file_map[sha256]
+                assert_equal(item, map_file)
+            else:
+                stack = stack + item['children']
+
+    def test_get_file_map_with_components(self):
+        node = factories.NodeFactory()
+        comp1 = factories.NodeFactory(parent=node)
+        comp1a = factories.NodeFactory(parent=comp1)
+        comp2 = factories.NodeFactory(parent=node)
+
+        file_trees = {
+            n._id: file_tree_factory(3, 3, 3)
+            for n in [node, comp1, comp1a, comp2]
+        }
+
+        patches = []
+        for n in [node, comp1, comp1a, comp2]:
+            file_tree = file_trees[n._id]
+            osfstorage = n.get_addon('osfstorage')
+            patch = mock.patch.object(osfstorage, '_get_file_tree', mock.Mock(return_value=file_tree))
+            patch.start()
+            patches.append(patch)
+
+        file_map = archiver_utils.get_file_map(node)
+        stack = file_trees.values()
+        file_map = {
+            sha256: value
+            for sha256, value, _ in file_map
+        }
+        while len(stack):
+            item = stack.pop(0)
+            if item['kind'] == 'file':
+                sha256 = item['extra']['hashes']['sha256']
+                assert_in(sha256, file_map)
+                map_file = file_map[sha256]
+                assert_equal(item, map_file)
+            else:
+                stack = stack + item['children']
+
+        for patch in patches:
+            patch.stop()
+
+    def test_get_file_map_memoization(self):
+        node = factories.NodeFactory()
+        comp1 = factories.NodeFactory(parent=node)
+        comp1a = factories.NodeFactory(parent=comp1)
+        comp2 = factories.NodeFactory(parent=node)
+
+        file_trees = {
+            n._id: file_tree_factory(3, 3, 3)
+            for n in [node, comp1, comp1a, comp2]
+        }
+        patches = {}
+        mocks = {}
+        for n in [node, comp1, comp1a, comp2]:
+            file_tree = file_trees[n._id]
+            osfstorage = n.get_addon('osfstorage')
+            mocked = mock.Mock(return_value=file_tree)
+            patch = mock.patch.object(osfstorage, '_get_file_tree', mocked)
+            patch.start()
+            patches[n._id] = patch
+            mocks[n._id] = mocked
+        # first call
+        file_map = archiver_utils.get_file_map(node)
+        file_map = {
+            sha256: value
+            for sha256, value, _ in file_map
+        }
+        for mocked in mocks.values():
+            mocked.assert_called_once()
+        # second call
+        file_map = archiver_utils.get_file_map(node)
+        file_map = {
+            sha256: value
+            for sha256, value, _ in file_map
+        }
+        for mocked in mocks.values():
+            mocked.assert_called_once()
+        for patch in patches.values():
+            patch.stop()
+
 
 class TestArchiverListeners(ArchiverTestCase):
 
@@ -638,25 +765,6 @@ class TestArchiverScripts(ArchiverTestCase):
         for pk in legacy:
             assert_false(pk in failed)
 
-class TestArchiverDebugRoutes(ArchiverTestCase):
-
-    def test_debug_route_does_not_exist(self):
-        route = None
-        try:
-            route = api_url_for('archiver_debug', nid=self.dst._id)
-            assert(False)
-        except AssertionError:
-            assert(False)
-        except:
-            assert(True)
-        if route:
-            try:
-                self.app.get(route)
-                assert(False)
-            except AssertionError:
-                assert(False)
-            except:
-                assert(True)
 
 class TestArchiverDecorators(ArchiverTestCase):
 
