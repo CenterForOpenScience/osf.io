@@ -10,14 +10,15 @@ import platform
 import subprocess
 import logging
 
-from invoke import task, run
+import invoke
+from invoke import run, Collection
 
 from website import settings
+from admin import tasks as api_tasks
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ADMIN_PATH = os.path.join(HERE, 'admin')
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 
 
@@ -39,6 +40,23 @@ except ImportError:
     TEST_CMD = 'nosetests'
 else:
     TEST_CMD = 'nosetests --rednose'
+
+ns = Collection()
+ns.add_collection(Collection.from_module(api_tasks), name='admin')
+
+def task(*args, **kwargs):
+    """Behaves the same way as invoke.task. Adds the task
+    to the root namespace.
+    """
+    if len(args) == 1 and callable(args[0]):
+        new_task = invoke.task(args[0])
+        ns.add_task(new_task)
+        return new_task
+    def decorator(f):
+        new_task = invoke.task(f, *args, **kwargs)
+        ns.add_task(new_task)
+        return new_task
+    return decorator
 
 
 @task
@@ -635,7 +653,6 @@ def copy_settings(addons=False):
     if addons:
         copy_addon_settings()
 
-
 @task
 def packages():
     brew_commands = [
@@ -658,13 +675,6 @@ def packages():
         # TODO: Write a script similar to brew bundle for Ubuntu
         # e.g., run('sudo apt-get install [list of packages]')
         pass
-
-
-@task
-def npm_bower():
-    print('Installing bower')
-    run('npm install -g bower', echo=True)
-
 
 @task(aliases=['bower'])
 def bower_install():
@@ -898,61 +908,6 @@ def assets(dev=False, watch=False):
     # on prod
     webpack(clean=False, watch=watch, dev=dev)
 
-
-@task()
-def admin_assets(dev=False, watch=False):
-    """Install and build static assets for admin."""
-    if os.getcwd() != ADMIN_PATH:
-        os.chdir(ADMIN_PATH)
-    npm = 'npm install'
-    if not dev:
-        npm += ' --production'
-    run(npm, echo=True)
-    admin_bower_install()
-    # Always set clean=False to prevent possible mistakes
-    # on prod
-    admin_webpack(clean=False, watch=watch, dev=dev)
-
-
-@task(aliases=['admin-pack'])
-def admin_webpack(clean=False, watch=False, dev=False):
-    """Build static assets with webpack."""
-    if clean:
-        admin_clean_assets()
-    if os.getcwd() != ADMIN_PATH:
-        os.chdir(ADMIN_PATH)
-    webpack_bin = os.path.join(ADMIN_PATH, 'node_modules', 'webpack', 'bin',
-                               'webpack.js')
-    args = [webpack_bin]
-    if settings.DEBUG_MODE and dev:
-        args += ['--colors']
-    else:
-        args += ['--progress']
-    if watch:
-        args += ['--watch']
-    config_file = 'webpack.admin.config.js' if dev else 'webpack.prod.config.js'
-    args += ['--config {0}'.format(config_file)]
-    command = ' '.join(args)
-    run(command, echo=True)
-
-
-@task
-def admin_clean_assets():
-    """Remove built JS files."""
-    public_path = os.path.join(ADMIN_PATH, 'static', 'public')
-    js_path = os.path.join(public_path, 'js')
-    run('rm -rf {0}'.format(js_path), echo=True)
-
-
-@task(aliases=['adminbower'])
-def admin_bower_install():
-    if os.getcwd() != ADMIN_PATH:
-        os.chdir(ADMIN_PATH)
-    bower_bin = os.path.join(ADMIN_PATH, 'node_modules', 'bower', 'bin', 'bower')
-    run('{} prune'.format(bower_bin), echo=True)
-    run('{} install'.format(bower_bin), echo=True)
-
-
 @task
 def generate_self_signed(domain):
     """Generate self-signed SSL key and certificate.
@@ -962,7 +917,6 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
-
 
 @task
 def update_citation_styles():
