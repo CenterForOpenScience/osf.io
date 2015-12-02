@@ -26,6 +26,7 @@ class CitationsProvider(object):
                 valid = False
             else:
                 raise err
+
         return valid
 
     def user_accounts(self, user):

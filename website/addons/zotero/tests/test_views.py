@@ -17,6 +17,9 @@ from website.addons.zotero.tests.factories import (
     ZoteroNodeSettingsFactory
 )
 
+from framework.exceptions import HTTPError
+
+from pyzotero.zotero_errors import UserNotAuthorised, MissingCredentials
 from website.addons.zotero.provider import ZoteroCitationsProvider
 from website.addons.zotero.serializer import ZoteroSerializer
 
@@ -53,6 +56,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = ZoteroNodeSettingsFactory(owner=self.project)
         self.node_addon.set_auth(external_account=self.account, user=self.user)
+        self.provider = ZoteroCitationsProvider()
         #self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
         self.node = MockNode()
         self.node.addon = self.node_addon
@@ -66,6 +70,15 @@ class ZoteroViewsTestCase(OsfTestCase):
     def tearDown(self):
         self.id_patcher.stop()
         self.secret_patcher.stop()
+
+    @mock.patch('website.addons.zotero.model.Zotero.client', new_callable=mock.PropertyMock)
+    def test_zotero_check_credentials(self, mock_client):
+        mock_client.side_effect = HTTPError(403)
+        assert_false(self.provider.check_credentials(self.node_addon))
+
+        mock_client.side_effect = MissingCredentials
+        with assert_raises(MissingCredentials):
+            self.provider.check_credentials(self.node_addon)
 
     @mock.patch('website.addons.zotero.views.ZoteroCitationsProvider.check_credentials')
     def test_serialize_settings_authorizer(self, mock_check_credentials):

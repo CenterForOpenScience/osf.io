@@ -17,6 +17,8 @@ from website.addons.mendeley.tests.factories import (
     MendeleyNodeSettingsFactory
 )
 
+from framework.exceptions import HTTPError
+from website.addons.mendeley.provider import MendeleyCitationsProvider
 from website.addons.mendeley.serializer import MendeleySerializer
 
 from utils import mock_responses
@@ -57,6 +59,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = MendeleyNodeSettingsFactory(owner=self.project)
         self.node_addon.set_auth(external_account=self.account, user=self.user)
+        self.provider = MendeleyCitationsProvider()
         #self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
         self.node = MockNode()
         self.node.addon = self.node_addon
@@ -70,6 +73,15 @@ class MendeleyViewsTestCase(OsfTestCase):
     def tearDown(self):
         self.id_patcher.stop()
         self.secret_patcher.stop()
+
+    @mock.patch('website.addons.mendeley.model.Mendeley.client', new_callable=mock.PropertyMock)
+    def test_check_mendeley_credentials(self, mock_client):
+        mock_client.side_effect = HTTPError(403)
+        assert_false(self.provider.check_credentials(self.node_addon))
+
+        mock_client.side_effect = HTTPError(402)
+        with assert_raises(HTTPError):
+            self.provider.check_credentials(self.node_addon)
 
     @mock.patch('website.addons.mendeley.views.MendeleyCitationsProvider.check_credentials')
     def test_serialize_settings_authorizer(self, mock_credentials):

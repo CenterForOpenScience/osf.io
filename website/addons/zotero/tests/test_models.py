@@ -64,14 +64,6 @@ class ZoteroProviderTestCase(OsfTestCase):
             'Fake Key'
         )
 
-    @mock.patch('website.addons.zotero.provider.ZoteroCitationsProvider')
-    @mock.patch('website.addons.zotero.model.Zotero.client')
-    def test_check_credentials(self, mock_client, mock_citations_provider):
-        mock_client.collections.return_value = UserNotAuthorised
-        self.provider._client = mock_client
-        mock_citations_provider.check_credentials()
-        assert_raises(HTTPError(403))
-
 class ZoteroNodeSettingsTestCase(OsfTestCase):
 
     def setUp(self):
