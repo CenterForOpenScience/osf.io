@@ -114,8 +114,3 @@ height: 320px;
     background-color: #CCC;
     border-color: #BBB;
 }
-
-.tt-dropdown-menu {
-  max-height: 300px;
-  overflow-y: auto;
-}
