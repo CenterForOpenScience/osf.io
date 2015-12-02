@@ -11,7 +11,6 @@ from website.addons.onedrive.model import (
 )
 
 
-# TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
 class OneDriveUserSettingsFactory(ModularOdmFactory):
     FACTORY_FOR = OneDriveUserSettings
 
