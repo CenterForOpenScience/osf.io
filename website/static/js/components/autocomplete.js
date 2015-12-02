@@ -133,7 +133,7 @@ $.extend(DraftRegistrationsSearchViewModel.prototype, BaseSearchViewModel.protot
     },
     suggestionTemplate: function(item) {
         var dateUpdated = new $osf.FormattableDate(item.value.dateUpdated);
-        var dateCreated = new $osf.FormattableDate(item.value.dateCreated);
+        var dateInitiated = new $osf.FormattableDate(item.value.dateInitiated);
         // jQuery implicity escapes HTML
         return $('<div>').append(
             $('<p>', {
@@ -149,7 +149,7 @@ $.extend(DraftRegistrationsSearchViewModel.prototype, BaseSearchViewModel.protot
                     $('<p>').append(
                         $('<small>', {
                             className: 'm-l-md text-muted',
-                            text: 'Initiated: ' + dateCreated.local
+                            text: 'Initiated: ' + dateInitiated.local
                         })
                     ),
                     $('<p>').append(
