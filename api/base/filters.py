@@ -156,7 +156,7 @@ class FilterMixin(object):
         [u'12345', u'abcde']
         """
         separated_values = value.split(',')
-        cleaned_values = [re.sub(re.compile(r'\W'), '', val) for val in separated_values]
+        cleaned_values = [re.sub(r"[^\w\s]+]", '', val).strip() for val in separated_values]
         values = [self.convert_value(val, field) for val in cleaned_values]
         return values
 
