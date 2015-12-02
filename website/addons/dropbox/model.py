@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import httplib as http
 import logging
 
 from flask import request
@@ -7,6 +8,7 @@ from modularodm import fields
 from dropbox.client import DropboxOAuth2Flow, DropboxClient
 
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 from framework.sessions import session
 
 from website.util import web_url_for
@@ -59,12 +61,18 @@ class DropboxProvider(ExternalProvider):
 
     # Overrides ExternalProvider
     def auth_callback(self, user):
+        # TODO: consider not using client library during auth flow
         try:
             access_token, dropbox_user_id, url_state = self.oauth_flow.finish(request.values)
-        except DropboxOAuth2Flow.NotApprovedException:
-            # User cancelled, but client library raises exc.
-            # TODO: consider not using client library during auth flow
+        except (DropboxOAuth2Flow.NotApprovedException, DropboxOAuth2Flow.BadStateException):
+            # 1) user cancelled and client library raised exc., or
+            # 2) the state was manipulated, possibly due to time.
+            # Either way, return and display info about how to properly connect.
             return
+        except (DropboxOAuth2Flow.ProviderException, DropboxOAuth2Flow.CsrfException):
+            raise HTTPError(http.FORBIDDEN)
+        except DropboxOAuth2Flow.BadRequestException:
+            raise HTTPError(http.BAD_REQUEST)
 
         self.client = DropboxClient(access_token)
 
