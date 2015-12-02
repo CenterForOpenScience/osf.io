@@ -31,9 +31,7 @@
     ##      %endif
         % else:
         <p>
-          There have been no completed registrations of this project. You can start a new registration by clicking the “New Registration” button, 
-          and you have the option of saving as a draft registration before submission. For a list of the most viewed and most recent public 
-          registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
+          There have been no completed registrations of this project. You can start a new registration by clicking the “New Registration” button, and you have the option of saving as a draft registration before submission. For a list of the most viewed and most recent public registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
         </p>
         % endif
         %if parent_node['exists'] and user['is_admin_parent']:
