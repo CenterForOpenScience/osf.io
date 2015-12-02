@@ -875,7 +875,7 @@ RegistrationEditor.prototype.toPreview = function () {
     self.save().then(function() {
         self.dirtyCount(0);
         window.location.assign(self.draft().urls.register_page);
-    });
+    }).always($osf.unblock);
 };
 /**
  * Check that the Draft is valid before registering
@@ -992,7 +992,8 @@ RegistrationEditor.prototype.submit = function() {
                             label: 'Return to registrations page',
                             className: 'btn-primary pull-right',
                             callback: function() {
-                                window.location.href = self.draft().urls.registrations;
+                                window.location.assign(self.draft().urls.registrations);
+                                $osf.unblock();
                             }
                         }
                     }
@@ -1311,11 +1312,14 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
 RegistrationManager.prototype.editDraft = function(draft) {
     $osf.block();
     window.location.assign(draft.urls.edit);
+    $osf.unblock();
 };
 RegistrationManager.prototype.previewDraft = function(draft) {
     $osf.block();
     window.location.assign(draft.urls.register_page);
+    $osf.unblock();
 };
+
 
 module.exports = {
     Comment: Comment,
