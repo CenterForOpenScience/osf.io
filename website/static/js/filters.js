@@ -30,7 +30,8 @@ var $ = require('jquery');
                             -value: the selector that this field should search against
          */
         var settings = $.extend({
-            items: ['.items']
+            items: ['.items'],
+            manualRemove: false
         }, options);
 
         var itemsSelector = settings.items.join();
@@ -92,7 +93,7 @@ var $ = require('jquery');
         /**
          * called every time a search parameter changes or a filter is toggled
          *
-         * fades out items that should now be hidden and fades in anything that was hidden and now isn't
+         * hides items that should now be hidden and shows anything that was hidden and now isn't
          *
          * if there is a callback function, this function calls that with 'filtered' and 'empty' parameters
          */
@@ -102,10 +103,14 @@ var $ = require('jquery');
                 var self = this;
                 if (!search(self) || !filter(self)) {
                     activeItems.splice(activeItems.index(self), 1);
-                    $(self).fadeOut();
+                    if (!settings.manualRemove) {
+                        $(self).hide();
+                    }
                 }
             });
-            activeItems.fadeIn();
+            if (!settings.manualRemove){
+                activeItems.show();
+            }
             if (settings.callback !== undefined) {
                 var empty = [];
                 var filtered = [];
@@ -131,7 +136,9 @@ var $ = require('jquery');
          */
         var applyFilters = function() {
             var self = this;
-            $(self).toggleClass('btn-primary btn-default');
+            if (!!settings.toggleClass) {
+                $(self).toggleClass(settings.toggleClass);
+            }
             var group = self.parentElement.parentElement.id;
             var match = settings.groups[group].buttons[self.id];
             try {

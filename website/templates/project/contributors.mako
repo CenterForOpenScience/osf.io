@@ -10,7 +10,7 @@
 
 <div class="col-md-3 col-xs-12">
     <div class="filters">
-        <input type="text" class="form-control searchable" id="nameSearch" placeholder="Search by name"/>
+        <input type="text" class="form-control searchable" id="nameSearch" placeholder="Filter by name"/>
         <h5 class="m-t-md">Permissions
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
@@ -64,6 +64,8 @@
 
     <div data-bind="filters: {
             items: ['.contrib', '.admin'],
+            toggleClass: 'btn-default btn-primary',
+            manualRemove: true,
             groups: {
                 permissionFilter: {
                     filter: '.permission-filter',
@@ -274,7 +276,7 @@
 </script>
 
 <script id="contribRow" type="text/html">
-    <tr data-bind="click: unremove, css: {'contributor-delete-staged': $parent.deleteStaged}, attr: {class: $parent}">
+    <tr data-bind="visible: !contributor.filtered(), click: unremove, css: {'contributor-delete-staged': $parent.deleteStaged}, attr: {class: $parent}">
         <td data-bind="attr: {class: contributor.expanded() ? 'expanded' : null,
                                 role: $root.collapsed() ? 'button' : null},
                        click: $root.collapsed() ? toggleExpand : null">

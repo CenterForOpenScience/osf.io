@@ -138,7 +138,7 @@
                             <div class="panel-heading card-heading" data-bind="click: $parent.toggle, attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false">
                                 <div class="header-content">
                                     <h5 class="institution">{{ institution }}</h5>
-                                    <span data-bind="ifnot: startYear() === null" class="subheading">{{ startMonth }} {{startYear }} - {{ endView }}</span>
+                                    <span data-bind="if: startYear()" class="subheading">{{ startMonth }} {{startYear }} - {{ endView }}</span>
                                 </div>
                                 <span class="fa fa-angle-down toggle-icon"></span>
                             </div>
@@ -146,7 +146,7 @@
                                 <div class="panel-body">
                                     <span data-bind="if: department().length"><h5>Department:</h5> {{ department }}</span>
                                     <span data-bind="if: degree().length"><h5>Degree:</h5> {{ degree }}</span>
-                                    <span data-bind="ifnot: startYear() === null"><h5>Dates:</h5> {{ startMonth }} {{startYear }} - {{ endView }}</span>
+                                    <span data-bind="if: startYear()"><h5>Dates:</h5> {{ startMonth }} {{startYear }} - {{ endView }}</span>
                                 </div>
                             </div>
                         </div>

@@ -47,8 +47,8 @@ $(function() {
 });
 
 $(window).load(function() {
-    cm.viewModel.checkWindowWidth();
-    privateLinkTable.viewModel.checkWindowWidth();
+    cm.viewModel.onWindowResize();
+    privateLinkTable.viewModel.onWindowResize();
     if (linkTable !== undefined) {
         rt.responsiveTable(linkTable[0]);
     }
@@ -58,6 +58,6 @@ $(window).load(function() {
 });
 
 $(window).resize(function() {
-    privateLinkTable.viewModel.checkWindowWidth();
-    cm.viewModel.checkWindowWidth();
+    privateLinkTable.viewModel.onWindowResize();
+    cm.viewModel.onWindowResize();
 });

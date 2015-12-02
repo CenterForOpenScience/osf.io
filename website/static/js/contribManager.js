@@ -25,17 +25,7 @@ ko.bindingHandlers.filters = {
     init: function(element, valueAccessor, allBindingsAccessor, data, context) {
         var $element = $(element);
         var value = ko.utils.unwrapObservable(valueAccessor()) || {};
-        value.callback = function (filtered, empty, activeItems) {
-            $.each(activeItems, function (i, contributor) {
-                activeItems[i] = ko.dataFor(contributor);
-            });
-            $.each(data.contributors(), function (i, contributor) {
-                contributor.filtered($.inArray(contributor, activeItems) === -1);
-            });
-            $.each(data.adminContributors(), function (i, contributor) {
-                contributor.filtered($.inArray(contributor, activeItems) === -1);
-            });
-        };
+        value.callback = data.callback;
         $element.filters(value);
     }
 };
@@ -253,25 +243,37 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     self.adminContributors = ko.observableArray();
 
-    self.filteredContribs = ko.computed(function() {
+    self.filteredContribs = ko.pureComputed(function() {
         return ko.utils.arrayFilter(self.contributors(), function(item) {
             return item.filtered();
         });
     });
 
-    self.filteredAdmins = ko.computed(function() {
+    self.filteredAdmins = ko.pureComputed(function() {
         return ko.utils.arrayFilter(self.adminContributors(), function(item) {
             return item.filtered();
         });
     });
 
-    self.empty = ko.computed(function() {
+    self.empty = ko.pureComputed(function() {
         return (self.contributors().length - self.filteredContribs().length) === 0;
     });
 
-    self.adminEmpty = ko.computed(function() {
+    self.adminEmpty = ko.pureComputed(function() {
         return (self.adminContributors().length - self.filteredAdmins().length === 0);
     });
+
+    self.callback = function (filtered, empty, activeItems) {
+        $.each(activeItems, function (i, contributor) {
+            activeItems[i] = ko.dataFor(contributor);
+        });
+        $.each(self.contributors(), function (i, contributor) {
+            contributor.filtered($.inArray(contributor, activeItems) === -1);
+        });
+        $.each(self.adminContributors(), function (i, contributor) {
+            contributor.filtered($.inArray(contributor, activeItems) === -1);
+        });
+    };
 
     self.user = ko.observable(user);
     self.canEdit = ko.computed(function() {
@@ -441,9 +443,8 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     self.collapsed = ko.observable(true);
 
-    self.checkWindowWidth = function() {
+    self.onWindowResize = function() {
         self.collapsed(self.table.children().filter('thead').is(':hidden'));
-        self.table.find('tbody>tr').css('display', '');
     };
 };
 

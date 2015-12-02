@@ -158,7 +158,7 @@ function ViewModel(url, nodeIsPublic, table) {
     self.afterRenderLink = function(elm, data) {
         var $tr = $(elm);
         if (self.privateLinks().indexOf(ko.dataFor($tr[1])) === 0) {
-            self.checkWindowWidth();
+            self.onWindowResize();
         }
         var target = $tr.find('button>i.fa.fa-copy')[0].parentElement;
         clipboard(target);
@@ -169,7 +169,7 @@ function ViewModel(url, nodeIsPublic, table) {
 
     self.table = $(table);
 
-    self.checkWindowWidth = function () {
+    self.onWindowResize = function () {
         self.collapsed(self.table.children().filter('thead').is(':hidden'));
     };
 
