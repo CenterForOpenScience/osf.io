@@ -1614,10 +1614,13 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.save()
 
 class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    base_permissions = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
+    permission_classes = ()
+
+    required_read_scopes = []
+    required_write_scopes = []
     serializer_class = InstitutionDetailSerializer
+
+    model = Institution
     view_category = 'nodes'
     view_name = 'node-institution-detail'
 
