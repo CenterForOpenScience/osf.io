@@ -158,10 +158,7 @@ class FilterMixin(object):
         if value[0] == '[' and value[-1] == ']':
             value = value.replace('[', '').replace(']', '')
         separated_values = value.split(',')
-        cleaned_values = []
-        for val in separated_values:
-            cleaned_values.append(val.strip())
-        values = [self.convert_value(val, field) for val in cleaned_values]
+        values = [self.convert_value(val.strip(), field) for val in separated_values]
         return values
 
     def parse_query_params(self, query_params):
