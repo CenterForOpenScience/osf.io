@@ -108,6 +108,45 @@ class TestNodeFiltering(ApiTestCase):
         super(TestNodeFiltering, self).tearDown()
         Node.remove()
 
+    def test_filtering_by_id(self):
+        url = '/{}nodes/?filter[id]={}'.format(API_BASE, self.project_one._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_equal(len(ids), 1)
+
+    def test_filtering_by_multiple_ids(self):
+        url = '/{}nodes/?filter[id]={},{}'.format(API_BASE, self.project_one._id, self.project_two._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_equal(len(ids), 2)
+
+    def test_filtering_by_multiple_ids_one_private(self):
+        url = '/{}nodes/?filter[id]={},{}'.format(API_BASE, self.project_one._id, self.private_project_user_two._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_equal(len(ids), 1)
+
+    def test_filtering_by_multiple_ids_incorrect_syntax_in_query_params(self):
+        url = '/{}nodes/?filter[id]=[{},   {}]'.format(API_BASE, self.project_one._id, self.project_two._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_equal(len(ids), 2)
+
     def test_filtering_by_category(self):
         project = ProjectFactory(creator=self.user_one, category='hypothesis')
         project2 = ProjectFactory(creator=self.user_one, category='procedure')
