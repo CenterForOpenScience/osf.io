@@ -42,7 +42,7 @@ from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.files.models import FileNode
 from website.files.models import OsfStorageFileNode
-from website.models import Node, Pointer, Comment
+from website.models import Node, Pointer, Comment, Institution
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
 
@@ -1613,8 +1613,14 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['node'] = node
         serializer.save()
 
-class NodeInstitutionDetail(JSONAPIBaseView):
+class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     base_permissions = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
     serializer_class = InstitutionDetailSerializer
+    view_category = 'nodes'
+    view_name = 'node-institution-detail'
+
+    def get_object(self):
+        node = self.get_node()
+        return node.primary_institution

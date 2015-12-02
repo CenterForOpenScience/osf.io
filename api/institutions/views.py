@@ -10,6 +10,7 @@ from api.users.serializers import UserSerializer, UserDetailSerializer
 
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.utils import get_object_or_error
 
 class InstitutionList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView):
     permission_classes = ()
@@ -31,7 +32,7 @@ class InstitutionList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView):
         return Institution.find(query)
 
 
-class InstitutionDetail(JSONAPIBaseView):
+class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = ()
 
     required_read_scopes = []
@@ -41,6 +42,14 @@ class InstitutionDetail(JSONAPIBaseView):
     serializer_class = InstitutionDetailSerializer
     view_category = 'institutions'
     view_name = 'institution-detail'
+
+    def get_object(self):
+        inst = get_object_or_error(
+            Institution,
+            self.kwargs['institution_id'],
+            display_name='institution'
+        )
+        return inst
 
 class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView):
     permission_classes = ()
@@ -70,10 +79,15 @@ class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     serializer_class = NodeDetailSerializer
     view_category = 'institutions'
-    view_name = 'institution-node-serializer'
+    view_name = 'institution-node-detail'
 
     def get_object(self):
-        pass
+        node = get_object_or_error(
+            Node,
+            self.kwargs['node_id'],
+            display_name='node'
+        )
+        return node
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView):
     permission_classes = ()
@@ -105,4 +119,10 @@ class InstitutionUserDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'institution-user-detail'
 
     def get_object(self):
-        pass
+        user = get_object_or_error(
+            User,
+            self.kwargs['user_id'],
+            display_name='user'
+        )
+        return user
+
