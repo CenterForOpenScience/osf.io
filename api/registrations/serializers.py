@@ -20,7 +20,8 @@ class RegistrationSerializer(NodeSerializer):
     pending_embargo = HideIfRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
         help_text='Is this registration pending embargo?'))
     registered_meta = HideIfRetraction(ser.SerializerMethodField(
-        help_text='Includes a dictionary with embargo end date and answers to supplemental registration questions'))
+        help_text='A dictionary with embargo end date, whether registration choice was immediate or embargoed,'
+                  ' and answers to supplemental registration questions'))
     registration_supplement = ser.SerializerMethodField()
 
     registered_by = HideIfRetraction(RelationshipField(
