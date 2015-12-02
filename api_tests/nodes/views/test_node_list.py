@@ -104,6 +104,13 @@ class TestNodeFiltering(ApiTestCase):
 
         self.url = "/{}nodes/".format(API_BASE)
 
+        self.tag1, self.tag2 = 'tag1', 'tag2'
+        self.project_one.add_tag(self.tag1, Auth(self.project_one.creator), save=False)
+        self.project_one.add_tag(self.tag2, Auth(self.project_one.creator), save=False)
+        self.project_one.save()
+
+        self.project_two.add_tag(self.tag1, Auth(self.project_two.creator), save=True)
+
     def tearDown(self):
         super(TestNodeFiltering, self).tearDown()
         Node.remove()
@@ -159,6 +166,29 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(project._id, ids)
         assert_not_in(project2._id, ids)
 
+    def test_filtering_by_multiple_categories(self):
+        instrumentation = ProjectFactory(category='instrumentation', creator=self.user_one)
+        hypothesis = ProjectFactory(creator=self.user_one, category='hypothesis')
+
+        url = '/{}nodes/?filter[category]={},{}'.format(API_BASE, 'hypothesis', 'instrumentation')
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(instrumentation._id, ids)
+        assert_in(hypothesis._id, ids)
+        assert_equal(len(ids), 2)
+
+    def test_filtering_by_multiple_titles(self):
+        url = '/{}nodes/?filter[title]={},{}'.format(API_BASE, 'Project One', 'Project Two')
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_equal(len(ids), 2)
+
     def test_filtering_by_public(self):
         project = ProjectFactory(creator=self.user_one, is_public=True)
         project2 = ProjectFactory(creator=self.user_one, is_public=False)
@@ -190,15 +220,8 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(project._id, ids)
 
     def test_filtering_tags(self):
-        tag1, tag2 = 'tag1', 'tag2'
-        self.project_one.add_tag(tag1, Auth(self.project_one.creator), save=False)
-        self.project_one.add_tag(tag2, Auth(self.project_one.creator), save=False)
-        self.project_one.save()
-
-        self.project_two.add_tag(tag1, Auth(self.project_two.creator), save=True)
-
         # both project_one and project_two have tag1
-        url = '/{}nodes/?filter[tags]={}'.format(API_BASE, tag1)
+        url = '/{}nodes/?filter[tags]={}'.format(API_BASE, self.tag1)
 
         res = self.app.get(url, auth=self.project_one.creator.auth)
         node_json = res.json['data']
@@ -209,7 +232,7 @@ class TestNodeFiltering(ApiTestCase):
 
         # filtering two tags
         # project_one has both tags; project_two only has one
-        url = '/{}nodes/?filter[tags]={}&filter[tags]={}'.format(API_BASE, tag1, tag2)
+        url = '/{}nodes/?filter[tags]={}&filter[tags]={}'.format(API_BASE, self.tag1, self.tag2)
 
         res = self.app.get(url, auth=self.project_one.creator.auth)
         node_json = res.json['data']
@@ -217,6 +240,17 @@ class TestNodeFiltering(ApiTestCase):
         ids = [each['id'] for each in node_json]
         assert_in(self.project_one._id, ids)
         assert_not_in(self.project_two._id, ids)
+
+    def test_filtering_multiple_tags(self):
+        url = '/{}nodes/?filter[tags]={},{}'.format(API_BASE, self.tag1, self.tag2)
+
+        res = self.app.get(url, auth=self.project_one.creator.auth)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_equal(len(ids), 2)
 
     def test_get_all_projects_with_no_filter_logged_in(self):
         res = self.app.get(self.url, auth=self.user_one.auth)
@@ -347,6 +381,19 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
+
+    def test_filtering_by_multiple_descriptions(self):
+        project = ProjectFactory(description='hello there', creator=self.user_one)
+        project_two = ProjectFactory(description='hi', creator=self.user_one)
+
+        url = "/{}nodes/?filter[description]={},{}".format(API_BASE, 'hi', 'hello there')
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(project._id, ids)
+        assert_in(project_two._id, ids)
+        assert_equal(len(ids), 2)
 
     def test_alternate_filtering_field_not_logged_in(self):
         url = "/{}nodes/?filter[description]=Three".format(API_BASE)
