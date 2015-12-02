@@ -745,6 +745,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked', index=True)
     registered_from = fields.ForeignField('node', backref='registrations', index=True)
+    ultimate_parent = fields.ForeignField('node', backref='ultimate_parent', index=True)
 
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
@@ -1366,11 +1367,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'node': self._primary_key,
             }
 
+            ultimate_parent = self._primary_key
             if getattr(self, 'parent', None):
                 # Append log to parent
                 self.parent.nodes.append(self)
                 self.parent.save()
                 log_params.update({'parent_node': self.parent._primary_key})
+
+                # TODO Remove entire if statement after ultimate_parent migration
+                if getattr(self.parent, 'ultimate_parent', None):
+                    ultimate_parent = self.parent.ultimate_parent
+
+            self.ultimate_parent = ultimate_parent
 
             # Add log with appropriate fields
             self.add_log(
