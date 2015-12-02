@@ -88,7 +88,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def fetch_folder_name(self):
         self._update_folder_data()
-        return (getattr(self, 'folder_name') or '').replace('All Files', '/ (Full Box)')
+        return getattr(self, 'folder_name', '').replace('All Files', '/ (Full Box)')
 
     def fetch_full_folder_path(self):
         self._update_folder_data()
