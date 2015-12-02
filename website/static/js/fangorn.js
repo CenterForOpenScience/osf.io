@@ -767,7 +767,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else if (xhr && xhr.status === 0){
         msgText = 'Unable to reach the provider, please try again later. If the ' +
-                'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.';
+                'problem persists, please contact support@osf.io.';
     } else {
         msgText = message.message || DEFAULT_ERROR_MESSAGE;
     }
