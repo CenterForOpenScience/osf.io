@@ -57,8 +57,6 @@ class NodeSerializer(JSONAPISerializer):
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
 
-    institution = ser.CharField(required=False, source='institution_id')
-
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
                               help_text='Nodes that are made public will give read-only access '
@@ -118,7 +116,7 @@ class NodeSerializer(JSONAPISerializer):
     ))
 
     primary_institution = RelationshipField(
-        related_view='nodes:node-institution-detail',
+        related_view='nodes:node-institutions',
         related_view_kwargs={'node_id': '<pk>'}
     )
 
@@ -194,12 +192,6 @@ class NodeSerializer(JSONAPISerializer):
         institution = validated_data.get('institution_id')
         if institution is not None:
             del validated_data['institution_id']
-            if institution == 'None':
-                node.remove_primary_institution()
-            else:
-                institution = Institution.load(institution)
-                if institution:
-                    node.add_primary_institution(user=auth.user, inst=institution)
         if validated_data:
             try:
                 node.update(validated_data, auth=auth)

@@ -754,9 +754,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Primary institution node is attached to
     primary_institution = fields.ForeignField('institution', backref='node')
 
-    def institution_id(self):
-        return self.primary_institution._id if self.primary_institution else 'None'
-
     def add_primary_institution(self, user, inst):
         if inst.auth(user):
             self.primary_institution = inst

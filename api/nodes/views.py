@@ -27,7 +27,7 @@ from api.nodes.serializers import (
     NodeContributorsCreateSerializer
 )
 from api.registrations.serializers import RegistrationSerializer
-from api.institutions.serializers import InstitutionDetailSerializer
+from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
@@ -1728,17 +1728,17 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['node'] = node
         serializer.save()
 
-class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+class NodeInstitutionList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     permission_classes = ()
 
     required_read_scopes = []
     required_write_scopes = []
-    serializer_class = InstitutionDetailSerializer
+    serializer_class = InstitutionSerializer
 
     model = Institution
     view_category = 'nodes'
-    view_name = 'node-institution-detail'
+    view_name = 'node-institutions'
 
-    def get_object(self):
+    def get_queryset(self):
         node = self.get_node()
-        return node.primary_institution
+        return [node.primary_institution]
