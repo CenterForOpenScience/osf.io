@@ -115,8 +115,18 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_in('Invalid link name.', res.body)
 
-    def test_not_anonymous_for_public_project(self):
+    def test_anonymous_for_anonymous_public_project(self):
         anonymous_link = PrivateLinkFactory(anonymous=True)
+        anonymous_link.nodes.append(self.project)
+        anonymous_link.save()
+        self.project.set_privacy('public')
+        self.project.save()
+        self.project.reload()
+        auth = Auth(user=self.user, private_key=anonymous_link.key)
+        assert_true(has_anonymous_link(self.project, auth))
+
+    def test_not_anonymous_for_not_anonymous_public_project(self):
+        anonymous_link = PrivateLinkFactory(anonymous=False)
         anonymous_link.nodes.append(self.project)
         anonymous_link.save()
         self.project.set_privacy('public')
