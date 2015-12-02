@@ -28,6 +28,7 @@ from api.nodes.serializers import (
     NodeContributorsCreateSerializer
 )
 from api.registrations.serializers import RegistrationSerializer
+from api.institutions.serializers import InstitutionDetailSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
@@ -1611,3 +1612,9 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['target'] = node
         serializer.validated_data['node'] = node
         serializer.save()
+
+class NodeInstitutionDetail(JSONAPIBaseView):
+    base_permissions = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+    serializer_class = InstitutionDetailSerializer
