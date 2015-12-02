@@ -148,6 +148,18 @@ class FilterMixin(object):
                 'value': stop
             }]
 
+    def bulk_get_values(self, value, field):
+        """
+        Returns list of values from query_param for IN query
+
+        If url contained `/nodes/?filter[id]=12345, abcde`, the returned values would be:
+        [u'12345', u'abcde']
+        """
+        separated_values = value.split(',')
+        cleaned_values = [re.sub(re.compile(r'\W'), '', val) for val in separated_values]
+        values = [self.convert_value(val, field) for val in cleaned_values]
+        return values
+
     def parse_query_params(self, query_params):
         """Maps query params to a dict useable for filtering
         :param dict query_params:
