@@ -1355,6 +1355,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
+        ultimate_parent = self._primary_key
+        if getattr(self, 'parent', None):
+            # TODO Remove if statement after ultimate_parent migration
+            if getattr(self.parent, 'ultimate_parent', None):
+                ultimate_parent = self.parent.ultimate_parent
+
+        self.ultimate_parent = ultimate_parent
+
         if first_save and is_original and not suppress_log:
             # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
@@ -1367,18 +1375,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'node': self._primary_key,
             }
 
-            ultimate_parent = self._primary_key
             if getattr(self, 'parent', None):
                 # Append log to parent
                 self.parent.nodes.append(self)
                 self.parent.save()
                 log_params.update({'parent_node': self.parent._primary_key})
-
-                # TODO Remove entire if statement after ultimate_parent migration
-                if getattr(self.parent, 'ultimate_parent', None):
-                    ultimate_parent = self.parent.ultimate_parent
-
-            self.ultimate_parent = ultimate_parent
 
             # Add log with appropriate fields
             self.add_log(
