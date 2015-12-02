@@ -29,7 +29,7 @@ class DropboxProvider(ExternalProvider):
     client_id = settings.DROPBOX_KEY
     client_secret = settings.DROPBOX_SECRET
 
-    # Explicitly override auth_url_base as None -- BoxOAuth2Flow handles this for us
+    # Explicitly override auth_url_base as None -- DropboxOAuth2Flow handles this for us
     auth_url_base = None
     callback_url = None
     handle_callback = None

@@ -346,7 +346,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         )
         assert_equal(clone.user_settings, self.user_settings)
 
-    def test_after_fork_by_unauthorized_box_user(self):
+    def test_after_fork_by_unauthorized_user(self):
         fork = ProjectFactory()
         user = UserFactory()
         clone, message = self.node_settings.after_fork(
