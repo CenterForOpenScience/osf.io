@@ -21,11 +21,8 @@ class ModelTests(OsfTestCase):
 
     def test_model_success(self):
         alt_citation = AlternativeCitation(name='test', text='citation')
-        try:
-            alt_citation.save()
-            self.node.alternativeCitations.append(alt_citation)
-        except ValidationError:
-            pass
+        alt_citation.save()
+        self.node.alternativeCitations.append(alt_citation)
         assert_equal(len(self.node.alternativeCitations), 2)
 
     def test_model_no_name(self):

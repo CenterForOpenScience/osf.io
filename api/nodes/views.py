@@ -1551,11 +1551,7 @@ class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, 
     view_name = 'alternative-citations'
 
     def get_queryset(self):
-        return [
-            citation
-            for citation
-            in self.get_node().alternativeCitations
-        ]
+        return self.get_node().alternativeCitations
 
 class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Details about an alternative citations for a project.

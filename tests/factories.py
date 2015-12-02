@@ -565,7 +565,6 @@ class AlternativeCitationFactory(ModularOdmFactory):
             name=name,
             text=text
         )
-        print instance
         instance.save()
         return instance
 

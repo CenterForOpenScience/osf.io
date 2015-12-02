@@ -278,7 +278,7 @@
                             <span class="citation-text" data-bind="text: mla"></span>
                         <div class="citation-name m-t-md">Chicago</div>
                             <span class="citation-text" data-bind="text: chicago"></span>
-                        <div data-bind="foreach: citations">
+                        <div data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}, foreach: citations">
                             <!-- ko if: view() === 'view' -->
                                 <div class="citation-name m-t-md">{{name}}
                                     % if 'admin' in user['permissions'] and not node['is_registration']:
@@ -291,10 +291,14 @@
                                 <span data-bind="text: text"></span>
                             <!-- /ko -->
                             <!-- ko if: view() === 'edit' -->
-                                <div class="citation-name m-t-md">Name</div>
+                                <div class="citation-name m-t-md">Citation Name</div>
                                 <input data-bind="if: name !== undefined, value: name" class="form-control"/>
                                 <div class="citation-name m-t-sm">Citation</div>
                                 <textarea data-bind="if: text !== undefined, value: text" class="form-control" rows="4"></textarea>
+                                <div data-bind="visible: showMessages, css: 'text-danger'">
+                                    <p class="m-t-sm" data-bind="validationMessage: name"></p>
+                                    <p class="m-t-sm" data-bind="validationMessage: text"></p>
+                                </div>
                                 <div class="m-t-sm" data-bind="foreach: {data: messages, as: 'message'}">
                                     <p class="text-danger" data-bind="text: message"></p>
                                 </div>

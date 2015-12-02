@@ -381,53 +381,57 @@ class NodeProviderSerializer(JSONAPISerializer):
 class NodeAlternativeCitationSerializer(JSONAPISerializer):
 
     id = IDField(source="_id", read_only=True)
-    name = ser.CharField(read_only=True)
-    text = ser.CharField(read_only=True)
+    type = TypeField()
+    name = ser.CharField()
+    text = ser.CharField()
 
     class Meta:
         type_ = 'citations'
 
     def create(self, validated_data):
-        data = self.context['request'].data
         node = self.context['view'].get_node()
+        errors = self.error_checker(validated_data, node)
 
-        errors = []
-        name_exists = node.alternativeCitations.find(Q('name', 'eq', data['name'])
-                                                     & Q('_id', 'ne', data['id'])).count() > 0
-        if name_exists:
-            errors.append("There is already an alternative citation named '{}'".format(data['name']))
-        matching_citations = node.alternativeCitations.find(Q('text', 'eq', data['text'])
-                                                            & Q('_id', 'ne', data['id']))
-        if matching_citations.count() > 0:
-            names = "', '".join([str(citation.name) for citation in matching_citations])
-            errors.append("Citation matches '{}'".format(names))
-        if name_exists or matching_citations.count() > 0:
+        if len(errors) > 0:
             raise ValidationError(detail=errors)
         else:
-            citation = AlternativeCitation(text=data['text'], name=data['name'])
+            citation = AlternativeCitation(text=validated_data['text'], name=validated_data['name'])
             citation.save()
             node.alternativeCitations.append(citation)
             node.save()
             return citation
 
     def update(self, instance, validated_data):
-        data = self.context['request'].data
         node = self.context['view'].get_node()
-        errors = []
-        name_exists = node.alternativeCitations.find(Q('name', 'eq', data['name'])
-                                                     & Q('_id', 'ne', data['id'])).count() > 0
-        if name_exists:
-            errors.append("There is already an alternative citation named '{}'".format(data['name']))
-        matching_citations = node.alternativeCitations.find(Q('text', 'eq', data['text'])
-                                                            & Q('_id', 'ne', data['id']))
-        if matching_citations.count() > 0:
-            names = "', '".join([str(citation.name) for citation in matching_citations])
-            errors.append("Citation matches '{}'".format(names))
-        if name_exists or matching_citations.count() > 0:
+        errors = self.error_checker(validated_data, node, instance=instance)
+
+        if len(errors) > 0:
             raise ValidationError(detail=errors)
         else:
-            citation = node.alternativeCitations.find(Q('_id', 'eq', str(data['id'])))[0]
-            citation.name = data['name']
-            citation.text = data['text']
-            citation.save()
-            return citation
+            instance.name = validated_data.get('name') or instance.name
+            instance.text = validated_data.get('text') or instance.text
+            instance.save()
+            return instance
+
+    def error_checker(self, data, node, instance=None):
+        errors = []
+
+        if 'name' not in data or (instance is not None and instance.name == data['name']):
+            name_exists = False
+        else:
+            name_exists = node.alternativeCitations.find(Q('name', 'eq', data['name'])).count() > 0
+
+        if name_exists:
+            errors.append("There is already an alternative citation named '{}'".format(data['name']))
+
+        if 'text' not in data or (instance is not None and instance.text == data['text']):
+            matches_citation = False
+        else:
+            matching_citations = node.alternativeCitations.find(Q('text', 'eq', data['text']))
+            matches_citation = matching_citations.count() > 0
+
+        if matches_citation:
+            names = "', '".join([str(citation.name) for citation in matching_citations])
+            errors.append("Citation matches '{}'".format(names))
+
+        return errors

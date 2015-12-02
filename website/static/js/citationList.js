@@ -2,6 +2,8 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+require('knockout.validation');
+//require('knockout.punches');
 var $osf = require('./osfHelpers');
 var citations = require('./citations');
 var bootbox = require('bootbox');
@@ -30,13 +32,13 @@ var ViewModel = function(citations, user) {
     self.citations = ko.observableArray([]);
 
     self.citations(citations.map(function(item) {
-            return new AlternativeModel(item, 'view');
-        }));
+        return new AlternativeModel(item, 'view', self);
+    }));
 
     self.editing = ko.observable(false);
 
     self.addAlternative = function() {
-        self.citations.push(new AlternativeModel());
+        self.citations.push(new AlternativeModel(null, null, self));
         self.editing(true);
     };
     self.apa = ko.observable();
@@ -44,11 +46,11 @@ var ViewModel = function(citations, user) {
     self.chicago = ko.observable();
 };
 
-var AlternativeModel = function(citation, view) {
+var AlternativeModel = function(citation, view, parent) {
     var self = this;
 
     self.init = function() {
-        if (citation !== undefined) {
+        if (!!citation) {
             $.extend(self, citation);
             self.name = ko.observable(citation.name);
             self.text = ko.observable(citation.text);
@@ -67,6 +69,47 @@ var AlternativeModel = function(citation, view) {
         }
 
         self.messages = ko.observableArray([]);
+        self.name.extend({
+            required: {
+                message: '\'Citation Name\' is required'
+            },
+            validation: {
+                validator: function() {
+                    for (var i = 0, citation; citation = parent.citations()[i]; i++) {
+                        if (citation !== self) {
+                            if (citation.name() === self.name()) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                },
+                'message': function() {
+                    return 'There is already an alternative citation named \'' + self.name() + '\'';
+                }
+            }
+        });
+        self.text.extend({
+            required: {
+                message: '\'Citation\' is required'
+            },
+            validation: {
+                validator: function() {
+                    self.matchesText = [];
+                    for (var i = 0, citation; citation = parent.citations()[i]; i++) {
+                        if (citation !== self) {
+                            if (citation.text() === self.text()) {
+                                self.matchesText.push(citation.name());
+                            }
+                        }
+                    }
+                    return self.matchesText.length === 0;
+                },
+                'message': function() {
+                    return 'Citation matches \'' + self.matchesText.join(', ') + '\'';
+                }
+            }
+        });
     };
 
     self.removeSelf = function(parent) {
@@ -74,18 +117,20 @@ var AlternativeModel = function(citation, view) {
             bootbox.confirm({
                 title: 'Delete citation?',
                 message: ('Are you sure you want to remove this citation (<strong>' + $osf.htmlEscape(self.name()) + '</strong>)?'),
-                callback: function () {
-                    $osf.ajaxJSON('DELETE', $osf.apiV2Url('nodes/' + ctx.node.id + '/citations/' + self.id + '/'), {isCors: true}).done(function(response) {
-                        var index = parent.citations.indexOf(self);
-                        parent.citations.splice(index, 1);
-                        if (parent.editing()) {
-                            parent.editing(false);
-                        }
-                    }).fail(function(response){
-                        $osf.growl('Error:',
-                            'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: support@cos.io">support@cos.io</a>', 'danger'
-                        );
-                    });
+                callback: function (confirmed) {
+                    if (confirmed) {
+                        $osf.ajaxJSON('DELETE', $osf.apiV2Url('nodes/' + ctx.node.id + '/citations/' + self.id + '/'), {isCors: true}).done(function(response) {
+                            var index = parent.citations.indexOf(self);
+                            parent.citations.splice(index, 1);
+                            if (parent.editing()) {
+                                parent.editing(false);
+                            }
+                        }).fail(function(response){
+                            $osf.growl('Error:',
+                                'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: support@cos.io">support@cos.io</a>', 'danger'
+                            );
+                        });
+                    }
                 },
                 buttons:{
                     confirm:{
@@ -112,42 +157,27 @@ var AlternativeModel = function(citation, view) {
     };
 
     self.save = function(parent) {
-        self.messages([]);
-        if (self.name() === undefined || self.name().length === 0) {
-            self.messages.push('\'Name\' is required');
-        }
-        if (self.text() === undefined || self.text().length === 0) {
-            self.messages.push('\'Citation\' is required');
-        }
-        for (var i = 0, citation; citation = parent.citations()[i]; i++) {
-            if (citation !== self) {
-                if (citation.name() === self.name()) {
-                    self.messages.push('There is already an alternative citation named \'' + self.name() + '\'');
-                }
-                if (citation.text() === self.text()) {
-                    self.messages.push('Citation matches \'' + citation.name() + '\'');
-                }
-            }
-        }
-        if (self.messages().length === 0) {
-            var url = $osf.apiV2Url('nodes/' + ctx.node.id + '/citations/');
-            var payload = {};
-            var method = 'POST';
-            payload.data = {
-                'type': 'citations',
-                'attributes': {
-                    'name': self.name(),
-                    'text': self.text()
-                }
-            };
-            if (self.id !== undefined) {
-                url += self.id + '/';
+        if (self.isValid()) {
+            self.messages([]);
+            if (self.messages().length === 0) {
+                var url = $osf.apiV2Url('nodes/' + ctx.node.id + '/citations/');
+                var payload = {};
+                var method = 'POST';
+                payload.data = {
+                    'type': 'citations',
+                    'attributes': {
+                        'name': self.name(),
+                        'text': self.text()
+                    }
+                };
+                if (self.id !== undefined) {
+                    url += self.id + '/';
 
-                payload.data.attributes.id = self.id;
-                method = 'PUT';
-            }
-            $osf.ajaxJSON(method, url, {data: payload, isCors: true}).done(function(response) {
-                var data = response.data;
+                    payload.data.attributes.id = self.id;
+                    method = 'PUT';
+                }
+                $osf.ajaxJSON(method, url, {data: payload, isCors: true}).done(function (response) {
+                    var data = response.data;
                     parent.editing(false);
                     self.view('view');
                     self.id = data.id;
@@ -161,18 +191,22 @@ var AlternativeModel = function(citation, view) {
                             text: self.text()
                         };
                     }
-            }).fail(function(response) {
-                if (response.status === 400) {
-                    for (var i = 0, error; error = response.responseJSON.errors[i]; i++) {
-                        self.messages.push(error.detail);
+                }).fail(function (response) {
+                    if (response.status === 400) {
+                        for (var i = 0, error; error = response.responseJSON.errors[i]; i++) {
+                            self.messages.push(error.detail);
+                        }
                     }
-                }
-                else {
-                    $osf.growl('Error:',
-                        'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: support@cos.io">support@cos.io</a>', 'danger'
-                    );
-                }
-            });
+                    else {
+                        $osf.growl('Error:',
+                            'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: support@cos.io">support@cos.io</a>', 'danger'
+                        );
+                    }
+                });
+            }
+        }
+        else {
+            self.showMessages(true);
         }
     };
 
@@ -183,6 +217,14 @@ var AlternativeModel = function(citation, view) {
         self.view('edit');
     };
     self.init();
+
+    var validated = ko.validatedObservable(self);
+
+    self.isValid = ko.computed(function() {
+        return validated.isValid();
+    });
+
+    self.showMessages = ko.observable(false);
 };
 
 ViewModel.prototype.fetch = function() {
