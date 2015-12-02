@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
 import datetime
-import re
 from dateutil import parser
 
 from nose.tools import *  # flake8: noqa
-import mock
 
 from rest_framework import serializers as ser
 
 from tests.base import ApiTestCase
-from tests import factories
 
-from api.base.settings.defaults import API_BASE
 from api.base.filters import FilterMixin
 
 from api.base.exceptions import (
@@ -19,8 +15,7 @@ from api.base.exceptions import (
     InvalidFilterOperator,
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
-    InvalidFilterValue,
-    InvalidFilterFieldError
+
 )
 
 class FakeSerializer(ser.Serializer):

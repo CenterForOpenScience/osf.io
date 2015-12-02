@@ -189,7 +189,7 @@ class FilterMixin(object):
                 if isinstance(field, self.DATE_FIELDS):
                     query[field_name].extend(self._parse_date_param(field, field_name, op, value))
                 else:
-                    if len(value.split(',')) > 1:
+                    if not isinstance(value, int) and len(value.split(',')) > 1:
                         query[field_name].append({
                             'op': 'in',
                             'value': self.bulk_get_values(value, field)
