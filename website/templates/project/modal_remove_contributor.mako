@@ -11,15 +11,15 @@
             <div class="modal-body">
                 <!-- remove page -->
                 <div data-bind='if:page() === "remove"'>
-                        <div class="form-group" data-bind="if:contributorToRemove">
+                        <div class="form-group">
                            <span>Do you want to remove {{contributorToRemove()["fullname"]}} from  <span class="f-w-lg" data-bind="text: title"></span>, or from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</span>
                         </div>
-                        <div id="remove-page-radio-buttons" data-bind="if:contributorToRemove" class="col-md-8" align="left">
-                            <div class="radio" data-bind="visible:nodeHasChildren">
+                        <div id="remove-page-radio-buttons" class="col-md-8" align="left">
+                            <div class="radio">
                                 <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>Remove  <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from  <span class="f-w-lg" data-bind="text: title"></span></label>
                             </div>
 
-                            <div class="radio" data-bind="visible:nodeHasChildren">
+                            <div class="radio">
                                 <label><input  type="radio" name="radioBoxGroup" data-bind="checked: deleteAll, checkedValue: true" >Remove <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</label>
                             </div>
                         </div>
@@ -69,7 +69,7 @@
                                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
                                 <a class="btn btn-danger" data-bind="click:submit">Remove</a>
                             </div>
-                    </div>
+                        </div>
                     </div>
                 </span>
                 <span data-bind="if: page() === 'removeAll'">

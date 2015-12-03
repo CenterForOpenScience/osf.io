@@ -62,7 +62,11 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.page = ko.observable('remove');
         self.pageTitle = ko.computed(function() {
-            return 'Remove Contributor';
+            return {
+                remove: 'Delete Contributor',
+                removeAll: 'Delete Contributor',
+                removeNoChildren: 'Delete Contributor'
+            }[self.page()];
         });
         self.userName = ko.observable(userName);
         self.deleteAll = ko.observable(false);
@@ -98,6 +102,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.hasChildrenToRemove = ko.computed(function() {
             //if there is more then one node to remove, then show a simplified page
             if (Object.keys(self.canRemoveContributor()).length > 1) {
+                self.page('remove');
                 return true;
             }
             else {
@@ -109,9 +114,6 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.modalSize = ko.pureComputed(function() {
             return this.hasChildrenToRemove() ? 'modal-dialog modal-lg' : 'modal-dialog modal-md';
         }, self);
-
-
-
 
         self.titlesToRemove = ko.computed(function() {
             var titlesToRemove = [];
@@ -163,11 +165,9 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         },
         selectRemove: function() {
             var self = this;
-            self.page('remove');
         },
         clear: function() {
             var self = this;
-            self.selectRemove();
             self.deleteAll(false);
         },
         back: function() {
