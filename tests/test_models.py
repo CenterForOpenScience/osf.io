@@ -3157,29 +3157,39 @@ class TestUltimateParent(OsfTestCase):
 
     def test_get_descendants_recursive_returns_in_depth_order(self):
         # Build up a family of nodes
-        NodeFactory(parent=self.project)
-        self.render_generations_from_parent(self.project, 2)
-        self.render_generations_from_parent(self.project, 3)
-        self.render_generations_from_parent(self.project, 5)
-        self.render_generations_from_parent(self.project, 3)
-        self.render_generations_from_parent(self.project, 2)
-        NodeFactory(parent=self.project)
+        # total_nodes = 1
+        node_structure = [5, 1, 2, [1, 2, 5], 3, [10, 5, 2, 1], 2, [4, [2, 2], 6], 1, 3, 5, 10, 5, 3, 1, [4, [2, 2], 6], 2, [10, 5, 2, 1], 3,  [1, 2, 5], 2, 1, 5]
+        self.render_generations_from_node_structure_list(self.project, node_structure)
 
         parent_list = [self.project._id]
-        counter = 0
+        nodes_touched = 0
         # Verifies, for every node in the list, that parent, we've seen before, in order.
         for project in self.project.get_descendants_recursive():
             parent_list.append(project._id)
             if project.parent:
                 assert_in(project.parent._id, parent_list)
-                counter += 1
-        assert_not_equal(counter, 0)
+                nodes_touched += 1
+        assert_not_equal(nodes_touched, 0)
 
     def render_generations_from_parent(self, parent, num_generations):
+        generations_created = 0
         current_gen = parent
         for generation in xrange(0, num_generations):
             next_gen = NodeFactory(parent=current_gen)
             current_gen = next_gen
+            generations_created += 1
+
+        return current_gen, generations_created
+
+    def render_generations_from_node_structure_list(self, parent, node_structure_list, total_nodes=1):
+        total_nodes = 1
+        for node_number in node_structure_list:
+            if isinstance(node_number, list):
+                self.render_generations_from_node_structure_list(parent, node_number, total_nodes)
+            else:
+                parent, new_nodes = self.render_generations_from_parent(parent, node_number)
+                total_nodes += new_nodes
+        return total_nodes
 
 
 class TestTemplateNode(OsfTestCase):
