@@ -26,11 +26,7 @@ ALLOWED_HOSTS = [
 ]
 
 # Email settings. Account created for testing. Password shouldn't be hardcoded
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'openscienceframeworktest@gmail.com'
-EMAIL_HOST_PASSWORD = ''
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Application definition
 
