@@ -3155,6 +3155,43 @@ class TestUltimateParent(OsfTestCase):
         for node_id in family_ids:
             assert_in(node_id, found_ids)
 
+    def test_get_descendants_recursive_returns_in_depth_order(self):
+        # Build up a family of nodes
+        NodeFactory(parent=self.project)
+
+        child_two = NodeFactory(parent=self.project)
+        self.render_generations_from_parent(child_two, 1)
+
+        child_three = NodeFactory(parent=self.project)
+        self.render_generations_from_parent(child_three, 2)
+
+        child_four = NodeFactory(parent=self.project)
+        self.render_generations_from_parent(child_four, 4)
+
+        child_five = NodeFactory(parent=self.project)
+        self.render_generations_from_parent(child_five, 2)
+
+        child_six = NodeFactory(parent=self.project)
+        self.render_generations_from_parent(child_six, 1)
+
+        NodeFactory(parent=self.project)
+
+        parent_list = [self.project._id]
+        counter = 0
+        # Verifies, for every node in the list, that parent, we've seen before, in order.
+        for project in self.project.get_descendants_recursive():
+            parent_list.append(project._id)
+            if project.parent:
+                assert_in(project.parent._id, parent_list)
+                counter += 1
+        assert_not_equal(counter, 0)
+
+    def render_generations_from_parent(self, parent, num_generations):
+        current_gen = parent
+        for generation in xrange(0, num_generations):
+            next_gen = NodeFactory(parent=current_gen)
+            current_gen = next_gen
+
 
 class TestTemplateNode(OsfTestCase):
 
