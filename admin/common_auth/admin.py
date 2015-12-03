@@ -20,7 +20,7 @@ class CustomUserRegistrationForm(UserCreationForm):
 
 class CustomUserAdmin(UserAdmin):
     add_form = CustomUserRegistrationForm
-    list_display = ['email', 'first_name', 'last_name', 'is_active']
+    list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed']
     fieldsets = (
         (None, {'fields': ('email', 'password',)}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_joined', 'last_login',)}),

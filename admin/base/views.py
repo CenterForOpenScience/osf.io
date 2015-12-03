@@ -1,9 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth import views
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from django.utils.http import urlsafe_base64_decode
+from admin.common_auth.models import MyUser
+
 
 @login_required
 def home(request):
@@ -20,10 +21,10 @@ def password_reset_confirm_custom(request, **kwargs):
     if response.status_code == 302:
         try:
             uid = urlsafe_base64_decode(kwargs['uidb64'])
-            user = User.objects.get(pk=uid)
+            user = MyUser.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             pass
         else:
-            user.is_active = True
+            user.confirmed = True
             user.save()
     return response
