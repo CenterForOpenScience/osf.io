@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from rest_framework import permissions
 
-from website.models import Node, Pointer, User
+from website.models import Node, Pointer, User, Institution
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth
@@ -21,7 +21,7 @@ class ContributorOrPublic(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
+        assert isinstance(obj, (Node, User, Institution)), 'obj must be a Node, User or Institution, got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:

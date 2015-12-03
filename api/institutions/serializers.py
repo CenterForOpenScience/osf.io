@@ -17,14 +17,16 @@ class InstitutionSerializer(JSONAPISerializer):
         related_view_kwargs={'institution_id': '<pk>'}
     )
 
-    def create(self, validated_data):
+    def update(self, instance, validated_data):
         node = self.context['view'].get_node()
-        inst = validated_data['_id']
         user = self.context['request'].user
-        institution = Institution.load(inst)
-        if institution:
-            node.add_primary_institution(user=user, inst=institution)
-        return institution
+        node.add_primary_institution(user=user, inst=instance)
+        return instance
+
+    def destroy(self, instance, validated_data):
+        node = self.context['view'].get_node()
+        node.remove_primary_institution()
+        return instance
 
     class Meta:
         type_ = 'institutions'

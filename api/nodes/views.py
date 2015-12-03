@@ -1728,7 +1728,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['node'] = node
         serializer.save()
 
-class NodeInstitutionList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
+class NodeInstitutionList(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -1743,6 +1743,15 @@ class NodeInstitutionList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin
     view_category = 'nodes'
     view_name = 'node-institutions'
 
-    def get_queryset(self):
+    def get_object(self):
         node = self.get_node()
-        return [node.primary_institution]
+        if self.request.method in drf_permissions.SAFE_METHODS:
+            return node.primary_institution
+        else:
+            id_ = self.request.data['id']
+            return Institution.load(id_)
+
+    def perform_destroy(self, instance):
+        node = self.get_node()
+        node.remove_primary_institution()
+        return instance
