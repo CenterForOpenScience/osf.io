@@ -191,6 +191,19 @@ var errorDefaultShort = 'Unable to resolve';
 var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
 
+var handleAddonApiHTTPError = function(error){
+    var response;
+    try{
+        response = JSON.parse(error.response);
+    } catch (e){
+        response = '';
+    }
+    var title = response.message_short || errorDefaultShort;
+    var message = response.message_long || errorDefaultLong;
+
+    $.osf.growl(title, message);
+};
+
 var handleJSONError = function(response) {
     var title = (response.responseJSON && response.responseJSON.message_short) || errorDefaultShort;
     var message = (response.responseJSON && response.responseJSON.message_long) || errorDefaultLong;
@@ -728,6 +741,7 @@ module.exports = window.$.osf = {
     putJSON: putJSON,
     ajaxJSON: ajaxJSON,
     setXHRAuthorization: setXHRAuthorization,
+    handleAddonApiHTTPError: handleAddonApiHTTPError,
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
     block: block,

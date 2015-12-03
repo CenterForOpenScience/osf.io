@@ -114,3 +114,11 @@ admin/static/vendor/
 
 # GUIDS
 scripts/guid_blacklist.txt
+
+# Admin Specific
+#################
+admin/static/public/
+# web_loader stat file
+admin/webpack-stats.json
+# bower
+admin/static/vendor/

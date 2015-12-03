@@ -8,40 +8,15 @@ var websiteRoot = path.join(__dirname, '..', 'website', 'static');
 
 var adminRoot = path.join(__dirname, 'static');
 
-var staticWebsitePath = function(dir) {
-    return path.join(websiteRoot, dir);
-};
-
 var staticAdminPath = function(dir) {
     return path.join(adminRoot, dir);
 };
 
-common.entry['admin-base-page'] = staticAdminPath('js/pages/base-page.js');
-common.entry['prereg-admin-page'] = staticAdminPath('js/pages/prereg-admin-page.js');
-common.entry['admin-registration-edit-page'] = staticAdminPath('js/pages/admin-registration-edit-page.js');
-
-common.resolve['root'] = [websiteRoot, adminRoot];
-
 // Adding bundle tracker to plugins
-common.plugins = [
-    // Bundle common code between modules
-    new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.js'),
-    // Bower support
-    new webpack.ResolverPlugin(
-        new webpack.ResolverPlugin.DirectoryDescriptionFilePlugin('bower.json', ['main'])
-    ),
-    // Make jQuery available in all modules without having to do require('jquery')
-    new webpack.ProvidePlugin({
-        $: 'jquery',
-        jQuery: 'jquery'
-    }),
-    // Slight hack to make sure that CommonJS is always used
-    new webpack.DefinePlugin({
-        'define.amd': false
-    }),
+var plugins = common.plugins.concat([
     // for using webpack with Django
     new BundleTracker({filename: './webpack-stats.json'}),
-];
+]);
 
 common.output = {
     path: './static/public/js/',
@@ -50,7 +25,14 @@ common.output = {
     sourcePrefix: ''
 };
 
-module.exports = assign(common, {
+module.exports = assign({}, common, {
+    entry: {
+        'admin-base-page': staticAdminPath('js/pages/base-page.js')
+    },
+    resolve: {
+        root: [websiteRoot, adminRoot]
+    },
+    plugins: plugins,
     debug: true,
     devtool: 'source-map'
 });

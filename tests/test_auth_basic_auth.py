@@ -48,8 +48,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
         res = self.app.get(self.unreachable_url, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_valid_credential_but_twofactor_required(self, mock_push_status_message):
+    def test_valid_credential_but_twofactor_required(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
         user1_addon.totp_drift = 1
         user1_addon.totp_secret = self.TOTP_SECRET
@@ -60,8 +59,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
         assert_equal(res.status_code, 401)
         assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body)
 
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_valid_credential_twofactor_invalid_otp(self, mock_push_status_message):
+    def test_valid_credential_twofactor_invalid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
         user1_addon.totp_drift = 1
         user1_addon.totp_secret = self.TOTP_SECRET
@@ -72,8 +70,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
         assert_equal(res.status_code, 401)
         assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body)
 
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def test_valid_credential_twofactor_valid_otp(self, mock_push_status_message):
+    def test_valid_credential_twofactor_valid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
         user1_addon.totp_drift = 1
         user1_addon.totp_secret = self.TOTP_SECRET

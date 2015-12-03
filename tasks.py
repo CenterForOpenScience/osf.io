@@ -10,9 +10,11 @@ import platform
 import subprocess
 import logging
 
-from invoke import task, run
+import invoke
+from invoke import run, Collection
 
 from website import settings
+from admin import tasks as api_tasks
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -39,6 +41,23 @@ except ImportError:
 else:
     TEST_CMD = 'nosetests --rednose'
 
+ns = Collection()
+ns.add_collection(Collection.from_module(api_tasks), name='admin')
+
+def task(*args, **kwargs):
+    """Behaves the same way as invoke.task. Adds the task
+    to the root namespace.
+    """
+    if len(args) == 1 and callable(args[0]):
+        new_task = invoke.task(args[0])
+        ns.add_task(new_task)
+        return new_task
+    def decorator(f):
+        new_task = invoke.task(f, *args, **kwargs)
+        ns.add_task(new_task)
+        return new_task
+    return decorator
+
 
 @task
 def server(host=None, port=5000, debug=True, live=False):
@@ -57,19 +76,18 @@ def server(host=None, port=5000, debug=True, live=False):
 
 
 @task
-def apiserver(port=8000, live=False):
+def apiserver(port=8000):
     """Run the API server."""
-    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python manage.py runserver {}'.format(port)
-    if live:
-        cmd += ' livereload'
+    env = 'DJANGO_SETTINGS_MODULE="api.base.settings"'
+    cmd = '{} python manage.py runserver {} --nothreading'.format(env, port)
     run(cmd, echo=True, pty=True)
 
+
 @task
-def adminserver(port=8001, live=False):
+def adminserver(port=8001):
     """Run the Admin server."""
-    cmd = 'DJANGO_SETTINGS_MODULE="admin.base.settings" python manage.py runserver {}'.format(port)
-    if live:
-        cmd += ' livereload'
+    env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
+    cmd = '{} python manage.py runserver {} --nothreading'.format(env, port)
     run(cmd, echo=True, pty=True)
 
 
@@ -635,7 +653,6 @@ def copy_settings(addons=False):
     if addons:
         copy_addon_settings()
 
-
 @task
 def packages():
     brew_commands = [
@@ -658,13 +675,6 @@ def packages():
         # TODO: Write a script similar to brew bundle for Ubuntu
         # e.g., run('sudo apt-get install [list of packages]')
         pass
-
-
-@task
-def npm_bower():
-    print('Installing bower')
-    run('npm install -g bower', echo=True)
-
 
 @task(aliases=['bower'])
 def bower_install():
@@ -898,7 +908,6 @@ def assets(dev=False, watch=False):
     # on prod
     webpack(clean=False, watch=watch, dev=dev)
 
-
 @task
 def generate_self_signed(domain):
     """Generate self-signed SSL key and certificate.
@@ -908,7 +917,6 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
-
 
 @task
 def update_citation_styles():
