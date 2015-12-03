@@ -236,10 +236,10 @@ class TestNodeCommentCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
 
-    def test_public_node_non_contributor_cannot_comment(self):
+    def test_public_node_non_contributor_can_comment(self):
         self._set_up_public_project()
         res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 201)
 
     def test_public_node_logged_out_user_cannot_comment(self):
         self._set_up_public_project()

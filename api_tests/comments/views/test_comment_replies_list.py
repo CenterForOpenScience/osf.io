@@ -243,10 +243,10 @@ class TestCommentRepliesCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
 
-    def test_public_node_non_contributor_cannot_reply(self):
+    def test_public_node_non_contributor_can_reply(self):
         self._set_up_public_project_comment_reply()
         res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 201)
 
 
 class TestCommentRepliesFiltering(ApiTestCase):
