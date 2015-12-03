@@ -5,12 +5,6 @@ import requests
 from flask import abort, request
 from datetime import datetime
 
-
-# import onedrivesdk
-# from onedrivesdk.helpers import GetAuthCodeServer
-
-#from onedrivesdk import CredentialsV2, OneDriveClient
-#from onedrivesdk.client import OneDriveClientException
 from modularodm import fields
 
 from framework.auth import Auth
@@ -31,6 +25,7 @@ from website.oauth.models import ExternalProvider
 logger = logging.getLogger(__name__)
 
 logging.getLogger('onedrive1').setLevel(logging.WARNING)
+
 
 class OneDrive(ExternalProvider):
     name = 'onedrive'
