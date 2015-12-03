@@ -21,12 +21,9 @@ class InstitutionSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         inst = validated_data['_id']
         user = self.context['request'].user
-        if inst == 'None':
-            node.remove_primary_institution()
-        else:
-            institution = Institution.load(inst)
-            if institution:
-                node.add_primary_institution(user=user, inst=institution)
+        institution = Institution.load(inst)
+        if institution:
+            node.add_primary_institution(user=user, inst=institution)
         return institution
 
     class Meta:

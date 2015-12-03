@@ -59,7 +59,7 @@ if ($('#wgrid').length) {
 var institutionsViewModel = function() {
     ko.punches.enableAll();
     var self = this;
-    self.test = ko.observable('Ayy lmao');
+    self.primaryInstitution = ko.observable('None');
     self.availableInstitutions = ko.observable();
     $.ajax({
         url: ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/?embed=institutions',
@@ -67,47 +67,61 @@ var institutionsViewModel = function() {
         dataType: 'json'
     }).done(function(response) {
         self.availableInstitutions(response.data.embeds.institutions.data);
-        /*for(var key in response.data.attributes.affiliated_institutions) {
-            self.availableInstitutions.push({'id': key, 'title': response.data.attributes.affiliated_institutions[key]});
-        }*/
     });
-
+    $.ajax({
+        url: ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institutions',
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        if (response.data[0]){
+            self.primaryInstitution(response.data[0].attributes.name);
+        }
+    });
     self.submitInst = function() {
-        $osf.ajaxJSON(
-            'POST',
-            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institutions/',
-            {
-                'isCors': true,
-                'data': {
+        if ($('input[name=primaryInst]:checked', '#selectedInst').val() !== 'None') {
+            $osf.ajaxJSON(
+                'POST',
+                ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institutions/',
+                {
+                    'isCors': true,
                     'data': {
-                        /*'type': 'nodes',
-                        'id': ctx.node.id,
-                        'attributes': {
-                            'title': ctx.node.title,
-                            'category': ctx.node.category,
-                            'institution': $('input[name=primaryInst]:checked', '#selectedInst').val() || null
-                        }*/
-                        'type': 'institutions',
-                        'relationships': {
-                             'institutions': {
-                                  'data': {
-                                       'type': 'institutions',
-                                       'id':   $('input[name=primaryInst]:checked', '#selectedInst').val() || null
-                                  }
-                             }
-                        },
-                        'attributes': {
-                            'name': $('input[name=primaryInst]:checked').val()
+                        'data': {
+                            'type': 'institutions',
+                            'relationships': {
+                                'institutions': {
+                                    'data': {
+                                        'type': 'institutions',
+                                        'id': $('input[name=primaryInst]:checked', '#selectedInst').val() || null
+                                    }
+                                }
+                            },
+                            'attributes': {
+                                'name': 'institution'
+                            }
                         }
                     }
                 }
-            }
-        ).done(function(response){
-            $osf.growl('Nice!');
-        }).fail(function(response){
-            $osf.growl('Poop!');
-        });
-    };
+            ).done(function (response) {
+                    $osf.growl('Nice!');
+                    self.primaryInstitution(response.data.attributes.name);
+                }).fail(function (response) {
+                    $osf.growl('Poop!');
+                });
+        } else if ($('input[name=primaryInst]:checked', '#selectedInst').val() === 'None') {
+            $osf.ajaxJSON(
+                'DELETE',
+                ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institutions/',
+                {
+                    'isCors': true,
+                }
+            ).done(function (response) {
+                    $osf.growl('Nice!');
+                    self.primaryInstitution('None');
+                }).fail(function (response) {
+                    $osf.growl('Poop!');
+                });
+        }
+    }
 };
 
 $(document).ready(function() {

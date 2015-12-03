@@ -277,9 +277,8 @@
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Add Primary Institution</h3>
                     </div>
-
                     <div class="panel-body">
-
+                        <p class="text-info"> Current Institution: <span data-bind="text:primaryInstitution"></span></p>
                         <div class="radio" id="selectedInst">
                             <div data-bind="foreach: availableInstitutions">
                                 <div>

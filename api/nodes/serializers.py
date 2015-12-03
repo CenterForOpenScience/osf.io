@@ -188,10 +188,6 @@ class NodeSerializer(JSONAPISerializer):
         for deleted_tag in (old_tags - current_tags):
             node.remove_tag(deleted_tag, auth=auth)
 
-        from website.models import Institution
-        institution = validated_data.get('institution_id')
-        if institution is not None:
-            del validated_data['institution_id']
         if validated_data:
             try:
                 node.update(validated_data, auth=auth)
