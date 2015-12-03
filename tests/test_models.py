@@ -3158,22 +3158,11 @@ class TestUltimateParent(OsfTestCase):
     def test_get_descendants_recursive_returns_in_depth_order(self):
         # Build up a family of nodes
         NodeFactory(parent=self.project)
-
-        child_two = NodeFactory(parent=self.project)
-        self.render_generations_from_parent(child_two, 1)
-
-        child_three = NodeFactory(parent=self.project)
-        self.render_generations_from_parent(child_three, 2)
-
-        child_four = NodeFactory(parent=self.project)
-        self.render_generations_from_parent(child_four, 4)
-
-        child_five = NodeFactory(parent=self.project)
-        self.render_generations_from_parent(child_five, 2)
-
-        child_six = NodeFactory(parent=self.project)
-        self.render_generations_from_parent(child_six, 1)
-
+        self.render_generations_from_parent(self.project, 2)
+        self.render_generations_from_parent(self.project, 3)
+        self.render_generations_from_parent(self.project, 5)
+        self.render_generations_from_parent(self.project, 3)
+        self.render_generations_from_parent(self.project, 2)
         NodeFactory(parent=self.project)
 
         parent_list = [self.project._id]
