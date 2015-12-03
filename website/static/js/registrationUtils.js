@@ -502,6 +502,12 @@ var Draft = function(params, metaSchema) {
         );
     });
 
+    self.hasRequiredQuestions = ko.pureComputed(function() {
+        return self.metaSchema.flatQuestions().filter(function(q) {
+            return q.required;
+        }).length > 0;
+    });
+
     self.completion = ko.computed(function() {
         var complete = 0;
         var questions = self.metaSchema.flatQuestions()
