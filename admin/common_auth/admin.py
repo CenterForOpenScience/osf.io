@@ -36,9 +36,6 @@ class CustomUserAdmin(UserAdmin):
 
     def send_email_invitation(self, request, queryset):
         for user in queryset:
-            if user.is_active is False:  # email doesn't send unless user is active
-                user.is_active = True
-                user.save()
             reset_form = PasswordResetForm({'email': user.email}, request.POST)
             assert reset_form.is_valid()
             reset_form.save(
@@ -46,10 +43,8 @@ class CustomUserAdmin(UserAdmin):
                 #email_template_name='templates/emails/invitation_email.html',
                 request=request
             )
-            user.is_active = False
-            user.save()
 
-        self.message_user(request, 'Email invitation sent successfully')
+        self.message_user(request, 'Email invitation successfully sent')
     send_email_invitation.short_description = 'Send email invitation to selected users'
 
     def save_model(self, request, obj, form, change):
