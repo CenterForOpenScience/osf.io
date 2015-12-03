@@ -723,7 +723,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # One of 'public', 'private'
     # TODO: Add validator
-    comment_level = fields.StringField(default='private')
+    comment_level = fields.StringField(default='public')
 
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
