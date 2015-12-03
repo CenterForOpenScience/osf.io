@@ -11,7 +11,7 @@ import httplib as http
 
 from modularodm import Q
 
-from utils import serialize_draft_registration, serialize_draft_registration_approval
+from utils import serialize_draft_registration  # , serialize_draft_registration_approval
 
 from framework.auth.core import User as osf_user
 from framework.mongo.utils import get_or_http_error
@@ -123,7 +123,7 @@ def approve_draft(request, draft_pk):
     draftRegistrationApproval.approve(user, token)
     draftRegistrationApproval.save()
 
-    response = serialize_draft_registration_approval(draftRegistrationApproval)
+    response = {}  # serialize_draft_registration_approval(draftRegistrationApproval)
     return HttpResponse(json.dumps(response), content_type='application/json')
 
 
@@ -150,43 +150,27 @@ def reject_draft(request, draft_pk):
     draftRegistrationApproval.reject(user, token)
     draftRegistrationApproval.save()
 
-    response = serialize_draft_registration_approval(draftRegistrationApproval)
+    response = {}  # serialize_draft_registration_approval(draftRegistrationApproval)
     return HttpResponse(json.dumps(response), content_type='application/json')
 
 
-@login_required
-@user_passes_test(is_in_prereg_group)
+# @login_required
+# @user_passes_test(is_in_prereg_group)
 @csrf_exempt
 def update_draft(request, draft_pk):
     """Updates current draft to save admin comments
-    :param user: Current logged in user
+
     :param draft_pk: Unique id for current draft
     :return: DraftRegistration obj
     """
-    get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
-
     data = json.load(request)
-
     draft = get_draft_obj(draft_pk)
 
     schema_data = data['schema_data']
-
-    schema_name = data['schema_name']
-    schema_version = data['schema_version']
-
-    if schema_name:
-        meta_schema = get_schema_or_fail(
-            Q('name', 'eq', schema_name) &
-            Q('schema_version', 'eq', schema_version)
-        )
-
-        existing_schema = draft[0].registration_schema
-        if (existing_schema.name, existing_schema.schema_version) != (meta_schema.name, meta_schema.schema_version):
-            draft[0].registration_schema = meta_schema
-
     try:
-        draft[0].update_metadata(schema_data)
+        draft.update_metadata(schema_data)
+        draft.save()
     except (NodeStateError):
         raise HTTPError(http.BAD_REQUEST)
-    response = serialize_draft_registration(draft[0], draft[1])
+    response = serialize_draft_registration(draft)
     return HttpResponse(json.dumps(response), content_type='application/json')
