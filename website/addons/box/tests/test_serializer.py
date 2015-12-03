@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Serializer tests for the Dropbox addon."""
+"""Serializer tests for the Box addon."""
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from website.addons.base.testing.serializers import StorageAddonSerializerTestSuiteMixin

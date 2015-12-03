@@ -9,5 +9,5 @@ class DataverseNodeLogger(AddonNodeLogger):
         return {
             'project': self.node.parent_id,
             'node': self.node._primary_key,
-            'dataset': node_settings.dataset
+            'dataset': node_settings.dataset if node_settings else None
         }

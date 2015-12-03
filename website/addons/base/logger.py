@@ -40,7 +40,7 @@ class AddonNodeLogger(object):
         if self.path:
             params.update({
                 'urls': {
-                    'view': self.node.web_url_for('addon_view_or_download_file', path=self.path, provider='box'),
+                    'view': self.node.web_url_for('addon_view_or_download_file', path=self.path, provider=self.addon_short_name),
                     'download': self.node.web_url_for(
                         'addon_view_or_download_file',
                         path=self.path,
