@@ -1227,7 +1227,7 @@ RegistrationManager.prototype.init = function() {
             var preregSchema = self.schemas().filter(function(schema) {
                 return schema.name === 'Prereg Challenge';
             })[0];
-            preregSchema.askConsent().then(function() {
+            preregSchema.askConsent(true).then(function() {
                 self.selectedSchema(preregSchema);
                 $('#newDraftRegistrationForm').submit();
             });
