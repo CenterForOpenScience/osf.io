@@ -16,8 +16,20 @@ To use:
 
 This will create 3 fake public projects, each with 3 fake contributors (with
     you as the creator).
+
+To create a project with a complex component structure, pass in a list representing the depth you would
+like each component to contain.
+Examples:
+    python -m scripts.create_fakes -u fred@cos --components '[1, 1, 1, 1]' --nprojects 1
+...will create a project with 4 components.
+    python -m scripts.create_fakes -u fred@cos --components '4' --nprojects 1
+...will create a project with a series of components, 4 levels deep.
+    python -m scripts.create_fakes -u fred@cos --components '[1, [1, 1]]' --nprojects 1
+...will create a project with two top level components, and one with a depth of 2 components.
+
 """
 from __future__ import print_function, absolute_import
+import ast
 import sys
 import argparse
 import logging
@@ -263,12 +275,16 @@ def parse_args():
     parser.add_argument('-u', '--user', dest='user', required=True)
     parser.add_argument('--nusers', dest='n_users', type=int, default=3)
     parser.add_argument('--nprojects', dest='n_projects', type=int, default=3)
-    parser.add_argument('--ncomponents', dest='n_components', type=int, default=0)
+    parser.add_argument('-c', '--components', dest='n_components', type=evaluate_argument, default='0')
     parser.add_argument('-p', '--privacy', dest="privacy", type=str, default='private', choices=['public', 'private'])
     parser.add_argument('-n', '--name', dest='name', type=str, default=None)
     parser.add_argument('-t', '--tags', dest='n_tags', type=int, default=5)
     parser.add_argument('--presentation', dest='presentation_name', type=str, default=None)
     return parser.parse_args()
+
+
+def evaluate_argument(string):
+    return ast.literal_eval(string)
 
 
 def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name):
@@ -279,9 +295,12 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
     for _ in range(n_users):
         contrib = create_fake_user()
         project.add_contributor(contrib, auth=auth)
-    for _ in range(n_components):
-        NodeFactory(project=project, title=fake.science_sentence(), description=fake.science_paragraph(),
-                    creator=creator)
+    if isinstance(n_components, int):
+        for _ in range(n_components):
+            NodeFactory(project=project, title=fake.science_sentence(), description=fake.science_paragraph(),
+                        creator=creator)
+    elif isinstance(n_components, list):
+        render_generations_from_node_structure_list(project, creator, n_components)
     for _ in range(n_tags):
         project.add_tag(fake.science_word(), auth=auth)
     if presentation_name is not None:
@@ -291,6 +310,29 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
     project.save()
     logger.info('Created project: {0}'.format(project.title))
     return project
+
+
+def render_generations_from_parent(parent, creator, num_generations):
+    current_gen = parent
+    for generation in xrange(0, num_generations):
+        next_gen = NodeFactory(
+            parent=current_gen,
+            creator=creator,
+            title=fake.science_sentence(),
+            description=fake.science_paragraph()
+        )
+        current_gen = next_gen
+    return current_gen
+
+
+def render_generations_from_node_structure_list(parent, creator, node_structure_list):
+    new_parent = None
+    for node_number in node_structure_list:
+        if isinstance(node_number, list):
+            render_generations_from_node_structure_list(new_parent or parent, creator, node_number)
+        else:
+            new_parent = render_generations_from_parent(parent, creator, node_number)
+    return new_parent
 
 
 def main():
