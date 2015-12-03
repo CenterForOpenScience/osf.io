@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+{% load staticfiles %}
+
+{% block content %}
+{% render_bundle 'vendor' %}
+<link href="{% static 'css/registrations.css' %}" rel="stylesheet" type="text/css" />
+<script>
+   var context = {{ data|safe }};
+</script>
+
+<div class="container scripted" id="draftRegistrationScope">
+  <div class="row">
+    <div class="col-md-11">
+        <span class="btn-group pull-right">
+          <a data-bind="click: $root.approve,
+                        tooltip: {
+                          position: 'top',
+                          title: 'Approve'
+                        }" class="btn btn-success" type="button">
+            <i class="fa fa-check"></i> Approve
+          </a>
+          <a data-bind="click: $root.reject,
+                        tooltip: {
+                          position: 'top',
+                          title: 'Reject'
+                        }" class="btn btn-danger" type="button">
+            <i class="fa fa-remove"></i> Reject
+          </a>
+          <a data-bind="click: $root.requestRevisions,
+                        tooltip: {
+                          position: 'top',
+                          title: 'Request Revisions'
+                        }" class="btn btn-primary" type="button">
+            <i class="fa fa-reply"></i> Request Revisions
+          </a>
+        </span>   
+      </div>
+    <h3>
+      <div class="row">
+        <div class="col-md-9">
+          Review draft submission
+        </div>
+      </div>
+    </h3>
+    <hr />
+    <div class="row">
+      <div class="col-md-12">
+        <div id="registrationEditorScope">
+          <div class="container">
+            <div class="row">
+              <div class="span8 col-md-2 columns eight large-8">
+                <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}, visible: pages().length">
+                  <li class="re-navbar">
+                    <a class="registration-editor-page" id="top-nav" style="text-align: left;" data-bind="text: title, click: $root.selectPage, style:{'font-weight': active() ? 'bold' : 'normal'}">
+                      <i class="fa fa-caret-right"></i>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div class="span8 col-md-9 columns eight large-8">
+                <!-- EDITOR -->
+                <div data-bind="if: currentPage">
+                  <div data-bind="if: currentPage">                  
+                    <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
+                  </div>
+                </div>
+                <div class="row" style="margin-bottom: 10px;">
+                  <span>
+                    Last saved: <span data-bind="text: $root.lastSaved"></span>
+                  </span>
+                </div>
+                <div class="row">
+                  <button data-bind="click: save" type="button" class="btn btn-primary">Save
+                  </button>
+                  <!-- ko ifnot: onLastPage -->
+                  <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
+                  <!-- /ko -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% render_bundle 'admin-registration-edit-page' %}
+{% include "pre-reg/registration_editor_templates.html" %}
+{% endblock %}

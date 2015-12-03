@@ -11,6 +11,7 @@ urlpatterns = [
         include(patterns('',
                          url(r'^$', views.root, name='home'),
                          url(r'^spam/', include('admin.spam.urls', namespace='spam')),
+                         url(r'^pre-reg/', include('admin.pre-reg.urls', namespace='pre-reg')),
                          )
                 )
         )

@@ -1,0 +1,37 @@
+<div class="row" data-bind="attr: {id: $index}, event: {mouseover: highlightRow, mouseout: unhighlightRow, click: goToDraft}">
+    <div data-bind="text: title" class="col-lg-1 text-center" id="submission_title"></div>
+    <div data-bind="text: fullname" class="col-lg-1 text-center" id="name"></div>
+    <div data-bind="text: username" class="col-lg-2 text-center" id="email"></div>
+    <div data-bind="text: initiated" class="col-lg-1 text-center" id="begun"></div>
+    <div data-bind="text: updated" class="col-lg-1 text-center" id="submitted"></div>
+    <!-- Proof of Publication -->
+    <div class="col-lg-2 text-center" id="proof_of_pub">
+        <select data-bind="options: proofOfPub.proofOfPubList, value:proofOfPub.proofOfPub, click: proofOfPub.editItem, clickBubble: false"></select>
+    </div>
+    <!-- Payment Sent -->
+    <div class="col-lg-1 text-center" id="payment_sent">
+        <div data-bind="visible: !paymentSent.edit()">
+            <span data-bind="text: paymentSent.paymentSent"></span><i data-bind="click: paymentSent.editItem, clickBubble: false, event: {mouseover: paymentSent.enlargeIcon, mouseout: paymentSent.shrinkIcon}, attr: {class: 'fa fa-pencil'}" style="margin-left: 10px"></i>
+        </div>
+        <div data-bind="valueUpdate: 'afterkeydown', enterkey: paymentSent.stopEditing, visible: paymentSent.edit()">
+            <div><input type="radio" value="no" data-bind="checked: paymentSent.paymentSent, attr:{name: 'paymentSent' + $index()}"/>No</div>
+            <div><input type="radio" value="yes" data-bind="checked: paymentSent.paymentSent, attr:{name: 'paymentSent' + $index()}"/>Yes</div>
+        </div>
+    </div>
+    <!-- Notes -->
+    <div class="col-lg-1 text-center" id="notes">
+        <div data-bind="visible: !notes.edit()">
+            <span data-bind="text: notes.notes"></span><i data-bind="click: notes.editItem, clickBubble: false, event: {mouseover: notes.enlargeIcon, mouseout: notes.shrinkIcon}, attr: {class: 'fa fa-pencil'}" style="margin-left: 10px"></i>
+        </div>
+        <div data-bind="valueUpdate: 'afterkeydown', enterkey: notes.stopEditing, visible: notes.edit()">
+            <div><input type="text" data-bind="value: notes.notes"/></div>
+        </div>
+    </div>
+    <!-- Status -->
+    <div data-bind="text: status" class="col-lg-1 text-center" id="status"></div>
+    <!-- Assignee -->
+    <div class="col-lg-1 text-center" id="assignee">
+        <select data-bind="visible: adminPermission() ,value: assignee.assignee, options: assignee.reviewers, click: assignee.editItem, clickBubble: false"></select>
+        <span data-bind="visible: !adminPermission(), text: assignee.assignee, click: assignee.editItem, clickBubble: false"></span>
+    </div>
+</div>

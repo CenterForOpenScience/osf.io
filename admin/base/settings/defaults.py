@@ -34,6 +34,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.staticfiles',
     'admin.base',
+    'admin.pre-reg',
     'admin.spam',
 
     # 3rd party
