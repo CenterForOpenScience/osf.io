@@ -43,12 +43,6 @@ var LinkObject = function (type, data, label, index) {
     self.link = self.generateLink();
 };
 
-var Activity = function(date, text, meta) {
-    this.date = date;
-    this.text = text;
-    this.meta = meta;
-};
-
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
 }
@@ -106,9 +100,13 @@ var FileBrowser = {
             new LinkObject('tag', { tag : 'something', query : { 'related_counts' : true }}, 'Something Else'),
         ];
         self.data = m.prop([]);
-        self.activityLogs = m.prop([
-            new Activity('2015-08-19 01:34 PM', 'Caner Uguz added a comment to Dashboard Redesign Proposal', {}),
-        ]);
+        self.activityLogs = m.prop();
+        self.getLogs = function _getLogs (nodeId) {
+            var url = $osf.apiV2Url('nodes/' + self.data.uid + '/logs/', { query : {}});
+            m.request({method : 'GET', url : url, config : xhrconfig}).then(function(result){
+                self.activityLogs(result.data);
+            });
+        };
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
         self.updateFilesData = function(linkObject) {
@@ -155,6 +153,7 @@ var FileBrowser = {
                 }];
             });
             self.data(value);
+            self.getLogs(value[0].id);
             self.reload(true);
         };
 
@@ -713,7 +712,16 @@ var ActivityLogs = {
         return m('.fb-activity-list.m-t-md', [
             m('h5', 'Activity Logs'),
             args.activityLogs ? args.activityLogs().map(function(item){
-                return m('.fb-activity-item.osf-box.p-sm', item.date + ' ' + item.text);
+                var text;
+                switch (item.attributes.action) {
+                    case 'project_created':
+                        text = 'Project created';
+                        break;
+                    default :
+                        console.log('');
+                        break;
+                }
+                return m('.fb-activity-item.osf-box.p-sm', item.date + ' ' + text);
             }) : ''
         ]);
     }
