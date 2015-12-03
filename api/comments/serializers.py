@@ -65,7 +65,10 @@ class CommentSerializer(JSONAPISerializer):
         elif isinstance(obj, Comment):
             return 'comments'
         else:
-            raise InvalidModelValueError('Invalid comment target.')
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/target/links/related/meta/type'},
+                detail='Invalid comment target type.'
+            )
 
 
 class CommentCreateSerializer(CommentSerializer):
@@ -97,12 +100,15 @@ class CommentCreateSerializer(CommentSerializer):
         user = validated_data['user']
         auth = Auth(user)
         node = validated_data['node']
+        target_id = self.context['request'].data.get('id')
 
         try:
-            target = self.get_target(node._id, self.context['request'].data.get('id'))
+            target = self.get_target(node._id, target_id)
         except ValueError:
-            raise InvalidModelValueError('Invalid target.')
-
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/target/data/id'},
+                detail='Invalid comment target \'{}\'.'.format(target_id)
+            )
         validated_data['target'] = target
         validated_data['content'] = validated_data.pop('get_content')
         if node and node.can_comment(auth):

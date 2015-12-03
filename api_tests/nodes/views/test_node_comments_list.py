@@ -260,10 +260,11 @@ class TestNodeCommentCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Invalid target.')
+        assert_equal(res.json['errors'][0]['detail'], "Invalid comment target ''.")
 
     def test_create_comment_invalid_target_id(self):
         self._set_up_private_project()
+        project_id = ProjectFactory()._id
         payload = {
             'data': {
                 'type': 'comments',
@@ -274,7 +275,7 @@ class TestNodeCommentCreate(ApiTestCase):
                     'target': {
                         'data': {
                             'type': 'nodes',
-                            'id': ProjectFactory()._id
+                            'id': project_id
                         }
                     }
                 }
@@ -282,7 +283,7 @@ class TestNodeCommentCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Invalid target.')
+        assert_equal(res.json['errors'][0]['detail'], "Invalid comment target \'" + str(project_id) + "\'.")
 
     def test_create_comment_invalid_target_type(self):
         self._set_up_private_project()
