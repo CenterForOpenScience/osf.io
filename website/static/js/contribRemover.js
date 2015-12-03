@@ -99,6 +99,12 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             return canRemoveContributor;
         });
 
+        self.onlyAdmin = ko.computed(function() {
+
+            if (self.userID === self.contributorToRemove.id && self.nodesOriginal()[self.nodeID].length === 1)
+                return node.contributorAdmins.length <= 1;
+        })
+
         self.hasChildrenToRemove = ko.computed(function() {
             //if there is more then one node to remove, then show a simplified page
             if (Object.keys(self.canRemoveContributor()).length > 1) {
