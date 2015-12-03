@@ -33,7 +33,6 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         id: nodeTree.node.id,
         title: nodeTree.node.title,
         contributors: nodeTree.node.contributors,
-        visibleContributors: nodeTree.node.visible_contributors,
         isAdmin: nodeTree.node.is_admin,
         contributorAdmins: contributorAdmins
     };
@@ -63,10 +62,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.page = ko.observable('remove');
         self.pageTitle = ko.computed(function() {
-            return {
-                remove: 'Delete Contributor',
-                removeAll: 'Delete Contributor'
-            }[self.page()];
+            return 'Remove Contributor';
         });
         self.userName = ko.observable(userName);
         self.deleteAll = ko.observable(false);
@@ -98,6 +94,23 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             }
             return canRemoveContributor;
         });
+
+        self.hasChildrenToRemove = ko.computed(function() {
+            //if there is more then one node to remove, then show a simplified page
+            if (Object.keys(self.canRemoveContributor()).length > 1) {
+                return true;
+            }
+            else {
+                self.page('removeNoChildren');
+                return false;
+            }
+        });
+
+        self.modalSize = ko.pureComputed(function() {
+            return this.hasChildrenToRemove() ? 'modal-dialog modal-lg' : 'modal-dialog modal-md';
+        }, self);
+
+
 
 
         self.titlesToRemove = ko.computed(function() {
