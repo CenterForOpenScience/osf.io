@@ -1239,18 +1239,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         record.copyright_holders = copyright_holders or []
         record.save()
         self.node_license = record
-        self.add_log(
-            action=NodeLog.CHANGED_LICENSE,
-            params={
-                'parent_node': self.parent_id,
-                'node': self._primary_key,
-                'new_license': node_license.name
-            },
-            auth=auth,
-            save=False,
-        )
-        if save:
-            self.save()
+
+        for node in self.node_and_primary_descendants():
+            node.add_log(
+                action=NodeLog.CHANGED_LICENSE,
+                params={
+                    'parent_node': node.parent_id,
+                    'node': node._primary_key,
+                    'new_license': node_license.name
+                },
+                auth=auth,
+                save=False,
+            )
+            if save:
+                node.save()
 
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
