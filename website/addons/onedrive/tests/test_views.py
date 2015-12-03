@@ -425,8 +425,7 @@ class TestRestrictions(OneDriveAddonTestCase):
         # Set shared folder
         self.node_settings.folder = 'foo bar/bar'
         self.node_settings.save()
-
-    @mock.patch('website.addons.onedrivesdk.client.OneDriveClient.metadata')
+    
     def test_restricted_hgrid_data_contents(self, mock_metadata):
         mock_metadata.return_value = mock_responses['metadata_list']
 

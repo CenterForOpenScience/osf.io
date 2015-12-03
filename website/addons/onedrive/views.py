@@ -6,9 +6,6 @@ import httplib as http
 import logging
 
 from flask import request
-# from OneDriveSDK
-# import onedrivesdk
-# from onedrivesdk.helpers import GetAuthCodeServer
 from website.addons.onedrive.client import OneDriveClient
 from urllib3.exceptions import MaxRetryError
 

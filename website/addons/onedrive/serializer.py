@@ -4,14 +4,10 @@ from website.addons.base.serializer import OAuthAddonSerializer
 
 from website.util import api_url_for, web_url_for
 
-# from OneDriveSDK
-import onedrivesdk
-from onedrivesdk.helpers import GetAuthCodeServer
-
-
 logger = logging.getLogger(__name__)
 
 logging.getLogger('onedrive1').setLevel(logging.WARNING)
+
 
 class OneDriveSerializer(OAuthAddonSerializer):
 

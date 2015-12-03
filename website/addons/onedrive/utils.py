@@ -3,10 +3,6 @@ import time
 import logging
 from datetime import datetime
 
-# from OneDriveSDK
-import onedrivesdk
-from onedrivesdk.helpers import GetAuthCodeServer
-
 from website.util import rubeus
 
 from website.addons.onedrive import settings
