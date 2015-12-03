@@ -7,7 +7,6 @@ from tests.factories import ProjectFactory, AuthUserFactory
 from framework.auth import Auth
 from website.addons.figshare import settings as figshare_settings
 
-DEFAULT_METASCHEMA = get_default_metaschema()
 
 class TestNodeSettings(OsfTestCase):
     def setUp(self):
@@ -238,7 +237,7 @@ class TestCallbacks(OsfTestCase):
     @mock.patch('website.addons.figshare.model.AddonFigShareNodeSettings.archive_errors')
     def test_does_not_get_copied_to_registrations(self, mock_errors, mock_archive):
         registration = self.project.register_node(
-            schema=DEFAULT_METASCHEMA,
+            schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
             data='hodor'
         )

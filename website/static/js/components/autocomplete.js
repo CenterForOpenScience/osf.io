@@ -6,12 +6,13 @@
  * objects other than nodes.
 **/
 'use strict';
+require('css/autocomplete.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
+var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 require('typeahead.js');
-
-var MAX_RESULTS = 14;
 
 var MethodNotDefined = function(methodName) {
     this.name = 'MethodNotDefined';
@@ -29,7 +30,7 @@ MethodNotDefined.prototype = Error.prototype;
  *  inputElement: the element upon which to call .typeahead(). Injected during
  *      component registration.
  */
-var baseSearchViewModel = function (params) {
+var BaseSearchViewModel = function (params) {
     // Parse params
     this.dataUrl = params.data;
     this.inputElement = params.inputElement;
@@ -49,7 +50,7 @@ var baseSearchViewModel = function (params) {
         this.initTypeahead.bind(this)
     );
 };
-$.extend(baseSearchViewModel.prototype, {
+$.extend(BaseSearchViewModel.prototype, {
     /************************************************
      * Abstract methods - subclasses must implement *
      ************************************************/
@@ -75,9 +76,14 @@ $.extend(baseSearchViewModel.prototype, {
     },
     /** Get the data at the provided URL, return a promise */
     fetchData: function () {
-        return $.get(this.dataUrl).fail(
-            function() {
-                console.log('failed to retrieve data');
+        var self = this;
+        return $.get(self.dataUrl).fail(
+            function(xhr, status, error) {
+                Raven.captureMessage('Could not GET autocomplete data', {
+                    url: self.dataUrl,
+                    textStatus: status,
+                    error: error
+                });
             });
     },
     /** Initialize the Typeahead widget for the component */
@@ -114,10 +120,10 @@ $.extend(baseSearchViewModel.prototype, {
 });
 
 
-var draftRegistrationsSearchViewModel = function (params) {
-    baseSearchViewModel.apply(this, arguments);
+var DraftRegistrationsSearchViewModel = function (params) {
+    BaseSearchViewModel.apply(this, arguments);
 };
-$.extend(draftRegistrationsSearchViewModel.prototype, baseSearchViewModel.prototype, {
+$.extend(DraftRegistrationsSearchViewModel.prototype, BaseSearchViewModel.prototype, {
     processData: function (data) {
         this.items(data.draftRegistrations);
     },
@@ -127,11 +133,34 @@ $.extend(draftRegistrationsSearchViewModel.prototype, baseSearchViewModel.protot
     },
     suggestionTemplate: function(item) {
         var dateUpdated = new $osf.FormattableDate(item.value.dateUpdated);
-        var dateCreated = new $osf.FormattableDate(item.value.dateCreated);
-        return '<p>' + item.value.node.title + '</p>' +
-            '<p><small class="m-l-md text-muted">' + 'Initiated by: ' + item.value.initiator.name + '</small></p>' +
-            '<p><small class="m-l-md text-muted">' + 'Initiated: ' + dateCreated.local + '</small></p>' +
-            '<p><small class="m-l-md text-muted">' + 'Last updated: ' + dateUpdated.local + '</small></p>';
+        var dateInitiated = new $osf.FormattableDate(item.value.dateInitiated);
+        // jQuery implicity escapes HTML
+        return $('<div>').append(
+            $('<p>', {
+                text: item.value.node.title
+            }).append(
+                [
+                    $('<p>').append(
+                        $('<small>', {
+                            className: 'm-l-md text-muted',
+                            text: 'Initiated by: ' + item.value.initiator.name
+                        })
+                    ),
+                    $('<p>').append(
+                        $('<small>', {
+                            className: 'm-l-md text-muted',
+                            text: 'Initiated: ' + dateInitiated.local
+                        })
+                    ),
+                    $('<p>').append(
+                        $('<small>', {
+                            className: 'm-l-md text-muted',
+                            text: 'Last updated: ' + dateUpdated.local
+                        })
+                    )                    
+                ]
+            )                
+        ).html();
     },
     substringMatcher: function(strs) {
         return function findMatches(q, cb) {
@@ -143,11 +172,6 @@ $.extend(draftRegistrationsSearchViewModel.prototype, baseSearchViewModel.protot
                 if (substrRegex.test(str.node.title)) {
                     count += 1;
                     matches.push({ value: str });
-
-                    //alex's hack to limit number of results
-                    if(count > MAX_RESULTS){
-                        return false;
-                    }
                 }
             });
 
@@ -160,11 +184,10 @@ $.extend(draftRegistrationsSearchViewModel.prototype, baseSearchViewModel.protot
 ko.components.register('osf-draft-registrations-search', {
     viewModel: {
         createViewModel: function(params, componentInfo) {
-            // Inject the inputElement
-            $.extend(params, {
+            var opts = $.extend({}, {
                 inputElement: $(componentInfo.element).find('input.osf-typeahead')
-            });
-            return new draftRegistrationsSearchViewModel(params);
+            }, params);
+            return new DraftRegistrationsSearchViewModel(opts);
         }
     },
     template: {element: 'osf-search'}

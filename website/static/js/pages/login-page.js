@@ -2,12 +2,14 @@
  * Login page
  */
 var $ = require('jquery');
-
+var SignUp = require('js/signUp');
 var LogInForm = require('js/signIn');
+
 new LogInForm.SignIn('#logInForm');
 
-var SignUp = require('../signUp.js');
-new SignUp('#signUpScope', '/api/v1/register/', $('#campaign').val());
+var registerUrl = window.contextVars.registerUrl;
+
+new SignUp('#signUpScope', registerUrl, $('#campaign').val());
 
 var activateToggleBox = function () {
     var el = $(this);

@@ -10,7 +10,6 @@ from website.addons.dataverse.model import AddonDataverseNodeSettings
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 from website.addons.dataverse.tests.utils import create_external_account
 
-DEFAULT_METASCHEMA = get_default_metaschema()
 
 class TestDataverseUserSettings(DataverseAddonTestCase):
     """Tests were modified from Mendeley. None of this functionality is
@@ -248,7 +247,7 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
-            schema=DEFAULT_METASCHEMA,
+            schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
             data='hodor',
         )

@@ -114,7 +114,7 @@ def auth_login(auth, **kwargs):
     login form passsed; else send forgot password email.
 
     """
-    campaign = request.args.get('c')
+    campaign = request.args.get('campaign')
     next_url = request.args.get('next')
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
@@ -135,11 +135,11 @@ def auth_login(auth, **kwargs):
     if next_url:
         status.push_status_message(language.MUST_LOGIN)
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
-    # allows for next to be followed or a redirect to the dashboard.X
+    # allows for next to be followed or a redirect to the dashboard.
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
 
     data = {}
-    if campaign and campaign in campaigns.VALID_CAMPAIGNS:
+    if campaign and campaign in campaigns.CAMPAIGNS:
         data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
 
@@ -175,7 +175,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     if user is None:
         raise HTTPError(http.NOT_FOUND)
 
-    if auth and auth.user and auth.user in (user, user.merged_by):
+    if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
         if not is_merge:
             # determine if the user registered through a campaign
             campaign = campaigns.campaign_for_user(user)
@@ -243,8 +243,10 @@ def send_confirm_email(user, email):
     # Choose the appropriate email template to use
     if merge_target:
         mail_template = mails.CONFIRM_MERGE
+    elif campaign:
+        mail_template = campaigns.email_template_for_campaign(campaign)
     else:
-        mail_template = campaigns.email_template_for_campaign(campaign, default=mails.CONFIRM_EMAIL)
+        mail_template = mails.CONFIRM_EMAIL
 
     mails.send_mail(
         email,
@@ -281,7 +283,7 @@ def register_user(**kwargs):
         full_name = strip_html(full_name)
 
         campaign = json_data.get('campaign')
-        if campaign and campaign not in campaigns.VALID_CAMPAIGNS:
+        if campaign and campaign not in campaigns.CAMPAIGNS:
             campaign = None
 
         user = framework.auth.register_unconfirmed(

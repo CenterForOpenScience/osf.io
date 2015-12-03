@@ -17,7 +17,6 @@ from website.addons.github import views, utils
 from website.addons.github.utils import check_permissions
 from website.addons.github.tests.utils import create_mock_github
 
-DEFAULT_METASCHEMA = get_default_metaschema()
 
 # TODO: Test remaining CRUD methods
 # TODO: Test exception handling
@@ -478,7 +477,7 @@ class TestGithubSettings(OsfTestCase):
         ]
 
         registration = self.project.register_node(
-            schema=DEFAULT_METASCHEMA,
+            schema=get_default_metaschema(),
             auth=self.consolidated_auth,
             data=''
         )

@@ -2,6 +2,7 @@ require('css/registrations.css');
 
 var $ = require('jquery');
 var ko = require('knockout');
+var Raven = require('raven-js');
 var bootbox = require('bootbox');
 var moment = require('moment');
 var History = require('exports?History!history');
@@ -15,7 +16,8 @@ var language = osfLanguage.registrations;
 
 var SaveManager = require('js/saveManager');
 var editorExtensions = require('js/registrationEditorExtensions');
-var registrationEmbargo = require('js/registrationEmbargo');
+var RegistrationModal = require('js/registrationModal');
+
 // This value should match website.settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
 var DRAFT_REGISTRATION_MIN_EMBARGO_DAYS = 10;
 var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
@@ -28,12 +30,14 @@ var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
  *
  * @param {Object} data: optional data to instatiate model with
  * @param {User} data.user
- * @param {Date} data.lastModified
+ * @param {Date string} data.lastModified
+ * @param {Date string} data.created
+ * @param {Boolean} data.isDeleted
  * @param {String} data.value
  *
  * @type User
  * @property {String} id
- * @property {String} name
+ * @property {String} fullname
  **/
 function Comment(data) {
     var self = this;
@@ -42,18 +46,13 @@ function Comment(data) {
 
     data = data || {};
     self.user = data.user || $osf.currentUser();
-    self.lastModified = new Date(data.lastModified) || new Date();
     self.value = ko.observable(data.value || '');
     self.value.subscribe(function() {
         self.lastModified = new Date();
     });
 
-    if (data.created) {
-        self.created = new Date(data.created);
-    }
-    else {
-        self.created = new Date();
-    }
+    self.created = data.created ? new Date(data.created) : new Date();
+    self.lastModified = data.lastModified ? new Date(data.lastModified) : new Date();
 
     self.isDeleted = ko.observable(data.isDeleted || false);
     self.isDeleted.subscribe(function(isDeleted) {
@@ -63,6 +62,14 @@ function Comment(data) {
     });
 
     self.seenBy = ko.observableArray([self.user.id]);
+
+    /**
+     * Returns true if the current user is the comment owner
+     **/
+    self.isOwner = ko.pureComputed(function() {
+        return self.user.id === $osf.currentUser().id;
+    });
+
     /**
      * Returns the author as the actual user, not 'You'
      **/
@@ -74,18 +81,7 @@ function Comment(data) {
      * Returns 'You' if the current user is the commenter, else the commenter's name
      */
     self.getAuthor = ko.pureComputed(function() {
-        if (self.user.id === $osf.currentUser().id) {
-            return 'You';
-        } else {
-            return self.user.fullname;
-        }
-    });
-
-    /**
-     * Returns 'You' if the current user is the commenter, else the commenter's name
-     */
-    self.getAuthor = ko.pureComputed(function() {
-        if (self.user.id === $osf.currentUser().id) {
+        if (self.isOwner()) {
             return 'You';
         } else {
             return self.user.fullname;
@@ -96,22 +92,26 @@ function Comment(data) {
      * Returns true if the current user is the comment creator
      **/
     self.canDelete = ko.pureComputed(function() {
-        return self.user.id === $osf.currentUser().id;
+        return self.isOwner();
     });
+
     /**
      * Returns true if the comment is saved and the current user is the comment creator
      **/
     self.canEdit = ko.pureComputed(function() {
-        return !self.isDeleted() && self.saved() && self.user.id === $osf.currentUser().id;
+        return !self.isDeleted() && self.saved() && self.isOwner();
     });
 }
 /** Toggle the comment's save state **/
 Comment.prototype.toggleSaved = function(save) {
     var self = this;
 
-    self.saved(!self.saved());
-    if (self.saved()) {
-        save();
+    if (!self.saved()) {
+        // error handling handled implicitly in save
+        save.done(self.saved.bind(self, true));
+    }
+    else {
+        self.saved(false);
     }
 };
 /** Indicate that a comment is deleted **/
@@ -131,26 +131,28 @@ Comment.prototype.viewComment = function(user) {
  * @class Question
  * Model for schema questions
  *
- * @param {Object} data: optional instantiation values
- * @param {String} data.title
- * @param {String} data.nav: short version of title
- * @param {String} data.type: 'string' | 'number' | 'choose' | 'object'; data type
- * @param {String} data.format: 'text' | 'textarea' | 'list'; format corresponding with data.type
- * @param {String} data.description
- * @param {String} data.help
- * @param {String} data.required
- * @param {String[]} data.options: array of options for 'choose' types
- * @param {Object[]} data.properties: object of sub-Question properties for 'object' types
- * @param {String} data.match: optional string that must be matched
- * @param {String} id: unique identifier
+ * @param {Object} questionSchema
+ * @param {String} questionSchema.title
+ * @param {String} questionSchema.nav: short version of title
+ * @param {String} questionSchema.type: 'string' | 'number' | 'choose' | 'object'; data type
+ * @param {String} questionSchema.format: 'text' | 'textarea' | 'list'; format corresponding with data.type
+ * @param {String} questionSchema.description
+ * @param {String} questionSchema.help
+ * @param {String} questionSchema.required
+ * @param {String[]} questionSchema.options: array of options for 'choose' types
+ * @param {Object[]} questionSchema.properties: object of sub-Question properties for 'object' types
+ * @param {String} questionSchema.match: optional string that must be matched
+ * @param {Object} data
+ * @param {Any} data.value
+ * @param {Array[Object]} data.comments
+ * @param {Object} data.extra
  **/
 var Question = function(questionSchema, data) {
     var self = this;
 
-    self.id = questionSchema.qid;
-
     self.data = data || {};
 
+    self.id = questionSchema.qid;
     self.title = questionSchema.title || 'Untitled';
     self.nav = questionSchema.nav || 'Untitled';
     self.type = questionSchema.type || 'string';
@@ -162,19 +164,29 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || {};
     self.match = questionSchema.match || '';
 
-    var _value;
-    if ($.isFunction(self.data.value)) {
-        // For subquestions, this could be an observable
-        _value = self.data.value();
+    self.extra = ko.observable(self.data.extra || {});
+    self.showExample = ko.observable(false);
+
+    self.comments = ko.observableArray(
+        $.map(self.data.comments || [], function(comment) {
+            return new Comment(comment);
+        })
+    );
+    self.nextComment = ko.observable('');
+
+    var value;
+    if (ko.isObservable(self.data.value)) {
+        value = self.data.value();
     } else {
-        _value = self.data.value || null;
+        value = self.data.value || null;
     }
+
     if (self.type === 'choose' && self.format === 'multiselect') {
-        if (_value) {
-            if(!$.isArray(_value)) {
-                _value = [_value];
+        if (value) {
+            if(!$.isArray(value)) {
+                value = [value];
             }
-            self.value = ko.observableArray(_value);
+            self.value = ko.observableArray(value);
         }
         else {
             self.value = ko.observableArray([]);
@@ -188,25 +200,33 @@ var Question = function(questionSchema, data) {
         });
         self.value = ko.computed({
             read: function() {
-                var value = {};
-                $.each(self.properties, function(name, prop) {
-                    value[name] = {
-                        value: prop.value(),
-                        comments: prop.comments(),
-                        extra: prop.extra
-                    };
-                });
-                return value;
+                var compositeValue = {};
+                $.each(
+                    $.map(self.properties, function(prop, name) {
+                        var ret = {};
+                        ret[name] = {
+                            value: prop.value(),
+                            comments: prop.comments(),
+                            extra: prop.extra
+                        };
+                        return ret;
+                    }),
+                    $.extend.bind(null, compositeValue)
+                );
+                return compositeValue;
             },
             deferred: true
         });
+
+        self.required = self.required || $osf.any(
+            $.map(self.properties, function(prop) {
+                return prop.required;
+            })
+        );
     }
     else {
-        self.value = ko.observable(_value);
+        self.value = ko.observable(value);
     }
-    self.setValue = function(val) {
-        self.value(val);
-    };
 
     if (self.required) {
         self.value.extend({
@@ -217,17 +237,7 @@ var Question = function(questionSchema, data) {
             required: false
         });
     }
-    self.extra = ko.observable(self.data.extra || {});
 
-    self.showExample = ko.observable(false);
-    self.showUploader = ko.observable(false);
-
-    self.comments = ko.observableArray(
-        $.map(self.data.comments || [], function(comment) {
-            return new Comment(comment);
-        })
-    );
-    self.nextComment = ko.observable('');
     /**
      * @returns {Boolean} true if the nextComment <input> is not blank
      **/
@@ -236,7 +246,8 @@ var Question = function(questionSchema, data) {
     });
 
     /**
-     * @returns {Boolean} true if the value <input> is not blank
+     * @returns {Boolean} true if either the question is not required (see logic above) or
+     * the question value (or its required children's values) is not empty
      **/
     self.isComplete = ko.computed({
         read: function() {
@@ -280,29 +291,25 @@ Question.prototype.addComment = function(save) {
 Question.prototype.toggleExample = function() {
     this.showExample(!this.showExample());
 };
-/**
- * Shows/hides the Question uploader
- **/
-Question.prototype.toggleUploader = function() {
-    this.showUploader(!this.showUploader());
-};
 
 /**
  * @class Page
  * A single page within a draft registration
  *
- * @param {Object} data: serialized page from a registration schema
+ * @param {Object} schemaPage: page representation from a registration schema (see MetaSchema#pages)
+ * @param {Object} schemaData: user data to autoload into page, a key/value map of questionId: questionData
  *
  * @property {ko.observableArray[Question]} questions
  * @property {String} title
  * @property {String} id
+ * @property {Question[]} questions
+ * @property {Question} current Question
  **/
 var Page = function(schemaPage, schemaData) {
     var self = this;
-    self.questions = ko.observableArray([]);
+    self.id = schemaPage.id;
     self.title = schemaPage.title;
     self.description = schemaPage.description || '';
-    self.id = schemaPage.id;
 
     self.active = ko.observable(false);
 
@@ -311,6 +318,9 @@ var Page = function(schemaPage, schemaData) {
         return new Question(questionSchema, schemaData[questionSchema.qid]);
     });
 
+    /**
+     * Aggregate lists of comments from each question in questions. Sort by 'created'.
+     **/
     self.comments = ko.computed(function() {
         var comments = [];
         $.each(self.questions, function(_, question) {
@@ -324,19 +334,19 @@ var Page = function(schemaPage, schemaData) {
 
     // TODO: track currentQuestion based on browser focus
     self.currentQuestion = self.questions[0];
-
-    /*
-    self.nextComment = ko.computed({
-        read: function(){
-            return question.nextComment();
-        },
-        write: function(value) {
-            question.nextComment(value);
-        }
+};
+Page.prototype.viewComments = function() {
+    var self = this;
+    var comments = self.comments();
+    $.each(comments, function(index, comment) {
+        comment.viewComment($osf.currentUser());
     });
-    self.allowAddNext = question.allowAddNext.bind(question);
-    self.addComment = question.addComment.bind(question);
-    */
+};
+Page.prototype.getUnseenComments = function() {
+    var self = this;
+    return self.comments().filter(function(comment) {
+        return comment.seenBy.indexOf($osf.currentUser().id) === -1;
+    });
 };
 
 /**
@@ -377,7 +387,6 @@ var MetaSchema = function(params, schemaData) {
     self.fulfills = params.fulfills || [];
     self.messages = params.messages || {};
 
-    self.consent = params.consent || '';
     self.requiresConsent = params.requires_consent || false;
 
     self.pages = $.map(self.schema.pages, function(page) {
@@ -396,19 +405,23 @@ MetaSchema.prototype.flatQuestions = function() {
     });
     return flat;
 };
-
-MetaSchema.prototype.askConsent = function(mustAgree) {
+/**
+ * @param Boolean pre: consent before beginning or submitting?
+ **/
+MetaSchema.prototype.askConsent = function(pre) {
     var self = this;
 
     var ret = $.Deferred();
 
-    if (typeof mustAgree === 'undefined') {
-        mustAgree = true;
+    if (typeof pre === 'undefined') {
+        pre = false;
     }
 
+    var message = (pre ? self.messages.preConsentHeader : self.messages.postConsentHeader) + self.messages.consentBody;
+
     var viewModel = {
-        mustAgree: mustAgree,
-        message: self.consent,
+        mustAgree: !pre,
+        message: message,
         consent: ko.observable(false),
         submit: function() {
             $osf.unblock();
@@ -482,74 +495,51 @@ var Draft = function(params, metaSchema) {
     });
 
     self.userHasUnseenComment = ko.computed(function() {
-        var user = $osf.currentUser();
-        var ret = false;
-        $.each(self.pages(), function(i, page) {
-            $.each(page.comments(), function(idx, comment) {
-                if ( comment.seenBy().indexOf(user) === -1 )
-                    ret = true;
-            });
-        });
-        return ret;
+        return $osf.any(
+            $.map(self.pages(), function(page) {
+                return page.getUnseenComments().length > 0;
+            })
+        );
     });
 
     self.completion = ko.computed(function() {
-        var total = 0;
         var complete = 0;
-        $.each(self.metaSchema.flatQuestions(), function(_, question) {
+        var questions = self.metaSchema.flatQuestions()
+                .filter(function(question) {
+                    return question.required;
+                });
+        $.each(questions, function(_, question) {
             if (question.isComplete()) {
                 complete++;
             }
-            total++;
         });
-        return Math.ceil(100 * (complete / total));
+        return Math.ceil(100 * (complete / questions.length));
     });
+};
+Draft.prototype.getUnseenComments = function() {
+    var unseen = [];
+    $.each(self.pages(), function(_, page) {
+        unseen = unseen.concat(page.getUnseenComments());
+    });
+    return unseen;
 };
 Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var self = this;
-    var ViewModel = registrationEmbargo.ViewModel;
-    var viewModel = new ViewModel();
-    viewModel.canRegister = ko.computed(function() {
-        var embargoed = viewModel.showEmbargoDatePicker();
-        if (embargoed) {
-            return viewModel.pikaday.isValid();
-        }
-        return true;
-    });
-    var validation = [];
+    var validator = null;
     if (self.metaSchema.requiresApproval) {
-        validation.push({
-            validator: function() {
-                return viewModel.embargoEndDate().getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
+        validator = {
+            validator: function(value) {
+                return (new Date(value)).getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
             },
             message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
-        });
+        };
     }
-    validation.push({
-        validator: function() {return viewModel.isEmbargoEndDateValid();},
-        message: 'Embargo end date must be at least two days in the future.'
-    });
-    viewModel.pikaday.extend({
-        validation: validation
-    });
-    viewModel.close = function() {
-        bootbox.hideAll();
-    };
-    viewModel.register = function() {
-        confirm({
-            registrationChoice: viewModel.registrationChoice(),
-            embargoEndDate: viewModel.embargoEndDate()
-        });
-    };
-    viewModel.preRegisterPrompts = response.prompts || [];
-    bootbox.dialog({
-        // TODO: Check button language here
-        size: 'large',
-        title: language.registerConfirm,
-        message: function() {
-            ko.renderTemplate('preRegistrationTemplate', viewModel, {}, this);
-        }
-    });
+    var preRegisterPrompts = response.prompts || [];
+
+    var registrationModal = new RegistrationModal.ViewModel(
+        confirm, preRegisterPrompts, validator
+    );
+    registrationModal.show();
 };
 Draft.prototype.preRegisterErrors = function(response, confirm) {
     bootbox.confirm({
@@ -568,35 +558,7 @@ Draft.prototype.preRegisterErrors = function(response, confirm) {
             }}
     });
 };
-Draft.prototype.askConsent = function() {
-    var self = this;
 
-    var ret = $.Deferred();
-
-    var viewModel = {
-        message: self.metaSchema.consent,
-        consent: ko.observable(false),
-        submit: function() {
-            $osf.unblock();
-            bootbox.hideAll();
-            ret.resolve();
-        },
-        cancel: function() {
-            $osf.unblock();
-            bootbox.hideAll();
-            ret.reject();
-        }
-    };
-
-    bootbox.dialog({
-        size: 'large',
-        message: function() {
-            ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
-        }
-    });
-
-    return ret.promise();
-};
 Draft.prototype.beforeRegister = function(url) {
     var self = this;
 
@@ -631,15 +593,15 @@ Draft.prototype.registerWithoutReview = function() {
         title: 'Notice',
         message: self.metaSchema.messages.beforeSkipReview,
         buttons: {
-            submit: {
-                label: 'Continue',
-                className: 'btn-primary',
-                callback: self.beforeRegister.bind(self, null)
-            },
             cancel: {
                 label: 'Cancel',
                 className: 'btn-default',
                 callback: bootbox.hideAll
+            },
+            submit: {
+                label: 'Continue',
+                className: 'btn-warning',
+                callback: self.beforeRegister.bind(self, null)
             }
         }
     });
@@ -669,39 +631,16 @@ Draft.prototype.submitForReview = function() {
     var self = this;
 
     var metaSchema = self.metaSchema;
-    var messages = metaSchema.messages;
-    var beforeSubmitForApprovalMessage = messages.beforeSubmitForApproval || '';
-    var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';
-
-    var submitForReview = function() {
-        bootbox.dialog({
-            message: beforeSubmitForApprovalMessage,
-            buttons: {
-                cancel: {
-                    label: 'Cancel',
-                    className: 'btn-default',
-                    callback: bootbox.hideAll
-                },
-                ok: {
-                    label: 'Continue',
-                    className: 'btn-primary',
-                    callback: function() {
-                        self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
-                    }
-                }
-            }
-        });
-    };
 
     if (self.metaSchema.requiresConsent) {
         return self.metaSchema.askConsent()
+            .always(bootbox.hideAll)
             .then(function() {
-                bootbox.hideAll();
-                submitForReview();
-            })
-            .fail(function() {
-                bootbox.hideAll();
+                self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
             });
+    }
+    else {
+        self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
     }
 };
 
@@ -711,13 +650,13 @@ Draft.prototype.submitForReview = function() {
  * @param {Object} urls
  * @param {String} urls.update: endpoint to update a draft instance
  * @param {String} editorId: id of editor DOM node
+ * @param {Boolean} preview: enable preview mode-- adds a KO binding handler to allow extensions to define custom preview behavior
  * @property {ko.observable[Boolean]} readonly
  * @property {ko.observable[Draft]} draft
  * @property {ko.observable[Question]} currentQuestion
  * @property {Object} extensions: mapping of extenstion names to their view models
  **/
-var RegistrationEditor = function(urls, editorId) {
-
+var RegistrationEditor = function(urls, editorId, preview) {
     var self = this;
 
     self.urls = urls;
@@ -730,9 +669,6 @@ var RegistrationEditor = function(urls, editorId) {
     self.showValidation = ko.observable(false);
 
     self.contributors = ko.observable([]);
-    self.getContributors().done(function(data) {
-        self.contributors(data);
-    });
 
     self.pages = ko.computed(function () {
         // empty array if self.draft is not set.
@@ -751,26 +687,6 @@ var RegistrationEditor = function(urls, editorId) {
         return self.currentPage() === self.pages()[self.pages().length - 1];
     });
 
-    self.serialized = ko.pureComputed(function () {
-        // TODO(lyndsysimon): Test this.
-        var self = this;
-        var data = {};
-
-        $.each(self.pages(), function (_, page) {
-            $.each(page.questions, function (_, question) {
-                data[question.id] = {
-                    value: question.value()
-                };
-            });
-        });
-
-        return {
-            schema_name: self.draft().metaSchema.name,
-            schema_version: self.draft().metaSchema.version,
-            schema_data: data
-        };
-    }.bind(self));
-
     // An incrementing dirty flag. The 0 state represents not-dirty.
     // States greater than 0 imply dirty, and incrementing the number
     // allows for reliable mutations of the ko.observable.
@@ -788,6 +704,7 @@ var RegistrationEditor = function(urls, editorId) {
                 self.dirtyCount(self.dirtyCount() + 1);
             });
         });
+        page.viewComments();
     });
 
     self.validationErrors = ko.computed(function() {
@@ -825,13 +742,46 @@ var RegistrationEditor = function(urls, editorId) {
         'osf-upload': editorExtensions.Uploader,
         'osf-author-import': editorExtensions.AuthorImport
     };
+
+    preview = preview || false;
+    if (preview) {
+        ko.bindingHandlers.previewQuestion = {
+            init: function(elem, valueAccessor) {
+                var question = valueAccessor();
+                var $elem = $(elem);
+
+                if (question.type === 'object') {
+                    $elem.append(
+                        $.map(question.properties, function(subQuestion) {
+                            subQuestion = self.context(subQuestion);
+                            var value;
+                            if (self.extensions[subQuestion.type] ) {
+                                value = subQuestion.preview();
+                            } else {
+                                value = $osf.htmlEscape(subQuestion.value() || '');
+                            }
+                            return $('<p>').append(value);
+                        })
+                    );
+                } else {
+                    var value;
+                    if (self.extensions[question.type] ) {
+                        value = question.preview();
+                    } else {
+                        value = $osf.htmlEscape(question.value() || '');
+                    }
+                    $elem.append(value);
+                }
+            }
+        };
+    }
 };
 /**
  * Load draft data into the editor
  *
  * @param {Draft} draft
  **/
-RegistrationEditor.prototype.init = function(draft, preview) {
+RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
     self.draft(draft);
@@ -882,40 +832,11 @@ RegistrationEditor.prototype.init = function(draft, preview) {
         }
     });
 
+    self.getContributors().done(function(data) {
+        self.contributors(data);
+    });
+
     self.currentQuestion(self.flatQuestions().shift());
-
-    preview = preview || false;
-    if (preview) {
-        ko.bindingHandlers.previewQuestion = {
-            init: function(elem, valueAccessor) {
-                var question = valueAccessor();
-                var $elem = $(elem);
-
-                if (question.type === 'object') {
-                    $elem.append(
-                        $.map(question.properties, function(subQuestion) {
-                            subQuestion = self.context(subQuestion);
-                            var value;
-                            if (self.extensions[subQuestion.type] ) {
-                                value = subQuestion.preview();
-                            } else {
-                                value = subQuestion.value();
-                            }
-                            return $('<p>').append(value);
-                        })
-                    );
-                } else {
-                    var value;
-                    if (self.extensions[question.type] ) {
-                        value = question.preview();
-                    } else {
-                        value = question.value();
-                    }
-                    $elem.append(value);
-                }
-            }
-        };
-    }
 };
 /**
  * @returns {Question[]} flat list of the current schema's questions
@@ -954,36 +875,8 @@ RegistrationEditor.prototype.toPreview = function () {
     self.save().then(function() {
         self.dirtyCount(0);
         window.location.assign(self.draft().urls.register_page);
-    });
+    }).always($osf.unblock);
 };
-
-RegistrationEditor.prototype.viewComments = function() {
-    var self = this;
-
-    var comments = self.currentQuestion().comments();
-    $.each(comments, function(index, comment) {
-        if (comment.seenBy().indexOf($osf.currentUser().id) === -1) {
-            comment.seenBy.push($osf.currentUser().id);
-        }
-    });
-};
-RegistrationEditor.prototype.getUnseenComments = function(qid) {
-    var self = this;
-
-    var question = self.draft().schemaData[qid];
-    var comments = question.comments || [];
-    for (var key in question) {
-        if (key === 'comments') {
-            for (var i = 0; i < question[key].length - 1; i++) {
-                if (question[key][i].indexOf($osf.currentUser().id) === -1) {
-                    comments.push(question[key][i]);
-                }
-            }
-        }
-    }
-    return comments;
-};
-
 /**
  * Check that the Draft is valid before registering
  */
@@ -1084,8 +977,9 @@ RegistrationEditor.prototype.submit = function() {
     var currentUser = $osf.currentUser();
     var messages = self.draft().messages;
     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
+        var url = self.urls.submit.replace('{draft_pk}', self.draft().pk);
         if (result) {
-            var request = $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+            var request = $osf.postJSON(url, {
                 node: currentNode,
                 auth: currentUser
             });
@@ -1098,13 +992,21 @@ RegistrationEditor.prototype.submit = function() {
                             label: 'Return to registrations page',
                             className: 'btn-primary pull-right',
                             callback: function() {
-                                window.location.href = self.draft().urls.registrations;
+                                window.location.assign(self.draft().urls.registrations);
+                                $osf.unblock();
                             }
                         }
                     }
                 });
             });
-        request.fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+            request.fail(function(xhr, status, error) {
+                Raven.captureMessage('Could not submit draft registration', {
+                    url: url,
+                    textStatus: status,
+                    error: error
+                });
+                $osf.growl('Error submitting for review', language.submitForReviewFail);
+            });
         }
     });
 };
@@ -1180,7 +1082,12 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
-    request.fail(function() {
+    request.fail(function(err, status, xhr) {
+        Raven.captureMessage('Could not save draft registration', {
+            url: self.urls.update.replace('{draft_pk}', self.draft().pk),
+            textStatus: status,
+            error: error
+        });
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
     return request;
@@ -1201,10 +1108,13 @@ RegistrationEditor.prototype.getContributors = function() {
     return self.makeContributorsRequest()
         .then(function(data) {
             return $.map(data.contributors, function(c) { return c.fullname; });
-        }).fail(function() {
-            $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
-                       'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                       'problem persists.');
+        }).fail(function(xhr, status, error) {
+            Raven.captureMessage('Could not GET contributors', {
+                url: window.contextVars.node.urls.api + 'get_contributors/',
+                textStatus: status,
+                error: error
+            });
+            $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
         });
 };
 
@@ -1297,11 +1207,13 @@ RegistrationManager.prototype.init = function() {
 
     var getDraftRegistrations = self.getDraftRegistrations();
     getDraftRegistrations.done(function(response) {
-        self.drafts(
-            $.map(response.drafts, function(draft) {
-                return new Draft(draft);
-            })
-        );
+        var drafts = $.map(response.drafts, function(draft) {
+            return new Draft(draft);
+        });
+        drafts.sort(function(a, b) {
+            return a.initiated.getTime() < b.initiated.getTime();
+        });
+        self.drafts(drafts);
     });
 
     var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
@@ -1309,18 +1221,17 @@ RegistrationManager.prototype.init = function() {
     });
 
     var urlParams = $osf.urlParams();
-    if (urlParams.c && urlParams.c === 'prereg') {
+    if (urlParams.campaign && urlParams.campaign === 'prereg') {
         $osf.block();
         ready.done(function() {
-            $osf.unblock();
             var preregSchema = self.schemas().filter(function(schema) {
                 return schema.name === 'Prereg Challenge';
             })[0];
-            preregSchema.askConsent().then(function() {
-                self.selectedSchema(preregSchema);                
+            preregSchema.askConsent(true).then(function() {
+                self.selectedSchema(preregSchema);
                 $('#newDraftRegistrationForm').submit();
-            }); 
-        });
+            });
+        }).always($osf.unblock);
     }
 };
 /**
@@ -1331,16 +1242,29 @@ RegistrationManager.prototype.init = function() {
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
 
-    bootbox.confirm('Are you sure you want to delete this draft registration?', function(confirmed) {
-        if (confirmed) {
-            $.ajax({
-                url: self.urls.delete.replace('{draft_pk}', draft.pk),
-                method: 'DELETE'
-            }).then(function() {
-                self.drafts.remove(function(item) {
-                    return item.pk === draft.pk;
-                });
-            });
+    bootbox.dialog({
+        title: 'Please confirm',
+        message: 'Are you sure you want to delete this draft registration?',
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default',
+                callback: bootbox.hideAll
+            },
+            submit: {
+                label: 'Delete',
+                className: 'btn-danger',
+                callback: function() {
+                    $.ajax({
+                        url: self.urls.delete.replace('{draft_pk}', draft.pk),
+                        method: 'DELETE'
+                    }).then(function() {
+                        self.drafts.remove(function(item) {
+                            return item.pk === draft.pk;
+                        });
+                    });
+                }
+            }
         }
     });
 };
@@ -1370,7 +1294,7 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
                 callback: function(event) {
                     var selectedSchema = self.selectedSchema();
                     if (selectedSchema.requiresConsent) {
-                        selectedSchema.askConsent(false).then(function() {
+                        selectedSchema.askConsent(true).then(function() {
                             $('#newDraftRegistrationForm').submit();
                         });
                     }
@@ -1388,7 +1312,14 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
 RegistrationManager.prototype.editDraft = function(draft) {
     $osf.block();
     window.location.assign(draft.urls.edit);
+    $osf.unblock();
 };
+RegistrationManager.prototype.previewDraft = function(draft) {
+    $osf.block();
+    window.location.assign(draft.urls.register_page);
+    $osf.unblock();
+};
+
 
 module.exports = {
     Comment: Comment,

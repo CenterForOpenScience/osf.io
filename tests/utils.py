@@ -134,3 +134,12 @@ def make_drf_request(*args, **kwargs):
     http_request.META['SERVER_PORT'] = 8000
     # A DRF Request wraps a Django HttpRequest
     return Request(http_request, *args, **kwargs)
+
+
+class MockAuth(object):
+
+    def __init__(self, user):
+        self.user = user
+        self.logged_in = True
+
+mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))

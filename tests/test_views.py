@@ -65,8 +65,6 @@ from tests.factories import (
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
-DEFAULT_METASCHEMA = get_default_metaschema()
-
 class Addon(MockAddonNodeSettings):
     @property
     def complete(self):
@@ -590,7 +588,7 @@ class TestProjectViews(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):
         # register a project
-        self.project.register_node(DEFAULT_METASCHEMA, Auth(user=self.project.creator), '', None)
+        self.project.register_node(get_default_metaschema(), Auth(user=self.project.creator), '', None)
         # get the first registered project of a project
         url = self.project.api_url_for('get_registrations')
         res = self.app.get(url, auth=self.auth)
@@ -1956,7 +1954,7 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
-        project.register_node(DEFAULT_METASCHEMA, Auth(user=project.creator), '', None)
+        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None)
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
@@ -4226,7 +4224,7 @@ class TestDashboardViews(OsfTestCase):
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
         project.register_node(
-            DEFAULT_METASCHEMA, Auth(self.creator), '', '',
+            get_default_metaschema(), Auth(self.creator), '', '',
         )
 
         # Get the All My Registrations smart folder from the dashboard

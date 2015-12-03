@@ -233,7 +233,7 @@ def make_url_map(app):
             '/prereg/',
             'get',
             prereg.prereg_landing_page,
-            OsfWebRenderer('prereg_landing_page.mako')
+            OsfWebRenderer('prereg_landing_page.mako', trust=False)
         ),
 
         Rule(

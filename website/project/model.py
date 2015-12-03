@@ -114,12 +114,8 @@ class MetaSchema(StoredObject):
         return self._config.get('messages', {})
 
     @property
-    def consent(self):
-        return self._config.get('consent', '')
-
-    @property
     def requires_consent(self):
-        return self.consent != ''
+        return self._config.get('requiresConsent', False)
 
 def ensure_schema(schema, name, version=1):
     schema_obj = None
@@ -422,9 +418,16 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
 
+    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED]
+
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
                 'with id {self._id!r}>').format(self=self)
+
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
 
     @property
     def node(self):
@@ -1656,11 +1659,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     if include(descendant):
                         yield descendant
 
-    def get_aggregate_logs_queryset(self, auth):
+    def get_aggregate_logs_query(self, auth):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
         query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
+        return query
+
+    def get_aggregate_logs_queryset(self, auth):
+        query = self.get_aggregate_logs_query(auth)
         return NodeLog.find(query).sort('-_id')
 
     @property
@@ -3194,7 +3201,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
             save=True,
         )
-        # TODO make private?
+
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
@@ -3306,14 +3313,9 @@ class Sanction(StoredObject):
     state = fields.StringField(
         default=UNAPPROVED,
         validate=validators.choice_in((
-            # Allowed values according to source code comment
-            'unapproved',
-            'approved',
-            'rejected',
-            # Possible values, origin unclear. May be required, incl for unit tests TODO: review later
-            'active',
-            'cancelled',
-            'completed',
+            UNAPPROVED,
+            APPROVED,
+            REJECTED
         ))
     )
 
@@ -3559,7 +3561,6 @@ class EmailApprovableSanction(Sanction):
         raise NotImplementedError
 
     def _on_complete(self, *args):
-        super(EmailApprovableSanction, self).on_complete(*args)
         if self.notify_initiator_on_complete:
             self._notify_initiator()
 
@@ -3576,7 +3577,7 @@ class PreregCallbackMixin(object):
                 registration_url=registration.url
             )
 
-class Embargo(EmailApprovableSanction, PreregCallbackMixin):
+class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
     COMPLETED = 'completed'
@@ -3707,6 +3708,7 @@ class Embargo(EmailApprovableSanction, PreregCallbackMixin):
         self.reject(user, token)
 
     def _on_complete(self, user):
+        super(Embargo, self)._on_complete(user)
         parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
@@ -3848,7 +3850,7 @@ class Retraction(EmailApprovableSanction):
         self.reject(user, token)
 
 
-class RegistrationApproval(EmailApprovableSanction, PreregCallbackMixin):
+class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
@@ -3930,6 +3932,7 @@ class RegistrationApproval(EmailApprovableSanction, PreregCallbackMixin):
         src.save()
 
     def _on_complete(self, user):
+        super(RegistrationApproval, self)._on_complete(user)
         self.state = Sanction.APPROVED
         register = self._get_registration()
         registered_from = register.registered_from
@@ -4002,7 +4005,7 @@ class DraftRegistrationApproval(Sanction):
             save=True
         )
         registration_choice = self.meta['registration_choice']
-        sanction = None
+
         if registration_choice == 'immediate':
             sanction = functools.partial(registration.require_approval, draft.initiator)
         elif registration_choice == 'embargo':
@@ -4013,16 +4016,7 @@ class DraftRegistrationApproval(Sanction):
             )
         else:
             raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
-        try:
-            sanction(notify_initiator_on_complete=True)
-        except NodeStateError as e:
-            raise e
-            # TODO(samchrisinger)
-            #  raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-        except ValidationValueError as e:
-            raise e
-            # TODO(samchrisinger):
-            # raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+        sanction(notify_initiator_on_complete=True)
 
     def _on_reject(self, user, *args, **kwargs):
         # clear out previous registration options
