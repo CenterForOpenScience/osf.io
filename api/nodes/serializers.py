@@ -84,7 +84,6 @@ class NodeSerializer(JSONAPISerializer):
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_contrib_count'},
-        always_embed=True
     )
 
     files = RelationshipField(
@@ -101,7 +100,6 @@ class NodeSerializer(JSONAPISerializer):
         related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'},
-        always_embed=True
     ))
 
     parent = RelationshipField(
@@ -304,7 +302,9 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     target_node = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<pk>'},
+        always_embed=True
+
     )
     class Meta:
         type_ = 'node_links'

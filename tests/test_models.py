@@ -46,7 +46,7 @@ from website.addons.wiki.exceptions import (
     PageNotFoundError,
 )
 
-from tests.base import OsfTestCase, Guid, fake, capture_signals
+from tests.base import OsfTestCase, Guid, fake, capture_signals, get_default_metaschema
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
@@ -58,8 +58,6 @@ from tests.factories import (
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
 
-
-from tests.base import DEFAULT_METASCHEMA
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
 
@@ -1884,7 +1882,7 @@ class TestNode(OsfTestCase):
         node = NodeFactory(creator=user)
         node.is_public = True
         node.save()
-        registration = node.register_node(DEFAULT_METASCHEMA, Auth(user), '', None)
+        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
         assert_false(registration.is_public)
 
     def test_register_node_makes_private_child_registrations(self):
@@ -1898,7 +1896,7 @@ class TestNode(OsfTestCase):
         childchild = NodeFactory(parent=child)
         childchild.is_public = True
         childchild.save()
-        registration = node.register_node(DEFAULT_METASCHEMA, Auth(user), '', None)
+        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
         for node in registration.node_and_primary_descendants():
             assert_false(node.is_public)
 
@@ -3630,7 +3628,7 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration2.registered_from, self.project)
         assert_equal(registration2.registered_user, user2)
         assert_equal(
-            registration2.registered_meta[DEFAULT_METASCHEMA._id],
+            registration2.registered_meta[get_default_metaschema()._id],
             {'some': 'data'}
         )
 
@@ -4373,118 +4371,6 @@ class TestPrivateLink(OsfTestCase):
         link.save()
         assert_equal(link.node_scale(node), -40)
 
-class TestDraftRegistration(OsfTestCase):
-
-    def setUp(self, *args, **kwargs):
-        super(TestDraftRegistration, self).setUp(*args, **kwargs)
-
-        self.user = AuthUserFactory()
-        self.auth = self.user.auth
-        self.node = ProjectFactory(creator=self.user)
-
-        MetaSchema.remove()
-        ensure_schemas()
-        self.meta_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 1)
-        )
-        self.draft = DraftRegistration(
-            initiator=self.user,
-            branched_from=self.node,
-            registration_schema=self.meta_schema,
-            registration_metadata={
-                'summary': {'value': 'Some airy'}
-            }
-        )
-        self.draft.save()
-
-    def test_factory(self):
-        draft = DraftRegistrationFactory()
-        assert_is_not_none(draft.branched_from)
-        assert_is_not_none(draft.initiator)
-        assert_is_not_none(draft.registration_schema)
-
-        user = AuthUserFactory()
-        draft = DraftRegistrationFactory(initiator=user)
-        assert_equal(draft.initiator, user)
-
-        node = ProjectFactory()
-        draft = DraftRegistrationFactory(branched_from=node)
-        assert_equal(draft.branched_from, node)
-        assert_equal(draft.initiator, node.creator)
-
-        schema = MetaSchema.find()[1]
-        data = {'some': 'data'}
-        draft = DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
-        assert_equal(draft.registration_schema, schema)
-        assert_equal(draft.registration_metadata, data)
-
-    @mock.patch('website.project.model.Node.register_node')
-    def test_register(self, mock_register_node):
-
-        self.draft.register(self.auth)
-        mock_register_node.assert_called_with(
-            schema=self.draft.registration_schema,
-            auth=self.auth,
-            data=self.draft.registration_metadata,
-        )
-
-    @mock.patch('framework.tasks.handlers.celery_teardown_request', mock.Mock())
-    def test_register_makes_registration_private(self):
-        self.node.is_public = True
-        self.node.save()
-        registration = self.draft.register(Auth(self.user))
-        assert_false(registration.is_public)
-
-    @mock.patch('framework.tasks.handlers.celery_teardown_request', mock.Mock())
-    def test_register_makes_registration_children_private(self):
-        self.node.is_public = True
-        self.node.save()
-        child = NodeFactory(parent=self.node)
-        child.is_public = True
-        child.save()
-        childchild = NodeFactory(parent=child)
-        childchild.is_public = True
-        childchild.save()
-        registration = self.draft.register(Auth(self.user))
-        for node in registration.node_and_primary_descendants():
-            assert_false(node.is_public)
-
-    def test_update_metadata_tracks_changes(self):
-        self.draft.registration_metadata = {
-            'foo': {
-                'value': 'bar',
-
-            },
-            'a': {
-                'value': 1,
-            },
-            'b': {
-                'value': True
-            },
-        }
-        new_meta = {
-            'foo': {
-                'value': 'foobar',
-            },
-            'a': {
-                'value': 1,
-            },
-            'b': {
-                'value': True,
-            },
-            'c': {
-                'value': 2,
-            },
-        }
-        changes = self.draft.update_metadata(new_meta)
-        self.draft.save()
-        for key in ['foo', 'c']:
-            assert_in(key, changes)
-            assert_equal(
-                self.draft.registration_metadata[key],
-                new_meta[key]
-            )
 
     def test_create_from_node(self):
         ensure_schemas()

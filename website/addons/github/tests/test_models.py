@@ -7,7 +7,7 @@ from nose.tools import *  # noqa
 from github3 import GitHubError
 from github3.repos import Repository
 
-from tests.base import OsfTestCase, DEFAULT_METASCHEMA
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth import Auth
@@ -230,7 +230,7 @@ class TestCallbacks(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
-            schema=DEFAULT_METASCHEMA,
+            schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
             data='hodor',
         )
