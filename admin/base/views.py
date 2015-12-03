@@ -22,7 +22,7 @@ def password_reset_confirm_custom(request, **kwargs):
         try:
             uid = urlsafe_base64_decode(kwargs['uidb64'])
             user = MyUser.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        except (TypeError, ValueError, OverflowError, MyUser.DoesNotExist):
             pass
         else:
             user.confirmed = True
