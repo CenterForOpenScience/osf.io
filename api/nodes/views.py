@@ -27,7 +27,7 @@ from api.nodes.serializers import (
     NodeContributorsCreateSerializer
 )
 from api.registrations.serializers import RegistrationSerializer
-from api.institutions.serializers import InstitutionSerializer
+from api.institutions.serializers import InstitutionDetailSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
@@ -1728,7 +1728,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['node'] = node
         serializer.save()
 
-class NodeInstitutionList(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -1737,11 +1737,11 @@ class NodeInstitutionList(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    serializer_class = InstitutionSerializer
+    serializer_class = InstitutionDetailSerializer
 
     model = Institution
     view_category = 'nodes'
-    view_name = 'node-institutions'
+    view_name = 'node-institution-detail'
 
     def get_object(self):
         node = self.get_node()

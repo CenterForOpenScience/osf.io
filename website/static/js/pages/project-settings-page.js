@@ -69,7 +69,7 @@ var institutionsViewModel = function() {
         self.availableInstitutions(response.data.embeds.institutions.data);
     });
     $.ajax({
-        url: ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institutions',
+        url: ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institution',
         type: 'GET',
         dataType: 'json'
     }).done(function(response) {
@@ -81,7 +81,7 @@ var institutionsViewModel = function() {
         var inst = $('input[name=primaryInst]:checked', '#selectedInst').val();
         $osf.ajaxJSON(
             inst !== 'None' ? 'PUT' : 'DELETE',
-            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institutions/',
+            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institution/',
             {
                 'isCors': true,
                 'data': {

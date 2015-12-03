@@ -116,7 +116,7 @@ class NodeSerializer(JSONAPISerializer):
     ))
 
     primary_institution = RelationshipField(
-        related_view='nodes:node-institutions',
+        related_view='nodes:node-institution-detail',
         related_view_kwargs={'node_id': '<pk>'}
     )
 
