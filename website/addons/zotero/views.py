@@ -29,12 +29,14 @@ def zotero_get_config(auth, node_addon, **kwargs):
     """
 
     provider = ZoteroCitationsProvider()
-    return {
-        'result': provider.serializer(
-            node_settings=node_addon,
-            user_settings=auth.user.get_addon('zotero'),
-        ).serialized_node_settings
-    }
+
+    result = provider.serializer(
+        node_settings=node_addon,
+        user_settings=auth.user.get_addon('zotero')
+    ).serialized_node_settings
+    result['validCredentials'] = provider.check_credentials(node_addon)
+    return {'result': result}
+
 
 @must_have_permission('write')
 @must_have_addon('zotero', 'node')
