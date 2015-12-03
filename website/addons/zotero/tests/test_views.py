@@ -92,7 +92,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['nodeHasAuth'])
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
-        assert_true(res.json['validCredentials'])
+        assert_true(result['validCredentials'])
         assert_equal(result['folder'], {'name': ''})
         assert_equal(result['ownerName'], self.user.fullname)
         assert_true(result['urls']['auth'])
@@ -116,7 +116,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['nodeHasAuth'])
         assert_false(result['userHasAuth'])
         assert_false(result['userIsOwner'])
-        assert_true(res.json['validCredentials'])
+        assert_true(result['validCredentials'])
         assert_equal(result['folder'], {'name': ''})
         assert_equal(result['ownerName'], self.user.fullname)
         assert_true(result['urls']['auth'])
@@ -126,8 +126,10 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['urls']['importAuth'])
         assert_true(result['urls']['settings'])
 
-    def test_set_auth(self):
+    @mock.patch('website.addons.zotero.provider.ZoteroCitationsProvider.check_credentials')
+    def test_set_auth(self, mock_credentials):
 
+        mock_credentials.return_value = True
         res = self.app.put_json(
             self.project.api_url_for('zotero_add_user_auth'),
             {
