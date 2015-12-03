@@ -47,3 +47,6 @@ django-cors-headers==1.1.0
 django-rest-swagger==0.3.2
 pyjwt==1.4.0
 pyjwe==0.1.4
+
+# Admin requirements
+django-extensions==1.5.9
