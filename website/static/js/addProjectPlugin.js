@@ -27,6 +27,10 @@ var AddProject = {
         };
         self.newProjectName = m.prop('');
         self.goToProjectLink = m.prop('');
+        self.errorMessageType = m.prop('unknown');
+        self.errorMessage = {
+            'unknown' : 'There was an unknown error. Please try again later.'
+        };
         self.add = function _add () {
             self.viewState('processing');
             var url = $osf.apiV2Url('nodes/', { query : {}});
@@ -47,7 +51,6 @@ var AddProject = {
             var error = function _error (result) {
                 self.viewState('error');
                 console.log('error', result);
-
             };
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);
@@ -70,12 +73,17 @@ var AddProject = {
             //Success:       201 CREATED + node representation
 
         };
+        self.reset = function _reset(){
+            self.newProjectName('');
+            self.viewState('form');
+            $('.modal').modal('hide');
+        };
     },
     view : function (ctrl, options) {
         var templates = {
             form : m('.modal-content', [
                 m('.modal-header', [
-                    m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                    m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                         m('span[aria-hidden="true"]','×'),
                     ]),
                     m('h3.modal-title#addProject', 'Add New Project')
@@ -89,14 +97,14 @@ var AddProject = {
                     ]),
                 ]),
                 m('.modal-footer', [
-                    m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
+                    m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : ctrl.reset},  'Cancel'),
                     m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Add')
                 ])
             ]),
             processing : m('.modal-content',
                 m('.modal-content',
                     m('.modal-header', [
-                        m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                        m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                             m('span[aria-hidden="true"]','×'),
                         ]),
                     ]),
@@ -108,37 +116,34 @@ var AddProject = {
             ),
             success : m('.modal-content', [
                 m('.modal-content',
-                    m('.modal-header', [
-                        m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                            m('span[aria-hidden="true"]','×'),
-                        ]),
-                    ]),
                     m('.modal-body', [
-                            m('.add-project-success', 'Success...')
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
+                                m('span[aria-hidden="true"]','×'),
+                            ]),
+                            m('h4.p-md.add-project-success.text-success', 'Project created successfully!')
                         ]
                     ),
                     m('.modal-footer', [
-                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Keep Working Here'),
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : ctrl.reset },  'Keep Working Here'),
                         m('a.btn.btn-success', { href : ctrl.goToProjectLink() },'Go to New Project')
                     ])
                 )
             ]),
             error : m('.modal-content', [
                 m('.modal-content',
-                    m('.modal-header', [
-                        m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                            m('span[aria-hidden="true"]','×'),
-                        ]),
-                    ]),
                     m('.modal-body', [
-                            m('.add-project-error', 'There was a problem...')
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
+                                m('span[aria-hidden="true"]','×'),
+                            ]),
+                            m('h4.p-md.add-project-error.text-danger', 'Couldn\'t create your project'),
+                            m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
                     )
                 )
             ])
         };
 
-        return  m('#addProjectWrap', [
+        return  m('', [
             ctrl.options.buttonTemplate,
             m('#addProjectModal.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addProject"][aria-hidden="true"]',
                 m('.modal-dialog',
