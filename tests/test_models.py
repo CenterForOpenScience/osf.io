@@ -3157,8 +3157,7 @@ class TestUltimateParent(OsfTestCase):
 
     def test_get_descendants_recursive_returns_in_depth_order(self):
         # Build up a family of nodes
-        # total_nodes = 1
-        node_structure = [5, 1, 2, [1, 2, 5], 3, [10, 5, 2, 1], 2, [4, [2, 2], 6], 1, 3, 5, 10, 5, 3, 1, [4, [2, 2], 6], 2, [10, 5, 2, 1], 3,  [1, 2, 5], 2, 1, 5]
+        node_structure = [5, 2, [1, 2], 3, [10, 2, 1], 2, [4, [2, 2], 6]]
         self.render_generations_from_node_structure_list(self.project, node_structure)
 
         parent_list = [self.project._id]
@@ -3170,26 +3169,23 @@ class TestUltimateParent(OsfTestCase):
                 assert_in(project.parent._id, parent_list)
                 nodes_touched += 1
         assert_not_equal(nodes_touched, 0)
+        assert_equal(nodes_touched, 42)
 
     def render_generations_from_parent(self, parent, num_generations):
-        generations_created = 0
         current_gen = parent
         for generation in xrange(0, num_generations):
             next_gen = NodeFactory(parent=current_gen)
             current_gen = next_gen
-            generations_created += 1
+        return current_gen
 
-        return current_gen, generations_created
-
-    def render_generations_from_node_structure_list(self, parent, node_structure_list, total_nodes=1):
-        total_nodes = 1
+    def render_generations_from_node_structure_list(self, parent, node_structure_list):
+        new_parent = None
         for node_number in node_structure_list:
             if isinstance(node_number, list):
-                self.render_generations_from_node_structure_list(parent, node_number, total_nodes)
+                self.render_generations_from_node_structure_list(new_parent or parent, node_number)
             else:
-                parent, new_nodes = self.render_generations_from_parent(parent, node_number)
-                total_nodes += new_nodes
-        return total_nodes
+                new_parent = self.render_generations_from_parent(parent, node_number)
+        return new_parent
 
 
 class TestTemplateNode(OsfTestCase):
