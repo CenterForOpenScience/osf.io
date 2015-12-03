@@ -103,6 +103,16 @@ MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is
 ENABLE_EMAIL_SUBSCRIPTIONS = True
 MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
+#Triggered emails
+OSF_HELP_LIST = 'Open Science Framework Help'
+WAIT_BETWEEN_MAILS = timedelta(days=7)
+NO_ADDON_WAIT_TIME = timedelta(weeks=8)
+NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
+WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)
+NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
+NEW_PUBLIC_PROJECT_WAIT_TIME = timedelta(hours=24)
+WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
+
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
 
@@ -149,7 +159,7 @@ PROFILE_IMAGE_MEDIUM = 40
 PROFILE_IMAGE_SMALL = 20
 
 # Conference options
-CONFERNCE_MIN_COUNT = 5
+CONFERENCE_MIN_COUNT = 5
 
 WIKI_WHITELIST = {
     'tags': [
@@ -283,7 +293,8 @@ CELERY_IMPORTS = (
     'framework.analytics.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',
-    'website.archiver.tasks'
+    'website.archiver.tasks',
+    'website.search.search',
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.

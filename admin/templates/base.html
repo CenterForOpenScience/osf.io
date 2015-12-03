@@ -8,7 +8,6 @@
     {% block title %}
       <title>OSF Admin | Dashboard</title>
     {% endblock %}
-
     <!-- Tell the browser to be responsive to screen width -->
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
     <!-- Bootstrap -->
@@ -87,6 +86,9 @@
         <!-- Main content -->
         <section class="content">
           {% block content %}
+          <h1>
+           Welcome to the OSF Admin Home Page
+          </h1>
           <!-- Your Page Content Here -->
           {% endblock %}
         </section><!-- /.content -->
@@ -102,7 +104,6 @@
     <!-- Included JS -->
     {% render_bundle 'vendor' %}
     {% render_bundle 'admin-base-page' %}
-    <script src="{% static 'vendor/bower_components/admin-lte/dist/js/app.min.js' %}"></script>
 
     {% block bottom_js %}
       
