@@ -16,7 +16,6 @@ from api.base import utils
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
 
-
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
     """
     Properly handles formatting of self and related links according to JSON API.
@@ -98,7 +97,7 @@ class IDField(ser.CharField):
         kwargs['label'] = 'ID'
         super(IDField, self).__init__(**kwargs)
 
-    #Overrides CharField
+    # Overrides CharField
     def to_internal_value(self, data):
         request = self.context['request']
         if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
@@ -282,7 +281,15 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         bracket_check = _tpl(lookup_field)
         if bracket_check:
             source_attrs = bracket_check.split('.')
-            return get_nested_attributes(obj, source_attrs)
+            # If you are using a nested attribute for lookup, and you get the attribute wrong, you will not get an
+            # error message, you will just not see that field. This allows us to have slightly more dynamic use of
+            # nested attributes in relationship fields.
+            try:
+                return_val = get_nested_attributes(obj, source_attrs)
+            except KeyError:
+                return None
+            return return_val
+
         return lookup_field
 
     def kwargs_lookup(self, obj, kwargs_dict):
@@ -329,7 +336,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             self_meta = self.get_meta_information(self.self_meta, value)
 
             ret = format_relationship_links(related_url, self_url, related_meta, self_meta)
-
         return ret
 
 
@@ -470,7 +476,8 @@ def _get_attr_from_tpl(attr_tpl, obj):
 # TODO: Make this a Field that is usable on its own?
 class Link(object):
     """Link object to use in conjunction with Links field. Does reverse lookup of
-    URLs given an endpoint name and attributed enclosed in `<>`.
+    URLs given an endpoint name and attributed enclosed in `<>`. This includes
+    complex key strings like 'user.id'
     """
 
     def __init__(self, endpoint, args=None, kwargs=None, query_kwargs=None, **kw):
@@ -701,3 +708,23 @@ def DevOnly(field):
         experimental_field = DevMode(CharField(required=False))
     """
     return field if settings.DEV_MODE else None
+
+
+class RestrictedDictSerializer(ser.Serializer):
+    def to_representation(self, obj):
+        data = {}
+        fields = [field for field in self.fields.values() if not field.write_only]
+
+        for field in fields:
+            try:
+                attribute = field.get_attribute(obj)
+            except ser.SkipField:
+                continue
+
+            if attribute is None:
+                # We skip `to_representation` for `None` values so that
+                # fields do not have to explicitly deal with that case.
+                data[field.field_name] = None
+            else:
+                data[field.field_name] = field.to_representation(attribute)
+        return data

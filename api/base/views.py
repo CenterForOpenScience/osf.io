@@ -67,7 +67,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
 @api_view(('GET',))
 def root(request, format=None):
-    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, and files
+    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
     from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
     maintained by the [Center for Open Science](http://cos.io/).
 

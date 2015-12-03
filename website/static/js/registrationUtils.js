@@ -870,7 +870,7 @@ RegistrationEditor.prototype.toPreview = function () {
     self.save().then(function() {
         self.dirtyCount(0);
         window.location.assign(self.draft().urls.register_page);
-    });
+    }).always($osf.unblock);
 };
 /**
  * Check that the Draft is valid before registering
@@ -988,6 +988,7 @@ RegistrationEditor.prototype.submit = function() {
                             className: 'btn-primary pull-right',
                             callback: function() {
                                 window.location.assign(self.draft().urls.registrations);
+                                $osf.unblock();
                             }
                         }
                     }
@@ -1180,7 +1181,7 @@ RegistrationManager.prototype.init = function() {
             return new Draft(draft);
         });
         drafts.sort(function(a, b) {
-            return a.initiated < b.initiated;
+            return a.initiated.getTime() < b.initiated.getTime();
         });
         self.drafts(drafts);
     });
@@ -1193,15 +1194,14 @@ RegistrationManager.prototype.init = function() {
     if (urlParams.campaign && urlParams.campaign === 'prereg') {
         $osf.block();
         ready.done(function() {
-            $osf.unblock();
             var preregSchema = self.schemas().filter(function(schema) {
                 return schema.name === 'Prereg Challenge';
             })[0];
-            preregSchema.askConsent().then(function() {
+            preregSchema.askConsent(true).then(function() {
                 self.selectedSchema(preregSchema);
                 $('#newDraftRegistrationForm').submit();
             });
-        });
+        }).always($osf.unblock);
     }
 };
 /**
@@ -1282,11 +1282,14 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
 RegistrationManager.prototype.editDraft = function(draft) {
     $osf.block();
     window.location.assign(draft.urls.edit);
+    $osf.unblock();
 };
 RegistrationManager.prototype.previewDraft = function(draft) {
     $osf.block();
     window.location.assign(draft.urls.register_page);
+    $osf.unblock();
 };
+
 
 module.exports = {
     Comment: Comment,

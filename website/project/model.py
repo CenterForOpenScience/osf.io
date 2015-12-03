@@ -418,9 +418,16 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
 
+    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED]
+
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
                 'with id {self._id!r}>').format(self=self)
+
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
 
     @property
     def node(self):
@@ -1652,11 +1659,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     if include(descendant):
                         yield descendant
 
-    def get_aggregate_logs_queryset(self, auth):
+    def get_aggregate_logs_query(self, auth):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
         query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
+        return query
+
+    def get_aggregate_logs_queryset(self, auth):
+        query = self.get_aggregate_logs_query(auth)
         return NodeLog.find(query).sort('-_id')
 
     @property
