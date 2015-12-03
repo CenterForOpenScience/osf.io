@@ -191,6 +191,19 @@ var errorDefaultShort = 'Unable to resolve';
 var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
 
+var handleAddonApiHTTPError = function(error){
+    var response;
+    try{
+        response = JSON.parse(error.response);
+    } catch (e){
+        response = '';
+    }
+    var title = response.message_short || errorDefaultShort;
+    var message = response.message_long || errorDefaultLong;
+
+    $.osf.growl(title, message);
+};
+
 var handleJSONError = function(response) {
     var title = (response.responseJSON && response.responseJSON.message_short) || errorDefaultShort;
     var message = (response.responseJSON && response.responseJSON.message_long) || errorDefaultLong;
@@ -379,13 +392,6 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
     } catch(err) { return false; }
     return true;
 };
-
-/**
- * Allows data-bind to be called without a div so the layout of the page is not effected.
- * Example:
- * <!-- ko stopBinding: true -->
- */
-ko.virtualElements.allowedBindings.stopBinding = true;
 
 /**
   * A thin wrapper around ko.applyBindings that ensures that a view model
@@ -721,6 +727,23 @@ function indexOf(array, searchFn) {
     return -1;
 }
 
+/**
+ * Check if any of the values in an array are truthy
+ *
+ * @param {Array[Any]} listOfBools
+ * @returns {Boolean}
+ **/
+var any = function(listOfBools) {
+    var someTruthy = false;
+    for(var i = 0; i < listOfBools.length; i++){
+        someTruthy = someTruthy || Boolean(listOfBools[i]);
+        if (someTruthy) {
+            return someTruthy;
+        }
+    }
+    return false;
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -728,6 +751,7 @@ module.exports = window.$.osf = {
     putJSON: putJSON,
     ajaxJSON: ajaxJSON,
     setXHRAuthorization: setXHRAuthorization,
+    handleAddonApiHTTPError: handleAddonApiHTTPError,
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
     block: block,
@@ -753,5 +777,6 @@ module.exports = window.$.osf = {
     isIE: isIE,
     isSafari:isSafari,
     indexOf: indexOf,
-    currentUser: currentUser
+    currentUser: currentUser,
+    any: any
 };

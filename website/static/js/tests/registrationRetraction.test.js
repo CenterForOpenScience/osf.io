@@ -14,6 +14,7 @@ var registrationRetraction = require('js/registrationRetraction');
 sinon.assert.expose(assert, {prefix: ''});
 
 describe('registrationRetraction', () => {
+    sinon.collection.restore();
     describe('ViewModels', () => {
 
         describe('RegistrationRetractionViewModel', () => {
