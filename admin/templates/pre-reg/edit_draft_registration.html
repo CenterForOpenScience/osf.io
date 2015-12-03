@@ -7,6 +7,11 @@
 <link href="{% static 'css/registrations.css' %}" rel="stylesheet" type="text/css" />
 <script>
    var context = {{ data|safe }};
+   window.contextVars = window.contextVars || {};
+   window.contextVars.currentUser = {
+     id: -1,
+     fullname: 'Prereg Admin'
+   };
 </script>
 
 <div class="container scripted" id="draftRegistrationScope">
@@ -27,14 +32,7 @@
                         }" class="btn btn-danger" type="button">
             <i class="fa fa-remove"></i> Reject
           </a>
-          <a data-bind="click: $root.requestRevisions,
-                        tooltip: {
-                          position: 'top',
-                          title: 'Request Revisions'
-                        }" class="btn btn-primary" type="button">
-            <i class="fa fa-reply"></i> Request Revisions
-          </a>
-        </span>   
+        </span>
       </div>
     <h3>
       <div class="row">
@@ -50,9 +48,9 @@
           <div class="container">
             <div class="row">
               <div class="span8 col-md-2 columns eight large-8">
-                <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}, visible: pages().length">
+                <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}, visible: pages().length > 1">
                   <li class="re-navbar">
-                    <a class="registration-editor-page" id="top-nav" style="text-align: left;" data-bind="text: title, click: $root.selectPage, style:{'font-weight': active() ? 'bold' : 'normal'}">
+                    <a class="registration-editor-page" id="top-nav" style="text-align: left;" data-bind="text: title, click: $root.selectPage.bind($root), style:{'font-weight': active() ? 'bold' : 'normal'}">
                       <i class="fa fa-caret-right"></i>
                     </a>
                   </li>
@@ -61,9 +59,18 @@
               <div class="span8 col-md-9 columns eight large-8">
                 <!-- EDITOR -->
                 <div data-bind="if: currentPage">
-                  <div data-bind="if: currentPage">                  
-                    <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
+                  <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
+                      <div class="row">
+                        <strong data-bind="attr.id: question.id, text: question.title"></strong>:
+                        <div class="well">
+                          <p>
+                            <span data-bind="previewQuestion: $root.context(question, $root, true)"></span>
+                          </p>
+                        </div>
+                      </div>                    
+                    </div>
                   </div>
+                <div class="well" data-bind="template: {data: currentPage, name: 'commentable'}"></div> 
                 </div>
                 <div class="row" style="margin-bottom: 10px;">
                   <span>
