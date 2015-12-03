@@ -1,42 +1,48 @@
 from rest_framework import generics
+from rest_framework import permissions as drf_permissions
+
 from modularodm import Q
+
+from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import Institution, Node, User
 
-from api.institutions.serializers import InstitutionSerializer, InstitutionDetailSerializer
-
-from api.nodes.serializers import NodeSerializer, NodeDetailSerializer
-from api.users.serializers import UserSerializer, UserDetailSerializer
-
+from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
+from api.nodes.serializers import NodeSerializer, NodeDetailSerializer
+from api.users.serializers import UserSerializer, UserDetailSerializer
 
-class InstitutionList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView):
-    permission_classes = ()
+from .serializers import InstitutionSerializer, InstitutionDetailSerializer
 
-    required_read_scopes = []
-    required_write_scopes = []
+
+class InstitutionList(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
     model_class = Institution
 
     serializer_class = InstitutionSerializer
     view_category = 'institutions'
     view_name = 'institution-list'
 
-    def get_default_odm_query(self):
-        query = None
-        return query
-
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return Institution.find(query)
+        return Institution.find()
 
 
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    permission_classes = ()
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
 
-    required_read_scopes = []
-    required_write_scopes = []
+    required_read_scopes = [CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
     model_class = Institution
 
     serializer_class = InstitutionDetailSerializer
@@ -52,10 +58,13 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return inst
 
 class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView):
-    permission_classes = ()
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
 
-    required_read_scopes = []
-    required_write_scopes = []
+    required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
     model_class = Node
 
     serializer_class = NodeSerializer
@@ -72,10 +81,13 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView)
         return Node.find(query)
 
 class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    permission_classes = ()
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
 
-    required_read_scopes = []
-    required_write_scopes = []
+    required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
     model_class = Node
 
     serializer_class = NodeDetailSerializer
@@ -91,10 +103,13 @@ class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return node
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView):
-    permission_classes = ()
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
 
-    required_read_scopes = []
-    required_write_scopes = []
+    required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
     model_class = User
 
     serializer_class = UserSerializer
@@ -111,10 +126,13 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView)
         return User.find(query)
 
 class InstitutionUserDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    permission_classes = ()
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
 
-    required_read_scopes = []
-    required_write_scopes = []
+    required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = UserDetailSerializer
     view_category = 'institutions'

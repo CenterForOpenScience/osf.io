@@ -304,10 +304,13 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
         return nodes
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
-    permission_classes = ()
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
 
-    required_read_scopes = []
-    required_write_scopes = []
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = InstitutionSerializer
     view_category = 'users'

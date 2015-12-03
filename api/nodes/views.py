@@ -1729,10 +1729,14 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.save()
 
 class NodeInstitutionList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
-    permission_classes = ()
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        AdminOrPublic
+    )
 
-    required_read_scopes = []
-    required_write_scopes = []
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     serializer_class = InstitutionSerializer
 
     model = Institution

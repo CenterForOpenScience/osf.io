@@ -51,6 +51,8 @@ class CoreScopes(object):
     TOKENS_READ = 'tokens_read'
     TOKENS_WRITE = 'tokens_write'
 
+    INSTITUTION_READ = 'institutions_read'
+
     NULL = 'null'
 
     ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
