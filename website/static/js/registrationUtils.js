@@ -108,7 +108,7 @@ Comment.prototype.toggleSaved = function(save) {
 
     if (!self.saved()) {
         // error handling handled implicitly in save
-        save.done(self.saved.bind(self, true));
+        save().done(self.saved.bind(self, true));
     }
     else {
         self.saved(false);
