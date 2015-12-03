@@ -58,7 +58,7 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
         message: 'Embargo end date must be at least two days in the future.'
     }];
     if(validator) {
-        validation.push(validator);
+        validation.unshift(validator);
     }
     self.pikaday.extend({
         validation: validation

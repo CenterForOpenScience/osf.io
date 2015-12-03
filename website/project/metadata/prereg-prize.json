@@ -152,7 +152,7 @@
             "format": "textarea",
             "title": "Manipulated variables",
             "description": "Describe all variables you plan to manipulate and the levels or treatment arms of each variable. For observational studies and meta-analyses, simply state that this is not applicable.",
-            "help": "We manipulated the percentage of sugar by mass added to brownies. . The four levels of this categorical variable are: 15%, 20%, 25%, or 40% cane sugar by mass. <br /><br /> How responses will be evaluated: For any experimental manipulation, you should give a precise definition of each manipulated variable. This must include a precise description of the levels at which each variable will be set, or a specific definition for each categorical treatment. For example, “loud or quiet,” should instead give either a precise decibel level or a means of recreating each level. 'Presence/absence' or 'positive/negative' is an acceptable description if the variable is precisely described.",
+            "help": "We manipulated the percentage of sugar by mass added to brownies. The four levels of this categorical variable are: 15%, 20%, 25%, or 40% cane sugar by mass. <br /><br /> How responses will be evaluated: For any experimental manipulation, you should give a precise definition of each manipulated variable. This must include a precise description of the levels at which each variable will be set, or a specific definition for each categorical treatment. For example, “loud or quiet,” should instead give either a precise decibel level or a means of recreating each level. 'Presence/absence' or 'positive/negative' is an acceptable description if the variable is precisely described.",
             "required": true
         }, {
             "qid": "q12",
@@ -275,7 +275,7 @@
             "qid": "q21",
             "nav": "Follow-up analyses",
             "title": "Follow-up analyses",
-            "description": "If not specified previously, will you be conducting any confirmatory analyses to follow up on effects in your statistical model, such as subgroup analyses, pairwise or complex contrasts, or follow-up tests from interactions. Remember that any analyses not specified in this research plan must be noted as exploratory.",
+            "description": "If not specified previously, will you be conducting any confirmatory analyses to follow up on effects in your statistical model, such as subgroup analyses, pairwise or complex contrasts, or follow-up tests from interactions? Remember that any analyses not specified in this research plan must be noted as exploratory.",
             "help": "If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to conduct all possible pairwise comparison.<br /><br /> How responses will be evaluated: This is simply a place to allow entering in any additional analyses. The criteria for these follow up analyses are identical to any analyses listed in other sections. It is also fine to enter these follow up analyses in a separate analysis section. The purpose of this question is to allow entering of any follow up tests that naturally follow from a primary analysis.",
             "required": true,
             "type": "string",
@@ -284,8 +284,8 @@
             "qid": "q22",
             "nav": "Inference criteria",
             "title": "Inference criteria",
-            "description": "What criteria will you use to make inferences? Please describe the information you’ll use (e.g. p-values, bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this? ",
-            "help": "We will use the standard p<.05 criteria for determining if the ANOVA and the post hoc test suggest that the results are significantly different from those expected if the null hypothesis were correct. The post-hoc Tukey-Kramer test adjusts for multiple comparisons.<br /><br /> How responses will be evaluated: P-values, confidence intervals, and effect sizes are standard means for making an inference, and any level is acceptable, though some criteria must be specified in this or previous fields. Bayesian analyses should specify a Bayes factor or a credible interval. If you are selecting models, then how will you determine the relative quality of each? In regards to multiple comparisons, this is a question with few “wrong” answers. In other words, transparency is more important than any specific method of controlling the false discovery rate or false error rate. One may state an intention to report all tests conducted or one may conduct a specific correction procedure, either strategy is acceptable.",
+            "description": "What criteria will you use to make inferences? Please describe the information you’ll use (e.g. p-values, Bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this? ",
+            "help": "We will use the standard p<.05 criteria for determining if the ANOVA and the post hoc test suggest that the results are significantly different from those expected if the null hypothesis were correct. The post-hoc Tukey-Kramer test adjusts for multiple comparisons.<br /><br /> How responses will be evaluated: P-values, confidence intervals, and effect sizes are standard means for making an inference, and any level is acceptable, though some criteria must be specified in this or previous fields. Bayesian analyses should specify a Bayes factor or a credible interval. If you are selecting models, then how will you determine the relative quality of each? In regards to multiple comparisons, this is a question with few “wrong” answers. In other words, transparency is more important than any specific method of controlling the false discovery rate or false error rate. One may state an intention to report all tests conducted or one may conduct a specific correction procedure; either strategy is acceptable.",
             "required": true,
             "type": "string",
             "format": "textarea"
@@ -293,7 +293,7 @@
             "qid": "q23",
             "nav": "Data exclusion",
             "title": "Data exclusion",
-            "description": "How will you determine what data or samples (if any) to exclude from your analyses? How will outliers be handled?",
+            "description": "How will you determine which data points or samples (if any) to exclude from your analyses? How will outliers be handled?",
             "help": "No checks will be performed to determine eligibility for inclusion besides verification that each subject answered each of the three tastiness indices. Outliers will be included in the analysis. <br /><br /> How responses will be evaluated: Any rule for excluding a particular set of data is acceptable. One may describe rules for excluding a participant or for identifying outlier data.",
             "required": true,
             "type": "string",
