@@ -6,7 +6,7 @@
 
 var Raven = require('raven-js');
 var $ = require('jquery');
-var jstz = require('jstimezonedetect').jstz;
+var jstz = require('jstimezonedetect');
 
 var $osf = require('js/osfHelpers');
 var FileBrowser = require('js/fileBrowser.js').FileBrowser;

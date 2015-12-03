@@ -1,9 +1,10 @@
 var SUPPORT_EMAIL = 'support@osf.io';
-var SUPPORT_LINK = '<a href="mailto: ' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL + '</a>';
+var SUPPORT_LINK = '<a href="mailto:' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL +'</a>';
 
 var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_LINK + ' if the problem persists.';
 
 module.exports = {
+    SUPPORT_LINK: SUPPORT_LINK,
     // TODO
     makePublic: null,
     makePrivate: null,
@@ -11,15 +12,27 @@ module.exports = {
         registrationFailed: 'Registration failed. If this problem persists, please contact ' + SUPPORT_EMAIL + '.',
         invalidEmbargoTitle: 'Invalid embargo end date',
         invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
-        registerConfirm: 'Are you sure you want to register this project?',
-        registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.'
+        registerConfirm: 'Before you continue...',
+        registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.',
+        registerFail: 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_LINK,
+        submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_LINK,
+        beforeEditIsApproved: 'This draft registration is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.',
+        beforeEditIsPendingReview: 'This draft registration is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.'
     },
     Addons: {
         dataverse: {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                'contact <a href="mailto: ' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL + '</a> if the ' +
-                'problem persists.',
-            deauthError: 'Could not disconnect the Dataverse account at this time.',
+                'contact ' + SUPPORT_LINK + ' if the problem persists.',
+            confirmUserDeauth: 'Are you sure you want to unlink your Dataverse ' +
+                'Account? This will revoke access to Dataverse for all ' +
+                'projects you have authorized.',
+            confirmNodeDeauth: 'Are you sure you want to unlink this Dataverse Account? This will ' +
+                'revoke the ability to view, download, modify, and upload files ' +
+                'to studies on the Dataverse from the OSF. This will not remove your ' +
+                'Dataverse authorization from your <a href="/settings/addons/">user settings</a> ' +
+                'page.',
+            deauthError: 'Could not disconnect the Dataverse Account at this time.',
+            deauthSuccess: 'Succesfully disconnected the connected Dataverse Account.',
             authError: 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
                 'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
                 'have any questions or believe this to be an error, please contact ' +
@@ -75,7 +88,9 @@ module.exports = {
         dataListFetchError: 'Could not load list of developer applications at this time. ' + REFRESH_OR_SUPPORT,
         dataSendError: 'Error sending data to the server. Check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         creationSuccess: 'Successfully registered new application',
-        dataUpdated: 'Application data updated'
+        dataUpdated: 'Application data updated',
+        resetSecretConfirm: 'Are you sure you want to reset the client secret? This cannot be reversed. Your application will be unusable until it is updated with the new client secret, and all users must reauthorize access. Previously issued access tokens will no longer work.',
+        resetSecretError: 'Could not reset client secret. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + 'if the problem persists.',
     },
     apiOauth2Token: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
@@ -92,5 +107,5 @@ module.exports = {
         updateErrorMessage400: 'Error updating project settings. Check that all fields are valid.',
         updateErrorMessage: 'Could not update project settings. ' + REFRESH_OR_SUPPORT,
         instantiationErrorMessage: 'Trying to instantiate ProjectSettings view model without an update URL'
-    },
+    }
 };

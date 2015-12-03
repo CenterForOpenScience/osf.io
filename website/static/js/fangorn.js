@@ -341,7 +341,7 @@ function _fangornResolveToggle(item) {
         return togglePlus;
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
-        if (item.data.extra.checkout) {
+        if (item.data.extra && item.data.extra.checkout) {
             if (item.data.extra.checkout === window.contextVars.currentUser.id){
                 return checkedByUser;
             }
@@ -1157,16 +1157,28 @@ function gotoFileEvent (item) {
  */
 function _fangornTitleColumn(item, col) {
     var tb = this;
+    if (typeof tb.options.links === 'undefined') {
+        tb.options.links = true;
+    }
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return _connectCheckTemplate.call(this, item);
     }
     if (item.kind === 'file' && item.data.permissions.view) {
-        return m('span.fg-file-links',{
-            onclick: function(event) {
-                event.stopImmediatePropagation();
-                gotoFileEvent.call(tb, item);
-            }
-        }, item.data.name);
+        var attrs = {};
+        if (tb.options.links) {
+            attrs =  {
+                className: 'fg-file-links',
+                onclick: function(event) {
+                    event.stopImmediatePropagation();
+                    gotoFileEvent.call(tb, item);
+                }
+            };
+        }
+        return m(
+            'span', 
+            attrs,
+            item.data.name
+        );
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
@@ -2319,7 +2331,7 @@ Fangorn.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
-    },
+    }
 };
 
 Fangorn.Components = {
