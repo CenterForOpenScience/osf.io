@@ -293,7 +293,7 @@ def archive_success(dst_pk):
     # allows users to select files in OSFStorage as their response to some schema
     # questions. These files are references to files on the unregistered Node, and
     # consequently we must migrate those file paths after archiver has run. Using
-    # sha256 hashes is a convienent way to identify files post-archival.
+    # sha256 hashes is a convenient way to identify files post-archival.
     prereg_schema = MetaSchema.find_one(
         Q('name', 'eq', 'Prereg Challenge') &
         Q('schema_version', 'eq', 2)
@@ -301,12 +301,14 @@ def archive_success(dst_pk):
     if prereg_schema in dst.registered_schema:
         prereg_metadata = dst.registered_meta[prereg_schema._id]
         updated_metadata = {}
-        for key, value in prereg_metadata.items():
-            if isinstance(value['value'], dict):
-                for subkey, subvalue in value['value'].items():
+        for key, question in prereg_metadata.items():
+            if isinstance(question['value'], dict):
+                for subkey, subvalue in question['value'].items():
+                    registration_file = None
                     if subvalue.get('extra', {}).get('sha256'):
                         orig_sha256 = subvalue['extra']['sha256']
-                        for sha256, value, node_id in utils.get_file_map(dst):
+                        file_map = utils.get_file_map(dst)
+                        for sha256, value, node_id in file_map:
                             if sha256 == orig_sha256:
                                 registration_file = value
                                 break
@@ -318,23 +320,26 @@ def archive_success(dst_pk):
                                 registration_file['path']
                             )
                         })
-                    value[subkey] = subvalue
+                    question['value'][subkey] = subvalue
             else:
-                if value.get('extra', {}).get('sha256'):
-                    sha256 = value['extra']['sha256']
-                    for fsha256, fvalue, node_id in utils.get_file_map(dst):
-                        if fsha256 == sha256:
-                            registration_file = fvalue
+                if question.get('extra', {}).get('sha256'):
+                    registration_file = None
+                    orig_sha256 = question['extra']['sha256']
+                    file_map = utils.get_file_map(dst)
+                    for sha256, value, node_id in file_map:
+                        if sha256 == orig_sha256:
+                            registration_file = value
                             break
                     if not registration_file:
                         raise RuntimeError()
-                    value['extra'].update({
-                        'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
-                            node_id,
-                            registration_file['path']
+                    question['extra'].update({
+                        'viewUrl': Node.load(node_id).web_url_for(
+                            'addon_view_or_download_file',
+                            provider='osfstorage',
+                            path=registration_file['path']
                         )
                     })
-            updated_metadata[key] = value
+            updated_metadata[key] = question
         prereg_metadata.update(updated_metadata)
         dst.registered_meta[prereg_schema._id] = prereg_metadata
         dst.save()

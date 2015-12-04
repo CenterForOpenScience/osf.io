@@ -1,3 +1,4 @@
+
 import functools
 
 from framework.auth import Auth
@@ -75,7 +76,6 @@ def handle_archive_fail(reason, src, dst, user, result):
     dst.root.sanction.forcibly_reject()
     dst.root.sanction.save()
     dst.root.delete_registration_tree(save=True)
-
 
 def archive_provider_for(node, user):
     """A generic function to get the archive provider for some node, user pair.
