@@ -25,7 +25,8 @@ class CommentSerializer(JSONAPISerializer):
         'deleted',
         'date_created',
         'date_modified',
-        'page'
+        'page',
+        'target'
     ])
 
     id = IDField(source='_id', read_only=True)

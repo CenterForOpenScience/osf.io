@@ -7,12 +7,12 @@
         "id": "page1",
         "questions": [{
             "qid": "datacompletion",
-            "title": "Is data collection for this project underway or complete?",
+            "title": "Has data collection begun for this project?",
             "nav": "Data Completion",
             "type": "choose",
             "format": "singleselect",
-            "options": ["Yes", "No"],
-            "description": "Choose Yes or No"
+            "options": ["No, data collection has not begun", "Yes, data collection is underway or complete"],
+            "description": "Please choose"
         },{
             "qid": "looked",
             "title": "Have you looked at the data?",
@@ -20,7 +20,7 @@
             "type": "choose",
             "format": "singleselect",
             "options": ["Yes", "No"],
-            "description": "Choose Yes or No"
+            "description": "Please choose"
         },{
             "qid": "comments",
             "title": "Other Comments",

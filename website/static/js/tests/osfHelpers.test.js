@@ -467,4 +467,25 @@ describe('osfHelpers', () => {
             assert.equal(-1, found);
         });
     });
+    
+    describe('any', () => {
+        it('returns true if any of the values in an array are truthy', () => {
+            var TRUTHY = [true, {}, [], 42, 'foo', new Date()];
+            $.each(TRUTHY, function(_, item) {
+                assert.isTrue(
+                    $osf.any([false, item, false])
+                );
+            });
+        });
+        it('returns false if none of the values in an array are truthy', () => {
+            assert.isFalse(
+                $osf.any([false, null, undefined, 0, NaN, ''])
+            );
+        });
+        it('returns false if the array is empty', () => {
+            assert.isFalse(
+                $osf.any([])
+            );            
+        });
+    });
 });

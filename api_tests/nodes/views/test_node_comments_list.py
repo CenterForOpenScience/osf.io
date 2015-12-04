@@ -636,3 +636,14 @@ class TestCommentFiltering(ApiTestCase):
         url = self.base_url + '?filter[date_modified][gt]={}'.format(self.formatted_date_modified)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 0)
+
+    def test_filtering_by_target(self):
+        url = self.base_url + '?filter[target]=' + str(self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+        assert_in(self.project._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
+
+    def test_filtering_by_target_no_results(self):
+        url = self.base_url + '?filter[target]=' + 'fakeid'
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 0)

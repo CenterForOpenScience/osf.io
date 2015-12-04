@@ -450,13 +450,18 @@ class User(GuidStoredObject, AddonModelMixin):
         return user
 
     @classmethod
-    def create_unconfirmed(cls, username, password, fullname, do_confirm=True):
+    def create_unconfirmed(cls, username, password, fullname, do_confirm=True,
+                           campaign=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
         user.add_unconfirmed_email(username)
         user.is_registered = False
+        if campaign:
+            # needed to prevent cirular import
+            from framework.auth.campaigns import system_tag_for_campaign  # skipci
+            user.system_tags.append(system_tag_for_campaign(campaign))
         return user
 
     @classmethod
