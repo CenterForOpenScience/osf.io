@@ -135,7 +135,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
