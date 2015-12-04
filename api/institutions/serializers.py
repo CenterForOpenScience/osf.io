@@ -1,6 +1,5 @@
 from rest_framework import serializers as ser
 
-from website.models import Institution
 from api.base.serializers import JSONAPISerializer, RelationshipField
 
 class InstitutionSerializer(JSONAPISerializer):
