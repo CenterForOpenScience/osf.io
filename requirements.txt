@@ -52,3 +52,6 @@ django-rest-swagger==0.3.2
 djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
 pyjwe==0.1.6
+
+# Admin requirements
+django-extensions==1.5.9

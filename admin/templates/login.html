@@ -33,9 +33,9 @@
           {% csrf_token %}
           {% if form.non_field_errors %} <span class="text-danger"> {{ form.non_field_errors | striptags }} </span> {% endif %}
           <div class="form-group">
-            <label for="username">Username:</label>
-            <p>{{ form.username }}</p>
-            {% if form.username.errors %}<span class="text-danger"> {{ form.username.errors }}</span>{% endif %}
+            <label for="username">Email:</label>
+            <p>{{ form.email }}</p>
+            {% if form.email.errors %}<span class="text-danger"> {{ form.email.errors }}</span>{% endif %}
           </div>
           <div class="form-group">
             <label for="username">Password:</label>
@@ -62,5 +62,9 @@
         </form>
       </div><!-- /.login-box-body -->
     </div><!-- /.login-box -->
+    <!-- Bootstrap 3.3.2 JS -->
+    {% render_bundle 'vendor' %}
+    <!-- AdminLTE App -->
+    {% render_bundle 'admin-base-page' %}
   </body>
 </html>

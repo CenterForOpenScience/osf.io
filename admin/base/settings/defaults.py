@@ -22,6 +22,9 @@ ALLOWED_HOSTS = [
     '.osf.io'
 ]
 
+# Email settings. Account created for testing. Password shouldn't be hardcoded
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -37,9 +40,13 @@ INSTALLED_APPS = (
     'admin.spam',
 
     # 3rd party
+    'django_extensions',
     'raven.contrib.django.raven_compat',
     'webpack_loader',
 )
+
+# Custom user model (extends AbstractBaseUser)
+AUTH_USER_MODEL = 'common_auth.MyUser'
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
