@@ -97,7 +97,7 @@ class TestCommentReportsView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_non_contributor_reporter_can_view_report(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory.build(node=project, user=project.creator)
         comment.reports = comment.reports or {}
         comment.reports[self.non_contributor._id] = {'category': 'spam', 'text': 'This is spam.'}
@@ -236,7 +236,7 @@ class TestCommentReportsView(ApiTestCase):
             comment (comment_level == 'public), non-contributors
             can also report comments.
         """
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory(node=project, user=project.creator)
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
 

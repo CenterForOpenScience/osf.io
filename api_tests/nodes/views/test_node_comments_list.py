@@ -123,7 +123,6 @@ class TestNodeCommentCreate(ApiTestCase):
     def _set_up_public_project_with_public_comment_level(self):
         """ Public project configured so that any logged-in user can comment."""
         self.project_with_public_comment_level = ProjectFactory(is_public=True, creator=self.user)
-        self.project_with_public_comment_level.comment_level = 'public'
         self.project_with_public_comment_level.save()
         self.public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project_with_public_comment_level._id)
 

@@ -176,7 +176,7 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_non_contributor_commenter_can_update_comment(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory(node=project, target=project, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = {
@@ -400,7 +400,7 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_non_contributor_commenter_can_delete_comment(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory(node=project, target=project, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = {

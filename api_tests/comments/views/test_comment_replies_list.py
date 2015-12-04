@@ -204,7 +204,7 @@ class TestCommentRepliesCreate(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_private_node_with_public_comment_level_non_contributor_cannot_reply(self):
-        project = ProjectFactory(is_public=False, comment_level='public')
+        project = ProjectFactory(is_public=False)
         comment = CommentFactory(node=project, user=self.user)
         reply = CommentFactory(node=project, target=comment, user=self.user)
         url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
@@ -212,7 +212,7 @@ class TestCommentRepliesCreate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_public_node_contributor_can_reply(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory(node=project, user=self.user)
         reply = CommentFactory(node=project, target=comment, user=self.user)
         url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
@@ -221,7 +221,7 @@ class TestCommentRepliesCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
 
     def test_public_node_any_logged_in_user_can_reply(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory(node=project, user=self.user)
         reply = CommentFactory(node=project, target=comment, user=self.user)
         url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
@@ -230,7 +230,7 @@ class TestCommentRepliesCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
 
     def test_public_node_logged_out_user_cannot_reply(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory(node=project, user=self.user)
         reply = CommentFactory(node=project, target=comment, user=self.user)
         url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
