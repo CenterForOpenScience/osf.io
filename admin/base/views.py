@@ -1,10 +1,9 @@
 from django.contrib import messages
 from django.contrib.auth import views
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-
-#def root(request):
-#   return HttpResponse("Will probably need to put some front end Auth on this.")
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+from django.utils.http import urlsafe_base64_decode
 
 @login_required
 def home(request):

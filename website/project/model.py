@@ -3450,7 +3450,6 @@ class Sanction(StoredObject):
             raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         return user_state['{0}_token'.format(method)]
 
-
     def approve(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
         try:

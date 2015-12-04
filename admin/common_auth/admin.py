@@ -38,7 +38,7 @@ class CustomUserAdmin(UserAdmin):
 
     def send_email_invitation(self, request, queryset):
         for user in queryset:
-            if user.is_active == False: # email doesn't send unless user is active
+            if not user.is_active:
                 user.is_active = True
                 user.save()
             reset_form = PasswordResetForm({'email': user.email}, request.POST)
