@@ -143,13 +143,13 @@
         class="project list-group-item list-group-item-node">
         <p class="list-group-item-heading f-w-lg">
             %if summary['is_registration']:
-                Private Registration
+                Unshared Registration
             %elif summary['is_fork']:
-                Private Fork
+                Unshared Fork
             %elif not summary['primary']:
-                Private Link
+                Unshared Link
             %else:
-                Private Component
+                Unshared Component
             %endif
         </p>
     </li>
