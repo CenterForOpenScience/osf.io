@@ -155,10 +155,16 @@
                                       </a></li>
                                   <!-- /ko -->
                               </ul>
-
+                            <div>
                               <div id="wmd-button-bar"></div>
-                              <div id="editor" class="wmd-input wiki-editor"
-                                   data-bind="ace: currentText">Loading. . .</div>
+                              <div id="auto">
+                                <input type="checkbox" name="test" data-bind="click:setAutocom" checked/>
+                                <span>Autocomplete</span>
+                              </div>
+                            </div>
+                            <div id="editor" class="wmd-input wiki-editor"
+                                data-bind="ace: currentText">Loading. . .
+                            </div>
                           </div>
                         </div>
                       </div>

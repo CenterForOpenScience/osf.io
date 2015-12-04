@@ -184,8 +184,7 @@
 }
 
 /* Markdown editing */
-.wmd-panel
-{
+.wmd-panel {
     width: 100%;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -215,11 +214,11 @@
     flex: 0 0 auto;
 }
 .wmd-button-bar {
-    width: 100%;
     background-color: Silver;
+
 }
 #wmd-button-bar {
-    width: 100%;
+    float:left;
     margin: auto;
     -webkit-box-flex: 0 0 auto;
     -webkit-flex: 0 0 auto;
@@ -236,6 +235,7 @@
     margin-bottom: 5px;
     margin-top: 0px;
     padding: 0px;
+    display:inline;
 }
 .wmd-spacer {
     width: 1px;
@@ -250,7 +250,8 @@
     height: 20px;
     padding-left: 2px;
     padding-right: 3px;
-    display: inline-block;
+    /*display: inline-block;*/
+    float:left;
     list-style: none;
     cursor: pointer;
 }
@@ -260,16 +261,8 @@
     background-position: 0px 0px;
     width: 20px;
     height: 20px;
-    display: inline-block;
-}
-.wmd-spacer1 {
-    left: 50px;
-}
-.wmd-spacer2 {
-    left: 175px;
-}
-.wmd-spacer3 {
-    left: 300px;
+    /*display: inline-block;*/
+    float:left;
 }
 .wmd-prompt-background {
     background-color: Black;
@@ -277,6 +270,11 @@
 .wmd-prompt-dialog {
     border: 1px solid #999999;
     background-color: #F5F5F5;
+}
+#auto {
+    float:left;
+    margin-left:5px;
+    margin-bottom:10px;
 }
 .wiki-single-heading {
     border: 1px solid #ddd;

@@ -46,6 +46,7 @@ function ViewModel(url, viewText) {
     self.activeUsers = ko.observableArray([]);
     self.status = ko.observable('connecting');
     self.throttledStatus = ko.observable(self.status());
+    self.autocom = ko.observable(true);
 
     self.displayCollaborators = ko.computed(function() {
        return self.activeUsers().length > 1;
@@ -78,6 +79,11 @@ function ViewModel(url, viewText) {
                 return 'Unavailable: Live editing';
         }
     });
+
+    self.setAutocom = function() {
+        self.autocom(!self.autocom());
+        return true;
+    };
 
     self.progressBar = ko.computed(function() {
         switch(self.throttledStatus()) {
