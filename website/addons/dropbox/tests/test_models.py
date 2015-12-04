@@ -7,9 +7,7 @@ from website.addons.dropbox.tests.factories import (
     DropboxNodeSettingsFactory,
     DropboxAccountFactory
 )
-from website.addons.dropbox.model import (
-    DropboxNodeSettings
-)
+from website.addons.dropbox.model import DropboxNodeSettings
 from website.addons.base import testing
 
 class TestNodeSettings(testing.models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase):
@@ -33,7 +31,6 @@ class TestNodeSettings(testing.models.OAuthAddonNodeSettingsTestSuiteMixin, OsfT
         node_settings = DropboxNodeSettings(user_settings=self.user_settings)
         node_settings.save()
         assert_is_none(node_settings.folder)
-
 
 class TestUserSettings(testing.models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 

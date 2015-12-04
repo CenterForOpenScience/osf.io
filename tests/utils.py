@@ -10,7 +10,8 @@ from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
-from tests.base import DEFAULT_METASCHEMA
+from tests.base import get_default_metaschema
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 def requires_module(module):
     def decorator(fn):

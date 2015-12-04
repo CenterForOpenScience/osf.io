@@ -45,19 +45,19 @@ class Zotero(ExternalProvider):
     @property
     def client(self):
         """An API session with Zotero"""
+
         if not self._client:
             self._client = zotero.Zotero(self.account.provider_id, 'user', self.account.oauth_key)
 
             # Check if Zotero can be accessed with current credentials
             try:
                 self._client.collections()
-            except zotero_errors.UserNotAuthorised:
-                raise HTTPError(403, data=dict(
-                    message_short='Authorization Error',
-                    message_long='Could not retrieve Zotero settings at this time. The credentials associated with this'
-                                 ' Zotero account may no longer be valid. Try disconnecting and reconnecting the Zotero'
-                                 ' account on your account settings page.'
-                ))
+            except zotero_errors.PyZoteroError as err:
+                self._client = None
+                if isinstance(err, zotero_errors.UserNotAuthorised):
+                    raise HTTPError(403)
+                else:
+                    raise err
 
         return self._client
 
