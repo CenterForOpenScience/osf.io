@@ -37,11 +37,13 @@ class NodeSerializer(JSONAPISerializer):
         'category',
         'date_created',
         'date_modified',
-        'registration'
+        'registration',
+        'ultimate_parent'
     ])
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
+    ultimate_parent = ser.CharField(required=False, read_only=True)
 
     category_choices = Node.CATEGORY_MAP.keys()
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
