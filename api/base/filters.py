@@ -19,6 +19,7 @@ from api.base.exceptions import (
     InvalidFilterFieldError
 )
 from api.base import utils
+from api.base.serializers import RelationshipField, TargetField
 
 def sort_multiple(fields):
     fields = list(fields)
@@ -214,6 +215,8 @@ class FilterMixin(object):
                     field_type='date'
                 )
         elif isinstance(field, self.LIST_FIELDS):
+            return value
+        elif isinstance(field, (RelationshipField, TargetField)):
             return value
         else:
             try:
