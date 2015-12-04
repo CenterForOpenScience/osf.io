@@ -7,6 +7,7 @@ var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
+var LogText = require('js/logTextParser');
 
 var LinkObject = function (type, data, label, index) {
     if (type === undefined || data === undefined || label === undefined) {
@@ -102,8 +103,11 @@ var FileBrowser = {
         self.data = m.prop([]);
         self.activityLogs = m.prop();
         self.getLogs = function _getLogs (nodeId) {
-            var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : {}});
+            var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
             m.request({method : 'GET', url : url, config : xhrconfig}).then(function(result){
+                result.data.map(function(log){
+                    log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
+                });
                 self.activityLogs(result.data);
             });
         };
@@ -710,16 +714,10 @@ var ActivityLogs = {
         return m('.fb-activity-list.m-t-md', [
             m('h5', 'Activity Logs'),
             args.activityLogs ? args.activityLogs().map(function(item){
-                var text;
-                switch (item.attributes.action) {
-                    case 'project_created':
-                        text = 'Project created';
-                        break;
-                    default :
-                        text = 'Something happened'
-                        break;
-                }
-                return m('.fb-activity-item.osf-box.p-sm', item.attributes.date + ' ' + text);
+                return m('.fb-activity-item.osf-box.p-sm', [
+                    item.attributes.formattableDate.local,
+                    m.component(LogText,item)
+                ]);
             }) : ''
         ]);
     }
