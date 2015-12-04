@@ -183,9 +183,6 @@ BaseComment.prototype.submitReply = function() {
     }
     self.submittingReply(true);
     var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: 'embed=user'});
-    if (self.id() !== undefined) {
-        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {query: 'embed=user'});
-    }
     var request = osfHelpers.ajaxJSON(
         'POST',
         url,
@@ -196,6 +193,14 @@ BaseComment.prototype.submitReply = function() {
                     'type': 'comments',
                     'attributes': {
                         'content': self.replyContent()
+                    },
+                    'relationships': {
+                        'target': {
+                            'data': {
+                                'type': self.id() === undefined ? 'nodes' : 'comments',
+                                'id': self.id() === undefined ? window.contextVars.node.id : self.id()
+                            }
+                        }
                     }
                 }
             }
