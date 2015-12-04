@@ -1088,7 +1088,7 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
-    request.fail(function(err, status, xhr) {
+    request.fail(function(xhr, status, error) {
         Raven.captureMessage('Could not save draft registration', {
             url: self.urls.update.replace('{draft_pk}', self.draft().pk),
             textStatus: status,
