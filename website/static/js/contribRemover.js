@@ -34,6 +34,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         title: nodeTree.node.title,
         contributors: nodeTree.node.contributors,
         isAdmin: nodeTree.node.is_admin,
+        visibleContributors: nodeTree.node.visible_contributors,
         contributorAdmins: contributorAdmins
     };
 
@@ -47,14 +48,14 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
 
 
 var RemoveContributorViewModel = oop.extend(Paginator, {
-    constructor: function(title, nodeId, nodeHasChildren, parentId, parentTitle, userName, userID, shouter) {
+    constructor: function(title, nodeId, nodeHasChildren, parentId, parentTitle, userName, userId, shouter) {
         this.super.constructor.call(this);
         var self = this;
         self.title = title;
         self.nodeId = nodeId;
         self.parentId = parentId;
         self.parentTitle = parentTitle;
-        self.userID = userID;
+        self.userId = userId;
         self.contributorToRemove = ko.observable('');
         shouter.subscribe(function(newValue) {
             self.contributorToRemove(newValue);
@@ -84,11 +85,11 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                         canRemoveContributor[key] = true;
                     }
                     //If there are contributors and you are an admin, you can remove anyone but yourself.
-                    else if (node.isAdmin && (self.contributorToRemove().id !== self.userID)) {
+                    else if (node.isAdmin && (self.contributorToRemove().id !== self.userId)) {
                         canRemoveContributor[key] = true;
                     }
                     //If you are not an admin, you can remove yourself and no one else
-                    else if (!node.isAdmin && (self.contributorToRemove().id === self.userID)) {
+                    else if (!node.isAdmin && (self.contributorToRemove().id === self.userId)) {
                         canRemoveContributor[key] = true;
                     }
                     else {
@@ -99,10 +100,8 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             return canRemoveContributor;
         });
 
-        self.onlyAdmin = ko.computed(function() {
-
-            if (self.userID === self.contributorToRemove.id && self.nodesOriginal()[self.nodeID].length === 1)
-                return node.contributorAdmins.length <= 1;
+        self.canRemoveAdmin = ko.computed(function() {
+            return self.canRemoveContributor()[self.nodeId];
         })
 
         self.hasChildrenToRemove = ko.computed(function() {
@@ -118,7 +117,8 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         });
 
         self.modalSize = ko.pureComputed(function() {
-            return this.hasChildrenToRemove() ? 'modal-dialog modal-lg' : 'modal-dialog modal-md';
+            var self = this;
+            return self.hasChildrenToRemove() && self.canRemoveAdmin() ? 'modal-dialog modal-lg' : 'modal-dialog modal-md';
         }, self);
 
         self.titlesToRemove = ko.computed(function() {
@@ -237,7 +237,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribRemover(selector, nodeTitle, nodeId, nodeHasChildren, parentId, parentTitle, userName, userID, shouter) {
+function ContribRemover(selector, nodeTitle, nodeId, nodeHasChildren, parentId, parentTitle, userName, userId, shouter) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
@@ -247,9 +247,9 @@ function ContribRemover(selector, nodeTitle, nodeId, nodeHasChildren, parentId, 
     self.parentId = parentId;
     self.parentTitle = parentTitle;
     self.userName = userName;
-    self.userID = userID;
+    self.userId = userId;
     self.viewModel = new RemoveContributorViewModel(self.nodeTitle,
-        self.nodeId, self.nodeHasChildren, self.parentId, self.parentTitle, self.userName, self.userID, shouter);
+        self.nodeId, self.nodeHasChildren, self.parentId, self.parentTitle, self.userName, self.userId, shouter);
     self.init();
 }
 

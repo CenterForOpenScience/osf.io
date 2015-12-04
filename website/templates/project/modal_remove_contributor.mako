@@ -2,15 +2,13 @@
 <div id="removeContributor" class="modal fade">
     <div data-bind="css: modalSize">
         <div class="modal-content">
-
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
-
             <div class="modal-body" >
                 {{ko.toJSON($data)}}
-                <div data-bind="visible:canRemoveContributor()">
+                <div data-bind="if: canRemoveAdmin()">
                     <!-- remove page -->
                     <div data-bind='if:page() === "remove"'>
                         <div class="form-group">
@@ -27,15 +25,15 @@
                         </div>
 
                     </div><!-- end remove page -->
-                    <!-- remove page -->
+                    <!-- removeNoChildren page -->
                     <div data-bind='if:page() === "removeNoChildren"'>
                         <div class="form-group" data-bind="if:contributorToRemove">
                             <span>Remove <b>{{contributorToRemove()["fullname"]}}</b> from {{title}}"?</span>
                         </div>
 
-                    </div><!-- end remove page -->
+                    </div><!-- end removeNoChildren page -->
 
-                    <!-- remove page -->
+                    <!-- removeAll page -->
                     <div data-bind='if:page() === "removeAll"'>
                         <div class="form-group" data-bind="if:contributorToRemove">
                             <span><b>{{contributorToRemove()["fullname"]}}</b> will be removed from the following projects and/or components.</span>
@@ -48,16 +46,17 @@
                             </ul>
                         </div>
 
-                    </div><!-- end invite user page -->
-                </div>
-                <div data-bind="visible:!canRemoveContributor()">
-                    <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.</span>
+                    </div><!-- end removeAll page -->
                 </div>
 
-            </div><!-- end modal-body -->
+                <div data-bind="if: !canRemoveAdmin()">
+                    <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.  You need at least one administrator.</span>
+                </div>
+            </div>
+            <!-- end modal-body -->
 
             <div class="modal-footer">
-                <div data-bind="visible:canRemoveContributor()">
+                <div data-bind="if:canRemoveAdmin()">
                 <span data-bind="if: page() === 'remove'">
                     <div>
                         <div class="row">
@@ -91,12 +90,17 @@
                     </div>
                 </span>
                 </div>
-            </div>
-            <div data-bind="visible:!canRemoveContributor()">
-                <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
-            </div>
-
-        </div><!-- end modal-footer -->
-    </div><!-- end modal-content -->
+                <div data-bind="if:!canRemoveAdmin()">
+                    <div>
+                        <div class="row">
+                            <div  class="col-md-12 remove-page-buttons" align="right">
+                                <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- end modal-footer -->
+        </div><!-- end modal-content -->
+    </div><!-- end modal-size -->
 </div><!-- end modal -->
 
