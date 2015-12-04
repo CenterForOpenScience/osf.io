@@ -44,9 +44,10 @@ from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_lice
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from website.addons.wiki.model import NodeWikiPage
-from tests.base import fake
+from website.util import permissions
 
-from tests.base import DEFAULT_METASCHEMA
+from tests.base import fake
+from tests.base import get_default_metaschema
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
 def save_kwargs(**kwargs):
@@ -196,6 +197,7 @@ class NodeFactory(AbstractNodeFactory):
 
 class RegistrationFactory(AbstractNodeFactory):
 
+    creator = None
     # Default project is created if not provided
     category = 'project'
 
@@ -204,17 +206,29 @@ class RegistrationFactory(AbstractNodeFactory):
         raise Exception("Cannot build registration without saving.")
 
     @classmethod
-    def _create(cls, target_class, project=None, schema=None, user=None,
-                data=None, archive=False, embargo=None, registration_approval=None, retraction=None, is_public=False,
+    def _create(cls, target_class, project=None, is_public=False,
+                schema=None, data=None,
+                archive=False, embargo=None, registration_approval=None, retraction=None,
                 *args, **kwargs):
         save_kwargs(**kwargs)
+        user = None
+        if project:
+            user = project.creator
+        user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
+        kwargs['creator'] = user
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
+        if user._id not in project.permissions:
+            project.add_contributor(
+                contributor=user,
+                permissions=permissions.CREATOR_PERMISSIONS,
+                log=False,
+                save=False
+            )
         project.save()
 
         # Default registration parameters
-        schema = schema or DEFAULT_METASCHEMA
-        user = user or project.creator
+        schema = schema or get_default_metaschema()
         data = data or {'some': 'data'}
         auth = Auth(user=user)
         register = lambda: project.register_node(

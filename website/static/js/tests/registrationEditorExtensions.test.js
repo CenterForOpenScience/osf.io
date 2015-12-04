@@ -46,21 +46,21 @@ describe('RegistrationEditor.osfUploader', () => {
     // var allBindings = "";
     // var bindingContext = "";
 
-    describe('limitOsfStorage', () => {
+    describe('limitContents', () => {
         it('says provider is osfstorage and can edit', () => {
-            RegistrationEditor.limitOsfStorage(itemIsOsfstorage);
+            RegistrationEditor.limitContents(itemIsOsfstorage);
             assert.isTrue(itemIsOsfstorage.data.permissions.edit);
         });
         it('says provider is osfstorage and can view', () => {
-            RegistrationEditor.limitOsfStorage(itemIsOsfstorage);
+            RegistrationEditor.limitContents(itemIsOsfstorage);
             assert.isTrue(itemIsOsfstorage.data.permissions.view);
         });
         it('says provider is not osfstorage and cannot edit', () => {
-            RegistrationEditor.limitOsfStorage(itemIsNotOsfstorage);
+            RegistrationEditor.limitContents(itemIsNotOsfstorage);
             assert.isFalse(itemIsNotOsfstorage.data.permissions.edit);
         });
         it('says provider is not osfstorage and cannot view', () => {
-            RegistrationEditor.limitOsfStorage(itemIsNotOsfstorage);
+            RegistrationEditor.limitContents(itemIsNotOsfstorage);
             assert.isFalse(itemIsNotOsfstorage.data.permissions.view);
         });
     });
