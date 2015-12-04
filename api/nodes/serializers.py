@@ -43,7 +43,6 @@ class NodeSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    ultimate_parent = ser.CharField(required=False, read_only=True)
 
     category_choices = Node.CATEGORY_MAP.keys()
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
@@ -107,6 +106,11 @@ class NodeSerializer(JSONAPISerializer):
     parent = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<parent_id>'}
+    )
+
+    ultimate_parent = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<ultimate_parent>'}
     )
 
     registrations = DevOnly(RelationshipField(
