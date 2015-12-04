@@ -907,3 +907,10 @@ def update_citation_styles():
     from scripts import parse_citation_styles
     total = parse_citation_styles.main()
     print("Parsed {} styles".format(total))
+
+@task
+def clean(verbose=False):
+    cmd = 'find . -name "*.pyc" -exec rm -rf {} \;'
+    if verbose:
+        print(cmd)
+    run(cmd, pty=True)
