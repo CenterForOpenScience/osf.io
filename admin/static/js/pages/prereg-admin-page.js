@@ -192,7 +192,7 @@ Row.prototype.goToDraft = function(data, event) {
     var self = this;
     if (self.editing() === false) {
         self.viewingDraft(true);
-        document.location.href = 'prereg_form/' + self.params.pk + '/';
+        document.location.href = 'drafts/' + self.params.pk + '/';
     }
 };
 
@@ -210,7 +210,7 @@ var AdminView = function(adminSelector, user, reviewers) {
     self.user = user;
     self.reviewers = reviewers;
 
-    self.getDrafts = $.getJSON.bind(null, "get_drafts/");
+    self.getDrafts = $.getJSON.bind(null, "drafts/");
 
     self.drafts = ko.observable([]);
     self.loading = ko.observable(true);
