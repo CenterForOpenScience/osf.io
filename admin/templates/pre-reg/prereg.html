@@ -30,6 +30,7 @@
           <td data-bind="text: fullname" class="text-center" id="name"></td>
           <td data-bind="text: username" class="text-center" id="email"></td>
           <td data-bind="text: initiated" class="text-center" id="begun"></td>
+          <td data-bind="text: updated" class="text-center" id="submitted"></td>
           <!-- Proof of Publication -->
           <td class="text-center" id="proof_of_pub">
             <select data-bind="options: proofOfPub.proofOfPubList, value:proofOfPub.proofOfPub, click: proofOfPub.editItem, clickBubble: false"></select>
@@ -37,7 +38,7 @@
           <!-- Payment Sent -->
           <td class="text-center" id="payment_sent">
             <div data-bind="visible: !paymentSent.edit()">
-              <span data-bind="text: paymentSent.paymentSent"></span><i data-bind="click: paymentSent.editItem, clickBubble: false, event: {mouseover: paymentSent.enlargeIcon, mouseout: paymentSent.shrinkIcon}, attr: {class: 'fa fa-pencil'}" style="margin-left: 10px"></i>
+              <select data-bind="options: paymentSent.paymentSentList, value:paymentSent.paymentSent, click: paymentSent.editItem, clickBubble: false"></select>
             </div>
             <div data-bind="valueUpdate: 'afterkeydown', enterkey: paymentSent.stopEditing, visible: paymentSent.edit()">
               <div><input type="radio" value="no" data-bind="checked: paymentSent.paymentSent, attr:{name: 'paymentSent' + $index()}"/>No</div>

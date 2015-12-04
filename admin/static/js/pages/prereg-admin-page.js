@@ -37,15 +37,6 @@ var Assignee = function(reviewers) {
     self.assignee = ko.observable('none');
 };
 
-Assignee.prototype.enlargeIcon = function(data, event) {
-    var icon = event.currentTarget;
-    $(icon).addClass("fa-2x");
-};
-
-Assignee.prototype.shrinkIcon = function(data, event) {
-    var icon = event.currentTarget;
-    $(icon).removeClass("fa-2x");
-};
 Assignee.prototype.editItem = function() {
     var self = this;
     self.assignee.edit(!self.editing);
@@ -63,15 +54,6 @@ var ProofOfPub = function() {
     self.proofOfPubList = ko.observableArray(['Published Article Not Yet Submitted', 'Published Article Submitted', 'Published Article Under Review', 'Published Article Approved', 'Published Article Rejected']);
 };
 
-ProofOfPub.prototype.enlargeIcon = function(data, event) {
-    var icon = event.currentTarget;
-    $(icon).addClass("fa-2x");
-};
-
-ProofOfPub.prototype.shrinkIcon = function(data, event) {
-    var icon = event.currentTarget;
-    $(icon).removeClass("fa-2x");
-};
 ProofOfPub.prototype.editItem = function() {
     var self = this;
     self.proofOfPub.edit(!self.editing);
@@ -85,27 +67,13 @@ var PaymentSent = function() {
     var self = this;
     self.edit = ko.observable(false);
     self.paymentSent = ko.observable('no');
+    self.paymentSentList = ko.observableArray(['Yes', 'No']);
 };
 
-PaymentSent.prototype.enlargeIcon = function(data, event) {
-    var icon = event.currentTarget;
-    $(icon).addClass("fa-2x");
-};
-
-PaymentSent.prototype.shrinkIcon = function(data, event) {
-    var icon = event.currentTarget;
-    $(icon).removeClass("fa-2x");
-};
 PaymentSent.prototype.editItem = function() {
     var self = this;
-    self.editing(true);
-    self.paymentSent.edit(true);
-};
-
-PaymentSent.prototype.stopEditing = function() {
-    var self = this;
-    self.editing(false);
-    self.paymentSent.edit(false);
+    self.paymentSent.edit(!self.editing);
+    self.editing(!self.editing);
 };
 
 /**
