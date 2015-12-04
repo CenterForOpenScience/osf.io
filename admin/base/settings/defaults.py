@@ -32,7 +32,10 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
+    'django.contrib.messages',
+    'django.contrib.sessions',
     'django.contrib.staticfiles',
+    'admin.common_auth',
     'admin.base',
     'admin.pre-reg',
     'admin.spam',
@@ -63,15 +66,14 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.TokuTransactionsMiddleware',
 
-    # 'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    # 'django.contrib.auth.middleware.AuthenticationMiddleware',
-    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-    # 'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-
 )
 
 TEMPLATES = [
@@ -89,11 +91,33 @@ TEMPLATES = [
         }
     }]
 
+# Database
+# Postgres:
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',   # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+#         'NAME': 'mydb',                                       # Or path to database file if using sqlite3.
+#         # The following settings are not used with sqlite3:
+#         'USER': 'myuser',
+#         'PASSWORD': 'password',
+#         'HOST': 'localhost',                                  # Empty for localhost through domain sockets or           '127.0.0.1' for localhost through TCP.
+#         'PORT': '',                                           # Set to empty string for default.
+#     }
+# }
+# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
 
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'admin.base.wsgi.application'
 ADMIN_BASE = 'admin/'
 STATIC_URL = '/static/'
+LOGIN_URL = '/admin/auth/login/'
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_root')
 
@@ -104,8 +128,8 @@ STATICFILES_DIRS = (
 LANGUAGE_CODE = 'en-us'
 
 WEBPACK_LOADER = {
-    'DEFAULT': {
+    #'DEFAULT': {
         'BUNDLE_DIR_NAME': 'public/js/',
         'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
-    }
+    #}
 }

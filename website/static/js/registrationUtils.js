@@ -1,5 +1,7 @@
 require('css/registrations.css');
 
+require('bootstrap');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var Raven = require('raven-js');
@@ -640,8 +642,54 @@ Draft.prototype.submitForReview = function() {
             });
     }
     else {
-        self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
+        return self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
     }
+};
+Draft.prototype.approve = function() {
+    var ret = $.Deferred();
+    bootbox.dialog({
+        title: 'Before you continue...',
+        message: 'Are you sure you want to approve this submission? This action is irreversible',
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default',
+                callback: function() {
+                    bootbox.hideAll();
+                    ret.reject(); 
+                }
+            },
+            approve: {
+                label: 'Approve',
+                class: 'btn-warning',
+                callback: ret.resolve
+            }
+        }                
+    });
+    return ret.promise();
+};
+Draft.prototype.reject = function(confirmed) {
+    var ret = $.Deferred();
+    bootbox.dialog({
+        title: 'Before you continue...',
+        message: 'Are you sure you want to reject this submission? This action is irreversible',
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default',
+                callback: function() {
+                    bootbox.hideAll();
+                    ret.reject();
+                }
+            },
+            approve: {
+                label: 'Approve',
+                class: 'btn-warning',
+                callback: ret.resolve       
+            }
+        }                
+    });
+    return ret.promise();
 };
 
 /**
@@ -1088,6 +1136,33 @@ RegistrationEditor.prototype.save = function() {
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
     return request;
+};
+
+RegistrationEditor.prototype.approveDraft = function() {
+    var self = this;
+
+    var draft = self.draft();
+    draft.approve().done(function() {
+        $.post(self.urls.approve.replace('{draft_pk}', draft.pk))
+            .done(function() {
+                window.location.assign(self.urls.list);
+            }).fail(function() {
+                bootbox.alert('There was a problem approving this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
+            });
+    });
+};
+RegistrationEditor.prototype.rejectDraft = function() {
+    var self = this;
+
+    var draft = self.draft();
+    draft.reject().done(function() {
+        $.post(self.urls.reject.replace('{draft_pk}', draft.pk))
+            .done(function() {
+                window.location.assign(self.urls.list);
+            }).fail(function() {
+                bootbox.alert('There was a problem rejecting this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
+            });
+    });
 };
 
 /**

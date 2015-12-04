@@ -1,31 +1,32 @@
 {% extends 'base.html' %}
 {% load render_bundle from webpack_loader %}
 {% load staticfiles %}
+{% load filters %}
 
 {% block content %}
 {% render_bundle 'vendor' %}
 <link href="{% static 'css/registrations.css' %}" rel="stylesheet" type="text/css" />
 <script>
-   var context = {{ data|safe }};
    window.contextVars = window.contextVars || {};
    window.contextVars.currentUser = {
      id: -1,
      fullname: 'Prereg Admin'
    };
+   window.contextVars.draft = {{ draft | jsonify | safe }};
 </script>
 
 <div class="container scripted" id="draftRegistrationScope">
   <div class="row">
     <div class="col-md-11">
         <span class="btn-group pull-right">
-          <a data-bind="click: $root.approve,
+          <a data-bind="click: $root.approveDraft,
                         tooltip: {
                           position: 'top',
                           title: 'Approve'
                         }" class="btn btn-success" type="button">
             <i class="fa fa-check"></i> Approve
           </a>
-          <a data-bind="click: $root.reject,
+          <a data-bind="click: $root.rejectDraft,
                         tooltip: {
                           position: 'top',
                           title: 'Reject'
