@@ -102,7 +102,7 @@ var FileBrowser = {
         self.data = m.prop([]);
         self.activityLogs = m.prop();
         self.getLogs = function _getLogs (nodeId) {
-            var url = $osf.apiV2Url('nodes/' + self.data.uid + '/logs/', { query : {}});
+            var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : {}});
             m.request({method : 'GET', url : url, config : xhrconfig}).then(function(result){
                 self.activityLogs(result.data);
             });
@@ -124,10 +124,7 @@ var FileBrowser = {
         self.updateSelected = function(selectedList){
             // If single project is selected, get activity
             if(selectedList.length === 1){
-                self.activityLogs([
-                    new Activity('2015-08-19 01:34 PM', 'Caner Uguz added a comment to Dashboard Redesign Proposal', {}),
-                    new Activity('2015-08-19 01:34 PM', 'John Chandler added a page to Dashboard Redesign Proposal wiki', {})
-                ]);
+                self.getLogs(selectedList[0].data.id);
             }
             self.selected(selectedList);
         };
@@ -140,6 +137,7 @@ var FileBrowser = {
         };
 
         self.updateListSuccess = function(value) {
+            console.log(value);
             value.data.map(function (item) {
                 item.kind = 'folder';
                 item.uid = item.id;
@@ -153,7 +151,7 @@ var FileBrowser = {
                 }];
             });
             self.data(value);
-            self.getLogs(value[0].id);
+            self.getLogs(value.data[0].id);
             self.reload(true);
         };
 
@@ -718,10 +716,10 @@ var ActivityLogs = {
                         text = 'Project created';
                         break;
                     default :
-                        console.log('');
+                        text = 'Something happened'
                         break;
                 }
-                return m('.fb-activity-item.osf-box.p-sm', item.date + ' ' + text);
+                return m('.fb-activity-item.osf-box.p-sm', item.attributes.date + ' ' + text);
             }) : ''
         ]);
     }
