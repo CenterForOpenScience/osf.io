@@ -4,9 +4,18 @@
 </script>
 
 <script type="text/html" id="text">
-  <input data-bind="valueUpdate: 'keyup',
-                    value: value"
-         type="text" class="form-control" />
+    <span data-bind="if: required">
+        <input data-bind="valueUpdate: 'keyup',
+                          value: value,
+                          tooltip: {title: 'This field is required for submission. If this field is not applicable to your study, you may state so.', placement: 'right'}"
+               type="text" class="form-control" />
+    </span>
+
+    <span data-bind="ifnot: required">
+        <input data-bind="valueUpdate: 'keyup',
+                          value: value"
+               type="text" class="form-control" />
+    </span>
 </script>
 <script type="text/html" id="match">
   <input data-bind="valueUpdate: 'keyup',
@@ -14,9 +23,18 @@
                     attr.placeholder: match" type="text" class="form-control" />
 </script>
 <script type="text/html" id="textarea">
-  <textarea data-bind="valueUpdate: 'keyup',
-                       textInput: value"
-            class="form-control"> </textarea>
+    <span data-bind="if: required">
+        <textarea data-bind="valueUpdate: 'keyup',
+                             textInput: value,
+                             tooltip: {title: 'This field is required for submission. If this field is not applicable to your study, you may state so.', placement: 'right'}"
+                  class="form-control"> </textarea>
+    </span>
+
+    <span data-bind="ifnot: required">
+        <textarea data-bind="valueUpdate: 'keyup',
+                             textInput: value"
+                  class="form-control"> </textarea>
+    </span>
 </script>
 <!-- Number Types -->
 <script type="text/html" id="number">
