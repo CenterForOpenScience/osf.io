@@ -17,7 +17,14 @@ def get_all_drafts():
     """
     # TODO[lauren]: add query parameters to only retrieve submitted drafts
     # they will have an approval associated with them
-    all_drafts = DraftRegistration.find()
+    prereg_schema = MetaSchema.find_one(
+        Q('name', 'eq', 'Prereg Challenge') &
+        Q('schema_version', 'eq', 2)
+    )
+    all_drafts = DraftRegistration.find(
+        Q('registration_schema', 'eq', prereg_schema) &
+        Q('approval', 'ne', None)
+    )
 
     # import ipdb; ipdb.set_trace()
 

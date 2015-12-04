@@ -159,14 +159,14 @@ var Row = function(params, permission, reviewers) {
 
     self.editing = ko.observable(false);
 
-    self.title = params.registration_metadata.q1.value || "no title";
+    self.title = params.registration_metadata.q1.value || 'no title';
     self.fullname = params.initiator.fullname;
     self.username = params.initiator.emails[0].address;
     self.initiated = self.formatTime(params.initiated);
     self.updated = self.formatTime(params.updated);
-    // TODO[lauren]: change to computed function based on flags
-    self.status = ko.observable(params.approval.state);
-    
+    self.status = ko.observable('active');
+    //params.isPendingApproval
+    //);
     //variables for editing items in row
     self.proofOfPub = new ProofOfPub();
     self.paymentSent = new PaymentSent();
@@ -214,10 +214,11 @@ var AdminView = function(adminSelector, user, reviewers) {
 
     self.getDrafts = $.getJSON.bind(null, "get_drafts/");
 
-    self.drafts = ko.observableArray();
+    self.drafts = ko.observable([]);
     self.loading = ko.observable(true);
 
-    self.sortedDrafts = ko.pureComputed(function() {
+    self.sortBy = ko.observable('title');
+    self.sortedDrafts = ko.computed(function() {
         var row = self.sortBy();
         return self.drafts().sort(function (left, right) { 
             var a = deep_value(left, row).toLowerCase();
@@ -225,18 +226,11 @@ var AdminView = function(adminSelector, user, reviewers) {
             return a == b ? 0 : 
                 (a < b ? -1 : 1); 
         });
-    }, this);
-
-    self.sortBy = ko.observable('title');
-
-    self.init();
-}
+    });
+};
 
 AdminView.prototype.init = function() {
     var self = this;
-
-    // '#prereg-row'
-    $osf.applyBindings(self, self.adminSelector);
 
     var getDrafts = self.getDrafts();
 
@@ -252,7 +246,7 @@ AdminView.prototype.init = function() {
     $.when(getDrafts).then(function() {
         self.loading(false);
     });
-}
+};
 
 AdminView.prototype.setSort = function(data, event) {
     var self = this;
@@ -266,6 +260,8 @@ $(document).ready(function() {
     var user = prereg_user;
     var reviewers = prereg_reviewers;
     var adminView = new AdminView('#prereg-row', user, reviewers);
+    adminView.init();
+    ko.applyBindings(adminView, $('#prereg-row')[0]);
 });
 
 /**

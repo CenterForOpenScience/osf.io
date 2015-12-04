@@ -108,7 +108,7 @@ Comment.prototype.toggleSaved = function(save) {
 
     if (!self.saved()) {
         // error handling handled implicitly in save
-        save.done(self.saved.bind(self, true));
+        save().done(self.saved.bind(self, true));
     }
     else {
         self.saved(false);
@@ -668,8 +668,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
 
-    self.contributors = ko.observable([]);
-
     self.pages = ko.computed(function () {
         // empty array if self.draft is not set.
         return self.draft() ? self.draft().pages() : [];
@@ -753,7 +751,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
                 if (question.type === 'object') {
                     $elem.append(
                         $.map(question.properties, function(subQuestion) {
-                            subQuestion = self.context(subQuestion);
+                            subQuestion = self.context(subQuestion, self, true);
                             var value;
                             if (self.extensions[subQuestion.type] ) {
                                 value = subQuestion.preview();
@@ -832,9 +830,6 @@ RegistrationEditor.prototype.init = function(draft) {
         }
     });
 
-    self.getContributors().done(function(data) {
-        self.contributors(data);
-    });
 
     self.currentQuestion(self.flatQuestions().shift());
 };
@@ -857,14 +852,16 @@ RegistrationEditor.prototype.flatQuestions = function() {
  * @param {Object} data: data in current editor template scope
  * @returns {Object|ViewModel}
  **/
-RegistrationEditor.prototype.context = function(data, $root) {
+RegistrationEditor.prototype.context = function(data, $root, preview) {
+    preview = preview || false;
+
     $.extend(data, {
         save: this.save.bind(this),
         readonly: this.readonly
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data, $root);
+        return new this.extensions[data.type](data, $root, preview);
     }
     return data;
 };
@@ -1091,31 +1088,6 @@ RegistrationEditor.prototype.save = function() {
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
     return request;
-};
-/**
- * Makes ajax request for a project's contributors
- */
-RegistrationEditor.prototype.makeContributorsRequest = function() {
-    var self = this;
-    var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
-    return $.getJSON(contributorsUrl);
-};
-/**
- * Returns the `user_fullname` of each contributor attached to a node.
- **/
-RegistrationEditor.prototype.getContributors = function() {
-    var self = this;
-    return self.makeContributorsRequest()
-        .then(function(data) {
-            return $.map(data.contributors, function(c) { return c.fullname; });
-        }).fail(function(xhr, status, error) {
-            Raven.captureMessage('Could not GET contributors', {
-                url: window.contextVars.node.urls.api + 'get_contributors/',
-                textStatus: status,
-                error: error
-            });
-            $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
-        });
 };
 
 /**
