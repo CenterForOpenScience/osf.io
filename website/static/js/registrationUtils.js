@@ -661,7 +661,7 @@ Draft.prototype.approve = function() {
             },
             approve: {
                 label: 'Approve',
-                class: 'btn-warning',
+                class: 'btn-danger',
                 callback: ret.resolve
             }
         }                
@@ -684,7 +684,7 @@ Draft.prototype.reject = function(confirmed) {
             },
             approve: {
                 label: 'Approve',
-                class: 'btn-warning',
+                class: 'btn-danger',
                 callback: ret.resolve       
             }
         }                
@@ -1143,12 +1143,13 @@ RegistrationEditor.prototype.approveDraft = function() {
 
     var draft = self.draft();
     draft.approve().done(function() {
+        $osf.block();
         $.post(self.urls.approve.replace('{draft_pk}', draft.pk))
             .done(function() {
                 window.location.assign(self.urls.list);
             }).fail(function() {
                 bootbox.alert('There was a problem approving this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
-            });
+            }).always($osf.unblock);
     });
 };
 RegistrationEditor.prototype.rejectDraft = function() {
@@ -1156,12 +1157,13 @@ RegistrationEditor.prototype.rejectDraft = function() {
 
     var draft = self.draft();
     draft.reject().done(function() {
+        $osf.block();
         $.post(self.urls.reject.replace('{draft_pk}', draft.pk))
             .done(function() {
                 window.location.assign(self.urls.list);
             }).fail(function() {
                 bootbox.alert('There was a problem rejecting this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
-            });
+            }).always($osf.unblock);
     });
 };
 

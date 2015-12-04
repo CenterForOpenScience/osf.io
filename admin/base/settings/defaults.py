@@ -14,10 +14,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = osf_settings.SECRET_KEY
 
-# TODO: generalize this authentication
-AUTHENTICATION_BACKENDS = (
-    'api.base.authentication.backends.ODMBackend',
-)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = osf_settings.DEBUG_MODE

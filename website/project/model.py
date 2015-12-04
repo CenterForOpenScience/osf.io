@@ -3440,6 +3440,17 @@ class Sanction(StoredObject):
         """
         raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
 
+    def token_for_user(self, user, method):
+        """
+        :param str method: 'approval' | 'rejection'
+        """
+        try:
+            user_state = self.approval_state[user._id]
+        except KeyError:
+            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
+        return user_state['{0}_token'.format(method)]
+
+
     def approve(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
         try:
@@ -4165,3 +4176,13 @@ class DraftRegistration(StoredObject):
         if save:
             self.save()
         return register
+
+    def approve(self, user):
+        token = self.approval.token_for_user(user, 'approval')
+        self.approval.approve(user, token)
+        self.approval.save()
+
+    def reject(self, user):
+        token = self.approval.token_for_user(user, 'rejection')
+        self.approval.reject(user, token)
+        self.approval.save()
