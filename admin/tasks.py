@@ -5,6 +5,21 @@ from website import settings
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+
+@task()
+def manage(*args):
+    """Take arguments and run python manage
+
+    :param args: ex. runserver, migrate
+    """
+    if os.getcwd() != HERE:
+        os.chdir(HERE)
+    env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
+    arg_str = ' '.join(args)
+    cmd = '{} python ../manage.py {}'.format(env, arg_str)
+    run(cmd, echo=True, pty=True)
+
+
 @task()
 def assets(dev=False, watch=False):
     """Install and build static assets for admin."""
