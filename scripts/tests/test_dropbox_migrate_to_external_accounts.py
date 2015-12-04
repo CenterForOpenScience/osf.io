@@ -6,7 +6,6 @@ import uuid
 
 from scripts.dropbox import migrate_to_external_accounts as migration
 
-from framework.auth import Auth
 from framework.mongo import database
 
 from tests.base import OsfTestCase
@@ -84,7 +83,8 @@ class TestDropboxMigration(OsfTestCase):
     def test_migrate_to_external_account(self):
         assert_equal(ExternalAccount.find().count(), 0)
         user_settings_document = self.unlinked_user_settings[0]
-        external_account, user = migration.migrate_to_external_account(user_settings_document)
+        external_account, user, new = migration.migrate_to_external_account(user_settings_document)
+        assert_true(new)
         assert_equal(ExternalAccount.find().count(), 1)
         assert_is_not_none(external_account)
         assert_equal(user_settings_document['owner'], user._id)
@@ -120,7 +120,7 @@ class TestDropboxMigration(OsfTestCase):
         user_settings_document = database['dropboxusersettings'].find_one({
             '_id':  node_settings_document['user_settings']
         })
-        external_account, user = migration.migrate_to_external_account(
+        external_account, user, new = migration.migrate_to_external_account(
             user_settings_document
         )
         user_settings = migration.make_new_user_settings(user)
@@ -195,3 +195,19 @@ class TestDropboxMigration(OsfTestCase):
                         self.unauthorized_node_settings_documents
                     )
                 )
+
+    def test_migrate_two_users_one_account(self):
+        self.linked_user_settings[1]["_id"] = self.linked_user_settings[0]["_id"]
+        self.linked_user_settings[1]["_version"] = self.linked_user_settings[0]["_version"]
+        self.linked_user_settings[1]["access_token"] = self.linked_user_settings[0]["access_token"]
+        self.linked_user_settings[1]["deleted"] = self.linked_user_settings[0]["deleted"]
+        self.linked_user_settings[1]["dropbox_id"] = self.linked_user_settings[0]["dropbox_id"]
+        self.linked_user_settings[1]["dropbox_info"] = self.linked_user_settings[0]["dropbox_info"]
+
+        external_account_1, user_1, new_1 = migration.migrate_to_external_account(self.linked_user_settings[0])
+        external_account_2, user_2, new_2 = migration.migrate_to_external_account(self.linked_user_settings[1])
+
+        assert_equal(external_account_1._id, external_account_2._id)
+        assert_not_equal(user_1, user_2)
+        assert_true(new_1)
+        assert_false(new_2)

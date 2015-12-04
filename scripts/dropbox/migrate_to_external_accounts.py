@@ -4,6 +4,7 @@ import sys
 import shutil
 
 from nose.tools import *  # noqa
+from modularodm import Q
 
 from framework.mongo import database
 from framework.transactions.context import TokuTransaction
@@ -50,19 +51,26 @@ def verify_node_settings_document(document):
 
 def migrate_to_external_account(user_settings_document):
     if not user_settings_document.get('access_token'):
-        return None
+        return (None, None, None)
+    new = False
     user = User.load(user_settings_document['owner'])
-    external_account = ExternalAccount(
-        provider=PROVIDER,
-        provider_name=PROVIDER_NAME,
-        provider_id=user_settings_document['dropbox_id'],
-        oauth_key=user_settings_document['access_token'],
-        display_name=user_settings_document['dropbox_info'].get('display_name', None),
-    )
-    external_account.save()  # generate pk for external account
+    try:
+        external_account = ExternalAccount.find(Q('provider_id', 'eq', user_settings_document['dropbox_id']))[0]
+        logger.info('Duplicate account use found: User {0} with dropbox_id {1}'.format(user.username, user_settings_document['dropbox_id']))
+    except IndexError:
+        new = True
+        external_account = ExternalAccount(
+            provider=PROVIDER,
+            provider_name=PROVIDER_NAME,
+            provider_id=user_settings_document['dropbox_id'],
+            oauth_key=user_settings_document['access_token'],
+            display_name=user_settings_document['dropbox_info'].get('display_name', None),
+        )
+        external_account.save()  # generate pk for external accountc
+    
     user.external_accounts.append(external_account)
     user.save()
-    return external_account, user
+    return external_account, user, new
 
 def make_new_user_settings(user):
     # kill the old backrefs
@@ -140,13 +148,14 @@ def migrate(dry_run=True, remove_old=True):
                 "Found dropboxusersettings document (id:{0}) that is marked as deleted. It will be hard-deleted during the migration.".format(user_settings_document['_id'])
             )
             continue
-        external_account, user = migrate_to_external_account(user_settings_document)
+        external_account, user, new = migrate_to_external_account(user_settings_document)
         if not external_account:
             logger.info("DropboxUserSettings<_id:{0}> has no oauth credentials and will not be migrated.".format(
                 user_settings_document['_id']
             ))
         else:
-            external_accounts_created += 1
+            if new:
+                external_accounts_created += 1
             linked_node_settings_documents = database['dropboxnodesettings'].find({
                 'user_settings': user_settings_document['_id']
             })
@@ -193,12 +202,6 @@ def migrate(dry_run=True, remove_old=True):
             external_accounts_created, migrated_user_settings, migrated_node_settings
         )
     )
-    # Migrate dropbnodesettings without a usersettings document
-    unauthorized_node_settings_documents = database['dropboxnodesettings'].find({
-        'user_settings': 'null'
-    })
-    for node_settings_document in unauthorized_node_settings_documents:
-        make_new_node_settings(node, node_settings_document)
     if remove_old:
         remove_old_documents(
             old_user_settings, old_user_settings_count,
