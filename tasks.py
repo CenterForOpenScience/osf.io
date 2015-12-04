@@ -115,7 +115,7 @@ TRANSACTION_WARNING = """
 To persist changes run 'commit()'.
 Keep in mind that changing documents will lock them.
 
-This feature can be disabled with the '--no-transactation' flag.
+This feature can be disabled with the '--no-transaction' flag.
 
 """
 
@@ -910,7 +910,4 @@ def update_citation_styles():
 
 @task
 def clean(verbose=False):
-    cmd = 'find . -name "*.pyc" -exec rm -rf {} \;'
-    if verbose:
-        print(cmd)
-    run(cmd, pty=True)
+    run('find . -name "*.pyc" -delete', echo=True)
