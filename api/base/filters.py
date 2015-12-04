@@ -19,6 +19,7 @@ from api.base.exceptions import (
     InvalidFilterFieldError
 )
 from api.base import utils
+from api.base.serializers import RelationshipField
 
 def sort_multiple(fields):
     fields = list(fields)
@@ -188,6 +189,8 @@ class FilterMixin(object):
         :param basestring field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
+        if isinstance(field, RelationshipField):
+            return field_name
         return field.source or field_name
 
     def convert_value(self, value, field):
@@ -214,6 +217,8 @@ class FilterMixin(object):
                     field_type='date'
                 )
         elif isinstance(field, self.LIST_FIELDS):
+            return value
+        elif isinstance(field, RelationshipField):
             return value
         else:
             try:
