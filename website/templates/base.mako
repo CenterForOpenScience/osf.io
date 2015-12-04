@@ -165,7 +165,8 @@
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
                 cookieName: ${ cookie_name | sjson, n },
-                apiV2Prefix: ${ api_v2_base | sjson, n }
+                apiV2Prefix: ${ api_v2_base | sjson, n },
+                registerUrl: ${ api_url_for('register_user') | sjson, n}
             });
         </script>
 

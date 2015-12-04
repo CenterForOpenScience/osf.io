@@ -1,22 +1,19 @@
 .panel-heading.no-background {
     background: transparent;
 }
-
 .markdown-it-view {
     padding: 10px;
     height: auto;
 }
-
 .wiki-compare-view {
     white-space: pre-wrap;
     padding: 10px;
 }
-
 .panel-collapsed {
     background: #F5F5F5;
     height: auto;
 }
-.wiki-sidenav h4, .wiki-sidenav li>ul>.btn,  .osf-sidenav.wiki-sidenav ul>li .row{
+.wiki-sidenav h4, .wiki-sidenav li>ul>.btn,  .osf-sidenav.wiki-sidenav ul>li .row {
     padding: 8px 15px;
     margin-top: 2px;
 }
@@ -48,6 +45,7 @@
 .osf-sidenav.wiki-sidenav ul>li a:hover {
     text-decoration: none;
 }
+
 /* Changes to default icons to be consistent with the grey look of many new ui items */
 .btn-default-alt {
     background: #EFEFEF;
@@ -55,7 +53,6 @@
 .btn-success-alt {
     background: #D9E8D9;
 }
-
 .addon-external-link:hover,
 .addon-external-link:focus {
     text-decoration: none !important;
@@ -83,7 +80,6 @@
     -ms-flex-wrap: wrap;
     flex-wrap: wrap;
 }
-
 .osf-panel-heading-flex {
     width: 100%;
     margin: auto;
@@ -102,12 +98,10 @@
     height: 500px;
     overflow: auto;
 }
-
 .osf-panel .superlist li {
     display: block;
     font-size: 20px;
 }
-
 .superlist li {
     display: inline-block;
     float: none;
@@ -143,7 +137,6 @@
     max-width: 100%;
     height: auto;
 }
-
 .wiki-title {
     line-height: 36px;
     border-bottom: none;
@@ -163,7 +156,6 @@
         margin-top: 20px;
     }
 }
-
 @media (min-width: 768px) {
     .wiki-status-lg {
         float: right;
@@ -183,18 +175,15 @@
     margin-left: -14px;
     font-size: 12px;
 }
-
 .wiki-component {
     list-style-type: none;
     padding-right: 20px;
 }
-
 .wiki-component li {
     margin-bottom: 8px;
 }
 
 /* Markdown editing */
-
 .wmd-panel
 {
     width: 100%;
@@ -217,7 +206,6 @@
     -ms-flex-wrap: wrap;
     flex-wrap: wrap;
 }
-
 .wmd-panel .list-inline {
     width: 100%;
     margin: auto;
@@ -226,14 +214,11 @@
     -ms-flex: 0 0 auto;
     flex: 0 0 auto;
 }
-
-.wmd-button-bar
-{
+.wmd-button-bar {
     width: 100%;
     background-color: Silver;
 }
-
-#wmd-button-bar{
+#wmd-button-bar {
     width: 100%;
     margin: auto;
     -webkit-box-flex: 0 0 auto;
@@ -241,15 +226,10 @@
     -ms-flex: 0 0 auto;
     flex: 0 0 auto;
 }
-
-.wmd-input
-{
+.wmd-input {
     border: 1px solid DarkGray;
 }
-
-
-.wmd-button-row
-{
+.wmd-button-row {
     position: relative;
     margin-left: 0;
     margin-right: 0;
@@ -257,9 +237,7 @@
     margin-top: 0px;
     padding: 0px;
 }
-
-.wmd-spacer
-{
+.wmd-spacer {
     width: 1px;
     height: 20px;
     margin-left: 14px;
@@ -267,7 +245,6 @@
     display: inline-block;
     list-style: none;
 }
-
 .wmd-button {
     width: 20px;
     height: 20px;
@@ -277,7 +254,6 @@
     list-style: none;
     cursor: pointer;
 }
-
 .wmd-button > span {
     background-image: url(/static/public/vendor/pagedown/wmd-buttons.png);
     background-repeat: no-repeat;
@@ -286,42 +262,31 @@
     height: 20px;
     display: inline-block;
 }
-
-.wmd-spacer1
-{
+.wmd-spacer1 {
     left: 50px;
 }
-.wmd-spacer2
-{
+.wmd-spacer2 {
     left: 175px;
 }
-.wmd-spacer3
-{
+.wmd-spacer3 {
     left: 300px;
 }
-
-.wmd-prompt-background
-{
+.wmd-prompt-background {
     background-color: Black;
 }
-
-.wmd-prompt-dialog
-{
+.wmd-prompt-dialog {
     border: 1px solid #999999;
     background-color: #F5F5F5;
 }
-
 .wiki-single-heading {
     border: 1px solid #ddd;
 }
-
 select.form-control {
     padding:1px;
     display: inline;
     height: 24px;
     font-size: 13px;
 }
-
 .wiki-toolbar-icon {
     padding: 5px 10px;
     display: inline-block;
@@ -339,7 +304,6 @@ select.form-control {
 .wiki-toolbar-icon span {
     margin-left: 5px;
 }
-
 .wiki-toolbar-icon:hover {
   background: rgba(51, 122, 183, 0.15);
 }

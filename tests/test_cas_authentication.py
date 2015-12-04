@@ -114,7 +114,7 @@ class TestCASClient(OsfTestCase):
 
     @httpretty.activate
     def test_application_token_revocation_succeeds(self):
-        url = self.client.get_application_revocation_url()
+        url = self.client.get_auth_token_revocation_url()
         client_id= 'fake_id'
         client_secret = 'fake_secret'
         httpretty.register_uri(httpretty.POST,
@@ -128,7 +128,7 @@ class TestCASClient(OsfTestCase):
 
     @httpretty.activate
     def test_application_token_revocation_fails(self):
-        url = self.client.get_application_revocation_url()
+        url = self.client.get_auth_token_revocation_url()
         client_id= 'fake_id'
         client_secret = 'fake_secret'
         httpretty.register_uri(httpretty.POST,

@@ -17,6 +17,9 @@ from website.addons.mendeley.provider import MendeleyCitationsProvider
 
 import datetime
 
+from mendeley.exception import MendeleyApiException
+from framework.exceptions import HTTPError
+
 from website.addons.mendeley import model
 
 
@@ -78,6 +81,13 @@ class MendeleyProviderTestCase(OsfTestCase):
         res = self.provider.citation_lists(MendeleyCitationsProvider()._extract_folder)
         assert_equal(res[1]['name'], mock_folders[0].name)
         assert_equal(res[1]['id'], mock_folders[0].json['id'])
+
+    def test_mendeley_has_access(self):
+        mock_client = mock.Mock()
+        mock_client.folders.list.return_value = MendeleyApiException({'status_code': 403, 'text': 'Mocked 403 MendeleyApiException'})
+        self.provider._client = mock_client
+        res = self.provider._client
+        assert_raises(HTTPError(403))
 
 class MendeleyNodeSettingsTestCase(OsfTestCase):
 
@@ -156,6 +166,24 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
                 external_account=external_account,
                 user=UserFactory()
             )
+
+    def test_deauthorize(self):
+        self.node_settings.external_account = ExternalAccountFactory()
+        self.node_settings.mendeley_list_id = 'something'
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.save()
+
+        assert_true(self.node_settings.mendeley_list_id)
+        self.node_settings.deauthorize(auth=Auth(self.user))
+        self.node_settings.save()
+        assert_is(self.node_settings.user_settings, None)
+        assert_is(self.node_settings.mendeley_list_id, None)
+
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, 'mendeley_node_deauthorized')
+        params = last_log.params
+        assert_in('node', params)
+        assert_in('project', params)
 
     def test_clear_auth(self):
         self.node_settings.external_account = ExternalAccountFactory()

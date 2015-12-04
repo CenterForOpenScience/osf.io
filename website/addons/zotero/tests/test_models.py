@@ -15,6 +15,9 @@ from website.addons.zotero.tests.factories import (
 )
 from website.addons.zotero.provider import ZoteroCitationsProvider
 
+from pyzotero.zotero_errors import UserNotAuthorised
+from framework.exceptions import HTTPError
+
 from website.addons.zotero import model
 
 
@@ -138,6 +141,24 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
                 external_account=external_account,
                 user=UserFactory()
             )
+
+    def test_deauthorize(self):
+        self.node_settings.external_account = ExternalAccountFactory()
+        self.node_settings.zotero_list_id = 'something'
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.save()
+
+        assert_true(self.node_settings.zotero_list_id)
+        self.node_settings.deauthorize(auth=Auth(self.user))
+        self.node_settings.save()
+        assert_is(self.node_settings.user_settings, None)
+        assert_is(self.node_settings.zotero_list_id, None)
+
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, 'zotero_node_deauthorized')
+        params = last_log.params
+        assert_in('node', params)
+        assert_in('project', params)
 
     def test_clear_auth(self):
         self.node_settings.external_account = ExternalAccountFactory()

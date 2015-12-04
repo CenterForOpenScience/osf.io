@@ -23,7 +23,8 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.models import ApiOAuth2Application, User
+from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
+from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
@@ -408,6 +409,43 @@ def oauth_application_detail(auth, **kwargs):
     return {"app_list_url": '',
             "app_detail_url": app_detail_url}
 
+@must_be_logged_in
+def personal_access_token_list(auth, **kwargs):
+    """Return token creation page with list of known tokens. API is responsible for tying list to current user."""
+    token_list_url = api_v2_url("tokens/")
+    return {
+        "token_list_url": token_list_url
+    }
+
+@must_be_logged_in
+def personal_access_token_register(auth, **kwargs):
+    """Register a personal access token: blank form view"""
+    token_list_url = api_v2_url("tokens/")  # POST request to this url
+    return {"token_list_url": token_list_url,
+            "token_detail_url": '',
+            "scope_options": get_available_scopes()}
+
+@must_be_logged_in
+def personal_access_token_detail(auth, **kwargs):
+    """Show detail for a single personal access token"""
+    _id = kwargs.get('_id')
+
+    # The ID must be an active and existing record, and the logged-in user must have permission to view it.
+    try:
+        record = ApiOAuth2PersonalToken.find_one(Q('_id', 'eq', _id))
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND)
+    if record.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
+    if record.is_active is False:
+        raise HTTPError(http.GONE)
+
+    token_detail_url = api_v2_url("tokens/{}/".format(_id))  # Send request to this URL
+    return {"token_list_url": '',
+            "token_detail_url": token_detail_url,
+            "scope_options": get_available_scopes()}
+
+
 def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the user addons config page.
@@ -461,7 +499,7 @@ def user_choose_mailing_lists(auth, **kwargs):
 
 
 @user_merged.connect
-def update_mailchimp_subscription(user, list_name, subscription):
+def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=True):
     """ Update mailing list subscription in mailchimp.
 
     :param obj user: current user
@@ -472,7 +510,7 @@ def update_mailchimp_subscription(user, list_name, subscription):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",

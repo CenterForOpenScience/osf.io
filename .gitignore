@@ -62,6 +62,7 @@ api/static/vendor
 
 # Local settings files
 local.py
+local.json
 
 website/uploads/
 website/mfrcache/
@@ -91,9 +92,14 @@ website/mfrtemp/
 docs/_build
 website/static/img/badges
 
-# GUIDS
+# Scripts
 scripts/guid_blacklist.txt
+scripts/hide_extra_registration_logs.json
+scripts/osfstorage/usage_whitelist.json
 
 # Celery dbs
 celerybeat-schedule.db
 celery_beat.py.db
+#
+# GUIDS
+scripts/guid_blacklist.txt
