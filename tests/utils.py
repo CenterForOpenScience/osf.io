@@ -140,7 +140,7 @@ def make_drf_request(*args, **kwargs):
 def render_generations_from_parent(parent, num_generations):
     current_gen = parent
     for generation in xrange(0, num_generations):
-        next_gen = NodeFactory(parent=current_gen)
+        next_gen = NodeFactory(parent=current_gen, is_public=True)
         current_gen = next_gen
     return current_gen
 
