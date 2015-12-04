@@ -56,7 +56,7 @@ from tests.factories import (
     NodeLicenseRecordFactory, DraftRegistrationFactory
 )
 from tests.test_features import requires_piwik
-from tests.utils import mock_archive
+from tests.utils import mock_archive, render_generations_from_node_structure_list
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
@@ -3156,7 +3156,7 @@ class TestUltimateParent(OsfTestCase):
     def test_get_descendants_recursive_returns_in_depth_order(self):
         # Build up a family of nodes
         node_structure = [5, 2, [1, 2], 3, [10, 2, 1], 2, [4, [2, 2], 6]]
-        self.render_generations_from_node_structure_list(self.project, node_structure)
+        render_generations_from_node_structure_list(self.project, node_structure)
 
         parent_list = [self.project._id]
         nodes_touched = 0
@@ -3168,22 +3168,6 @@ class TestUltimateParent(OsfTestCase):
                 nodes_touched += 1
         assert_not_equal(nodes_touched, 0)
         assert_equal(nodes_touched, 42)
-
-    def render_generations_from_parent(self, parent, num_generations):
-        current_gen = parent
-        for generation in xrange(0, num_generations):
-            next_gen = NodeFactory(parent=current_gen)
-            current_gen = next_gen
-        return current_gen
-
-    def render_generations_from_node_structure_list(self, parent, node_structure_list):
-        new_parent = None
-        for node_number in node_structure_list:
-            if isinstance(node_number, list):
-                self.render_generations_from_node_structure_list(new_parent or parent, node_number)
-            else:
-                new_parent = self.render_generations_from_parent(parent, node_number)
-        return new_parent
 
 
 class TestTemplateNode(OsfTestCase):

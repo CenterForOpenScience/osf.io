@@ -10,6 +10,7 @@ from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
+from tests.factories import NodeFactory
 from tests.base import get_default_metaschema
 DEFAULT_METASCHEMA = get_default_metaschema()
 
@@ -134,6 +135,24 @@ def make_drf_request(*args, **kwargs):
     http_request.META['SERVER_PORT'] = 8000
     # A DRF Request wraps a Django HttpRequest
     return Request(http_request, *args, **kwargs)
+
+
+def render_generations_from_parent(parent, num_generations):
+    current_gen = parent
+    for generation in xrange(0, num_generations):
+        next_gen = NodeFactory(parent=current_gen)
+        current_gen = next_gen
+    return current_gen
+
+
+def render_generations_from_node_structure_list(parent, node_structure_list):
+    new_parent = None
+    for node_number in node_structure_list:
+        if isinstance(node_number, list):
+            render_generations_from_node_structure_list(new_parent or parent, node_number)
+        else:
+            new_parent = render_generations_from_parent(parent, node_number)
+    return new_parent
 
 
 class MockAuth(object):
