@@ -1,7 +1,8 @@
 import httplib as http
+from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import status
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, AuthenticationFailed
 
 
 def dict_error_formatting(errors, index=None):
@@ -61,6 +62,9 @@ def json_api_exception_handler(exc, context):
     if response:
         message = response.data
 
+        if isinstance(exc, TwoFactorRequiredError):
+            response['X-OSF-OTP'] = 'required; app'
+
         if isinstance(exc, JSONAPIException):
             errors.extend([{'source': exc.source or {}, 'detail': exc.detail}])
         elif isinstance(message, dict):
@@ -81,7 +85,7 @@ def json_api_exception_handler(exc, context):
 
 class ServiceUnavailableError(APIException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    default_detail = 'Service is unavailable at this time.'
+    default_detail = _('Service is unavailable at this time.')
 
 
 class JSONAPIException(APIException):
@@ -162,7 +166,7 @@ class InvalidFilterValue(JSONAPIParameterException):
 
 class InvalidFilterError(JSONAPIParameterException):
     """Raised when client passes an malformed filter in the query string."""
-    default_detail = 'Query string contains a malformed filter.'
+    default_detail = _('Query string contains a malformed filter.')
     status_code = http.BAD_REQUEST
 
     def __init__(self, detail=None):
@@ -171,19 +175,19 @@ class InvalidFilterError(JSONAPIParameterException):
 
 class InvalidFilterComparisonType(JSONAPIParameterException):
     """Raised when client tries to filter on a field that is not a date or number type"""
-    default_detail = "Comparison operators are only supported for dates and numbers."
+    default_detail = _('Comparison operators are only supported for dates and numbers.')
     status_code = http.BAD_REQUEST
 
 
 class InvalidFilterMatchType(JSONAPIParameterException):
     """Raised when client tries to do a match filter on a field that is not a string or a list"""
-    default_detail = "Match operators are only supported for strings and lists."
+    default_detail = _('Match operators are only supported for strings and lists.')
     status_code = http.BAD_REQUEST
 
 
 class InvalidFilterFieldError(JSONAPIParameterException):
     """Raised when client tries to filter on a field that is not supported"""
-    default_detail = "Query contained one or more filters for invalid fields."
+    default_detail = _('Query contained one or more filters for invalid fields.')
     status_code = http.BAD_REQUEST
 
     def __init__(self, detail=None, parameter=None, value=None):
@@ -194,14 +198,24 @@ class InvalidFilterFieldError(JSONAPIParameterException):
 
 class UnconfirmedAccountError(APIException):
     status_code = 400
-    default_detail = 'Please confirm your account before using the API.'
+    default_detail = _('Please confirm your account before using the API.')
 
 
 class DeactivatedAccountError(APIException):
     status_code = 400
-    default_detail = 'Making API requests with credentials associated with a deactivated account is not allowed.'
+    default_detail = _('Making API requests with credentials associated with a deactivated account is not allowed.')
+
+
+class TwoFactorRequiredError(AuthenticationFailed):
+    default_detail = _('Must specify two-factor authentication OTP code.')
+    pass
 
 
 class InvalidModelValueError(JSONAPIException):
     status_code = 400
-    default_detail = 'Invalid value in POST/PUT/PATCH request.'
+    default_detail = _('Invalid value in POST/PUT/PATCH request.')
+
+
+class TargetNotSupportedError(Exception):
+    """Raised if a TargetField is used for a resource that isn't supported."""
+    pass

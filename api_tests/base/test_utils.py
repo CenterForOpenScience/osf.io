@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa
 
 from rest_framework import fields
 
-from api.base import utils
+from api.base import utils as api_utils
 
 from tests.base import ApiTestCase
 
@@ -14,7 +14,7 @@ class TruthyFalsyTestCase(ApiTestCase):
     """
 
     def test_truthy(self):
-        assert_equal(utils.TRUTHY, fields.BooleanField.TRUE_VALUES)
+        assert_equal(api_utils.TRUTHY, fields.BooleanField.TRUE_VALUES)
 
     def test_falsy(self):
-        assert_equal(utils.FALSY, fields.BooleanField.FALSE_VALUES)
+        assert_equal(api_utils.FALSY, fields.BooleanField.FALSE_VALUES)

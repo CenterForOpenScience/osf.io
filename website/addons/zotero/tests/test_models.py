@@ -15,6 +15,9 @@ from website.addons.zotero.tests.factories import (
 )
 from website.addons.zotero.provider import ZoteroCitationsProvider
 
+from pyzotero.zotero_errors import UserNotAuthorised
+from framework.exceptions import HTTPError
+
 from website.addons.zotero import model
 
 

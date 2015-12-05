@@ -294,7 +294,7 @@ def update_node(node, index=None, bulk=False):
 
     from website.files.models.osfstorage import OsfStorageFile
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
-        update_file(file_)
+        update_file(file_, index=index)
 
     if node.is_deleted or not node.is_public or node.archiving:
         delete_doc(elastic_document_id, node)
