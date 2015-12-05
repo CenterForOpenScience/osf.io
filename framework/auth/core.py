@@ -378,7 +378,12 @@ class User(GuidStoredObject, AddonModelMixin):
     # when comments for a node were last viewed
     comments_viewed_timestamp = fields.DictionaryField()
     # Format: {
-    #   'node_id': 'timestamp'
+    #   'node_id': {
+    #     'node': 'timestamp',
+    #     'files': {
+    #        'file_id': 'timestamp'
+    #     }
+    #   }
     # }
 
     # timezone for user's locale (e.g. 'America/New_York')
@@ -445,13 +450,18 @@ class User(GuidStoredObject, AddonModelMixin):
         return user
 
     @classmethod
-    def create_unconfirmed(cls, username, password, fullname, do_confirm=True):
+    def create_unconfirmed(cls, username, password, fullname, do_confirm=True,
+                           campaign=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
         user.add_unconfirmed_email(username)
         user.is_registered = False
+        if campaign:
+            # needed to prevent cirular import
+            from framework.auth.campaigns import system_tag_for_campaign  # skipci
+            user.system_tags.append(system_tag_for_campaign(campaign))
         return user
 
     @classmethod
@@ -1312,6 +1322,21 @@ class User(GuidStoredObject, AddonModelMixin):
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
+
+    def get_node_comment_timestamps(self, node, page):
+        """ Returns the timestamp for when comments were last viewed on a node or
+            a dictionary of timestamps for when comments were last viewed on files or
+            wiki pages.
+        """
+        default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
+        node_timestamps = self.comments_viewed_timestamp.get(node._id, dict())
+        if not node_timestamps:
+            self.comments_viewed_timestamp[node._id] = dict()
+        if page == 'node':
+            page_timestamps = node_timestamps.get(page, default_timestamp)
+        else:
+            page_timestamps = node_timestamps.get(page, dict())
+        return page_timestamps
 
 
 def _merge_into_reversed(*iterables):

@@ -36,7 +36,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from website.models import Node, Pointer, WatchConfig, PrivateLink
+from website.models import Guid, Node, Pointer, WatchConfig, PrivateLink, Comment
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
@@ -44,6 +44,8 @@ from website.project import new_folder
 from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
+from website.files.models.base import File, FileNode
+from datetime import datetime
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 
@@ -691,7 +693,8 @@ def _should_show_wiki_widget(node, user):
     else:
         return has_wiki
 
-def _view_project(node, auth, primary=False):
+
+def _view_project(node, auth, primary=False, check_files=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
@@ -715,7 +718,9 @@ def _view_project(node, auth, primary=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message, kind='info', dismissible=False, trust=True)
+                status.push_status_message(message, 'info', dismissible=False, trust=True)
+    n_unread_node = n_unread_comments(node, user, 'node')
+    n_unread_files = n_unread_comments(node, user, 'files', check=check_files)
     data = {
         'node': {
             'id': node._primary_key,
@@ -764,8 +769,8 @@ def _view_project(node, auth, primary=False):
             'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
             'comment_level': node.comment_level,
-            'has_comments': bool(getattr(node, 'commented', [])),
-            'has_children': bool(getattr(node, 'commented', False)),
+            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
+            'has_children': bool(Comment.find(Q('node', 'eq', node))),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
@@ -801,6 +806,11 @@ def _view_project(node, auth, primary=False):
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': dashboard_id,
+            'unread_comments': {
+                'node': n_unread_node,
+                'files': n_unread_files,
+                'total': n_unread_node + n_unread_files
+            }
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -842,6 +852,92 @@ def _get_children(node, auth, indent=0):
 
     return children
 
+
+def n_unread_comments(node, user, page, root_id=None, check=False):
+    """Return the number of unread comments on a node for a user."""
+    if not node.is_contributor(user):
+        return 0
+    if page == 'node':
+        return n_unread_total_node(user, node)
+    if root_id is None:
+        return n_unread_total(node, user, page, check=check)
+    root_target = Guid.load(root_id)
+    if root_target:
+        root_target = root_target.referent
+
+    if page == 'files':
+        root_target = FileNode.load(root_id)
+        if check:
+            exists, _ = check_file_exists(node, root_id)
+            if not exists:
+                return 0
+    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
+    view_timestamp = user.get_node_comment_timestamps(node, page)
+    if not page == 'node' and isinstance(view_timestamp, dict):
+        view_timestamp = view_timestamp.get(root_id, default_timestamp)
+    return Comment.find(Q('node', 'eq', node) &
+                        Q('user', 'ne', user) &
+                        Q('date_created', 'gt', view_timestamp) &
+                        Q('date_modified', 'gt', view_timestamp) &
+                        Q('is_deleted', 'eq', False) &
+                        Q('is_hidden', 'eq', False) &
+                        Q('root_target', 'eq', root_target)).count()
+
+
+def n_unread_total(node, user, page, check=False):
+    if page == 'files':
+        return n_unread_total_files(user, node, check=check)
+    return n_unread_total_node(user, node) + n_unread_total_files(user, node, check=check)
+
+
+def n_unread_total_node(user, node):
+    view_timestamp = user.get_node_comment_timestamps(node, 'node')
+    return Comment.find(Q('node', 'eq', node) &
+                        Q('user', 'ne', user) &
+                        Q('date_created', 'gt', view_timestamp) &
+                        Q('date_modified', 'gt', view_timestamp) &
+                        Q('is_deleted', 'eq', False) &
+                        Q('is_hidden', 'eq', False) &
+                        Q('page', 'eq', 'node')).count()
+
+
+def n_unread_total_files(user, node, check=False):
+    file_timestamps = user.get_node_comment_timestamps(node, 'files')
+    n_unread = 0
+    if not file_timestamps:
+        set_default_file_comment_timestamps(user, node)
+
+    removed_files = []
+    for file_id in node.commented_files:
+        exists, _ = check_file_exists(node, file_id)
+        if not exists:
+            removed_files.append(file_id)
+
+    for file_id in removed_files:
+        del node.commented_files[file_id]
+        node.save()
+
+    for file_id in node.commented_files:
+        n_unread += n_unread_comments(node, user, 'files', file_id)
+
+    return n_unread
+
+
+def set_default_file_comment_timestamps(user, node):
+    user.comments_viewed_timestamp[node._id]['files'] = dict()
+    file_timestamps = user.comments_viewed_timestamp[node._id]['files']
+    for file_id in node.commented_files:
+        file_timestamps[file_id] = datetime(1970, 1, 1, 12, 0, 0)
+    user.save()
+
+
+def check_file_exists(node, file_id):
+    num_of_comments = node.commented_files[file_id]
+    file_guid = File.load(file_id)
+    if file_guid and file_guid.touch(request.headers.get('Authorization')):
+        return True, num_of_comments
+    else:
+        return False, num_of_comments
 
 @must_be_valid_project
 @must_have_permission(ADMIN)

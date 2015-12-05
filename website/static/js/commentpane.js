@@ -21,6 +21,8 @@
         var $bar = $pane.find('.cp-bar');
         var $toggleElm = $.merge($pane, $sidebar);
 
+        $handle.tooltip();
+
         options = $.extend({}, defaults, options);
         if (options.maxWidthProp < options.toggleWidth) {
             throw(
@@ -59,6 +61,7 @@
                 }
                 options.onOpen.call(self);
             }
+            $handle.tooltip('hide');
             $toggleElm.animate(
                 {width: width},
                 options.animateTime

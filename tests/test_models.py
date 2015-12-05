@@ -32,7 +32,7 @@ from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.signals import contributor_added
 from website.project.model import (
-    Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
+    Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo, MetaSchema, DraftRegistration
 )
 from website.util.permissions import CREATOR_PERMISSIONS, ADMIN, READ, WRITE, DEFAULT_CONTRIBUTOR_PERMISSIONS
@@ -46,7 +46,7 @@ from website.addons.wiki.exceptions import (
     PageNotFoundError,
 )
 
-from tests.base import OsfTestCase, Guid, fake, capture_signals
+from tests.base import OsfTestCase, Guid, fake, capture_signals, get_default_metaschema
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
@@ -58,8 +58,6 @@ from tests.factories import (
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
 
-
-from tests.base import DEFAULT_METASCHEMA
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
 
@@ -1884,7 +1882,7 @@ class TestNode(OsfTestCase):
         node = NodeFactory(creator=user)
         node.is_public = True
         node.save()
-        registration = node.register_node(DEFAULT_METASCHEMA, Auth(user), '', None)
+        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
         assert_false(registration.is_public)
 
     def test_register_node_makes_private_child_registrations(self):
@@ -1898,7 +1896,7 @@ class TestNode(OsfTestCase):
         childchild = NodeFactory(parent=child)
         childchild.is_public = True
         childchild.save()
-        registration = node.register_node(DEFAULT_METASCHEMA, Auth(user), '', None)
+        registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
         for node in registration.node_and_primary_descendants():
             assert_false(node.is_public)
 
@@ -3499,7 +3497,7 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration2.registered_from, self.project)
         assert_equal(registration2.registered_user, user2)
         assert_equal(
-            registration2.registered_meta[DEFAULT_METASCHEMA._id],
+            registration2.registered_meta[get_default_metaschema()._id],
             {'some': 'data'}
         )
 
@@ -4083,95 +4081,6 @@ class TestProjectWithAddons(OsfTestCase):
         assert_true(p.get_addon('s3'))
         assert_true(p.creator.get_addon('s3'))
 
-
-class TestComments(OsfTestCase):
-
-    def setUp(self):
-        super(TestComments, self).setUp()
-        self.comment = CommentFactory()
-        self.auth = Auth(user=self.comment.user)
-
-    def test_create(self):
-        comment = Comment.create(
-            auth=self.auth,
-            user=self.comment.user,
-            node=self.comment.node,
-            target=self.comment.target,
-            is_public=True,
-        )
-        assert_equal(comment.user, self.comment.user)
-        assert_equal(comment.node, self.comment.node)
-        assert_equal(comment.target, self.comment.target)
-        assert_equal(len(comment.node.logs), 2)
-        assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
-
-    def test_edit(self):
-        self.comment.edit(
-            auth=self.auth,
-            content='edited'
-        )
-        assert_equal(self.comment.content, 'edited')
-        assert_true(self.comment.modified)
-        assert_equal(len(self.comment.node.logs), 2)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
-
-    def test_delete(self):
-        self.comment.delete(auth=self.auth)
-        assert_equal(self.comment.is_deleted, True)
-        assert_equal(len(self.comment.node.logs), 2)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
-
-    def test_undelete(self):
-        self.comment.delete(auth=self.auth)
-        self.comment.undelete(auth=self.auth)
-        assert_equal(self.comment.is_deleted, False)
-        assert_equal(len(self.comment.node.logs), 3)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
-
-    def test_report_abuse(self):
-        user = UserFactory()
-        self.comment.report_abuse(user, category='spam', text='ads', save=True)
-        assert_in(user._id, self.comment.reports)
-        assert_equal(
-            self.comment.reports[user._id],
-            {'category': 'spam', 'text': 'ads'}
-        )
-
-    def test_report_abuse_own_comment(self):
-        with assert_raises(ValueError):
-            self.comment.report_abuse(
-                self.comment.user, category='spam', text='ads', save=True
-            )
-
-    def test_unreport_abuse(self):
-        user = UserFactory()
-        self.comment.report_abuse(user, category='spam', text='ads', save=True)
-        self.comment.unreport_abuse(user, save=True)
-        assert_not_in(user._id, self.comment.reports)
-
-    def test_unreport_abuse_not_reporter(self):
-        reporter = UserFactory()
-        non_reporter = UserFactory()
-        self.comment.report_abuse(reporter, category='spam', text='ads', save=True)
-        with assert_raises(ValueError):
-            self.comment.unreport_abuse(non_reporter, save=True)
-        assert_in(reporter._id, self.comment.reports)
-
-    def test_validate_reports_bad_key(self):
-        self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
-        with assert_raises(ValidationValueError):
-            self.comment.save()
-
-    def test_validate_reports_bad_type(self):
-        self.comment.reports[self.comment.user._id] = 'not a dict'
-        with assert_raises(ValidationTypeError):
-            self.comment.save()
-
-    def test_validate_reports_bad_value(self):
-        self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
-        with assert_raises(ValidationValueError):
-            self.comment.save()
-
     def test_read_permission_contributor_can_comment(self):
         project = ProjectFactory()
         user = UserFactory()
@@ -4242,118 +4151,6 @@ class TestPrivateLink(OsfTestCase):
         link.save()
         assert_equal(link.node_scale(node), -40)
 
-class TestDraftRegistration(OsfTestCase):
-
-    def setUp(self, *args, **kwargs):
-        super(TestDraftRegistration, self).setUp(*args, **kwargs)
-
-        self.user = AuthUserFactory()
-        self.auth = self.user.auth
-        self.node = ProjectFactory(creator=self.user)
-
-        MetaSchema.remove()
-        ensure_schemas()
-        self.meta_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 1)
-        )
-        self.draft = DraftRegistration(
-            initiator=self.user,
-            branched_from=self.node,
-            registration_schema=self.meta_schema,
-            registration_metadata={
-                'summary': {'value': 'Some airy'}
-            }
-        )
-        self.draft.save()
-
-    def test_factory(self):
-        draft = DraftRegistrationFactory()
-        assert_is_not_none(draft.branched_from)
-        assert_is_not_none(draft.initiator)
-        assert_is_not_none(draft.registration_schema)
-
-        user = AuthUserFactory()
-        draft = DraftRegistrationFactory(initiator=user)
-        assert_equal(draft.initiator, user)
-
-        node = ProjectFactory()
-        draft = DraftRegistrationFactory(branched_from=node)
-        assert_equal(draft.branched_from, node)
-        assert_equal(draft.initiator, node.creator)
-
-        schema = MetaSchema.find()[1]
-        data = {'some': 'data'}
-        draft = DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
-        assert_equal(draft.registration_schema, schema)
-        assert_equal(draft.registration_metadata, data)
-
-    @mock.patch('website.project.model.Node.register_node')
-    def test_register(self, mock_register_node):
-
-        self.draft.register(self.auth)
-        mock_register_node.assert_called_with(
-            schema=self.draft.registration_schema,
-            auth=self.auth,
-            data=self.draft.registration_metadata,
-        )
-
-    @mock.patch('framework.tasks.handlers.celery_teardown_request', mock.Mock())
-    def test_register_makes_registration_private(self):
-        self.node.is_public = True
-        self.node.save()
-        registration = self.draft.register(Auth(self.user))
-        assert_false(registration.is_public)
-
-    @mock.patch('framework.tasks.handlers.celery_teardown_request', mock.Mock())
-    def test_register_makes_registration_children_private(self):
-        self.node.is_public = True
-        self.node.save()
-        child = NodeFactory(parent=self.node)
-        child.is_public = True
-        child.save()
-        childchild = NodeFactory(parent=child)
-        childchild.is_public = True
-        childchild.save()
-        registration = self.draft.register(Auth(self.user))
-        for node in registration.node_and_primary_descendants():
-            assert_false(node.is_public)
-
-    def test_update_metadata_tracks_changes(self):
-        self.draft.registration_metadata = {
-            'foo': {
-                'value': 'bar',
-
-            },
-            'a': {
-                'value': 1,
-            },
-            'b': {
-                'value': True
-            },
-        }
-        new_meta = {
-            'foo': {
-                'value': 'foobar',
-            },
-            'a': {
-                'value': 1,
-            },
-            'b': {
-                'value': True,
-            },
-            'c': {
-                'value': 2,
-            },
-        }
-        changes = self.draft.update_metadata(new_meta)
-        self.draft.save()
-        for key in ['foo', 'c']:
-            assert_in(key, changes)
-            assert_equal(
-                self.draft.registration_metadata[key],
-                new_meta[key]
-            )
 
     def test_create_from_node(self):
         ensure_schemas()

@@ -558,6 +558,8 @@ def addon_view_file(auth, node, file_node, version):
         },
         'error': error,
         'file_name': file_node.name,
+        'file_name_title': os.path.splitext(file_node.name)[0],
+        'file_name_ext': os.path.splitext(file_node.name)[1],
         'file_path': file_node.path,
         'sharejs_uuid': sharejs_uuid,
         'provider': file_node.provider,
@@ -566,6 +568,9 @@ def addon_view_file(auth, node, file_node, version):
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
         'file_tags': [tag._id for tag in file_node.tags],
+        'file_id': file_node._id,
+        # Note: Comments are allowed for all addons that support waterbutler
+        'allow_comment': True
     })
 
     ret.update(rubeus.collect_addon_assets(node))

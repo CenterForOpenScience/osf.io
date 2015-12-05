@@ -2,114 +2,78 @@
 import collections
 import httplib as http
 import pytz
+import os
 
 from flask import request
 from modularodm import Q
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from framework.auth.utils import privacy_info_handle
 from framework.forms.utils import sanitize
 
 from website import settings
 from website.notifications.emails import notify
-from website.filters import gravatar
+from website.notifications.constants import PROVIDERS
 from website.models import Guid, Comment
+from website.files.models.base import File, StoredFileNode
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
+from website.project.views.node import n_unread_comments
+from website.profile.utils import serialize_user
 
 
-def resolve_target(node, guid):
-
+def resolve_target(node, page, guid):
     if not guid:
         return node
     target = Guid.load(guid)
     if target is None:
+        if page == Comment.FILES:
+            return File.load(guid)
         raise HTTPError(http.BAD_REQUEST)
     return target.referent
 
 
-def collect_discussion(target, users=None):
-
-    users = users or collections.defaultdict(list)
-    for comment in getattr(target, 'commented', []):
-        if not comment.is_deleted:
-            users[comment.user].append(comment)
-        collect_discussion(comment, users=users)
-    return users
-
-
-@must_be_contributor_or_public
-def comment_discussion(auth, node, **kwargs):
-
-    users = collect_discussion(node)
-    anonymous = has_anonymous_link(node, auth)
-    # Sort users by comment frequency
-    # TODO: Allow sorting by recency, combination of frequency and recency
-    sorted_users = sorted(
-        users.keys(),
-        key=lambda item: len(users[item]),
-        reverse=True,
-    )
-
-    return {
-        'discussion': [
-            {
-                'id': privacy_info_handle(user._id, anonymous),
-                'url': privacy_info_handle(user.url, anonymous),
-                'fullname': privacy_info_handle(user.fullname, anonymous, name=True),
-                'isContributor': node.is_contributor(user),
-                'gravatarUrl': privacy_info_handle(
-                    gravatar(
-                        user, use_ssl=True, size=settings.PROFILE_IMAGE_SMALL
-                    ),
-                    anonymous
-                ),
-
-            }
-            for user in sorted_users
-        ]
-    }
-
-
 def serialize_comment(comment, auth, anonymous=False):
+    node = comment.node
+
+    if not comment.root_target:
+        root_id = ''
+        title = ''
+        comment.is_hidden = True
+    else:
+        if isinstance(comment.root_target, StoredFileNode):  # File
+            root_id = comment.root_target._id
+            title = comment.root_target.name
+        else:  # Node or comment
+            root_id = comment.root_target._id
+            title = ''
+    if comment.target:
+        targetID = getattr(comment.target, 'page_name', comment.target._id)
+    else:
+        targetID = ''
+
     return {
         'id': comment._id,
-        'author': {
-            'id': privacy_info_handle(comment.user._id, anonymous),
-            'url': privacy_info_handle(comment.user.url, anonymous),
-            'name': privacy_info_handle(
-                comment.user.fullname, anonymous, name=True
-            ),
-            'gravatarUrl': privacy_info_handle(
-                gravatar(
-                    comment.user, use_ssl=True,
-                    size=settings.PROFILE_IMAGE_SMALL
-                ),
-                anonymous
-            ),
-        },
+        'author': serialize_user(comment.user, node=node, n_comments=1, anonymous=anonymous),
         'dateCreated': comment.date_created.isoformat(),
         'dateModified': comment.date_modified.isoformat(),
+        'page': comment.page,
+        'targetId': targetID,
+        'rootId': root_id,
+        'title': title,
+        'provider': comment.root_target.provider if isinstance(comment.root_target, StoredFileNode) else '',
         'content': comment.content,
-        'hasChildren': bool(getattr(comment, 'commented', [])),
+        'hasChildren': Comment.find(Q('target', 'eq', comment)).count() != 0,
         'canEdit': comment.user == auth.user,
         'modified': comment.modified,
         'isDeleted': comment.is_deleted,
+        'isHidden': comment.is_hidden,
         'isAbuse': auth.user and auth.user._id in comment.reports,
     }
 
 
-def serialize_comments(record, auth, anonymous=False):
-
-    return [
-        serialize_comment(comment, auth, anonymous)
-        for comment in getattr(record, 'commented', [])
-    ]
-
-
-def get_comment(cid, auth, owner=False):
+def kwargs_to_comment(cid, auth, owner=False):
     comment = Comment.load(cid)
     if comment is None:
         raise HTTPError(http.NOT_FOUND)
@@ -128,12 +92,14 @@ def add_comment(auth, node, **kwargs):
 
     if not node.can_comment(auth):
         raise HTTPError(http.FORBIDDEN)
+    comment_info = request.get_json()
+    page = comment_info.get('page')
+    guid = comment_info.get('target')
+    target = resolve_target(node, page, guid)
 
-    guid = request.json.get('target')
-    target = resolve_target(node, guid)
-
-    content = request.json.get('content').strip()
-    content = sanitize(content)
+    content = comment_info.get('content', None)
+    if content:
+        content = sanitize(content.strip())
     if not content:
         raise HTTPError(http.BAD_REQUEST)
     if len(content) > settings.COMMENT_MAXLENGTH:
@@ -144,6 +110,7 @@ def add_comment(auth, node, **kwargs):
         node=node,
         target=target,
         user=auth.user,
+        page=page,
         content=content,
     )
     comment.save()
@@ -151,9 +118,12 @@ def add_comment(auth, node, **kwargs):
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
         content=content,
+        page_type=get_page_type(page, node),
+        page_title=get_root_target_title(page, comment.root_target),
+        provider=get_file_provider(page, comment.root_target),
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
-        url=node.absolute_url
+        url=get_comment_url(node, page, comment.root_target)
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     sent_subscribers = notify(
@@ -179,6 +149,37 @@ def add_comment(auth, node, **kwargs):
     }, http.CREATED
 
 
+def get_file_provider(page, root_target):
+    if page == Comment.FILES:
+        return PROVIDERS[root_target.provider]
+    else:
+        return ''
+
+
+def get_page_type(page, node):
+    if page == Comment.FILES:
+        return 'file'
+    elif node.parent_node:
+        return 'component'
+    else:
+        return 'project'
+
+
+def get_root_target_title(page, root_target):
+    if page == Comment.FILES:
+        return root_target.name
+    else:
+        return ''
+
+
+def get_comment_url(node, page, root_target):
+    if page == Comment.FILES:
+        path = root_target.path[1:]
+        return node.web_url_for('addon_view_or_download_file', provider=root_target.provider, path=path, _absolute=True)
+    else:
+        return node.absolute_url
+
+
 def is_reply(target):
     return isinstance(target, Comment)
 
@@ -186,40 +187,37 @@ def is_reply(target):
 @must_be_contributor_or_public
 def list_comments(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
+    page = request.args.get('page')
     guid = request.args.get('target')
-    target = resolve_target(node, guid)
-    serialized_comments = serialize_comments(target, auth, anonymous)
-    n_unread = 0
+    root_id = request.args.get('rootId')
 
+    target = resolve_target(node, page, guid)
+    comments = Comment.find(Q('target', 'eq', target)).sort('date_created')
+
+    n_unread = 0
     if node.is_contributor(auth.user):
         if auth.user.comments_viewed_timestamp is None:
             auth.user.comments_viewed_timestamp = {}
             auth.user.save()
-        n_unread = n_unread_comments(target, auth.user)
-    return {
-        'comments': serialized_comments,
+        n_unread = n_unread_comments(node, auth.user, page, root_id)
+
+    ret = {
+        'comments': [
+            serialize_comment(comment, auth, anonymous)
+            for comment in comments
+        ],
         'nUnread': n_unread
     }
 
-
-def n_unread_comments(node, user):
-    """Return the number of unread comments on a node for a user."""
-    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
-    return Comment.find(Q('node', 'eq', node) &
-                        Q('user', 'ne', user) &
-                        Q('date_created', 'gt', view_timestamp) &
-                        Q('date_modified', 'gt', view_timestamp)).count()
-
+    return ret
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def edit_comment(auth, **kwargs):
+def edit_comment(cid, auth, **kwargs):
 
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth, owner=True)
+    comment = kwargs_to_comment(cid, auth, owner=True)
 
-    content = request.json.get('content').strip()
+    content = request.get_json().get('content').strip()
     content = sanitize(content)
     if not content:
         raise HTTPError(http.BAD_REQUEST)
@@ -237,10 +235,8 @@ def edit_comment(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def delete_comment(auth, **kwargs):
-
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth, owner=True)
+def delete_comment(cid, auth, **kwargs):
+    comment = kwargs_to_comment(cid, auth, owner=True)
     comment.delete(auth=auth, save=True)
 
     return {}
@@ -248,38 +244,79 @@ def delete_comment(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def undelete_comment(auth, **kwargs):
-
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth, owner=True)
+def undelete_comment(cid, auth, **kwargs):
+    comment = kwargs_to_comment(cid, auth, owner=True)
     comment.undelete(auth=auth, save=True)
 
     return {}
 
 
-@must_be_logged_in
-@must_be_contributor_or_public
-def update_comments_timestamp(auth, node, **kwargs):
-    if node.is_contributor(auth.user):
-        auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
+def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
+    if node.is_contributor(auth.user) and page != 'total':
+        user_timestamp = auth.user.comments_viewed_timestamp
+        node_timestamp = user_timestamp.get(node._id, None)
+        # Handle legacy comments_viewed_timestamp format
+        if not node_timestamp:
+            user_timestamp[node._id] = dict()
+        if node_timestamp and isinstance(node_timestamp, datetime):
+            overview_timestamp = user_timestamp[node._id]
+            user_timestamp[node._id] = dict()
+            user_timestamp[node._id][Comment.OVERVIEW] = overview_timestamp
+        timestamps = auth.user.comments_viewed_timestamp[node._id]
+
+        # update node timestamp
+        if page == Comment.OVERVIEW:
+            timestamps[Comment.OVERVIEW] = datetime.utcnow()
+            auth.user.save()
+            return {node._id: auth.user.comments_viewed_timestamp[node._id][Comment.OVERVIEW].isoformat()}
+
+        # set up timestamp dictionary for files page
+        if not timestamps.get(page, None):
+            timestamps[page] = dict()
+
+        # if updating timestamp on the files page...
+        if root_id is None:
+            return _update_comments_timestamp_total(node, auth, page)
+
+        # if updating timestamp on a specific file page
+        timestamps[page][root_id] = datetime.utcnow()
         auth.user.save()
-        list_comments(**kwargs)
-        return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
+        return {node._id: auth.user.comments_viewed_timestamp[node._id][page][root_id].isoformat()}
     else:
         return {}
 
 
+def _update_comments_timestamp_total(node, auth, page):
+    ret = {}
+    if page == Comment.FILES:
+        for root_target_id in node.commented_files:
+            root_target = File.load(root_target_id)
+            comments = Comment.find(Q('target', 'eq', root_target))
+            if comments and comments[0].is_hidden:
+                continue
+            ret = _update_comments_timestamp(auth, node, page, root_target_id)
+    return ret
+
+
 @must_be_logged_in
 @must_be_contributor_or_public
-def report_abuse(auth, **kwargs):
+def update_comments_timestamp(auth, node, **kwargs):
+    timestamp_info = request.get_json()
+    page = timestamp_info.get('page')
+    root_id = timestamp_info.get('rootId')
+    return _update_comments_timestamp(auth, node, page, root_id)
+
+
+@must_be_logged_in
+@must_be_contributor_or_public
+def report_abuse(cid, auth, **kwargs):
 
     user = auth.user
 
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth)
+    comment = kwargs_to_comment(cid, auth)
 
-    category = request.json.get('category')
-    text = request.json.get('text', '')
+    category = request.get_json().get('category')
+    text = request.get_json().get('text', '')
     if not category:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -293,11 +330,10 @@ def report_abuse(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def unreport_abuse(auth, **kwargs):
+def unreport_abuse(cid, auth, **kwargs):
     user = auth.user
 
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth)
+    comment = kwargs_to_comment(cid, auth)
 
     try:
         comment.unreport_abuse(user, save=True)

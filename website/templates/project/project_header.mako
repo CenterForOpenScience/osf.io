@@ -29,10 +29,23 @@
                         % endif
 
                     % endif
-                        <li><a href="${node['url']}"  class="project-title"> ${ node['title'] }  </a></li>
-
+                        <li>
+                            <a href="${node['url']}"  class="project-title"> 
+                                ${ node['title'] }
+                                % if user['unread_comments']['node'] > 0:
+                                    <span class="badge">${user['unread_comments']['node']}</span>
+                                % endif
+                            </a>
+                        </li>
                     % if not node['is_retracted']:
-                        <li id="projectNavFiles"><a href="${node['url']}files/">Files</a></li>
+                        <li id="projectNavFiles">
+                            <a href="${node['url']}files/">
+                                Files
+                                % if user['unread_comments']['files'] > 0:
+                                    <span class="badge">${user['unread_comments']['files']}</span>
+                                % endif
+                            </a>
+                        </li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
 

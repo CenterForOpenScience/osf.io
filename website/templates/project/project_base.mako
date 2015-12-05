@@ -74,7 +74,9 @@
             urls: {api: userApiUrl},
             isContributor: ${ user.get('is_contributor', False) | sjson, n },
             fullname: ${ user['fullname'] | sjson, n },
-            isAdmin: ${ user.get('is_admin', False) | sjson, n}
+            isAdmin: ${ user.get('is_admin', False) | sjson, n},
+            canComment: ${ user['can_comment'] | sjson, n},
+            canEdit: ${ user['can_edit'] | sjson, n}
         },
         node: {
             ## TODO: Abstract me

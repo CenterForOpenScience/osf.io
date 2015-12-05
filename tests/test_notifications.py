@@ -990,7 +990,59 @@ class TestSendEmails(OsfTestCase):
         )
         self.node_subscription.save()
 
-    @mock.patch('website.notifications.emails.store_emails')
+    def test_email_transactional_sent_without_errors(self):
+
+        users = [factories.UserFactory() for i in range(5)]
+        context = dict(
+            gravatar_url=self.user.gravatar_url,
+            content='',
+            target_user=None,
+            parent_comment='',
+            url=self.node.absolute_url,
+            page_type='project',
+            page_title=''
+        )
+        try:
+            emails.email_transactional(
+                [u._id for u in users],
+                self.node._id,
+                'comments',
+                self.user,
+                self.project,
+                datetime.datetime.utcnow(),
+                **context
+            )
+            assert(True)
+        except Exception:
+            assert(False)
+
+    def test_email_digest_sent_without_errors(self):
+
+        users = [factories.UserFactory() for i in range(5)]
+        context = dict(
+            gravatar_url=self.user.gravatar_url,
+            content='',
+            target_user=None,
+            parent_comment='',
+            url=self.node.absolute_url,
+            page_type='project',
+            page_title=''
+        )
+        try:
+            emails.email_digest(
+                [u._id for u in users],
+                self.node._id,
+                'comments',
+                self.user,
+                self.project,
+                datetime.datetime.utcnow(),
+                **context
+            )
+            assert(True)
+        except Exception:
+            assert(False)
+
+    @mock.patch('website.notifications.emails.send')
     def test_notify_no_subscription(self, mock_store):
         node = factories.NodeFactory()
         emails.notify('comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
