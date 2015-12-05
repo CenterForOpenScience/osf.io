@@ -64,13 +64,6 @@ class ZoteroProviderTestCase(OsfTestCase):
             'Fake Key'
         )
 
-    def test_zotero_has_access(self):
-        mock_client = mock.Mock()
-        mock_client.collections.return_value = UserNotAuthorised
-        self.provider._client = mock_client
-        self.provider._client
-        assert_raises(HTTPError(403))
-
 class ZoteroNodeSettingsTestCase(OsfTestCase):
 
     def setUp(self):
