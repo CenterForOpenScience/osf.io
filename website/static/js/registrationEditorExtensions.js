@@ -150,8 +150,9 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
             links: false
         });
     filePicker = fw;
-    fw.init();
-    viewModel.showUploader(false);
+    fw.init().then(function() {
+        viewModel.showUploader(false);
+    });
 };
 
 ko.bindingHandlers.osfUploader = {
