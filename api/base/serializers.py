@@ -208,11 +208,19 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
     )
 
+    Field can include optional filters:
+
+    Example:
+    replies = RelationshipField(
+        self_view='nodes:node-comments',
+        self_view_kwargs={'node_id': '<node._id>'},
+        filter={'target': '<pk>'})
+    )
     """
     json_api_link = True  # serializes to a links object
 
     def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-                 self_meta=None, related_meta=None, always_embed=False, **kwargs):
+                 self_meta=None, related_meta=None, always_embed=False, filter=None, **kwargs):
         related_view = related_view
         self_view = self_view
         related_kwargs = related_view_kwargs
@@ -222,6 +230,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.related_meta = related_meta
         self.self_meta = self_meta
         self.always_embed = always_embed
+        self.filter = filter
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
             assert related_kwargs is not None, 'Must provide related view kwargs.'
@@ -318,11 +327,22 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 if kwargs is None:
                     urls[view_name] = {}
                 else:
-                    urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
-
+                    url = self.reverse(view, kwargs=kwargs, request=request, format=format)
+                    if self.filter:
+                        url += self.format_filter(obj)
+                    urls[view_name] = url
         if not urls['self'] and not urls['related']:
             urls = None
         return urls
+
+    def format_filter(self, obj):
+        filter_query = '?'
+        filter_fields = self.filter.keys()
+        for field_name in filter_fields:
+            filter_query += 'filter[{0}]={1}'.format(field_name, self.lookup_attribute(obj, self.filter[field_name]))
+            if filter_fields.index(field_name) != len(filter_fields) - 1:
+                filter_query += '&'
+        return filter_query
 
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
