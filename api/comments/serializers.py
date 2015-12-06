@@ -4,6 +4,7 @@ from website.project.model import Comment
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse
+from api.base.settings import osf_settings
 from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
                                   RelationshipField,
@@ -28,7 +29,7 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = AuthorizedCharField(source='get_content')
+    content = AuthorizedCharField(source='get_content', max_length=osf_settings.COMMENT_MAXLENGTH)
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
@@ -40,6 +41,9 @@ class CommentSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
+    is_abuse = ser.SerializerMethodField()
+    has_children = ser.SerializerMethodField()
+    can_edit = ser.SerializerMethodField()
 
     # LinksField.to_representation adds link to "self"
     links = LinksField({})
@@ -47,12 +51,31 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
+    def get_is_abuse(self, obj):
+        auth = Auth(self.context['request'].user)
+        if not auth or auth.user.is_anonymous():
+            return False
+        return auth.user and auth.user._id in obj.reports
+
+    def get_can_edit(self, obj):
+        auth = Auth(self.context['request'].user)
+        if not auth or auth.user.is_anonymous():
+            return False
+        return obj.user._id == auth.user._id
+
+    def get_has_children(self, obj):
+        return bool(getattr(obj, 'commented', []))
+
     def create(self, validated_data):
         user = validated_data['user']
         auth = Auth(user)
         node = validated_data['node']
 
-        validated_data['content'] = validated_data.pop('get_content')
+        content = validated_data.pop('get_content')
+        validated_data['content'] = content.strip()
+        if not validated_data['content']:
+            raise ValidationError('Comment cannot be empty.')
+
         if node and node.can_comment(auth):
             comment = Comment.create(auth=auth, **validated_data)
         else:
@@ -64,7 +87,11 @@ class CommentSerializer(JSONAPISerializer):
         auth = Auth(self.context['request'].user)
         if validated_data:
             if 'get_content' in validated_data:
-                comment.edit(validated_data['get_content'], auth=auth, save=True)
+                content = validated_data.pop('get_content')
+                content = content.strip()
+                if not content:
+                    raise ValidationError('Comment cannot be empty.')
+                comment.edit(content, auth=auth, save=True)
             if validated_data.get('is_deleted', None) is True:
                 comment.delete(auth, save=True)
             elif comment.is_deleted:
