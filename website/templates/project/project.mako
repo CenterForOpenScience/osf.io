@@ -128,8 +128,8 @@
                 % if node['is_registration']:
                     <p>
                     Registration Supplement:
-                    % for meta_schema in node['registered_schemas']:                    
-                    <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a> 
+                    % for meta_schema in node['registered_schemas']:
+                    <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a>
                       % if len(node['registered_schemas']) > 1:
                       ,
                       % endif
@@ -153,8 +153,8 @@
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
-                  DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
-                  ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
+                  DOI <span data-bind="text: doi"></span> |
+                  ARK <span data-bind="text: ark"></span>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
