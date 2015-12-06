@@ -5,11 +5,9 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from api.base.exceptions import Gone
-from api.base.filters import ODMFilterMixin
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
-    CanCommentOrPublic,
     CommentDetailPermissions,
     CommentReportsPermissions
 )
@@ -43,74 +41,6 @@ class CommentMixin(object):
             # May raise a permission denied
             self.check_object_permissions(self.request, comment)
         return comment
-
-
-class CommentRepliesList(JSONAPIBaseView, generics.ListAPIView, CommentMixin, ODMFilterMixin):
-    """List of replies to a comment. *Writeable*.
-
-    Paginated list of comment replies ordered by their `date_created.` Each resource contains the full representation
-    of the comment, meaning additional requests to an individual comment's detail view are not necessary.
-
-    ###Permissions
-
-    Comments on public nodes are given read-only access to everyone. If the node comment-level is "private,"
-    only contributors have permission to comment. If the comment-level is "public" any logged-in OSF user can comment.
-    Comments on private nodes are only visible to contributors and administrators on the parent node.
-
-    ##Attributes
-
-    OSF comment reply entities have the "comments" `type`.
-
-        name           type               description
-        ---------------------------------------------------------------------------------
-        content        string             content of the comment
-        date_created   iso8601 timestamp  timestamp that the comment was created
-        date_modified  iso8601 timestamp  timestamp when the comment was last updated
-        modified       boolean            has this comment been edited?
-        deleted        boolean            is this comment deleted?
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Query Params
-
-    + `filter[deleted]=True|False` -- filter comment replies based on whether or not they are deleted.
-
-    The list of comment replies includes deleted comments by default. The `deleted` field is a boolean and can be
-    filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
-    the query will cause the match to fail regardless.
-
-    + `filter[date_created][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter comment replies based on date created.
-
-    Comment replies can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
-    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
-    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
-
-    #This Request/Response
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        CanCommentOrPublic,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
-    required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
-
-    view_category = 'comments'
-    view_name = 'comment-replies'
-    serializer_class = CommentSerializer
-
-    ordering = ('-date_created', )  # default ordering
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        return Q('target', 'eq', self.get_comment())
-
-    def get_queryset(self):
-        return Comment.find(self.get_query_from_request())
 
 
 class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixin):
