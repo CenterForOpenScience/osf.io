@@ -14,6 +14,21 @@ from tests.factories import (
 from website.addons.osfstorage import settings as osfstorage_settings
 
 
+def _create_file_comment(node, user):
+        osfstorage = node.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        test_file = root_node.append_file('test_file')
+        test_file.create_version(user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
+        return CommentFactory(node=node, user=user, target=test_file, page='files')
+
+
 class TestNodeCommentsList(ApiTestCase):
 
     def setUp(self):
@@ -86,13 +101,106 @@ class TestNodeCommentsList(ApiTestCase):
 
     def test_return_both_deleted_and_undeleted_comments(self):
         self._set_up_private_project_with_comment()
-        deleted_comment = CommentFactory(node=self.private_project, user=self.user)
+        deleted_comment = CommentFactory(node=self.private_project, user=self.user, is_deleted=True)
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         comment_json = res.json['data']
         comment_ids = [comment['id'] for comment in comment_json]
         assert_in(self.comment._id, comment_ids)
         assert_in(deleted_comment._id, comment_ids)
+
+
+class TestNodeCommentsListFiles(ApiTestCase):
+    def setUp(self):
+        super(TestNodeCommentsListFiles, self).setUp()
+        self.user = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+
+    def _set_up_private_project_with_file_comment(self):
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.comment = _create_file_comment(node=self.private_project, user=self.user)
+        self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
+
+    def _set_up_public_project_with_file_comment(self):
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_comment = _create_file_comment(node=self.public_project, user=self.user)
+        self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
+
+    def _set_up_registration_with_file_comment(self):
+        self.registration = RegistrationFactory(creator=self.user)
+        self.registration_comment = _create_file_comment(node=self.registration, user=self.user)
+        self.registration_url = '/{}nodes/{}/comments/'.format(API_BASE, self.registration._id)
+
+    def test_return_public_file_comments_logged_out_user(self):
+        self._set_up_public_project_with_file_comment()
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_equal(len(comment_json), 1)
+        assert_in(self.public_comment._id, comment_ids)
+
+    def test_return_public_file_comments_logged_in_user(self):
+        self._set_up_public_project_with_file_comment()
+        res = self.app.get(self.public_url, auth=self.non_contributor)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_equal(len(comment_json), 1)
+        assert_in(self.public_comment._id, comment_ids)
+
+    def test_return_private_file_comments_logged_out_user(self):
+        self._set_up_private_project_with_file_comment()
+        res = self.app.get(self.private_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_return_private_file_comments_logged_in_non_contributor(self):
+        self._set_up_private_project_with_file_comment()
+        res = self.app.get(self.private_url, auth=self.non_contributor, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_return_private_file_comments_logged_in_contributor(self):
+        self._set_up_private_project_with_file_comment()
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_equal(len(comment_json), 1)
+        assert_in(self.comment._id, comment_ids)
+
+    def test_return_registration_file_comments_logged_in_contributor(self):
+        self._set_up_registration_with_file_comment()
+        res = self.app.get(self.registration_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_equal(len(comment_json), 1)
+        assert_in(self.registration_comment._id, comment_ids)
+
+    def test_return_both_deleted_and_undeleted_file_comments(self):
+        self._set_up_private_project_with_file_comment()
+        deleted_comment = CommentFactory(node=self.private_project, user=self.user, target=self.comment.target, is_deleted=True)
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_in(self.comment._id, comment_ids)
+        assert_in(deleted_comment._id, comment_ids)
+
+    def test_comments_on_deleted_files_are_not_returned(self):
+        self._set_up_private_project_with_file_comment()
+        # Delete commented file
+        osfstorage = self.private_project.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        root_node.delete(self.comment.target)
+
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_not_in(self.comment._id, comment_ids)
 
 
 class TestNodeCommentCreate(ApiTestCase):
@@ -712,20 +820,6 @@ class TestCommentFiltering(ApiTestCase):
         self.comment.edit('Edited comment', auth=core.Auth(self.user), save=True)
         self.formatted_date_modified = self.comment.date_modified.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
-    def _create_file_comment(self, node):
-        osfstorage = node.get_addon('osfstorage')
-        root_node = osfstorage.get_root()
-        self.file = root_node.append_file('test_file')
-        self.file.create_version(self.user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png'
-        }).save()
-        self.file_comment = CommentFactory(node=self.project, user=self.user, target=self.file, page='files')
-
     def test_node_comments_with_no_filter_returns_all_comments(self):
         res = self.app.get(self.base_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
@@ -802,11 +896,11 @@ class TestCommentFiltering(ApiTestCase):
         assert_in(self.comment._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
 
     def test_filtering_by_target_file(self):
-        self._create_file_comment(self.project)
-        url = self.base_url + '?filter[target]=' + str(self.file._id)
+        file_comment = _create_file_comment(self.project, self.user)
+        url = self.base_url + '?filter[target]=' + str(file_comment.target._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
-        assert_in(self.file._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
+        assert_in(file_comment.target._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
 
     def test_filtering_by_page_node(self):
         url = self.base_url + '?filter[page]=node'
@@ -816,7 +910,7 @@ class TestCommentFiltering(ApiTestCase):
         assert_equal('node', res.json['data'][1]['attributes']['page'])
 
     def test_filtering_by_page_files(self):
-        self._create_file_comment(self.project)
+        _create_file_comment(self.project, self.user)
         url = self.base_url + '?filter[page]=files'
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
