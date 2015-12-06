@@ -72,8 +72,11 @@ class CommentSerializer(JSONAPISerializer):
         elif isinstance(obj, StoredFileNode):
             return 'files'
         else:
-            raise InvalidModelValueError('Invalid comment target.')
-
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/target/links/related/meta/type'},
+                detail='Invalid comment target type.'
+            )
+        
     def get_page(self, obj):
         root_target = obj.root_target
         if not root_target:
@@ -85,17 +88,16 @@ class CommentSerializer(JSONAPISerializer):
             elif name == 'storedfilenode':
                 return 'files'
 
-
 class CommentCreateSerializer(CommentSerializer):
 
-    target_type = ser.SerializerMethodField(method_name='check_target_type')
+    target_type = ser.SerializerMethodField(method_name='get_validated_target_type')
 
-    def check_target_type(self, obj):
+    def get_validated_target_type(self, obj):
         target = obj.target
         target_type = self.context['request'].data.get('target_type')
         expected_target_type = self.get_target_type(target)
         if target_type != expected_target_type:
-            raise Conflict()
+            raise Conflict('Invalid target type. Expected \"{0}\", got \"{1}.\"'.format(expected_target_type, target_type))
         return target_type
 
     def get_target(self, node_id, target_id):
@@ -115,12 +117,15 @@ class CommentCreateSerializer(CommentSerializer):
         user = validated_data['user']
         auth = Auth(user)
         node = validated_data['node']
+        target_id = self.context['request'].data.get('id')
 
         try:
-            target = self.get_target(node._id, self.context['request'].data.get('id'))
+            target = self.get_target(node._id, target_id)
         except ValueError:
-            raise InvalidModelValueError('Invalid target.')
-
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/target/data/id'},
+                detail='Invalid comment target \'{}\'.'.format(target_id)
+            )
         validated_data['target'] = target
         validated_data['content'] = validated_data.pop('get_content')
         if node and node.can_comment(auth):

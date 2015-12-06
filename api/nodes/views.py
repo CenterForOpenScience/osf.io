@@ -1673,7 +1673,6 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                            "type": "comments",   # required
                            "attributes": {
                              "content":       {content},        # mandatory
-                             "deleted":       {is_deleted},     # optional
                            },
                            "relationships": {
                              "target": {
@@ -1690,8 +1689,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     To create a comment on this node, issue a POST request against this endpoint. The comment target id and target type
     must be specified. To create a comment on the node overview page, the target `type` would be "nodes" and the `id`
     would be the node id. To reply to a comment on this node, the target `type` would be "comments" and the `id` would
-    be the id of the comment to reply to. The `content` field is mandatory. The `deleted` field is optional and defaults
-    to `False`.
+    be the id of the comment to reply to. The `content` field is mandatory.
 
     If the comment creation is successful the API will return
     a 201 response with the representation of the new comment in the body. For the new comment's canonical URL, see the
