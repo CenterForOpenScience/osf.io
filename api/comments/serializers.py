@@ -88,6 +88,7 @@ class CommentSerializer(JSONAPISerializer):
             elif name == 'storedfilenode':
                 return 'files'
 
+
 class CommentCreateSerializer(CommentSerializer):
 
     target_type = ser.SerializerMethodField(method_name='get_validated_target_type')
@@ -105,13 +106,20 @@ class CommentCreateSerializer(CommentSerializer):
         if node and node_id != target_id:
             raise ValueError('Cannot post comment to another node.')
         elif target_id == node_id:
-            return Node.load(node_id)
+            return node
         else:
             comment = Comment.load(target_id)
             if comment:
-                return comment
+                if comment.node._id == node._id:
+                    return comment
+                else:
+                    raise ValueError('Cannot post reply to comment on another node.')
             else:
-                raise ValueError
+                target_file = StoredFileNode.load(target_id)
+                if target_file and target_file.node._id == node_id:
+                    return target_file
+                else:
+                    raise ValueError('Cannot post comment to file on another node.')
 
     def create(self, validated_data):
         user = validated_data['user']
