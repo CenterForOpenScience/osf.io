@@ -15,18 +15,23 @@ from website.addons.osfstorage import settings as osfstorage_settings
 
 
 def _create_file_comment(node, user):
-        osfstorage = node.get_addon('osfstorage')
-        root_node = osfstorage.get_root()
-        test_file = root_node.append_file('test_file')
-        test_file.create_version(user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png'
-        }).save()
+        test_file = _create_test_file(node, user)
         return CommentFactory(node=node, user=user, target=test_file, page='files')
+
+
+def _create_test_file(node, user):
+    osfstorage = node.get_addon('osfstorage')
+    root_node = osfstorage.get_root()
+    test_file = root_node.append_file('test_file')
+    test_file.create_version(user, {
+        'object': '06d80e',
+        'service': 'cloud',
+        osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+    }, {
+        'size': 1337,
+        'contentType': 'img/png'
+    }).save()
+    return test_file
 
 
 class TestNodeCommentsList(ApiTestCase):
@@ -631,6 +636,221 @@ class TestNodeCommentCreate(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
+
+class TestFileCommentCreate(ApiTestCase):
+
+    def setUp(self):
+        super(TestFileCommentCreate, self).setUp()
+        self.user = AuthUserFactory()
+        self.read_only_contributor = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+
+    def _set_up_payload(self, file_id):
+        return {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a comment'
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'files',
+                            'id': file_id
+                        }
+                    }
+                }
+            }
+        }
+
+    def _set_up_private_project(self):
+        self.private_project = ProjectFactory(is_public=False, creator=self.user, comment_level='private')
+        self.private_project.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.private_project.save()
+        self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
+        self.test_file = _create_test_file(self.private_project, self.user)
+        self.private_payload = self._set_up_payload(self.test_file._id)
+
+    def _set_up_public_project(self):
+        self.public_project = ProjectFactory(is_public=True, creator=self.user, comment_level='private')
+        self.public_project.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.public_project.save()
+        self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
+        self.test_file = _create_test_file(self.public_project, self.user)
+        self.public_payload = self._set_up_payload(self.test_file._id)
+
+    def _set_up_public_project_with_public_comment_level(self):
+        """ Public project configured so that any logged-in user can comment."""
+        self.project_with_public_comment_level = ProjectFactory(is_public=True, creator=self.user, comment_level='public')
+        self.project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.project_with_public_comment_level.save()
+        self.public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project_with_public_comment_level._id)
+        self.test_file = _create_test_file(self.project_with_public_comment_level, self.user)
+        self.public_comment_level_payload = self._set_up_payload(self.test_file._id)
+
+    def _set_up_private_project_with_public_comment_level(self):
+        self.private_project_with_public_comment_level = ProjectFactory(is_public=False, creator=self.user, comment_level='public')
+        self.private_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.private_project_with_public_comment_level.save()
+        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level)
+        self.test_file = _create_test_file(self.private_project_with_public_comment_level, self.user)
+        self.private_project_public_comments_payload = self._set_up_payload(self.test_file._id)
+
+    def test_create_file_comment_invalid_target_id(self):
+        self._set_up_private_project()
+        file = _create_test_file(ProjectFactory(), self.user)
+        payload = self._set_up_payload(file._id)
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid comment target \'" + str(file._id) + "\'.")
+
+    def test_create_file_comment_invalid_target_type(self):
+        self._set_up_private_project()
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a comment'
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'Invalid',
+                            'id': self.test_file._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Invalid target type. Expected "files", got "Invalid."')
+
+    def test_create_comment_nonexistent_target_file(self):
+        url = '/{}nodes/{}/comments/'.format(API_BASE, 'abcde')
+        payload = self._set_up_payload('abcde')
+        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'Not found.')
+
+    def test_private_node_logged_in_admin_can_comment_on_file(self):
+        self._set_up_private_project()
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
+
+    def test_private_node_logged_in_read_contributor_can_comment_on_file(self):
+        self._set_up_private_project()
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
+
+    def test_private_node_non_contributor_cannot_comment_on_file(self):
+        self._set_up_private_project()
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_private_node_logged_out_user_cannot_comment_on_file(self):
+        self._set_up_private_project()
+        res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_private_node_with_public_comment_level_admin_can_comment_on_file(self):
+        """ Test admin contributors can still comment on a private project with comment_level == 'public' """
+        self._set_up_private_project_with_public_comment_level()
+        res = self.app.post_json_api(self.private_project_public_comments_url,
+                                     self.private_project_public_comments_payload,
+                                     auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'],
+                     self.private_project_public_comments_payload['data']['attributes']['content'])
+
+    def test_private_node_with_public_comment_level_read_only_contributor_can_comment_on_file(self):
+        """ Test read-only contributors can still comment on a private project with comment_level == 'public' """
+        self._set_up_private_project_with_public_comment_level()
+        res = self.app.post_json_api(self.private_project_public_comments_url,
+                                     self.private_project_public_comments_payload,
+                                     auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'],
+                     self.private_project_public_comments_payload['data']['attributes']['content'])
+
+    def test_private_node_with_public_comment_level_non_contributor_cannot_comment_on_file(self):
+        """ Test non-contributors cannot comment on a private project with comment_level == 'public' """
+        self._set_up_private_project_with_public_comment_level()
+        res = self.app.post_json_api(self.private_project_public_comments_url,
+                                     self.private_project_public_comments_payload,
+                                     auth=self.non_contributor.auth,
+                                     expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_private_node_with_public_comment_level_logged_out_user_cannot_comment_on_file(self):
+        """ Test logged out users cannot comment on a private project with comment_level == 'public' """
+        self._set_up_private_project_with_public_comment_level()
+        res = self.app.post_json_api(self.private_project_public_comments_url,
+                                     self.private_project_public_comments_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_public_project_with_public_comment_level_admin_can_comment_on_file(self):
+        """ Test admin contributor can still comment on a public project when it is
+            configured so any logged-in user can comment (comment_level == 'public') """
+        self._set_up_public_project_with_public_comment_level()
+        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
+
+    def test_public_project_with_public_comment_level_read_only_contributor_can_comment_on_file(self):
+        """ Test read-only contributor can still comment on a public project when it is
+            configured so any logged-in user can comment (comment_level == 'public') """
+        self._set_up_public_project_with_public_comment_level()
+        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
+
+    def test_public_project_with_public_comment_level_non_contributor_can_comment_on_file(self):
+        """ Test non-contributors can comment on a public project when it is
+            configured so any logged-in user can comment (comment_level == 'public') """
+        self._set_up_public_project_with_public_comment_level()
+        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
+
+    def test_public_project_with_public_comment_level_logged_out_user_cannot_comment_on_file(self):
+        """ Test logged out users cannot comment on a public project when it is
+            configured so any logged-in user can comment (comment_level == 'public') """
+        self._set_up_public_project_with_public_comment_level()
+        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_public_node_contributor_can_comment_on_file(self):
+        self._set_up_public_project()
+        """ Test only contributors can comment on a public project when it is
+            configured so only contributors can comment (comment_level == 'private') """
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
+
+    def test_public_node_read_only_contributor_can_comment_on_file(self):
+        self._set_up_public_project()
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
+
+    def test_public_node_non_contributor_cannot_comment_on_file(self):
+        self._set_up_public_project()
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_public_node_logged_out_user_cannot_comment_on_file(self):
+        self._set_up_public_project()
+        res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
 class TestCommentRepliesCreate(ApiTestCase):
     def setUp(self):
