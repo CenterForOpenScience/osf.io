@@ -8,7 +8,7 @@ from website import settings
 from framework.auth.core import User
 from website.files.models import FileNode
 from api.base.utils import absolute_reverse
-from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links
+from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links, RelationshipField
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
 
@@ -108,6 +108,8 @@ class FileSerializer(JSONAPISerializer):
         related_view_kwargs={'file_id': '<_id>'},
         kind='file'
     )
+    comments = RelationshipField(self_view='nodes:node-comments', self_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<_id>'})
+
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
