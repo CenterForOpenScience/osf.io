@@ -11,6 +11,7 @@ from tests.factories import (
     AuthUserFactory,
     CommentFactory
 )
+from website.addons.osfstorage import settings as osfstorage_settings
 
 
 class TestNodeCommentsList(ApiTestCase):
@@ -573,13 +574,27 @@ class TestCommentFiltering(ApiTestCase):
         super(TestCommentFiltering, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
-        self.comment = CommentFactory(node=self.project, user=self.user)
-        self.deleted_comment = CommentFactory(node=self.project, user=self.user, is_deleted=True)
+        self.comment = CommentFactory(node=self.project, user=self.user, page='node')
+        self.deleted_comment = CommentFactory(node=self.project, user=self.user, is_deleted=True, page='node')
         self.base_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project._id)
 
         self.formatted_date_created = self.comment.date_created.strftime('%Y-%m-%dT%H:%M:%S.%f')
         self.comment.edit('Edited comment', auth=core.Auth(self.user), save=True)
         self.formatted_date_modified = self.comment.date_modified.strftime('%Y-%m-%dT%H:%M:%S.%f')
+
+    def _create_file_comment(self, node):
+        osfstorage = node.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        self.file = root_node.append_file('test_file')
+        self.file.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
+        self.file_comment = CommentFactory(node=self.project, user=self.user, target=self.file, page='files')
 
     def test_node_comments_with_no_filter_returns_all_comments(self):
         res = self.app.get(self.base_url, auth=self.user.auth)
@@ -637,13 +652,42 @@ class TestCommentFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 0)
 
-    def test_filtering_by_target(self):
+    def test_filtering_by_target_node(self):
         url = self.base_url + '?filter[target]=' + str(self.project._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
         assert_in(self.project._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
+        assert_in(self.project._id, res.json['data'][1]['relationships']['target']['links']['related']['href'])
 
     def test_filtering_by_target_no_results(self):
         url = self.base_url + '?filter[target]=' + 'fakeid'
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 0)
+
+    def test_filtering_for_comment_replies(self):
+        reply = CommentFactory(node=self.project, user=self.user, target=self.comment)
+        url = self.base_url + '?filter[target]=' + str(self.comment._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_in(self.comment._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
+
+    def test_filtering_by_target_file(self):
+        self._create_file_comment(self.project)
+        url = self.base_url + '?filter[target]=' + str(self.file._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_in(self.file._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
+
+    def test_filtering_by_page_node(self):
+        url = self.base_url + '?filter[page]=node'
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+        assert_equal('node', res.json['data'][0]['attributes']['page'])
+        assert_equal('node', res.json['data'][1]['attributes']['page'])
+
+    def test_filtering_by_page_files(self):
+        self._create_file_comment(self.project)
+        url = self.base_url + '?filter[page]=files'
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal('files', res.json['data'][0]['attributes']['page'])
