@@ -30,14 +30,14 @@ class TestCollectionList(ApiTestCase):
 
         self.url = '/{}collections/'.format(API_BASE)
 
-    def user_one_gets_user_one_collections(self):
-        res = self.app.get(self.url, auth=self.user_one)
+    def test_user_one_gets_user_one_collections(self):
+        res = self.app.get(self.url, auth=self.user_one.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_in(self.deleted_one._id, ids)
+        assert_not_in(self.deleted_one._id, ids)
         assert_in(self.collection_one._id, ids)
 
-    def user_two_gets_nothing(self):
-        res = self.app.get(self.url, auth=self.user_two)
+    def test_user_two_gets_nothing(self):
+        res = self.app.get(self.url, auth=self.user_two.auth)
         ids = [each['id'] for each in res.json['data']]
         assert_not_in(self.deleted_one._id, ids)
         assert_not_in(self.collection_one._id, ids)
@@ -650,12 +650,9 @@ class TestCollectionNodeLinksList(ApiTestCase):
         assert_equal(len(res_json), 2)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        expected_project_path = node_url_for(self.project._id)
-        expected_public_project_path = node_url_for(self.public_project._id)
-        actual_project_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
-        actual_public_project_path = urlparse(res_json[1]['relationships']['target_node']['links']['related']['href']).path
-        assert_equal(expected_project_path, actual_project_path)
-        assert_equal(expected_public_project_path, actual_public_project_path)
+        first_embedded = res_json[0]['embeds']['target_node']['data']['id']
+        second_embedded = res_json[1]['embeds']['target_node']['data']['id']
+        assert_items_equal([first_embedded, second_embedded], [self.project._id, self.public_project._id])
 
     def test_return_private_node_pointers_logged_in_non_contributor(self):
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
@@ -688,8 +685,8 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
 
         self.project = ProjectFactory(is_public=False, creator=self.user_one)
         self.public_project = ProjectFactory(is_public=True, creator=self.user_one)
-        self.user_two_private_project = ProjectFactory(is_public=True, creator=self.user_two)
-        self.user_two_public_project = ProjectFactory(is_public=False, creator=self.user_two)
+        self.user_two_private_project = ProjectFactory(is_public=False, creator=self.user_two)
+        self.user_two_public_project = ProjectFactory(is_public=True, creator=self.user_two)
 
         self.url = node_link_string.format(API_BASE, self.collection._id)
         self.fake_node_id = 'fakeident'
@@ -733,19 +730,16 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
         res_json = res.json['data']
-        expected_path = node_url_for(self.public_project._id)
-        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
-        assert_equal(expected_path, actual_path)
+        embedded_node_id = res_json['embeds']['target_node']['data']['id']
+        assert_equal(embedded_node_id, self.public_project._id)
 
     @assert_logs(NodeLog.POINTER_CREATED, 'collection')
     def test_creates_node_link_to_private_project_logged_in(self):
         res = self.app.post_json_api(self.url, self.post_payload(self.project._id), auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
         res_json = res.json['data']
-        expected_path = node_url_for(self.project._id)
-        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
-        assert_equal(expected_path, actual_path)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        embedded_node_id = res_json['embeds']['target_node']['data']['id']
+        assert_equal(embedded_node_id, self.project._id)
 
     def test_does_not_create_node_link_unauthorized(self):
         res = self.app.post_json_api(self.url, self.post_payload(self.user_two_private_project._id), auth=self.user_two.auth, expect_errors=True)
@@ -758,9 +752,8 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
         res_json = res.json['data']
-        expected_path = node_url_for(self.user_two_public_project._id)
-        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
-        assert_equal(expected_path, actual_path)
+        embedded_node_id = res_json['embeds']['target_node']['data']['id']
+        assert_equal(embedded_node_id, self.user_two_public_project._id)
 
     def test_create_node_link_to_fake_node(self):
         res = self.app.post_json_api(self.url, self.post_payload(self.fake_node_id), auth=self.user_one.auth, expect_errors=True)
@@ -794,9 +787,8 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
         res_json = res.json['data']
-        expected_path = node_url_for(self.project._id)
-        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
-        assert_equal(expected_path, actual_path)
+        embedded_node_id = res_json['embeds']['target_node']['data']['id']
+        assert_equal(embedded_node_id, self.project._id)
 
         res = self.app.post_json_api(self.url, self.post_payload(self.project._id), auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -845,9 +837,8 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        expected_path = node_url_for(self.project_public._id)
-        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
-        assert_equal(expected_path, actual_path)
+        embedded = res_json['embeds']['target_node']['data']['id']
+        assert_equal(embedded, self.project_public._id)
 
     def test_returns_error_private_node_link_detail_unauthenticated(self):
         res = self.app.get(self.url, expect_errors=True)
@@ -859,9 +850,8 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        expected_path = node_url_for(self.project._id)
-        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
-        assert_equal(expected_path, actual_path)
+        embedded = res_json['embeds']['target_node']['data']['id']
+        assert_equal(embedded, self.project._id)
 
     def test_returns_error_private_node_link_detail_unauthorized(self):
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
