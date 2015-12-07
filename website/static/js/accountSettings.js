@@ -207,10 +207,10 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     if (emails[i].address() === email.address()) {
                         emailAdded = true;
                         this.emailInput('');
-                        var addrText = $osf.htmlEscape(email.address());
                     }
                 }
-                if (emailAdded == true) {
+                if (emailAdded === true) {
+                    var addrText = $osf.htmlEscape(email.address());
                     bootbox.alert({
                                 title: 'Confirm Change?',
                                 message: 'Please check your email for confirmation of this change. ' + 
