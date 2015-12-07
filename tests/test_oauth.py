@@ -565,3 +565,79 @@ class TestExternalProviderOAuth2(OsfTestCase):
         assert_equal(external_account.oauth_key, 'refreshed_access_token')
         assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
         assert_not_equal(external_account.expires_at, old_expiry)
+
+    @httpretty.activate
+    def test_refresh_oauth_key_does_not_need_refresh(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=0  # causes `.needs_refresh()` to return False
+        )
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'err_msg': 'Should not be hit'
+            }),
+            status=500
+        )  
+        
+        self.provider.account = external_account
+        ret = self.provider.refresh_oauth_key(force=False)
+        assert_false(ret)
+
+    @httpretty.activate
+    def test_refresh_with_broken_provider(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=time.time() + 200
+        )
+        self.provider.client_id = None
+        self.provider.client_secret = None
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'err_msg': 'Should not be hit'
+            }),
+            status=500
+        )  
+        
+        ret = self.provider.refresh_oauth_key(force=False)
+        assert_false(ret)
+
+    @httpretty.activate
+    def test_refresh_without_account_or_refresh_url(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=time.time() + 200
+        )
+
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'err_msg': 'Should not be hit'
+            }),
+            status=500
+        )  
+        
+        ret = self.provider.refresh_oauth_key(force=False)
+        assert_false(ret)
