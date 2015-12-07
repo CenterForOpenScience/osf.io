@@ -14,11 +14,6 @@ from tests.factories import (
 from website.addons.osfstorage import settings as osfstorage_settings
 
 
-def _create_file_comment(node, user):
-        test_file = _create_test_file(node, user)
-        return CommentFactory(node=node, user=user, target=test_file, page='files')
-
-
 def _create_test_file(node, user):
     osfstorage = node.get_addon('osfstorage')
     root_node = osfstorage.get_root()
@@ -123,17 +118,20 @@ class TestNodeCommentsListFiles(ApiTestCase):
 
     def _set_up_private_project_with_file_comment(self):
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.comment = _create_file_comment(node=self.private_project, user=self.user)
+        self.file = _create_test_file(self.private_project, self.user)
+        self.comment = CommentFactory(node=self.private_project, user=self.user, target=self.file, page='files')
         self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
 
     def _set_up_public_project_with_file_comment(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_comment = _create_file_comment(node=self.public_project, user=self.user)
+        self.public_file = _create_test_file(self.public_project, self.user)
+        self.public_comment = CommentFactory(node=self.public_project, user=self.user, target=self.public_file, page='files')
         self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
 
     def _set_up_registration_with_file_comment(self):
         self.registration = RegistrationFactory(creator=self.user)
-        self.registration_comment = _create_file_comment(node=self.registration, user=self.user)
+        self.registration_file = _create_test_file(self.registration, self.user)
+        self.registration_comment = CommentFactory(node=self.registration, user=self.user, target=self.registration_file, page='files')
         self.registration_url = '/{}nodes/{}/comments/'.format(API_BASE, self.registration._id)
 
     def test_return_public_file_comments_logged_out_user(self):
@@ -199,7 +197,7 @@ class TestNodeCommentsListFiles(ApiTestCase):
         # Delete commented file
         osfstorage = self.private_project.get_addon('osfstorage')
         root_node = osfstorage.get_root()
-        root_node.delete(self.comment.target)
+        root_node.delete(self.file)
 
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -1125,11 +1123,12 @@ class TestCommentFiltering(ApiTestCase):
         assert_in(self.comment._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
 
     def test_filtering_by_target_file(self):
-        file_comment = _create_file_comment(self.project, self.user)
-        url = self.base_url + '?filter[target]=' + str(file_comment.target._id)
+        test_file = _create_test_file(self.project, self.user)
+        file_comment = CommentFactory(node=self.project, user=self.user, target=test_file)
+        url = self.base_url + '?filter[target]=' + str(test_file._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
-        assert_in(file_comment.target._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
+        assert_in(test_file._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
 
     def test_filtering_by_page_node(self):
         url = self.base_url + '?filter[page]=node'
@@ -1139,7 +1138,8 @@ class TestCommentFiltering(ApiTestCase):
         assert_equal('node', res.json['data'][1]['attributes']['page'])
 
     def test_filtering_by_page_files(self):
-        _create_file_comment(self.project, self.user)
+        test_file = _create_test_file(self.project, self.user)
+        file_comment = CommentFactory(node=self.project, user=self.user, target=test_file, page='files')
         url = self.base_url + '?filter[page]=files'
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
