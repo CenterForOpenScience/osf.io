@@ -20,6 +20,19 @@ from api.base.exceptions import (
 )
 from api.base import utils
 
+def sort_multiple(fields):
+    fields = list(fields)
+    def sort_fn(a, b):
+        while fields:
+            field = fields.pop(0)
+            a_field = getattr(a, field)
+            b_field = getattr(b, field)
+            if a_field > b_field:
+                return 1
+            elif a_field < b_field:
+                return -1
+        return 0
+    return sort_fn
 
 class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
@@ -29,9 +42,7 @@ class ODMOrderingFilter(OrderingFilter):
         ordering = self.get_ordering(request, queryset, view)
         if ordering:
             if not isinstance(queryset, modularodm_queryset.BaseQuerySet) and isinstance(ordering, (list, tuple)):
-                # for lists call sorted, list.sort doesn't take a key
-                order_key = ordering[0]
-                sorted_list = sorted(queryset, key=operator.attrgetter(order_key))
+                sorted_list = sorted(queryset, cmp=sort_multiple(ordering))
                 return sorted_list
             return queryset.sort(*ordering)
         return queryset

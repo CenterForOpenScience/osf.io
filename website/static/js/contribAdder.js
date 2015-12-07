@@ -75,13 +75,12 @@ var AddContributorViewModel = oop.extend(Paginator, {
             var selected_ids = self.selection().map(function(user){
                 return user.id;
             });
-            for(var i = 0; i < self.results().length; i++) {
-                if(self.contributors().indexOf(self.results()[i].id) === -1 &&
-                   selected_ids.indexOf(self.results()[i].id) === -1) {
-                    return true;
-                }
-            }
-            return false;
+            var contributors = self.contributors();
+            return !($osf.any(
+                $.map(self.results(), function(result) {
+                    return contributors.indexOf(result.id) === -1 && selected_ids.indexOf(result.id === -1);
+                })
+            ));
         });
 
         self.removeAllVisible = ko.pureComputed(function() {
@@ -373,8 +372,12 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle) {
     self.nodeId = nodeId;
     self.parentId = parentId;
     self.parentTitle = parentTitle;
-    self.viewModel = new AddContributorViewModel(self.nodeTitle,
-        self.nodeId, self.parentId, self.parentTitle);
+    self.viewModel = new AddContributorViewModel(
+        self.nodeTitle,
+        self.nodeId,
+        self.parentId,
+        self.parentTitle
+    );
     self.init();
 }
 

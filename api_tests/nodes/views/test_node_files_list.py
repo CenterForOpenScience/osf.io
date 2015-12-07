@@ -280,18 +280,21 @@ class TestNodeFilesListFiltering(ApiTestCase):
     def test_node_files_are_filterable_by_name(self):
         url = '/{}nodes/{}/files/github/?filter[name]=xyz'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'abc'
         assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
 
     def test_node_files_are_filterable_by_path(self):
         url = '/{}nodes/{}/files/github/?filter[path]=abc'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
     def test_node_files_are_filterable_by_kind(self):
         url = '/{}nodes/{}/files/github/?filter[kind]=folder'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
