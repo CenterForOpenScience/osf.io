@@ -80,25 +80,12 @@ var institutionsViewModel = function() {
     self.submitInst = function() {
         var inst = $('input[name=primaryInst]:checked', '#selectedInst').val();
         $osf.ajaxJSON(
-            inst !== 'None' ? 'PUT' : 'DELETE',
-            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institution/',
+            'PUT',
+            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/',
             {
                 'isCors': true,
                 'data': {
-                    'data': {
-                        'type': 'institutions',
-                        'relationships': {
-                            'institutions': {
-                                'data': {
-                                    'type': 'institutions',
-                                    'id': $('input[name=primaryInst]:checked', '#selectedInst').val() || null
-                                }
-                            }
-                        },
-                        'attributes': {
-                            'name': 'institution'
-                        }
-                    }
+                     'data': inst != 'None' ? {'type': 'institution', 'id': inst} : null
                 }
             }
         ).done(function (response) {

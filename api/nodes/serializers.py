@@ -5,13 +5,14 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.models import Node, User, Comment
+from website.models import Node, User, Comment, Institution
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
-                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
+                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
+                                  JSONAPIRelationshipSerializer)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -378,3 +379,27 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
+
+class NodeInstitutionRelationshipSerializer(JSONAPIRelationshipSerializer):
+
+    class Meta:
+        type_ = 'institution'
+
+    def relationship(self, obj):
+        return obj.primary_institution
+
+    def update(self, instance, validated_data):
+        node = instance
+        user = self.context['request'].user
+        data = self.context['request'].data['data']
+        inst = None
+        if data:
+            assert data['type'] == 'institution'
+            inst = Institution.load(data.get('id'))
+            if inst and inst.auth(user):
+                node.primary_institution = inst
+                node.save()
+        else:
+            node.primary_institution = None
+            node.save()
+        return node

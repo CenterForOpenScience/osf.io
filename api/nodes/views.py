@@ -1,6 +1,7 @@
 import requests
 
 from modularodm import Q
+from rest_framework.parsers import JSONParser
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.status import is_server_error
@@ -24,7 +25,8 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
-    NodeContributorsCreateSerializer
+    NodeContributorsCreateSerializer,
+    NodeInstitutionRelationshipSerializer,
 )
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionDetailSerializer
@@ -1728,7 +1730,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['node'] = node
         serializer.save()
 
-class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -1736,7 +1738,7 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_write_scopes = [CoreScopes.NULL]
     serializer_class = InstitutionDetailSerializer
 
     model = Institution
@@ -1745,13 +1747,22 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 
     def get_object(self):
         node = self.get_node()
-        if self.request.method in drf_permissions.SAFE_METHODS:
-            return node.primary_institution
-        else:
-            id_ = self.request.data['id']
-            return Institution.load(id_)
+        return node.primary_institution or NotFound
 
-    def perform_destroy(self, instance):
-        node = self.get_node()
-        node.remove_primary_institution()
-        return instance
+
+class NodeInstitutionRelationship(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        AdminOrPublic
+    )
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    serializer_class = NodeInstitutionRelationshipSerializer
+    parser_classes = (JSONParser, )
+
+    view_category = 'nodes'
+    view_name = 'node-relationships-institution'
+
+    def get_object(self):
+        return self.get_node()

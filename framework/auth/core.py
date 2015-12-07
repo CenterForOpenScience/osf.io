@@ -1319,8 +1319,6 @@ class User(GuidStoredObject, AddonModelMixin):
     def has_inst_auth(self, inst):
         if inst in self.affiliated_institutions:
             return True
-        if inst._id in [i._id for i in self.affiliated_institutions]:
-            return True
         return False
 
     affiliated_institutions = fields.ForeignField('institution', list=True)
