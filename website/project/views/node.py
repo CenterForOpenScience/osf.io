@@ -14,6 +14,8 @@ from framework.mongo import StoredObject
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
+
+from framework.analytics.piwik import PiwikClient
 from framework.mongo.utils import get_or_http_error
 
 from website import language
@@ -46,6 +48,8 @@ from website.util.sanitize import strip_html
 from website.util import rapply
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
+
+from website.addons.osfstorage.model import OsfStorageGuidFile
 
 logger = logging.getLogger(__name__)
 
@@ -453,6 +457,33 @@ def project_statistics(auth, node, **kwargs):
         raise HTTPError(http.FORBIDDEN)
     return _view_project(node, auth, primary=True)
 
+@must_be_valid_project
+@must_be_contributor_or_public
+def piwik_stats(auth, node, **kwargs):
+    if not (node.can_edit(auth) or node.is_public):
+        raise HTTPError(http.FORBIDDEN)
+    return _view_project(node, auth, primary=True)
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def get_piwik_stats(auth, node, **kwargs):
+    if not (node.can_edit(auth) or node.is_public):
+        raise HTTPError(http.FORBIDDEN)
+
+    project_data = _view_project(node, auth, primary=True)
+
+    client = PiwikClient(
+            url=settings.PIWIK_HOST,
+            auth_token=settings.PIWIK_ADMIN_TOKEN,
+            site_id=project_data.get('node').get('piwik_site_id'),
+            period='day',
+            date='today',
+    )
+
+    return client.api_call('Actions.get', period='day', date='last10')
+
+
+
 
 @must_be_valid_project
 @must_be_contributor_or_public
@@ -748,6 +779,7 @@ def _view_project(node, auth, primary=False):
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id,
+            'files': {str(guid_file): guid_file.get_file_name() for guid_file in OsfStorageGuidFile.find(Q('node', 'eq', node._id))},
             'registered_meta': node.registered_meta,
             'registered_schemas': serialize_meta_schemas(node.registered_schema),
             'registration_count': len(node.node__registrations),

@@ -1398,6 +1398,11 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/statistics/',
         ], 'get', project_views.node.project_statistics, json_renderer),
 
+        Rule([
+            '/project/<pid>/piwikStats/',
+            '/project/<pid>/node/<nid>/piwikStats/',
+        ], 'get', project_views.node.get_piwik_stats, json_renderer),
+
         # Permissions
         Rule([
             '/project/<pid>/permissions/<permissions>/',

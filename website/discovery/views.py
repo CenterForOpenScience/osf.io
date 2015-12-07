@@ -8,6 +8,7 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 from framework.analytics.piwik import PiwikClient
 
+
 def activity():
 
     popular_public_projects = []

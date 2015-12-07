@@ -56,6 +56,7 @@ var entry = {
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'share-embed-page': staticPath('js/pages/share-embed-page.js'),
+    'statistics-page': staticPath('js/pages/statistics-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
     // Commons chunk
     'vendor': [
