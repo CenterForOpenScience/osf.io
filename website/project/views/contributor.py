@@ -322,14 +322,13 @@ def project_contributors_post(auth, node, **kwargs):
         child.save()
     # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
-    ret_contribs = profile_utils.serialize_contributors(
-        node.visible_contributors,
-        node=node,
-    )
 
     return {
         'status': 'success',
-        'contributors': ret_contribs
+        'contributors': profile_utils.serialize_contributors(
+            node.visible_contributors,
+            node=node,
+        )
     }, 201
 
 

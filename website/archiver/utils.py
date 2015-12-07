@@ -1,4 +1,3 @@
-
 import functools
 
 from framework.auth import Auth
