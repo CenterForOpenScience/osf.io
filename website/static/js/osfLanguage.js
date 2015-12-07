@@ -6,7 +6,6 @@ var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + S
 module.exports = {
     REFRESH_OR_SUPPORT: REFRESH_OR_SUPPORT,
     SUPPORT_LINK: SUPPORT_LINK,
-    REFRESH_OR_SUPPORT: REFRESH_OR_SUPPORT,
     // TODO
     makePublic: null,
     makePrivate: null,
