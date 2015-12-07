@@ -201,30 +201,22 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
 
             this.client.update(this.profile()).done(function (profile) {
                 this.profile(profile);
-
                 var emails = profile.emails();
+                var emailAdded = false;
                 for (var i=0; i<emails.length; i++) {
                     if (emails[i].address() === email.address()) {
+                        emailAdded = true;
                         this.emailInput('');
                         var addrText = $osf.htmlEscape(email.address());
-                            bootbox.confirm({
+                    }
+                }
+                if (emailAdded == true) {
+                    bootbox.alert({
                                 title: 'Confirm Change?',
                                 message: 'Please check your email for confirmation of this change. ' + 
                                 'If there is another OSF account associated with ' + '<em>' + addrText + '</em>, ' +
                                 'you will have the ability to confirm an account merge.',
-                                callback: function (confirmed) {
-                                    if (confirmed) {
-                                        $osf.growl('<em>' + addrText  + '</em> added to your account.','You will receive a confirmation email at <em>' + addrText  + '</em>. Please check your email and confirm.', 'success');
-                                    }
-                                },
-                                buttons:{
-                                    confirm:{
-                                        label:'Confirm'
-                                    }
-                                }
                             });
-                        return;
-                    }
                 }
             }.bind(this)).fail(function(){
                 this.profile().emails.remove(email);
@@ -232,6 +224,9 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         } else {
             this.changeMessage('Email cannot be empty.', 'text-danger');
         }
+        
+        
+        
     },
     resendConfirmation: function(email){
         var self = this;
