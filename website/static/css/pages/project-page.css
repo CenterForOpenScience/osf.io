@@ -1,11 +1,3 @@
-textarea {
-    resize: none;
-}
-
-.citation-name {
-    font-weight: 700;
-}
-
 /* Contributor List */
 #contributors {
     margin-bottom:10px;

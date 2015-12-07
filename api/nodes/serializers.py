@@ -382,56 +382,42 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
 
     id = IDField(source="_id", read_only=True)
     type = TypeField()
-    name = ser.CharField()
-    text = ser.CharField()
+    name = ser.CharField(required=True)
+    text = ser.CharField(required=True)
 
     class Meta:
         type_ = 'citations'
 
     def create(self, validated_data):
-        node = self.context['view'].get_node()
-        errors = self.error_checker(validated_data, node)
-
+        errors = self.error_checker(validated_data)
         if len(errors) > 0:
             raise ValidationError(detail=errors)
-        else:
-            citation = AlternativeCitation(text=validated_data['text'], name=validated_data['name'])
-            citation.save()
-            node.alternativeCitations.append(citation)
-            node.save()
-            return citation
+        node = self.context['view'].get_node()
+        citation = AlternativeCitation(**validated_data)
+        citation.save()
+        node.alternativeCitations.append(citation)
+        node.save()
+        return citation
 
     def update(self, instance, validated_data):
-        node = self.context['view'].get_node()
-        errors = self.error_checker(validated_data, node, instance=instance)
-
+        errors = self.error_checker(validated_data)
         if len(errors) > 0:
             raise ValidationError(detail=errors)
-        else:
-            instance.name = validated_data.get('name') or instance.name
-            instance.text = validated_data.get('text') or instance.text
-            instance.save()
-            return instance
+        instance.name = validated_data.get('name') or instance.name
+        instance.text = validated_data.get('text') or instance.text
+        instance.save()
+        return instance
 
-    def error_checker(self, data, node, instance=None):
+    def error_checker(self, data):
         errors = []
-
-        if 'name' not in data or (instance is not None and instance.name == data['name']):
-            name_exists = False
-        else:
-            name_exists = node.alternativeCitations.find(Q('name', 'eq', data['name'])).count() > 0
-
-        if name_exists:
-            errors.append("There is already an alternative citation named '{}'".format(data['name']))
-
-        if 'text' not in data or (instance is not None and instance.text == data['text']):
-            matches_citation = False
-        else:
-            matching_citations = node.alternativeCitations.find(Q('text', 'eq', data['text']))
-            matches_citation = matching_citations.count() > 0
-
-        if matches_citation:
-            names = "', '".join([str(citation.name) for citation in matching_citations])
-            errors.append("Citation matches '{}'".format(names))
-
+        name = data.get('name') or None
+        text = data.get('text') or None
+        citations = self.context['view'].get_node().alternativeCitations
+        if not (self.instance and self.instance.name == name) and citations.find(Q('name', 'eq', name)).count() > 0:
+            errors.append("There is already an alternative citation named '{}'".format(name))
+        if not (self.instance and self.instance.text == text):
+            matching_citations = citations.find(Q('text', 'eq', text))
+            if matching_citations.count() > 0:
+                names = "', '".join([str(citation.name) for citation in matching_citations])
+                errors.append("Citation matches '{}'".format(names))
         return errors

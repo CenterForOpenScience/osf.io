@@ -27,29 +27,23 @@ class ModelTests(OsfTestCase):
 
     def test_model_no_name(self):
         alt_citation = AlternativeCitation(text='citation')
-        try:
+        with assert_raises(ValidationError):
             alt_citation.save()
             self.node.alternativeCitations.append(alt_citation)
-        except ValidationError:
-            pass
         assert_equal(len(self.node.alternativeCitations), 1)
 
     def test_model_no_text(self):
         alt_citation = AlternativeCitation(name='test')
-        try:
+        with assert_raises(ValidationError):
             alt_citation.save()
             self.node.alternativeCitations.append(alt_citation)
-        except ValidationError:
-            pass
         assert_equal(len(self.node.alternativeCitations), 1)
 
     def test_model_no_fields(self):
         alt_citation = AlternativeCitation()
-        try:
+        with assert_raises(ValidationError):
             alt_citation.save()
             self.node.alternativeCitations.append(alt_citation)
-        except ValidationError:
-            pass
         assert_equal(len(self.node.alternativeCitations), 1)
 
     def test_model_change_name(self):

@@ -1600,8 +1600,7 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
             raise NotFound
 
     def perform_destroy(self, instance):
-        citation = self.get_object()
-        self.get_node().alternativeCitations.remove(citation)
+        self.get_node().alternativeCitations.remove(instance)
         self.get_node().save()
 
 class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):

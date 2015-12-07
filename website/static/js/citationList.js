@@ -3,7 +3,6 @@
 var $ = require('jquery');
 var ko = require('knockout');
 require('knockout.validation');
-//require('knockout.punches');
 var $osf = require('./osfHelpers');
 var citations = require('./citations');
 var bootbox = require('bootbox');
@@ -68,7 +67,6 @@ var AlternativeModel = function(citation, view, parent) {
             self.edit();
         }
 
-        self.messages = ko.observableArray([]);
         self.name.extend({
             required: {
                 message: '\'Citation Name\' is required'
@@ -153,57 +151,46 @@ var AlternativeModel = function(citation, view, parent) {
             self.view('view');
         }
         parent.editing(false);
-        self.messages([]);
     };
 
     self.save = function(parent) {
         if (self.isValid()) {
-            self.messages([]);
-            if (self.messages().length === 0) {
-                var url = $osf.apiV2Url('nodes/' + ctx.node.id + '/citations/');
-                var payload = {};
-                var method = 'POST';
-                payload.data = {
-                    'type': 'citations',
-                    'attributes': {
-                        'name': self.name(),
-                        'text': self.text()
-                    }
-                };
-                if (self.id !== undefined) {
-                    url += self.id + '/';
-
-                    payload.data.attributes.id = self.id;
-                    method = 'PUT';
+            var url = $osf.apiV2Url('nodes/' + ctx.node.id + '/citations/');
+            var payload = {};
+            var method = 'POST';
+            payload.data = {
+                'type': 'citations',
+                'attributes': {
+                    'name': self.name(),
+                    'text': self.text()
                 }
-                $osf.ajaxJSON(method, url, {data: payload, isCors: true}).done(function (response) {
-                    var data = response.data;
-                    parent.editing(false);
-                    self.view('view');
-                    self.id = data.id;
-                    if (self.originalValues !== undefined) {
-                        self.originalValues.name = self.name();
-                        self.originalValues.text = self.text();
-                    }
-                    else {
-                        self.originalValues = {
-                            name: self.name(),
-                            text: self.text()
-                        };
-                    }
-                }).fail(function (response) {
-                    if (response.status === 400) {
-                        for (var i = 0, error; error = response.responseJSON.errors[i]; i++) {
-                            self.messages.push(error.detail);
-                        }
-                    }
-                    else {
-                        $osf.growl('Error:',
-                            'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: support@cos.io">support@cos.io</a>', 'danger'
-                        );
-                    }
-                });
+            };
+            if (self.id !== undefined) {
+                url += self.id + '/';
+
+                payload.data.attributes.id = self.id;
+                method = 'PUT';
             }
+            $osf.ajaxJSON(method, url, {data: payload, isCors: true}).done(function (response) {
+                var data = response.data;
+                parent.editing(false);
+                self.view('view');
+                self.id = data.id;
+                if (self.originalValues !== undefined) {
+                    self.originalValues.name = self.name();
+                    self.originalValues.text = self.text();
+                }
+                else {
+                    self.originalValues = {
+                        name: self.name(),
+                        text: self.text()
+                    };
+                }
+            }).fail(function (response) {
+                $osf.growl('Error:',
+                    'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: support@cos.io">support@cos.io</a>', 'danger'
+                );
+            });
         }
         else {
             self.showMessages(true);
