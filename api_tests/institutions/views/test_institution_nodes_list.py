@@ -3,6 +3,7 @@ from nose.tools import *
 from tests.base import ApiTestCase
 from tests.factories import InstitutionFactory, AuthUserFactory, NodeFactory
 
+from framework.auth import Auth
 from api.base.settings.defaults import API_BASE
 
 class TestInstitutionNodeList(ApiTestCase):
@@ -20,7 +21,7 @@ class TestInstitutionNodeList(ApiTestCase):
         self.node3 = NodeFactory(creator=self.user2, is_public=False)
         self.node3.primary_institution = self.institution
         self.node3.save()
-        self.node2.add_contributor(self.user2, auth=self.user1.auth)
+        self.node2.add_contributor(self.user2, auth=Auth(self.user1))
 
         self.institution_node_url = '/{0}institutions/{1}/nodes/'.format(API_BASE, self.institution._id)
 
