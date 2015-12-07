@@ -11,7 +11,12 @@
             style="margin-left: 5px;"
             class="btn btn-xs btn-danger fa fa-times"></button>
   </div>
-  <div data-bind="attr.id: $data.id, osfUploader"></div>
+  <div data-bind="attr.id: $data.id, osfUploader">
+    <div class="spinner-loading-wrapper">
+      <div class="logo-spin logo-lg"></div>
+      <p class="m-t-sm fg-load-message"> Loading files...  </p>
+    </div>
+  </div>
 </script>
 
 <script type="text/html" id="osf-upload-toggle">
@@ -24,7 +29,12 @@
   </div>
   <a data-bind="click: toggleUploader">Attach File</a>
   <span data-bind="visible: showUploader">
-    <div data-bind="attr.id: $data.id, osfUploader"></div>
+    <div data-bind="attr.id: $data.id, osfUploader">
+      <div class="spinner-loading-wrapper">
+	<div class="logo-spin logo-lg"></div>
+	<p class="m-t-sm fg-load-message"> Loading files...  </p>
+      </div>
+    </div>
   </span>
 </script>
 
