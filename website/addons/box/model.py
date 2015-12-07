@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 import logging
+import time
 
 from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
@@ -54,7 +56,7 @@ class Box(ExternalProvider):
         }
 
     def refresh_oauth_key(self, force=False):
-        super(Box, self).refresh_oauth_key(force=force, resp_expiry_key='expires_in')
+        super(Box, self).refresh_oauth_key(force=force, resp_expiry_fn=(lambda x: datetime.utcfromtimestamp(time.time() + float(x['expires_in']))))
 
 class BoxUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific box information

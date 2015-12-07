@@ -368,7 +368,7 @@ class ExternalProvider(object):
         pass
 
     def refresh_oauth_key(self, force=False, extra={}, resp_auth_token_key='access_token',
-                          resp_refresh_token_key='refresh_token', resp_expiry_key='expires_at'):
+                          resp_refresh_token_key='refresh_token', resp_expiry_fn=None):
         """Handles the refreshing of an oauth_key for account associated with this provider.
            Not all addons need to use this, as some do not have oauth_keys that expire.
 
@@ -379,18 +379,24 @@ class ExternalProvider(object):
 
         Providers may have different keywords in their response bodies, kwargs
         `resp_*_key` allow subclasses to override these if necessary.
+
+        kwarg `resp_expiry_fn` allows subclasses to specify a function that will return the
+        datetime-formatted oauth_key expiry key, given a successful refresh response from
+        `auto_refresh_url`. A default using 'expires_at' as a key is provided.
         """
         # Ensure this is an authenticated Provider that uses token refreshing
-        if not self.account and self.auto_refresh_url:
+        if not (self.account and self.auto_refresh_url):
             return
 
         # Ensure this Provider is for a valid addon
-        if not self.client_id and self.client_secret:
+        if not (self.client_id and self.client_secret):
             return
 
         # Ensure a refresh is needed
         if not (force or self._needs_refresh()):
             return
+
+        resp_expiry_fn = resp_expiry_fn or (lambda x: datetime.datetime.fromtimestamp(float(x['expires_at'])))
 
         client = OAuth2Session(
             self.client_id,
@@ -417,7 +423,7 @@ class ExternalProvider(object):
         else:
             self.account.oauth_key = token[resp_auth_token_key]
             self.account.refresh_token = token[resp_refresh_token_key]
-            self.account.expires_at = datetime.datetime.fromtimestamp(float(token[resp_expiry_key]))
+            self.account.expires_at = resp_expiry_fn(token)
             self.account.save()
 
     def _needs_refresh(self):
