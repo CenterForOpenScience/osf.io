@@ -9,6 +9,8 @@ import bson
 import pytz
 import itsdangerous
 
+from django.core.urlresolvers import reverse
+
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
@@ -1331,12 +1333,36 @@ def _merge_into_reversed(*iterables):
 
 
 class Institution(StoredObject):
+
     _id = fields.StringField(index=True, unique=True, primary=True)
     name = fields.StringField(required=True)
 
     @property
     def pk(self):
         return self._id
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def url(self):
+        return '/{}/'.format(self._id)
+
+    @property
+    def api_v2_url(self):
+        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def absolute_api_v2_url(self):
+        from api.base.utils import absolute_reverse
+        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    def get_api_url(self):
+        return self.absolute_api_v2_url
+
+    def get_absolute_url(self):
+        return self.absolute_url
 
     def auth(self, user):
         return user.has_inst_auth(self)
