@@ -85,7 +85,7 @@ var institutionsViewModel = function() {
             {
                 'isCors': true,
                 'data': {
-                     'data': inst != 'None' ? {'type': 'institution', 'id': inst} : null
+                     'data': inst !== 'None' ? {'type': 'institution', 'id': inst} : null
                 }
             }
         ).done(function (response) {
@@ -94,7 +94,7 @@ var institutionsViewModel = function() {
         }).fail(function (response) {
             $osf.growl('Poop!');
         });
-    }
+    };
 };
 
 $(document).ready(function() {

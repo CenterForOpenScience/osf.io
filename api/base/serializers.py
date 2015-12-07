@@ -712,7 +712,7 @@ class JSONAPIRelationshipSerializer(ser.Serializer):
         assert type_ is not None, 'Must define Meta.type_'
         relationship = self.relationship(obj)
         if relationship:
-            data = collections.OrderedDict({'type': type_, 'id':relationship._id})
+            data = collections.OrderedDict({'type': type_, 'id': relationship._id})
         else:
             data = None
         if envelope:

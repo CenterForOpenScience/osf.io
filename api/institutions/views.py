@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import NotFound
 
 from modularodm import Q
 
@@ -85,7 +85,6 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView)
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            import ipdb; ipdb.set_trace()
             permission_query = (permission_query | Q('contributors', 'icontains', user._id))
 
         query = base_query & permission_query & inst_query
