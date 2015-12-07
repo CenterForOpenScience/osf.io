@@ -101,7 +101,7 @@
                     }">
         </table>
     </div>
-    <div id="noContributors" data-bind="visible: $root.empty" class="no-items text-danger m-b-md">
+    <div data-bind="visible: $root.empty" class="no-items text-danger m-b-md">
         No contributors found
     </div>
     <span id="adminContributorsAnchor" class="project-page anchor"></span>
@@ -146,7 +146,7 @@
         <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
         <div class="scripted" id="linkScope">
             <table id="privateLinkTable" class="table responsive-table responsive-table-xs"
-                    data-bind="if: visible">
+                    data-bind="visible: visible">
                 <thead>
                     <tr>
                         <th class="responsive-table-hide">Link Name</th>
@@ -353,7 +353,7 @@
 
                 <!-- ko ifnot: contributor.canEdit() -->
                     <!-- ko if: canRemove -->
-                        <button type="button" class="btn btn-danger" data-bind="click: removeSelf">Remove</button>
+                        <button type="button" class="btn btn-danger" data-bind="click: function() {$root.removeSelf($data)}">Remove</button>
                     <!-- /ko -->
                 <!-- /ko -->
             </div>

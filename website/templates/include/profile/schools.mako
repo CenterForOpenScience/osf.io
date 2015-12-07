@@ -135,12 +135,12 @@
                 <div class="col-xs-12">
                     <!-- ko if: expandable() -->
                         <div class="panel panel-default">
-                            <div class="panel-heading card-heading" data-bind="click: $parent.toggle, attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false">
+                            <div class="panel-heading card-heading" data-bind="click: toggle(), attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false">
                                 <div class="header-content">
                                     <h5 class="institution">{{ institution }}</h5>
                                     <span data-bind="if: startYear()" class="subheading">{{ startMonth }} {{startYear }} - {{ endView }}</span>
                                 </div>
-                                <span class="fa fa-angle-down toggle-icon"></span>
+                                <span data-bind="attr: {class: expanded() ? 'fa toggle-icon fa-angle-down' : 'fa toggle-icon fa-angle-up'}"></span>
                             </div>
                             <div data-bind="attr: {id: 'schoolCard' + $index(), aria-labelledby: 'schoolHeading' + $index()}" class="panel-collapse collapse">
                                 <div class="panel-body">

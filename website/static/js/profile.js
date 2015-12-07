@@ -739,11 +739,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
 };
 ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 
-ListViewModel.prototype.toggle = function(data, event) {
-    var el = event.toElement;
-    $(el.querySelector('.toggle-icon')).toggleClass('fa-angle-down fa-angle-up');
-};
-
 ListViewModel.prototype.addContent = function() {
     if (!this.institutionObjectsEmpty() && this.isValid()) {
         this.contents.push(new this.ContentModel(this));
@@ -854,6 +849,12 @@ var JobViewModel = function() {
                 self.startYear() !== null;
     });
 
+    self.expanded = ko.observable(false);
+
+    self.toggle = function() {
+        self.expanded(!self.expanded());
+    };
+
     self.trackedProperties = [
         self.institution,
         self.department,
@@ -901,6 +902,12 @@ var SchoolViewModel = function() {
                 self.degree().length > 1 ||
                 self.startYear() !== null;
     });
+
+    self.expanded = ko.observable(false);
+
+    self.toggle = function() {
+        self.expanded(!self.expanded());
+    };
 
     self.trackedProperties = [
         self.institution,

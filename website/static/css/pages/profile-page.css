@@ -53,7 +53,7 @@ table.table.table-plain th, table.table.table-plain td {
 /* Cards
 -------------------- */
 
-.institution {
+.panel-heading>.header-content {
     word-break: break-all;
 }
 

@@ -32,9 +32,10 @@ ko.bindingHandlers.filters = {
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin, index, parent) {
+var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin, index, options) {
 
     var self = this;
+    self.options = options;
     $.extend(self, contributor);
 
     self.originals = {
@@ -53,40 +54,30 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.permission = ko.observable(contributor.permission);
 
-    self.permissionText = ko.observable(parent.permissionDict[self.permission()]);
+    self.permissionText = ko.observable(self.options.permissionMap[self.permission()]);
 
     self.visible = ko.observable(contributor.visible);
 
     self.permission.subscribeChanged(function(newValue, oldValue) {
-        if (oldValue === 'admin') {
-            parent.adminCount(parent.adminCount() - 1);
-        }
-        if (newValue === 'admin') {
-            parent.adminCount(parent.adminCount() + 1);
-        }
-        self.permissionText(parent.permissionDict[newValue]);
+        self.options.onPermissionChanged(newValue, oldValue);
+        self.permissionText(self.options.permissionMap[newValue]);
     });
 
     self.visible.subscribeChanged(function(newValue, oldValue) {
-        if (oldValue === true) {
-            parent.visibleCount(parent.visibleCount() - 1);
-        }
-        if (newValue === true) {
-            parent.visibleCount(parent.visibleCount() + 1);
-        }
+        self.options.onVisibleChanged(newValue, oldValue);
     });
 
     self.permissionChange = ko.computed(function() {
         return self.permission() !== self.originals.permission;
     });
 
-    self.reset = function() {
+    self.reset = function(adminCount, visibleCount) {
         if (self.deleteStaged()) {
             if (self.visible()) {
-                parent.visibleCount(parent.visibleCount() + 1);
+                visibleCount(visibleCount() + 1);
             }
             if (self.permission() === 'admin') {
-                parent.adminCount(parent.adminCount() + 1);
+                adminCount(adminCount() + 1);
             }
             self.deleteStaged(false);
         }
@@ -110,23 +101,16 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     });
 
     self.remove = function() {
-        if (parent.visibleCount() > 0 && self.visible()) {
-            parent.visibleCount(parent.visibleCount() - 1);
-        }
-        if (parent.adminCount() > 0 && self.permission() === 'admin') {
-            parent.adminCount(parent.adminCount() - 1);
-        }
+        self.options.onVisibleChanged(null, self.visible());
+        self.options.onPermissionChanged(null, self.permission());
         self.deleteStaged(true);
     };
+
     self.unremove = function() {
         if (self.deleteStaged()) {
             self.deleteStaged(false);
-            if (self.visible()) {
-                parent.visibleCount(parent.visibleCount() + 1);
-            }
-            if (self.permission() === 'admin') {
-                parent.adminCount(parent.adminCount() + 1);
-            }
+            self.options.onVisibleChanged(self.visible(), null);
+            self.options.onPermissionChanged(self.permission(), null);
         }
         // Allow default action
         return true;
@@ -142,60 +126,8 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             self.visible() !== self.originals.visible || self.deleteStaged();
     });
 
-    // TODO: copied-and-pasted from nodeControl. When nodeControl
-    // gets refactored, update this to use global method.
-    self.removeSelf = function() {
-        var id = self.id,
-            name = self.fullname;
-        var payload = {
-            id: id,
-            name: self.fullname
-        };
-
-        if (parent.visibleCount() > 0 && self.visible()) {
-            parent.visibleCount(parent.visibleCount() - 1);
-        }
-
-        if (parent.visibleCount() > 0) {
-            $osf.postJSON(
-                window.contextVars.node.urls.api + 'beforeremovecontributors/',
-                payload
-            ).done(function (response) {
-                    bootbox.confirm({
-                        title: 'Delete contributor?',
-                        message: ('Are you sure you want to remove yourself (<strong>' + name + '</strong>) from contributor list?'),
-                        callback: function (result) {
-                            if (result) {
-                                $osf.postJSON(
-                                    window.contextVars.node.urls.api + 'removecontributors/',
-                                    payload
-                                ).done(function (response) {
-                                        if (response.redirectUrl) {
-                                            window.location.href = response.redirectUrl;
-                                        } else {
-                                            window.location.reload();
-                                        }
-                                    }).fail(
-                                    $osf.handleJSONError
-                                );
-                            }
-                        },
-                        buttons:{
-                            confirm:{
-                                label:'Delete',
-                                className:'btn-danger'
-                            }
-                        }
-                    });
-                }).fail(
-                $osf.handleJSONError
-            );
-            return false;
-        }
-    };
-
     self.optionsText = function(val) {
-        return parent.permissionDict[val];
+        return self.options.permissionMap[val];
     };
 };
 
@@ -231,13 +163,13 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.table = $(table);
     self.adminTable = $(adminTable);
 
-    self.permissionDict = {
+    self.permissionMap = {
         read: 'Read',
         write: 'Read + Write',
         admin: 'Administrator'
     };
 
-    self.permissionList = Object.keys(self.permissionDict);
+    self.permissionList = Object.keys(self.permissionMap);
 
     self.contributors = ko.observableArray();
 
@@ -332,6 +264,32 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         return messages;
     });
 
+    self.handlePermissionChanged = function(newPerm, oldPerm) {
+        if (oldPerm === 'admin') {
+            self.adminCount(self.adminCount() - 1);
+        }
+        if (newPerm === 'admin') {
+            self.adminCount(self.adminCount() + 1);
+        }
+        console.log('admins: ' + self.adminCount());
+    };
+
+    self.handleVisibleChanged = function(newVis, oldVis) {
+        if (oldVis) {
+            self.visibleCount(self.visibleCount() - 1);
+        }
+        if (newVis) {
+            self.visibleCount(self.visibleCount() + 1);
+        }
+        console.log('visible: ' + self.visibleCount());
+    };
+
+    self.options = {
+        onPermissionChanged: self.handlePermissionChanged,
+        onVisibleChanged: self.handleVisibleChanged,
+        permissionMap: self.permissionMap
+    };
+
     self.init = function() {
         var index = -1;
         self.contributors(self.original().map(function(item) {
@@ -342,13 +300,13 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             if (item.visible) {
                 self.visibleCount(self.visibleCount() + 1);
             }
-            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, false, index, self);
+            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, false, index, self.options);
         }));
         self.adminContributors(adminContributors.map(function(contributor) {
           if (contributor.permission === 'admin') {
                 self.adminCount(self.adminCount() + 1);
             }
-          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true, index, self);
+          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true, index, self.options);
         }));
     };
 
@@ -386,7 +344,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     self.cancel = function() {
         self.contributors().forEach(function(contributor) {
-            contributor.reset();
+            contributor.reset(self.adminCount, self.visibleCount);
         });
         self.contributors(self.contributors.sort(function(left, right) {
             return left.originals.index > right.originals.index ? 1 : -1;
@@ -445,6 +403,58 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     self.onWindowResize = function() {
         self.collapsed(self.table.children().filter('thead').is(':hidden'));
+    };
+
+    // TODO: copied-and-pasted from nodeControl. When nodeControl
+    // gets refactored, update this to use global method.
+    self.removeSelf = function(contrib) {
+        var id = contrib.id;
+        var name = contrib.fullname;
+        var payload = {
+            id: id,
+            name: name
+        };
+
+        if (self.visibleCount() > 0 && contrib.visible()) {
+            self.visibleCount(self.visibleCount() - 1);
+        }
+
+        if (self.visibleCount() > 0) {
+            $osf.postJSON(
+                window.contextVars.node.urls.api + 'beforeremovecontributors/',
+                payload
+            ).done(function (response) {
+                bootbox.confirm({
+                    title: 'Delete contributor?',
+                    message: ('Are you sure you want to remove yourself (<strong>' + name + '</strong>) from contributor list?'),
+                    callback: function (result) {
+                        if (result) {
+                            $osf.postJSON(
+                                window.contextVars.node.urls.api + 'removecontributors/',
+                                payload
+                            ).done(function (response) {
+                                    if (response.redirectUrl) {
+                                        window.location.href = response.redirectUrl;
+                                    } else {
+                                        window.location.reload();
+                                    }
+                                }).fail(
+                                $osf.handleJSONError
+                            );
+                        }
+                    },
+                    buttons:{
+                        confirm:{
+                            label:'Delete',
+                            className:'btn-danger'
+                        }
+                    }
+                });
+            }).fail(
+                $osf.handleJSONError
+            );
+            return false;
+        }
     };
 };
 
