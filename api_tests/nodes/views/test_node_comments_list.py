@@ -852,6 +852,7 @@ class TestFileCommentCreate(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
+
 class TestCommentRepliesCreate(ApiTestCase):
     def setUp(self):
         super(TestCommentRepliesCreate, self).setUp()
@@ -906,6 +907,14 @@ class TestCommentRepliesCreate(ApiTestCase):
         reply = CommentFactory(node=self.public_project_with_public_comment_level, target=comment, user=self.user)
         self.public_project_with_public_comment_level_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project_with_public_comment_level._id)
         self.public_project_with_public_comment_level_payload = self._set_up_payload(reply._id)
+
+    def test_create_comment_reply_invalid_target_id(self):
+        self._set_up_private_project_comment_reply()
+        target_comment = CommentFactory(node=ProjectFactory(), user=self.user)
+        payload = self._set_up_payload(target_comment._id)
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid comment target \'" + str(target_comment._id) + "\'.")
 
     def test_private_node_logged_in_admin_can_reply(self):
         self._set_up_private_project_comment_reply()

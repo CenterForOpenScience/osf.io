@@ -110,7 +110,7 @@ class CommentCreateSerializer(CommentSerializer):
         else:
             comment = Comment.load(target_id)
             if comment:
-                if comment.node._id == node._id:
+                if comment.node._id == node_id:
                     return comment
                 else:
                     raise ValueError('Cannot post reply to comment on another node.')
