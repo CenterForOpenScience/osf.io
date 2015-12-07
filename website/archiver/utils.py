@@ -141,14 +141,14 @@ def before_archive(node, user):
     job.set_targets()
 
 def _do_get_file_map(file_tree):
-    """Reduces a tree of folders and files into a dict of <sha256>: <file_metadata> pairs
+    """Reduces a tree of folders and files into a list of (<sha256>, <file_metadata>) pairs
     """
-    file_map = {}
+    file_map = []
     stack = [file_tree]
     while len(stack):
         tree_node = stack.pop(0)
         if tree_node['kind'] == 'file':
-            file_map[tree_node['extra']['hashes']['sha256']] = tree_node
+            file_map.append((tree_node['extra']['hashes']['sha256'], tree_node))
         else:
             stack = stack + tree_node['children']
     return file_map
@@ -171,7 +171,7 @@ def get_file_map(node, file_map):
 
     get_file_map(node)
     """
-    for key, value in file_map.items():
+    for (key, value) in file_map:
         yield (key, value, node._id)
     for child in node.nodes_primary:
         for key, value, node_id in get_file_map(child):

@@ -170,6 +170,7 @@ var Uploader = function(question) {
         if (file) {
             question.extra({
                 selectedFileName: file.data.name,
+                nodeId: file.data.nodeId,
                 viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
                 sha256: file.data.extra.hashes.sha256,
                 hasSelectedFile: true

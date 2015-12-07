@@ -269,6 +269,17 @@ def archive(job_pk):
         ]
     )
 
+def find_registration_file(value, node):
+    orig_sha256 = value['extra']['sha256']
+    orig_name = value['extra']['selectedFileName']
+    orig_node = value['extra']['nodeId']
+    file_map = utils.get_file_map(node)
+    for sha256, value, node_id in file_map:
+        registered_from_id = Node.load(node_id).registered_from._id
+        if sha256 == orig_sha256 and registered_from_id == orig_node and orig_name == value['name']:
+            return value, node_id
+    raise RuntimeError()
+
 @celery_app.task
 def archive_success(dst_pk):
     """Archiver's final callback. For the time being the use case for this task
@@ -306,37 +317,23 @@ def archive_success(dst_pk):
                 for subkey, subvalue in question['value'].items():
                     registration_file = None
                     if subvalue.get('extra', {}).get('sha256'):
-                        orig_sha256 = subvalue['extra']['sha256']
-                        file_map = utils.get_file_map(dst)
-                        for sha256, value, node_id in file_map:
-                            if sha256 == orig_sha256:
-                                registration_file = value
-                                break
-                        if not registration_file:
-                            raise RuntimeError()
+                        registration_file, node_id = find_registration_file(subvalue, dst)
                         subvalue['extra'].update({
-                            'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
-                                node_id,
-                                registration_file['path']
+                            'viewUrl': Node.load(node_id).web_url_for(
+                                'addon_view_or_download_file',
+                                provider='osfstorage',
+                                path=registration_file['path'].lstrip('/')
                             )
                         })
                     question['value'][subkey] = subvalue
             else:
                 if question.get('extra', {}).get('sha256'):
-                    registration_file = None
-                    orig_sha256 = question['extra']['sha256']
-                    file_map = utils.get_file_map(dst)
-                    for sha256, value, node_id in file_map:
-                        if sha256 == orig_sha256:
-                            registration_file = value
-                            break
-                    if not registration_file:
-                        raise RuntimeError()
+                    registration_file, node_id = find_registration_file(question, dst)
                     question['extra'].update({
                         'viewUrl': Node.load(node_id).web_url_for(
                             'addon_view_or_download_file',
                             provider='osfstorage',
-                            path=registration_file['path']
+                            path=registration_file['path'].lstrip('/')
                         )
                     })
             updated_metadata[key] = question
