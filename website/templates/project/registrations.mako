@@ -66,7 +66,7 @@
             <li class="project list-group-item list-group-item-node">
               <h4 data-bind="text: schema().title" ></h4>
               <h4 class="list-group-item-heading">
-                <div class="progress progress-bar-md">
+                <div data-bind="visible: hasRequiredQuestions" class="progress progress-bar-md">
                   <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
                        data-bind="attr.aria-completion: completion,
                                   style: {width: completion() + '%'}">

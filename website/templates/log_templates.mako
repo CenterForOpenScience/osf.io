@@ -6,8 +6,8 @@
 
 ## Embargo related logs
 <script type="text/html" id="embargo_approved">
-approved embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+approved embargoed registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="embargo_approved_no_user">
@@ -16,7 +16,7 @@ Embargo for
 </script>
 
 <script type="text/html" id="embargo_cancelled">
-cancelled embargo of
+cancelled embargoed registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
@@ -32,29 +32,29 @@ Embargo for
 
 <script type="text/html" id="embargo_initiated">
 initiated an embargoed registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 ## Retraction related logs
 <script type="text/html" id="retraction_approved">
-approved retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+approved retraction of registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="retraction_cancelled">
-cancelled retraction of
+cancelled retraction of registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
-initiated retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+initiated retraction of registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 ## Registration related Logs
 <script type="text/html" id="registration_initiated">
 initiated registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="registration_cancelled">

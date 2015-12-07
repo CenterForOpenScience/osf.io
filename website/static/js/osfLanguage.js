@@ -4,6 +4,7 @@ var SUPPORT_LINK = '<a href="mailto:' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL +'<
 var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_LINK + ' if the problem persists.';
 
 module.exports = {
+    REFRESH_OR_SUPPORT: REFRESH_OR_SUPPORT,
     SUPPORT_LINK: SUPPORT_LINK,
     REFRESH_OR_SUPPORT: REFRESH_OR_SUPPORT,
     // TODO
