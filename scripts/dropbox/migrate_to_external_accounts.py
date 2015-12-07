@@ -3,22 +3,12 @@ import os
 import sys
 import shutil
 
+from dropbox.client import DropboxClient
 from nose.tools import *  # noqa
 from modularodm import Q
 
 from framework.mongo import database
 from framework.transactions.context import TokuTransaction
-
-from website import settings
-dropbox_views_path = os.path.join(
-    settings.BASE_PATH,
-    'addons',
-    'dropbox',
-    'views'
-)
-# Remove old dropbox views directory and .pyc files
-if os.path.isdir(dropbox_views_path):
-    shutil.rmtree(dropbox_views_path)
 
 from website.app import init_app
 from website.models import User, Node
@@ -30,16 +20,21 @@ PROVIDER = 'dropbox'
 PROVIDER_NAME = 'Dropbox'
 
 def verify_user_settings_document(document):
-    assert_in('_id', document)
-    assert_in('deleted', document)
-    assert_in('access_token', document)
-    assert_in('dropbox_id', document)
-    if document['access_token']:
-        assert_is_not_none(document['dropbox_id'])
-    assert_in('dropbox_info', document)
-    assert_in('display_name', document['dropbox_info'])
-    assert_in('owner', document)
-    assert_is_not_none(document['owner'])
+    try:
+        assert_in('_id', document)
+        assert_in('deleted', document)
+        assert_in('access_token', document)
+        assert_in('dropbox_id', document)
+        if document['access_token']:
+            assert_is_not_none(document['dropbox_id'])
+        assert_in('dropbox_info', document)
+        assert_in('display_name', document['dropbox_info'])
+        assert_in('owner', document)
+        assert_is_not_none(document['owner'])
+    except AssertionError:
+        return salvage_broken_user_settings_document(document)
+    else:
+        return True
 
 def verify_node_settings_document(document):
     assert_in('_id', document)
@@ -48,6 +43,36 @@ def verify_node_settings_document(document):
     assert_in('owner', document)
     assert_is_not_none(document['owner'])
     assert_in('user_settings', document)
+
+def salvage_broken_user_settings_document(document):
+    if not document['access_token'] or not document['dropbox_id']:
+        return False
+    if not document['owner'] or not User.load(document['owner']).is_active:
+        return False
+    if document['deleted']:
+        return False
+    if not document['dropbox_info'] or not document['dropbox_info']['display_name']:
+        logger.info(
+            "Attempting dropbox_info population for document (id:{0})".format(document['_id'])
+        )
+        client = DropboxClient(document['access_token'])
+        document['dropbox_info'] = {}
+        try:
+            database['dropboxusersettings'].find_and_modify(
+                {'_id': document['_id']},
+                {
+                    '$set': {
+                        'dropbox_info': client.account_info()
+                    }
+                }
+            )
+        except Exception:
+            # Invalid token probably
+            return False
+        else:
+            return verify_user_settings_document(document)
+
+    return False
 
 def migrate_to_external_account(user_settings_document):
     if not user_settings_document.get('access_token'):
@@ -128,6 +153,18 @@ def remove_old_documents(old_user_settings, old_user_settings_count, old_node_se
         })
 
 def migrate(dry_run=True, remove_old=True):
+    rm_msg = ' It will be hard-deleted during the migration.' if remove_old else ''
+    from website import settings as dropbox_settings
+    dropbox_views_path = os.path.join(
+        dropbox_settings.BASE_PATH,
+        'addons',
+        'dropbox',
+        'views'
+    )
+    # Remove old dropbox views directory and .pyc files
+    if os.path.isdir(dropbox_views_path):
+        shutil.rmtree(dropbox_views_path)
+
     user_settings_list = list(database['dropboxusersettings'].find())
 
     # get in-memory versions of collections and collection sizes
@@ -142,10 +179,14 @@ def migrate(dry_run=True, remove_old=True):
     migrated_user_settings = 0
     migrated_node_settings = 0
     for user_settings_document in user_settings_list:
-        verify_user_settings_document(user_settings_document)
+        if not verify_user_settings_document(user_settings_document):
+            logger.info(
+                "Found broken dropboxusersettings document (id:{0}) that could not be fixed.{1}".format(user_settings_document['_id'], rm_msg)
+            )
+            continue
         if user_settings_document['deleted']:
             logger.info(
-                "Found dropboxusersettings document (id:{0}) that is marked as deleted. It will be hard-deleted during the migration.".format(user_settings_document['_id'])
+                "Found dropboxusersettings document (id:{0}) that is marked as deleted.{1}".format(user_settings_document['_id'], rm_msg)
             )
             continue
         external_account, user, new = migrate_to_external_account(user_settings_document)
@@ -177,14 +218,15 @@ def migrate(dry_run=True, remove_old=True):
                     verify_node_settings_document(node_settings_document)
                     if node_settings_document['deleted']:
                         logger.info(
-                            "Found dropboxnodesettings document (id:{0}) that is marked as deleted. It will be hard-deleted during the migration.".format(
-                                node_settings_document['_id']
+                            "Found dropboxnodesettings document (id:{0}) that is marked as deleted.{1}".format(
+                                node_settings_document['_id'],
+                                rm_msg
                             )
                         )
                         continue
                     node = Node.load(node_settings_document['owner'])
                     if not node:
-                        logger.info("DropboxNodeSettings<_id:{0}> either has no associated Node, and will not be migrated.".format(
+                        logger.info("DropboxNodeSettings<_id:{0}> has no associated Node, and will not be migrated.".format(
                             node_settings_document['_id']
                         ))
                         continue
@@ -208,16 +250,20 @@ def migrate(dry_run=True, remove_old=True):
             old_node_settings, old_node_settings_count,
             dry_run
         )
+        
     if dry_run:
         raise RuntimeError('Dry run, transaction rolled back.')
 
 def main():
     dry_run = False
+    remove_old = True
+    if '--keep' in sys.argv:
+        remove_old = False
     if '--dry' in sys.argv:
         dry_run = True
     init_app(set_backends=True, routes=False)
     with TokuTransaction():
-        migrate(dry_run=dry_run)
+        migrate(dry_run=dry_run, remove_old=remove_old)
 
 if __name__ == "__main__":
     main()

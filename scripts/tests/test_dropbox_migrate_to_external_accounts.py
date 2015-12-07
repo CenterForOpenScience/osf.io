@@ -153,8 +153,8 @@ class TestDropboxMigration(OsfTestCase):
         )  # 3 + 3 + 3 + 6 (non-deleted)
         assert_equal(
             database['dropboxnodesettings'].count(),
-            12
-        )  # 3 + 3 + 3 + 3
+            9
+        )  # 3 + 3 + 3
         migration.remove_old_documents(
             old_user_settings, old_user_settings_count,
             old_node_settings, old_node_settings_count,
@@ -166,7 +166,7 @@ class TestDropboxMigration(OsfTestCase):
         )
         assert_equal(
             database['dropboxnodesettings'].count(),
-            6
+            3
         )
 
     def test_migrate(self):
@@ -177,7 +177,7 @@ class TestDropboxMigration(OsfTestCase):
         )
         assert_equal(
             DropboxNodeSettings.find().count(),
-            6
+            3
         )
         for user_settings in DropboxUserSettings.find():
             assert_is_not_none(user_settings.owner)
