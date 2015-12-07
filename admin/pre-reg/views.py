@@ -119,11 +119,7 @@ def approve_draft(request, draft_pk):
     draft = get_draft_or_error(draft_pk)
 
     user = load_osf_user(request.user)
-    try:
-        draft.approve(user)
-    except PermissionsError:
-        draft.approval.add_authorizer(user, save=True)
-        draft.approve(user)
+    draft.approve(user)
     return JsonResponse({})
 
 @login_required
@@ -138,13 +134,8 @@ def reject_draft(request, draft_pk):
     draft = get_draft_or_error(draft_pk)
 
     user = load_osf_user(request.user)
-    try:
-        draft.reject(user)
-    except PermissionsError:
-        draft.approval.add_authorizer(user, save=True)
-        draft.reject(user)
+    draft.reject(user)
     return JsonResponse({})
-
 
 @login_required
 # @user_passes_test(is_in_prereg_group)
