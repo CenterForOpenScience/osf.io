@@ -1747,7 +1747,9 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
 
     def get_object(self):
         node = self.get_node()
-        return node.primary_institution or NotFound
+        if not node.primary_institution:
+            raise NotFound
+        return node.primary_institution
 
 
 class NodeInstitutionRelationship(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):

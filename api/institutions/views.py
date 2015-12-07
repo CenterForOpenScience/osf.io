@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from rest_framework.exceptions import ValidationError
 
 from modularodm import Q
 
@@ -12,6 +13,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.nodes.serializers import NodeSerializer, NodeDetailSerializer
+from api.nodes.permissions import ContributorOrPublic
 from api.users.serializers import UserSerializer, UserDetailSerializer
 
 from .serializers import InstitutionSerializer, InstitutionDetailSerializer
@@ -73,7 +75,18 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView)
 
     def get_default_odm_query(self):
         inst = Institution.load(self.kwargs['institution_id'])
-        query = Q('primary_institution', 'eq', inst)
+        inst_query = Q('primary_institution', 'eq', inst)
+        base_query = (
+            Q('is_deleted', 'ne', True) &
+            Q('is_folder', 'ne', True) &
+            Q('is_registration', 'eq', False)
+        )
+        user = self.request.user
+        permission_query = Q('is_public', 'eq', True)
+        if not user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+
+        query = base_query & permission_query & inst_query
         return query
 
     def get_queryset(self):
@@ -84,6 +97,7 @@ class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic
     )
 
     required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.NODE_BASE_READ]
@@ -100,6 +114,8 @@ class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             self.kwargs['node_id'],
             display_name='node'
         )
+        if node.is_registration:
+            raise ValidationError('This is a registration.')
         return node
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView):
