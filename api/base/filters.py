@@ -73,6 +73,8 @@ class FilterMixin(object):
 
     LIST_FIELDS = (ser.ListField, )
 
+    RELATIONSHIP_FIELDS = (RelationshipField, TargetField)
+
     def __init__(self, *args, **kwargs):
         super(FilterMixin, self).__init__(*args, **kwargs)
         if not self.serializer_class:
@@ -214,9 +216,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
-        elif isinstance(field, self.LIST_FIELDS):
-            return value
-        elif isinstance(field, (RelationshipField, TargetField)):
+        elif isinstance(field, (self.LIST_FIELDS + self.RELATIONSHIP_FIELDS)):
             return value
         else:
             try:
