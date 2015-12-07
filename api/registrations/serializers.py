@@ -9,7 +9,7 @@ from api.base.serializers import IDField, RelationshipField, LinksField
 class RegistrationSerializer(NodeSerializer):
 
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
-        help_text='Whether this registration has been retracted.')
+                                 help_text='Whether this registration has been retracted.')
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
 
     registered_by = RelationshipField(
