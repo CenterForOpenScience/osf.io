@@ -55,6 +55,7 @@
     float: left;
     background-color: #fff;
     padding: 0 10px;
+    overflow-y: auto;
 }
 
 .fb-collections ul li , .fb-filters ul li {
@@ -123,6 +124,7 @@
     padding: 10px;
     float: left;
     width: 30%;
+    overflow-y: auto;
 }
 
 .fb-info-multi {
