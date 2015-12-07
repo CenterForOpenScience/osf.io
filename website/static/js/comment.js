@@ -473,9 +473,9 @@ var CommentListModel = function(options) {
     self.canComment = ko.observable(options.canComment);
     self.hasChildren = ko.observable(options.hasChildren);
 
-    self.page(options.hostPage);
-    self.id = ko.observable(options.hostName);
-    self.rootId = ko.observable(options.hostName);
+    self.page(options.page);
+    self.id = ko.observable(options.rootId);
+    self.rootId = ko.observable(options.rootId);
     self.nodeId = ko.observable(options.nodeId);
     self.nodeApiUrl = options.nodeApiUrl;
 
@@ -501,13 +501,13 @@ CommentListModel.prototype.initListeners = function() {
     });
 };
 
-var onOpen = function(hostPage, hostName, nodeApiUrl) {
+var onOpen = function(page, rootId, nodeApiUrl) {
     var timestampUrl = nodeApiUrl + 'comments/timestamps/';
     var request = osfHelpers.putJSON(
         timestampUrl,
         {
-            page: hostPage,
-            rootId: hostName
+            page: page,
+            rootId: rootId
         }
     );    
     request.fail(function(xhr, textStatus, errorThrown) {
@@ -523,8 +523,8 @@ var onOpen = function(hostPage, hostName, nodeApiUrl) {
 /* options example: {
  *      nodeId: Node._id,
  *      nodeApiUrl: Node.api_url,
- *      hostPage: 'node',
- *      hostName: Node._id,
+ *      page: 'node',
+ *      rootId: Node._id,
  *      userName: User.fullname,
  *      canComment: User.canComment,
  *      hasChildren: Node.hasChildren,
@@ -533,7 +533,7 @@ var onOpen = function(hostPage, hostName, nodeApiUrl) {
 var init = function(selector, options) {
     new CommentPane(selector, {
         onOpen: function(){
-            return onOpen(options.hostPage, options.hostName, options.nodeApiUrl);
+            return onOpen(options.page, options.rootId, options.nodeApiUrl);
         }
     });
     var viewModel = new CommentListModel(options);
