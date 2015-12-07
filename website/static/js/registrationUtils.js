@@ -654,7 +654,7 @@ Draft.prototype.submitForReview = function() {
 Draft.prototype.approve = function() {
     return $osf.dialog(
         'Before you continue...',
-        'Are you sure you want to approve this submission? This action is irreversible',
+        'Are you sure you want to approve this submission? This action is irreversible.',
         'Approve',
         {
             actionButtonClass: 'btn-warning'
@@ -664,7 +664,7 @@ Draft.prototype.approve = function() {
 Draft.prototype.reject = function() {
     return $osf.dialog(
         'Before you continue...',
-        'Are you sure you want to reject this submission? This action is irreversible',
+        'Are you sure you want to reject this submission? This action is irreversible.',
         'Reject',
         {
             actionButtonClass: 'btn-danger'

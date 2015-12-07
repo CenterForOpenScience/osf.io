@@ -2,7 +2,6 @@ import functools
 
 from django.contrib.auth.decorators import login_required  # , user_passes_test
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.http import JsonResponse
 
@@ -12,6 +11,7 @@ import httplib as http
 from modularodm import Q
 
 import utils
+from admin.common_auth.models import MyUser
 
 from framework.auth.core import User as OsfUser
 from framework.mongo.utils import get_or_http_error
@@ -33,7 +33,7 @@ def get_prereg_users():
     :return: List of usernames of those who are in the prereg_group
     """
     reviewers = []
-    users = User.objects.all()
+    users = MyUser.objects.all()
     for reviewer in users:
         if (is_in_prereg_group(reviewer)):
             reviewers.append(str(reviewer.username))
