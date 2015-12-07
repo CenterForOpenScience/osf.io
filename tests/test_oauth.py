@@ -552,7 +552,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             self.provider.auto_refresh_url,
              body=json.dumps({
                 'access_token': 'refreshed_access_token',
-                'expires_at': 3600,
+                'expires_at': time.time() + 3600,
                 'refresh_token': 'refreshed_refresh_token'
             })
         )
