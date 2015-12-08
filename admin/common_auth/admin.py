@@ -2,12 +2,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Permission
 from django.contrib.auth.forms import PasswordResetForm
-from .models import MyUser, OsfUser
+from .models import MyUser
 from forms import CustomUserRegistrationForm
-
-
-class OsfUserAdmin(admin.StackedInline):
-    model = OsfUser
 
 
 class PermissionAdmin(admin.ModelAdmin):
@@ -16,10 +12,10 @@ class PermissionAdmin(admin.ModelAdmin):
 
 class CustomUserAdmin(UserAdmin):
     add_form = CustomUserRegistrationForm
-    list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed']
+    list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed', 'osf_id']
     fieldsets = (
         (None, {'fields': ('email', 'password',)}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_joined', 'last_login',)}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_joined', 'last_login', 'osf_id')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions',)}),
     )
     add_fieldsets = (
@@ -29,7 +25,6 @@ class CustomUserAdmin(UserAdmin):
     search_fields = ('email', 'first_name', 'last_name',)
     ordering = ('last_name', 'first_name',)
     actions = ['send_email_invitation']
-    inlines = (OsfUserAdmin, )
 
     # TODO - include alternative messages for warning/failure
     def send_email_invitation(self, request, queryset):

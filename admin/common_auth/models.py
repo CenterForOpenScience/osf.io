@@ -1,11 +1,11 @@
 from datetime import datetime
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
 from website.models import User as OsfUserModel
 
 
-class MyUserManager(BaseUserManager):
+class MyUserManager(models.Manager):
     def create_user(self, email, password=None):
         if not email:
             raise ValueError('Users must have an email address')
@@ -28,6 +28,10 @@ class MyUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+    def prereg_users(self):
+        return self.filter(groups__name='prereg_group')
+
+
 class MyUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         verbose_name='email address',
@@ -42,6 +46,7 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=datetime.now)
     confirmed = models.BooleanField(default=False)
+    osf_id = models.CharField(default=False, max_length=10, blank=True)
 
     objects = MyUserManager()
 
@@ -69,12 +74,6 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
 
     @property
     def osf_user(self):
-        if not self.osf_user:
-            raise RuntimeError('This Django admin user does not have an associated Osf User')
-        return OsfUserModel.load(self.osf_user.osf_id)
-
-
-class OsfUser(models.Model):
-
-    user = models.OneToOneField(MyUser, on_delete=models.CASCADE, related_name="osf_user")
-    osf_id = models.CharField(max_length=10)
+        if not self.osf_id:
+            raise RuntimeError('This user does not have an associated Osf User')
+        return OsfUserModel.load(self.osf_id)

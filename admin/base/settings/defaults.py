@@ -5,6 +5,7 @@ Django settings for the admin project.
 import os
 from urlparse import urlparse
 from website import settings as osf_settings
+# import local  # Build own local.py (used with postgres)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
@@ -94,6 +95,18 @@ TEMPLATES = [
         }
     }]
 
+# Database
+# Postgres:
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': local.POSTGRES_NAME,
+#         'USER': local.POSTGRES_USER,
+#         'PASSWORD': local.POSTGRES_PASSWORD,
+#         'HOST': local.POSTGRES_HOST,
+#         'PORT': '',
+#     }
+# }
 # Postgres settings in local.py
 
 DATABASES = {
@@ -102,6 +115,7 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'admin.base.wsgi.application'

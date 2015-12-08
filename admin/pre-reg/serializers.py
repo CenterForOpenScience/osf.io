@@ -1,8 +1,9 @@
 from framework.utils import iso8601format
 from website.project.metadata.utils import serialize_meta_schema
 
+
 # TODO: Write and use APIv2 serializer for this
-def serialize_draft_registration(draft, auth=None):
+def serialize_draft_registration(draft):
     from website.profile.utils import serialize_user  # noqa
 
     return {
