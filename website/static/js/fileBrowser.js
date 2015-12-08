@@ -36,7 +36,7 @@ var LinkObject = function (type, data, label, index) {
             return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : true}});
         }
         else if (self.type === 'node') {
-            return $osf.apiV2Url('nodes/' + self.data.uid + '/children/', { query : { 'related_counts' : true }});
+            return $osf.apiV2Url('nodes/' + self.data.uid + '/children/', { query : { 'related_counts' : true, 'embed' : 'contributors' }});
         }
         // If nothing
         throw new Error('Link could not be generated from linkObject data');
@@ -54,9 +54,12 @@ function getUID() {
 
 var xhrconfig = function (xhr) {
     xhr.withCredentials = true;
+};
+
+var xhrconfigBulk = function (xhr) {
+    xhr.withCredentials = true;
     xhr.setRequestHeader("Content-Type", "application/vnd.api+json; ext=bulk");
     xhr.setRequestHeader("Accept", "application/vnd.api+json; ext=bulk");
-
 };
 
 /**
@@ -82,8 +85,8 @@ var FileBrowser = {
 
         // Default system collections
         self.collections = [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 100 }, systemCollection : true}, 'All My Projects'),
-            new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true, 'page[size]'  : 100}, systemCollection : true}, 'All My Registrations'),
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 100, 'embed' : 'contributors' }, systemCollection : true}, 'All My Projects'),
+            new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true, 'page[size]'  : 100, 'embed' : 'contributors'}, systemCollection : true}, 'All My Registrations'),
         ];
 
         var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'sort' : 'date_created'}});
@@ -150,12 +153,6 @@ var FileBrowser = {
                 item.uid = item.id;
                 item.name = item.attributes.title;
                 item.date = new $osf.FormattableDate(item.attributes.date_modified);
-
-                // TODO: Dummy data, remove this when api is ready
-                item.contributors = [{
-                    id: '8q36f',
-                    name: 'Dummy User'
-                }];
             });
             self.data(value);
             if(value.data[0]){ // If we have projects to show get first project's logs

@@ -130,11 +130,13 @@ function _poTitleColumn(item) {
  */
 // TODO : May need refactor based on the api data
 function _poContributors(item) {
-    if (!item.data.contributors) {
+    var contributorList = item.data.embeds.contributors.data;
+    if (contributorList.length === 0) {
         return '';
     }
 
-    return item.data.contributors.map(function (person, index, arr) {
+    return contributorList.map(function (person, index, arr) {
+        var name = person.embeds.users.data.attributes.family_name;
         var comma;
         if (index === 0) {
             comma = '';
@@ -147,7 +149,7 @@ function _poContributors(item) {
         if (index === 2) {
             return m('span', ' + ' + (arr.length - 2));
         }
-        return m('span', comma + person.name);
+        return m('span', comma + name);
     });
 }
 
@@ -455,12 +457,6 @@ var tbOptions = {
             item.uid = item.id;
             item.name = item.attributes.title;
             item.date = new $osf.FormattableDate(item.attributes.date_modified);
-
-            // TODO: Dummy data, remove this when api is ready
-            item.contributors = [{
-                id: '8q36f',
-                name : 'Dummy User'
-            }];
         });
 
         return value;
