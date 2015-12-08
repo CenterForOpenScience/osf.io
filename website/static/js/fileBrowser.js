@@ -365,7 +365,7 @@ var Collections  = {
                 args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
             });
             self.newCollectionName('');
-
+            m.redraw(true);
             self.dismissModal();
         };
         self.deleteCollection = function(){
@@ -485,8 +485,16 @@ var Collections  = {
                                 m('.form-inline', [
                                     m('.form-group', [
                                         m('label[for="addCollInput]', 'Collection Name'),
-                                        m('input[type="text"].form-control.m-l-sm#addCollInput', {onchange: m.withAttr('value', ctrl.newCollectionName), value: ctrl.newCollectionName()})
+                                        m('input[type="text"].form-control.m-l-sm#addCollInput', {
+                                            onkeyup: function (ev){
+                                                if(ev.which === 13){
+                                                    ctrl.addCollection();
+                                                }
+                                                ctrl.newCollectionName($(this).val());
+                                            },
+                                            value : ctrl.newCollectionName()
 
+                                        })
                                     ])
                                 ]),
                                 m('p.m-t-sm', 'After you create your collection drag and drop projects to the collection. ')
@@ -513,6 +521,9 @@ var Collections  = {
                                         m('label[for="addCollInput]', 'Rename to: '),
                                         m('input[type="text"].form-control.m-l-sm#renameCollInput',{
                                             onkeyup: function(ev){
+                                                if (ev.which === 13) { // if enter is pressed
+                                                    ctrl.renameCollection();
+                                                }
                                                 args.collectionMenuObject().item.renamedLabel = $(this).val();
                                             },
                                             value: args.collectionMenuObject().item.renamedLabel})
