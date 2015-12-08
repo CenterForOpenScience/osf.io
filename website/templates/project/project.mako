@@ -20,7 +20,10 @@
                     % endif
                 % endif
                 <h2 class="node-title">
-                    <img id="instLogo" data-bind="attr: {src: instLogoPath}"></img><span id="nodeTitleEditable" class="overflow">${node['title']}</span>
+                    % if node['institution']:
+                        <img class="img-circle" height="75" width="75" id="instLogo" data-bind="attr: {src: instLogoPath}">
+                    % endif
+                    <span id="nodeTitleEditable" class="overflow"> ${node['title']}</span>
                 </h2>
             </div>
             <div class="col-sm-7 col-md-5">
