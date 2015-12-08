@@ -36,7 +36,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from website.models import Node, Pointer, WatchConfig, PrivateLink
+from website.models import Guid, Node, Pointer, WatchConfig, PrivateLink, Comment
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
@@ -44,6 +44,8 @@ from website.project import new_folder
 from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
+from website.files.models.base import File, FileNode
+from datetime import datetime
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 
@@ -691,7 +693,8 @@ def _should_show_wiki_widget(node, user):
     else:
         return has_wiki
 
-def _view_project(node, auth, primary=False):
+
+def _view_project(node, auth, primary=False, check_files=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
@@ -715,7 +718,9 @@ def _view_project(node, auth, primary=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message, kind='info', dismissible=False, trust=True)
+                status.push_status_message(message, 'info', dismissible=False, trust=True)
+    n_unread_node = Comment.find_unread(user, node, page='node')
+    n_unread_files = Comment.find_unread(user, node, page='files', check=check_files)
     data = {
         'node': {
             'id': node._primary_key,
@@ -764,8 +769,8 @@ def _view_project(node, auth, primary=False):
             'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
             'comment_level': node.comment_level,
-            'has_comments': bool(getattr(node, 'commented', [])),
-            'has_children': bool(getattr(node, 'commented', False)),
+            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
+            'has_children': bool(Comment.find(Q('node', 'eq', node))),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
@@ -801,6 +806,11 @@ def _view_project(node, auth, primary=False):
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': dashboard_id,
+            'unread_comments': {
+                'node': n_unread_node,
+                'files': n_unread_files,
+                'total': n_unread_node + n_unread_files
+            }
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts

@@ -207,7 +207,7 @@
 <%include file="project/modal_add_component.mako"/>
 
 % if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_template.mako"/>
+    <%include file="include/comment_pane_template.mako"/>
 % endif
 
 <div class="row">
@@ -221,6 +221,7 @@
         }'></div>
         %endif
 
+        <!-- Files -->
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Files</h3>

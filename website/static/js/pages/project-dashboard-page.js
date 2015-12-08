@@ -36,12 +36,18 @@ $('body').on('nodeLoad', function(event, data) {
 });
 
 // Initialize comment pane w/ it's viewmodel
-var $comments = $('#comments');
+var $comments = $('.comments');
 if ($comments.length) {
-    var userName = window.contextVars.currentUser.name;
-    var canComment = window.contextVars.currentUser.canComment;
-    var hasChildren = window.contextVars.node.hasChildren;
-    Comment.init('#commentPane', userName, canComment, hasChildren);
+    var options = {
+        nodeId : window.contextVars.node.id,
+        nodeApiUrl: window.contextVars.node.urls.api,
+        page: 'node',
+        rootId: window.contextVars.node.id,
+        userName: window.contextVars.currentUser.name,
+        canComment: window.contextVars.currentUser.canComment,
+        hasChildren: window.contextVars.node.hasChildren
+    };
+    Comment.init('.comment-pane', options);
 }
 
 // Initialize CitationWidget if user isn't viewing through an anonymized VOL
