@@ -5,6 +5,7 @@ import logging
 import datetime
 import functools
 import httplib as http
+import time
 import urlparse
 import uuid
 
@@ -396,7 +397,7 @@ class ExternalProvider(object):
         if not (force or self._needs_refresh()):
             return
 
-        resp_expiry_fn = resp_expiry_fn or (lambda x: datetime.datetime.fromtimestamp(float(x['expires_at'])))
+        resp_expiry_fn = resp_expiry_fn or (lambda x: datetime.datetime.utcfromtimestamp(time.time() + float(x['expires_in'])))
 
         client = OAuth2Session(
             self.client_id,
