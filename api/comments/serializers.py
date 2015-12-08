@@ -87,8 +87,8 @@ class CommentSerializer(JSONAPISerializer):
             elif name == 'storedfilenode':
                 return 'files'
 
-    def get_target_tile(self, obj):
-        return obj.name if isinstance(obj.root_target, StoredFileNode) else ''
+    def get_target_title(self, obj):
+        return obj.name if isinstance(obj, StoredFileNode) else ''
 
 
 class CommentCreateSerializer(CommentSerializer):
