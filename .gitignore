@@ -122,3 +122,4 @@ admin/static/public/
 admin/webpack-stats.json
 # bower
 admin/static/vendor/
+admin/db.sqlite3
