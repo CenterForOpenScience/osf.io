@@ -1016,9 +1016,6 @@ def node_child_tree(user, node_ids):
         can_read_children = node.has_permission_on_children(user, 'read')
         if not can_read and not can_read_children:
             continue
-        for addon in node.get_addon_names():
-            if (addon is not 'osfstorage') and (addon is not 'wiki') and (addons.count(addon) != 1):
-                addons.append(addon)
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
@@ -1038,7 +1035,6 @@ def node_child_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
-                'addons': addons,
                 'can_write': can_write
             },
             'user_id': user._id,
@@ -1060,7 +1056,14 @@ def node_child_tree(user, node_ids):
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    return node_child_tree(auth.user, [node._id])
+    tree = node_child_tree(auth.user, [node._id])
+    if tree:
+        return tree
+    else:
+        raise HTTPError(
+            http.FORBIDDEN,
+            data=dict(message_long='User does not have read permission.')
+        )
 
 
 @must_be_contributor_or_public
