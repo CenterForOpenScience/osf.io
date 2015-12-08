@@ -143,8 +143,4 @@ def update_draft(request, draft_pk):
         draft.save()
     except (NodeStateError):
         raise HTTPError(http.BAD_REQUEST)
-    return JsonResponse(
-        {
-            'draft': serializers.serialize_draft_registration(draft)
-        }
-    )
+    return JsonResponse(serializers.serialize_draft_registration(draft))
