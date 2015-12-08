@@ -155,7 +155,9 @@ var FileBrowser = {
                 }];
             });
             self.data(value);
-            self.getLogs(value.data[0].id);
+            if(value.data[0]){ // If we have projects to show get first project's logs
+                self.getLogs(value.data[0].id);
+            }
             self.reload(true);
         };
 
