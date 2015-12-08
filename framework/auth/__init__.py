@@ -8,7 +8,7 @@ from framework import bcrypt
 from framework.auth import signals
 from framework.auth.exceptions import DuplicateEmailError
 
-from .core import User, Auth, Institution
+from .core import User, Auth
 from .core import get_user
 
 

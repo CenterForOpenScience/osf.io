@@ -22,7 +22,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import StoredObject
-from framework.auth import User, Auth, Institution
+from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
@@ -32,6 +32,7 @@ from website.oauth.models import (
     ExternalAccount,
     ExternalProvider
 )
+from website.models import Institution
 from website.project.model import (
     Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig,
