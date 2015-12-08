@@ -236,29 +236,12 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
         if not timestamps.get(page, None):
             timestamps[page] = dict()
 
-        # if updating timestamp on the files page...
-        if root_id is None:
-            return _update_comments_timestamp_total(node, auth, page)
-
         # if updating timestamp on a specific file page
         timestamps[page][root_id] = datetime.utcnow()
         auth.user.save()
         return {node._id: auth.user.comments_viewed_timestamp[node._id][page][root_id].isoformat()}
     else:
         return {}
-
-
-def _update_comments_timestamp_total(node, auth, page):
-    ret = {}
-    if page == Comment.FILES:
-        for root_target_id in node.commented_files:
-            root_target = File.load(root_target_id)
-            comments = Comment.find(Q('target', 'eq', root_target))
-            if comments and comments[0].is_hidden:
-                continue
-            ret = _update_comments_timestamp(auth, node, page, root_target_id)
-    return ret
-
 
 @must_be_logged_in
 @must_be_contributor_or_public
