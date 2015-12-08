@@ -5,12 +5,8 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');
 var Raven = require('raven-js');
-
-var oop = require('./oop');
 var $osf = require('./osfHelpers');
-var Paginator = require('./paginator');
 var osfHelpers = require('js/osfHelpers');
 var m = require('mithril');
 var Treebeard = require('treebeard');
