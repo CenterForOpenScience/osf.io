@@ -33,6 +33,7 @@ from api.nodes.permissions import (
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
+    ExcludeRetractions
 )
 from api.base.exceptions import ServiceUnavailableError
 from api.logs.serializers import NodeLogSerializer
@@ -137,7 +138,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
-    node, meaning additional requests to an individual node's detail view are not necessary.
+    node, meaning additional requests to an individual node's detail view are not necessary.  For a registration,
+    however, navigate to the individual registration's detail view for registration-specific information.
 
     <!--- Copied Spiel from NodeDetail -->
 
@@ -145,8 +147,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.  Registrations are not included
-    in this endpoint.
+    a category other than project, and children nodes may have a category of project.  Registrations can be accessed
+    from this endpoint, but retracted registrations are excluded.
 
     ##Node Attributes
 
@@ -231,8 +233,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
-            Q('is_registration', 'eq', False)
+            Q('is_folder', 'ne', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
@@ -242,21 +243,29 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         query = base_query & permission_query
         return query
 
+    def filter_non_retracted_nodes(self, query):
+        nodes = Node.find(query)
+        # Refetching because this method needs to return a queryset instead of a
+        # list comprehension for subsequent filtering on ordering.
+        non_retracted_list = [node._id for node in nodes if not node.is_retracted]
+        non_retracted_nodes = Node.find(Q('_id', 'in', non_retracted_list))
+        return non_retracted_nodes
+
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
-
             auth = get_user_auth(self.request)
-            nodes = Node.find(query)
+
+            nodes = self.filter_non_retracted_nodes(query)
             for node in nodes:
                 if not node.can_edit(auth):
                     raise PermissionDenied
             return nodes
         else:
             query = self.get_query_from_request()
-            return Node.find(query)
+            return self.filter_non_retracted_nodes(query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -303,8 +312,8 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project. Registrations cannot be accessed
-    through this endpoint.
+    a category other than project, and children nodes may have a category of project. Registrations can be accessed through
+    this endpoint, though registration-specific fields must be retrieved through a registration's detail view.
 
     ###Permissions
 
@@ -354,6 +363,10 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
     If this node was forked from another node, the canonical endpoint of the node that was forked from will be
     available in the `/forked_from/links/related/href` key.  Otherwise, it will be null.
+
+    ###Registrations
+
+    List of registrations of the current node.
 
     ##Links
 
@@ -409,6 +422,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
+        ExcludeRetractions,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -420,10 +434,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
-        node = self.get_node()
-        if node.is_registration:
-            raise ValidationError('This is a registration.')
-        return node
+        return self.get_node()
 
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
@@ -722,7 +733,6 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         tags               array of strings   list of tags that describe the registered node
         fork               boolean            is this project a fork?
         registration       boolean            has this project been registered?
-        collection         boolean            is this registered node a collection of other nodes?
         dashboard          boolean            is this registered node visible on the user dashboard?
         public             boolean            has this registration been made publicly-visible?
         retracted          boolean            has this registration been retracted?
@@ -750,6 +760,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ExcludeRetractions
     )
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -846,6 +857,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
+        ExcludeRetractions
     )
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
@@ -944,6 +956,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
+        ExcludeRetractions,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1025,6 +1038,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ReadOnlyIfRegistration,
+        ExcludeRetractions
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1289,6 +1303,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
         base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
         base_permissions.TokenHasScope,
+        ExcludeRetractions
     )
 
     ordering = ('materialized_path',)  # default ordering
@@ -1325,6 +1340,7 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
         base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
         base_permissions.TokenHasScope,
+        ExcludeRetractions
     )
 
     serializer_class = FileSerializer
@@ -1475,6 +1491,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        ExcludeRetractions,
         base_permissions.TokenHasScope,
     )
 
@@ -1619,6 +1636,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         base_permissions.TokenHasScope,
+        ExcludeRetractions
     )
 
     def get_default_odm_query(self):
@@ -1702,6 +1720,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanCommentOrPublic,
         base_permissions.TokenHasScope,
+        ExcludeRetractions
     )
 
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
