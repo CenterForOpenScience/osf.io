@@ -55,8 +55,6 @@ class Box(ExternalProvider):
             'profile_url': 'https://app.box.com/profile/{0}'.format(about['id'])
         }
 
-    def refresh_oauth_key(self, force=False):
-        super(Box, self).refresh_oauth_key(force=force, resp_expiry_fn=(lambda x: datetime.utcfromtimestamp(time.time() + float(x['expires_in']))))
 
 class BoxUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific box information
