@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
 import logging
-import time
 
 from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
