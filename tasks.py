@@ -14,25 +14,13 @@ import invoke
 from invoke import run, Collection
 
 from website import settings
-from admin import tasks as api_tasks
+from admin import tasks as admin_tasks
+from tasks_utils import pip_install, bin_prefix
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
-
-
-def get_bin_path():
-    """Get parent path of current python binary.
-    """
-    return os.path.dirname(sys.executable)
-
-
-def bin_prefix(cmd):
-    """Prefix command with current binary path.
-    """
-    return os.path.join(get_bin_path(), cmd)
-
 
 try:
     __import__('rednose')
@@ -42,7 +30,8 @@ else:
     TEST_CMD = 'nosetests --rednose'
 
 ns = Collection()
-ns.add_collection(Collection.from_module(api_tasks), name='admin')
+ns.add_collection(Collection.from_module(admin_tasks), name='admin')
+
 
 def task(*args, **kwargs):
     """Behaves the same way as invoke.task. Adds the task
@@ -420,16 +409,6 @@ def jshint():
 @task(aliases=['flake8'])
 def flake():
     run('flake8 .', echo=True)
-
-
-def pip_install(req_file):
-    """Return the proper 'pip install' command for installing the dependencies
-    defined in ``req_file``.
-    """
-    cmd = bin_prefix('pip install --exists-action w --upgrade -r {} '.format(req_file))
-    if WHEELHOUSE_PATH:
-        cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
-    return cmd
 
 
 @task(aliases=['req'])
