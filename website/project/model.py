@@ -220,6 +220,13 @@ class Comment(GuidStoredObject):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    def get_comment_page_url(self):
+        if self.page == Comment.FILES:
+            path = self.root_target.path[1:]
+            return self.node.web_url_for('addon_view_or_download_file', provider=self.root_target.provider, path=path, _absolute=True)
+        else:
+            return self.node.absolute_url
+
     def get_content(self, auth):
         """ Returns the comment content if the user is allowed to see it. Deleted comments
         can only be viewed by the user who created the comment."""

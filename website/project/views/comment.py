@@ -117,12 +117,12 @@ def add_comment(auth, node, **kwargs):
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
         content=content,
-        page_type=get_page_type(page, node),
-        page_title=get_root_target_title(page, comment.root_target),
-        provider=get_file_provider(page, comment.root_target),
+        page_type='file' if page == Comment.FILES else node.project_or_component,
+        page_title=comment.root_target.name if page == Comment.FILES else '',
+        provider=PROVIDERS[comment.root_target.provider] if page == Comment.FILES else '',
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
-        url=get_comment_url(node, page, comment.root_target)
+        url=comment.get_comment_page_url()
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     sent_subscribers = notify(
@@ -146,37 +146,6 @@ def add_comment(auth, node, **kwargs):
     return {
         'comment': serialize_comment(comment, auth)
     }, http.CREATED
-
-
-def get_file_provider(page, root_target):
-    if page == Comment.FILES:
-        return PROVIDERS[root_target.provider]
-    else:
-        return ''
-
-
-def get_page_type(page, node):
-    if page == Comment.FILES:
-        return 'file'
-    elif node.parent_node:
-        return 'component'
-    else:
-        return 'project'
-
-
-def get_root_target_title(page, root_target):
-    if page == Comment.FILES:
-        return root_target.name
-    else:
-        return ''
-
-
-def get_comment_url(node, page, root_target):
-    if page == Comment.FILES:
-        path = root_target.path[1:]
-        return node.web_url_for('addon_view_or_download_file', provider=root_target.provider, path=path, _absolute=True)
-    else:
-        return node.absolute_url
 
 
 def is_reply(target):
