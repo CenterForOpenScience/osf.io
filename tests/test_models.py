@@ -2034,12 +2034,11 @@ class TestNodeTraversals(OsfTestCase):
         self.root = ProjectFactory(creator=self.user)
 
     def test_next_descendants(self):
-
-        comp1 = ProjectFactory(creator=self.user, parent=self.root._id)
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
         comp1a.add_contributor(self.viewer, auth=self.auth, permissions='read')
         ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=self.root._id)
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
         comp2.add_contributor(self.viewer, auth=self.auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
         comp2a.add_contributor(self.viewer, auth=self.auth, permissions='read')
@@ -2073,11 +2072,11 @@ class TestNodeTraversals(OsfTestCase):
         assert_false(proj.node__registrations)
 
     def test_get_descendants_recursive(self):
-        comp1 = ProjectFactory(creator=self.user, parent=self.root._id)
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
         comp1a.add_contributor(self.viewer, auth=self.auth, permissions='read')
         comp1b = ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=self.root._id)
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
         comp2.add_contributor(self.viewer, auth=self.auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
         comp2a.add_contributor(self.viewer, auth=self.auth, permissions='read')
@@ -2088,11 +2087,11 @@ class TestNodeTraversals(OsfTestCase):
         assert_false({node._id for node in [comp1, comp1a, comp1b, comp2, comp2a, comp2b]}.difference(ids))
 
     def test_get_descendants_recursive_filtered(self):
-        comp1 = ProjectFactory(creator=self.user, parent=self.root._id)
+        comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
         comp1a.add_contributor(self.viewer, auth=self.auth, permissions='read')
         ProjectFactory(creator=self.user, parent=comp1)
-        comp2 = ProjectFactory(creator=self.user, parent=self.root._id)
+        comp2 = ProjectFactory(creator=self.user, parent=self.root)
         comp2.add_contributor(self.viewer, auth=self.auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
         comp2a.add_contributor(self.viewer, auth=self.auth, permissions='read')
@@ -2106,8 +2105,8 @@ class TestNodeTraversals(OsfTestCase):
         assert_false(ids.difference(nids))
 
     def test_get_descendants_recursive_cyclic(self):
-        point1 = ProjectFactory(creator=self.user, parent=self.root._id)
-        point2 = ProjectFactory(creator=self.user, parent=self.root._id)
+        point1 = ProjectFactory(creator=self.user, parent=self.root)
+        point2 = ProjectFactory(creator=self.user, parent=self.root)
         point1.add_pointer(point2, auth=self.auth)
         point2.add_pointer(point1, auth=self.auth)
 
@@ -3069,7 +3068,7 @@ class TestRoot(OsfTestCase):
     def test_child_project_has_root_of_parent(self):
         child = NodeFactory(parent=self.project)
         assert_equal(child.root._id, self.project._id)
-        # assert_equal(node.root._id, self.project.root._id)
+        assert_equal(child.root._id, self.project.root._id)
 
     def test_grandchild_root_relationships(self):
         child_node_one = NodeFactory(parent=self.project)
