@@ -8,11 +8,13 @@ from framework.transactions.context import TokuTransaction
 INSTITUTIONS = [
     {
         'name': 'Virginia Tech',
-        '_id': 'VT'
+        '_id': 'VT',
+        'logo_name': 'vt.jpeg',
     },
     {
         'name': 'Notre Dame',
-        '_id': 'ND'
+        '_id': 'ND',
+        'logo_name': 'kenichi.png',
     }
 ]
 
@@ -29,6 +31,8 @@ def update_or_create(inst):
 
 def add_institutions():
     user = User.find_one(Q('username', 'eq', 'qwe@net.com'))
+    user.affiliated_institutions = []
+    user.save()
     for inst in INSTITUTIONS:
         with TokuTransaction():
             new_inst, inst_created = update_or_create(inst)

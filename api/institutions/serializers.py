@@ -5,7 +5,7 @@ from api.base.serializers import JSONAPISerializer, RelationshipField, LinksFiel
 class InstitutionSerializer(JSONAPISerializer):
     name = ser.CharField(required=True)
     id = ser.CharField(required=True, source='_id')
-
+    logopath = ser.CharField(source='logo_path')
     links = LinksField({'self': 'get_api_url',
                         'html': 'get_absolute_url', })
 

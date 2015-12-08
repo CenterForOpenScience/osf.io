@@ -150,6 +150,19 @@ var ProjectViewModel = function(data) {
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
+    self.instLogoPath = ko.observable('');
+
+    var req = $.ajax({
+        'method': 'GET',
+        'url': window.contextVars.apiV2Prefix + 'nodes/' + window.nodeId + '/institution/',
+    });
+    req.done(function(response) {
+        self.instLogoPath(response.data.attributes.logopath);
+    });
+    req.fail(function(){
+
+    });
+
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.pureComputed(function() {
         return self.watchedCount().toString();
@@ -209,6 +222,7 @@ var ProjectViewModel = function(data) {
                 }
             }
         }));
+
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',

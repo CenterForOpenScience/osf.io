@@ -1334,6 +1334,7 @@ class Institution(StoredObject):
 
     _id = fields.StringField(index=True, unique=True, primary=True)
     name = fields.StringField(required=True)
+    logo_name = fields.StringField()
 
     @property
     def pk(self):
@@ -1355,6 +1356,10 @@ class Institution(StoredObject):
     def absolute_api_v2_url(self):
         from api.base.utils import absolute_reverse
         return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def logo_path(self):
+        return '/static/img/institutions/{}/'.format(self.logo_name)
 
     def get_api_url(self):
         return self.absolute_api_v2_url
