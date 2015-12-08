@@ -3,6 +3,7 @@
  */
 'use strict';
 
+require('css/add-project-plugin.css');
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
@@ -26,6 +27,7 @@ var AddProject = {
 
         };
         self.newProjectName = m.prop('');
+        self.newProjectDesc = m.prop('');
         self.goToProjectLink = m.prop('');
         self.errorMessageType = m.prop('unknown');
         self.errorMessage = {
@@ -39,7 +41,8 @@ var AddProject = {
                         'type': 'nodes',
                         'attributes': {
                             'title': self.newProjectName(),
-                            'category': 'project'
+                            'category': 'project',
+                            'description' : self.newProjectDesc()
                         }
                     }
                 };
@@ -75,9 +78,9 @@ var AddProject = {
                 ]),
                 m('.modal-body', [
                     m('.form-inline', [
-                        m('.form-group', [
-                            m('label[for="addCollInput]', 'Project Name'),
-                            m('input[type="text"].form-control.m-l-sm#addCollInput', {
+                        m('.form-group.m-v-sm', [
+                            m('label[for="projectName]', 'Project Name'),
+                            m('input[type="text"].form-control.m-l-sm#projectName', {
                                 onkeyup: function(ev){
                                     if (ev.which === 13) {
                                          ctrl.add();
@@ -86,6 +89,28 @@ var AddProject = {
                                 },
                                 value : ctrl.newProjectName()
                             })
+                        ]),
+                        m('.form-group.m-v-sm', [
+                            m('label[for="projectDesc]', 'Project Description'),
+                            m('textarea.form-control.m-l-sm#projectDesc', {
+                                onkeyup: function(ev){
+                                    ctrl.newProjectDesc($(this).val());
+                                },
+                                value : ctrl.newProjectDesc()
+                            })
+                        ]),
+                        m('.category-group.clearfix.m-v-sm', [
+                            m('.category-group-item','Project'),
+                            m('.category-group-item','Hypothesis'),
+                            m('.category-group-item','Methods and Measures'),
+                            m('.category-group-item','Procedure'),
+                            m('.category-group-item','Instrumentation'),
+                            m('.category-group-item','Data'),
+                            m('.category-group-item','Analysis'),
+                            m('.category-group-item','Communication'),
+                            m('.category-group-item','Other'),
+                            m('.category-group-item','Uncategorized')
+
                         ])
                     ]),
                 ]),

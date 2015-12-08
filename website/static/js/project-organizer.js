@@ -417,9 +417,6 @@ var tbOptions = {
     xhrconfig : function(xhr) {
         xhr.withCredentials = true;
     },
-    onselectrow : function(row){
-        console.log(row);
-    },
     ondblclickrow : function(item, event){
         var tb = this;
         var node = item.data;
