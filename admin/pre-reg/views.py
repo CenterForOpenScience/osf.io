@@ -107,9 +107,9 @@ def get_drafts(request):
         serialized_drafts
     )
 
+@csrf_exempt
 @login_required
 # @user_passes_test(is_in_prereg_group)
-@csrf_exempt
 def approve_draft(request, draft_pk):
     """Approves current draft
     :param user: Current logged in user
@@ -122,9 +122,9 @@ def approve_draft(request, draft_pk):
     draft.approve(user)
     return JsonResponse({})
 
+@csrf_exempt
 @login_required
 # @user_passes_test(is_in_prereg_group)
-@csrf_exempt
 def reject_draft(request, draft_pk):
     """Rejects current draft
     :param user: Current logged in user
@@ -137,9 +137,9 @@ def reject_draft(request, draft_pk):
     draft.reject(user)
     return JsonResponse({})
 
+@csrf_exempt
 @login_required
 # @user_passes_test(is_in_prereg_group)
-@csrf_exempt
 def update_draft(request, draft_pk):
     """Updates current draft to save admin comments
 
@@ -155,8 +155,4 @@ def update_draft(request, draft_pk):
         draft.save()
     except (NodeStateError):
         raise HTTPError(http.BAD_REQUEST)
-    return JsonResponse(
-        {
-            'draft': utils.serialize_draft_registration(draft)
-        }
-    )
+    return JsonResponse(utils.serialize_draft_registration(draft))
