@@ -22,4 +22,8 @@ class TestInstitutionUsersList(ApiTestCase):
         res = self.app.get(self.institution_user_url)
 
         assert_equal(res.status_code, 200)
+
+        ids = [each['id'] for each in res.json['data']]
         assert_equal(len(res.json['data']), 2)
+        assert_in(self.user1._id, ids)
+        assert_in(self.user2._id, ids)
