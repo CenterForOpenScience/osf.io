@@ -157,6 +157,13 @@ var FileBrowser = {
             self.data(value);
             if(value.data[0]){ // If we have projects to show get first project's logs
                 self.getLogs(value.data[0].id);
+            } else {
+                var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
+                if(lastcrumb.type === 'collection'){
+                    self.nonLoadTemplate(m('', 'This collection has no projects. Add new.'));
+                } else {
+                    self.nonLoadTemplate(m('', 'This project has no subcomponents. Add new.'));
+                }
             }
             self.reload(true);
         };
@@ -319,7 +326,7 @@ var FileBrowser = {
                 })
             ]) : '',
             m('.fb-main', { style : poStyle },
-                ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('#poOrganizer',  m.component( ProjectOrganizer, {
+                ctrl.data().data.length === 0 ? ctrl.nonLoadTemplate() : m('#poOrganizer',  m.component( ProjectOrganizer, {
                         filesData : ctrl.data,
                         updateSelected : ctrl.updateSelected,
                         updateFilesData : ctrl.updateFilesData,
