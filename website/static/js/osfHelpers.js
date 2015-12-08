@@ -744,6 +744,36 @@ var any = function(listOfBools) {
     return false;
 };
 
+var dialog = function(title, message, actionButtonLabel, options) {
+    var ret = $.Deferred();
+    options = $.extend({}, {
+        actionButtonClass: 'btn-success',
+        cancelButtonLabel: 'Cancel',
+        cancelButtonClass: 'btn-default'
+    }, options || {});
+
+    bootbox.dialog({
+        title: title,
+        message: message,
+        buttons: {
+            cancel: {
+                label: options.cancelButtonLabel,
+                className: options.cancelButtonClass,
+                callback: function() {
+                    bootbox.hideAll();
+                    ret.reject();
+                }
+            },
+            approve: {
+                label: actionButtonLabel,
+                className: options.actionButtonClass,
+                callback: ret.resolve
+            }
+        }
+    });
+    return ret.promise();
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -778,5 +808,6 @@ module.exports = window.$.osf = {
     isSafari:isSafari,
     indexOf: indexOf,
     currentUser: currentUser,
-    any: any
+    any: any,
+    dialog: dialog
 };

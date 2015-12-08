@@ -16,4 +16,5 @@ def serialize_draft_registration(draft):
         'requires_approval': draft.requires_approval,
         'is_pending_approval': draft.is_pending_review,
         'is_approved': draft.is_approved,
+        'notes': draft.notes
     }

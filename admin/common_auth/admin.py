@@ -2,16 +2,17 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Permission
 from django.contrib.auth.forms import PasswordResetForm
-from .models import MyUser
+from .models import MyUser, OsfUser
 from forms import CustomUserRegistrationForm
 
-from models import OsfUser
 
 class OsfUserAdmin(admin.StackedInline):
     model = OsfUser
 
+
 class PermissionAdmin(admin.ModelAdmin):
     search_fields = ['name', 'codename']
+
 
 class CustomUserAdmin(UserAdmin):
     add_form = CustomUserRegistrationForm
@@ -49,6 +50,7 @@ class CustomUserAdmin(UserAdmin):
         else:
             obj.is_active = False
         obj.save()
+
 
 admin.site.register(MyUser, CustomUserAdmin)
 admin.site.register(Permission, PermissionAdmin)

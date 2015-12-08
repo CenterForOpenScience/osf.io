@@ -3368,6 +3368,29 @@ class Sanction(StoredObject):
     def is_rejected(self):
         return self.state == Sanction.REJECTED
 
+    def approve(self, user):
+        raise NotImplementedError("Sanction subclasses must implement an approve method.")
+
+    def reject(self, user):
+        raise NotImplementedError("Sanction subclasses must implement an approve method.")
+
+    def _on_reject(self, user):
+        """Callback for rejection of a Sanction
+
+        :param User user:
+        """
+        raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
+
+    def _on_complete(self, user):
+        """Callback for when a Sanction has approval and enters the ACTIVE state
+
+        :param User user:
+        """
+        raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
+
+
+class TokenApprovableSanction(Sanction):
+
     def _validate_authorizer(self, user):
         """Subclasses may choose to provide extra restrictions on who can be an authorizer
 
@@ -3426,21 +3449,6 @@ class Sanction(StoredObject):
             self.state = Sanction.APPROVED
             self._on_complete(user)
 
-    def _on_reject(self, user, token):
-        """Callback for rejection of a Sanction
-
-        :param User user:
-        :param str token: user's approval token
-        """
-        raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
-
-    def _on_complete(self, user):
-        """Callback for when a Sanction has approval and enters the ACTIVE state
-
-        :param User user:
-        """
-        raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
-
     def token_for_user(self, user, method):
         """
         :param str method: 'approval' | 'rejection'
@@ -3488,7 +3496,7 @@ class Sanction(StoredObject):
                 self._notify_non_authorizer(contrib)
 
 
-class EmailApprovableSanction(Sanction):
+class EmailApprovableSanction(TokenApprovableSanction):
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
@@ -3967,7 +3975,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
         self.save()
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, user):
         register = self._get_registration()
         registered_from = register.registered_from
         register.delete_registration_tree(save=True)
@@ -4005,6 +4013,24 @@ class DraftRegistrationApproval(Sanction):
             raise NotImplementedError(
                 'TODO: add a generic email template for registration approvals'
             )
+
+    def approve(self, user):
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        if user._id not in draft.get_authorizers():
+            raise PermissionsError("This user does not have permission to approve this draft.")
+        self.state = Sanction.APPROVED
+        self._on_complete(user)
+
+    def reject(self, user):
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        if user._id not in draft.get_authorizers():
+            raise PermissionsError("This user does not have permission to approve this draft.")
+        self.state = Sanction.REJECTED
+        self._on_reject(user)
 
     def _on_complete(self, user):
         draft = DraftRegistration.find_one(
@@ -4178,11 +4204,9 @@ class DraftRegistration(StoredObject):
         return register
 
     def approve(self, user):
-        token = self.approval.token_for_user(user, 'approval')
-        self.approval.approve(user, token)
+        self.approval.approve(user)
         self.approval.save()
 
     def reject(self, user):
-        token = self.approval.token_for_user(user, 'rejection')
-        self.approval.reject(user, token)
+        self.approval.reject(user)
         self.approval.save()

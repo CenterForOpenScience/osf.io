@@ -2,10 +2,9 @@
     "name": "Prereg Challenge",
     "version": 2,
     "flags": {
-        "isApproved": false,
-        "isPendingReview": false,
         "paymentSent": false,
-        "hasConsent": true
+        "hasProofOfPublication": false,
+        "assignee": null
     },
     "config": {
         "requiresApproval": true,

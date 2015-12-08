@@ -2,6 +2,8 @@ from datetime import datetime
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
+from website.models import User as OsfUserModel
+
 
 class MyUserManager(models.Manager):
 
@@ -70,6 +72,12 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     # def is_staff(self):
     #     "Is the user a member of staff?"
     #     return self.is_admin
+
+    @property
+    def osf_user(self):
+        if not self.osf_user:
+            raise RuntimeError('This Django admin user does not have an associated Osf User')
+        return OsfUserModel.load(self.osf_user.osf_id)
 
 
 class OsfUser(models.Model):

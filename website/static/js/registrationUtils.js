@@ -652,50 +652,24 @@ Draft.prototype.submitForReview = function() {
     }
 };
 Draft.prototype.approve = function() {
-    var ret = $.Deferred();
-    bootbox.dialog({
-        title: 'Before you continue...',
-        message: 'Are you sure you want to approve this submission? This action is irreversible',
-        buttons: {
-            cancel: {
-                label: 'Cancel',
-                className: 'btn-default',
-                callback: function() {
-                    bootbox.hideAll();
-                    ret.reject(); 
-                }
-            },
-            approve: {
-                label: 'Approve',
-                class: 'btn-danger',
-                callback: ret.resolve
-            }
-        }                
-    });
-    return ret.promise();
+    return $osf.dialog(
+        'Before you continue...',
+        'Are you sure you want to approve this submission? This action is irreversible.',
+        'Approve',
+        {
+            actionButtonClass: 'btn-warning'
+        }
+    );
 };
-Draft.prototype.reject = function(confirmed) {
-    var ret = $.Deferred();
-    bootbox.dialog({
-        title: 'Before you continue...',
-        message: 'Are you sure you want to reject this submission? This action is irreversible',
-        buttons: {
-            cancel: {
-                label: 'Cancel',
-                className: 'btn-default',
-                callback: function() {
-                    bootbox.hideAll();
-                    ret.reject();
-                }
-            },
-            approve: {
-                label: 'Approve',
-                class: 'btn-danger',
-                callback: ret.resolve       
-            }
-        }                
-    });
-    return ret.promise();
+Draft.prototype.reject = function() {
+    return $osf.dialog(
+        'Before you continue...',
+        'Are you sure you want to reject this submission? This action is irreversible.',
+        'Reject',
+        {
+            actionButtonClass: 'btn-danger'
+        }
+    );
 };
 
 /**

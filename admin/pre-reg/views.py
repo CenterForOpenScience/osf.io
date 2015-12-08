@@ -2,7 +2,6 @@ import functools
 
 from django.contrib.auth.decorators import login_required  # , user_passes_test
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.http import JsonResponse
 
@@ -16,7 +15,7 @@ from admin.common_auth.models import MyUser
 
 from framework.auth.core import User as OsfUser
 from framework.mongo.utils import get_or_http_error
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import HTTPError
 from website.project.model import MetaSchema, DraftRegistration
 from website.exceptions import NodeStateError
 
@@ -115,11 +114,7 @@ def approve_draft(request, draft_pk):
     draft = get_draft_or_error(draft_pk)
 
     user = load_osf_user(request.user)
-    try:
-        draft.approve(user)
-    except PermissionsError:
-        draft.approval.add_authorizer(user, save=True)
-        draft.approve(user)
+    draft.approve(user)
     return JsonResponse({})
 
 
@@ -135,13 +130,8 @@ def reject_draft(request, draft_pk):
     draft = get_draft_or_error(draft_pk)
 
     user = load_osf_user(request.user)
-    try:
-        draft.reject(user)
-    except PermissionsError:
-        draft.approval.add_authorizer(user, save=True)
-        draft.reject(user)
+    draft.reject(user)
     return JsonResponse({})
-
 
 @login_required
 # @user_passes_test(is_in_prereg_group)
@@ -152,7 +142,7 @@ def update_draft(request, draft_pk):
     :param draft_pk: Unique id for current draft
     :return: DraftRegistration obj
     """
-    data = json.load(request)
+    data = json.loads(request.body)
     draft = get_draft_or_error(draft_pk)
 
     schema_data = data.get('schema_data', {})
