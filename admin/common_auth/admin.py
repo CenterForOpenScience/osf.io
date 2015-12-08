@@ -31,6 +31,7 @@ class CustomUserAdmin(UserAdmin):
     actions = ['send_email_invitation']
     inlines = (OsfUserAdmin, )
 
+    # TODO - include alternative messages for warning/failure
     def send_email_invitation(self, request, queryset):
         for user in queryset:
             reset_form = PasswordResetForm({'email': user.email}, request.POST)
