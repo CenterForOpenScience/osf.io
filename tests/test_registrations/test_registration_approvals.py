@@ -19,6 +19,7 @@ from website.project.model import (
     RegistrationApproval,
 )
 
+
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
 })
