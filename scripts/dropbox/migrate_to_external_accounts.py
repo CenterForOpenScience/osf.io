@@ -70,6 +70,7 @@ def salvage_broken_user_settings_document(document):
             # Invalid token probably
             return False
         else:
+            document = database['dropboxusersettings'].find_one({'_id': document['_id']})
             return verify_user_settings_document(document)
 
     return False
@@ -201,7 +202,7 @@ def migrate(dry_run=True, remove_old=True):
                 'user_settings': user_settings_document['_id']
             })
             if not user or not user.is_active:
-                if linked_node_settings_documents.count():
+                if linked_node_settings_documents.count() and not user.is_merged:
                     logger.warn("DropboxUserSettings<_id:{0}> has no owner, but is used by DropboxNodeSettings: {1}.".format(
                         user_settings_document['_id'],
                         ', '.join(linked_node_settings_documents.map(lambda d: d['_id']))
