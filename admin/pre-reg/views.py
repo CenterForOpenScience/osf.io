@@ -11,7 +11,8 @@ import httplib as http
 
 from modularodm import Q
 
-import utils
+import serializers
+from admin.common_auth.models import MyUser
 
 from framework.auth.core import User as OsfUser
 from framework.mongo.utils import get_or_http_error
@@ -21,6 +22,7 @@ from website.exceptions import NodeStateError
 
 get_draft_or_error = functools.partial(get_or_http_error, DraftRegistration)
 
+
 def load_osf_user(django_user):
 
     if not django_user.osf_user:
@@ -28,16 +30,6 @@ def load_osf_user(django_user):
     else:
         return OsfUser.load(django_user.osf_user.osf_id)
 
-def get_prereg_users():
-    """Retrieves users on the admin site who are in the prereg_group
-    :return: List of usernames of those who are in the prereg_group
-    """
-    reviewers = []
-    users = User.objects.all()
-    for reviewer in users:
-        if (is_in_prereg_group(reviewer)):
-            reviewers.append(str(reviewer.username))
-    return reviewers
 
 def is_in_prereg_group(user):
     """Determines whether a user is in the prereg_group
@@ -45,6 +37,7 @@ def is_in_prereg_group(user):
     :return: True if prereg False if not
     """
     return user.groups.filter(name='prereg_group').exists()
+
 
 @login_required
 # @user_passes_test(is_in_prereg_group)
@@ -62,7 +55,7 @@ def prereg(request):
         'username': 'user_placeholder',
         'admin': 'admin_placeholder'
     }
-    #reviewers = get_prereg_users()
+    # reviewers = MyUser.objects.prereg_users()
     reviewers = ['admin_placeholder']
 
     #context = {'user_info': user, 'reviewers': reviewers, 'user': request.user}
@@ -71,6 +64,7 @@ def prereg(request):
         'reviewers': reviewers
     }
     return render(request, 'pre-reg/prereg.html', context)
+
 
 @login_required
 # @user_passes_test(is_in_prereg_group)
@@ -81,9 +75,10 @@ def prereg_form(request, draft_pk):
     """
     draft = get_draft_or_error(draft_pk)
     context = {
-        'draft': utils.serialize_draft_registration(draft)
+        'draft': serializers.serialize_draft_registration(draft)
     }
     return render(request, 'pre-reg/edit_draft_registration.html', context)
+
 
 @login_required
 # @user_passes_test(is_in_prereg_group)
@@ -101,11 +96,12 @@ def get_drafts(request):
         Q('approval', 'ne', None)
     )
     serialized_drafts = {
-        'drafts': [utils.serialize_draft_registration(d) for d in all_drafts]
+        'drafts': [serializers.serialize_draft_registration(d) for d in all_drafts]
     }
     return JsonResponse(
         serialized_drafts
     )
+
 
 @login_required
 # @user_passes_test(is_in_prereg_group)
@@ -125,6 +121,7 @@ def approve_draft(request, draft_pk):
         draft.approval.add_authorizer(user, save=True)
         draft.approve(user)
     return JsonResponse({})
+
 
 @login_required
 # @user_passes_test(is_in_prereg_group)
@@ -166,6 +163,6 @@ def update_draft(request, draft_pk):
         raise HTTPError(http.BAD_REQUEST)
     return JsonResponse(
         {
-            'draft': utils.serialize_draft_registration(draft)
+            'draft': serializers.serialize_draft_registration(draft)
         }
     )

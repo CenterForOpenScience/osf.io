@@ -15,10 +15,10 @@ class PermissionAdmin(admin.ModelAdmin):
 
 class CustomUserAdmin(UserAdmin):
     add_form = CustomUserRegistrationForm
-    list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed']
+    list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed', 'osf_id']
     fieldsets = (
         (None, {'fields': ('email', 'password',)}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_joined', 'last_login',)}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_joined', 'last_login', 'osf_id')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions',)}),
     )
     add_fieldsets = (
