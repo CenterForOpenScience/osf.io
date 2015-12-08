@@ -72,6 +72,12 @@ def adminserver(port=8001, live=False):
         cmd += ' livereload'
     run(cmd, echo=True, pty=True)
 
+# TODO - refactor? It is functional. e.g. 'invoke admin_task createsuperuser'
+@task
+def admin_task(args):
+    """Run Admin manage.py command"""
+    cmd = 'DJANGO_SETTINGS_MODULE="admin.base.settings" python manage.py ' + args
+    run(cmd)
 
 SHELL_BANNER = """
 {version}
