@@ -114,9 +114,9 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_registration_count'}
     )))
 
-    root = HideIfRegistration(RelationshipField(
+    root = HideIfRetraction(RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<root._id>'}
     ))
 
     logs = HideIfRetraction(RelationshipField(
