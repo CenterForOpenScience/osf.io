@@ -24,6 +24,7 @@ class CustomUserAdmin(UserAdmin):
     ordering = ('last_name', 'first_name',)
     actions = ['send_email_invitation']
 
+    # TODO - include alternative messages for warning/failure
     def send_email_invitation(self, request, queryset):
         for user in queryset:
             reset_form = PasswordResetForm({'email': user.email}, request.POST)
