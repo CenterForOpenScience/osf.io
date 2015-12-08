@@ -100,22 +100,7 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if(node.links.html){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title),
-            m('span', { ondblclick : function(){
-                var linkObject = new LinkObject('node', node, node.attributes.title);
-
-                // Get ancestors
-                linkObject.ancestors = [];
-                function getAncestors (item) {
-                    var parent = item.parent();
-                    if(parent && parent.id > tb.treeData.id) {
-                        linkObject.ancestors.unshift(parent);
-                        getAncestors(parent);
-                    }
-                }
-                getAncestors(item);
-                tb.options.updateFilesData(linkObject);
-            }}, ' -Open')
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title)
         ];
     } else {
         return  m('span', { 'class' : css}, node.attributes.title);
@@ -434,6 +419,22 @@ var tbOptions = {
     },
     onselectrow : function(row){
         console.log(row);
+    },
+    ondblclickrow : function(item, event){
+        var tb = this;
+        var node = item.data;
+        var linkObject = new LinkObject('node', node, node.attributes.title);
+        // Get ancestors
+        linkObject.ancestors = [];
+        function getAncestors (item) {
+            var parent = item.parent();
+            if(parent && parent.id > tb.treeData.id) {
+                linkObject.ancestors.unshift(parent);
+                getAncestors(parent);
+            }
+        }
+        getAncestors(item);
+        tb.options.updateFilesData(linkObject);
     },
     hScroll : 300,
     filterTemplate : function() {
