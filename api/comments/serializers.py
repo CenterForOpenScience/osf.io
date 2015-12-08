@@ -34,7 +34,7 @@ class CommentSerializer(JSONAPISerializer):
     content = AuthorizedCharField(source='get_content')
     page = ser.SerializerMethodField()
 
-    target = TargetField(link_type='related', meta={'type': 'get_target_type'})
+    target = TargetField(link_type='related', meta={'type': 'get_target_type', 'title': 'get_target_title'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
     node = RelationshipField(related_view='nodes:node-detail', related_view_kwargs={'node_id': '<node._id>'})
     replies = RelationshipField(self_view='nodes:node-comments', self_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<pk>'})
@@ -86,6 +86,9 @@ class CommentSerializer(JSONAPISerializer):
                 return 'node'
             elif name == 'storedfilenode':
                 return 'files'
+
+    def get_target_tile(self, obj):
+        return obj.name if isinstance(obj.root_target, StoredFileNode) else ''
 
 
 class CommentCreateSerializer(CommentSerializer):
