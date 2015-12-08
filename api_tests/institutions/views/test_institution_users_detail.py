@@ -1,4 +1,4 @@
-from nose.tools import *
+from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
 from tests.factories import InstitutionFactory, AuthUserFactory

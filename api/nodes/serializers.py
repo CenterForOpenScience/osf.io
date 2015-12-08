@@ -392,13 +392,15 @@ class NodeInstitutionRelationshipSerializer(JSONAPIRelationshipSerializer):
         node = instance
         user = self.context['request'].user
         data = self.context['request'].data['data']
-        inst = None
         if data:
-            assert data['type'] == 'institution'
+            assert data['type'] == 'institution', 'Not right endpoint for this type, expected \'institution\' '
             inst = Institution.load(data.get('id'))
-            if inst and inst.auth(user):
-                node.primary_institution = inst
-                node.save()
+            if not inst:
+                raise exceptions.NotFound
+            if not inst.auth(user):
+                raise exceptions.PermissionDenied
+            node.primary_institution = inst
+            node.save()
         else:
             node.primary_institution = None
             node.save()

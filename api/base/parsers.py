@@ -119,3 +119,6 @@ class JSONAPIParserForRegularJSON(JSONAPIParser):
     Allows same processing as JSONAPIParser to occur for requests with application/json media type.
     """
     media_type = 'application/json'
+
+class JSONAPIRelationshipParser(JSONParser):
+    media_type = 'application/vnd.api+json'
