@@ -1367,7 +1367,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-
         if first_save and is_original and not suppress_log:
             # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
