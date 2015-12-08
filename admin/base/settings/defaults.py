@@ -107,6 +107,7 @@ TEMPLATES = [
 #         'PORT': '',
 #     }
 # }
+# Postgres settings in local.py
 
 DATABASES = {
     'default': {
