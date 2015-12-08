@@ -196,8 +196,8 @@ class Comment(GuidStoredObject):
 
     # Dictionary field mapping user IDs to dictionaries of report details:
     # {
-    #   'icpnw': {'category': 'hate', 'message': 'offensive'},
-    #   'cdi38': {'category': 'spam', 'message': 'godwins law'},
+    #   'icpnw': {'category': 'hate', 'text': 'offensive'},
+    #   'cdi38': {'category': 'spam', 'text': 'godwins law'},
     # }
     reports = fields.DictionaryField(validate=validate_comment_reports)
 
@@ -260,9 +260,9 @@ class Comment(GuidStoredObject):
                     else:
                         return Comment.find(Q('node', 'eq', node) &
                                             Q('user', 'ne', user) &
-                                            Q('date_created', 'gt', view_timestamp) &
-                                            Q('date_modified', 'gt', view_timestamp) &
                                             Q('is_deleted', 'eq', False) &
+                                            (Q('date_created', 'gt', view_timestamp) |
+                                            Q('date_modified', 'gt', view_timestamp)) &
                                             Q('root_target', 'eq', root_target)).count()
 
         return n_unread
@@ -322,6 +322,7 @@ class Comment(GuidStoredObject):
         )
 
         comment.node.save()
+        project_signals.comment_added.send(comment, auth=auth)
 
         return comment
 

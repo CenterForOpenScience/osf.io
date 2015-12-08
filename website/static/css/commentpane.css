@@ -110,3 +110,7 @@
   max-width: 100%;
   height: auto;
 }
+
+.comment-gravatar {
+    height: 20px;
+}

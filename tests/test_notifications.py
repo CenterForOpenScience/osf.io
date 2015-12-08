@@ -19,7 +19,7 @@ from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.notifications import emails
 from website.notifications import utils
-from website.project.model import Node
+from website.project.model import Node, Comment
 from website import mails
 from website.util import api_url_for
 from website.util import web_url_for
@@ -1141,21 +1141,18 @@ class TestSendEmails(OsfTestCase):
         # user is not subscribed to project comment notifications
         project = factories.ProjectFactory()
 
-        # reply to user
+        # user comments on project
         target = factories.CommentFactory(node=project, user=user)
         content = 'hammer to fall'
 
-        # auth=project.creator.auth
-        url = project.api_url + 'comment/'
-        self.app.post_json(
-            url,
-            {
-                'content': content,
-                'isPublic': 'public',
-                'target': target._id
-
-            },
-            auth=project.creator.auth
+        # reply to user (note: notify is called from Comment.create)
+        reply = Comment.create(
+                auth=Auth(project.creator),
+                user=project.creator,
+                node=project,
+                content=content,
+                target=target,
+                is_public=True,
         )
         assert_true(mock_notify.called)
         assert_equal(mock_notify.call_count, 2)

@@ -2,6 +2,7 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+from api.base.settings import osf_settings
 from api_tests.nodes.views.test_node_comments_list import _create_test_file
 from tests.base import ApiTestCase
 from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, RegistrationFactory
@@ -193,6 +194,44 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(payload['data']['attributes']['content'], res.json['data']['attributes']['content'])
+
+    def test_update_comment_cannot_exceed_max_length(self):
+        self._set_up_private_project_with_comment()
+        payload = {
+            'data': {
+                'id': self.comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'content': ('contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent'
+                    + 'contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcon'
+                    + 'tentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentconten'
+                    + 'tcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentco'
+                    + 'ntentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentconte'
+                    + 'ntcontentcontentcontentcontentcontentcontent'),
+                    'deleted': False
+                }
+            }
+        }
+        res = self.app.put_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'],
+                     'Ensure this field has no more than ' + str(osf_settings.COMMENT_MAXLENGTH) + ' characters.')
+
+    def test_update_comment_cannot_be_empty(self):
+        self._set_up_private_project_with_comment()
+        payload = {
+            'data': {
+                'id': self.comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'content': '',
+                    'deleted': False
+                }
+            }
+        }
+        res = self.app.put_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
 
     def test_private_node_only_logged_in_contributor_commenter_can_delete_comment(self):
         self._set_up_private_project_with_comment()

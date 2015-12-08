@@ -1,23 +1,24 @@
 from __future__ import absolute_import
 import datetime as dt
 import mock
-import httplib as http
 from nose.tools import *  # noqa PEP8 asserts
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
-from dateutil.parser import parse as parse_date
 
 from framework.auth import Auth
+from framework.exceptions import PermissionsError
+from website.addons.osfstorage import settings as osfstorage_settings
 from website.project.model import Comment, NodeLog
+from website.project.signals import comment_added
 from website.project.views.node import _view_project
-from website.project.views.comment import serialize_comment
+
 
 from tests.base import (
     OsfTestCase,
     assert_datetime_equal,
+    capture_signals
 )
 from tests.factories import (
     UserFactory, ProjectFactory, AuthUserFactory, CommentFactory,
-    PrivateLinkFactory
 )
 
 
@@ -75,319 +76,6 @@ class TestCommentViews(OsfTestCase):
             **kwargs
         )
 
-    def test_add_comment_public_contributor(self):
-
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(
-            self.project, auth=self.project.creator.auth,
-        )
-
-        self.project.reload()
-
-        res_comment = res.json['comment']
-        date_created = parse_date(str(res_comment.pop('dateCreated')))
-        date_modified = parse_date(str(res_comment.pop('dateModified')))
-
-        serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
-        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
-        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
-
-        assert_datetime_equal(date_created, date_created2)
-        assert_datetime_equal(date_modified, date_modified2)
-
-        assert_equal(len(self.project.commented), 1)
-        assert_equal(res_comment, serialized_comment)
-
-    def test_add_comment_public_non_contributor(self):
-
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(
-            self.project, auth=self.non_contributor.auth,
-        )
-
-        self.project.reload()
-
-        res_comment = res.json['comment']
-        date_created = parse_date(res_comment.pop('dateCreated'))
-        date_modified = parse_date(res_comment.pop('dateModified'))
-
-        serialized_comment = serialize_comment(self.project.commented[0], Auth(user=self.non_contributor))
-        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
-        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
-
-        assert_datetime_equal(date_created, date_created2)
-        assert_datetime_equal(date_modified, date_modified2)
-
-        assert_equal(len(self.project.commented), 1)
-        assert_equal(res_comment, serialized_comment)
-
-    def test_add_comment_private_contributor(self):
-
-        self._configure_project(self.project, 'private')
-        res = self._add_comment(
-            self.project, auth=self.project.creator.auth,
-        )
-
-        self.project.reload()
-
-        res_comment = res.json['comment']
-        date_created = parse_date(str(res_comment.pop('dateCreated')))
-        date_modified = parse_date(str(res_comment.pop('dateModified')))
-
-        serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
-        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
-        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
-
-        assert_datetime_equal(date_created, date_created2)
-        assert_datetime_equal(date_modified, date_modified2)
-
-        assert_equal(len(self.project.commented), 1)
-        assert_equal(res_comment, serialized_comment)
-
-
-    def test_add_comment_private_non_contributor(self):
-
-        self._configure_project(self.project, 'private')
-        res = self._add_comment(
-            self.project, auth=self.non_contributor.auth, expect_errors=True,
-        )
-
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_add_comment_logged_out(self):
-
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(self.project)
-
-        assert_equal(res.status_code, 302)
-        assert_in('login?', res.headers.get('location'))
-
-    def test_add_comment_off(self):
-
-        self._configure_project(self.project, None)
-        res = self._add_comment(
-            self.project, auth=self.project.creator.auth, expect_errors=True,
-        )
-
-        assert_equal(res.status_code, http.BAD_REQUEST)
-
-    def test_add_comment_empty(self):
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(
-            self.project, content='',
-            auth=self.project.creator.auth,
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_false(getattr(self.project, 'commented', []))
-
-    def test_add_comment_toolong(self):
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(
-            self.project, content='toolong' * 500,
-            auth=self.project.creator.auth,
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_false(getattr(self.project, 'commented', []))
-
-    def test_add_comment_whitespace(self):
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(
-            self.project, content='  ',
-            auth=self.project.creator.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_false(getattr(self.project, 'commented', []))
-
-    def test_edit_comment(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, page='node')
-
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.put_json(
-            url,
-            {
-                'content': 'edited',
-                'isPublic': 'private',
-            },
-            auth=self.project.creator.auth,
-        )
-
-        comment.reload()
-
-        assert_equal(res.json['content'], 'edited')
-
-        assert_equal(comment.content, 'edited')
-
-    def test_edit_comment_short(self):
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, content='short', page='node')
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.put_json(
-            url,
-            {
-                'content': '',
-                'isPublic': 'private',
-            },
-            auth=self.project.creator.auth,
-            expect_errors=True,
-        )
-        comment.reload()
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_equal(comment.content, 'short')
-
-    def test_edit_comment_toolong(self):
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, content='short', page='node')
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.put_json(
-            url,
-            {
-                'content': 'toolong' * 500,
-                'isPublic': 'private',
-            },
-            auth=self.project.creator.auth,
-            expect_errors=True,
-        )
-        comment.reload()
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_equal(comment.content, 'short')
-
-    def test_edit_comment_non_author(self):
-        "Contributors who are not the comment author cannot edit."
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, page='node')
-        non_author = AuthUserFactory()
-        self.project.add_contributor(non_author, auth=self.consolidated_auth)
-
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.put_json(
-            url,
-            {
-                'content': 'edited',
-                'isPublic': 'private',
-            },
-            auth=non_author.auth,
-            expect_errors=True,
-        )
-
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_edit_comment_non_contributor(self):
-        "Non-contributors who are not the comment author cannot edit."
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, page='node')
-
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.put_json(
-            url,
-            {
-                'content': 'edited',
-                'isPublic': 'private',
-            },
-            auth=self.non_contributor.auth,
-            expect_errors=True,
-        )
-
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_delete_comment_author(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, page='node')
-
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        self.app.delete_json(
-            url,
-            auth=self.project.creator.auth,
-        )
-
-        comment.reload()
-
-        assert_true(comment.is_deleted)
-
-    def test_delete_comment_non_author(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, page='node')
-
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.delete_json(
-            url,
-            auth=self.non_contributor.auth,
-            expect_errors=True,
-        )
-
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-        comment.reload()
-
-        assert_false(comment.is_deleted)
-
-    def test_report_abuse(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, page='node')
-        reporter = AuthUserFactory()
-
-        url = self.project.api_url + 'comment/{0}/report/'.format(comment._id)
-
-        self.app.post_json(
-            url,
-            {
-                'category': 'spam',
-                'text': 'ads',
-            },
-            auth=reporter.auth,
-        )
-
-        comment.reload()
-        assert_in(reporter._id, comment.reports)
-        assert_equal(
-            comment.reports[reporter._id],
-            {'category': 'spam', 'text': 'ads'}
-        )
-
-    def test_can_view_private_comments_if_contributor(self):
-
-        self._configure_project(self.project, 'public')
-        CommentFactory(node=self.project, user=self.project.creator, is_public=False, page='node')
-
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url, {
-            "page": 'node',
-            "target": self.project._primary_key
-        }, auth=self.project.creator.auth)
-
-        assert_equal(len(res.json['comments']), 1)
-
-    def test_view_comments_with_anonymous_link(self):
-        self.project.set_privacy('private')
-        self.project.save()
-        self.project.reload()
-        user = AuthUserFactory()
-        link = PrivateLinkFactory(anonymous=True)
-        link.nodes.append(self.project)
-        link.save()
-
-        CommentFactory(node=self.project, user=self.project.creator, is_public=False, page='node')
-
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url, {
-            "view_only": link.key,
-            "page": 'node',
-            "target": self.project._primary_key
-        }, auth=user.auth)
-        comment = res.json['comments'][0]
-        author = comment['author']
-        assert_in('A user', author['fullname'])
-        assert_false(author['gravatar_url'])
-        assert_false(author['url'])
-        assert_false(author['id'])
-
     def test_view_comments_updates_user_comments_view_timestamp(self):
         CommentFactory(node=self.project, page='node')
 
@@ -428,97 +116,6 @@ class TestCommentViews(OsfTestCase):
         user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['files'][guid._id]
         view_timestamp = dt.datetime.utcnow()
         assert_datetime_equal(user_timestamp, view_timestamp)
-
-    def test_n_unread_comments_updates_when_comment_is_added(self):
-        self._add_comment(self.project, auth=self.project.creator.auth)
-        self.project.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, {
-            'page': 'node',
-            'rootId': self.project._id
-        }, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
-            'page': 'node',
-            'rootId': self.project._id
-        }, auth=self.user.auth)
-        self.user.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, {
-            'page': 'node',
-            'rootId': self.project._id
-        }, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 0)
-
-    def test_n_unread_comments_updates_when_comment_is_added_files(self):
-        path = 'gingertea.txt'
-        self._add_comment_files(
-            self.project,
-            content='Ginger tea rocks',
-            path=path,
-            provider='osfstorage',
-            auth=self.project.creator.auth
-        )
-        self.project.reload()
-
-        addon = self.project.get_addon('osfstorage')
-        guid, _ = addon.find_or_create_file_guid('/' + path)
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, {
-            'page': 'files',
-            'rootId': guid._id
-        }, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-        url_timestamp = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url_timestamp, {
-            'page': 'files',
-            'rootId': guid._id
-        }, auth=self.user.auth)
-        self.user.reload()
-
-        res = self.app.get(url, {
-            'page': 'node',
-            'rootId': guid._id
-        }, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 0)
-
-    def test_n_unread_comments_updates_when_comment_reply(self):
-        comment = CommentFactory(node=self.project, user=self.project.creator, page='node')
-        reply = CommentFactory(node=self.project, user=self.user, target=comment, page='node')
-        self.project.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, {
-            'page': 'node',
-            'rootId': self.project._id
-        }, auth=self.project.creator.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-
-    def test_n_unread_comments_updates_when_comment_is_edited(self):
-        self.test_edit_comment()
-        self.project.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, {
-            'page': 'node',
-            'rootId': self.project._id
-        }, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-    def test_n_unread_comments_is_zero_when_no_comments(self):
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, {
-            'page': 'node',
-            'rootId': self.project._id
-        }, auth=self.project.creator.auth)
-        assert_equal(res.json.get('nUnread'), 0)
 
     def test_n_unread_comments_overview(self):
         self._add_comment(self.project, auth=self.project.creator.auth)
@@ -601,6 +198,17 @@ class TestCommentModel(OsfTestCase):
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
+    def test_create_sends_comment_added_signal(self):
+        with capture_signals() as mock_signals:
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+            )
+        assert_equal(mock_signals.signals_sent(), set([comment_added]))
+
     def test_edit(self):
         self.comment.edit(
             auth=self.consolidated_auth,
@@ -667,3 +275,96 @@ class TestCommentModel(OsfTestCase):
         self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
         with assert_raises(ValidationValueError):
             self.comment.save()
+
+    def test_read_permission_contributor_can_comment(self):
+        project = ProjectFactory()
+        user = UserFactory()
+        project.set_privacy('private')
+        project.add_contributor(user, 'read')
+        project.save()
+
+        assert_true(project.can_comment(Auth(user=user)))
+
+    def test_get_content_for_not_deleted_comment(self):
+        project = ProjectFactory(is_public=True)
+        comment = CommentFactory(node=project)
+        content = comment.get_content(auth=Auth(comment.user))
+        assert_equal(content, comment.content)
+
+    def test_get_content_returns_deleted_content_to_commenter(self):
+        comment = CommentFactory(is_deleted=True)
+        content = comment.get_content(auth=Auth(comment.user))
+        assert_equal(content, comment.content)
+
+    def test_get_content_does_not_return_deleted_content_to_non_commenter(self):
+        user = AuthUserFactory()
+        comment = CommentFactory(is_deleted=True)
+        content = comment.get_content(auth=Auth(user))
+        assert_is_none(content)
+
+    def test_get_content_public_project_does_not_return_deleted_content_to_logged_out_user(self):
+        project = ProjectFactory(is_public=True)
+        comment = CommentFactory(node=project, is_deleted=True)
+        content = comment.get_content(auth=None)
+        assert_is_none(content)
+
+    def test_get_content_private_project_throws_permissions_error_for_logged_out_users(self):
+        project = ProjectFactory(is_public=False)
+        comment = CommentFactory(node=project, is_deleted=True)
+        with assert_raises(PermissionsError):
+            comment.get_content(auth=None)
+
+    def test_find_unread_is_zero_when_no_comments(self):
+        n_unread = Comment.find_unread(user=UserFactory(), node=ProjectFactory())
+        assert_equal(n_unread, 0)
+
+    def test_find_unread_new_comments(self):
+        project = ProjectFactory()
+        user = UserFactory()
+        project.add_contributor(user)
+        project.save()
+        comment = CommentFactory(node=project, user=project.creator)
+        n_unread = Comment.find_unread(user=user, node=project)
+        assert_equal(n_unread, 1)
+
+    def test_find_unread_includes_comment_replies(self):
+        project = ProjectFactory()
+        user = UserFactory()
+        project.add_contributor(user)
+        project.save()
+        comment = CommentFactory(node=project, user=user)
+        reply = CommentFactory(node=project, target=comment, user=project.creator)
+        n_unread = Comment.find_unread(user=user, node=project)
+        assert_equal(n_unread, 1)
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-5193
+    def test_find_unread_includes_edited_comments(self):
+        project = ProjectFactory()
+        user = AuthUserFactory()
+        project.add_contributor(user)
+        project.save()
+        comment = CommentFactory(node=project, user=project.creator)
+
+        url = project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, auth=user.auth)
+        user.reload()
+        n_unread = Comment.find_unread(user=user, node=project)
+        assert_equal(n_unread, 0)
+
+        # Edit previously read comment
+        comment.edit(
+            auth=Auth(project.creator),
+            content='edited',
+            save=True
+        )
+        n_unread = Comment.find_unread(user=user, node=project)
+        assert_equal(n_unread, 1)
+
+    def test_find_unread_does_not_include_deleted_comments(self):
+        project = ProjectFactory()
+        user = AuthUserFactory()
+        project.add_contributor(user)
+        project.save()
+        comment = CommentFactory(node=project, user=project.creator, is_deleted=True)
+        n_unread = Comment.find_unread(user=user, node=project)
+        assert_equal(n_unread, 0)

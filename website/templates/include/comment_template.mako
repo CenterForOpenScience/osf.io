@@ -46,7 +46,7 @@
                     <div class="comment-info">
                         <form class="form-inline">
                             <span data-bind="if: author.gravatar_url">
-                                <img data-bind="attr: {src: author.gravatar_url}"/>
+                                <img class="comment-gravatar" data-bind="attr: {src: author.gravatar_url}"/>
                             </span>
                             <span data-bind="if: author.id">
                                 <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.url}"></a>
