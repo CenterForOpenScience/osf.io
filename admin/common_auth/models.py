@@ -1,11 +1,11 @@
 from datetime import datetime
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
 
 from website.models import User as OsfUserModel
 
 
-class MyUserManager(models.Manager):
+class MyUserManager(BaseUserManager):
     def create_user(self, email, password=None):
         if not email:
             raise ValueError('Users must have an email address')
