@@ -80,15 +80,14 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         var nodesOriginal = {};
         self.nodesOriginal = ko.observableArray();
 
-        self.canRemoveContributor = ko.computed(function() {
-            var canRemoveContributor = {};
+        self.canRemoveOnNodes = ko.computed(function() {
+            var canRemoveOnNodes = {};
             if (self.contributorToRemove()) {
                 for (var key in self.nodesOriginal()) {
                     var node = self.nodesOriginal()[key];
                     var registeredContributors = self.nodesOriginal()[key].registeredContributors;
                     var adminContributors = self.nodesOriginal()[key].adminContributors;
                     var visibleContributors = self.nodesOriginal()[key].visibleContributors;
-                    debugger;
                     var contributorIndex = registeredContributors.indexOf(self.contributorToRemove().id);
                     var adminIndex = adminContributors.indexOf(self.contributorToRemove().id);
                     var visibleIndex = visibleContributors.indexOf(self.contributorToRemove().id);
@@ -101,19 +100,19 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                     if (visibleIndex > -1) {
                         visibleContributors.splice(visibleIndex, 1);
                     }
-                    canRemoveContributor[key] = (registeredContributors.length > 0 && adminContributors.length > 0 && visibleContributors.length > 0);
+                    canRemoveOnNodes[key] = (registeredContributors.length > 0 && adminContributors.length > 0 && visibleContributors.length > 0);
                     }
                 }
-            return canRemoveContributor;
+            return canRemoveOnNodes;
         });
 
-        self.canRemoveAdmin = ko.computed(function() {
-            return self.canRemoveContributor()[self.nodeId];
+        self.canRemoveOnNode = ko.computed(function() {
+            return self.canRemoveOnNodes()[self.nodeId];
         })
 
         self.hasChildrenToRemove = ko.computed(function() {
             //if there is more then one node to remove, then show a simplified page
-            if (Object.keys(self.canRemoveContributor()).length > 1) {
+            if (Object.keys(self.canRemoveOnNodes()).length > 1) {
                 self.page('remove');
                 return true;
             }
@@ -131,7 +130,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.titlesToRemove = ko.computed(function() {
             var titlesToRemove = [];
             for (var key in self.nodesOriginal()) {
-                if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveContributor()[key]) {
+                if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveOnNodes()[key]) {
                     var node = self.nodesOriginal()[key];
                     var contributors = node.contributors;
                     for (var i = 0; i < contributors.length; i++) {
@@ -148,7 +147,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.nodeIDsToRemove = ko.computed(function() {
             var nodeIDsToRemove = [];
             for (var key in self.nodesOriginal()) {
-                if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveContributor()[key]) {
+                if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveOnNodes()[key]) {
                     var node = self.nodesOriginal()[key];
                     var contributors = node.contributors;
                     for (var i = 0; i < contributors.length; i++) {

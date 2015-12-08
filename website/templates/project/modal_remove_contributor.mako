@@ -54,7 +54,7 @@
                 </div>
 
                 <div data-bind="if: !canRemoveAdmin()">
-                    <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.  You need at least one administrator.</span>
+                    <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.  You need at least one administrator and one bibliographic contributor.</span>
                 </div>
             </div>
             <!-- end modal-body -->
