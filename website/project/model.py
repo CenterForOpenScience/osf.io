@@ -1365,6 +1365,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         self.ultimate_parent = self.root._id
 
+        # If you're saving a property, do it above this super call
         saved_fields = super(Node, self).save(*args, **kwargs)
 
         if first_save and is_original and not suppress_log:
