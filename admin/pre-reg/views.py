@@ -22,14 +22,6 @@ from website.exceptions import NodeStateError
 get_draft_or_error = functools.partial(get_or_http_error, DraftRegistration)
 
 
-def load_osf_user(django_user):
-
-    if not django_user.osf_id:
-        raise RuntimeError('This user does not have an associated Osf User')
-    else:
-        return OsfUser.load(django_user.osf_id)
-
-
 def is_in_prereg_group(user):
     """Determines whether a user is in the prereg_group
     :param user: User wanting access to prereg material
@@ -113,7 +105,7 @@ def approve_draft(request, draft_pk):
     """
     draft = get_draft_or_error(draft_pk)
 
-    user = request.user.osf_user()
+    user = request.user.osf_user
     draft.approve(user)
     return JsonResponse({})
 
@@ -129,7 +121,7 @@ def reject_draft(request, draft_pk):
     """
     draft = get_draft_or_error(draft_pk)
 
-    user = load_osf_user(request.user)
+    user = request.user.osf_user
     draft.reject(user)
     return JsonResponse({})
 
