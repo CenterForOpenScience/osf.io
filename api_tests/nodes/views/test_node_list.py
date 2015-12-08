@@ -334,12 +334,12 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint.")
 
-    def test_filtering_on_ultimate_parent(self):
+    def test_filtering_on_root(self):
         # Build up a family of nodes
         node_structure = [5, 2, [1, 2], 3, [10, 2], 2, [4, [2, 2], 6]]
         render_generations_from_node_structure_list(self.project_one, node_structure)
 
-        url = '/{}nodes/?filter[ultimate_parent]={}'.format(API_BASE, self.project_one._id)
+        url = '/{}nodes/?filter[root]={}'.format(API_BASE, self.project_one._id)
 
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
