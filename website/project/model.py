@@ -755,7 +755,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked', index=True)
     registered_from = fields.ForeignField('node', backref='registrations', index=True)
-    ultimate_parent = fields.StringField(index=True)
+    root = fields.ForeignField('node', index=True)
 
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
@@ -1363,7 +1363,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         else:
             suppress_log = False
 
-        self.ultimate_parent = self.root._id
+        self.root = self._root._id
 
         # If you're saving a property, do it above this super call
         saved_fields = super(Node, self).save(*args, **kwargs)
@@ -2306,9 +2306,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parent.save()
 
     @property
-    def root(self):
+    def _root(self):
         if self.parent_node:
-            return self.parent_node.root
+            return self.parent_node._root
         else:
             return self
 
