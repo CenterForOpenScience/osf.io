@@ -1,3 +1,4 @@
+from datetime import datetime
 import httplib as http
 import logging
 import json
@@ -543,7 +544,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=time.time() - 200
+            expires_at=datetime.utcfromtimestamp(time.time() - 200)
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -565,6 +566,40 @@ class TestExternalProviderOAuth2(OsfTestCase):
         assert_equal(external_account.oauth_key, 'refreshed_access_token')
         assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
         assert_not_equal(external_account.expires_at, old_expiry)
+        assert_true(external_account.expires_at > old_expiry)
+
+    @httpretty.activate
+    def test_needs_refresh(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=datetime.utcfromtimestamp(time.time() - 200),
+            refresh_time=300
+        )
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'access_token': 'refreshed_access_token',
+                'expires_in': 3600,
+                'refresh_token': 'refreshed_refresh_token'
+            })
+        )
+        
+        old_expiry = external_account.expires_at
+        self.provider.account = external_account
+        self.provider.refresh_oauth_key(force=False)
+        external_account.reload()
+
+        assert_equal(external_account.oauth_key, 'refreshed_access_token')
+        assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
+        assert_not_equal(external_account.expires_at, old_expiry)
+        assert_true(external_account.expires_at > old_expiry)
 
     @httpretty.activate
     def test_refresh_oauth_key_does_not_need_refresh(self):
@@ -599,7 +634,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=time.time() - 200
+            expires_at=datetime.utcfromtimestamp(time.time() - 200)
         )
         self.provider.client_id = None
         self.provider.client_secret = None
@@ -625,7 +660,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=time.time() + 200
+            expires_at=datetime.utcfromtimestamp(time.time() + 200)
         )
 
 
