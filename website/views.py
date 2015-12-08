@@ -367,6 +367,12 @@ def resolve_guid(guid, suffix=None):
             _build_guid_url(guid.lower(), suffix)
         )
 
+    # GUID not found: try institution:
+    from website.models import Institution
+    not_guid_but_inst = Institution.load(guid)
+    if not_guid_but_inst:
+        return redirect(not_guid_but_inst.deep_url)
+
     # GUID not found
     raise HTTPError(http.NOT_FOUND)
 

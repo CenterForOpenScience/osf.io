@@ -778,6 +778,12 @@ def make_url_map(app):
 
     ], prefix='/api/v1')
 
+    # Institution
+
+    process_rules(app, [
+        Rule('/institution/<id>/', 'get', profile_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
+    ])
+
     # Project
 
     # Web

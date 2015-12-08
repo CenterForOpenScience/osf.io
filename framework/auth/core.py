@@ -1349,6 +1349,10 @@ class Institution(StoredObject):
         return '/{}/'.format(self._id)
 
     @property
+    def deep_url(self):
+        return '/institution/{}/'.format(self._id)
+
+    @property
     def api_v2_url(self):
         return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
 

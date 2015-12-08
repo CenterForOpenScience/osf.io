@@ -152,16 +152,14 @@ var ProjectViewModel = function(data) {
     self.nodeType = data.node.node_type;
     self.instLogoPath = ko.observable('');
 
-    var req = $.ajax({
-        'method': 'GET',
-        'url': window.contextVars.apiV2Prefix + 'nodes/' + window.nodeId + '/institution/',
-    });
-    req.done(function(response) {
-        self.instLogoPath(response.data.attributes.logopath);
-    });
-    req.fail(function(){
-
-    });
+    if (window.contextVars.node.institution) {
+        $.ajax({
+            'method': 'GET',
+            'url': window.contextVars.apiV2Prefix + 'nodes/' + window.nodeId + '/institution/',
+        }).done(function (response) {
+            self.instLogoPath(response.data.attributes.logopath);
+        });
+    }
 
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.pureComputed(function() {
