@@ -13,7 +13,6 @@ from modularodm import Q
 import serializers
 # from admin.common_auth.models import MyUser
 
-from framework.auth.core import User as OsfUser
 from framework.mongo.utils import get_or_http_error
 from framework.exceptions import HTTPError
 from website.project.model import MetaSchema, DraftRegistration
