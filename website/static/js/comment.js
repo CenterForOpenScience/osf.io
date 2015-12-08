@@ -177,7 +177,7 @@ var setUnreadCommentCount = function(self) {
         osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/', {query: 'related_counts=True'}),
         {'isCors': true});
     request.done(function(response) {
-        self.unreadComments(response.data.relationships.comments.links.related.meta.node.unread);
+        self.unreadComments(response.data.relationships.comments.links.related.meta.unread.node);
     });
 };
 
@@ -228,8 +228,8 @@ BaseComment.prototype.submitReply = function() {
                     'relationships': {
                         'target': {
                             'data': {
-                                'type': self.id() === undefined ? 'nodes' : 'comments',
-                                'id': self.id() === undefined ? window.contextVars.node.id : self.id()
+                                'type': self.id() === window.contextVars.node.id ? 'nodes' : 'comments',
+                                'id': self.id() === window.contextVars.node.id ? window.contextVars.node.id : self.id()
                             }
                         }
                     }
@@ -266,6 +266,7 @@ var CommentModel = function(data, $parent, $root) {
 
     self.id = ko.observable(data.id);
     self.content = ko.observable(data.attributes.content || '');
+    self.page = ko.observable(data.attributes.page);
     self.dateCreated = ko.observable(data.attributes.date_created);
     self.dateModified = ko.observable(data.attributes.date_modified);
     self.isDeleted = ko.observable(data.attributes.deleted);
@@ -276,7 +277,7 @@ var CommentModel = function(data, $parent, $root) {
     self.author = {
         'id': userData.id,
         'url': userData.links.html,
-        'name': userData.attributes.full_name,
+        'fullname': userData.attributes.full_name,
         'gravatarUrl': userData.links.profile_image
     };
 
@@ -323,7 +324,7 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.toggleIcon = ko.computed(function() {
-            return self.showChildren() ? 'fa fa-minus' : 'fa fa-plus';
+        return self.showChildren() ? 'fa fa-minus' : 'fa fa-plus';
     });
 
     self.canReport = ko.pureComputed(function() {

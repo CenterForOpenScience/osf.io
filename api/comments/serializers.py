@@ -1,4 +1,5 @@
 from rest_framework import serializers as ser
+from modularodm import Q
 from framework.auth.core import Auth
 from website.files.models import StoredFileNode
 from website.project.model import Comment, Node
@@ -68,7 +69,7 @@ class CommentSerializer(JSONAPISerializer):
         return obj.user._id == auth.user._id
 
     def get_has_children(self, obj):
-        return bool(getattr(obj, 'commented', []))
+        return bool(Comment.find(Q('target', 'eq', obj)).count())
 
     def update(self, comment, validated_data):
         assert isinstance(comment, Comment), 'comment must be a Comment'
