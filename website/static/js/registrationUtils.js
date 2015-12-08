@@ -1,3 +1,5 @@
+'use strict';
+
 require('css/registrations.css');
 
 var $ = require('jquery');
@@ -23,6 +25,18 @@ var DRAFT_REGISTRATION_MIN_EMBARGO_DAYS = 10;
 var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
         DRAFT_REGISTRATION_MIN_EMBARGO_DAYS * 24 * 60 * 60 * 1000
 );
+
+var VALIDATORS = {
+    required: {
+        validator: ko.validation.rules.required.validator,
+        message: 'A required question is unanswered.',
+        messagePlural: 'Some required questions are unanswered.'
+    }
+};
+var VALIDATOR_LOOKUP = {};
+$.each(VALIDATORS, function(key, value) {
+    VALIDATOR_LOOKUP[value.message] = value;
+});
 
 /**
  * @class Comment
@@ -230,7 +244,9 @@ var Question = function(questionSchema, data) {
 
     if (self.required) {
         self.value.extend({
-            required: true
+            validation: [
+                VALIDATORS.required
+            ]
         });
     } else {
         self.value.extend({
@@ -269,6 +285,7 @@ var Question = function(questionSchema, data) {
         deferEvaluation: true
     });
 };
+
 /**
  * Creates a new comment from the current value of Question.nextComment and clears nextComment
  *
@@ -331,6 +348,26 @@ var Page = function(schemaPage, schemaData) {
         });
         return comments;
     });
+
+    self.validationInfo = ko.computed(function() {
+        var errors = $.map(self.questions, function(question) {
+            return ko.validation.group(question, {deep: true})();
+        }).filter(function(errors) {
+            return Boolean(errors);
+        });
+
+        var errorSet = ko.utils.arrayGetDistinctValues(errors);
+        var finalErrorSet = [];
+        $.each(errorSet, function(_, error) {
+            if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
+                finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
+            }
+            else {
+                finalErrorSet.push(error);
+            }
+        });
+        return finalErrorSet;
+    }, {deferEvaluation: true});
 
     // TODO: track currentQuestion based on browser focus
     self.currentQuestion = self.questions[0];
@@ -647,7 +684,7 @@ Draft.prototype.submitForReview = function() {
             });
     }
     else {
-        self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
+        return self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
     }
 };
 
@@ -705,6 +742,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
     });
     self.currentPage.subscribe(function(page) {
         // lazily apply subscriptions to question values
+        // TODO: dispose subscriptions to last page? Probably unncessary.
         $.each(page.questions, function(_, question) {
             question.value.subscribe(function() {
                 self.dirtyCount(self.dirtyCount() + 1);
@@ -713,20 +751,13 @@ var RegistrationEditor = function(urls, editorId, preview) {
         page.viewComments();
     });
 
-    self.validationErrors = ko.computed(function() {
-        if (self.onLastPage()) {
-            var errors = [];
-            var questions = self.flatQuestions() || [];
-            if (questions.length && questions.filter(function(question) {
-                return question.required && !question.isComplete();
-            }).length) {
-                return 'Some required questions are unanswered.';
+    self.hasValidationInfo = ko.computed(function() {
+        return $osf.any(
+            self.pages(),
+            function(page) {
+                return page.validationInfo().length > 0;
             }
-            else {
-                return '';
-            }
-        }
-        return '';
+        );
     });
 
     self.canSubmit = ko.computed(function() {
@@ -878,37 +909,35 @@ RegistrationEditor.prototype.toPreview = function () {
         window.location.assign(self.draft().urls.register_page);
     }).always($osf.unblock);
 };
-/**
- * Check that the Draft is valid before registering
- */
-RegistrationEditor.prototype.check = function() {
+
+RegistrationEditor.prototype.showValidationInfo = function() {
     var self = this;
 
-    var valid = true;
-    ko.utils.arrayMap(self.draft().pages(), function(page) {
-        ko.utils.arrayMap(page.questions, function(question) {
-            if (question.required && !question.value.isValid()) {
-                valid = false;
-                // Validation for a question failed
-                bootbox.dialog({
-                    title: 'Registration Not Complete',
-                    message: 'There are errors in your registration. Please double check it and submit again.',
-                    buttons: {
-                        success: {
-                            label: 'Return',
-                            className: 'btn-primary',
-                            callback: function() {
-                                self.showValidation(true);
-                            }
-                        }
-                    }
-                });
+    var viewModel = {
+        pages: $.map(
+            self.draft().pages(),
+            function(page) {
+                return {
+                    title: page.title,
+                    errors: page.validationInfo()
+                };
             }
-        });
+        )
+    };
+
+    bootbox.dialog({
+        title: 'Errors with this draft:',
+        message: function() {
+            ko.renderTemplate('draftRegistrationValidationModal', viewModel, {}, this);
+        },
+        buttons: {
+            dismiss: {
+                label: 'Dismiss',
+                className: 'btn-default',
+                callback: bootbox.hideAll
+            }
+        }
     });
-    if (valid) {
-        self.toPreview();
-    }
 };
 
 RegistrationEditor.prototype.viewComments = function() {

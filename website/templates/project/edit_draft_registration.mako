@@ -17,7 +17,6 @@
                 <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}, visible: pages().length > 1">
                   <li class="re-navbar">
                     <a class="registration-editor-page" id="top-nav" style="text-align: left;" data-bind="text: title, click: $root.selectPage, style:{'font-weight': active() ? 'bold' : 'normal'}">
-                      <i class="fa fa-caret-right"></i>
                     </a>
                   </li>
                 </ul>
@@ -49,8 +48,11 @@
                     Last saved: <span data-bind="text: $root.lastSaved"></span>
                   </span>
                   <!-- ko if: onLastPage -->
-                  <span data-bind="if: validationErrors" class="pull-right">
-                    <span class="text text-warning" data-bind="text: validationErrors"></span>
+                  <span data-bind="if: onLastPage() && hasValidationInfo()" class="pull-right">
+                    <span class="text text-warning">
+                      There are errors requiring your attention.
+                      <span class="btn fa fa-info-circle" data-bind="click: showValidationInfo"></span>
+                    </span>
                   </span>
                   <!-- /ko -->
                 </div>
@@ -58,8 +60,7 @@
                   <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
                   </button>
                   <!-- ko if: onLastPage -->
-                  <a data-bind="css: {disabled: !canSubmit()},
-                                click: $root.check"
+                  <a data-bind="css: {disabled: !canSubmit()}"
                      type="button" class="pull-right btn btn-success">Preview for submission
                   </a>
                   <!-- /ko -->
@@ -86,7 +87,6 @@
   </script>
   <script src=${ "/static/public/js/registration-edit-page.js" | webpack_asset}>
   </script>
-
 </%def>
 
 <%include file="project/registration_editor_templates.mako" />

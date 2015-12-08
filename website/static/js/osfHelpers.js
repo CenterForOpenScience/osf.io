@@ -733,15 +733,50 @@ function indexOf(array, searchFn) {
  * @param {Array[Any]} listOfBools
  * @returns {Boolean}
  **/
-var any = function(listOfBools) {
+var any = function(listOfBools, check) {
     var someTruthy = false;
     for(var i = 0; i < listOfBools.length; i++){
-        someTruthy = someTruthy || Boolean(listOfBools[i]);
+        if (check) {
+            someTruthy = someTruthy || Boolean(check(listOfBools[i]));
+        }
+        else {
+            someTruthy = someTruthy || Boolean(listOfBools[i]);
+        }
         if (someTruthy) {
             return someTruthy;
         }
     }
     return false;
+};
+
+var dialog = function(title, message, actionButtonLabel, options) {
+    var ret = $.Deferred();
+    options = $.extend({}, {
+        actionButtonClass: 'btn-success',
+        cancelButtonLabel: 'Cancel',
+        cancelButtonClass: 'btn-default'
+    }, options || {});
+
+    bootbox.dialog({
+        title: title,
+        message: message,
+        buttons: {
+            cancel: {
+                label: options.cancelButtonLabel,
+                className: options.cancelButtonClass,
+                callback: function() {
+                    bootbox.hideAll();
+                    ret.reject();
+                }
+            },
+            approve: {
+                label: actionButtonLabel,
+                className: options.actionButtonClass,
+                callback: ret.resolve
+            }
+        }
+    });
+    return ret.promise();
 };
 
 // Also export these to the global namespace so that these can be used in inline
@@ -778,5 +813,6 @@ module.exports = window.$.osf = {
     isSafari:isSafari,
     indexOf: indexOf,
     currentUser: currentUser,
-    any: any
+    any: any,
+    dialog: dialog
 };

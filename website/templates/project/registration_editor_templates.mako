@@ -173,4 +173,17 @@
     </div>
 </script>
 
+<script id="draftRegistrationValidationModal" type="text/html">
+  <div class="col-md-12">
+    <div class="row" data-bind="foreach: pages">
+      <p data-bind="if: errors.length > 0">
+        <label data-bind="text: title"></label>
+        <ul data-bind="foreach: errors">
+          <li data-bind="text: $data"></li>
+        </ul>
+      </p>
+    </div>
+  </div>
+</script>
+
 <%include file="registration_editor_extensions.mako" />
