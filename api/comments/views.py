@@ -33,7 +33,7 @@ class CommentMixin(object):
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
         try:
-            comment = Comment.find_one(Q('_id', 'eq', pk))
+            comment = Comment.find_one(Q('_id', 'eq', pk) & Q('root_target', 'ne', None))
         except NoResultsFound:
             raise NotFound
 
