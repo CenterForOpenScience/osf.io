@@ -3300,7 +3300,9 @@ class PrivateLink(StoredObject):
 class Sanction(StoredObject):
     """Sanction class is a generic way to track approval states"""
     # Tell modularodm not to attach backends
-    abstract = True
+    _meta = {
+        'abstract': True,
+    }
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -3390,6 +3392,11 @@ class Sanction(StoredObject):
 
 
 class TokenApprovableSanction(Sanction):
+
+    # Tell modularodm not to attach backends
+    _meta = {
+        'abstract': True,
+    }
 
     def _validate_authorizer(self, user):
         """Subclasses may choose to provide extra restrictions on who can be an authorizer
@@ -3497,6 +3504,11 @@ class TokenApprovableSanction(Sanction):
 
 
 class EmailApprovableSanction(TokenApprovableSanction):
+
+    # Tell modularodm not to attach backends
+    _meta = {
+        'abstract': True,
+    }
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
