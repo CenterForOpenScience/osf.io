@@ -66,7 +66,7 @@ var FileBrowser = {
         self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
-        self.nonLoadTemplate = m.prop(m('', 'Loading')); // Template for when data is not available or error happens
+        self.nonLoadTemplate = m.prop(m('.fb-non-loading-template.m-b-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
 
         // VIEW STATES
         self.showInfo = m.prop(false); // Show the info panel
@@ -160,9 +160,9 @@ var FileBrowser = {
             } else {
                 var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
                 if(lastcrumb.type === 'collection'){
-                    self.nonLoadTemplate(m('', 'This collection has no projects. Add new.'));
+                    self.nonLoadTemplate(m('.fb-non-load-template.m-b-md.p-md.osf-box', 'This collection has no projects. You can go to All My Projects collection and drop projects you want to add into the collection link'));
                 } else {
-                    self.nonLoadTemplate(m('', 'This project has no subcomponents. Add new.'));
+                    self.nonLoadTemplate(m('.fb-non-load-template.m-b-md.p-md.osf-box', 'This project has no subcomponents. Add new.'));
                 }
             }
             self.reload(true);
