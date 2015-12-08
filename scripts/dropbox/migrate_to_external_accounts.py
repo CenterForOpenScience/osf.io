@@ -51,7 +51,7 @@ def salvage_broken_user_settings_document(document):
         return False
     if document['deleted']:
         return False
-    if not document['dropbox_info'] or not document['dropbox_info']['display_name']:
+    if not document.get('dropbox_info') or not document['dropbox_info']['display_name']:
         logger.info(
             "Attempting dropbox_info population for document (id:{0})".format(document['_id'])
         )
@@ -68,10 +68,11 @@ def salvage_broken_user_settings_document(document):
             )
         except Exception:
             # Invalid token probably
-            return False
+            # Still want Dropbox to be enabled to show error message 
+            # to user on node settings, pass
+            return True
         else:
-            document = database['dropboxusersettings'].find_one({'_id': document['_id']})
-            return verify_user_settings_document(document)
+            return True
 
     return False
 
@@ -90,7 +91,7 @@ def migrate_to_external_account(user_settings_document):
             provider_name=PROVIDER_NAME,
             provider_id=user_settings_document['dropbox_id'],
             oauth_key=user_settings_document['access_token'],
-            display_name=user_settings_document['dropbox_info'].get('display_name', None),
+            display_name=user_settings_document['dropbox_info'].get('display_name', None) if user_settings_document.get('dropbox_info', None) else None,
         )
         external_account.save()  # generate pk for external accountc
     
@@ -155,16 +156,6 @@ def remove_old_documents(old_user_settings, old_user_settings_count, old_node_se
 
 def migrate(dry_run=True, remove_old=True):
     rm_msg = ' It will be hard-deleted during the migration.' if remove_old else ''
-    from website import settings as dropbox_settings
-    dropbox_views_path = os.path.join(
-        dropbox_settings.BASE_PATH,
-        'addons',
-        'dropbox',
-        'views'
-    )
-    # Remove old dropbox views directory and .pyc files
-    if os.path.isdir(dropbox_views_path):
-        shutil.rmtree(dropbox_views_path)
 
     user_settings_list = list(database['dropboxusersettings'].find())
 
@@ -190,6 +181,7 @@ def migrate(dry_run=True, remove_old=True):
                 "Found dropboxusersettings document (id:{0}) that is marked as deleted.{1}".format(user_settings_document['_id'], rm_msg)
             )
             continue
+        user_settings_document = database['dropboxusersettings'].find_one({'_id': user_settings_document['_id']})
         external_account, user, new = migrate_to_external_account(user_settings_document)
         if not external_account:
             logger.info("DropboxUserSettings<_id:{0}> has no oauth credentials and will not be migrated.".format(
@@ -205,7 +197,7 @@ def migrate(dry_run=True, remove_old=True):
                 if linked_node_settings_documents.count() and not user.is_merged:
                     logger.warn("DropboxUserSettings<_id:{0}> has no owner, but is used by DropboxNodeSettings: {1}.".format(
                         user_settings_document['_id'],
-                        ', '.join(linked_node_settings_documents.map(lambda d: d['_id']))
+                        ', '.join([each['_id'] for each in linked_node_settings_documents])
                     ))
                     raise RuntimeError("This should never happen.")
                 else:
