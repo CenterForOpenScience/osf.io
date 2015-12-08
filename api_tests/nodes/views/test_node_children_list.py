@@ -14,7 +14,8 @@ from tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RetractedRegistrationFactory
 )
 
 
@@ -107,6 +108,13 @@ class TestNodeChildrenList(ApiTestCase):
 
         assert_equal(len(ids), len([e for e in self.public_project.nodes if e.primary]))
         assert_not_in(pointed_to._id, ids)
+
+    def test_cannot_access_retracted_children(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
+        url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 class TestNodeChildrenListFiltering(ApiTestCase):
