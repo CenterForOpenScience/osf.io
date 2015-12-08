@@ -1363,15 +1363,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         else:
             suppress_log = False
 
+        self.ultimate_parent = self.root._id
+
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-        ultimate_parent = self._primary_key
-        if getattr(self, 'parent', None):
-            # TODO Remove if statement after ultimate_parent migration
-            if getattr(self.parent, 'ultimate_parent', None):
-                ultimate_parent = self.parent.ultimate_parent
-
-        self.ultimate_parent = ultimate_parent
 
         if first_save and is_original and not suppress_log:
             # TODO: This logic also exists in self.use_as_template()
