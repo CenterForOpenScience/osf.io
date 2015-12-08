@@ -314,6 +314,7 @@ class TestUserMerging(base.OsfTestCase):
             'username',
             'mailing_lists',
             'verification_key',
+            'affiliated_institutions',
             'contributor_added_email_records'
         ]
 
