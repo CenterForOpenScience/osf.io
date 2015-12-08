@@ -543,7 +543,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=time.time() + 200
+            expires_at=time.time() - 200
         )
 
         # mock a successful call to the provider to refresh tokens
@@ -552,7 +552,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             self.provider.auto_refresh_url,
              body=json.dumps({
                 'access_token': 'refreshed_access_token',
-                'expires_at': time.time() + 3600,
+                'expires_in': 3600,
                 'refresh_token': 'refreshed_refresh_token'
             })
         )
@@ -599,7 +599,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             provider_name='Mock Provider',
             oauth_key='old_key',
             oauth_secret='old_secret',
-            expires_at=time.time() + 200
+            expires_at=time.time() - 200
         )
         self.provider.client_id = None
         self.provider.client_secret = None
