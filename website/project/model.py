@@ -3390,6 +3390,9 @@ class Sanction(StoredObject):
         """
         raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
 
+    def forcibly_reject(self):
+        self.state = Sanction.REJECTED
+
 
 class TokenApprovableSanction(Sanction):
 
@@ -3484,10 +3487,7 @@ class TokenApprovableSanction(Sanction):
         except KeyError:
             raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         self.state = Sanction.REJECTED
-        self._on_reject(user, token)
-
-    def forcibly_reject(self):
-        self.state = Sanction.REJECTED
+        self._on_reject(user)
 
     def _notify_authorizer(self, user):
         pass
@@ -3715,7 +3715,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         registration = self._get_registration()
         return registration.has_permission(user, ADMIN)
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, user):
         parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
@@ -3834,7 +3834,7 @@ class Retraction(EmailApprovableSanction):
                 'registration_link': registration_link,
             }
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, user):
         parent_registration = Node.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
