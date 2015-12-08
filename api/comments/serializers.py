@@ -44,7 +44,6 @@ class CommentSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
-    hidden = ser.BooleanField(read_only=True, source='is_hidden', default=False)
 
     # LinksField.to_representation adds link to "self"
     links = LinksField({})

@@ -174,8 +174,7 @@ BaseComment.prototype.configureCommentsVisibility = function(nodeId) {
     for (var c in self.comments()) {
         var comment = self.comments()[c];
         if (self.level > 0 && self.loading() === false) {
-            comment.isHidden(self.isHidden());
-            if (!self.isHidden() && self.page() === FILES) {
+            if (self.page() === FILES) {
                 comment.title(self.title());
             }
             comment.loading(false);
@@ -273,7 +272,7 @@ var CommentModel = function(data, $parent, $root) {
     );
 
     self.isVisible = ko.pureComputed(function() {
-        return !self.isDeleted() && !self.isHidden() && !self.isAbuse();
+        return !self.isDeleted() && !self.isAbuse();
     });
 
     self.editNotEmpty = ko.pureComputed(function() {
@@ -289,21 +288,7 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.shouldShow = ko.pureComputed(function() {
-        if (!self.isDeleted() && !self.isHidden()) {
-            return true;
-        }
-        if (self.isHidden()) {
-            return self.level === 1;
-        }
-        return self.hasChildren() || self.canEdit();
-    });
-
-    self.shouldShowChildren = ko.computed(function() {
-        if (self.isHidden()) {
-            self.showChildren(false);
-            return false;
-        }
-        return true;
+        return !self.isDeleted() || self.hasChildren() || self.canEdit();
     });
 
     self.nodeUrl = '/' + self.$root.nodeId() + '/';

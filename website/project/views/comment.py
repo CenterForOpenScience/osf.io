@@ -39,7 +39,6 @@ def serialize_comment(comment, auth, anonymous=False):
     if not comment.root_target:
         root_id = ''
         title = ''
-        comment.is_hidden = True
     else:
         if isinstance(comment.root_target, StoredFileNode):  # File
             root_id = comment.root_target._id
@@ -67,7 +66,6 @@ def serialize_comment(comment, auth, anonymous=False):
         'canEdit': comment.user == auth.user,
         'modified': comment.modified,
         'isDeleted': comment.is_deleted,
-        'isHidden': comment.is_hidden,
         'isAbuse': auth.user and auth.user._id in comment.reports,
     }
 

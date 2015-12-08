@@ -188,10 +188,8 @@ class Comment(GuidStoredObject):
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
     modified = fields.BooleanField(default=False)
-
     is_deleted = fields.BooleanField(default=False)
-    # Whether the original file is deleted
-    is_hidden = fields.BooleanField(default=False)
+
     # The type of root_target: node/files
     page = fields.StringField()
     content = fields.StringField()
@@ -265,7 +263,6 @@ class Comment(GuidStoredObject):
                                             Q('date_created', 'gt', view_timestamp) &
                                             Q('date_modified', 'gt', view_timestamp) &
                                             Q('is_deleted', 'eq', False) &
-                                            Q('is_hidden', 'eq', False) &
                                             Q('root_target', 'eq', root_target)).count()
 
         return n_unread
@@ -278,7 +275,6 @@ class Comment(GuidStoredObject):
                             Q('date_created', 'gt', view_timestamp) &
                             Q('date_modified', 'gt', view_timestamp) &
                             Q('is_deleted', 'eq', False) &
-                            Q('is_hidden', 'eq', False) &
                             Q('page', 'eq', 'node')).count()
 
     @classmethod
@@ -382,16 +378,6 @@ class Comment(GuidStoredObject):
             auth=auth,
             save=False,
         )
-        if save:
-            self.save()
-
-    def hide(self, save=False):
-        self.is_hidden = True
-        if save:
-            self.save()
-
-    def show(self, save=False):
-        self.is_hidden = False
         if save:
             self.save()
 

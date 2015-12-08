@@ -624,15 +624,6 @@ class TestCommentModel(OsfTestCase):
         assert_equal(len(self.comment.node.logs), 3)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
-    def test_hide(self):
-        self.comment.hide()
-        assert_equal(self.comment.is_hidden, True)
-
-    def test_show(self):
-        self.comment.hide()
-        self.comment.show()
-        assert_equal(self.comment.is_hidden, False)
-
     def test_report_abuse(self):
         user = UserFactory()
         self.comment.report_abuse(user, category='spam', text='ads', save=True)

@@ -32,7 +32,6 @@ def update_comments():
     for comment in comments:
         comment.root_target = comment.node
         comment.page = Comment.OVERVIEW
-        comment.is_hidden = False
         comment.save()
 
 

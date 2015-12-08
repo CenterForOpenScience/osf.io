@@ -9,7 +9,7 @@
             <div data-bind="ifnot: loading">
                 <div data-bind="if: isDeleted">
                     <div>
-                        <span data-bind="if: hasChildren() && shouldShowChildren()">
+                        <span data-bind="if: hasChildren()">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
                         Comment deleted.
@@ -24,19 +24,10 @@
                         </div>
                     </div>
                 </div>
-                
-                <div data-bind="if: isHidden">
-                    <div>
-                        <span data-bind="if: hasChildren() && shouldShowChildren()">
-                            <i data-bind="css: toggleIcon, click: toggle"></i>
-                        </span>
-                        The original file is not accessible from this ${node['node_type']} or has been deleted.
-                    </div>
-                </div>
-                    
+
                 <div data-bind="if: isAbuse">
                     <div>
-                        <span data-bind="if: hasChildren() && shouldShowChildren()">
+                        <span data-bind="if: hasChildren()">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
                         Comment reported.
@@ -77,7 +68,7 @@
 
                         <div data-bind="ifnot: editing">
                             <span class="component-overflow" data-bind="html: contentDisplay"></span>
-                            <span class="pull-right" data-bind="if: hasChildren() && shouldShowChildren()">
+                            <span class="pull-right" data-bind="if: hasChildren()">
                                 <i data-bind="css: toggleIcon, click: toggle"></i>
                             </span>
                         </div>
@@ -169,7 +160,7 @@
 
             <!-- /ko -->
 
-            <!-- ko if: showChildren() && shouldShowChildren() -->
+            <!-- ko if: showChildren() -->
                 <!-- ko template: {name:  'commentTemplate', foreach: comments} -->
                 <!-- /ko -->
             <!-- /ko -->
