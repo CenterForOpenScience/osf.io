@@ -54,23 +54,8 @@ var AddProject = {
             };
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);
-
-            //Method:        POST
-            //URL:           links.self
-            //Query Params:  <none>
-            //Body (JSON):   {
-            //    "data": {
-            //        "type": "nodes", # required
-            //        "attributes": {
-            //            "title":       {title},          # required
-            //            "category":    {category},       # required
-            //            "description": {description},    # optional
-            //            "tags":        [{tag1}, {tag2}], # optional
-            //            "public":      true|false        # optional
-            //        }
-            //    }
-            //}
-            //Success:       201 CREATED + node representation
+            self.newProjectName('');
+            m.redraw(true);
 
         };
         self.reset = function _reset(){
@@ -92,7 +77,15 @@ var AddProject = {
                     m('.form-inline', [
                         m('.form-group', [
                             m('label[for="addCollInput]', 'Project Name'),
-                            m('input[type="text"].form-control.m-l-sm#addCollInput', {onchange: m.withAttr('value', ctrl.newProjectName), value: ctrl.newProjectName()})
+                            m('input[type="text"].form-control.m-l-sm#addCollInput', {
+                                onkeyup: function(ev){
+                                    if (ev.which === 13) {
+                                         ctrl.add();
+                                    }
+                                    ctrl.newProjectName($(this).val());
+                                },
+                                value : ctrl.newProjectName()
+                            })
                         ])
                     ]),
                 ]),
