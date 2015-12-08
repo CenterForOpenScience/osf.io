@@ -7,12 +7,12 @@
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
             <div class="modal-body" >
-                {{ko.toJSON($data)}}
+
                 <div data-bind="if: canRemoveAdmin()">
                     <!-- remove page -->
                     <div data-bind='if:page() === "remove"'>
                         <div class="form-group">
-                            <span>Do you want to remove {{contributorToRemove()["fullname"]}} from  <span class="f-w-lg" data-bind="text: title"></span>, or from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</span>
+                            <span>Do you want to remove <b>{{contributorToRemove()["fullname"]}}</b> from <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it.</span>
                         </div>
                         <div id="remove-page-radio-buttons" class="col-md-8" align="left">
                             <div class="radio">
@@ -35,6 +35,9 @@
 
                     <!-- removeAll page -->
                     <div data-bind='if:page() === "removeAll"'>
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+
                         <div class="form-group" data-bind="if:contributorToRemove">
                             <span><b>{{contributorToRemove()["fullname"]}}</b> will be removed from the following projects and/or components.</span>
                         </div>
@@ -45,7 +48,8 @@
                                 </li>
                             </ul>
                         </div>
-
+                        </div>
+                            </div>
                     </div><!-- end removeAll page -->
                 </div>
 
@@ -56,46 +60,40 @@
             <!-- end modal-body -->
 
             <div class="modal-footer">
-                <div data-bind="if:canRemoveAdmin()">
-                <span data-bind="if: page() === 'remove'">
-                    <div>
-                        <div class="row">
-                            <div  class="col-md-4 remove-page-buttons">
-                                <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
-                                <a class="btn btn-danger" data-bind="click:submit, visible: !deleteAll()">Remove</a>
-                                <a class="btn btn-default" data-bind="click:deleteAllNodes, visible: deleteAll">Continue</a>
+                <div data-bind="if:canRemoveAdmin()" align="right">
+                        <span data-bind="if: page() === 'remove'">
+                                <div class="row">
+                                    <div  class="col-md-4 remove-page-buttons">
+                                        <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
+                                        <a class="btn btn-danger" data-bind="click:submit, visible: !deleteAll()">Remove</a>
+                                        <a class="btn btn-default" data-bind="click:deleteAllNodes, visible: deleteAll">Continue</a>
+                                    </div>
+                                </div>
+                        </span>
+                        <span data-bind="if: page() === 'removeNoChildren'">
+                            <div>
+                                <div class="row">
+                                    <div  class="col-md-12 remove-page-buttons" align="right">
+                                        <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
+                                        <a class="btn btn-danger" data-bind="click:submit">Remove</a>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </span>
-                <span data-bind="if: page() === 'removeNoChildren'">
-                    <div>
-                        <div class="row">
-                            <div  class="col-md-12 remove-page-buttons" align="right">
-                                <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
-                                <a class="btn btn-danger" data-bind="click:submit">Remove</a>
-                            </div>
-                        </div>
-                    </div>
-                </span>
-                <span data-bind="if: page() === 'removeAll'">
-                    <div>
-                        <div class="row">
-                            <div  class="col-md-4 remove-page-buttons" align="right">
-                                <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
-                                <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
-                                <a class="btn btn-danger" data-bind="click:submit">Remove</a>
-                            </div>
-                        </div>
-                    </div>
-                </span>
+                        </span>
+                        <span data-bind="if: page() === 'removeAll'" align="right">
+                                <div class="row">
+                                    <div class="col-md-12 remove-page-buttons">
+                                        <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
+                                        <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
+                                        <a class="btn btn-danger" data-bind="click:submit">Remove</a>
+                                    </div>
+                                </div>
+                        </span>
                 </div>
                 <div data-bind="if:!canRemoveAdmin()">
-                    <div>
-                        <div class="row">
-                            <div  class="col-md-12 remove-page-buttons" align="right">
-                                <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
-                            </div>
+                    <div class="row">
+                        <div  class="col-md-12 remove-page-buttons" align="right">
+                            <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
                         </div>
                     </div>
                 </div>

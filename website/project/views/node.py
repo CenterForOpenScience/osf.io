@@ -1024,6 +1024,7 @@ def node_child_tree(user, node_ids):
             contributors.append({
                 'id': contributor._id,
                 'is_admin': node.has_permission(contributor, ADMIN),
+                'is_confirmed': contributor.is_confirmed
             })
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node

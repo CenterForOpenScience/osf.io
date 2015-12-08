@@ -21,11 +21,15 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
      */
     var i;
     var j;
-    var contributorAdmins = []
+    var adminContributors = [];
+    var registeredContributors = [];
     var nodeId = nodeTree.node.id;
     for (i=0; i < nodeTree.node.contributors.length; i++) {
         if (nodeTree.node.contributors[i].is_admin) {
-            contributorAdmins.push(nodeTree.node.contributors[i].id);
+            adminContributors.push(nodeTree.node.contributors[i].id);
+        }
+        if (nodeTree.node.contributors[i].is_confirmed) {
+            registeredContributors.push(nodeTree.node.contributors[i].id);
         }
     }
     nodesOriginal[nodeId] = {
@@ -35,7 +39,8 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         contributors: nodeTree.node.contributors,
         isAdmin: nodeTree.node.is_admin,
         visibleContributors: nodeTree.node.visible_contributors,
-        contributorAdmins: contributorAdmins
+        adminContributors: adminContributors,
+        registeredContributors: registeredContributors
     };
 
     if (nodeTree.children) {
@@ -80,23 +85,25 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             if (self.contributorToRemove()) {
                 for (var key in self.nodesOriginal()) {
                     var node = self.nodesOriginal()[key];
-                    //If there are contributors that are admin, you can always remove yourself
-                    if (node.contributorAdmins.length > 1) {
-                        canRemoveContributor[key] = true;
+                    var registeredContributors = self.nodesOriginal()[key].registeredContributors;
+                    var adminContributors = self.nodesOriginal()[key].adminContributors;
+                    var visibleContributors = self.nodesOriginal()[key].visibleContributors;
+                    debugger;
+                    var contributorIndex = registeredContributors.indexOf(self.contributorToRemove().id);
+                    var adminIndex = adminContributors.indexOf(self.contributorToRemove().id);
+                    var visibleIndex = visibleContributors.indexOf(self.contributorToRemove().id);
+                    if (contributorIndex > -1) {
+                        registeredContributors.splice(contributorIndex, 1);
                     }
-                    //If there are contributors and you are an admin, you can remove anyone but yourself.
-                    else if (node.isAdmin && (self.contributorToRemove().id !== self.userId)) {
-                        canRemoveContributor[key] = true;
+                    if (adminIndex > -1) {
+                        adminContributors.splice(adminIndex, 1);
                     }
-                    //If you are not an admin, you can remove yourself and no one else
-                    else if (!node.isAdmin && (self.contributorToRemove().id === self.userId)) {
-                        canRemoveContributor[key] = true;
+                    if (visibleIndex > -1) {
+                        visibleContributors.splice(visibleIndex, 1);
                     }
-                    else {
-                        canRemoveContributor[key] = false;
+                    canRemoveContributor[key] = (registeredContributors.length > 0 && adminContributors.length > 0 && visibleContributors.length > 0);
                     }
                 }
-            }
             return canRemoveContributor;
         });
 
