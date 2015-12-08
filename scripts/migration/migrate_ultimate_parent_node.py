@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 def do_migration():
     init_app(routes=False)
     logger.warn('ultimate_parent field will be added to all nodes.')
-    all_nodes = models.Node.find()
-    all_nodes_count = all_nodes.count()
+    all_undeleted_nodes = models.Node.find(Q('is_deleted', 'eq', False))
+    all_undeleted_nodes_count = all_undeleted_nodes.count()
     touched_counter = 0
-    logger.info('There are {} total nodes'.format(all_nodes_count))
-    for node in all_nodes:
+    logger.info('There are {} total nodes'.format(all_undeleted_nodes_count))
+    for node in all_undeleted_nodes:
         if not getattr(node, 'parent_node', None):
             touched_counter += 1
             node.save()
@@ -30,7 +30,7 @@ def do_migration():
             logger.info(
                 '{}/{}: touched node {} with children {}'.format(
                     touched_counter,
-                    all_nodes_count,
+                    all_undeleted_nodes_count,
                     node._id,
                     [child._id for child in children]
                 )
@@ -44,7 +44,7 @@ def do_migration():
                 logger.info(
                     '{}/{}: touched node {} with parent {}'.format(
                         touched_counter,
-                        all_nodes_count,
+                        all_undeleted_nodes_count,
                         child._id,
                         child.parent_id
                     )
@@ -54,7 +54,7 @@ def do_migration():
                 assert child.ultimate_parent == node.ultimate_parent
                 logger.info('Saved Node {} with ultimate_parent {}'.format(child._id, child.ultimate_parent))
 
-    assert all_nodes_count == touched_counter
+    assert all_undeleted_nodes_count == touched_counter
 
 
 def main(dry=True):
