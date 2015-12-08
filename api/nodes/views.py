@@ -4,6 +4,7 @@ from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.status import is_server_error
+from rest_framework.parsers import JSONParser
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -1761,7 +1762,7 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.UpdateAPIView, NodeM
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     serializer_class = NodeInstitutionRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, )
+    parser_classes = (JSONAPIRelationshipParser, JSONParser, )
 
     view_category = 'nodes'
     view_name = 'node-relationships-institution'
