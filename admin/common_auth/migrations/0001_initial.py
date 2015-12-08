@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from django.db import models, migrations
 import datetime
-from django.conf import settings
 
 
 class Migration(migrations.Migration):
@@ -28,19 +27,12 @@ class Migration(migrations.Migration):
                 ('is_staff', models.BooleanField(default=False)),
                 ('date_joined', models.DateTimeField(default=datetime.datetime.now)),
                 ('confirmed', models.BooleanField(default=False)),
+                ('osf_id', models.CharField(default=False, max_length=10, blank=True)),
                 ('groups', models.ManyToManyField(related_query_name='user', related_name='user_set', to='auth.Group', blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', verbose_name='groups')),
                 ('user_permissions', models.ManyToManyField(related_query_name='user', related_name='user_set', to='auth.Permission', blank=True, help_text='Specific permissions for this user.', verbose_name='user permissions')),
             ],
             options={
                 'ordering': ['email'],
             },
-        ),
-        migrations.CreateModel(
-            name='OsfUser',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('osf_id', models.CharField(max_length=10)),
-                ('user', models.OneToOneField(related_name='osf_user', to=settings.AUTH_USER_MODEL)),
-            ],
         ),
     ]

@@ -2,12 +2,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Permission
 from django.contrib.auth.forms import PasswordResetForm
-from .models import MyUser, OsfUser
+from .models import MyUser
 from forms import CustomUserRegistrationForm
-
-
-class OsfUserAdmin(admin.StackedInline):
-    model = OsfUser
 
 
 class PermissionAdmin(admin.ModelAdmin):
@@ -29,7 +25,6 @@ class CustomUserAdmin(UserAdmin):
     search_fields = ('email', 'first_name', 'last_name',)
     ordering = ('last_name', 'first_name',)
     actions = ['send_email_invitation']
-    inlines = (OsfUserAdmin, )
 
     def send_email_invitation(self, request, queryset):
         for user in queryset:

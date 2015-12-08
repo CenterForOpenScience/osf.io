@@ -11,7 +11,7 @@ import httplib as http
 from modularodm import Q
 
 import serializers
-from admin.common_auth.models import MyUser
+# from admin.common_auth.models import MyUser
 
 from framework.auth.core import User as OsfUser
 from framework.mongo.utils import get_or_http_error
@@ -24,10 +24,10 @@ get_draft_or_error = functools.partial(get_or_http_error, DraftRegistration)
 
 def load_osf_user(django_user):
 
-    if not django_user.osf_user:
-        raise RuntimeError()
+    if not django_user.osf_id:
+        raise RuntimeError('This user does not have an associated Osf User')
     else:
-        return OsfUser.load(django_user.osf_user.osf_id)
+        return OsfUser.load(django_user.osf_id)
 
 
 def is_in_prereg_group(user):
@@ -113,7 +113,7 @@ def approve_draft(request, draft_pk):
     """
     draft = get_draft_or_error(draft_pk)
 
-    user = load_osf_user(request.user)
+    user = request.user.osf_user()
     draft.approve(user)
     return JsonResponse({})
 
