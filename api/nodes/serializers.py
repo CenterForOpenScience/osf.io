@@ -384,7 +384,7 @@ class NodeProviderSerializer(JSONAPISerializer):
 
 class NodeInstitutionRelationshipSerializer(JSONAPIRelationshipSerializer):
 
-    id = ser.CharField(required=False, allow_null=True)
+    id = ser.CharField(source='institution_id', required=False, allow_null=True)
     type = TypeField(required=False, allow_null=True)
 
     links = LinksField({
@@ -405,7 +405,7 @@ class NodeInstitutionRelationshipSerializer(JSONAPIRelationshipSerializer):
         node = instance
         user = self.context['request'].user
 
-        inst = validated_data['id']
+        inst = validated_data.get('institution_id')
         if inst:
             inst = Institution.load(inst)
             if not inst:

@@ -73,8 +73,9 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['type'], 'institution')
-        assert_equal(res.json['data']['id'], self.institution._id)
+        data = res.json['data']['data']
+        assert_equal(data['type'], 'institution')
+        assert_equal(data['id'], self.institution._id)
         node.reload()
         assert_equal(node.primary_institution, self.institution)
 
@@ -102,7 +103,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'], None)
+        assert_equal(res.json['data']['data'], None)
         node.reload()
         assert_equal(node.primary_institution, None)
 
@@ -154,6 +155,6 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'], None)
+        assert_equal(res.json['data']['data'], None)
         node.reload()
         assert_equal(node.primary_institution, None)

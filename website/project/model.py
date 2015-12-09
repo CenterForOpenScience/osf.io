@@ -765,6 +765,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.primary_institution = None
         self.save()
 
+    def institution_id(self):
+        return self.primary_institution._id if self.primary_institution else None
+
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
