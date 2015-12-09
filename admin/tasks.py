@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import os
-from invoke import task, run
-from tasks_utils import pip_install
 
+from invoke import task, run
+
+from tasks.utils import pip_install
 from website import settings
 
 HERE = os.path.dirname(os.path.abspath(__file__))

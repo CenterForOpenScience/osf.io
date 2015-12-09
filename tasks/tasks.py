@@ -15,11 +15,12 @@ from invoke import run, Collection
 
 from website import settings
 from admin import tasks as admin_tasks
-from tasks_utils import pip_install, bin_prefix
+from utils import pip_install, bin_prefix
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+# gets the root path for all the scripts that rely on it
+HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 
 try:
