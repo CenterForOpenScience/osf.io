@@ -2,10 +2,12 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
+from rest_framework.mixins import ListModelMixin
 
 from api.users.serializers import UserSerializer
 from website import settings
 from .utils import absolute_reverse
+from .requests import EmbeddedRequest
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -26,8 +28,11 @@ class JSONAPIBaseView(generics.GenericAPIView):
         def partial(item):
             # resolve must be implemented on the field
             view, view_args, view_kwargs = field.resolve(item)
+            if issubclass(view.cls, ListModelMixin) and field.always_embed:
+                raise Exception("Cannot auto-embed a list view.")
+            request = EmbeddedRequest(self.request)
             view_kwargs.update({
-                'request': self.request,
+                'request': request,
                 'is_embedded': True
             })
             response = view(*view_args, **view_kwargs)
@@ -36,15 +41,15 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
     def get_serializer_context(self):
         """Inject request into the serializer context. Additionally, inject partial functions
-        (request, object -> embed items) if the query string contains embeds, and this
-        is the topmost call to this method (the embed partials call view functions which has
-        the potential to create infinite recursion hence the inclusion of the is_embedded
-        view kwarg to prevent this).
+        (request, object -> embed items) if the query string contains embeds.  Allows
+         multiple levels of nesting.
         """
         context = super(JSONAPIBaseView, self).get_serializer_context()
         if self.kwargs.get('is_embedded'):
-            return context
-        embeds = self.request.query_params.getlist('embed')
+            embeds = []
+        else:
+            embeds = self.request.query_params.getlist('embed')
+
         fields = self.serializer_class._declared_fields
         for field in fields:
             if getattr(fields[field], 'always_embed', False) and field not in embeds:
@@ -62,7 +67,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
 @api_view(('GET',))
 def root(request, format=None):
-    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, and files
+    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
     from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
     maintained by the [Center for Open Science](http://cos.io/).
 

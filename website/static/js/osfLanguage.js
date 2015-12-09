@@ -4,6 +4,7 @@ var SUPPORT_LINK = '<a href="mailto:' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL +'<
 var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_LINK + ' if the problem persists.';
 
 module.exports = {
+    REFRESH_OR_SUPPORT: REFRESH_OR_SUPPORT,
     SUPPORT_LINK: SUPPORT_LINK,
     // TODO
     makePublic: null,
@@ -12,7 +13,7 @@ module.exports = {
         registrationFailed: 'Registration failed. If this problem persists, please contact ' + SUPPORT_EMAIL + '.',
         invalidEmbargoTitle: 'Invalid embargo end date',
         invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
-        registerConfirm: 'Are you sure you want to register this project?',
+        registerConfirm: 'Before you continue...',
         registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.',
         registerFail: 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_LINK,
         submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_LINK,
@@ -88,7 +89,9 @@ module.exports = {
         dataListFetchError: 'Could not load list of developer applications at this time. ' + REFRESH_OR_SUPPORT,
         dataSendError: 'Error sending data to the server. Check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         creationSuccess: 'Successfully registered new application',
-        dataUpdated: 'Application data updated'
+        dataUpdated: 'Application data updated',
+        resetSecretConfirm: 'Are you sure you want to reset the client secret? This cannot be reversed. Your application will be unusable until it is updated with the new client secret, and all users must reauthorize access. Previously issued access tokens will no longer work.',
+        resetSecretError: 'Could not reset client secret. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + 'if the problem persists.',
     },
     apiOauth2Token: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
