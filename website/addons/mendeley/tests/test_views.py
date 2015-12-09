@@ -17,6 +17,8 @@ from website.addons.mendeley.tests.factories import (
     MendeleyNodeSettingsFactory
 )
 
+from framework.exceptions import HTTPError
+from website.addons.mendeley.provider import MendeleyCitationsProvider
 from website.addons.mendeley.serializer import MendeleySerializer
 
 from utils import mock_responses
@@ -57,6 +59,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = MendeleyNodeSettingsFactory(owner=self.project)
         self.node_addon.set_auth(external_account=self.account, user=self.user)
+        self.provider = MendeleyCitationsProvider()
         #self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
         self.node = MockNode()
         self.node.addon = self.node_addon
@@ -71,8 +74,19 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.id_patcher.stop()
         self.secret_patcher.stop()
 
-    def test_serialize_settings_authorizer(self):
+    @mock.patch('website.addons.mendeley.model.Mendeley.client', new_callable=mock.PropertyMock)
+    def test_check_mendeley_credentials(self, mock_client):
+        mock_client.side_effect = HTTPError(403)
+        assert_false(self.provider.check_credentials(self.node_addon))
+
+        mock_client.side_effect = HTTPError(402)
+        with assert_raises(HTTPError):
+            self.provider.check_credentials(self.node_addon)
+
+    @mock.patch('website.addons.mendeley.views.MendeleyCitationsProvider.check_credentials')
+    def test_serialize_settings_authorizer(self, mock_credentials):
         #"""dict: a serialized version of user-specific addon settings"""
+        mock_credentials.return_value = True
         res = self.app.get(
             self.project.api_url_for('mendeley_get_config'),
             auth=self.user.auth,
@@ -81,6 +95,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(result['nodeHasAuth'])
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
+        assert_true(result['validCredentials'])
         assert_equal(result['folder'], {'name': ''})
         assert_equal(result['ownerName'], self.user.fullname)
         assert_true(result['urls']['auth'])
@@ -90,8 +105,10 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(result['urls']['importAuth'])
         assert_true(result['urls']['settings'])
 
-    def test_serialize_settings_non_authorizer(self):
+    @mock.patch('website.addons.mendeley.views.MendeleyCitationsProvider.check_credentials')
+    def test_serialize_settings_non_authorizer(self, mock_credentials):
         #"""dict: a serialized version of user-specific addon settings"""
+        mock_credentials.return_value = True
         non_authorizing_user = AuthUserFactory()
         self.project.add_contributor(non_authorizing_user, save=True)
         res = self.app.get(
@@ -102,6 +119,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(result['nodeHasAuth'])
         assert_false(result['userHasAuth'])
         assert_false(result['userIsOwner'])
+        assert_true(result['validCredentials'])
         assert_equal(result['folder'], {'name': ''})
         assert_equal(result['ownerName'], self.user.fullname)
         assert_true(result['urls']['auth'])
@@ -111,8 +129,10 @@ class MendeleyViewsTestCase(OsfTestCase):
         assert_true(result['urls']['importAuth'])
         assert_true(result['urls']['settings'])
 
-    def test_set_auth(self):
+    @mock.patch('website.addons.mendeley.provider.MendeleyCitationsProvider.check_credentials')
+    def test_set_auth(self, mock_credentials):
 
+        mock_credentials.return_value = True
         res = self.app.put_json(
             self.project.api_url_for('mendeley_add_user_auth'),
             {

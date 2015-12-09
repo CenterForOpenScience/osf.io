@@ -287,7 +287,6 @@ CitationGrid.prototype.initTreebeard = function() {
                 return self.resolveRowAux.call(self, arguments);
             },
             ondataloaderror: function(err) {
-                $osf.handleAddonApiHTTPError(err);
                 $(self.gridSelector).html(errorPage);
             }
         },

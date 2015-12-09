@@ -105,16 +105,14 @@
                         </div>
                     % if 'admin' in user['permissions']:
                         <hr />
-                        <div class="panel-body">
                             <div class="help-block">
                                 A project cannot be deleted if it has any components within it.
                                 To delete a parent project, you must first delete all child components
                                 by visiting their settings pages.
                             </div>
                             <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
-                        </div>
                     % endif
-
+                    </div>
                 </div>
 
             % endif
