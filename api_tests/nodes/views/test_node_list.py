@@ -97,6 +97,34 @@ class TestNodeList(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
 
+    def test_node_list_has_root(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        projects_with_root = 0
+        for project in res.json['data']:
+            if project['relationships'].get('root', None):
+                projects_with_root += 1
+        assert_equal(projects_with_root, 2)
+
+    def test_node_list_has_proper_root(self):
+        project_one = ProjectFactory(title="Project One", is_public=True)
+        child = ProjectFactory(parent=project_one, is_public=True)
+
+        res = self.app.get(self.url, auth=self.user.auth, params={'embed': 'root'})
+        projects_with_correct_root = 0
+        for project in res.json['data']:
+            root_id = project['embeds']['root']['data']['id']
+
+            if project['relationships'].get('parent'):
+                parent_id = project['relationships']['parent']['links']['related']['href'][-6:-1]
+                if parent_id == project_one._id:
+                    if root_id == project_one._id:
+                        projects_with_correct_root += 1
+            elif root_id == project['id']:
+                projects_with_correct_root += 1
+
+        assert_equal(projects_with_correct_root, 4)
+
+
 
 class TestNodeFiltering(ApiTestCase):
 
@@ -351,6 +379,9 @@ class TestNodeFiltering(ApiTestCase):
         # Build up a family of nodes
         node_structure = [5, 2, [1, 2], 3, [10, 2], 2, [4, [2, 2], 6]]
         render_generations_from_node_structure_list(self.project_one, node_structure)
+        # create some unrelated projects
+        ProjectFactory(title="Road Dogg Jesse James", is_public=True)
+        ProjectFactory(title="Badd *** Billy Gunn", is_public=True)
 
         url = '/{}nodes/?filter[root]={}'.format(API_BASE, self.project_one._id)
 
