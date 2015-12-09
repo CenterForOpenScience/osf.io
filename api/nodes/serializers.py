@@ -396,10 +396,10 @@ class NodeInstitutionRelationshipSerializer(JSONAPIRelationshipSerializer):
         type_ = 'institution'
 
     def get_self_link(self, obj):
-        return '/nodes/{}/relationships/institution/'.format(obj._id)
+        return obj.institution_relationship_url()
 
     def get_related_link(self, obj):
-        return '/nodes/{}/institution/'.format(obj._id)
+        return obj.institution_url()
 
     def update(self, instance, validated_data):
         node = instance

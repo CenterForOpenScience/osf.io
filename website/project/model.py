@@ -766,7 +766,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
 
     def institution_id(self):
-        return self.primary_institution._id if self.primary_institution else None
+        # Empty string over None, as None was somehow being serialized to <string>'None',
+        # there's probably a better way to do this or a problem there.
+        return self.primary_institution._id if self.primary_institution else ''
+
+    def institution_url(self):
+        return self.absolute_api_v2_url + 'institution/'
+
+    def institution_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institution/'
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
