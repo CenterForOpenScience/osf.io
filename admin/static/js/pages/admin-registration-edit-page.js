@@ -11,10 +11,10 @@ $(document).ready(function() {
     var draftData = window.contextVars.draft;
 
     var draftEditor = new RegistrationEditor({
-	update: '/admin/pre-reg/drafts/{draft_pk}/update/',
-	approve: '/admin/pre-reg/drafts/{draft_pk}/approve/',
-	reject: '/admin/pre-reg/drafts/{draft_pk}/reject/',
-        list: '/admin/pre-reg/'
+	update: '/admin/pre_reg/drafts/{draft_pk}/update/',
+	approve: '/admin/pre_reg/drafts/{draft_pk}/approve/',
+	reject: '/admin/pre_reg/drafts/{draft_pk}/reject/',
+        list: '/admin/pre_reg/'
     }, 'registrationEditor', true);
 
     var draft = new registrationUtils.Draft(draftData);

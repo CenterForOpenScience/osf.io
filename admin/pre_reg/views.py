@@ -53,7 +53,7 @@ def prereg(request):
         'user_info': user,
         'reviewers': reviewers
     }
-    return render(request, 'pre-reg/prereg.html', context)
+    return render(request, 'pre_reg/prereg.html', context)
 
 
 @login_required
@@ -67,7 +67,7 @@ def prereg_form(request, draft_pk):
     context = {
         'draft': serializers.serialize_draft_registration(draft)
     }
-    return render(request, 'pre-reg/edit_draft_registration.html', context)
+    return render(request, 'pre_reg/edit_draft_registration.html', context)
 
 
 @login_required
