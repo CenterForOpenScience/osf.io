@@ -12,7 +12,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         super(TestNodeRelationshipInstitution, self).setUp()
         self.user = AuthUserFactory()
         self.institution = InstitutionFactory()
-        self.node = NodeFactory()
+        self.node = NodeFactory(is_public=True)
         self.node_institution_url = '/{0}nodes/{1}/relationships/institution/'.format(API_BASE, self.node._id)
 
     def test_node_with_no_permissions(self):
@@ -158,3 +158,61 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         assert_equal(res.json['data']['data'], None)
         node.reload()
         assert_equal(node.primary_institution, None)
+
+    def test_retrieve_public_node_no_inst(self):
+        res = self.app.get(self.node_institution_url)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['data'], None)
+        assert_in(self.node_institution_url, res.json['data']['links']['self'])
+
+    def test_retrieve_public_node_with_inst(self):
+        self.node.primary_institution = self.institution
+        self.node.save()
+
+        res = self.app.get(self.node_institution_url)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['data']['type'], 'institution')
+        assert_equal(res.json['data']['data']['id'], self.institution._id)
+
+    def test_retrieve_private_node_no_auth(self):
+        self.node.is_public = False
+        self.node.save()
+
+        res = self.app.get(self.node_institution_url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
+    def test_retrieve_private_node_with_auth_no_inst(self):
+        node = NodeFactory(is_public=False, creator=self.user)
+
+        res = self.app.get(
+            '/{0}nodes/{1}/relationships/institution/'.format(API_BASE, node._id),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['data'], None)
+
+    def test_retrieve_private_node_with_auth_with_inst(self):
+        node = NodeFactory(is_public=False, creator=self.user)
+        node.primary_institution = self.institution
+        node.save()
+
+        res = self.app.get(
+            '/{0}nodes/{1}/relationships/institution/'.format(API_BASE, node._id),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['data']['type'], 'institution')
+        assert_equal(res.json['data']['data']['id'], self.institution._id)
+
+    def test_retrieve_private_node_wrong_auth(self):
+        self.node.is_public = False
+        self.node.save()
+
+        res = self.app.get(self.node_institution_url, expect_errors=True, auth=self.user.auth)
+
+        assert_equal(res.status_code, 403)
