@@ -46,3 +46,10 @@ class TestInstitutionNodeDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(self.private_node.title, res.json['data']['attributes']['title'])
         assert_equal(self.private_node._id, res.json['data']['id'])
+
+    def test_return_private_node_non_contrib_auth(self):
+        user = AuthUserFactory()
+        url = self.institution_node_url + self.private_node._id + '/'
+        res = self.app.get(url, auth=user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 403)

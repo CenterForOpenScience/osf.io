@@ -5,9 +5,9 @@ from tests.factories import InstitutionFactory, AuthUserFactory
 
 from api.base.settings.defaults import API_BASE
 
-class TestInstitutionUsersList(ApiTestCase):
+class TestInstitutionUsersDetail(ApiTestCase):
     def setUp(self):
-        super(TestInstitutionUsersList, self).setUp()
+        super(TestInstitutionUsersDetail, self).setUp()
         self.institution = InstitutionFactory()
         self.user = AuthUserFactory()
         self.user.affiliated_institutions.append(self.institution)

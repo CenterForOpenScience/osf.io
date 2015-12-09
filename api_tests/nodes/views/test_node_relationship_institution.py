@@ -79,6 +79,36 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         node.reload()
         assert_equal(node.primary_institution, self.institution)
 
+    def test_user_with_institution_and_permissions_through_patch(self):
+        self.user.affiliated_institutions.append(self.institution)
+        self.user.save()
+        node = NodeFactory(creator=self.user)
+        res = self.app.patch_json_api(
+            '/{0}nodes/{1}/relationships/institution/'.format(API_BASE, node._id),
+            {'data': {'type': 'institution', 'id': self.institution._id}},
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+        data = res.json['data']['data']
+        assert_equal(data['type'], 'institution')
+        assert_equal(data['id'], self.institution._id)
+        node.reload()
+        assert_equal(node.primary_institution, self.institution)
+
+    def test_user_with_institution_and_permissions_wrong_format(self):
+        self.user.affiliated_institutions.append(self.institution)
+        self.user.save()
+        node = NodeFactory(creator=self.user)
+        res = self.app.put_json_api(
+            '/{0}nodes/{1}/relationships/institution/'.format(API_BASE, node._id),
+            {'data': {'id': self.institution._id}},
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 400)
+
     def test_remove_institution_with_no_permissions(self):
         res = self.app.put_json_api(
             self.node_institution_url,
