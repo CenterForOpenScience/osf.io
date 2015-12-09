@@ -6,7 +6,7 @@ from modularodm import Q
 def serialize_comment(comment, full=False):
     comment = {
         'id': comment._id,
-        'author': serialize_user(comment.user, full=full),
+        'author': comment.user,
         'date_created': comment.date_created,
         'date_modified': comment.date_modified,
         'content': comment.content,
@@ -23,9 +23,7 @@ def serialize_comment(comment, full=False):
 
 
 def retrieve_comment(id, full_user=False):
-    query = Q("_id", 'eq', id)
-    comment = Comment.find_one(query)
-    return serialize_comment(comment, full=full_user)
+    return serialize_comment(Comment.load(id), full=full_user)
 
 
 def serialize_comments():
@@ -42,7 +40,7 @@ def serialize_reports(reports):
 
 def serialize_report(user, report):
     return {
-        'reporter': serialize_user(User.load(user)),
+        'reporter': User.load(user),
         'category': report.get('category', None),
         'reason': report.get('text', None),
     }
