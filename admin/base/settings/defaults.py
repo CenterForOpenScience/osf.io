@@ -41,7 +41,6 @@ INSTALLED_APPS = (
     'admin.spam',
 
     # 3rd party
-    'django_extensions',
     'raven.contrib.django.raven_compat',
     'webpack_loader',
 )
