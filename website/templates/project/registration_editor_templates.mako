@@ -29,20 +29,31 @@
 </script>
 <script type="text/html" id="singleselect">
   <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
-    <p>
+    <p data-bind="if: !Boolean(option.tooltip)">
       <input type="radio" data-bind="checked: $parent.value,
                                      value: option"/>
       <span data-bind="text: option"></span>
+    </p>
+    <p data-bind="if: Boolean(option.tooltip)">
+      <input type="radio" data-bind="checked: $parent.value,
+                                     value: option.text"/>
+      <span data-bind="text: option.text, tooltip: {title: option.tooltip}"></span>
     </p>
   </div>
 </script>
 <script type="text/html" id="multiselect">
   <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
-    <p>
+    <p data-bind="if: !Boolean(option.tooltip)">
       <input type="checkbox" data-bind="attr.value: option,
                                         checked: $parent.value,
                                         checkedValue: option" />
       <span data-bind="text: option"></span>
+    </p>
+    <p data-bind="if: Boolean(option.tooltip)">
+      <input type="checkbox" data-bind="attr.value: option.text,
+                                        checked: $parent.value,
+                                        checkedValue: option"
+      <span data-bind="text: option.text, tooltip: {title: option.tooltip}"></span>
     </p>
   </div>
 </script>
@@ -69,7 +80,6 @@
             <a data-bind="click: toggleExample">Show Example</a>
             <p data-bind="visible: showExample, html: help"></p>
           </span>
-          <br />
           <br />
           <div class="row">
             <div class="col-md-12">
