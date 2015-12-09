@@ -92,6 +92,15 @@ def evernote_add_user_auth(auth, node_addon, user_addon, **kwargs):
         'message': 'Successfully imported access token from profile.',
     }
 
+
+@must_have_addon('evernote', 'node')
+@must_be_addon_authorizer('evernote')
+def evernote_notes (node_addon, **kwargs):
+    return [{'firstName': 'Elinoor', 'lastName':'Dashwood'},
+            {'firstName': 'Marianne', 'lastName':'Dashwood'},
+           ]
+
+
 @must_have_addon('evernote', 'node')
 @must_be_addon_authorizer('evernote')
 def evernote_folder_list(node_addon, **kwargs):
