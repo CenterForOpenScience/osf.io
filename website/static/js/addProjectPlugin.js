@@ -28,10 +28,14 @@ var AddProject = {
         };
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
+        self.newProjectCategory = 'project';
         self.goToProjectLink = m.prop('');
         self.errorMessageType = m.prop('unknown');
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
+        };
+        self.chooseCategory = function(event){
+            self.newProjectCategory = $(this).val();
         };
         self.add = function _add () {
             self.viewState('processing');
@@ -41,7 +45,7 @@ var AddProject = {
                         'type': 'nodes',
                         'attributes': {
                             'title': self.newProjectName(),
-                            'category': 'project',
+                            'category': self.newProjectCategory,
                             'description' : self.newProjectDesc()
                         }
                     }
@@ -77,10 +81,10 @@ var AddProject = {
                     m('h3.modal-title#addProject', 'Add New Project')
                 ]),
                 m('.modal-body', [
-                    m('.form-inline', [
+                    m('', [
                         m('.form-group.m-v-sm', [
                             m('label[for="projectName]', 'Project Name'),
-                            m('input[type="text"].form-control.m-l-sm#projectName', {
+                            m('input[type="text"].form-control#projectName', {
                                 onkeyup: function(ev){
                                     if (ev.which === 13) {
                                          ctrl.add();
@@ -92,27 +96,26 @@ var AddProject = {
                         ]),
                         m('.form-group.m-v-sm', [
                             m('label[for="projectDesc]', 'Project Description'),
-                            m('textarea.form-control.m-l-sm#projectDesc', {
+                            m('textarea.form-control#projectDesc', {
                                 onkeyup: function(ev){
                                     ctrl.newProjectDesc($(this).val());
                                 },
                                 value : ctrl.newProjectDesc()
                             })
                         ]),
-                        m('.category-group.clearfix.m-v-sm', [
-                            m('.category-group-item','Project'),
-                            m('.category-group-item','Hypothesis'),
-                            m('.category-group-item','Methods and Measures'),
-                            m('.category-group-item','Procedure'),
-                            m('.category-group-item','Instrumentation'),
-                            m('.category-group-item','Data'),
-                            m('.category-group-item','Analysis'),
-                            m('.category-group-item','Communication'),
-                            m('.category-group-item','Other'),
-                            m('.category-group-item','Uncategorized')
-
+                        m('.category-radio', [
+                            m('','Category'),
+                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catProject][value="project][checked="checked"]',{ onchange : ctrl.chooseCategory }), 'Project'])),
+                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catHypothesis][value="hypothesis"]',{ onchange : ctrl.chooseCategory }), 'Hypothesis'])),
+                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catmethods][value="methods and measures"]',{ onchange : ctrl.chooseCategory }), 'Methods and Measures'])),
+                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catprocedure][value="procedure"]',{ onchange : ctrl.chooseCategory }), 'Procedure'])),
+                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catinstrumentation][value="instrumentation"]',{ onchange : ctrl.chooseCategory }), 'Instrumentation'])),
+                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catdata][value="data"]',{ onchange : ctrl.chooseCategory }), 'Data'])),
+                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catanalysis][value="analysis"]',{ onchange : ctrl.chooseCategory }), 'Analysis'])),
+                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catcommunication][value="communication"]',{ onchange : ctrl.chooseCategory }), 'Communication'])),
+                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catother][value="other"]',{ onchange : ctrl.chooseCategory }), 'Other']))
                         ])
-                    ]),
+                    ])
                 ]),
                 m('.modal-footer', [
                     m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : ctrl.reset},  'Cancel'),
