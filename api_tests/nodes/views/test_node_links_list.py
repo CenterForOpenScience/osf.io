@@ -11,7 +11,8 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RetractedRegistrationFactory
 )
 from tests.utils import assert_logs
 
@@ -84,6 +85,13 @@ class TestNodeLinksList(ApiTestCase):
         res = self.app.get(self.public_url)
         res_json = res.json['data']
         assert_equal(len(res_json), original_length - 1)
+
+    def test_cannot_access_retracted_node_links_list(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 class TestNodeLinkCreate(ApiTestCase):

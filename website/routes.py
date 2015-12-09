@@ -1521,6 +1521,16 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/project/<pid>/tree/',
+                '/project/<pid>/node/<nid>/tree/'
+            ],
+            'get',
+            project_views.node.get_node_tree,
+            json_renderer,
+        ),
+
+        Rule(
             '/subscriptions/',
             'post',
             notification_views.configure_subscription,
