@@ -6,7 +6,7 @@
 {% block content %}
 {% render_bundle 'vendor' %}
 <link href="{% static 'css/registrations.css' %}" rel="stylesheet" type="text/css" />
-<script>
+<script type="application/javascript">
    window.contextVars = window.contextVars || {};
    window.contextVars.currentUser = {
      id: -1,
@@ -93,6 +93,9 @@
     </div>
   </div>
 </div>
-{% render_bundle 'admin-registration-edit-page' %}
 {% include "pre-reg/registration_editor_templates.html" %}
+{% endblock %}
+
+{% block bottom_js %}
+  {% render_bundle 'admin-registration-edit-page' %}
 {% endblock %}

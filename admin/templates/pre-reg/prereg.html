@@ -2,8 +2,7 @@
 {% load render_bundle from webpack_loader %}
 
 {% block content %}
-{% render_bundle 'vendor' %}
-<script>
+<script type="application/javascript">
    var prereg_user = {{ user_info|safe }};
    var prereg_reviewers = {{ reviewers|safe }};
 </script>
@@ -65,6 +64,7 @@
     </tbody>
   </table>
 </div>
-
-{% render_bundle 'prereg-admin-page' %}
+{% endblock %}
+{% block bottom_js %}
+  {% render_bundle 'prereg-admin-page' %}
 {% endblock %}

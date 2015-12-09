@@ -1,6 +1,6 @@
 'use strict';
 
-var $ = require('jQuery');
+var $ = require('jquery');
 
 var $osf = require('js/osfHelpers');
 var registrationUtils = require('js/registrationUtils');

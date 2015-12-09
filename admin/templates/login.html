@@ -44,6 +44,7 @@
           </div>
           <div>
             {% if messages %} <!-- TODO: refactor message code to display proper class type -->
+            <ul>
               {% for message in messages %}
               {% if message.level == 40 %}
                 <li class="text-danger">
@@ -52,6 +53,7 @@
                 {% endif %}
                 {{ message }}</li>
               {% endfor %}
+            </ul>
             {% endif %}
           </div>
         </form>
