@@ -83,7 +83,7 @@ var AddProject = {
                 m('.modal-body', [
                     m('', [
                         m('.form-group.m-v-sm', [
-                            m('label[for="projectName]', 'Project Name'),
+                            m('label[for="projectName].f-w-lg.text-bigger', 'Project Name'),
                             m('input[type="text"].form-control#projectName', {
                                 onkeyup: function(ev){
                                     if (ev.which === 13) {
@@ -95,7 +95,7 @@ var AddProject = {
                             })
                         ]),
                         m('.form-group.m-v-sm', [
-                            m('label[for="projectDesc]', 'Project Description'),
+                            m('label[for="projectDesc].f-w-lg.text-bigger', 'Project Description'),
                             m('textarea.form-control#projectDesc', {
                                 onkeyup: function(ev){
                                     ctrl.newProjectDesc($(this).val());
@@ -103,8 +103,8 @@ var AddProject = {
                                 value : ctrl.newProjectDesc()
                             })
                         ]),
-                        m('.category-radio', [
-                            m('','Category'),
+                        m('.f-w-lg.text-bigger','Category'),
+                        m('.category-radio.p-h-md', [
                             m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catProject][value="project][checked="checked"]',{ onchange : ctrl.chooseCategory }), 'Project'])),
                             m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catHypothesis][value="hypothesis"]',{ onchange : ctrl.chooseCategory }), 'Hypothesis'])),
                             m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catmethods][value="methods and measures"]',{ onchange : ctrl.chooseCategory }), 'Methods and Measures'])),
