@@ -28,8 +28,13 @@ def count_user_logs(user, query=None):
         query &= Q('user', 'eq', user._id)
     else:
         query = Q('user', 'eq', user._id)
-    items = [item for item in NodeLog.find(query) if item.action != 'project_created' or not item.node.is_dashboard]
-    return len(items)
+    logs = NodeLog.find(query)
+    length = logs.count()
+    if length > 0:
+        item = logs[0]
+        if item.action == 'project_created' and item.node.is_dashboard:
+            length -= 1
+    return length
 
 
 def get_depth_users(users):
