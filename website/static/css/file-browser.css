@@ -12,6 +12,9 @@
     background-color: #f8f8f8;
     margin-right: 0px !important;
     margin-left: 0px !important;
+    box-shadow: 0 3px 3px -3px #ccc;
+    z-index: 99;
+    position: relative;
 }
 .fb-breadcrumbs {
     display : inline-block;
@@ -156,6 +159,20 @@
 .fb-error {
     width: 100%;
     text-align: center;
+}
+
+/* Logs */
+
+.fb-activity-item {
+    font-size: 13px;
+    padding: 5px 10px;
+    background: #FFF;
+    margin-bottom: 3px;
+    border-bottom: 1px solid #eee;
+}
+
+#poFilter {
+    width : 300px;
 }
 
 /* Responsive Style */

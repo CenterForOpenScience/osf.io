@@ -5,6 +5,11 @@
     padding-right:0;
 }
 
+.dashboard-header {
+    background: #f2f2f2;
+    border-bottom: 1px solid #eee;
+}
+
 .tb-th {
     font-weight: normal;
 }
