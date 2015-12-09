@@ -12,12 +12,12 @@ from tests import factories
 
 from framework.mongo import handlers
 
-from website.project.model import Sanction, EmailApprovableSanction, ensure_schemas
+from website.project.model import Sanction, TokenApprovableSanction, EmailApprovableSanction, ensure_schemas, PreregCallbackMixin
 
 def valid_user():
     return factories.UserFactory(system_tags=['flag'])
 
-class SanctionTestClass(Sanction):
+class SanctionTestClass(TokenApprovableSanction):
 
     DISPLAY_NAME = 'test class'
 
@@ -26,7 +26,7 @@ class SanctionTestClass(Sanction):
     def _validate_authorizer(self, user):
         return 'flag' in user.system_tags
 
-class EmailApprovableSanctionTestClass(EmailApprovableSanction):
+class EmailApprovableSanctionTestClass(PreregCallbackMixin, EmailApprovableSanction):
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = 'authorizer'
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = 'non-authorizer'
@@ -114,7 +114,7 @@ class TestSanction(SanctionsTestCase):
         assert_true(mock_complete.called)
 
     def test_on_reject_raises_NotImplementedError(self):
-        err = lambda: self.sanction._on_reject(self.user, '')
+        err = lambda: self.sanction._on_reject(self.user)
         assert_raises(NotImplementedError, err)
 
     def test_on_complete_raises_NotImplementedError(self):
@@ -223,6 +223,30 @@ class TestEmailApprovableSanction(SanctionsTestCase):
                 user=user,
                 **{}
             )
+
+    def test_on_complete_notify_initiator(self):
+        sanction = EmailApprovableSanctionTestClass(
+            initiated_by=self.user,
+            end_date=datetime.datetime.now() + datetime.timedelta(days=2),
+            notify_initiator_on_complete=True
+        )
+        sanction.add_authorizer(self.user)
+        sanction.save()
+        with mock.patch.object(EmailApprovableSanctionTestClass, '_notify_initiator') as mock_notify:
+            sanction._on_complete(self.user)
+        mock_notify.assert_called()
+
+    def test_notify_initiator_with_PreregCallbackMixin(self):
+        sanction = EmailApprovableSanctionTestClass(
+            initiated_by=self.user,
+            end_date=datetime.datetime.now() + datetime.timedelta(days=2),
+            notify_initiator_on_complete=True
+        )
+        sanction.add_authorizer(self.user)
+        sanction.save()
+        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+            sanction._on_complete(self.user)
+        mock_notify.assert_called()
 
 
 class TestRegistrationApproval(OsfTestCase):

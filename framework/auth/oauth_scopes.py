@@ -50,8 +50,11 @@ class CoreScopes(object):
     APPLICATIONS_READ = 'applications_read'
     APPLICATIONS_WRITE = 'applications_write'
 
+    NODE_LOG_READ = 'nodes.logs_read'
     TOKENS_READ = 'tokens_read'
     TOKENS_WRITE = 'tokens_write'
+
+    NULL = 'null'
 
     ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
     ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
