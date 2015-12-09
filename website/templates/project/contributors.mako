@@ -226,7 +226,7 @@
                                 <i class="fa fa-times text-danger no-sort"></i>
                     </a>
            -->
-                        <a href="#removeContributor" data-bind="click: remove,  css: {'disabled': $parent.changed},  tooltip: {title: 'Remove contributor'}" data-toggle="modal">
+                        <a href="#removeContributor" data-bind="click: remove,  tooltip: {title: 'Remove contributor'}" data-toggle="modal">
                             <i class="fa fa-times text-danger no-sort"></i>
                         </a>
 
@@ -239,7 +239,7 @@
             <!-- ko ifnot: contributor.canEdit() -->
                 <!-- ko if: canRemove -->
                     <a   href="#removeContributor"
-                            data-bind="click: function() { $data.removeSelf($parent)}, tooltip: {title: 'Remove contributor'}, css: {'disabled': $parent.changed}, tooltip: {title: 'Remove contributor'}"
+                            data-bind="click: function() { $data.removeSelf($parent)}, tooltip: {title: 'Remove contributor'}, tooltip: {title: 'Remove contributor'}"
                         >
                         <i class="fa fa-times text-danger no-sort"></i>
                     </a>

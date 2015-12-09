@@ -7,8 +7,8 @@
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
             <div class="modal-body" >
-
-                <div data-bind="if: canRemoveAdmin()">
+{{ko.toJSON($data)}}
+                <div data-bind="if: canRemoveOnNode() && !pageChanged()">
                     <!-- remove page -->
                     <div data-bind='if:page() === "remove"'>
                         <div class="form-group">
@@ -52,15 +52,17 @@
                             </div>
                     </div><!-- end removeAll page -->
                 </div>
-
-                <div data-bind="if: !canRemoveAdmin()">
+                <div data-bind="if: !canRemoveOnNode()">
                     <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.  You need at least one administrator and one bibliographic contributor.</span>
+                </div>
+                <div data-bind="if: pageChanged()">
+                    <span>Please save your changes before removing a contributor.</span>
                 </div>
             </div>
             <!-- end modal-body -->
 
             <div class="modal-footer">
-                <div data-bind="if:canRemoveAdmin()" align="right">
+                <div data-bind="if:canRemoveOnNode() && !pageChanged()" align="right">
                         <span data-bind="if: page() === 'remove'">
                                 <div class="row">
                                     <div  class="col-md-4 remove-page-buttons">
@@ -90,7 +92,7 @@
                                 </div>
                         </span>
                 </div>
-                <div data-bind="if:!canRemoveAdmin()">
+                <div data-bind="if:!canRemoveOnNode() || pageChanged()">
                     <div class="row">
                         <div  class="col-md-12 remove-page-buttons" align="right">
                             <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>

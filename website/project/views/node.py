@@ -1023,13 +1023,9 @@ def node_child_tree(user, node_ids):
                 'is_admin': node.has_permission(contributor, ADMIN),
                 'is_confirmed': contributor.is_confirmed
             })
-        admin_contributors = []
-        for admin_contributor in node.admin_contributors:
-            admin_contributors.append(admin_contributor._id)
 
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-
         children = []
         children.extend(node_child_tree(
             user,
@@ -1046,11 +1042,9 @@ def node_child_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
-                'addons': addons,
                 'contributors': contributors,
                 'visible_contributors': node.visible_contributor_ids,
-                'is_admin': node.has_permission(user, ADMIN),
-                'admin_contributors': admin_contributors
+                'is_admin': node.has_permission(user, ADMIN)
             },
             'children': children,
             'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
@@ -1062,7 +1056,6 @@ def node_child_tree(user, node_ids):
         }
 
         items.append(item)
-
     return items
 
 

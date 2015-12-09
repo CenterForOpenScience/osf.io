@@ -40,7 +40,7 @@ var sortMap = {
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, shouter, isRegistration, isAdmin) {
+var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, contribShouter, changeShouter, isRegistration, isAdmin) {
 
     var self = this;
     $.extend(self, contributor);
@@ -70,7 +70,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, shou
     self.contributorToRemove = ko.observable();
 
     self.contributorToRemove.subscribe(function(newValue) {
-        shouter.notifySubscribers(newValue, "messageToPublish");
+        contribShouter.notifySubscribers(newValue, 'contribMessageToPublish');
     });
 
     self.serialize = function() {
@@ -114,6 +114,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, shou
         var currentValue = self.curPermission().value;
         return currentValue === self.original;
     });
+    
     // TODO: copied-and-pasted from nodeControl. When nodeControl
     // gets refactored, update this to use global method.
     self.removeSelf = function(parent) {
@@ -195,7 +196,7 @@ var MessageModel = function(text, level) {
 
 };
 
-var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, shouter) {
+var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, contribShouter, pageChangedShouter) {
 
     var self = this;
 
@@ -263,7 +264,8 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.canSubmit = ko.computed(function() {
         return self.changed() && self.validAdmin() && self.validVisible();
     });
-    self.changed.subscribe(function() {
+    self.changed.subscribe(function(newValue) {
+        pageChangedShouter.notifySubscribers(newValue, "changedMessageToPublish");
         self.messages([]);
     });
 
@@ -295,10 +297,10 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.init = function() {
         self.messages([]);
         self.contributors(self.original().map(function(item) {
-            return new ContributorModel(item, self.canEdit(), self.user(), shouter, isRegistration);
+            return new ContributorModel(item, self.canEdit(), self.user(), contribShouter, pageChangedShouter, isRegistration);
         }));
         self.adminContributors = adminContributors.map(function(contributor) {
-          return new ContributorModel(contributor, self.canEdit(), self.user(), shouter, isRegistration, true);
+          return new ContributorModel(contributor, self.canEdit(), self.user(), contribShouter, pageChangedShouter, isRegistration, true);
         });
     };
 
@@ -415,12 +417,13 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
     self.selectedRemove = new ko.observable();
     //shouter allows communication between ContribManager and ContribRemover, in particular which contributor needs to
     // be removed is passed to ContribRemover
-    var shouter = new ko.subscribable();
+    var contribShouter = new ko.subscribable();
+    var changeShouter = new ko.subscribable();
     self.selector = selector;
     self.$element = $(selector);
     self.contributors = contributors;
     self.adminContributors = adminContributors;
-    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, shouter);
+    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, contribShouter, changeShouter);
     $('body').on('nodeLoad', function(event, data) {
         // If user is a contributor, initialize the contributor modal
         // controller
@@ -441,7 +444,8 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
                 data.parent_node.title,
                 data.user.username,
                 data.user.id,
-                shouter
+                contribShouter,
+                changeShouter
             );
 
 

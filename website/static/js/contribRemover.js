@@ -53,7 +53,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
 
 
 var RemoveContributorViewModel = oop.extend(Paginator, {
-    constructor: function(title, nodeId, nodeHasChildren, parentId, parentTitle, userName, userId, shouter) {
+    constructor: function(title, nodeId, nodeHasChildren, parentId, parentTitle, userName, userId, contribShouter, pageChangedShouter) {
         this.super.constructor.call(this);
         var self = this;
         self.title = title;
@@ -62,9 +62,14 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.parentTitle = parentTitle;
         self.userId = userId;
         self.contributorToRemove = ko.observable('');
-        shouter.subscribe(function(newValue) {
+        contribShouter.subscribe(function(newValue) {
             self.contributorToRemove(newValue);
-        }, self, 'messageToPublish');
+        }, self, 'contribMessageToPublish');
+
+        self.pageChanged = ko.observable(false);
+        pageChangedShouter.subscribe(function(newValue) {
+            self.pageChanged(newValue);
+        }, self, 'changedMessageToPublish');
 
         self.page = ko.observable('remove');
         self.pageTitle = ko.computed(function() {
@@ -80,17 +85,19 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         var nodesOriginal = {};
         self.nodesOriginal = ko.observableArray();
 
-        self.canRemoveOnNodes = ko.computed(function() {
-            var canRemoveOnNodes = {};
+        self.canRemoveNodes = ko.computed(function() {
+            var canRemoveNodes = {};
+            var nodesOriginalLocal = ko.toJS(self.nodesOriginal());
             if (self.contributorToRemove()) {
-                for (var key in self.nodesOriginal()) {
-                    var node = self.nodesOriginal()[key];
-                    var registeredContributors = self.nodesOriginal()[key].registeredContributors;
-                    var adminContributors = self.nodesOriginal()[key].adminContributors;
-                    var visibleContributors = self.nodesOriginal()[key].visibleContributors;
-                    var contributorIndex = registeredContributors.indexOf(self.contributorToRemove().id);
-                    var adminIndex = adminContributors.indexOf(self.contributorToRemove().id);
-                    var visibleIndex = visibleContributors.indexOf(self.contributorToRemove().id);
+                var contributor_id = self.contributorToRemove().id;
+                for (var key in nodesOriginalLocal) {
+                    var node = nodesOriginalLocal[key];
+                    var registeredContributors = node.registeredContributors;
+                    var adminContributors = node.adminContributors;
+                    var visibleContributors = node.visibleContributors;
+                    var contributorIndex = registeredContributors.indexOf(contributor_id);
+                    var adminIndex = adminContributors.indexOf(contributor_id);
+                    var visibleIndex = visibleContributors.indexOf(contributor_id);
                     if (contributorIndex > -1) {
                         registeredContributors.splice(contributorIndex, 1);
                     }
@@ -100,19 +107,22 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                     if (visibleIndex > -1) {
                         visibleContributors.splice(visibleIndex, 1);
                     }
-                    canRemoveOnNodes[key] = (registeredContributors.length > 0 && adminContributors.length > 0 && visibleContributors.length > 0);
+                    self.canRemoveAdmin = adminContributors.length > 0;
+                    self.canRemoveVisible = visibleContributors.length > 0;
+                    self.canRemoveRegistered = registeredContributors.length > 0 ;
+                    canRemoveNodes[key] = (registeredContributors.length > 0 && adminContributors.length > 0 && visibleContributors.length > 0);
                     }
                 }
-            return canRemoveOnNodes;
+            return canRemoveNodes;
         });
 
-        self.canRemoveOnNode = ko.computed(function() {
-            return self.canRemoveOnNodes()[self.nodeId];
-        })
+        self.canRemoveNode = ko.computed(function() {
+            return self.canRemoveNodes()[self.nodeId];
+        });
 
         self.hasChildrenToRemove = ko.computed(function() {
             //if there is more then one node to remove, then show a simplified page
-            if (Object.keys(self.canRemoveOnNodes()).length > 1) {
+            if (Object.keys(self.canRemoveNodes()).length > 1) {
                 self.page('remove');
                 return true;
             }
@@ -124,13 +134,13 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.modalSize = ko.pureComputed(function() {
             var self = this;
-            return self.hasChildrenToRemove() && self.canRemoveAdmin() ? 'modal-dialog modal-lg' : 'modal-dialog modal-md';
+            return self.hasChildrenToRemove() && self.canRemoveNode() ? 'modal-dialog modal-lg' : 'modal-dialog modal-md';
         }, self);
 
         self.titlesToRemove = ko.computed(function() {
             var titlesToRemove = [];
             for (var key in self.nodesOriginal()) {
-                if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveOnNodes()[key]) {
+                if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveNodes()[key]) {
                     var node = self.nodesOriginal()[key];
                     var contributors = node.contributors;
                     for (var i = 0; i < contributors.length; i++) {
@@ -147,7 +157,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.nodeIDsToRemove = ko.computed(function() {
             var nodeIDsToRemove = [];
             for (var key in self.nodesOriginal()) {
-                if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveOnNodes()[key]) {
+                if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveNodes()[key]) {
                     var node = self.nodesOriginal()[key];
                     var contributors = node.contributors;
                     for (var i = 0; i < contributors.length; i++) {
@@ -243,7 +253,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribRemover(selector, nodeTitle, nodeId, nodeHasChildren, parentId, parentTitle, userName, userId, shouter) {
+function ContribRemover(selector, nodeTitle, nodeId, nodeHasChildren, parentId, parentTitle, userName, userId, contribShouter, pageChangedShouter) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
@@ -255,7 +265,7 @@ function ContribRemover(selector, nodeTitle, nodeId, nodeHasChildren, parentId, 
     self.userName = userName;
     self.userId = userId;
     self.viewModel = new RemoveContributorViewModel(self.nodeTitle,
-        self.nodeId, self.nodeHasChildren, self.parentId, self.parentTitle, self.userName, self.userId, shouter);
+        self.nodeId, self.nodeHasChildren, self.parentId, self.parentTitle, self.userName, self.userId, contribShouter, pageChangedShouter);
     self.init();
 }
 
