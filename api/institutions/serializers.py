@@ -3,8 +3,8 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField
 
 class InstitutionSerializer(JSONAPISerializer):
-    name = ser.CharField(required=True)
-    id = ser.CharField(required=True, source='_id')
+    name = ser.CharField(required=False)
+    id = ser.CharField(required=False, source='_id')
     logopath = ser.CharField(source='logo_path')
     links = LinksField({'self': 'get_api_url',
                         'html': 'get_absolute_url', })

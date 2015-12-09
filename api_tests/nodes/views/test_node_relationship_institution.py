@@ -60,7 +60,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 500)
+        assert_equal(res.status_code, 409)
 
     def test_user_with_institution_and_permissions(self):
         self.user.affiliated_institutions.append(self.institution)

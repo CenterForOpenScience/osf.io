@@ -118,7 +118,9 @@ class NodeSerializer(JSONAPISerializer):
 
     primary_institution = RelationshipField(
         related_view='nodes:node-institution-detail',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<pk>'},
+        self_view='nodes:node-relationships-institution',
+        self_view_kwargs={'node_id': '<pk>'}
     )
 
     logs = RelationshipField(
@@ -382,26 +384,34 @@ class NodeProviderSerializer(JSONAPISerializer):
 
 class NodeInstitutionRelationshipSerializer(JSONAPIRelationshipSerializer):
 
+    id = ser.CharField(required=False, allow_null=True)
+    type = TypeField(required=False, allow_null=True)
+
+    links = LinksField({
+        'self': 'get_self_link',
+        'related': 'get_related_link',
+    })
+
     class Meta:
         type_ = 'institution'
 
-    def relationship(self, obj):
-        return obj.primary_institution
+    def get_self_link(self, obj):
+        return '/nodes/{}/relationships/institution/'.format(obj._id)
+
+    def get_related_link(self, obj):
+        return '/nodes/{}/institution/'.format(obj._id)
 
     def update(self, instance, validated_data):
         node = instance
         user = self.context['request'].user
-        data = self.context['request'].data['data']
-        if data:
-            assert data['type'] == 'institution', 'Not right endpoint for this type, expected \'institution\' '
-            inst = Institution.load(data.get('id'))
+
+        inst = validated_data['id']
+        if inst:
+            inst = Institution.load(inst)
             if not inst:
                 raise exceptions.NotFound
             if not inst.auth(user):
                 raise exceptions.PermissionDenied
-            node.primary_institution = inst
-            node.save()
-        else:
-            node.primary_institution = None
-            node.save()
+        node.primary_institution = inst
+        node.save()
         return node

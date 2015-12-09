@@ -19,6 +19,18 @@ from api.users.serializers import UserSerializer, UserDetailSerializer
 
 from .serializers import InstitutionSerializer, InstitutionDetailSerializer
 
+class InstitutionMixin(object):
+
+    institution_lookup_url_kwarg = 'institution_id'
+
+    def get_institution(self):
+        inst = get_object_or_error(
+            Institution,
+            self.kwargs[self.institution_lookup_url_kwarg],
+            display_name='institution'
+        )
+        return inst
+
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView):
     permission_classes = (
@@ -38,7 +50,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView):
         return Institution.find()
 
 
-class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -53,14 +65,10 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'institution-detail'
 
     def get_object(self):
-        inst = get_object_or_error(
-            Institution,
-            self.kwargs['institution_id'],
-            display_name='institution'
-        )
-        return inst
+        return self.get_institution()
 
-class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView):
+
+class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -75,7 +83,7 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView)
     view_name = 'institution-nodes'
 
     def get_default_odm_query(self):
-        inst = Institution.load(self.kwargs['institution_id'])
+        inst = self.get_institution()
         inst_query = Q('primary_institution', 'eq', inst)
         base_query = (
             Q('is_deleted', 'ne', True) &
@@ -94,7 +102,8 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView)
         query = self.get_query_from_request()
         return Node.find(query)
 
-class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+
+class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin, InstitutionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -110,13 +119,14 @@ class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
     view_name = 'institution-node-detail'
 
     def get_object(self):
-        inst = Institution.load(self.kwargs['institution_id'])
+        inst = self.get_institution()
         node = self.get_node()
         if node.primary_institution != inst:
             raise NotFound
         return node
 
-class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView):
+
+class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -131,7 +141,7 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView)
     view_name = 'institution-users'
 
     def get_default_odm_query(self):
-        inst = Institution.load(self.kwargs['institution_id'])
+        inst = self.get_institution()
         query = Q('affiliated_institutions', 'eq', inst)
         return query
 
@@ -139,7 +149,8 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView)
         query = self.get_query_from_request()
         return User.find(query)
 
-class InstitutionUserDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+
+class InstitutionUserDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -158,7 +169,7 @@ class InstitutionUserDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             self.kwargs['user_id'],
             display_name='user'
         )
-        inst = Institution.load(self.kwargs['institution_id'])
+        inst = self.get_institution()
         if inst not in user.affiliated_institutions:
             raise NotFound
         return user

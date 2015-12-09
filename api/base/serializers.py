@@ -702,24 +702,24 @@ class JSONAPISerializer(ser.Serializer):
         return ret
 
 class JSONAPIRelationshipSerializer(ser.Serializer):
-    def relationship(self, obj):
-        raise NotImplementedError
 
     def to_representation(self, obj, envelope='data'):
         ret = {}
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
-        relationship = self.relationship(obj)
-        if relationship:
-            data = collections.OrderedDict({'type': type_, 'id': relationship._id})
-        else:
-            data = None
-        if envelope:
-            ret[envelope] = data
-        else:
-            ret = data
+        relationship_id = self.validated_data.get('id')
+        data = collections.OrderedDict([
+            ('links', collections.OrderedDict()),
+            ('data', collections.OrderedDict()),
+        ])
+
+        data['data'] = {'type': type_, 'id': relationship_id} if relationship_id else None
+        data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
+
+        ret.update({envelope: data} if envelope else data)
         return ret
+
 
 def DevOnly(field):
     """Make a field only active in ``DEV_MODE``. ::

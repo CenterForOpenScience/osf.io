@@ -9,7 +9,6 @@ class TestInstitutionDetail(ApiTestCase):
     def setUp(self):
         super(TestInstitutionDetail, self).setUp()
         self.institution = InstitutionFactory()
-        self.institution.save()
         self.institution_url = '/' + API_BASE + 'institutions/{id}/'
 
     def test_return_wrong_id(self):
