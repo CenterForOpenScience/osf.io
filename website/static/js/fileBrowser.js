@@ -303,7 +303,7 @@ var FileBrowser = {
             ctrl.showSidebar(true);
         }
         return [
-            m('.fb-header.m-b-xs.row', [
+            m('.fb-header.row', [
                 m('.col-xs-12.col-sm-6', m.component(Breadcrumbs, {
                     data : ctrl.breadcrumbs,
                     updateFilesData : ctrl.updateFilesData
@@ -706,27 +706,41 @@ var Information = {
         if (args.selected().length === 1) {
             var item = args.selected()[0];
             template = m('', [
-                m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
-                m('p.fb-info-meta.text-muted', [
-                    m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
-                    m('span', ', Last Modified on ' + item.data.date.local)
-                ]),
-                m('p', [
-                    m('span', item.data.attributes.description)
-                ]),
-                m('p.m-t-md', [
-                    m('h5', 'Tags'),
-                    item.data.attributes.tags.map(function(tag){
-                        return m('span.tag', tag);
-                    })
-                ]),
-                m('p.m-t-md', [
-                    m('h5', 'Jump to Page'),
-                    m('a.p-xs', { href : item.data.links.html + 'wiki/home'}, 'Wiki'),
-                    m('a.p-xs', { href : item.data.links.html + 'files/'}, 'Files'),
-                    m('a.p-xs', { href : item.data.links.html + 'settings/'}, 'Settings'),
-                ]),
-                m.component(ActivityLogs, { activityLogs : args.activityLogs })
+                m('h3', m('a', { href : item.data.links.html}, item.data.attributes.title)),
+
+                m('[role="tabpanel"]', [
+                    m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
+                        m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', 'Information')),
+                        m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', 'Activity')),
+                    ]),
+                    m('.tab-content', [
+                        m('[role="tabpanel"].tab-pane.active#tab-information',[
+                            m('p.fb-info-meta.text-muted', [
+                                m('', 'Visibility : ' + (item.data.attributes.public ? 'Public' : 'Private')),
+                                m('', 'Category: ' + item.data.attributes.category),
+                                m('', 'Last Modified on: ' + item.data.date.local)
+                            ]),
+                            m('p', [
+                                m('span', item.data.attributes.description)
+                            ]),
+                            m('p.m-t-md', [
+                                m('h5', 'Tags'),
+                                item.data.attributes.tags.map(function(tag){
+                                    return m('span.tag', tag);
+                                })
+                            ]),
+                            m('p.m-t-md', [
+                                m('h5', 'Jump to Page'),
+                                m('a.p-xs', { href : item.data.links.html + 'wiki/home'}, 'Wiki'),
+                                m('a.p-xs', { href : item.data.links.html + 'files/'}, 'Files'),
+                                m('a.p-xs', { href : item.data.links.html + 'settings/'}, 'Settings'),
+                            ])
+                        ]),
+                        m('[role="tabpanel"].tab-pane.active#tab-activity',[
+                            m.component(ActivityLogs, { activityLogs : args.activityLogs })
+                        ])
+                    ])
+                ])
             ]);
         }
         if (args.selected().length > 1) {
@@ -748,10 +762,9 @@ var Information = {
 var ActivityLogs = {
     view : function (ctrl, args) {
         return m('.fb-activity-list.m-t-md', [
-            m('h5', 'Activity Logs'),
             args.activityLogs ? args.activityLogs().map(function(item){
-                return m('.fb-activity-item.osf-box.p-sm', [
-                    item.attributes.formattableDate.local,
+                return m('.fb-activity-item', [
+                    m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
                     m.component(LogText,item)
                 ]);
             }) : ''
