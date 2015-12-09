@@ -3300,7 +3300,9 @@ class PrivateLink(StoredObject):
 class Sanction(StoredObject):
     """Sanction class is a generic way to track approval states"""
     # Tell modularodm not to attach backends
-    abstract = True
+    _meta = {
+        'abstract': True,
+    }
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -3368,6 +3370,37 @@ class Sanction(StoredObject):
     def is_rejected(self):
         return self.state == Sanction.REJECTED
 
+    def approve(self, user):
+        raise NotImplementedError("Sanction subclasses must implement an approve method.")
+
+    def reject(self, user):
+        raise NotImplementedError("Sanction subclasses must implement an approve method.")
+
+    def _on_reject(self, user):
+        """Callback for rejection of a Sanction
+
+        :param User user:
+        """
+        raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
+
+    def _on_complete(self, user):
+        """Callback for when a Sanction has approval and enters the ACTIVE state
+
+        :param User user:
+        """
+        raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
+
+    def forcibly_reject(self):
+        self.state = Sanction.REJECTED
+
+
+class TokenApprovableSanction(Sanction):
+
+    # Tell modularodm not to attach backends
+    _meta = {
+        'abstract': True,
+    }
+
     def _validate_authorizer(self, user):
         """Subclasses may choose to provide extra restrictions on who can be an authorizer
 
@@ -3426,20 +3459,15 @@ class Sanction(StoredObject):
             self.state = Sanction.APPROVED
             self._on_complete(user)
 
-    def _on_reject(self, user, token):
-        """Callback for rejection of a Sanction
-
-        :param User user:
-        :param str token: user's approval token
+    def token_for_user(self, user, method):
         """
-        raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
-
-    def _on_complete(self, user):
-        """Callback for when a Sanction has approval and enters the ACTIVE state
-
-        :param User user:
+        :param str method: 'approval' | 'rejection'
         """
-        raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
+        try:
+            user_state = self.approval_state[user._id]
+        except KeyError:
+            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
+        return user_state['{0}_token'.format(method)]
 
     def approve(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
@@ -3459,10 +3487,7 @@ class Sanction(StoredObject):
         except KeyError:
             raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         self.state = Sanction.REJECTED
-        self._on_reject(user, token)
-
-    def forcibly_reject(self):
-        self.state = Sanction.REJECTED
+        self._on_reject(user)
 
     def _notify_authorizer(self, user):
         pass
@@ -3478,7 +3503,12 @@ class Sanction(StoredObject):
                 self._notify_non_authorizer(contrib)
 
 
-class EmailApprovableSanction(Sanction):
+class EmailApprovableSanction(TokenApprovableSanction):
+
+    # Tell modularodm not to attach backends
+    _meta = {
+        'abstract': True,
+    }
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
@@ -3685,7 +3715,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         registration = self._get_registration()
         return registration.has_permission(user, ADMIN)
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, user):
         parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
@@ -3804,7 +3834,7 @@ class Retraction(EmailApprovableSanction):
                 'registration_link': registration_link,
             }
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, user):
         parent_registration = Node.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
@@ -3957,7 +3987,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
         self.save()
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, user):
         register = self._get_registration()
         registered_from = register.registered_from
         register.delete_registration_tree(save=True)
@@ -3995,6 +4025,24 @@ class DraftRegistrationApproval(Sanction):
             raise NotImplementedError(
                 'TODO: add a generic email template for registration approvals'
             )
+
+    def approve(self, user):
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        if user._id not in draft.get_authorizers():
+            raise PermissionsError("This user does not have permission to approve this draft.")
+        self.state = Sanction.APPROVED
+        self._on_complete(user)
+
+    def reject(self, user):
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        if user._id not in draft.get_authorizers():
+            raise PermissionsError("This user does not have permission to approve this draft.")
+        self.state = Sanction.REJECTED
+        self._on_reject(user)
 
     def _on_complete(self, user):
         draft = DraftRegistration.find_one(
@@ -4166,3 +4214,11 @@ class DraftRegistration(StoredObject):
         if save:
             self.save()
         return register
+
+    def approve(self, user):
+        self.approval.approve(user)
+        self.approval.save()
+
+    def reject(self, user):
+        self.approval.reject(user)
+        self.approval.save()
