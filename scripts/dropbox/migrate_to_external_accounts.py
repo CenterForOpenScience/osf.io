@@ -1,7 +1,5 @@
 import logging
-import os
 import sys
-import shutil
 
 from dropbox.client import DropboxClient
 from nose.tools import *  # noqa
@@ -13,6 +11,8 @@ from framework.transactions.context import TokuTransaction
 from website.app import init_app
 from website.models import User, Node
 from website.oauth.models import ExternalAccount
+from scripts import utils as script_utils
+
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def salvage_broken_user_settings_document(document):
             )
         except Exception:
             # Invalid token probably
-            # Still want Dropbox to be enabled to show error message 
+            # Still want Dropbox to be enabled to show error message
             # to user on node settings, pass
             return True
         else:
@@ -94,7 +94,7 @@ def migrate_to_external_account(user_settings_document):
             display_name=user_settings_document['dropbox_info'].get('display_name', None) if user_settings_document.get('dropbox_info', None) else None,
         )
         external_account.save()  # generate pk for external accountc
-    
+
     user.external_accounts.append(external_account)
     user.save()
     return external_account, user, new
@@ -243,7 +243,7 @@ def migrate(dry_run=True, remove_old=True):
             old_node_settings, old_node_settings_count,
             dry_run
         )
-        
+
     if dry_run:
         raise RuntimeError('Dry run, transaction rolled back.')
 
@@ -254,6 +254,8 @@ def main():
         remove_old = False
     if '--dry' in sys.argv:
         dry_run = True
+    if not dry_run:
+        script_utils.add_file_logger(logger, __file__)
     init_app(set_backends=True, routes=False)
     with TokuTransaction():
         migrate(dry_run=dry_run, remove_old=remove_old)
