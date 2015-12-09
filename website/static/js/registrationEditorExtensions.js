@@ -207,11 +207,41 @@ var Uploader = function(question) {
     $.extend(self, question);
 };
 
-var AuthorImport = function(data, $root) {
+var AuthorImport = function(data, $root, preview) {
     var self = this;
 
     self.question = data;
-    self.contributors = $root.contributors();
+    self.contributors = ko.observable();
+
+    /**
+     * Makes ajax request for a project's contributors
+     */
+    self.makeContributorsRequest = function() {
+        var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
+        return $.getJSON(contributorsUrl);
+    };
+    /**
+     * Returns the `user_fullname` of each contributor attached to a node.
+     **/
+    self.getContributors = function() {
+        return self.makeContributorsRequest()
+            .then(function(data) {
+                return $.map(data.contributors, function(c) { return c.fullname; });
+            }).fail(function(xhr, status, error) {
+                Raven.captureMessage('Could not GET contributors', {
+                    url: window.contextVars.node.urls.api + 'get_contributors/',
+                    textStatus: status,
+                    error: error
+                });
+                $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
+            });
+    };
+
+    if (!preview) {
+        self.getContributors().done(function(data) {
+            self.contributors(data);
+        });
+    }
 
     self.setContributorBoxes = function(value) {
         var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');

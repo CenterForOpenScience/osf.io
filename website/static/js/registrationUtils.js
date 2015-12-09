@@ -1,5 +1,7 @@
 require('css/registrations.css');
 
+require('bootstrap');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var Raven = require('raven-js');
@@ -646,8 +648,28 @@ Draft.prototype.submitForReview = function() {
             });
     }
     else {
-        self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
+        return self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
     }
+};
+Draft.prototype.approve = function() {
+    return $osf.dialog(
+        'Before you continue...',
+        'Are you sure you want to approve this submission? This action is irreversible.',
+        'Approve',
+        {
+            actionButtonClass: 'btn-warning'
+        }
+    );
+};
+Draft.prototype.reject = function() {
+    return $osf.dialog(
+        'Before you continue...',
+        'Are you sure you want to reject this submission? This action is irreversible.',
+        'Reject',
+        {
+            actionButtonClass: 'btn-danger'
+        }
+    );
 };
 
 /**
@@ -673,8 +695,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
 
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
-
-    self.contributors = ko.observable([]);
 
     self.pages = ko.computed(function () {
         // empty array if self.draft is not set.
@@ -759,7 +779,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
                 if (question.type === 'object') {
                     $elem.append(
                         $.map(question.properties, function(subQuestion) {
-                            subQuestion = self.context(subQuestion);
+                            subQuestion = self.context(subQuestion, self, true);
                             var value;
                             if (self.extensions[subQuestion.type] ) {
                                 value = subQuestion.preview();
@@ -838,9 +858,6 @@ RegistrationEditor.prototype.init = function(draft) {
         }
     });
 
-    self.getContributors().done(function(data) {
-        self.contributors(data);
-    });
 
     self.currentQuestion(self.flatQuestions().shift());
 };
@@ -863,14 +880,16 @@ RegistrationEditor.prototype.flatQuestions = function() {
  * @param {Object} data: data in current editor template scope
  * @returns {Object|ViewModel}
  **/
-RegistrationEditor.prototype.context = function(data, $root) {
+RegistrationEditor.prototype.context = function(data, $root, preview) {
+    preview = preview || false;
+
     $.extend(data, {
         save: this.save.bind(this),
         readonly: this.readonly
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data, $root);
+        return new this.extensions[data.type](data, $root, preview);
     }
     return data;
 };
@@ -1098,30 +1117,34 @@ RegistrationEditor.prototype.save = function() {
     });
     return request;
 };
-/**
- * Makes ajax request for a project's contributors
- */
-RegistrationEditor.prototype.makeContributorsRequest = function() {
+
+RegistrationEditor.prototype.approveDraft = function() {
     var self = this;
-    var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
-    return $.getJSON(contributorsUrl);
+
+    var draft = self.draft();
+    draft.approve().done(function() {
+        $osf.block();
+        $.post(self.urls.approve.replace('{draft_pk}', draft.pk))
+            .done(function() {
+                window.location.assign(self.urls.list);
+            }).fail(function() {
+                bootbox.alert('There was a problem approving this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
+            }).always($osf.unblock);
+    });
 };
-/**
- * Returns the `user_fullname` of each contributor attached to a node.
- **/
-RegistrationEditor.prototype.getContributors = function() {
+RegistrationEditor.prototype.rejectDraft = function() {
     var self = this;
-    return self.makeContributorsRequest()
-        .then(function(data) {
-            return $.map(data.contributors, function(c) { return c.fullname; });
-        }).fail(function(xhr, status, error) {
-            Raven.captureMessage('Could not GET contributors', {
-                url: window.contextVars.node.urls.api + 'get_contributors/',
-                textStatus: status,
-                error: error
-            });
-            $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
-        });
+
+    var draft = self.draft();
+    draft.reject().done(function() {
+        $osf.block();
+        $.post(self.urls.reject.replace('{draft_pk}', draft.pk))
+            .done(function() {
+                window.location.assign(self.urls.list);
+            }).fail(function() {
+                bootbox.alert('There was a problem rejecting this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
+            }).always($osf.unblock);
+    });
 };
 
 /**
