@@ -78,7 +78,7 @@ var FileBrowser = {
         self.nonLoadTemplate = m.prop(m('.fb-non-loading-template.m-b-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
 
         // VIEW STATES
-        self.showInfo = m.prop(false); // Show the info panel
+        self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(true); // Show the links with collections etc. used in narrow views
         self.showCollectionMenu = m.prop(false); // Show hide ellipsis menu for collections
         self.collectionMenuObject = m.prop(); // Collection object to complete actions on menu
