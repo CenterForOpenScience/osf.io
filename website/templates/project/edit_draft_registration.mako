@@ -16,7 +16,10 @@
               <div class="span8 col-md-2 columns eight large-8">
                 <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}, visible: pages().length > 1">
                   <li class="re-navbar">
-                    <a class="registration-editor-page" id="top-nav" style="text-align: left;" data-bind="text: title, click: $root.selectPage, style:{'font-weight': active() ? 'bold' : 'normal'}">
+                    <a class="registration-editor-page" id="top-nav" style="text-align: left;"
+                       data-bind="text: title, click: $root.selectPage,
+                                  style:{'font-weight': active() ? 'bold' : 'normal'},
+                                  css: {'bg-danger': ($root.showValidation() && page.hasValidationInfo())}">
                     </a>
                   </li>
                 </ul>
@@ -38,11 +41,11 @@
                 % endif
                 <!-- EDITOR -->
                 <div data-bind="if: currentPage">
-                  <div data-bind="if: currentPage">                  
+                  <div data-bind="if: currentPage">
                     <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
                   </div>
                 </div>
-                
+
                 <div class="row" style="margin-bottom: 10px;">
                   <span>
                     Last saved: <span data-bind="text: $root.lastSaved"></span>
@@ -50,8 +53,7 @@
                   <!-- ko if: onLastPage -->
                   <span data-bind="if: onLastPage() && hasValidationInfo()" class="pull-right">
                     <span class="text text-warning">
-                      There are errors requiring your attention.
-                      <span class="btn fa fa-info-circle" data-bind="click: showValidationInfo"></span>
+                      Responses to some questions are invalid or missing where required.
                     </span>
                   </span>
                   <!-- /ko -->

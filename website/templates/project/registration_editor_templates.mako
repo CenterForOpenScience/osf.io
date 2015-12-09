@@ -73,11 +73,10 @@
           <br />
           <div class="row">
             <div class="col-md-12">
-              <div class="form-group" data-bind="css: {has-success: $data.value.isValid}">
+              <div class="form-group">
                 <span data-bind="with: $root.context($data, $root)">
                   <span data-bind="if: $root.showValidation">
-                    <p class="text-error" data-bind="validationMessage: $data.value"></p>
-                    <ul class="list-group" data-bind="foreach: $data.validationMessages">
+                    <ul class="list-group" data-bind="foreach: $data.validationInfo()">
                       <li class="list-group-item">
                         <span class="text-danger"
                               data-bind="text: $data">
@@ -172,18 +171,4 @@
       </span>
     </div>
 </script>
-
-<script id="draftRegistrationValidationModal" type="text/html">
-  <div class="col-md-12">
-    <div class="row" data-bind="foreach: pages">
-      <p data-bind="if: errors.length > 0">
-        <label data-bind="text: title"></label>
-        <ul data-bind="foreach: errors">
-          <li data-bind="text: $data"></li>
-        </ul>
-      </p>
-    </div>
-  </div>
-</script>
-
 <%include file="registration_editor_extensions.mako" />

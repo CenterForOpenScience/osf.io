@@ -29,7 +29,7 @@ var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
 var VALIDATORS = {
     required: {
         validator: ko.validation.rules.required.validator,
-        message: 'A required question is unanswered.',
+        message: 'This question is required and unanswered.',
         messagePlural: 'Some required questions are unanswered.'
     }
 };
@@ -309,6 +309,10 @@ Question.prototype.toggleExample = function() {
     this.showExample(!this.showExample());
 };
 
+Question.prototype.validationInfo = function() {
+    return ko.validation.group(this, {deep: true})();
+};
+
 /**
  * @class Page
  * A single page within a draft registration
@@ -351,7 +355,7 @@ var Page = function(schemaPage, schemaData) {
 
     self.validationInfo = ko.computed(function() {
         var errors = $.map(self.questions, function(question) {
-            return ko.validation.group(question, {deep: true})();
+            return question.validationInfo();
         }).filter(function(errors) {
             return Boolean(errors);
         });
@@ -367,6 +371,15 @@ var Page = function(schemaPage, schemaData) {
             }
         });
         return finalErrorSet;
+    }, {deferEvaluation: true});
+
+    self.hasValidationInfo = ko.computed(function() {
+        return $osf.any(
+            self.questions,
+            function(question) {
+                return question.validationInfo().length > 0;
+            }
+        );
     }, {deferEvaluation: true});
 
     // TODO: track currentQuestion based on browser focus
@@ -560,6 +573,8 @@ var Draft = function(params, metaSchema) {
     });
 };
 Draft.prototype.getUnseenComments = function() {
+    var self = this;
+
     var unseen = [];
     $.each(self.pages(), function(_, page) {
         unseen = unseen.concat(page.getUnseenComments());
@@ -712,7 +727,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
 
-
     self.pages = ko.computed(function () {
         // empty array if self.draft is not set.
         return self.draft() ? self.draft().pages() : [];
@@ -726,9 +740,16 @@ var RegistrationEditor = function(urls, editorId, preview) {
         History.replaceState({page: self.pages().indexOf(currentPage)});
     });
 
-    self.onLastPage = ko.pureComputed(function() {
-        return self.currentPage() === self.pages()[self.pages().length - 1];
-    });
+    self.onLastPage = ko.computed(function() {
+        if(!self.currentPage()) {
+            return false;
+        }
+        var onLastPage = self.currentPage().id === self.pages()[self.pages().length - 1].id;
+        if (onLastPage) {
+            self.showValidation(true);
+        }
+        return onLastPage;
+    }, {deferEvaluation: true});
 
     // An incrementing dirty flag. The 0 state represents not-dirty.
     // States greater than 0 imply dirty, and incrementing the number
@@ -908,36 +929,6 @@ RegistrationEditor.prototype.toPreview = function () {
         self.dirtyCount(0);
         window.location.assign(self.draft().urls.register_page);
     }).always($osf.unblock);
-};
-
-RegistrationEditor.prototype.showValidationInfo = function() {
-    var self = this;
-
-    var viewModel = {
-        pages: $.map(
-            self.draft().pages(),
-            function(page) {
-                return {
-                    title: page.title,
-                    errors: page.validationInfo()
-                };
-            }
-        )
-    };
-
-    bootbox.dialog({
-        title: 'Errors with this draft:',
-        message: function() {
-            ko.renderTemplate('draftRegistrationValidationModal', viewModel, {}, this);
-        },
-        buttons: {
-            dismiss: {
-                label: 'Dismiss',
-                className: 'btn-default',
-                callback: bootbox.hideAll
-            }
-        }
-    });
 };
 
 RegistrationEditor.prototype.viewComments = function() {
