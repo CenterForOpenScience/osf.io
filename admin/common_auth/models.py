@@ -60,7 +60,7 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         # The user is identified by their email address
         return self.email
 
-    def __str__(self):
+    def __unicode__(self):
         return self.email
 
     class Meta:
