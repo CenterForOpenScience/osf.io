@@ -169,6 +169,7 @@ class PrivateLinkFactory(ModularOdmFactory):
     anonymous = False
     creator = SubFactory(AuthUserFactory)
 
+
 class AbstractNodeFactory(ModularOdmFactory):
     FACTORY_FOR = Node
 
@@ -271,6 +272,23 @@ class RegistrationFactory(AbstractNodeFactory):
         reg.save()
         return reg
 
+
+class RetractedRegistrationFactory(AbstractNodeFactory):
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+
+        registration = kwargs.pop('registration', None)
+        registration.is_public = True
+        user = kwargs.pop('user', registration.creator)
+
+        registration.retract_registration(user)
+        retraction = registration.retraction
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(user, token)
+        retraction.save()
+
+        return retraction
 
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer

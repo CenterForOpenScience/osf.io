@@ -12,7 +12,6 @@ from website.project.model import (
     Comment, PrivateLink, MetaData,
     Retraction, Embargo, RegistrationApproval,
     DraftRegistrationApproval, DraftRegistration,
-    Sanction,
 )
 from website.oauth.models import ApiOAuth2Application, ExternalAccount, ApiOAuth2PersonalToken
 from website.identifiers.model import Identifier
@@ -37,7 +36,7 @@ MODELS = (
     NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount, Identifier,
     Embargo, Retraction, RegistrationApproval,
-    ArchiveJob, ArchiveTarget, BlacklistGuid, Sanction,
+    ArchiveJob, ArchiveTarget, BlacklistGuid,
     QueuedMail,
     DraftRegistration, DraftRegistrationApproval,
     NodeLicense, NodeLicenseRecord

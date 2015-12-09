@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<%include file="project/nodes_privacy.mako"/>
 
 <%
     is_project = node['node_type'] == 'project'
@@ -33,11 +34,11 @@
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
                         % if 'admin' in user['permissions'] and not node['is_pending_embargo']:
-                            <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
+                            <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
                         % endif
                     % else:
                         % if 'admin' in user['permissions'] and not node['is_registration']:
-                            <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
+                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     % endif
