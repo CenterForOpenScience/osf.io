@@ -107,15 +107,16 @@ class TestNodeList(ApiTestCase):
 
     def test_node_list_has_proper_root(self):
         project_one = ProjectFactory(title="Project One", is_public=True)
-        child = ProjectFactory(parent=project_one, is_public=True)
+        ProjectFactory(parent=project_one, is_public=True)
 
-        res = self.app.get(self.url, auth=self.user.auth, params={'embed': 'root'})
+        res = self.app.get(self.url+'?embed=root&embed=parent', auth=self.user.auth)
+
         projects_with_correct_root = 0
         for project in res.json['data']:
             root_id = project['embeds']['root']['data']['id']
 
-            if project['relationships'].get('parent'):
-                parent_id = project['relationships']['parent']['links']['related']['href'][-6:-1]
+            if project['embeds']['parent'].get('data'):
+                parent_id = project['embeds']['parent']['data']['id']
                 if parent_id == project_one._id:
                     if root_id == project_one._id:
                         projects_with_correct_root += 1
