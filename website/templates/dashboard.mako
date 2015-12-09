@@ -8,7 +8,7 @@
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
 
-<div class="dashboard-header p-sm">
+<div class="dashboard-header">
     <div class="row">
         <div class="col-xs-8">
             <h3>My Projects <small>Browse and organize all your projects </small></h3>
