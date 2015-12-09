@@ -86,7 +86,8 @@ var institutionsViewModel = function() {
                 'isCors': true,
                 'data': {
                      'data': inst !== 'None' ? {'type': 'institution', 'id': inst} : null
-                }
+                },
+                fields: {xhrFields: {withCredentials: true}}
             }
         ).done(function (response) {
                 $osf.growl('Nice!');
