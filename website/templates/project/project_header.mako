@@ -78,8 +78,18 @@
                         % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
-
                     % endif
+                    % if user['can_comment'] or node['has_comments']:
+                       <li>
+                           <a id="commentsLink" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                                Comments
+                                <span data-bind="if: unreadComments() !== 0">
+                                    <span data-bind="text: displayCount" class="badge"></span>
+                                </span>
+                           </a>
+                       </li>
+                    % endif
+
 
                     </ul>
                 </div>

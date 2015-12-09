@@ -27,35 +27,33 @@ $(window).unload(function(){
     return 'Unload';
 });
 
-// TODO: See if this can be removed
 $(document).ready(function() {
-    $.getJSON(node.urls.api, function(data) {    
+    $.getJSON(node.urls.api, function(data) {
         $('body').trigger('nodeLoad', data);
     });
+});
 
-    var self = this;
-    var THRESHOLD_SCROLL_POSITION  = 50;
-    var SMALL_SCREEN_SIZE = 767;
-    var NON_NAV_TOP_MARGIN = 46;
-    var NAV_MAX_TOP_MARGIN = 46;
-    self.adjustPanelPosition = function() {
-        var bodyWidth = $(document.body).width();
-        var scrollTopPosition = $(window).scrollTop();
-        if (bodyWidth <= SMALL_SCREEN_SIZE) {
-            if (scrollTopPosition >= THRESHOLD_SCROLL_POSITION) {
-                $('.cp-handle').css('margin-top', NON_NAV_TOP_MARGIN);
-            }
-            else {
-                $('.cp-handle').css('margin-top', NAV_MAX_TOP_MARGIN - scrollTopPosition);
-            }
-        } else {
-            $('.cp-handle').css('margin-top', NAV_MAX_TOP_MARGIN);
-        }
-    };
-    var ADJUST_PANEL_DEBOUNCE = 10;
-    var RESIZE_DEBOUNCE  = 50;
+$(window).scroll(function() {
+    var st = $(this).scrollTop();
+    var offset = 49;
+    st = (st <= offset ? st : offset);
+    if ($('.comment-handle-icon').is(':hidden')) {
+        $('.comment-pane').css({
+            'transform': 'translate3d(0, ' + (-st) + 'px, 0)',
+            '-webkit-transform': 'translate3d(0, ' + (-st) + 'px, 0)',
+            '-moz-transform': 'translate3d(0, ' + (-st) + 'px, 0)'
+        });
+    }
+});
 
-    self.adjustPanelPosition(); /* Init when refreshing the page*/
-    $(window).scroll($osf.debounce(self.adjustPanelPosition, ADJUST_PANEL_DEBOUNCE));
-    $(window).resize($osf.debounce(self.adjustPanelPosition, RESIZE_DEBOUNCE));
+$(window).resize(function() {
+    var st = $(this).scrollTop();
+    st = $('.comment-handle-icon').is(':hidden') ? st : 0;
+    var offset = 49;
+    st = (st <= offset ? st : offset);
+    $('.comment-pane').css({
+        'transform': 'translate3d(0, ' + (-st) + 'px, 0)',
+        '-webkit-transform': 'translate3d(0, ' + (-st) + 'px, 0)',
+        '-moz-transform': 'translate3d(0, ' + (-st) + 'px, 0)'
+    });
 });
