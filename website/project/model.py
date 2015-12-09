@@ -1777,16 +1777,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
         return list(reversed(self.logs)[:n])
 
-    def date_updated(self):
-        """
-        The most recent datetime when this node was modified, based on
-        the logs.
-        """
-        try:
-            return self.logs[-1].date
-        except IndexError:
-            return self.date_created
-
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
 
