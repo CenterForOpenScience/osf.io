@@ -27,6 +27,3 @@ class InstitutionSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'institutions'
-
-class InstitutionDetailSerializer(InstitutionSerializer):
-    pass

@@ -17,7 +17,7 @@ from api.nodes.serializers import NodeSerializer, NodeDetailSerializer
 from api.nodes.permissions import ContributorOrPublic
 from api.users.serializers import UserSerializer, UserDetailSerializer
 
-from .serializers import InstitutionSerializer, InstitutionDetailSerializer
+from .serializers import InstitutionSerializer
 
 class InstitutionMixin(object):
 
@@ -60,7 +60,7 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
     required_write_scopes = [CoreScopes.NULL]
     model_class = Institution
 
-    serializer_class = InstitutionDetailSerializer
+    serializer_class = InstitutionSerializer
     view_category = 'institutions'
     view_name = 'institution-detail'
 

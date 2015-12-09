@@ -29,7 +29,7 @@ from api.nodes.serializers import (
     NodeInstitutionRelationshipSerializer,
 )
 from api.registrations.serializers import RegistrationSerializer
-from api.institutions.serializers import InstitutionDetailSerializer
+from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
@@ -1758,7 +1758,7 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NULL]
-    serializer_class = InstitutionDetailSerializer
+    serializer_class = InstitutionSerializer
 
     model = Institution
     view_category = 'nodes'
