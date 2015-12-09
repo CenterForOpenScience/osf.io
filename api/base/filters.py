@@ -216,7 +216,8 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
-        elif isinstance(field, (self.LIST_FIELDS + self.RELATIONSHIP_FIELDS)):
+        elif isinstance(field, (self.LIST_FIELDS, self.RELATIONSHIP_FIELDS)) \
+                or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
             return value
         else:
             try:

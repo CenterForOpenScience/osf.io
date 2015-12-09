@@ -108,7 +108,7 @@ Comment.prototype.toggleSaved = function(save) {
 
     if (!self.saved()) {
         // error handling handled implicitly in save
-        save.done(self.saved.bind(self, true));
+        save().done(self.saved.bind(self, true));
     }
     else {
         self.saved(false);
@@ -500,6 +500,12 @@ var Draft = function(params, metaSchema) {
                 return page.getUnseenComments().length > 0;
             })
         );
+    });
+
+    self.hasRequiredQuestions = ko.pureComputed(function() {
+        return self.metaSchema.flatQuestions().filter(function(q) {
+            return q.required;
+        }).length > 0;
     });
 
     self.completion = ko.computed(function() {
@@ -1082,7 +1088,7 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
-    request.fail(function(err, status, xhr) {
+    request.fail(function(xhr, status, error) {
         Raven.captureMessage('Could not save draft registration', {
             url: self.urls.update.replace('{draft_pk}', self.draft().pk),
             textStatus: status,

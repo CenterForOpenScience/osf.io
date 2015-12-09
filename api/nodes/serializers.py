@@ -11,7 +11,7 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
-                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
+                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly, HideIfRegistration, HideIfRetraction)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -48,37 +48,37 @@ class NodeSerializer(JSONAPISerializer):
 
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
+    category = HideIfRetraction(ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string))
     date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
+    date_modified = HideIfRetraction(ser.DateTimeField(read_only=True))
     registration = ser.BooleanField(read_only=True, source='is_registration')
-    fork = ser.BooleanField(read_only=True, source='is_fork')
-    collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
-    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
-    tags = JSONAPIListField(child=NodeTagField(), required=False)
+    fork = HideIfRetraction(ser.BooleanField(read_only=True, source='is_fork'))
+    collection = HideIfRetraction(DevOnly(ser.BooleanField(read_only=True, source='is_folder')))
+    dashboard = HideIfRetraction(ser.BooleanField(read_only=True, source='is_dashboard'))
+    tags = HideIfRetraction(JSONAPIListField(child=NodeTagField(), required=False))
 
     # Public is only write-able by admins--see update method
-    public = ser.BooleanField(source='is_public', required=False,
+    public = HideIfRetraction(ser.BooleanField(source='is_public', required=False,
                               help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
                                         'permission. Write and admin access are the same for '
                                         'public and private nodes. Administrators on a parent '
-                                        'node have implicit read permissions for all child nodes',
+                                        'node have implicit read permissions for all child nodes')
                               )
 
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
-    children = RelationshipField(
+    children = HideIfRetraction(RelationshipField(
         related_view='nodes:node-children',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_node_count'},
-    )
+    ))
 
-    comments = RelationshipField(
+    comments = HideIfRetraction(RelationshipField(
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'unread': 'get_unread_comments_count'})
+        related_meta={'unread': 'get_unread_comments_count'}))
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
@@ -86,37 +86,37 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_contrib_count'},
     )
 
-    files = RelationshipField(
+    files = HideIfRetraction(RelationshipField(
         related_view='nodes:node-providers',
         related_view_kwargs={'node_id': '<pk>'}
-    )
+    ))
 
-    forked_from = RelationshipField(
+    forked_from = HideIfRetraction(RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<forked_from_id>'}
-    )
+    ))
 
-    node_links = DevOnly(RelationshipField(
+    node_links = DevOnly(HideIfRetraction(RelationshipField(
         related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'},
-    ))
+    )))
 
-    parent = RelationshipField(
+    parent = HideIfRetraction(RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<parent_id>'}
-    )
+    ))
 
-    registrations = DevOnly(RelationshipField(
+    registrations = DevOnly(HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_registration_count'}
-    ))
+    )))
 
-    logs = RelationshipField(
+    logs = HideIfRetraction(RelationshipField(
         related_view='nodes:node-logs',
         related_view_kwargs={'node_id': '<pk>'},
-    )
+    ))
 
     class Meta:
         type_ = 'nodes'
