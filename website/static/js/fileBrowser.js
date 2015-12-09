@@ -54,6 +54,9 @@ function getUID() {
 
 var xhrconfig = function (xhr) {
     xhr.withCredentials = true;
+    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json');
+    xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
+
 };
 
 var xhrconfigBulk = function (xhr) {
@@ -219,31 +222,37 @@ var FileBrowser = {
                     drop: function( event, ui ) {
                        console.log('dropped', event, ui, this);
                         var collection = self.collections[$(this).attr('data-index')];
-                        var data = {
-                            'data': []
-                        };
+                        var dataArray = [];
                         self.selected().map(function(item){
-                            data.data.push({
-                                    'type': 'node_links',
-                                    'relationships': {
-                                        'nodes': {
-                                            'data': {
-                                                'type': 'nodes',
-                                                'id': item.data.id
+                            dataArray.push({
+                                    'data' : {
+                                        'type': 'node_links',
+                                        'relationships': {
+                                            'nodes': {
+                                                'data': {
+                                                    'type': 'nodes',
+                                                    'id': item.data.id
+                                                }
                                             }
                                         }
                                     }
                                 });
                         });
-                        m.request({
-                            method : 'POST',
-                            url : collection.data.node.relationships.node_links.links.related.href,
-                            config : xhrconfig,
-                            dataType : 'json',
-                            data : data
-                        }).then(function(result){
-                            console.log(result);
-                        });
+                        function saveLink (index) {
+                            m.request({
+                                method : 'POST',
+                                url : collection.data.node.relationships.node_links.links.related.href,
+                                config : xhrconfig,
+                                data : dataArray[index]
+                            }).then(function(result){
+                                if(dataArray[index+1]){
+                                    saveLink(index+1);
+                                }
+                            });
+                        }
+                        if(dataArray.length > 0){
+                            saveLink(0);
+                        }
                     }
                 });
             }
