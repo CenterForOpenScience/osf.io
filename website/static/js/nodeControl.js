@@ -17,110 +17,6 @@ var osfHelpers = require('js/osfHelpers');
 var NodeActions = require('js/project.js');
 var iconmap = require('js/iconmap');
 
-// Modal language
-var MESSAGES = {
-    makeProjectPublicWarning: 'Once a project is made public, you should assume that it will always be ' +
-                        'public.  You can return it to private later, but search engines or others ' +
-                        'may access the files before you do so.  <b>Please review your project for ' +
-                        'sensitive or restricted information before making it public</b>.  Are you sure ' +
-                        'you would like to continue?',
-
-    makeProjectPrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
-                        'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?',
-
-    makeComponentPublicWarning: 'Once a component is made public, there is no way to guarantee that ' +
-                        'access to the data it contains can be completely prevented. Users ' +
-                        'should assume that once a component is made public, it will always ' +
-                        'be public. The rest of the project, including other components, ' +
-                        'will not be made public. <b>Review your component for sensitive or restricted information before making it public</b>. Are you absolutely sure you would like to continue?',
-
-    makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
-                        'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?',
-    makeRegistrationPublicWarning: 'Once a registration is made public, you will not be able to make the ' +
-                        'registration private again.  After making the registration public, if you '  +
-                        'discover material in it that should have remained private, your only option ' +
-                        'will be to retract the registration.  This will eliminate the registration, ' +
-                        'leaving only basic information of the project title, description, and '  +
-                        'contributors with a notice of retraction.'
-};
-
-// TODO(sloria): Fix this external dependency on nodeApiUrl
-var URLS = {
-    makePublic: window.nodeApiUrl + 'permissions/public/',
-    makePrivate: window.nodeApiUrl + 'permissions/private/'
-};
-var PUBLIC = 'public';
-var PRIVATE = 'private';
-var PROJECT = 'project';
-var COMPONENT = 'component';
-
-
-function setPermissions(permissions, nodeType) {
-
-    var msgKey;
-    var isRegistration = window.contextVars.node.isRegistration;
-
-    if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
-    else if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
-    else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
-    else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
-    else { msgKey = 'makeComponentPrivateWarning'; }
-
-    var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
-    var buttonText = permissions === PUBLIC ? 'Make Public' : 'Make Private';
-
-    var message = MESSAGES[msgKey];
-
-    var confirmModal = function (message) {
-        bootbox.dialog({
-            title: 'Warning',
-            message: message,
-            buttons: {
-                cancel : {
-                    label : 'Cancel',
-                    className : 'btn-default',
-                    callback : function() {
-                    }
-                },
-                success: {
-                    label: buttonText,
-                    className: 'btn-primary',
-                    callback: function() {
-                        osfHelpers.postJSON(
-                            URLS[urlKey],
-                            {permissions: permissions}
-                        ).done(function() {
-                                window.location.reload();
-                        }).fail(
-                            osfHelpers.handleJSONError
-                        );
-                    }
-                }
-            }
-        });
-    };
-
-    if (permissions === PUBLIC) {
-        $.getJSON(
-            window.nodeApiUrl + 'permissions/beforepublic/',
-            {},
-            function(data) {
-                var alerts = '';
-                var addonMessages = data.prompts;
-                    for(var i=0; i<addonMessages.length; i++) {
-                        alerts += '<div class="alert alert-warning">' +
-                                    addonMessages[i] + '</div>';
-                    }
-                confirmModal(alerts + message);
-            }
-        );
-    } else {
-        confirmModal(message);
-    }
-}
-
 /**
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} data The parsed project data returned from the project's API url.
@@ -161,6 +57,7 @@ var ProjectViewModel = function(data) {
     self.canBeOrganized = ko.pureComputed(function() {
         return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
+
 
     // Add icon to title
     self.icon = '';
@@ -274,14 +171,6 @@ var ProjectViewModel = function(data) {
                 osfHelpers.handleJSONError
             );
         }
-    };
-
-    self.makePublic = function() {
-        return setPermissions(PUBLIC, self.nodeType);
-    };
-
-    self.makePrivate = function() {
-        return setPermissions(PRIVATE, self.nodeType);
     };
 
     self.forkNode = function() {

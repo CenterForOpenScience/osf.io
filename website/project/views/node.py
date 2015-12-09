@@ -46,7 +46,6 @@ from website.util.sanitize import strip_html
 from website.util import rapply
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
-
 logger = logging.getLogger(__name__)
 
 @must_be_valid_project
@@ -1007,7 +1006,6 @@ def node_child_tree(user, node_ids):
     """ Format data to test for node privacy settings for use in treebeard.
     """
     items = []
-    addons = []
     for node_id in node_ids:
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
@@ -1016,6 +1014,7 @@ def node_child_tree(user, node_ids):
         can_read_children = node.has_permission_on_children(user, 'read')
         if not can_read and not can_read_children:
             continue
+
         contributors = []
         for contributor in node.contributors:
             contributors.append({
@@ -1024,9 +1023,10 @@ def node_child_tree(user, node_ids):
                 'is_confirmed': contributor.is_confirmed
             })
 
+        children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-        children = []
+        can_write = node.has_permission(user, 'admin')
         children.extend(node_child_tree(
             user,
             [
@@ -1042,10 +1042,12 @@ def node_child_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
+                'can_write': can_write,
                 'contributors': contributors,
                 'visible_contributors': node.visible_contributor_ids,
                 'is_admin': node.has_permission(user, ADMIN)
             },
+            'user_id': user._id,
             'children': children,
             'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
@@ -1063,7 +1065,14 @@ def node_child_tree(user, node_ids):
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    return node_child_tree(auth.user, [node._id])
+    tree = node_child_tree(auth.user, [node._id])
+    if tree:
+        return tree
+    else:
+        raise HTTPError(
+            http.FORBIDDEN,
+            data=dict(message_long='User does not have read permission.')
+        )
 
 
 @must_be_contributor_or_public
