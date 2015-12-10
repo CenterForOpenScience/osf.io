@@ -15,17 +15,11 @@ var LogText = {
             return m('span.osf-log-item',[
                 list.map(function(piece){
                     if(piece === '') { return; }
-                    if(piece === '${user}' && logObject.embeds.user) {
-                        return m.component(UserLink, logObject.embeds.user);
-                    }
-                    if(piece === '${node}' && logObject.embeds.nodes){
-                        return m.component(NodeLink, logObject.embeds.nodes);
-                    }
-                    if(piece === '${contributors}'){
-                        return m.component(Contributors, logObject);
-                    }
-                     if(piece === '${tag}'){
-                        return m.component(Tag, logObject);
+                    var startsWith = piece.substring(0,2);
+                    if(startsWith === '${'){
+                        var last = piece.length-1;
+                        var logComponentName = piece.substring(2,last);
+                        return m.component(LogPieces[logComponentName], logObject);
                     }
                     return piece;
                 })
@@ -39,29 +33,123 @@ var LogText = {
     }
 };
 
-var UserLink = {
-    view : function(ctrl, userObject){
-        return m('a', { href : userObject.data.links.html}, userObject.data.attributes.full_name);
-    }
-};
-
-var NodeLink = {
-    view : function (ctrl, nodeObject) {
-        return m('a', { href : nodeObject.data[0].links.html}, nodeObject.data[0].attributes.title);
-    }
-};
-
-var Contributors = {
-    view : function (ctrl, logObject) {
-        return m('span');
-        //return m('a', { href : logObject.attributes.links.html}, nodeObject.data[0].attributes.title);
-    }
-};
-
-var Tag = {
-    view : function (ctrl, logObject) {
-        return m('a', { href : '/search/?q=%22' + logObject.attributes.params.tag + '%22'}, logObject.attributes.params.tag);
-    }
+var LogPieces = {
+    // User that took the action
+    user: {
+        view: function (ctrl, logObject) {
+            var userObject = logObject.embeds.user;
+            return m('a', {href: userObject.data.links.html}, userObject.data.attributes.full_name);
+        }
+    },
+    // Node involved
+    node: {
+        view: function (ctrl, logObject) {
+            var nodeObject = logObject.embeds.nodes;
+            return m('a', {href: nodeObject.data[0].links.html}, nodeObject.data[0].attributes.title);
+        }
+    },
+    // Contrubutor list of added, updated etc.
+    contributors: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    // The tag added to item involved
+    tag: {
+        view: function (ctrl, logObject) {
+            return m('a', {href: '/search/?q=%22' + logObject.attributes.params.tag + '%22'}, logObject.attributes.params.tag);
+        }
+    },
+    // Node that is linked to the node involved
+    pointer: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    // Node that acted as template to create a new node involved
+    template: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    // The original title of node involved
+    title_original: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    // The new title of node involved
+    title_new: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    // Update fields for the node
+    updated_fields: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    // external identifiers on node
+    identifiers: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    // Wiki page name
+    page: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    // Old wiki title that's renamed
+    old_page: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    // Wiki page version
+    version: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    //
+    source: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+    //
+    destination: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+        //
+    path: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+        //
+    filename: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+        //
+    study: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
+        //
+    dataset: {
+        view: function (ctrl, logObject) {
+            return m('span', 'Placeholder');
+        }
+    },
 };
 
 

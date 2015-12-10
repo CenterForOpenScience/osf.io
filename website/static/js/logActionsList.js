@@ -14,9 +14,9 @@ var logActions = {
     'made_private':     '${user} made ${node} private',
     'tag_added':    '${user} tagged ${node} as ${tag}',
     'tag_removed':  '${user} removed {$tag} from ${node}',
-    'edit_title':   '${user} changed the title from ${originalTitle} to ${node}',
+    'edit_title':   '${user} changed the title from ${title_original} to ${title_new}',
     'edit_description': '${user} edited description of ${node}',
-    'updated_fields':   '${user} changed the ${updatedFields} for ${node}',
+    'updated_fields':   '${user} changed the ${updated_fields} for ${node}',
     'external_ids_added':   '${user} created external identifiers ${identifiers} on ${node}',
     'contributor_added':    '${user} added ${contributors} as contributor(s) to ${node}',
     'contributor_removed':  '${user} removed ${contributors} as contributor(s) from ${node}',
@@ -56,7 +56,7 @@ var logActions = {
     'node_forked':  '${user} created fork from ${node}', // deprecated
     'node_removed':  '${user} removed ${node}', // deprecated
     'license_changed' : '${user} updated the license of ${node}',
-    'osf_storage_file_added' : '${user} added a ${file} to OSF Storage in ${node}',
+    'osf_storage_file_added' : '${user} added a ${filename} to OSF Storage in ${node}',
     'osf_storage_folder_created' : '${user} created folder ${path} in OSF Storage in ${node}',
     'osf_storage_file_updated' : '${user} updated file ${path} in OSF Storage in ${node}',
     'osf_storage_file_removed' : '${user} removed ${path} from OSF Storage in ${node}',
