@@ -11,6 +11,7 @@ require('js/project');
 require('js/licensePicker');
 
 var node = window.contextVars.node;
+var OFFSET = 49;
 
 new pointers.PointerDisplay('#showLinks');
 
@@ -35,7 +36,7 @@ $(document).ready(function() {
 
 $(window).scroll(function() {
     var scrollTop = $(this).scrollTop();
-    var offset = 49;
+    var offset = OFFSET;
     scrollTop = (scrollTop <= offset ? scrollTop : offset);
     if ($('.comment-handle-icon').is(':hidden')) {
         $('.comment-pane').css({
@@ -49,7 +50,7 @@ $(window).scroll(function() {
 $(window).resize(function() {
     var scrollTop = $(this).scrollTop();
     scrollTop = $('.comment-handle-icon').is(':hidden') ? scrollTop : 0;
-    var offset = 49;
+    var offset = OFFSET;
     scrollTop = (scrollTop <= offset ? scrollTop : offset);
     $('.comment-pane').css({
         'transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',

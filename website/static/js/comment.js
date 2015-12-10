@@ -561,7 +561,7 @@ var CommentListModel = function(options) {
     self.nodeId = ko.observable(options.nodeId);
     self.nodeApiUrl = options.nodeApiUrl;
 
-    self.toggle = options.toggle;
+    self.togglePane = options.togglePane;
 
     self.commented = ko.pureComputed(function(){
         return self.comments().length > 0;
@@ -620,7 +620,7 @@ var init = function(commentLinkSelector, commentPaneSelector, options) {
             return onOpen(options.page, options.rootId, options.nodeApiUrl);
         }
     });
-    options['toggle'] = cp.toggle;
+    options.togglePane = cp.toggle;
     var viewModel = new CommentListModel(options);
     osfHelpers.applyBindings(viewModel, commentLinkSelector);
     osfHelpers.applyBindings(viewModel, commentPaneSelector);

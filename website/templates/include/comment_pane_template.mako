@@ -10,7 +10,7 @@
 
 
     <div class="comments cp-sidebar">
-        <button type="button" class="close visible-xs text-smaller" data-bind="click: toggle">
+        <button type="button" class="close visible-xs text-smaller" data-bind="click: togglePane">
             <i class="fa fa-times"></i>
         </button>
         <h4>
