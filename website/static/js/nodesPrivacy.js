@@ -137,23 +137,25 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
             dataType: 'json'
         }).done(function(response) {
             var i = 0;
-            self.nodesOriginal = getNodesOriginal(response[0], self.nodesOriginal);
-            Object.size = function(obj) {
-                var size = 0, key;
-                for (key in obj) {
-                    if (obj.hasOwnProperty(key)) size++;
-                }
-                return size;
-            };
-            // Get the size of an object
-            var size = Object.size(self.nodesOriginal);
-            self.hasChildren(size > 1);
-            var nodesState = $.extend(true, {}, self.nodesOriginal);
-            var nodeParent = response[0].node.id;
-            //change node state and response to reflect button push by user on project page (make public | make private)
-            nodesState[nodeParent].public = response[0].node.is_public = !parentIsPublic;
-            nodesState[nodeParent].changed = true;
-            self.nodesState(nodesState);
+            if (response.length) {
+                self.nodesOriginal = getNodesOriginal(response[0], self.nodesOriginal);
+                Object.size = function(obj) {
+                    var size = 0, key;
+                    for (key in obj) {
+                        if (obj.hasOwnProperty(key)) size++;
+                    }
+                    return size;
+                };
+                // Get the size of an object
+                var size = Object.size(self.nodesOriginal);
+                self.hasChildren(size > 1);
+                var nodesState = $.extend(true, {}, self.nodesOriginal);
+                var nodeParent = response[0].node.id;
+                //change node state and response to reflect button push by user on project page (make public | make private)
+                nodesState[nodeParent].public = response[0].node.is_public = !parentIsPublic;
+                nodesState[nodeParent].changed = true;
+                self.nodesState(nodesState);
+            }
         }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
             Raven.captureMessage('Could not GET project settings.', {
