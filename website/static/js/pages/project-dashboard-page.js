@@ -34,7 +34,7 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
-    if (data.node.is_admin) {
+    if (window.contextVars.currentUser.isAdmin) {
         new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data.node.is_public);
     }
 });
