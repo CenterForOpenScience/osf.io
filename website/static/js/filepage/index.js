@@ -498,7 +498,7 @@ if ($comments.length) {
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren
     };
-    CommentModel.init('.comment-pane', options);
+    CommentModel.init(['#commentsLink', '.comment-pane'], options);
 }
 
 
