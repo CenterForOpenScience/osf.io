@@ -36,7 +36,6 @@ EMPTY = payload()
 
 def create_project(creator, public=True, contrib=None, citation=False, registration=False):
     project = ProjectFactory(creator=creator, is_public=public)
-    project_url = '/{}nodes/{}/citations/'.format(API_BASE, project._id)
     if contrib:
         project.add_contributor(contrib, permissions=[permissions.READ, permissions.WRITE], visible=True)
     if citation:
@@ -45,35 +44,27 @@ def create_project(creator, public=True, contrib=None, citation=False, registrat
     project.save()
     if registration:
         registration = RegistrationFactory(project=project, is_public=public)
-        reg_url = '/{}nodes/{}/citations/'.format(API_BASE, registration._id)
-        return registration, reg_url
-    return project, project_url
-
-
-def user_info(admin, contrib, logged_out):
-    admin_ = AuthUserFactory()
-    contrib_ = None
-    user = None
-    if not admin and not logged_out:
-        user = AuthUserFactory()
-        if contrib:
-            contrib_ = user
-    elif not logged_out:
-        user = admin_
-    return admin_, contrib_, user
+        return registration
+    return project
 
 class TestCreateAlternativeCitations(ApiTestCase):
-    def request(self, data, errors=False, admin=False, contrib=True, logged_out=False, **kwargs):
-        admin, contrib, user = user_info(admin=admin, contrib=contrib, logged_out=logged_out)
-        project, project_url = create_project(admin, **kwargs)
-        if user:
+    def request(self, data, errors=False, is_admin=False, is_contrib=True, logged_out=False, **kwargs):
+        admin = AuthUserFactory()
+        if is_admin:
+            user = admin
+        elif not logged_out:
+            user = AuthUserFactory()
+            kwargs['contrib'] = user if is_contrib else None
+        project = create_project(admin, **kwargs)
+        project_url = '/{}nodes/{}/citations/'.format(API_BASE, project._id)
+        if not logged_out:
             res = self.app.post_json_api(project_url, data, auth=user.auth, expect_errors=errors)
         else:
             res = self.app.post_json_api(project_url, data, expect_errors=errors)
         return res, project
 
     def test_add_citation_admin_public(self):
-        res, project = self.request(CITATION, admin=True)
+        res, project = self.request(CITATION, is_admin=True)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['name'], CITATION['data']['attributes']['name'])
         assert_equal(res.json['data']['attributes']['text'], CITATION['data']['attributes']['text'])
@@ -82,7 +73,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
 
     def test_add_citation_admin_private(self):
         res, project = self.request(CITATION,
-                                    admin=True,
+                                    is_admin=True,
                                     public=False)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['name'], CITATION['data']['attributes']['name'])
@@ -111,7 +102,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
 
     def test_add_citation_non_contrib_public(self):
         res, project = self.request(CITATION,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -122,7 +113,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_citation_non_contrib_private(self):
         res, project = self.request(CITATION,
                                     public=False,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -154,7 +145,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_repeat_name_admin_public(self):
         res, project = self.request(REPEAT_NAME,
                                     citation=True,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -166,7 +157,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         res, project = self.request(REPEAT_NAME,
                                     public=False,
                                     citation=True,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -198,7 +189,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_repeat_name_non_contrib_public(self):
         res, project = self.request(REPEAT_NAME,
                                     citation=True,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -209,7 +200,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_repeat_name_non_contrib_private(self):
         res, project = self.request(REPEAT_NAME,
                                     public=False,
-                                    contrib=False,
+                                    is_contrib=False,
                                     citation=True,
                                     errors=True)
         assert_equal(res.status_code, 403)
@@ -244,7 +235,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_repeat_text_admin_public(self):
         res, project = self.request(REPEAT_TEXT,
                                     citation=True,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -256,7 +247,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         res, project = self.request(REPEAT_TEXT,
                                     public=False,
                                     citation=True,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -288,7 +279,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_repeat_text_non_contrib_public(self):
         res, project = self.request(REPEAT_TEXT,
                                     citation=True,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -300,7 +291,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         res, project = self.request(REPEAT_TEXT,
                                     public=False,
                                     citation=True,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -334,7 +325,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_repeat_name_and_text_admin_public(self):
         res, project = self.request(CITATION,
                                     citation=True,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 2)
@@ -348,7 +339,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         res, project = self.request(CITATION,
                                     public=False,
                                     citation=True,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 2)
@@ -382,7 +373,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_repeat_name_and_text_non_contrib_public(self):
         res, project = self.request(CITATION,
                                     citation=True,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -394,7 +385,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         res, project = self.request(CITATION,
                                     public=False,
                                     citation=True,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -427,7 +418,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
 
     def test_add_no_name_admin_public(self):
         res, project = self.request(NO_NAME,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -438,7 +429,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_no_name_admin_private(self):
         res, project = self.request(NO_NAME,
                                     public=False,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -467,7 +458,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
 
     def test_add_no_name_non_contrib_public(self):
         res, project = self.request(NO_NAME,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -478,7 +469,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_no_name_non_contrib_private(self):
         res, project = self.request(NO_NAME,
                                     public=False,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -509,7 +500,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
 
     def test_add_no_text_admin_public(self):
         res, project = self.request(NO_TEXT,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -520,7 +511,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_no_text_admin_private(self):
         res, project = self.request(NO_TEXT,
                                     public=False,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -549,7 +540,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
 
     def test_add_no_text_non_contrib_public(self):
         res, project = self.request(NO_TEXT,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -560,7 +551,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_no_text_non_contrib_private(self):
         res, project = self.request(NO_TEXT,
                                     public=False,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
@@ -591,7 +582,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
 
     def test_add_empty_admin_public(self):
         res, project = self.request(EMPTY,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 2)
@@ -600,13 +591,9 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(project.alternativeCitations), 0)
 
     def test_add_empty_admin_private(self):
-        data = dict()
-        data['admin'] = True
-        data['errors'] = True
-        data['public'] = False
         res, project = self.request(EMPTY,
                                     public=False,
-                                    admin=True,
+                                    is_admin=True,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 2)
@@ -635,7 +622,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
 
     def test_add_empty_non_contrib_public(self):
         res, project = self.request(EMPTY,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 2)
@@ -646,7 +633,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_empty_non_contrib_private(self):
         res, project = self.request(EMPTY,
                                     public=False,
-                                    contrib=False,
+                                    is_contrib=False,
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 2)
@@ -678,7 +665,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_citation_admin_public_reg(self):
         res, registration = self.request(CITATION,
                                          registration=True,
-                                         admin=True,
+                                         is_admin=True,
                                          errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -689,7 +676,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         res, registration = self.request(CITATION,
                                          public=False,
                                          registration=True,
-                                         admin=True,
+                                         is_admin=True,
                                          errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -718,7 +705,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
     def test_add_citation_non_contrib_public_reg(self):
         res, registration = self.request(CITATION,
                                          registration=True,
-                                         contrib=False,
+                                         is_contrib=False,
                                          errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -729,7 +716,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         res, registration = self.request(CITATION,
                                          public=False,
                                          registration=True,
-                                         contrib=False,
+                                         is_contrib=False,
                                          errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -758,49 +745,65 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(registration.alternativeCitations), 0)
 
 class TestGetAlternativeCitations(ApiTestCase):
-    def request(self, admin=False, contrib=True, logged_out=False, public=True, errors=False, registration=False):
-        admin, contrib, user = user_info(admin=admin, contrib=contrib, logged_out=logged_out)
-        project, project_url = create_project(admin, public=public, registration=registration, contrib=contrib, citation=True, )
-        if user:
+    def request(self, errors=False, is_admin=False, is_contrib=True, logged_out=False, **kwargs):
+        admin = AuthUserFactory()
+        if is_admin:
+            user = admin
+        elif not logged_out:
+            user = AuthUserFactory()
+            kwargs['contrib'] = user if is_contrib else None
+        project = create_project(admin, citation=True, **kwargs)
+        project_url = '/{}nodes/{}/citations/'.format(API_BASE, project._id)
+        if not logged_out:
             res = self.app.get(project_url, auth=user.auth, expect_errors=errors)
         else:
             res = self.app.get(project_url, expect_errors=errors)
         return res
 
     def test_get_all_citations_admin_public(self):
-        res = self.request(admin=True)
+        res = self.request(is_admin=True)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_admin_private(self):
-        res = self.request(admin=True,
+        res = self.request(is_admin=True,
                            public=False)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_non_admin_public(self):
         res = self.request()
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_non_admin_private(self):
         res = self.request(public=False)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_non_contrib_public(self):
-        res = self.request(contrib=False)
+        res = self.request(is_contrib=False)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_non_contrib_private(self):
         res = self.request(public=False,
-                           contrib=False,
+                           is_contrib=False,
                            errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -811,6 +814,8 @@ class TestGetAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_logged_out_private(self):
         res = self.request(public=False,
@@ -822,24 +827,30 @@ class TestGetAlternativeCitations(ApiTestCase):
 
     def test_get_all__citations_admin_public_reg(self):
         res = self.request(registration=True,
-                           admin=True)
+                           is_admin=True)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_admin_private_reg(self):
         res = self.request(public=False,
                            registration=True,
-                           admin=True)
+                           is_admin=True)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_non_admin_public_reg(self):
         res = self.request(registration=True)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_non_admin_private_reg(self):
         res = self.request(public=False,
@@ -847,18 +858,22 @@ class TestGetAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_non_contrib_public_reg(self):
         res = self.request(registration=True,
-                           contrib=False)
+                           is_contrib=False)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_non_contrib_private_reg(self):
         res = self.request(public=False,
                            registration=True,
-                           contrib=False,
+                           is_contrib=False,
                            errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
@@ -870,6 +885,8 @@ class TestGetAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['text'], 'text')
+        assert_equal(data[0]['attributes']['name'], 'name')
 
     def test_get_all_citations_logged_out_private_reg(self):
         res = self.request(public=False,

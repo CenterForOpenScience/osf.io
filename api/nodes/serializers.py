@@ -401,15 +401,15 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
         errors = self.error_checker(validated_data)
         if len(errors) > 0:
             raise ValidationError(detail=errors)
-        instance.name = validated_data.get('name') or instance.name
-        instance.text = validated_data.get('text') or instance.text
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
         instance.save()
         return instance
 
     def error_checker(self, data):
         errors = []
-        name = data.get('name') or None
-        text = data.get('text') or None
+        name = data.get('name', None)
+        text = data.get('text', None)
         citations = self.context['view'].get_node().alternativeCitations
         if not (self.instance and self.instance.name == name) and citations.find(Q('name', 'eq', name)).count() > 0:
             errors.append("There is already an alternative citation named '{}'".format(name))
