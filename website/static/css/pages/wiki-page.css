@@ -1,6 +1,6 @@
 .drag-drop-cursor {
     position: absolute;
-    border-left: 2px solid dimgrey;
+    border-left: 2px solid #696969;
 }
 
 .panel-heading.no-background {

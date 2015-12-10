@@ -198,7 +198,7 @@ var Range = ace.require('ace/range').Range;
                 return; // already initialized
 
             panels = new PanelCollection(idPostfix, aceEditor);
-            var commandManager = new CommandManager(hooks, getString, aceEditor);
+            var commandManager = new CommandManager(hooks, getString);
             var previewManager = function(){};
             var uiManager;
 
@@ -243,7 +243,7 @@ var Range = ace.require('ace/range').Range;
             var width = config.characterWidth;
             var row = Math.floor(y/height) < editor.session.getScreenLength() ? Math.floor(y/height) : editor.session.getScreenLength() - 1;
             var column = Math.floor(x/width) < editor.session.getScreenLastRowColumn(row) ? Math.floor(x/width) : editor.session.getScreenLastRowColumn(row);
-            return {row: row, column: column}
+            return {row: row, column: column};
         };
 
         editor.marker = {};
@@ -297,7 +297,7 @@ var Range = ace.require('ace/range').Range;
                 contentType: false,
                 beforeSend: $osf.setXHRAuthorization,
                 data: file
-            })
+            });
         };
 
         element.addEventListener('drop', function(event) {
@@ -368,7 +368,7 @@ var Range = ace.require('ace/range').Range;
                 var num = cm.addLinkDef(init) + 1;
                 var deferred = [];
                 checkFolder().fail(function() {
-                    notUploaded();
+                    notUploaded(multiple);
                 }).done(function(path) {
                     if (!!path) {
                         $.each(files, function (i, file) {
@@ -390,11 +390,9 @@ var Range = ace.require('ace/range').Range;
                                         url = response.data.links.download + '?mode=render';
                                         urls.splice(i, 0, url);
                                     }).fail(function (data) {
-                                        $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
-                                            'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                                            'if the problem persists.', 'danger');
+                                        notUploaded(false);
                                     })
-                                )
+                                );
                             }
                         });
                         $.when.apply(null, deferred).done(function () {
@@ -402,12 +400,10 @@ var Range = ace.require('ace/range').Range;
                                 cm.doLinkOrImage(init, null, true, url, multiple, num + i);
                             });
                             fixupInputArea();
-                        })
+                        });
                     }
                     else {
-                        $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
-                            'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                            'if the problem persists.', 'danger');
+                        notUploaded(multiple);
                     }
                 });
 
@@ -426,8 +422,9 @@ var Range = ace.require('ace/range').Range;
         });
     };
 
-    var notUploaded = function() {
-        $osf.growl('Error', 'File(s) not uploaded. Please refresh the page and try ' +
+    var notUploaded = function(multiple) {
+        var files = multiple ? 'File(s)' : 'File';
+        $osf.growl('Error', files + ' not uploaded. Please refresh the page and try ' +
             'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
             'if the problem persists.', 'danger');
     };
@@ -1960,10 +1957,9 @@ var Range = ace.require('ace/range').Range;
 
     }
 
-    function CommandManager(pluginHooks, getString, editor) {
+    function CommandManager(pluginHooks, getString) {
         this.hooks = pluginHooks;
         this.getString = getString;
-        this.editor = editor;
     }
 
     var commandProto = CommandManager.prototype;
