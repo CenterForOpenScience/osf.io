@@ -23,4 +23,4 @@ class CustomUserRegistrationForm(UserCreationForm):
             raise ValidationError('Password is too short')
         if len(password) > 256:
             raise ValidationError('Password is too long')
-        return super(MyUserCreationForm, self).clean_password1()
+        return password
