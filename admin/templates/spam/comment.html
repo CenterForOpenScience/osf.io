@@ -9,40 +9,38 @@
 
     <div class="container-fluid">
         <div class="row">
-            <div class="btn-group col-sm-6" role="group" aria-label="...">
-                <a href="javascript:window.history.back();"
-                   class="btn btn-primary">
-                    Back to list
-                </a>
-                <a href=""
-                   class="btn btn-default">
-                    HAM
-                </a>
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-danger dropdown-toggle"
-                            data-toggle="dropdown" aria-haspopup="true"
-                            aria-expanded="false">
-                        SPAM
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a href="{% url 'spam:email' comment.id %}">
-                                Email
-                            </a>
-                        </li>
-                        <li>
-                            <a href="">
-                                Mark as Spam
-                            </a>
-                        </li>
-                        <li>
-                            <a href="">
-                                Escalate
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+            <a href="javascript:window.history.back();"
+               class="btn btn-primary">
+                Back to list
+            </a>
+            <a href=""
+               class="btn btn-default">
+                HAM
+            </a>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-danger dropdown-toggle"
+                        data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    SPAM
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="{% url 'spam:email' comment.id %}">
+                            Email
+                        </a>
+                    </li>
+                    <li>
+                        <a href="">
+                            Mark as Spam
+                        </a>
+                    </li>
+                    <li>
+                        <a href="">
+                            Escalate
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
 
