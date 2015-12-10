@@ -90,10 +90,10 @@ var institutionsViewModel = function() {
                 fields: {xhrFields: {withCredentials: true}}
             }
         ).done(function (response) {
-                $osf.growl('Nice!');
+                $osf.growl('It worked!');
                 self.primaryInstitution(inst);
         }).fail(function (response) {
-            $osf.growl('Poop!');
+            $osf.growl('Error!');
         });
     };
 };
