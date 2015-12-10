@@ -126,6 +126,7 @@ def make_new_node_settings(node, node_settings_document, external_account=None, 
     node_settings_instance = node.get_or_add_addon('dropbox', auth=None, override=True)
     node_settings_instance.folder = node_settings_document['folder']
     node_settings_instance.save()
+    suppress_log(node)
     if external_account and user_settings_instance:
         node_settings_instance.set_auth(
             external_account,
@@ -133,6 +134,12 @@ def make_new_node_settings(node, node_settings_document, external_account=None, 
             log=False
         )
     return node_settings_instance
+
+def suppress_log(node):
+    node_log = node.logs[-1]
+    if node_log.action == node_log.ADDON_ADDED and node_log.params['addon'] == 'Dropbox':
+        node_log.should_hide = True
+        node_log.save()
 
 def remove_old_documents(old_user_settings, old_user_settings_count, old_node_settings, old_node_settings_count, dry_run):
     logger.info('Removing {0} old dropboxusersettings documents'.format(
