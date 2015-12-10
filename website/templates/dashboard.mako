@@ -20,7 +20,7 @@
 </div>
 
 
-  <div id="fileBrowser" class="fileBrowser" ></div>
+  <div id="fileBrowser" class="fileBrowser clearfix" ></div>
 
 
 %if 'badges' in addons_enabled:

@@ -1,9 +1,9 @@
 
 /* Main Wrapper */
 .fileBrowser {
-    height: 500px;
     width: 100%;
     font-family: "Open Sans", 'Helvetica Neue', sans-serif;
+    border-bottom: 1px solid #eee;
 }
 
 /* Header with breadcrumbs and buttons */
@@ -118,6 +118,7 @@
     float: left;
     padding: 0 0 1px 0;
     /* width is set as inline style in file-browser.js because it changes based on information panel visibility */
+    border-left: 1px solid #eee;
 }
 
 /* Information Panel */
@@ -128,6 +129,7 @@
     float: left;
     width: 30%;
     overflow-y: auto;
+    border-left: 1px solid #eee;
 }
 
 .fb-info-multi {
@@ -173,6 +175,11 @@
 
 #poFilter {
     width : 300px;
+}
+
+/* Treebeard override */
+#projectOrganizer #tb-tbody {
+    border: none;
 }
 
 /* Responsive Style */
