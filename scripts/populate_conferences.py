@@ -507,7 +507,11 @@ MEETING_DATA = {
     },
     'PsiChiRepository': {
         'name': 'Psi Chi',
-        'info_url': 'http://psichi.org',
+        'info_url': 'http://www.psichi.org/?ResearchAdvisory#.VmBpeOMrI1g',
+        'logo_url': 'http://s11.postimg.org/4g2451vcz/Psi_Chi_Logo.png',
+        'admins': [
+            'research.director@psichi.org',
+            ],
         'field_names': {
             'submission1': 'measures',
             'submission2': 'materials',

@@ -2,6 +2,7 @@
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
+import logging
 import datetime
 
 import hurry.filesize
@@ -17,6 +18,8 @@ from website.settings import (
     ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
 )
 
+
+logger = logging.getLogger(__name__)
 
 FOLDER = 'folder'
 FILE = 'file'
@@ -490,7 +493,14 @@ class NodeFileCollector(object):
                 # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
                 try:
                     temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
-                except Exception:
+                except Exception as e:
+                    logger.warn(
+                        getattr(
+                            e,
+                            'data',
+                            "Unexpected error when fetching file contents for {0}.".format(addon.config.full_name)
+                        )
+                    )
                     sentry.log_exception()
                     rv.append({
                         KIND: FOLDER,

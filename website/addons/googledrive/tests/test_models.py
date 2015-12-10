@@ -9,11 +9,12 @@ from dateutil import relativedelta
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
+from tests.factories import UserFactory, ProjectFactory
 from website.addons.base import exceptions
 
 from website.addons.googledrive import model
 from website.addons.googledrive.client import GoogleAuthClient
+from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
 
 class TestGoogleDriveProvider(OsfTestCase):
     def setUp(self):
@@ -36,7 +37,7 @@ class TestGoogleDriveUserSettings(OsfTestCase):
         self.node = ProjectFactory()
         self.user = self.node.creator
 
-        self.external_account = ExternalAccountFactory()
+        self.external_account = GoogleDriveAccountFactory()
 
         self.user.external_accounts.append(self.external_account)
         self.user.save()
@@ -93,7 +94,7 @@ class TestGoogleDriveUserSettings(OsfTestCase):
 
         factory_account_has_access = self.user_settings.verify_oauth_access(
             node=self.node,
-            external_account=ExternalAccountFactory()
+            external_account=GoogleDriveAccountFactory()
         )
 
         assert_true(account_has_access)
@@ -156,7 +157,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         assert_equal(api, 'testapi')
 
     def test_set_auth(self):
-        external_account = ExternalAccountFactory()
+        external_account = GoogleDriveAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
@@ -189,7 +190,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         assert_true(set_auth_gives_access)
 
     def test_set_auth_wrong_user(self):
-        external_account = ExternalAccountFactory()
+        external_account = GoogleDriveAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
@@ -200,7 +201,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             )
 
     def test_clear_auth(self):
-        self.node_settings.external_account = ExternalAccountFactory()
+        self.node_settings.external_account = GoogleDriveAccountFactory()
         self.node_settings.folder_id = 'something'
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
@@ -222,7 +223,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         }
 
 
-        external_account = ExternalAccountFactory()
+        external_account = GoogleDriveAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
@@ -258,7 +259,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         assert_equal(log.params['folder'], folder['path'])
 
     def test_has_auth_false(self):
-        external_account = ExternalAccountFactory()
+        external_account = GoogleDriveAccountFactory()
 
         assert_false(self.node_settings.has_auth)
 
@@ -276,7 +277,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         assert_false(self.node_settings.has_auth)
 
     def test_has_auth_true(self):
-        external_account = ExternalAccountFactory()
+        external_account = GoogleDriveAccountFactory()
         self.user.external_accounts.append(external_account)
 
         self.node_settings.set_auth(external_account, self.user)
@@ -315,7 +316,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
     @mock.patch('website.addons.googledrive.model.GoogleDriveProvider.refresh_oauth_key')
     def test_serialize_credentials(self, mock_refresh):
         mock_refresh.return_value = True
-        external_account = ExternalAccountFactory()
+        external_account = GoogleDriveAccountFactory()
         self.user.external_accounts.append(external_account)
         self.node_settings.set_auth(external_account, self.user)
         credentials = self.node_settings.serialize_waterbutler_credentials()
@@ -325,7 +326,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
     @mock.patch('website.addons.googledrive.model.GoogleDriveProvider.refresh_oauth_key')
     def test_serialize_credentials_not_authorized(self, mock_refresh):
         mock_refresh.return_value = True
-        external_account = ExternalAccountFactory()
+        external_account = GoogleDriveAccountFactory()
         self.node_settings.external_account = external_account
         with assert_raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_credentials()
@@ -355,7 +356,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             self.node_settings.serialize_waterbutler_settings()
 
     def test_fetch_access_token_with_token_not_expired(self):
-        external_account = ExternalAccountFactory()
+        external_account = GoogleDriveAccountFactory()
         self.user.external_accounts.append(external_account)
         external_account.expires_at = datetime.utcnow() + relativedelta.relativedelta(minutes=6)
         external_account.oauth_key = 'fake-token'

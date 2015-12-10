@@ -6,6 +6,8 @@ from website.util import api_url_for, web_url_for
 
 class DataverseSerializer(OAuthAddonSerializer):
 
+    addon_short_name = 'dataverse'
+
     REQUIRED_URLS = []
 
     # Include host information with more informative labels / formatting
