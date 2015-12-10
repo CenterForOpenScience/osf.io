@@ -391,10 +391,8 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
         if len(errors) > 0:
             raise ValidationError(detail=errors)
         node = self.context['view'].get_node()
-        citation = AlternativeCitation(**validated_data)
-        citation.save()
-        node.alternativeCitations.append(citation)
-        node.save()
+        auth = Auth(self.context['request']._user)
+        citation = node.add_citation(auth, **validated_data)
         return citation
 
     def update(self, instance, validated_data):

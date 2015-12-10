@@ -292,3 +292,9 @@ created external identifiers
 on
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
+
+<script type="text/html" id="citation_added">
+added an alternative citation with
+<span data-bind="text: 'name: ' + params.citation.name"></span> and
+<span data-bind="text: 'text: ' + params.citation.text"></span>
+</script>
