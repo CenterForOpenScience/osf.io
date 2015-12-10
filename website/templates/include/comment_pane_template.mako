@@ -1,6 +1,6 @@
-<div class="scripted comment-pane hidden-xs">
+<div class="scripted comment-pane">
 
-    <div class="cp-handle pull-right pointer" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="Discussion Pane">
+    <div class="cp-handle-div cp-handle pull-right pointer hidden-xs" data-bind="click:removeCount" data-toggle="tooltip" data-placement="bottom" title="Discussion Pane">
         <span data-bind="if: unreadComments() !== 0">
             <span data-bind="text: displayCount" class="badge unread-comments-count"></span>
         </span>
@@ -10,6 +10,9 @@
 
 
     <div class="comments cp-sidebar">
+        <button type="button" class="close visible-xs text-smaller" data-bind="click: toggle">
+            <i class="fa fa-times"></i>
+        </button>
         <h4>
             <span data-bind="if: page() == 'node' ">${node['title']} Discussion</span>
             %if file_name:

@@ -308,7 +308,7 @@ $(document).ready(function() {
     // Adds active class to current menu item
     $(function () {
         var path = window.location.pathname;
-        $('.project-nav a').each(function () {
+        $('.project-nav a:not(#commentsLink)').each(function () {
             var href = $(this).attr('href');
             if (path === href ||
                (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||

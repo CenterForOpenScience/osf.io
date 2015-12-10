@@ -2,10 +2,15 @@
     position: fixed;
     z-index: 999; /* Note: Must be lower than Bootstrap modals, BlockUI */
     width: 0;
-    top: 0;
+    top: 47px!important;
     right: 0;
     height: 100%;
-    padding-bottom: 88px; /* Note: Must be the same as .cp-bar:margin-top */
+}
+
+@media (max-width: 767px) {
+    .comment-pane {
+        top: 99px!important;
+    }
 }
 
 .comment-info {
@@ -37,10 +42,8 @@
     padding-right: 5px;
 }
 
-.cp-handle {
+.cp-handle-div {
     /* Handle starts under Bootstrap header */
-    /* Note: Must be the same as #commentPane:padding-bottom */
-    margin-top: 40px;
     width: 100px;
     height: 48px;
     margin-left: -50px;
@@ -50,7 +53,7 @@
 }
 
 .comment-handle-icon {
-    padding-top: 5px;
+    padding-top: 2px;
     color: #428bca;
     cursor: pointer;
     position: relative;
@@ -58,8 +61,7 @@
 
 .cp-bar {
     width: 1px;  /* Note: Should be the same as .cp-sidebar:margin-left */
-    margin-top: 88px;
-    margin-bottom: 0px;
+    top: 88px;
     height: 100%;
     background-color: transparent;
     position: absolute;
@@ -67,7 +69,6 @@
 }
 
 .cp-sidebar {
-    margin-top: 88px;
     height: 100%;
     margin-left: 1px;  /* Note: Should be the same as .cp-bar:width */
     background-color: whitesmoke;

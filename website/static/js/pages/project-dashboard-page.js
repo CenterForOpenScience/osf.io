@@ -49,7 +49,7 @@ if ($comments.length) {
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren
     };
-    Comment.init('.comment-pane', options);
+    Comment.init('#commentsLink', '.comment-pane', options);
 }
 
 // Initialize CitationWidget if user isn't viewing through an anonymized VOL

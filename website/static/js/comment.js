@@ -561,6 +561,8 @@ var CommentListModel = function(options) {
     self.nodeId = ko.observable(options.nodeId);
     self.nodeApiUrl = options.nodeApiUrl;
 
+    self.toggle = options.toggle;
+
     self.commented = ko.pureComputed(function(){
         return self.comments().length > 0;
     });
@@ -612,18 +614,16 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      hasChildren: Node.hasChildren,
  *      threadId: undefined }
  */
-var init = function(selector, options) {
-    new CommentPane(selector, {
+var init = function(commentLinkSelector, commentPaneSelector, options) {
+    var cp = new CommentPane(commentPaneSelector, {
         onOpen: function(){
             return onOpen(options.page, options.rootId, options.nodeApiUrl);
         }
     });
+    options['toggle'] = cp.toggle;
     var viewModel = new CommentListModel(options);
-    var $elm = $(selector);
-    if (!$elm.length) {
-        throw('No results found for selector');
-    }
-    osfHelpers.applyBindings(viewModel, selector);
+    osfHelpers.applyBindings(viewModel, commentLinkSelector);
+    osfHelpers.applyBindings(viewModel, commentPaneSelector);
     viewModel.initListeners();
 
     return viewModel;
