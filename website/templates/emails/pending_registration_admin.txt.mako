@@ -1,9 +1,9 @@
 Hello ${user.fullname},
 
 % if is_initiator:
-You initiated a registration of your project ${project_name}. The proposed registration can be viewed here: ${registration_link}.
+You initiated a registration of your project ${project_name}${context.get('custom_message', '')}. The proposed registration can be viewed here: ${registration_link}.
 % else:
-${initiated_by} has initiated a registration of your project ${project_name}. The proposed registration can be viewed here: ${registration_link}.
+${initiated_by} has initiated a registration of your project ${project_name}${context.get('custom_message', '')}. The proposed registration can be viewed here: ${registration_link}.
 % endif 
 
 If approved, a registration will be created for the project and will be made public immediately.
