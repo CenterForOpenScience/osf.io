@@ -34,26 +34,26 @@ $(document).ready(function() {
 });
 
 $(window).scroll(function() {
-    var st = $(this).scrollTop();
+    var scrollTop = $(this).scrollTop();
     var offset = 49;
-    st = (st <= offset ? st : offset);
+    scrollTop = (scrollTop <= offset ? scrollTop : offset);
     if ($('.comment-handle-icon').is(':hidden')) {
         $('.comment-pane').css({
-            'transform': 'translate3d(0, ' + (-st) + 'px, 0)',
-            '-webkit-transform': 'translate3d(0, ' + (-st) + 'px, 0)',
-            '-moz-transform': 'translate3d(0, ' + (-st) + 'px, 0)'
+            'transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
+            '-webkit-transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
+            '-moz-transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)'
         });
     }
 });
 
 $(window).resize(function() {
-    var st = $(this).scrollTop();
-    st = $('.comment-handle-icon').is(':hidden') ? st : 0;
+    var scrollTop = $(this).scrollTop();
+    scrollTop = $('.comment-handle-icon').is(':hidden') ? scrollTop : 0;
     var offset = 49;
-    st = (st <= offset ? st : offset);
+    scrollTop = (scrollTop <= offset ? scrollTop : offset);
     $('.comment-pane').css({
-        'transform': 'translate3d(0, ' + (-st) + 'px, 0)',
-        '-webkit-transform': 'translate3d(0, ' + (-st) + 'px, 0)',
-        '-moz-transform': 'translate3d(0, ' + (-st) + 'px, 0)'
+        'transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
+        '-webkit-transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
+        '-moz-transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)'
     });
 });

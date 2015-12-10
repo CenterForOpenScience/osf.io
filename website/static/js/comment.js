@@ -614,21 +614,16 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      hasChildren: Node.hasChildren,
  *      threadId: undefined }
  */
-var init = function(selectors, options) {
-    var cp = new CommentPane(selectors[1], {
+var init = function(commentLinkSelector, commentPaneSelector, options) {
+    var cp = new CommentPane(commentPaneSelector, {
         onOpen: function(){
             return onOpen(options.page, options.rootId, options.nodeApiUrl);
         }
     });
     options['toggle'] = cp.toggle;
     var viewModel = new CommentListModel(options);
-    var $elm = $(selectors);
-    if (!$elm.length) {
-        throw('No results found for selector');
-    }
-    $.each(selectors, function(index, selector){
-        osfHelpers.applyBindings(viewModel, selector);
-    });
+    osfHelpers.applyBindings(viewModel, commentLinkSelector);
+    osfHelpers.applyBindings(viewModel, commentPaneSelector);
     viewModel.initListeners();
 
     return viewModel;
