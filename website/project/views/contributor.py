@@ -483,7 +483,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, throttle=None):
+def notify_added_contributor(node, contributor, auth=None, throttle=None):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     # Exclude forks and templates because the user forking/templating the project gets added
@@ -505,7 +505,8 @@ def notify_added_contributor(node, contributor, throttle=None):
             contributor.username,
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
-            node=node
+            node=node,
+            referrer_name=auth.user.fullname if auth else ''
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()

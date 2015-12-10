@@ -2561,7 +2561,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor)
+            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
 
             return True
 
