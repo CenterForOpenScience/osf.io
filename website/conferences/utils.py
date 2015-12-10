@@ -6,7 +6,7 @@ import requests
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
-from framework.auth import Auth, signals
+from framework.auth import Auth
 from framework.auth.core import get_user
 
 from website import util
