@@ -596,6 +596,11 @@ class MockOAuthAddonUserSettings(addons_base.AddonOAuthUserSettingsBase):
 class MockOAuthAddonNodeSettings(addons_base.AddonOAuthNodeSettingsBase):
     oauth_provider = MockOAuth2Provider
 
+    folder_id = 'foo'
+    folder_name = 'Foo'
+    folder_path = '/Foo'
+
+
 
 class ArchiveTargetFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveTarget
