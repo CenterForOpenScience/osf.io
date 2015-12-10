@@ -44,6 +44,48 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
     return ret
 
 
+class HideIfRegistration(ser.Field):
+    """
+    If node is a registration, this field will return None.
+    """
+    def __init__(self, field, **kwargs):
+        super(HideIfRegistration, self).__init__(**kwargs)
+        self.field = field
+        self.source = field.source
+        self.required = field.required
+        self.read_only = field.read_only
+
+    def get_attribute(self, instance):
+        if instance.is_registration:
+            return None
+        return self.field.get_attribute(instance)
+
+    def bind(self, field_name, parent):
+        super(HideIfRegistration, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def to_internal_value(self, data):
+        return self.field.to_internal_value(data)
+
+    def to_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_representation(value)
+
+
+class HideIfRetraction(HideIfRegistration):
+    """
+    If node is retracted, this field will return None.
+    """
+
+    def get_attribute(self, instance):
+        if instance.is_retracted:
+            return None
+        return self.field.get_attribute(instance)
+
+
 class AllowMissing(ser.Field):
 
     def __init__(self, field, **kwargs):
@@ -79,6 +121,8 @@ def _url_val(val, obj, serializer, **kwargs):
     if isinstance(val, Link):  # If a Link is passed, get the url value
         url = val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
+        if getattr(serializer, 'field', None):
+            serializer = serializer.parent
         url = getattr(serializer, val)(obj)
     else:
         url = val
@@ -222,6 +266,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.related_meta = related_meta
         self.self_meta = self_meta
         self.always_embed = always_embed
+
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
             assert related_kwargs is not None, 'Must provide related view kwargs.'
@@ -609,6 +654,14 @@ class JSONAPISerializer(ser.Serializer):
         kwargs['child'] = cls()
         return JSONAPIListSerializer(*args, **kwargs)
 
+    def invalid_embeds(self, fields, embeds):
+        fields_check = fields[:]
+        for index, field in enumerate(fields_check):
+            if getattr(field, 'field', None):
+                fields_check[index] = field.field
+        invalid_embeds = set(embeds.keys()) - set([f.field_name for f in fields_check if getattr(f, 'json_api_link', False)])
+        return invalid_embeds
+
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
         """Serialize to final representation.
@@ -632,8 +685,7 @@ class JSONAPISerializer(ser.Serializer):
 
         embeds = self.context.get('embed', {})
         fields = [field for field in self.fields.values() if not field.write_only]
-
-        invalid_embeds = set(embeds.keys()) - set([f.field_name for f in fields if getattr(f, 'json_api_link', False)])
+        invalid_embeds = self.invalid_embeds(fields, embeds)
         if invalid_embeds:
             raise InvalidQueryStringError(parameter='embed',
                                           detail='The following fields are not embeddable: {}'.format(', '.join(invalid_embeds)))
@@ -644,10 +696,15 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if getattr(field, 'json_api_link', False):
+            nested_field = getattr(field, 'field', None)
+
+            if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
                 # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
                 # results rather than adding a relationship link
+                if attribute is None:
+                    continue
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
+
                     result = self.context['embed'][field.field_name](obj)
                     if result:
                         data['embeds'][field.field_name] = result

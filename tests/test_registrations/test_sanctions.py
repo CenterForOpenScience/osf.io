@@ -12,12 +12,12 @@ from tests import factories
 
 from framework.mongo import handlers
 
-from website.project.model import Sanction, EmailApprovableSanction, ensure_schemas, PreregCallbackMixin
+from website.project.model import Sanction, TokenApprovableSanction, EmailApprovableSanction, ensure_schemas, PreregCallbackMixin
 
 def valid_user():
     return factories.UserFactory(system_tags=['flag'])
 
-class SanctionTestClass(Sanction):
+class SanctionTestClass(TokenApprovableSanction):
 
     DISPLAY_NAME = 'test class'
 
@@ -114,7 +114,7 @@ class TestSanction(SanctionsTestCase):
         assert_true(mock_complete.called)
 
     def test_on_reject_raises_NotImplementedError(self):
-        err = lambda: self.sanction._on_reject(self.user, '')
+        err = lambda: self.sanction._on_reject(self.user)
         assert_raises(NotImplementedError, err)
 
     def test_on_complete_raises_NotImplementedError(self):
