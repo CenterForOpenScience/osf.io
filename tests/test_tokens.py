@@ -8,6 +8,7 @@ from modularodm import Q
 
 from tests.base import OsfTestCase
 from tests import factories
+from tests.utils import mock_auth
 
 from framework.exceptions import HTTPError
 
@@ -20,14 +21,6 @@ from website.tokens.exceptions import TokenHandlerNotFound
 NO_SANCTION_MSG = 'There is no {0} associated with this token.'
 APPROVED_MSG = "This registration is not pending {0}."
 REJECTED_MSG = "This registration {0} has been rejected."
-
-class MockAuth(object):
-
-    def __init__(self, user):
-        self.user = user
-        self.logged_in = True
-
-mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
 
 class TestTokenHandler(OsfTestCase):
 

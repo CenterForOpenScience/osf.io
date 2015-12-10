@@ -25,14 +25,15 @@ common.output = {
     sourcePrefix: ''
 };
 
-module.exports = assign({}, common, {
+var config = assign({}, common, {
     entry: {
-        'admin-base-page': staticAdminPath('js/pages/base-page.js')
-    },
-    resolve: {
-        root: [websiteRoot, adminRoot]
+        'admin-base-page': staticAdminPath('js/pages/base-page.js'),
+        'prereg-admin-page': staticAdminPath('js/pages/prereg-admin-page.js'),
+        'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js')
     },
     plugins: plugins,
     debug: true,
     devtool: 'source-map'
 });
+config.resolve.root = [websiteRoot, adminRoot];
+module.exports = config;

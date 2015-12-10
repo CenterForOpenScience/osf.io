@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<%include file="project/nodes_privacy.mako"/>
 
 <%
     is_project = node['node_type'] == 'project'
@@ -33,11 +34,11 @@
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
                         % if 'admin' in user['permissions'] and not node['is_pending_embargo']:
-                            <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
+                            <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
                         % endif
                     % else:
                         % if 'admin' in user['permissions'] and not node['is_registration']:
-                            <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
+                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     % endif
@@ -128,8 +129,8 @@
                 % if node['is_registration']:
                     <p>
                     Registration Supplement:
-                    % for meta_schema in node['registered_schemas']:                    
-                    <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a> 
+                    % for meta_schema in node['registered_schemas']:
+                    <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a>
                       % if len(node['registered_schemas']) > 1:
                       ,
                       % endif
@@ -153,8 +154,8 @@
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
-                  DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
-                  ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
+                  DOI <span data-bind="text: doi"></span> |
+                  ARK <span data-bind="text: ark"></span>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->

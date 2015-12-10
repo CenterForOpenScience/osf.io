@@ -21,6 +21,7 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from website import util
+from website import prereg
 from website import settings
 from website import language
 from website.util import paths
@@ -227,6 +228,20 @@ def make_url_map(app):
         ),
 
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
+
+        Rule(
+            '/prereg/',
+            'get',
+            prereg.prereg_landing_page,
+            OsfWebRenderer('prereg_landing_page.mako', trust=False)
+        ),
+
+        Rule(
+            '/api/v1/prereg/draft_registrations/',
+            'get',
+            prereg.prereg_draft_registrations,
+            json_renderer,
+        ),
     ])
 
     # Site-wide API routes
@@ -1502,6 +1517,16 @@ def make_url_map(app):
             ],
             'get',
             notification_views.get_node_subscriptions,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/tree/',
+                '/project/<pid>/node/<nid>/tree/'
+            ],
+            'get',
+            project_views.node.get_node_tree,
             json_renderer,
         ),
 

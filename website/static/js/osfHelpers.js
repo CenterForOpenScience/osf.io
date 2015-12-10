@@ -394,13 +394,6 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
 };
 
 /**
- * Allows data-bind to be called without a div so the layout of the page is not effected.
- * Example:
- * <!-- ko stopBinding: true -->
- */
-ko.virtualElements.allowedBindings.stopBinding = true;
-
-/**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element (and child elements) if it was
   * previously hidden by applying the 'scripted' CSS class.
@@ -734,6 +727,53 @@ function indexOf(array, searchFn) {
     return -1;
 }
 
+/**
+ * Check if any of the values in an array are truthy
+ *
+ * @param {Array[Any]} listOfBools
+ * @returns {Boolean}
+ **/
+var any = function(listOfBools) {
+    var someTruthy = false;
+    for(var i = 0; i < listOfBools.length; i++){
+        someTruthy = someTruthy || Boolean(listOfBools[i]);
+        if (someTruthy) {
+            return someTruthy;
+        }
+    }
+    return false;
+};
+
+var dialog = function(title, message, actionButtonLabel, options) {
+    var ret = $.Deferred();
+    options = $.extend({}, {
+        actionButtonClass: 'btn-success',
+        cancelButtonLabel: 'Cancel',
+        cancelButtonClass: 'btn-default'
+    }, options || {});
+
+    bootbox.dialog({
+        title: title,
+        message: message,
+        buttons: {
+            cancel: {
+                label: options.cancelButtonLabel,
+                className: options.cancelButtonClass,
+                callback: function() {
+                    bootbox.hideAll();
+                    ret.reject();
+                }
+            },
+            approve: {
+                label: actionButtonLabel,
+                className: options.actionButtonClass,
+                callback: ret.resolve
+            }
+        }
+    });
+    return ret.promise();
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -767,5 +807,7 @@ module.exports = window.$.osf = {
     isIE: isIE,
     isSafari:isSafari,
     indexOf: indexOf,
-    currentUser: currentUser
+    currentUser: currentUser,
+    any: any,
+    dialog: dialog
 };

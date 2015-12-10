@@ -6,7 +6,7 @@
 <%def name="title()">Registration of ${node['title']}</%def>
   <div id="registrationMetaDataScope" class="container scripted">
     <div class="row">
-      <div class="span8 col-md-2 columns eight large-8">        
+      <div class="col-md-2">
         <ul class="nav nav-stacked list-group" data-bind="foreach: {data: metaSchema.schema.pages, as: 'page'}, visible: metaSchema.schema.pages.length > 1">
           <li class="re-navbar">
             <a class="registration-editor-page" id="top-nav" style="text-align: left; font-weight:bold;" data-bind="text: title, attr.href: '#' + page.id">
@@ -23,26 +23,28 @@
           </li>
         </ul>
       </div>
-      <div class="span8 col-md-9 columns eight large-8" style="padding-left: 30px">
-        <div data-bind="foreach: {data: metaSchema.schema.pages, as: 'page'}">
+      <div class="col-md-9" style="padding-left: 30px">
+        <div data-bind="foreach: {data: metaSchema.pages, as: 'page'}">
           <h3 data-bind="attr.id: page.id, text: page.title"></h3>
           <div class="row">
-            <div data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
-              <div class="row" data-bind="with: $parent.questions[qid]">
-                <h4 data-bind="attr.id: qid, text: title"></h4>
-                <small><em data-bind="text: $data.description"></em></small>
-                <div class="col-md-12 well" data-bind="with: $root.schemaData[qid]">
-                  <span data-bind="if: $data">
-                    {{value}}
+            <div data-bind="foreach: {data: page.questions, as: 'question'}">
+              <div class="row">
+                <h4 data-bind="attr.id: question.id, text: question.title"></h4>
+                <small><em data-bind="text: question.description"></em></small>
+                <div class="col-md-12 well">
+                  <span data-bind="if: question.value()">
+                    <p>
+                      <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
+                    </p>
                   </span>
                 </div>
               </div>
-            </div>              
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>  
+  </div>
 % else:
   <%def name="title()">Register ${node['title']}</%def>
 <script type="text/javascript">
@@ -52,7 +54,7 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    % if node.get('registered_schema'):
+    % if node.get('registered_schema') and not node.get('is_retracted'):
       <script type="text/javascript">
         window.contextVars.node.registrationMetaSchema = ${ node['registered_schema'] | sjson, n };
       </script>
