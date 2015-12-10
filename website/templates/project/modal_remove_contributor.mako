@@ -7,10 +7,10 @@
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
             <div class="modal-body" >
-{{ko.toJSON($data)}}
-                <div data-bind="if: canRemoveOnNode() && !pageChanged()">
+
+                <div data-bind="if: canRemoveNode() && !pageChanged()">
                     <!-- remove page -->
-                    <div data-bind='if:page() === "remove"'>
+                    <div data-bind='if:page() === REMOVE'>
                         <div class="form-group">
                             <span>Do you want to remove <b>{{contributorToRemove()["fullname"]}}</b> from <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it.</span>
                         </div>
@@ -26,7 +26,7 @@
 
                     </div><!-- end remove page -->
                     <!-- removeNoChildren page -->
-                    <div data-bind='if:page() === "removeNoChildren"'>
+                    <div data-bind='if:page() === REMOVE_NO_CHILDREN'>
                         <div class="form-group" data-bind="if:contributorToRemove">
                             <span>Remove <b>{{contributorToRemove()["fullname"]}}</b> from {{title}}"?</span>
                         </div>
@@ -34,26 +34,39 @@
                     </div><!-- end removeNoChildren page -->
 
                     <!-- removeAll page -->
-                    <div data-bind='if:page() === "removeAll"'>
+                    <div data-bind='if:page() === REMOVE_ALL'>
                         <div class="panel panel-default">
                             <div class="panel-body">
-
-                        <div class="form-group" data-bind="if:contributorToRemove">
-                            <span><b>{{contributorToRemove()["fullname"]}}</b> will be removed from the following projects and/or components.</span>
-                        </div>
-                        <div class="col-md-8" align="left">
-                            <ul data-bind="foreach: { data: titlesToRemove(), as: 'item' }">
-                                <li>
-                                    <h4 class="f-w-lg" data-bind="text: item"></h4>
-                                </li>
-                            </ul>
-                        </div>
-                        </div>
+                                <div class="form-group" data-bind="if:contributorToRemove">
+                                    <span><b>{{contributorToRemove()["fullname"]}} will be</b> removed from the following projects and/or components.</span>
+                                </div>
+                                <div class="col-md-8" align="left">
+                                    <ul data-bind="foreach: { data: titlesToRemove(), as: 'item' }">
+                                        <li>
+                                            <h4 class="f-w-lg" data-bind="text: item"></h4>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
+                        </div>
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+                                <div class="form-group" data-bind="if:contributorToRemove">
+                                    <span><b>{{contributorToRemove()["fullname"]}} cannot</b> be removed from the following projects and/or components.</span>
+                                </div>
+                                <div class="col-md-8" align="left">
+                                    <ul data-bind="foreach: { data: titlesToRemove(), as: 'item' }">
+                                        <li>
+                                            <h4 class="f-w-lg" data-bind="text: item"></h4>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div><!-- end removeAll page -->
                 </div>
-                <div data-bind="if: !canRemoveOnNode()">
-                    <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.  You need at least one administrator and one bibliographic contributor.</span>
+                <div data-bind="if: !canRemoveNode()">
+                    <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.  You need at least one administrator, bibliographic contributor, and one registered user.</span>
                 </div>
                 <div data-bind="if: pageChanged()">
                     <span>Please save your changes before removing a contributor.</span>
@@ -62,8 +75,8 @@
             <!-- end modal-body -->
 
             <div class="modal-footer">
-                <div data-bind="if:canRemoveOnNode() && !pageChanged()" align="right">
-                        <span data-bind="if: page() === 'remove'">
+                <div data-bind="if:canRemoveNode() && !pageChanged()" align="right">
+                        <span data-bind="if: page() === REMOVE">
                                 <div class="row">
                                     <div  class="col-md-4 remove-page-buttons">
                                         <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
@@ -72,7 +85,7 @@
                                     </div>
                                 </div>
                         </span>
-                        <span data-bind="if: page() === 'removeNoChildren'">
+                        <span data-bind="if: page() === REMOVE_NO_CHILDREN">
                             <div>
                                 <div class="row">
                                     <div  class="col-md-12 remove-page-buttons" align="right">
@@ -82,7 +95,7 @@
                                 </div>
                             </div>
                         </span>
-                        <span data-bind="if: page() === 'removeAll'" align="right">
+                        <span data-bind="if: page() === REMOVE_ALL" align="right">
                                 <div class="row">
                                     <div class="col-md-12 remove-page-buttons">
                                         <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
@@ -92,7 +105,7 @@
                                 </div>
                         </span>
                 </div>
-                <div data-bind="if:!canRemoveOnNode() || pageChanged()">
+                <div data-bind="if:!canRemoveNode() || pageChanged()">
                     <div class="row">
                         <div  class="col-md-12 remove-page-buttons" align="right">
                             <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>

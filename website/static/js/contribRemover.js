@@ -51,27 +51,32 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     return nodesOriginal;
 }
 
-
 var RemoveContributorViewModel = oop.extend(Paginator, {
-    constructor: function(title, nodeId, nodeHasChildren, parentId, parentTitle, userName, userId, contribShouter, pageChangedShouter) {
+    constructor: function(title, nodeId, userName, userId, contribShouter, pageChangedShouter) {
         this.super.constructor.call(this);
         var self = this;
         self.title = title;
         self.nodeId = nodeId;
-        self.parentId = parentId;
-        self.parentTitle = parentTitle;
         self.userId = userId;
         self.contributorToRemove = ko.observable('');
+        self.REMOVE = 'remove';
+        self.REMOVE_ALL = 'removeAll'
+        self.REMOVE_NO_CHILDREN = 'removeNoChildren';
+
+        //This shouter allows the ContributorsViewModel to share which contributor to remove
+        // with the RemoveContributorViewModel
         contribShouter.subscribe(function(newValue) {
             self.contributorToRemove(newValue);
         }, self, 'contribMessageToPublish');
 
+        //This shouter allows RemoveContributorViewModel to know if the
+        // ContributorsViewModel is in a dirty state to prevent removal
         self.pageChanged = ko.observable(false);
         pageChangedShouter.subscribe(function(newValue) {
             self.pageChanged(newValue);
         }, self, 'changedMessageToPublish');
 
-        self.page = ko.observable('remove');
+        self.page = ko.observable(self.REMOVE);
         self.pageTitle = ko.computed(function() {
             return {
                 remove: 'Delete Contributor',
@@ -81,9 +86,15 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         });
         self.userName = ko.observable(userName);
         self.deleteAll = ko.observable(false);
-        self.nodeHasChildren = ko.observable(nodeHasChildren);
         var nodesOriginal = {};
         self.nodesOriginal = ko.observableArray();
+
+        /*
+         *   To remove, a contributor, you need one bibliographic contributor
+         *   (visibleContributors) one admin, and one registered contributor.
+         *   So we make new arrays with the contributor removed, and see if
+         *   the results are > 0.
+         */
 
         self.canRemoveNodes = ko.computed(function() {
             var canRemoveNodes = {};
@@ -92,27 +103,34 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                 var contributor_id = self.contributorToRemove().id;
                 for (var key in nodesOriginalLocal) {
                     var node = nodesOriginalLocal[key];
-                    var registeredContributors = node.registeredContributors;
-                    var adminContributors = node.adminContributors;
-                    var visibleContributors = node.visibleContributors;
-                    var contributorIndex = registeredContributors.indexOf(contributor_id);
-                    var adminIndex = adminContributors.indexOf(contributor_id);
-                    var visibleIndex = visibleContributors.indexOf(contributor_id);
-                    if (contributorIndex > -1) {
-                        registeredContributors.splice(contributorIndex, 1);
+                    //User cannot modify the node without admin permissions.
+                    if (node.isAdmin) {
+                        var registeredContributors = node.registeredContributors;
+                        var adminContributors = node.adminContributors;
+                        var visibleContributors = node.visibleContributors;
+                        var contributorIndex = node.registeredContributors.indexOf(contributor_id);
+                        var adminIndex = adminContributors.indexOf(contributor_id);
+                        var visibleIndex = visibleContributors.indexOf(contributor_id);
+
+                        if (contributorIndex > -1) {
+                            registeredContributors.splice(contributorIndex, 1);
+                        }
+                        if (adminIndex > -1) {
+                            adminContributors.splice(adminIndex, 1);
+                        }
+                        if (visibleIndex > -1) {
+                            visibleContributors.splice(visibleIndex, 1);
+                        }
+                        self.canRemoveAdmin = adminContributors.length > 0;
+                        self.canRemoveVisible = visibleContributors.length > 0;
+                        self.canRemoveRegistered = registeredContributors.length > 0 ;
+                        canRemoveNodes[key] = (registeredContributors.length > 0 && adminContributors.length > 0 && visibleContributors.length > 0);
                     }
-                    if (adminIndex > -1) {
-                        adminContributors.splice(adminIndex, 1);
-                    }
-                    if (visibleIndex > -1) {
-                        visibleContributors.splice(visibleIndex, 1);
-                    }
-                    self.canRemoveAdmin = adminContributors.length > 0;
-                    self.canRemoveVisible = visibleContributors.length > 0;
-                    self.canRemoveRegistered = registeredContributors.length > 0 ;
-                    canRemoveNodes[key] = (registeredContributors.length > 0 && adminContributors.length > 0 && visibleContributors.length > 0);
+                    else {
+                        canRemoveNodes[key] = false;
                     }
                 }
+            }
             return canRemoveNodes;
         });
 
@@ -120,14 +138,18 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             return self.canRemoveNodes()[self.nodeId];
         });
 
+        self.canRemoveNodeAdmin = ko.computed(function() {
+            self.canRemoveAdmin;
+        })
+
         self.hasChildrenToRemove = ko.computed(function() {
             //if there is more then one node to remove, then show a simplified page
             if (Object.keys(self.canRemoveNodes()).length > 1) {
-                self.page('remove');
+                self.page(self.REMOVE);
                 return true;
             }
             else {
-                self.page('removeNoChildren');
+                self.page(self.REMOVE_NO_CHILDREN);
                 return false;
             }
         });
@@ -154,6 +176,23 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             return titlesToRemove;
         });
 
+        self.titlesToKeep = ko.computed(function() {
+            var titlesToKeep = [];
+            for (var key in self.nodesOriginal()) {
+                if (self.nodesOriginal().hasOwnProperty(key) && !self.canRemoveNodes()[key]) {
+                    var node = self.nodesOriginal()[key];
+                    var contributors = node.contributors;
+                    for (var i = 0; i < contributors.length; i++) {
+                        if (contributors[i].id === self.contributorToRemove().id) {
+                            titlesToKeep.push(node.title);
+                            break;
+                        }
+                    }
+                }
+            }
+            return titlesToKeep;
+        });
+
         self.nodeIDsToRemove = ko.computed(function() {
             var nodeIDsToRemove = [];
             for (var key in self.nodesOriginal()) {
@@ -172,7 +211,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         });
 
         $.ajax({
-            url: window.contextVars.node.urls.api + 'get_node_tree',
+            url: window.contextVars.node.urls.api + 'tree',
             type: 'GET',
             dataType: 'json'
         }).done(function(response) {
@@ -194,16 +233,16 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         },
         back: function() {
             var self = this;
-            self.page('remove');
+            self.page(self.REMOVE);
         },
         submit: function() {
             var self = this;
             if (self.deleteAll()) {
                 $osf.postJSON(
                     window.contextVars.node.urls.api + 'contributor/remove/', {
-                    contributorID: self.contributorToRemove().id,
-                    nodeIDs: self.nodeIDsToRemove()
-            }
+                        contributorID: self.contributorToRemove().id,
+                        nodeIDs: self.nodeIDsToRemove()
+                    }
                 ).done(function(response) {
                     // TODO: Don't reload the page here; instead use code below
                     if (response.redirectUrl) {
@@ -211,13 +250,13 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                     } else {
                         window.location.reload();
                     }
-                    self.page('remove');
+                    self.page(self.REMOVE);
                 }).fail(function (xhr, status, error) {
                     $osf.growl('Error', 'Unable to delete Contributor');
                     Raven.captureMessage('Could not DELETE Contributor.' + error, {
                         API_BASE: url, status: status, error: error
                     });
-                    self.page('remove');
+                    self.page(self.REMOVE);
                 });
             }
             else {
@@ -232,40 +271,36 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                     },
                 }).done(function (response) {
                     window.location.reload();
-                    self.page('remove');
+                    self.page(self.REMOVE);
                 }).fail(function (xhr, status, error) {
                     $osf.growl('Error', 'Unable to delete Contributor');
                     Raven.captureMessage('Could not DELETE Contributor.' + error, {
                         API_BASE: url, status: status, error: error
                     });
-                    self.page('remove');
+                    self.page(self.REMOVE);
                 });
             }
         },
         deleteAllNodes: function() {
             var self = this;
-            self.page('removeAll');
+            self.page(self.REMOVE_ALL);
         }
 });
-
 
 ////////////////
 // Public API //
 ////////////////
 
-function ContribRemover(selector, nodeTitle, nodeId, nodeHasChildren, parentId, parentTitle, userName, userId, contribShouter, pageChangedShouter) {
+function ContribRemover(selector, nodeTitle, nodeId, userName, userId, contribShouter, pageChangedShouter) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
     self.nodeTitle = nodeTitle;
     self.nodeId = nodeId;
-    self.nodeHasChildren = nodeHasChildren;
-    self.parentId = parentId;
-    self.parentTitle = parentTitle;
     self.userName = userName;
     self.userId = userId;
     self.viewModel = new RemoveContributorViewModel(self.nodeTitle,
-        self.nodeId, self.nodeHasChildren, self.parentId, self.parentTitle, self.userName, self.userId, contribShouter, pageChangedShouter);
+        self.nodeId, self.userName, self.userId, contribShouter, pageChangedShouter);
     self.init();
 }
 
@@ -275,11 +310,6 @@ ContribRemover.prototype.init = function() {
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
         self.$element.find('.popover').popover('hide');
-        self.viewModel.clear();
-    });
-    // Clear user search modal when dismissed; catches dismiss by escape key
-    // or cancel button.
-    self.$element.on('hidden.bs.modal', function() {
         self.viewModel.clear();
     });
 };
