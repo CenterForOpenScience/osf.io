@@ -12,18 +12,16 @@ from modularodm import Q
 
 from framework.auth import decorators
 from framework.utils import iso8601format
-from website import models
 from website.util import permissions
+from website.prereg.utils import get_prereg_schema
 
 def drafts_for_user(user):
+    from website import models  # noqa
     user_projects = models.Node.find(
         Q('is_deleted', 'eq', False) &
         Q('permissions.{0}'.format(user._id), 'in', [permissions.ADMIN])
     )
-    PREREG_CHALLENGE_METASCHEMA = models.MetaSchema.find_one(
-        Q('name', 'eq', 'Prereg Challenge') &
-        Q('schema_version', 'eq', 2)
-    )
+    PREREG_CHALLENGE_METASCHEMA = get_prereg_schema()
     return models.DraftRegistration.find(
         Q('registration_schema', 'eq', PREREG_CHALLENGE_METASCHEMA) &
         Q('approval', 'eq', None) &
