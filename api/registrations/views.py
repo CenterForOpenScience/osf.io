@@ -23,7 +23,6 @@ from api.registrations.serializers import RegistrationNodeLinksSerializer
 from api.nodes.permissions import (
     ContributorOrPublic,
     ReadOnlyIfRegistration,
-    ExcludeRetractions,
 )
 from api.base.utils import get_object_or_error
 
@@ -49,7 +48,6 @@ class RegistrationMixin(NodeMixin):
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
         return node
-
 
 
 class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):

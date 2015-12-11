@@ -77,7 +77,6 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<pk>'},
     ))
 
-
     # TODO: Finish me
 
     # TODO: Override create?
