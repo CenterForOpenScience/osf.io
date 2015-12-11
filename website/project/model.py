@@ -3263,7 +3263,7 @@ class PrivateLink(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    key = fields.StringField(required=True)
+    key = fields.StringField(required=True, unique=True)
     name = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
     anonymous = fields.BooleanField(default=False)

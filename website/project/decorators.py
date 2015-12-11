@@ -214,7 +214,6 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
             #if not login user check if the key is valid or the other privilege
 
             kwargs['auth'].private_key = key
-
             link_anon = None
             if not include_view_only_anon:
                 from website.models import PrivateLink
