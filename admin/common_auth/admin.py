@@ -31,7 +31,7 @@ class CustomUserAdmin(UserAdmin):
             assert reset_form.is_valid()
             reset_form.save(
                 subject_template_name='common_auth/registration/account_creation_subject.txt',
-                email_template_name= 'common_auth/registration/invitation_email.html',
+                email_template_name='common_auth/registration/invitation_email.html',
                 request=request
             )
 
@@ -39,10 +39,6 @@ class CustomUserAdmin(UserAdmin):
     send_email_invitation.short_description = 'Send email invitation to selected users'
 
     def save_model(self, request, obj, form, change):
-        if change:
-            pass
-        else:
-            obj.is_active = False
         obj.save()
 
 admin.site.register(MyUser, CustomUserAdmin)
