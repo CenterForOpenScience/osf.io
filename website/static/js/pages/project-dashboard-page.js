@@ -34,7 +34,9 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
-    new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data.node.is_public);
+    if (window.contextVars.currentUser.isAdmin) {
+        new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data.node.is_public);
+    }
 });
 
 // Initialize comment pane w/ it's viewmodel

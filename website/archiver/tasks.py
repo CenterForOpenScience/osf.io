@@ -3,6 +3,7 @@ import json
 
 import celery
 from celery.utils.log import get_task_logger
+from modularodm import Q
 
 from framework.tasks import app as celery_app
 from framework.tasks.utils import logged
@@ -22,6 +23,7 @@ from website.archiver.model import ArchiveJob
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
+from website.project.model import Node, MetaSchema
 from website import settings
 from website.app import init_addons, do_set_backends
 
@@ -266,3 +268,76 @@ def archive(job_pk):
             )
         ]
     )
+
+def find_registration_file(value, node):
+    orig_sha256 = value['extra']['sha256']
+    orig_name = value['extra']['selectedFileName']
+    orig_node = value['extra']['nodeId']
+    file_map = utils.get_file_map(node)
+    for sha256, value, node_id in file_map:
+        registered_from_id = Node.load(node_id).registered_from._id
+        if sha256 == orig_sha256 and registered_from_id == orig_node and orig_name == value['name']:
+            return value, node_id
+    raise RuntimeError()
+
+@celery_app.task
+def archive_success(dst_pk):
+    """Archiver's final callback. For the time being the use case for this task
+    is to rewrite references to files selected in a registration schema (the Prereg
+    Challenge being the first to expose this feature). The created references point
+    to files on the registered_from Node (needed for previewing schema data), and
+    must be re-associated with the corresponding files in the newly created registration.
+
+    :param str dst_pk: primary key of registration Node
+
+    note:: At first glance this task makes redundant calls to utils.get_file_map (which
+    returns a generator yielding  (<sha256>, <file_metadata>) pairs) on the dst Node. Two
+    notes about utils.get_file_map: 1) this function memoizes previous results to reduce
+    overhead and 2) this function returns a generator that lazily fetches the file metadata
+    of child Nodes (it is possible for a selected file to belong to a child Node) using a
+    non-recursive DFS. Combined this allows for a relatively effient implementation with
+    seemingly redundant calls.
+    """
+    create_app_context()
+    dst = Node.load(dst_pk)
+    # The filePicker extension addded with the Prereg Challenge registration schema
+    # allows users to select files in OSFStorage as their response to some schema
+    # questions. These files are references to files on the unregistered Node, and
+    # consequently we must migrate those file paths after archiver has run. Using
+    # sha256 hashes is a convenient way to identify files post-archival.
+    prereg_schema = MetaSchema.find_one(
+        Q('name', 'eq', 'Prereg Challenge') &
+        Q('schema_version', 'eq', 2)
+    )
+    if prereg_schema in dst.registered_schema:
+        prereg_metadata = dst.registered_meta[prereg_schema._id]
+        updated_metadata = {}
+        for key, question in prereg_metadata.items():
+            if isinstance(question['value'], dict):
+                for subkey, subvalue in question['value'].items():
+                    registration_file = None
+                    if subvalue.get('extra', {}).get('sha256'):
+                        registration_file, node_id = find_registration_file(subvalue, dst)
+                        subvalue['extra'].update({
+                            'viewUrl': Node.load(node_id).web_url_for(
+                                'addon_view_or_download_file',
+                                provider='osfstorage',
+                                path=registration_file['path'].lstrip('/')
+                            )
+                        })
+                    question['value'][subkey] = subvalue
+            else:
+                if question.get('extra', {}).get('sha256'):
+                    registration_file, node_id = find_registration_file(question, dst)
+                    question['extra'].update({
+                        'viewUrl': Node.load(node_id).web_url_for(
+                            'addon_view_or_download_file',
+                            provider='osfstorage',
+                            path=registration_file['path'].lstrip('/')
+                        )
+                    })
+            updated_metadata[key] = question
+        prereg_metadata.update(updated_metadata)
+        dst.registered_meta[prereg_schema._id] = prereg_metadata
+        dst.save()
+    dst.sanction.ask(dst.active_contributors())

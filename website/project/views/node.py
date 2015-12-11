@@ -1066,13 +1066,7 @@ def node_child_tree(user, node_ids):
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
     tree = node_child_tree(auth.user, [node._id])
-    if tree:
-        return tree
-    else:
-        raise HTTPError(
-            http.FORBIDDEN,
-            data=dict(message_long='User does not have read permission.')
-        )
+    return tree
 
 
 @must_be_contributor_or_public

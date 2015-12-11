@@ -104,7 +104,7 @@ var FileViewPage = {
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
                 self.requestDone = true;
-                self.file.checkoutUser = resp.data.relationships.checkout.links.related.href ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
+                self.file.checkoutUser = resp.data.relationships.checkout ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
                 if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
                         m('strong', 'File is checked out.'),

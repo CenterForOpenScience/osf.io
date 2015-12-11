@@ -1105,8 +1105,8 @@ class TestGetNodeTree(OsfTestCase):
         child = NodeFactory(parent=project, creator=self.user2)
         url = project.api_url_for('get_node_tree')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
-        assert_equal(res.json['message_long'], 'User does not have read permission.')
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, [])
 
     # Parent node should show because of user2 read access, the children should not
     def test_get_node_parent_not_admin(self):

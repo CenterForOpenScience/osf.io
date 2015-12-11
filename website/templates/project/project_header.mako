@@ -66,11 +66,14 @@
                             <li><a href="${node['url']}analytics/">Analytics</a></li>
                         % endif
 
-                        % if not node['is_registration']:
+                        % if not node['is_registration'] and not node['anonymous']:
                             <li><a href="${node['url']}registrations/">Registrations</a></li>
                         % endif
 
-                        <li><a href="${node['url']}forks/">Forks</a></li>
+                        % if not node['anonymous']:
+                            <li><a href="${node['url']}forks/">Forks</a></li>
+                        %endif
+                        
                         % if user['is_contributor']:
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
