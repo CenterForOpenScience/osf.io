@@ -574,6 +574,7 @@ Draft.prototype.beforeRegister = function(url) {
 
     var request = $.getJSON(self.urls.before_register);
     request.done(function(response) {
+        $osf.unblock();
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(
                 response,
@@ -590,7 +591,7 @@ Draft.prototype.beforeRegister = function(url) {
                 self.register.bind(self, url)
             );
         }
-    }).always($osf.unblock);
+    }).fail($osf.unblock);
     return request;
 };
 Draft.prototype.registerWithoutReview = function() {
@@ -674,7 +675,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
 
-    self.contributors = ko.observable([]);
 
     self.pages = ko.computed(function () {
         // empty array if self.draft is not set.
@@ -743,6 +743,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
     });
 
     self.iterObject = $osf.iterObject;
+
     // TODO: better extensions system?
     self.extensions = {
         'osf-upload': editorExtensions.Uploader,
@@ -791,10 +792,9 @@ RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
     self.draft(draft);
-    var metaSchema = draft.metaSchema;
+    var metaSchema = draft ? draft.metaSchema: null;
 
     self.saveManager = null;
-    var schemaData = {};
     if (draft) {
         self.saveManager = new SaveManager(
             self.urls.update.replace('{draft_pk}', draft.pk),
@@ -802,7 +802,6 @@ RegistrationEditor.prototype.init = function(draft) {
                 dirty: self.dirtyCount
             }
         );
-        schemaData = draft.schemaData || {};
     }
 
     self.lastSaveTime = ko.computed(function() {
@@ -836,10 +835,6 @@ RegistrationEditor.prototype.init = function(draft) {
                 }
             }.bind(self, self.dirtyCount()));
         }
-    });
-
-    self.getContributors().done(function(data) {
-        self.contributors(data);
     });
 
     self.currentQuestion(self.flatQuestions().shift());
@@ -1098,31 +1093,6 @@ RegistrationEditor.prototype.save = function() {
     });
     return request;
 };
-/**
- * Makes ajax request for a project's contributors
- */
-RegistrationEditor.prototype.makeContributorsRequest = function() {
-    var self = this;
-    var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
-    return $.getJSON(contributorsUrl);
-};
-/**
- * Returns the `user_fullname` of each contributor attached to a node.
- **/
-RegistrationEditor.prototype.getContributors = function() {
-    var self = this;
-    return self.makeContributorsRequest()
-        .then(function(data) {
-            return $.map(data.contributors, function(c) { return c.fullname; });
-        }).fail(function(xhr, status, error) {
-            Raven.captureMessage('Could not GET contributors', {
-                url: window.contextVars.node.urls.api + 'get_contributors/',
-                textStatus: status,
-                error: error
-            });
-            $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
-        });
-};
 
 /**
  * @class RegistrationManager
@@ -1330,6 +1300,7 @@ RegistrationManager.prototype.previewDraft = function(draft) {
 module.exports = {
     Comment: Comment,
     Question: Question,
+    Page: Page,
     MetaSchema: MetaSchema,
     Draft: Draft,
     RegistrationEditor: RegistrationEditor,

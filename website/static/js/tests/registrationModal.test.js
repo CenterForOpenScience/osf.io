@@ -52,9 +52,9 @@ describe('registrationModal', () => {
                     message: 'Bad, bad, bad.'
                 }
             );
-            var validDate = new Date();
-            validDate.setDate(validDate.getDate() + 3);
-            instance.pikaday(validDate);
+            var d = new Date();
+            d.setDate(d.getDate() + 3);
+            instance.pikaday(d);
             instance.pikaday.isValid();
             assert.isTrue(validate.called);
         });
