@@ -618,3 +618,17 @@ button.close {
     /*  Override z-index here to avoid clashing with navigation elements */
     z-index: 98 !important;
 }
+
+
+/* Cards
+-------------------------------------------------- */
+
+.toggle-icon {
+    color: #337ab7;
+    margin-right: 10px;
+}
+
+.header-content {
+    max-width: 75%;
+    display: inline-block
+}
