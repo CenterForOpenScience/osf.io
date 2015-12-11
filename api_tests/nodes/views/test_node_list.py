@@ -390,6 +390,17 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 42)
 
+    def test_filtering_on_null_parent(self):
+        # Build up a family of nodes not to be included
+        node_structure = [2, [1, 2]]
+        render_generations_from_node_structure_list(self.project_one, node_structure)
+
+        url = '/{}nodes/?filter[parent_node]=null'.format(API_BASE)
+
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['total'], 4)
+
 
 class TestNodeCreate(ApiTestCase):
 
