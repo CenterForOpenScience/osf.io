@@ -188,7 +188,7 @@ class FilterMixin(object):
                 # Special case date(time)s to allow for ambiguous date matches
                 if isinstance(field, self.DATE_FIELDS):
                     query[field_name].extend(self._parse_date_param(field, field_name, op, value))
-                elif not isinstance(value, int) and len(value.split(',')) > 1:
+                elif not isinstance(value, int) and field_name == '_id':
                     query[field_name].append({
                         'op': 'in',
                         'value': self.bulk_get_values(value, field)
