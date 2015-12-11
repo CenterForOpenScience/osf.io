@@ -34,7 +34,7 @@ class CommentSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     content = AuthorizedCharField(source='get_content', max_length=osf_settings.COMMENT_MAXLENGTH)
-    page = ser.SerializerMethodField()
+    page = ser.CharField(read_only=True)
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type', 'title': 'get_target_title'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
@@ -99,17 +99,6 @@ class CommentSerializer(JSONAPISerializer):
                 source={'pointer': '/data/relationships/target/links/related/meta/type'},
                 detail='Invalid comment target type.'
             )
-        
-    def get_page(self, obj):
-        root_target = obj.root_target
-        if not root_target:
-            raise InvalidModelValueError('Invalid root target.')
-        else:
-            name = root_target._name
-            if name == 'node':
-                return 'node'
-            elif name == 'storedfilenode':
-                return 'files'
 
     def get_target_title(self, obj):
         return obj.name if isinstance(obj, StoredFileNode) else ''

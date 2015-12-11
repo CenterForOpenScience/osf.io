@@ -55,8 +55,7 @@ from website.exceptions import (
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.files.models.base import File
-from website.util import waterbutler_api_url_for
+from website.files.models.base import File, StoredFileNode
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -220,8 +219,8 @@ class Comment(GuidStoredObject):
 
     def get_comment_page_url(self):
         if self.page == Comment.FILES:
-            path = self.root_target.path[1:]
-            return self.node.web_url_for('addon_view_or_download_file', provider=self.root_target.provider, path=path, _absolute=True)
+            file_guid = self.root_target.get_guid()._id
+            return settings.DOMAIN + str(file_guid) + '/'
         else:
             return self.node.absolute_url
 
@@ -272,8 +271,8 @@ class Comment(GuidStoredObject):
         view_timestamp = user.get_node_comment_timestamps(node, 'node')
         return Comment.find(Q('node', 'eq', node) &
                             Q('user', 'ne', user) &
-                            Q('date_created', 'gt', view_timestamp) &
-                            Q('date_modified', 'gt', view_timestamp) &
+                            (Q('date_created', 'gt', view_timestamp) |
+                            Q('date_modified', 'gt', view_timestamp)) &
                             Q('is_deleted', 'eq', False) &
                             Q('page', 'eq', 'node')).count()
 
@@ -303,11 +302,16 @@ class Comment(GuidStoredObject):
             comment.root_target = comment.target.root_target
         else:
             comment.root_target = comment.target
-        comment.save()
 
-        if comment.page == cls.FILES:
+        if isinstance(comment.root_target, Node):
+            comment.page = 'node'
+        elif isinstance(comment.root_target, StoredFileNode):
+            comment.page = 'files'
             file_key = comment.root_target._id
             comment.node.commented_files[file_key] = comment.node.commented_files.get(file_key, 0) + 1
+        else:
+            raise ValueError('Invalid root target.')
+        comment.save()
 
         comment.node.add_log(
             NodeLog.COMMENT_ADDED,

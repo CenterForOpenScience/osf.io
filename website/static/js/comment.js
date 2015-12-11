@@ -147,7 +147,7 @@ BaseComment.prototype.fetchUserData = function() {
         self.author = {
             'id': response.data.id,
             'url': response.data.links.html,
-            'name': response.data.attributes.full_name,
+            'fullname': response.data.attributes.full_name,
             'gravatarUrl': response.data.links.profile_image
         };
         return self.author;
@@ -165,7 +165,6 @@ BaseComment.prototype.fetch = function(nodeId) {
         query += '&filter[target]=' + self.id();
     }
     var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query:  query});
-
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
@@ -178,7 +177,7 @@ BaseComment.prototype.fetch = function(nodeId) {
         );
         setUnreadCommentCount(self);
         deferred.resolve(self.comments());
-        self.configureCommentsVisibility(nodeId);
+        self.configureCommentsVisibility();
         self._loaded = true;
     });
     return deferred;
@@ -195,22 +194,21 @@ var setUnreadCommentCount = function(self) {
 };
 
 
-BaseComment.prototype.configureCommentsVisibility = function(nodeId) {
+BaseComment.prototype.configureCommentsVisibility = function() {
     var self = this;
     for (var c in self.comments()) {
         var comment = self.comments()[c];
-        if (self.level > 0 && self.loading() === false) {
-            if (self.page() === FILES) {
-                comment.title(self.title());
-            }
-            comment.loading(false);
-            continue;
-        }
-        if (comment.page() !== FILES) {
-            comment.loading(false);
-            continue;
-        }
         comment.loading(false);
+    }
+};
+
+var getTargetType = function(self) {
+    if (self.id() === window.contextVars.node.id) {
+        return 'nodes';
+    } else if (self.id() === self.$root.rootId() && self.page() === FILES) {
+        return 'files';
+    } else{
+        return 'comments';
     }
 };
 
@@ -225,7 +223,7 @@ BaseComment.prototype.submitReply = function() {
         return;
     }
     self.submittingReply(true);
-    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: 'embed=user'});
+    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {});
     var request = osfHelpers.ajaxJSON(
         'POST',
         url,
@@ -240,7 +238,7 @@ BaseComment.prototype.submitReply = function() {
                     'relationships': {
                         'target': {
                             'data': {
-                                'type': self.id() === window.contextVars.node.id ? 'nodes' : 'comments',
+                                'type': getTargetType(self),
                                 'id': self.id() === window.contextVars.node.id ? window.contextVars.node.id : self.id()
                             }
                         }
@@ -292,7 +290,7 @@ var CommentModel = function(data, $parent, $root) {
         self.author = {
             'id': userData.id,
             'url': userData.links.html,
-            'name': userData.attributes.full_name,
+            'fullname': userData.attributes.full_name,
             'gravatarUrl': userData.links.profile_image
         };
     }
