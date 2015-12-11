@@ -271,7 +271,6 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         if (newPerm === 'admin') {
             self.adminCount(self.adminCount() + 1);
         }
-        console.log('admins: ' + self.adminCount());
     };
 
     self.handleVisibleChanged = function(newVis, oldVis) {
@@ -281,7 +280,6 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         if (newVis) {
             self.visibleCount(self.visibleCount() + 1);
         }
-        console.log('visible: ' + self.visibleCount());
     };
 
     self.options = {
