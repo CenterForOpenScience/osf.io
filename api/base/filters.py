@@ -156,7 +156,7 @@ class FilterMixin(object):
         [u'12345', u'abcde']
         """
         if value[0] == '[' and value[-1] == ']':
-            value = value.replace('[', '').replace(']', '')
+            value = value.lstrip('[').rstrip(']')
         separated_values = value.split(',')
         values = [self.convert_value(val.strip(), field) for val in separated_values]
         return values
@@ -189,17 +189,16 @@ class FilterMixin(object):
                 # Special case date(time)s to allow for ambiguous date matches
                 if isinstance(field, self.DATE_FIELDS):
                     query[field_name].extend(self._parse_date_param(field, field_name, op, value))
+                elif not isinstance(value, int) and len(value.split(',')) > 1:
+                    query[field_name].append({
+                        'op': 'in',
+                        'value': self.bulk_get_values(value, field)
+                    })
                 else:
-                    if not isinstance(value, int) and len(value.split(',')) > 1:
-                        query[field_name].append({
-                            'op': 'in',
-                            'value': self.bulk_get_values(value, field)
-                        })
-                    else:
-                        query[field_name].append({
-                            'op': op,
-                            'value': self.convert_value(value, field)
-                        })
+                    query[field_name].append({
+                        'op': op,
+                        'value': self.convert_value(value, field)
+                    })
         return query
 
     def convert_key(self, field_name, field):
