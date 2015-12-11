@@ -155,8 +155,7 @@ class FilterMixin(object):
         If url contained `/nodes/?filter[id]=12345, abcde`, the returned values would be:
         [u'12345', u'abcde']
         """
-        if value[0] == '[' and value[-1] == ']':
-            value = value.lstrip('[').rstrip(']')
+        value = value.lstrip('[').rstrip(']')
         separated_values = value.split(',')
         values = [self.convert_value(val.strip(), field) for val in separated_values]
         return values
