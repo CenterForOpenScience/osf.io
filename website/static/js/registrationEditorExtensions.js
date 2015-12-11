@@ -1,24 +1,32 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var m = require('mithril');
+var bootbox = require('bootbox');
 
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
 var $osf = require('js/osfHelpers');
+var waterbutler = require('js/waterbutler');
+var ContribAdder = require('js/contribAdder');
 
 var node = window.contextVars.node;
 
 var NO_FILE = 'No file selected';
 
-var limitOsfStorage = function(item) {
-    if (item.data.provider !== undefined && item.data.provider !== 'osfstorage') {
+var limitContents = function(item) {
+    if (item.data.provider !== undefined && item.data.provider !== 'osfstorage' || item.data.isPointer) {
         item.open = false;
         item.load = false;
         item.css = 'text-muted';
         item.data.permissions = item.data.permissions || {};
         item.data.permissions.edit = false;
         item.data.permissions.view = false;
-        if (item.data.name.indexOf(' (Only OSF Storage supported to ensure accurate versioning.)') === -1) {
+        if (item.data.isPointer) {
+            if (item.data.name.indexOf(' (Linked content is not allowed.)') === -1) {
+                item.data.name = item.data.name + ' (Linked content is not allowed.)';
+            }
+        }
+        else if (item.data.name.indexOf(' (Only OSF Storage supported to ensure accurate versioning.)') === -1) {
             item.data.name = item.data.name + ' (Only OSF Storage supported to ensure accurate versioning.)';
         }
     }
@@ -27,15 +35,19 @@ var limitOsfStorage = function(item) {
 var filePicker;
 var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindingContext) {
     viewModel.showUploader(true);
+    viewModel.toggleUploader = function() {
+        this.showUploader(!this.showUploader());
+    };
+
 
     var $root = bindingContext.$root;
-    $root.currentQuestion.subscribe(function(question) {
+    $root.currentPage.subscribe(function(question) {
         if (filePicker) {
             // A hack to flush the old mithril controller.
             // It's unclear to me exactly why this is happening (after 3hrs), but seems
-            // to be a KO-mithril interaction. We're programattically changing the div 
+            // to be a KO-mithril interaction. We're programattically changing the div
             // containing mithril mountings, and for some reason old controllers (and
-            // their bound settings) are persisting and being reused. This call 
+            // their bound settings) are persisting and being reused. This call
             // explicity removes the old controller.
             // see: http://lhorie.github.io/mithril/mithril.component.html#unloading-components
             m.mount(document.getElementById(filePicker.fangornOpts.divID), null);
@@ -45,6 +57,15 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
         }
     }, null, 'beforeChange');
 
+
+    var onSelectRow = function(item) {
+        if (item.kind === 'file') {
+            viewModel.selectedFile(item);
+            item.css = 'fangorn-selected';
+        } else {
+            viewModel.selectedFile(null);
+        }
+    };
     var fw = new FilesWidget(
         element.id,
         node.urls.api + 'files/grid/', {
@@ -58,23 +79,30 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 parallelUploads: 1,
                 acceptDirectories: false
             },
-            onselectrow: function(item) {
-                if (item.kind === 'file') {
-                    viewModel.value(item.data.path);
-                    viewModel.selectedFileName(item.data.name);
-                    item.css = 'fangorn-selected';
-                } else {
-                    viewModel.value('');
-                    viewModel.selectedFileName(NO_FILE);
+            dropzoneEvents: $.extend(
+                {},
+                Fangorn.DefaultOptions.dropzoneEvents,
+                {
+                    complete: function(tb, file, response) {
+                        var fileMeta = JSON.parse(file.xhr.response);
+                        fileMeta.nodeId = file.treebeardParent.data.nodeId;
+                        onSelectRow({
+                            kind: 'file',
+                            data: fileMeta
+                        });
+
+                    }
                 }
-            },
+            ),
+            onselectrow: onSelectRow,
             resolveRows: function(item) {
                 var tb = this;
+
                 item.css = '';
 
-                limitOsfStorage(item);
+                limitContents(item);
 
-                if (viewModel.value() !== null) {
+                if (viewModel.value()) {
                     if (item.data.path === viewModel.value()) {
                         item.css = 'fangorn-selected';
                     }
@@ -93,23 +121,22 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                     }
                 }
 
-                if (item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')) {
-                    return Fangorn.Utils.uploadRowTemplate.call(tb, item);
-                }
-
                 var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                 return configOption || defaultColumns;
             },
             lazyLoadOnLoad: function(tree, event) {
-                limitOsfStorage(tree);
+                if (tree.data.provider === 'osfstorage' && tree.data.nodeId === window.contextVars.node.id) {
+                    this.multiselected([tree]);
+                }
 
                 tree.children.forEach(function(item) {
-                    limitOsfStorage(item);
+                    limitContents(item);
 
                     if (viewModel.value() !== null) {
                         if (item.data.path === viewModel.value()) {
                             item.css = 'fangorn-selected';
-                            viewModel.selectedFileName(item.data.name);
+                            item.data.nodeId = tree.data.nodeId;
+                            viewModel.selectedFile(item);
                         }
                     }
                     Fangorn.Utils.inheritFromParent(item, tree);
@@ -120,30 +147,122 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 if (tree.depth > 1) {
                     Fangorn.Utils.orderFolder.call(this, tree);
                 }
-            }
+            },
+            links: false
         });
-    filePicker = fw; 
-    fw.init(); 
-    viewModel.showUploader(false);
+    filePicker = fw;
+    fw.init().then(function() {
+        viewModel.showUploader(false);
+    });
 };
 
 ko.bindingHandlers.osfUploader = {
     init: osfUploader
 };
 
-var Uploader = function(data) {
+
+var uploaderCount = 0;
+var Uploader = function(question) {
 
     var self = this;
-    self._orig = data;
 
-    self.selectedFileName = ko.observable('no file selected');
+    question.showUploader = ko.observable(false);
+    question.uid = 'uploader_' + uploaderCount;
+    uploaderCount++;
+    self.selectedFile = ko.observable({});
+    self.selectedFile.subscribe(function(file) {
+        if (file) {
+            question.extra({
+                selectedFileName: file.data.name,
+                nodeId: file.data.nodeId,
+                viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
+                sha256: file.data.extra.hashes.sha256,
+                hasSelectedFile: true
+            });
+            question.value(file.data.name);
+        }
+        else {
+            question.extra({
+                selectedFileName: NO_FILE
+            });
+            question.value(NO_FILE);
+        }
+    });
+    self.hasSelectedFile = ko.computed(function() {
+        return !!(question.extra().viewUrl);
+    });
+    self.unselectFile = function() {
+        self.selectedFile(null);
+        question.extra({
+            selectedFileName: NO_FILE
+        });
+    };
+
     self.filePicker = null;
+
+    self.preview = function() {
+        var value = question.value();
+        if (!value || value === NO_FILE) {
+            return 'no file selected';
+        }
+        else {
+            var extra = question.extra();
+            return $('<a target="_blank" href="' + extra.viewUrl + '">' + $osf.htmlEscape(extra.selectedFileName) + '</a>');
+        }
+    };
+
+    $.extend(self, question);
+};
+
+var AuthorImport = function(data, $root) {
+    var self = this;
+    self.question = data;
+
+    self.serializeContributors = function(data) {
+        return $.map(data.contributors, function(c) {
+            return c.fullname;
+        }).join(', ');
+    };
+    self.makeContributorsRequest = function() {
+        var self = this;
+        var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
+        return $.getJSON(contributorsUrl);
+    };
+    self.getContributors = function() {
+        var self = this;
+        return self.makeContributorsRequest()
+            .then(function(data) {
+                return self.serializeContributors(data);
+            }).fail(function() {
+                $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
+                           'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                           'problem persists.');
+            });
+    };
+    self.getContributors().done(function(data) {
+        self.value(data);
+    });
+    self.preview = function() {
+        return self.value();
+    };
+    var callback = function(data) {
+        self.value(self.serializeContributors(data));
+    };
+    var adder = new ContribAdder(
+        '#addContributors',
+        node.title,
+        node.id,
+        null,
+        null,
+        {async: true, callback: callback}
+    );
 
     $.extend(self, data);
 };
 
 module.exports = {
+    AuthorImport: AuthorImport,
     Uploader: Uploader,
     osfUploader: osfUploader,
-    limitOsfStorage: limitOsfStorage
+    limitContents: limitContents
 };

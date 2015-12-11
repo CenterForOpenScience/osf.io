@@ -16,7 +16,6 @@ from api.base import utils
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
 
-
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
     """
     Properly handles formatting of self and related links according to JSON API.
@@ -43,6 +42,48 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
         })
 
     return ret
+
+
+class HideIfRegistration(ser.Field):
+    """
+    If node is a registration, this field will return None.
+    """
+    def __init__(self, field, **kwargs):
+        super(HideIfRegistration, self).__init__(**kwargs)
+        self.field = field
+        self.source = field.source
+        self.required = field.required
+        self.read_only = field.read_only
+
+    def get_attribute(self, instance):
+        if instance.is_registration:
+            return None
+        return self.field.get_attribute(instance)
+
+    def bind(self, field_name, parent):
+        super(HideIfRegistration, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def to_internal_value(self, data):
+        return self.field.to_internal_value(data)
+
+    def to_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_representation(value)
+
+
+class HideIfRetraction(HideIfRegistration):
+    """
+    If node is retracted, this field will return None.
+    """
+
+    def get_attribute(self, instance):
+        if instance.is_retracted:
+            return None
+        return self.field.get_attribute(instance)
 
 
 class AllowMissing(ser.Field):
@@ -80,6 +121,8 @@ def _url_val(val, obj, serializer, **kwargs):
     if isinstance(val, Link):  # If a Link is passed, get the url value
         url = val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
+        if getattr(serializer, 'field', None):
+            serializer = serializer.parent
         url = getattr(serializer, val)(obj)
     else:
         url = val
@@ -98,7 +141,7 @@ class IDField(ser.CharField):
         kwargs['label'] = 'ID'
         super(IDField, self).__init__(**kwargs)
 
-    #Overrides CharField
+    # Overrides CharField
     def to_internal_value(self, data):
         request = self.context['request']
         if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
@@ -223,6 +266,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.related_meta = related_meta
         self.self_meta = self_meta
         self.always_embed = always_embed
+
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
             assert related_kwargs is not None, 'Must provide related view kwargs.'
@@ -282,7 +326,15 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         bracket_check = _tpl(lookup_field)
         if bracket_check:
             source_attrs = bracket_check.split('.')
-            return get_nested_attributes(obj, source_attrs)
+            # If you are using a nested attribute for lookup, and you get the attribute wrong, you will not get an
+            # error message, you will just not see that field. This allows us to have slightly more dynamic use of
+            # nested attributes in relationship fields.
+            try:
+                return_val = get_nested_attributes(obj, source_attrs)
+            except KeyError:
+                return None
+            return return_val
+
         return lookup_field
 
     def kwargs_lookup(self, obj, kwargs_dict):
@@ -338,7 +390,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             self_meta = self.get_meta_information(self.self_meta, value)
 
             ret = format_relationship_links(related_url, self_url, related_meta, self_meta)
-
         return ret
 
 
@@ -485,7 +536,8 @@ def _get_attr_from_tpl(attr_tpl, obj):
 # TODO: Make this a Field that is usable on its own?
 class Link(object):
     """Link object to use in conjunction with Links field. Does reverse lookup of
-    URLs given an endpoint name and attributed enclosed in `<>`.
+    URLs given an endpoint name and attributed enclosed in `<>`. This includes
+    complex key strings like 'user.id'
     """
 
     def __init__(self, endpoint, args=None, kwargs=None, query_kwargs=None, **kw):
@@ -617,6 +669,14 @@ class JSONAPISerializer(ser.Serializer):
         kwargs['child'] = cls()
         return JSONAPIListSerializer(*args, **kwargs)
 
+    def invalid_embeds(self, fields, embeds):
+        fields_check = fields[:]
+        for index, field in enumerate(fields_check):
+            if getattr(field, 'field', None):
+                fields_check[index] = field.field
+        invalid_embeds = set(embeds.keys()) - set([f.field_name for f in fields_check if getattr(f, 'json_api_link', False)])
+        return invalid_embeds
+
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
         """Serialize to final representation.
@@ -641,8 +701,7 @@ class JSONAPISerializer(ser.Serializer):
         embeds = self.context.get('embed', {})
         esi = self.context.get('esi', {})
         fields = [field for field in self.fields.values() if not field.write_only]
-
-        invalid_embeds = set(embeds.keys()) - set([f.field_name for f in fields if getattr(f, 'json_api_link', False)])
+        invalid_embeds = self.invalid_embeds(fields, embeds)
         if invalid_embeds:
             raise InvalidQueryStringError(parameter='embed',
                                           detail='The following fields are not embeddable: {}'.format(', '.join(invalid_embeds)))
@@ -653,9 +712,13 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if getattr(field, 'json_api_link', False):
+            nested_field = getattr(field, 'field', None)
+
+            if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
                 # If embed=field_name is appended to the query string or 'always_embed' flag is True, directly embed the
                 # results rather than adding a relationship link
+                if attribute is None:
+                    continue
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
                     if esi:
                         try:
@@ -664,6 +727,7 @@ class JSONAPISerializer(ser.Serializer):
                             continue
                     else:
                         result = self.context['embed'][field.field_name](obj)
+
                     if result:
                         data['embeds'][field.field_name] = result
                 else:
@@ -723,3 +787,23 @@ def DevOnly(field):
         experimental_field = DevMode(CharField(required=False))
     """
     return field if settings.DEV_MODE else None
+
+
+class RestrictedDictSerializer(ser.Serializer):
+    def to_representation(self, obj):
+        data = {}
+        fields = [field for field in self.fields.values() if not field.write_only]
+
+        for field in fields:
+            try:
+                attribute = field.get_attribute(obj)
+            except ser.SkipField:
+                continue
+
+            if attribute is None:
+                # We skip `to_representation` for `None` values so that
+                # fields do not have to explicitly deal with that case.
+                data[field.field_name] = None
+            else:
+                data[field.field_name] = field.to_representation(attribute)
+        return data

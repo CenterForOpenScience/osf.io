@@ -12,7 +12,7 @@ api_routes = {
                 '/settings/box/accounts/',
             ],
             'get',
-            views.box_get_user_settings,
+            views.box_account_list,
             json_renderer,
         ),
         Rule(
@@ -39,7 +39,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/box/user_auth/'
             ],
             'put',
-            views.box_add_user_auth,
+            views.box_import_auth,
             json_renderer,
         ),
         Rule(
@@ -48,16 +48,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/box/user_auth/'
             ],
             'delete',
-            views.box_remove_user_auth,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/box/config/share/',
-                '/project/<pid>/node/<nid>/box/config/share/'
-            ],
-            'get',
-            views.box_get_share_emails,
+            views.box_deauthorize_node,
             json_renderer,
         ),
         Rule(

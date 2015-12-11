@@ -1,322 +1,66 @@
 # -*- coding: utf-8 -*-
 """Views tests for the Dropbox addon."""
-import os
+import httplib as http
+
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
-import httplib
 
 from framework.auth import Auth
-from website.util import api_url_for, web_url_for
 from dropbox.rest import ErrorResponse
-from dropbox.client import DropboxOAuth2Flow
 
 from urllib3.exceptions import MaxRetryError
 
-from tests.base import OsfTestCase, assert_is_redirect
-from tests.factories import AuthUserFactory, ProjectFactory
+from tests.factories import AuthUserFactory
 
+from website.addons.base.testing import views as views_testing
 from website.addons.dropbox.tests.utils import (
-    DropboxAddonTestCase, mock_responses, MockDropbox, patch_client
+    DropboxAddonTestCase,
+    mock_responses,
+    MockDropbox,
+    patch_client
 )
-from website.addons.dropbox.views.config import serialize_settings
-from website.addons.dropbox.views.hgrid import dropbox_addon_folder
-from website.addons.dropbox import utils
+from website.addons.dropbox.serializer import DropboxSerializer
+from website.addons.dropbox.views import dropbox_root_folder
 
 mock_client = MockDropbox()
 
+class TestAuthViews(DropboxAddonTestCase, views_testing.OAuthAddonAuthViewsTestCaseMixin):
 
-class TestAuthViews(OsfTestCase):
+    @mock.patch(
+        'website.addons.dropbox.model.DropboxProvider.auth_url',
+        mock.PropertyMock(return_value='http://api.foo.com')
+    )
+    def test_oauth_start(self):
+        super(TestAuthViews, self).test_oauth_start()
 
-    def setUp(self):
-        super(TestAuthViews, self).setUp()
-        self.user = AuthUserFactory()
-        # Log user in
-        self.app.authenticate(*self.user.auth)
+class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsTestCaseMixin):
 
-    def test_dropbox_oauth_start(self):
-        url = api_url_for('dropbox_oauth_start_user')
-        res = self.app.get(url)
-        assert_is_redirect(res)
-        assert_in('&force_reapprove=true', res.location)
+    folder = {
+        'path': '/Foo',
+        'id': '12234'
+    }
+    Serializer = DropboxSerializer
+    client = mock_client
 
-    @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
-    @mock.patch('website.addons.dropbox.views.auth.get_client_from_user_settings')
-    def test_dropbox_oauth_finish(self, mock_get, mock_finish):
-        mock_client = mock.MagicMock()
-        mock_client.account_info.return_value = {'display_name': 'Mr. Drop Box'}
-        mock_get.return_value = mock_client
-        mock_finish.return_value = ('mytoken123', 'mydropboxid', 'done')
-        url = api_url_for('dropbox_oauth_finish')
-        res = self.app.get(url)
-        assert_is_redirect(res)
-
-    @mock.patch('website.addons.dropbox.views.auth.session')
-    @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
-    def test_dropbox_oauth_finish_cancelled(self, mock_finish, mock_session):
-        node = ProjectFactory(creator=self.user)
-        mock_session.data = {'dropbox_auth_nid': node._id}
-        mock_response = mock.Mock()
-        mock_response.status = 404
-        mock_finish.side_effect = DropboxOAuth2Flow.NotApprovedException
-        settings = self.user.get_addon('dropbox')
-        url = api_url_for('dropbox_oauth_finish')
-        res = self.app.get(url)
-
-        assert_is_redirect(res)
-        assert_in(node._id, res.headers["location"])
-        assert_false(settings)
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.disable_access_token')
-    def test_dropbox_oauth_delete_user(self, mock_disable_access_token):
-        self.user.add_addon('dropbox')
-        settings = self.user.get_addon('dropbox')
-        settings.access_token = '12345abc'
-        settings.save()
-        assert_true(settings.has_auth)
-        self.user.save()
-        url = api_url_for('dropbox_oauth_delete_user')
-        self.app.delete(url)
-        settings.reload()
-        assert_false(settings.has_auth)
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.disable_access_token')
-    def test_dropbox_oauth_delete_user_with_invalid_credentials(self, mock_disable_access_token):
-        self.user.add_addon('dropbox')
-        settings = self.user.get_addon('dropbox')
-        settings.access_token = '12345abc'
-        settings.save()
-        assert_true(settings.has_auth)
-
-        mock_response = mock.Mock()
-        mock_response.status = 401
-        mock_disable_access_token.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
-
-        self.user.save()
-        url = api_url_for('dropbox_oauth_delete_user')
-        self.app.delete(url)
-        settings.reload()
-        assert_false(settings.has_auth)
-
-
-class TestConfigViews(DropboxAddonTestCase):
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
-    def test_dropbox_user_config_get_has_auth_info(self, mock_account_info):
-        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
-        url = api_url_for('dropbox_user_config_get')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        # The JSON result
-        result = res.json['result']
-        assert_true(result['userHasAuth'])
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
-    def test_dropbox_user_config_get_has_valid_credentials(self, mock_account_info):
-        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
-        url = api_url_for('dropbox_user_config_get')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        # The JSON result
-        result = res.json['result']
-        assert_true(result['validCredentials'])
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
-    def test_dropbox_user_config_get_has_invalid_credentials(self, mock_account_info):
-        mock_response = mock.Mock()
-        mock_response.status = 401
-        mock_account_info.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
-        url = api_url_for('dropbox_user_config_get')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        # The JSON result
-        result = res.json['result']
-        assert_false(result['validCredentials'])
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
-    def test_dropbox_user_config_get_returns_correct_urls(self, mock_account_info):
-        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
-        url = api_url_for('dropbox_user_config_get')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        # The JSONified URLs result
-        urls = res.json['result']['urls']
-        assert_equal(urls['delete'], api_url_for('dropbox_oauth_delete_user'))
-        assert_equal(urls['create'], api_url_for('dropbox_oauth_start_user'))
-
-    def test_serialize_settings_helper_returns_correct_urls(self):
-        result = serialize_settings(self.node_settings, self.user, client=mock_client)
-        urls = result['urls']
-
-        assert_equal(urls['config'], self.project.api_url_for('dropbox_config_put'))
-        assert_equal(urls['deauthorize'], self.project.api_url_for('dropbox_deauthorize'))
-        assert_equal(urls['auth'], self.project.api_url_for('dropbox_oauth_start'))
-        assert_equal(urls['importAuth'], self.project.api_url_for('dropbox_import_user_auth'))
-        assert_equal(urls['files'], self.project.web_url_for('collect_file_trees'))
-        # Includes endpoint for fetching folders only
-        # NOTE: Querystring params are in camelCase
-        assert_equal(urls['folders'],
-            self.project.api_url_for('dropbox_hgrid_data_contents', root=1))
-        assert_equal(urls['settings'], web_url_for('user_addons'))
-
-    def test_serialize_settings_helper_returns_correct_auth_info(self):
-        result = serialize_settings(self.node_settings, self.user, client=mock_client)
-        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
-        assert_true(result['userHasAuth'])
-        assert_true(result['userIsOwner'])
-
-    def test_serialize_settings_for_user_no_auth(self):
-        no_addon_user = AuthUserFactory()
-        result = serialize_settings(self.node_settings, no_addon_user, client=mock_client)
-        assert_false(result['userIsOwner'])
-        assert_false(result['userHasAuth'])
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
-    def test_serialize_settings_valid_credentials(self, mock_account_info):
-        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
-        result = serialize_settings(self.node_settings, self.user, client=mock_client)
-        assert_true(result['validCredentials'])
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
-    def test_serialize_settings_invalid_credentials(self, mock_account_info):
-        mock_response = mock.Mock()
-        mock_response.status = 401
-        mock_account_info.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
-        result = serialize_settings(self.node_settings, self.user)
-        assert_false(result['validCredentials'])
-
-    def test_serialize_settings_helper_returns_correct_folder_info(self):
-        result = serialize_settings(self.node_settings, self.user, client=mock_client)
-        folder = result['folder']
-        assert_equal(folder['name'], self.node_settings.folder)
-        assert_equal(folder['path'], self.node_settings.folder)
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
-    def test_dropbox_config_get(self, mock_account_info):
-        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
-        self.user_settings.save()
-
-        url = self.project.api_url_for('dropbox_config_get')
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        result = res.json['result']
-        assert_equal(result['ownerName'], self.user_settings.owner.fullname)
-
-        assert_equal(
-            result['urls']['config'],
-            self.project.api_url_for('dropbox_config_put'),
-        )
-
-    def test_dropbox_config_put(self):
-        url = self.project.api_url_for('dropbox_config_put')
-        # Can set folder through API call
-        res = self.app.put_json(url, {'selected': {'path': 'My test folder',
-            'name': 'Dropbox/My test folder'}},
-            auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        self.node_settings.reload()
-        self.project.reload()
-
-        # Folder was set
-        assert_equal(self.node_settings.folder, 'My test folder')
-        # A log event was created
-        last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'dropbox_folder_selected')
-        params = last_log.params
-        assert_equal(params['folder'], 'My test folder')
-
-    def test_dropbox_deauthorize(self):
-        url = self.project.api_url_for('dropbox_deauthorize')
-        saved_folder = self.node_settings.folder
-        self.app.delete(url, auth=self.user.auth)
-        self.project.reload()
-        self.node_settings.reload()
-
-        assert_false(self.node_settings.has_auth)
-        assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder, None)
-
-        # A log event was saved
-        last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'dropbox_node_deauthorized')
-        log_params = last_log.params
-        assert_equal(log_params['node'], self.project._primary_key)
-        assert_equal(log_params['folder'], saved_folder)
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
-    def test_dropbox_import_user_auth_returns_serialized_settings(self, mock_account_info):
-        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
-        # Node does not have user settings
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-        url = self.project.api_url_for('dropbox_import_user_auth')
-        res = self.app.put(url, auth=self.user.auth)
-        self.project.reload()
-        self.node_settings.reload()
-
-        expected_result = serialize_settings(self.node_settings, self.user,
-                                             client=mock_client)
-        result = res.json['result']
-        assert_equal(result, expected_result)
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
-    def test_dropbox_import_user_auth_adds_a_log(self, mock_account_info):
-        mock_account_info.return_value = {'display_name': 'Mr. Drop Box'}
-        # Node does not have user settings
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-        url = self.project.api_url_for('dropbox_import_user_auth')
-        self.app.put(url, auth=self.user.auth)
-        self.project.reload()
-        self.node_settings.reload()
-        last_log = self.project.logs[-1]
-
-        assert_equal(last_log.action, 'dropbox_node_authorized')
-        log_params = last_log.params
-        assert_equal(log_params['node'], self.project._primary_key)
-        assert_equal(last_log.user, self.user)
-
-    def test_dropbox_get_share_emails(self):
-        # project has some contributors
-        contrib = AuthUserFactory()
-        self.project.add_contributor(contrib, auth=Auth(self.user))
-        self.project.save()
-        url = self.project.api_url_for('dropbox_get_share_emails')
-        res = self.app.get(url, auth=self.user.auth)
-        result = res.json['result']
-        assert_equal(result['emails'], [u.username for u in self.project.contributors
-                                        if u != self.user])
-        assert_equal(result['url'], utils.get_share_folder_uri(self.node_settings.folder))
-
-    def test_dropbox_get_share_emails_returns_error_if_not_authorizer(self):
-        contrib = AuthUserFactory()
-        contrib.add_addon('dropbox')
-        contrib.save()
-        self.project.add_contributor(contrib, auth=Auth(self.user))
-        self.project.save()
-        url = self.project.api_url_for('dropbox_get_share_emails')
-        # Non-authorizing contributor sends request
-        res = self.app.get(url, auth=contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
-
-    def test_dropbox_get_share_emails_requires_user_addon(self):
-        # Node doesn't have auth
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-        url = self.project.api_url_for('dropbox_get_share_emails')
-        # Non-authorizing contributor sends request
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.BAD_REQUEST)
+    @mock.patch('website.addons.dropbox.views.DropboxClient', return_value=mock_client)
+    def test_folder_list(self, *args):
+        super(TestConfigViews, self).test_folder_list()
 
 
 class TestFilebrowserViews(DropboxAddonTestCase):
 
-    def test_dropbox_hgrid_data_contents(self):
-        with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
+    def setUp(self):
+        super(TestFilebrowserViews, self).setUp()
+        self.user.add_addon('dropbox')
+        self.node_settings.external_account = self.user_settings.external_accounts[0]
+        self.node_settings.save()
+
+    def test_dropbox_folder_list(self):
+        with patch_client('website.addons.dropbox.views.DropboxClient'):
             url = self.project.api_url_for(
-                'dropbox_hgrid_data_contents',
-                path=self.node_settings.folder,
+                'dropbox_folder_list',
+                folderId='/',
             )
             res = self.app.get(url, auth=self.user.auth)
             contents = [x for x in mock_client.metadata('', list=True)['contents'] if x['is_dir']]
@@ -325,28 +69,28 @@ class TestFilebrowserViews(DropboxAddonTestCase):
             assert_in('kind', first)
             assert_equal(first['path'], contents[0]['path'])
 
-    def test_dropbox_hgrid_data_contents_if_folder_is_none_and_folders_only(self):
-        with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
+    def test_dropbox_folder_list_if_folder_is_none_and_folders_only(self):
+        with patch_client('website.addons.dropbox.views.DropboxClient'):
             self.node_settings.folder = None
             self.node_settings.save()
-            url = self.project.api_url_for('dropbox_hgrid_data_contents', foldersOnly=True)
+            url = self.project.api_url_for('dropbox_folder_list')
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
             expected = [each for each in contents if each['is_dir']]
             assert_equal(len(res.json), len(expected))
 
-    def test_dropbox_hgrid_data_contents_folders_only(self):
-        with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
-            url = self.project.api_url_for('dropbox_hgrid_data_contents', foldersOnly=True)
+    def test_dropbox_folder_list_folders_only(self):
+        with patch_client('website.addons.dropbox.views.DropboxClient'):
+            url = self.project.api_url_for('dropbox_folder_list')
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
             expected = [each for each in contents if each['is_dir']]
             assert_equal(len(res.json), len(expected))
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
-    def test_dropbox_hgrid_data_contents_include_root(self, mock_metadata):
-        with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
-            url = self.project.api_url_for('dropbox_hgrid_data_contents', root=1)
+    @mock.patch('website.addons.dropbox.views.DropboxClient.metadata')
+    def test_dropbox_folder_list_include_root(self, mock_metadata):
+        with patch_client('website.addons.dropbox.views.DropboxClient'):
+            url = self.project.api_url_for('dropbox_folder_list')
 
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
@@ -356,24 +100,28 @@ class TestFilebrowserViews(DropboxAddonTestCase):
             assert_equal(first_elem['path'], '/')
 
     @unittest.skip('finish this')
-    def test_dropbox_addon_folder(self):
+    def test_dropbox_root_folder(self):
         assert 0, 'finish me'
 
-    def test_dropbox_addon_folder_if_folder_is_none(self):
+    def test_dropbox_root_folder_if_folder_is_none(self):
         # Something is returned on normal circumstances
-        root = dropbox_addon_folder(
-            node_settings=self.node_settings, auth=self.user.auth)
+        with mock.patch.object(type(self.node_settings), 'has_auth', True):
+            root = dropbox_root_folder(
+                node_settings=self.node_settings, auth=self.user.auth
+            )
         assert_true(root)
 
         # Nothing is returned when there is no folder linked
         self.node_settings.folder = None
         self.node_settings.save()
-        root = dropbox_addon_folder(
-            node_settings=self.node_settings, auth=self.user.auth)
+        with mock.patch.object(type(self.node_settings), 'has_auth', True):
+            root = dropbox_root_folder(
+                node_settings=self.node_settings, auth=self.user.auth
+            )
         assert_is_none(root)
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
-    def test_dropbox_hgrid_data_contents_deleted(self, mock_metadata):
+    @mock.patch('website.addons.dropbox.views.DropboxClient.metadata')
+    def test_dropbox_folder_list_deleted(self, mock_metadata):
         # Example metadata for a deleted folder
         mock_metadata.return_value = {
             u'bytes': 0,
@@ -390,25 +138,29 @@ class TestFilebrowserViews(DropboxAddonTestCase):
             u'size': u'0 bytes',
             u'thumb_exists': False
         }
-        url = self.project.api_url_for('dropbox_hgrid_data_contents')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.NOT_FOUND)
+        url = self.project.api_url_for('dropbox_folder_list', folderId='/tests')
+        with mock.patch.object(type(self.node_settings), 'has_auth', True):
+            res = self.app.get(url, auth=self.user.auth, expect_errors=True)
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
-    def test_dropbox_hgrid_data_contents_returns_error_if_invalid_path(self, mock_metadata):
+        assert_equal(res.status_code, http.NOT_FOUND)
+
+    @mock.patch('website.addons.dropbox.views.DropboxClient.metadata')
+    def test_dropbox_folder_list_returns_error_if_invalid_path(self, mock_metadata):
         mock_response = mock.Mock()
         mock_metadata.side_effect = ErrorResponse(mock_response, body='File not found')
-        url = self.project.api_url_for('dropbox_hgrid_data_contents')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.NOT_FOUND)
+        url = self.project.api_url_for('dropbox_folder_list', folderId='/fake_path')
+        with mock.patch.object(type(self.node_settings), 'has_auth', True):
+            res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.NOT_FOUND)
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
-    def test_dropbox_hgrid_data_contents_handles_max_retry_error(self, mock_metadata):
+    @mock.patch('website.addons.dropbox.views.DropboxClient.metadata')
+    def test_dropbox_folder_list_handles_max_retry_error(self, mock_metadata):
         mock_response = mock.Mock()
-        url = self.project.api_url_for('dropbox_hgrid_data_contents')
+        url = self.project.api_url_for('dropbox_folder_list', folderId='/')
         mock_metadata.side_effect = MaxRetryError(mock_response, url)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.REQUEST_TIMEOUT)
+        with mock.patch.object(type(self.node_settings), 'has_auth', True):
+            res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.REQUEST_TIMEOUT)
 
 
 class TestRestrictions(DropboxAddonTestCase):
@@ -426,28 +178,28 @@ class TestRestrictions(DropboxAddonTestCase):
         self.node_settings.folder = 'foo bar/bar'
         self.node_settings.save()
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
-    def test_restricted_hgrid_data_contents(self, mock_metadata):
+    @mock.patch('website.addons.dropbox.views.DropboxClient.metadata')
+    def test_restricted_folder_list(self, mock_metadata):
         mock_metadata.return_value = mock_responses['metadata_list']
 
         # tries to access a parent folder
-        url = self.project.api_url_for('dropbox_hgrid_data_contents',
+        url = self.project.api_url_for('dropbox_folder_list',
             path='foo bar')
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_restricted_config_contrib_no_addon(self):
-        url = self.project.api_url_for('dropbox_config_put')
+        url = self.project.api_url_for('dropbox_set_config')
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.BAD_REQUEST)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_restricted_config_contrib_not_owner(self):
         # Contributor has dropbox auth, but is not the node authorizer
         self.contrib.add_addon('dropbox')
         self.contrib.save()
 
-        url = self.project.api_url_for('dropbox_config_put')
+        url = self.project.api_url_for('dropbox_set_config')
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
+        assert_equal(res.status_code, http.FORBIDDEN)

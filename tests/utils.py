@@ -10,7 +10,8 @@ from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
-from tests.base import DEFAULT_METASCHEMA
+from tests.base import get_default_metaschema
+DEFAULT_METASCHEMA = get_default_metaschema()
 
 def requires_module(module):
     def decorator(fn):
@@ -116,7 +117,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         sanction = registration.root.sanction
         with contextlib.nested(
             mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
-            mock.patch.object(sanction, 'ask')
+            mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
         ):
             archiver_listeners.archive_callback(registration)
     if autoapprove:
@@ -133,3 +134,12 @@ def make_drf_request(*args, **kwargs):
     http_request.META['SERVER_PORT'] = 8000
     # A DRF Request wraps a Django HttpRequest
     return Request(http_request, *args, **kwargs)
+
+
+class MockAuth(object):
+
+    def __init__(self, user):
+        self.user = user
+        self.logged_in = True
+
+mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
