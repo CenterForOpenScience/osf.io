@@ -294,7 +294,17 @@ on
 </script>
 
 <script type="text/html" id="citation_added">
-added an alternative citation with
-<span data-bind="text: 'name: ' + params.citation.name"></span> and
-<span data-bind="text: 'text: ' + params.citation.text"></span>
+added an alternative citation named {{ params.name }}
+</script>
+
+<script type="text/html" id="citation_edited">
+{{#if params.citation.new_name}}
+  changed the name of an alternative citation from {{ params.citation.name }} to {{ params.citation.new_name }}
+  {{#if params.citation.text}}
+    and edited its text
+  {{/if}}
+{{/if}}
+{{#ifnot params.citation.new_name}}
+  edited the text of an alternative citations named {{ params.citations.name }}
+{{/ifnot}}
 </script>
