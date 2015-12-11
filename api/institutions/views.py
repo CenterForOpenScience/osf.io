@@ -33,6 +33,24 @@ class InstitutionMixin(object):
 
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView):
+    """
+    Verified Institutions affiliated with COS
+
+    Paginated list of institutions
+
+    ##Institution Attributes
+
+    OSF Institutions have the "institutions" `type`.
+
+        name           type               description
+        -------------------------------------------------------------------------
+        name           string             title of the institution
+        id             string             unique identifier in the OSF
+        logo_path      string             a path to the institution's static logo
+
+    #This Request/Response
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -51,6 +69,39 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView):
 
 
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
+    """ Details about a given institution.
+
+    ###Permissions
+
+    All institutions are available to be read by everyone. However, no one has write
+    permissions for institutions.
+
+    ##Attributes
+
+    OSF Institutions have the "institutions" `type`.
+
+        name           type               description
+        -------------------------------------------------------------------------
+        name           string             title of the institution
+        id             string             unique identifier in the OSF
+        logo_path      string             a path to the institution's static logo
+
+    ##Relationships
+
+    ###Nodes
+    List of nodes that have this institution as its primary institution.
+
+    ###Users
+    List of users that are affiliated with this institution.
+
+    ##Links
+
+        self:  the canonical api endpoint of this node
+        html:  this node's page on the OSF website
+
+    #This Request/Response
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -69,6 +120,11 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
 
 
 class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
+    """Nodes that have selected an institution as their primary institution.
+
+    ##Permissions
+    Only public nodes or ones in which current user is a contributor.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -104,6 +160,8 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
 
 class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin, InstitutionMixin):
+    """Detail of a node with this primary institution
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
