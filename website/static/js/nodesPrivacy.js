@@ -136,7 +136,6 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
             type: 'GET',
             dataType: 'json'
         }).done(function(response) {
-            var i = 0;
             self.nodesOriginal = getNodesOriginal(response[0], self.nodesOriginal);
             Object.size = function(obj) {
                 var size = 0, key;

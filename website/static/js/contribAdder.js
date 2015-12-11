@@ -8,9 +8,10 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var oop = require('./oop');
-var $osf = require('./osfHelpers');
-var Paginator = require('./paginator');
+var oop = require('js/oop');
+var $osf = require('js/osfHelpers');
+var osfLanguage = require('js/osfLanguage');
+var Paginator = require('js/paginator');
 
 var NODE_OFFSET = 25;
 
@@ -28,7 +29,7 @@ function Contributor(data) {
 }
 
 var AddContributorViewModel = oop.extend(Paginator, {
-    constructor: function(title, nodeId, parentId, parentTitle) {
+    constructor: function(title, nodeId, parentId, parentTitle, options) {
         this.super.constructor.call(this);
         var self = this;
 
@@ -37,6 +38,8 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
         self.parentId = parentId;
         self.parentTitle = parentTitle;
+        self.async = options.async || false;
+        self.callback = options.callback || function() {};
 
         //list of permission objects for select.
         self.permissionList = [
@@ -96,6 +99,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
             });
             return names.join(', ');
         });
+    },
+    hide: function() {
+        $('.modal').modal('hide');
     },
     selectWhom: function() {
         this.page('whom');
@@ -296,8 +302,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
     submit: function() {
         var self = this;
         $osf.block();
+        var url = self.nodeApiUrl + 'contributors/';
         return $osf.postJSON(
-            self.nodeApiUrl + 'contributors/', {
+            url, {
                 users: ko.utils.arrayMap(self.selection(), function(user) {
                     var permission = user.permission().value; //removes the value from the object
                     var tUser = JSON.parse(ko.toJSON(user)); //The serialized user minus functions
@@ -306,12 +313,25 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 }),
                 node_ids: self.nodesToChange()
             }
-        ).done(function() {
-            window.location.reload();
-        }).fail(function() {
-            $('.modal').modal('hide');
+        ).done(function(response) {
+            if (self.async) {
+                self.hide();
+                $osf.unblock();
+                if (self.callback) {
+                    self.callback(response);
+                }
+            } else {
+                window.location.reload();
+            }
+        }).fail(function(xhr, status, error) {
+            self.hide();
             $osf.unblock();
-            $osf.growl('Error', 'Add contributor failed.');
+            $osf.growl('Could not add contributors', 'There was a problem trying to add contributors. ' + osfLanguage.REFRESH_OR_SUPPORT);
+            Raven.captureMessage('Error adding contributors', {
+                url: url,
+                status: status,
+                error: error
+            });
         });
     },
     clear: function() {
@@ -355,7 +375,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle) {
+function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, options) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
@@ -363,11 +383,13 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle) {
     self.nodeId = nodeId;
     self.parentId = parentId;
     self.parentTitle = parentTitle;
+    self.options = options || {};
     self.viewModel = new AddContributorViewModel(
         self.nodeTitle,
         self.nodeId,
         self.parentId,
-        self.parentTitle
+        self.parentTitle,
+        self.options
     );
     self.init();
 }
