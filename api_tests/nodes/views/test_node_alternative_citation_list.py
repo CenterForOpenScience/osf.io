@@ -40,7 +40,7 @@ def create_project(creator, public=True, contrib=None, citation=False, registrat
         project.add_contributor(contrib, permissions=[permissions.READ, permissions.WRITE], visible=True)
     if citation:
         citation = AlternativeCitationFactory(name='name', text='text')
-        project.alternativeCitations.append(citation)
+        project.alternative_citations.append(citation)
     project.save()
     if registration:
         registration = RegistrationFactory(project=project, is_public=public)
@@ -69,7 +69,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.json['data']['attributes']['name'], CITATION['data']['attributes']['name'])
         assert_equal(res.json['data']['attributes']['text'], CITATION['data']['attributes']['text'])
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_citation_admin_private(self):
         res, project = self.request(CITATION,
@@ -79,7 +79,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.json['data']['attributes']['name'], CITATION['data']['attributes']['name'])
         assert_equal(res.json['data']['attributes']['text'], CITATION['data']['attributes']['text'])
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_citation_non_admin_public(self):
         res, project = self.request(CITATION,
@@ -88,7 +88,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_citation_non_admin_private(self):
         res, project = self.request(CITATION,
@@ -98,7 +98,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_citation_non_contrib_public(self):
         res, project = self.request(CITATION,
@@ -108,7 +108,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_citation_non_contrib_private(self):
         res, project = self.request(CITATION,
@@ -119,7 +119,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_citation_logged_out_public(self):
         res, project = self.request(CITATION,
@@ -129,7 +129,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_citation_logged_out_private(self):
         res, project = self.request(CITATION,
@@ -140,7 +140,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_repeat_name_admin_public(self):
         res, project = self.request(REPEAT_NAME,
@@ -151,7 +151,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], "There is already an alternative citation named 'name'")
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_admin_private(self):
         res, project = self.request(REPEAT_NAME,
@@ -163,7 +163,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], "There is already an alternative citation named 'name'")
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_non_admin_public(self):
         res, project = self.request(REPEAT_NAME,
@@ -173,7 +173,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_non_admin_private(self):
         res, project = self.request(REPEAT_NAME,
@@ -184,7 +184,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_non_contrib_public(self):
         res, project = self.request(REPEAT_NAME,
@@ -195,7 +195,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_non_contrib_private(self):
         res, project = self.request(REPEAT_NAME,
@@ -207,7 +207,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_logged_out_public(self):
         res, project = self.request(REPEAT_NAME,
@@ -218,7 +218,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_logged_out_private(self):
         res, project = self.request(REPEAT_NAME,
@@ -230,7 +230,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_text_admin_public(self):
         res, project = self.request(REPEAT_TEXT,
@@ -241,7 +241,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], "Citation matches 'name'")
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_text_admin_private(self):
         res, project = self.request(REPEAT_TEXT,
@@ -253,7 +253,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], "Citation matches 'name'")
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_text_non_admin_public(self):
         res, project = self.request(REPEAT_TEXT,
@@ -263,7 +263,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_text_non_admin_private(self):
         res, project = self.request(REPEAT_TEXT,
@@ -274,7 +274,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_text_non_contrib_public(self):
         res, project = self.request(REPEAT_TEXT,
@@ -285,7 +285,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_text_non_contrib_private(self):
         res, project = self.request(REPEAT_TEXT,
@@ -297,7 +297,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_text_logged_out_public(self):
         res, project = self.request(REPEAT_TEXT,
@@ -308,7 +308,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_text_logged_out_private(self):
         res, project = self.request(REPEAT_TEXT,
@@ -320,7 +320,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_and_text_admin_public(self):
         res, project = self.request(CITATION,
@@ -333,7 +333,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_in("There is already an alternative citation named 'name'", errors)
         assert_in("Citation matches 'name'", errors)
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_and_text_admin_private(self):
         res, project = self.request(CITATION,
@@ -347,7 +347,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_in("There is already an alternative citation named 'name'", errors)
         assert_in("Citation matches 'name'", errors)
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_and_text_non_admin_public(self):
         res, project = self.request(CITATION,
@@ -357,7 +357,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_and_text_non_admin_private(self):
         res, project = self.request(CITATION,
@@ -368,7 +368,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_and_text_non_contrib_public(self):
         res, project = self.request(CITATION,
@@ -379,7 +379,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_and_text_non_contrib_private(self):
         res, project = self.request(CITATION,
@@ -391,7 +391,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_and_text_logged_out_public(self):
         res, project = self.request(CITATION,
@@ -402,7 +402,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_repeat_name_and_text_logged_out_private(self):
         res, project = self.request(CITATION,
@@ -414,7 +414,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 1)
+        assert_equal(len(project.alternative_citations), 1)
 
     def test_add_no_name_admin_public(self):
         res, project = self.request(NO_NAME,
@@ -424,7 +424,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_name_admin_private(self):
         res, project = self.request(NO_NAME,
@@ -435,7 +435,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_name_non_admin_public(self):
         res, project = self.request(NO_NAME,
@@ -444,7 +444,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_name_non_admin_private(self):
         res, project = self.request(NO_NAME,
@@ -454,7 +454,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_name_non_contrib_public(self):
         res, project = self.request(NO_NAME,
@@ -464,7 +464,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_name_non_contrib_private(self):
         res, project = self.request(NO_NAME,
@@ -475,7 +475,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_name_logged_out_public(self):
         res, project = self.request(NO_NAME,
@@ -485,7 +485,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_name_logged_out_private(self):
         res, project = self.request(NO_NAME,
@@ -496,7 +496,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_text_admin_public(self):
         res, project = self.request(NO_TEXT,
@@ -506,7 +506,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_text_admin_private(self):
         res, project = self.request(NO_TEXT,
@@ -517,7 +517,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_text_non_admin_public(self):
         res, project = self.request(NO_TEXT,
@@ -526,7 +526,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_text_non_admin_private(self):
         res, project = self.request(NO_TEXT,
@@ -536,7 +536,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_text_non_contrib_public(self):
         res, project = self.request(NO_TEXT,
@@ -546,7 +546,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_text_non_contrib_private(self):
         res, project = self.request(NO_TEXT,
@@ -557,7 +557,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_text_logged_out_public(self):
         res, project = self.request(NO_TEXT,
@@ -567,7 +567,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_no_text_logged_out_private(self):
         res, project = self.request(NO_TEXT,
@@ -578,7 +578,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_empty_admin_public(self):
         res, project = self.request(EMPTY,
@@ -588,7 +588,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 2)
         assert_equal(res.json['errors'][0]['detail'], res.json['errors'][1]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_empty_admin_private(self):
         res, project = self.request(EMPTY,
@@ -599,7 +599,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 2)
         assert_equal(res.json['errors'][0]['detail'], res.json['errors'][1]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_empty_non_admin_public(self):
         res, project = self.request(EMPTY,
@@ -608,7 +608,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 2)
         assert_equal(res.json['errors'][0]['detail'], res.json['errors'][1]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_empty_non_admin_private(self):
         res, project = self.request(EMPTY,
@@ -618,7 +618,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 2)
         assert_equal(res.json['errors'][0]['detail'], res.json['errors'][1]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_empty_non_contrib_public(self):
         res, project = self.request(EMPTY,
@@ -628,7 +628,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 2)
         assert_equal(res.json['errors'][0]['detail'], res.json['errors'][1]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_empty_non_contrib_private(self):
         res, project = self.request(EMPTY,
@@ -639,7 +639,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 2)
         assert_equal(res.json['errors'][0]['detail'], res.json['errors'][1]['detail'], 'This field is required.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_empty_logged_out_public(self):
         res, project = self.request(EMPTY,
@@ -649,7 +649,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
 
     def test_add_empty_logged_out_private(self):
         res, project = self.request(EMPTY,
@@ -660,7 +660,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
-        assert_equal(len(project.alternativeCitations), 0)
+        assert_equal(len(project.alternative_citations), 0)
         
     def test_add_citation_admin_public_reg(self):
         res, registration = self.request(CITATION,
@@ -670,7 +670,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternativeCitations), 0)
+        assert_equal(len(registration.alternative_citations), 0)
 
     def test_add_citation_admin_private_reg(self):
         res, registration = self.request(CITATION,
@@ -681,7 +681,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternativeCitations), 0)
+        assert_equal(len(registration.alternative_citations), 0)
 
     def test_add_citation_non_admin_public_reg(self):
         res, registration = self.request(CITATION,
@@ -690,7 +690,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternativeCitations), 0)
+        assert_equal(len(registration.alternative_citations), 0)
 
     def test_add_citation_non_admin_private_reg(self):
         res, registration = self.request(CITATION,
@@ -700,7 +700,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternativeCitations), 0)
+        assert_equal(len(registration.alternative_citations), 0)
 
     def test_add_citation_non_contrib_public_reg(self):
         res, registration = self.request(CITATION,
@@ -710,7 +710,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternativeCitations), 0)
+        assert_equal(len(registration.alternative_citations), 0)
 
     def test_add_citation_non_contrib_private_reg(self):
         res, registration = self.request(CITATION,
@@ -721,7 +721,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-        assert_equal(len(registration.alternativeCitations), 0)
+        assert_equal(len(registration.alternative_citations), 0)
 
     def test_add_citation_logged_out_public_reg(self):
         res, registration = self.request(CITATION,
@@ -731,7 +731,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-        assert_equal(len(registration.alternativeCitations), 0)
+        assert_equal(len(registration.alternative_citations), 0)
 
     def test_add_citation_logged_out_private_reg(self):
         res, registration = self.request(CITATION,
@@ -742,7 +742,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-        assert_equal(len(registration.alternativeCitations), 0)
+        assert_equal(len(registration.alternative_citations), 0)
 
 class TestGetAlternativeCitations(ApiTestCase):
     def request(self, errors=False, is_admin=False, is_contrib=True, logged_out=False, **kwargs):

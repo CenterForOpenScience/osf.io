@@ -765,7 +765,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
-    alternativeCitations = fields.ForeignField('alternativecitation', list=True, backref='citations')
+    alternative_citations = fields.ForeignField('alternativecitation', list=True, backref='citations')
 
     _meta = {
         'optimistic': True,
@@ -2089,7 +2089,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
-        registered.alternativeCitations = self.alternativeCitations
+        registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
@@ -4005,8 +4005,8 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
 class AlternativeCitation(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    name = fields.StringField(required=True)
-    text = fields.StringField(required=True)
+    name = fields.StringField(required=True, validate=MaxLengthValidator(256))
+    text = fields.StringField(required=True, validate=MaxLengthValidator(2048))
 
     def to_json(self):
         return {

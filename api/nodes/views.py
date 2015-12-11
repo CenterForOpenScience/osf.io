@@ -1550,7 +1550,7 @@ class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, 
     view_name = 'alternative-citations'
 
     def get_queryset(self):
-        return self.get_node().alternativeCitations
+        return self.get_node().alternative_citations
 
 class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Details about an alternative citations for a project.
@@ -1594,12 +1594,12 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
 
     def get_object(self):
         try:
-            return self.get_node().alternativeCitations.find(Q('_id', 'eq', str(self.kwargs['citation_id'])))[0]
+            return self.get_node().alternative_citations.find(Q('_id', 'eq', str(self.kwargs['citation_id'])))[0]
         except IndexError:
             raise NotFound
 
     def perform_destroy(self, instance):
-        self.get_node().alternativeCitations.remove(instance)
+        self.get_node().alternative_citations.remove(instance)
         self.get_node().save()
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):

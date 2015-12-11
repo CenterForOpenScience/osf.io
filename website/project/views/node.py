@@ -770,7 +770,7 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-            'alternative_citations': [citation.to_json() for citation in node.alternativeCitations],
+            'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': bool(node.draft_registrations_active)
         },
         'parent_node': {
