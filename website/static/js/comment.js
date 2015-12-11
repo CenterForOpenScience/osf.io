@@ -132,6 +132,23 @@ BaseComment.prototype.setupToolTips = function(elm) {
     });
 };
 
+BaseComment.prototype.fetchUserData = function() {
+    var self = this;
+    var request = osfHelpers.ajaxJSON(
+        'GET',
+        osfHelpers.apiV2Url('users/me/', {}),
+        {'isCors': true});
+    request.done(function(response) {
+        self.author = {
+            'id': response.data.id,
+            'url': response.data.links.html,
+            'name': response.data.attributes.full_name,
+            'gravatarUrl': response.data.links.profile_image
+        };
+        return self.author;
+    });
+};
+
 BaseComment.prototype.fetch = function() {
     var self = this;
     var deferred = $.Deferred();
@@ -159,7 +176,6 @@ BaseComment.prototype.fetch = function() {
     return deferred;
 };
 
-
 var setUnreadCommentCount = function(self) {
     var request = osfHelpers.ajaxJSON(
         'GET',
@@ -182,7 +198,10 @@ BaseComment.prototype.submitReply = function() {
         return;
     }
     self.submittingReply(true);
-    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: 'embed=user'});
+    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {});
+    if (self.id() !== undefined) {
+        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {});
+    }
     var request = osfHelpers.ajaxJSON(
         'POST',
         url,
@@ -208,7 +227,9 @@ BaseComment.prototype.submitReply = function() {
     request.done(function(response) {
         self.cancelReply();
         self.replyContent(null);
-        self.comments.unshift(new CommentModel(response.data, self, self.$root));
+        var commentModel = new CommentModel(response.data, self, self.$root);
+        commentModel.author = self.$root.author;
+        self.comments.unshift(commentModel);
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
@@ -232,7 +253,6 @@ var CommentModel = function(data, $parent, $root) {
     BaseComment.prototype.constructor.call(this);
 
     var self = this;
-    var userData = data.embeds.user.data;
 
     self.$parent = $parent;
     self.$root = $root;
@@ -246,12 +266,16 @@ var CommentModel = function(data, $parent, $root) {
     self.isAbuse = ko.observable(data.attributes.is_abuse);
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
-    self.author = {
-        'id': userData.id,
-        'url': userData.links.html,
-        'name': userData.attributes.full_name,
-        'gravatarUrl': userData.links.profile_image
-    };
+
+    if ('embeds' in data && 'user' in data.embeds) {
+        var userData = data.embeds.user.data;
+        self.author = {
+            'id': userData.id,
+            'url': userData.links.html,
+            'name': userData.attributes.full_name,
+            'gravatarUrl': userData.links.profile_image
+        };
+    }
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
@@ -522,6 +546,7 @@ var CommentListModel = function(userName, canComment, hasChildren) {
     self.hasChildren = ko.observable(hasChildren);
     self.discussion = ko.observableArray();
 
+    self.fetchUserData();
     self.fetch();
     self.fetchDiscussion();
 
