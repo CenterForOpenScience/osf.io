@@ -34,7 +34,7 @@ class TestNodeCommentsList(ApiTestCase):
     def _set_up_registration_with_comment(self):
         self.registration = RegistrationFactory(creator=self.user)
         self.registration_comment = CommentFactory(node=self.registration, user=self.user)
-        self.registration_url = '/{}nodes/{}/comments/'.format(API_BASE, self.registration._id)
+        self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
 
     def test_return_public_node_comments_logged_out_user(self):
         self._set_up_public_project_with_comment()
@@ -73,15 +73,6 @@ class TestNodeCommentsList(ApiTestCase):
         assert_equal(len(comment_json), 1)
         assert_in(self.comment._id, comment_ids)
 
-    def test_return_registration_comments_logged_in_contributor(self):
-        self._set_up_registration_with_comment()
-        res = self.app.get(self.registration_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        comment_json = res.json['data']
-        comment_ids = [comment['id'] for comment in comment_json]
-        assert_equal(len(comment_json), 1)
-        assert_in(self.registration_comment._id, comment_ids)
-
     def test_return_both_deleted_and_undeleted_comments(self):
         self._set_up_private_project_with_comment()
         deleted_comment = CommentFactory(node=self.private_project, user=self.user)
@@ -99,7 +90,7 @@ class TestNodeCommentsList(ApiTestCase):
         url = '/{}nodes/{}/comments/'.format(API_BASE, registration._id)
         retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
 
 class TestNodeCommentCreate(ApiTestCase):

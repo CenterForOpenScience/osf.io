@@ -33,7 +33,7 @@ from api.nodes.permissions import (
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
-    ExcludeRetractions
+    ExcludeRetractions,
 )
 from api.base.exceptions import ServiceUnavailableError
 from api.logs.serializers import NodeLogSerializer
@@ -63,7 +63,7 @@ class NodeMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder:
+        if node.is_folder or node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -233,7 +233,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
+            Q('is_folder', 'ne', True) &
+            Q('is_registration', 'ne', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
@@ -245,11 +246,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     def filter_non_retracted_nodes(self, query):
         nodes = Node.find(query)
-        # Refetching because this method needs to return a queryset instead of a
-        # list comprehension for subsequent filtering on ordering.
-        non_retracted_list = [node._id for node in nodes if not node.is_retracted]
-        non_retracted_nodes = Node.find(Q('_id', 'in', non_retracted_list))
-        return non_retracted_nodes
+        return nodes
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):

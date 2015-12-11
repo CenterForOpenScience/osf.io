@@ -82,16 +82,16 @@ class TestNodeList(ApiTestCase):
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
-    def test_node_list_returns_registrations(self):
+    def test_node_list_does_not_returns_registrations(self):
         registration = RegistrationFactory(project=self.public, creator=self.user)
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_in(registration._id, ids)
+        assert_not_in(registration._id, ids)
 
     def test_omit_retracted_registration(self):
         registration = RegistrationFactory(creator=self.user, project=self.public)
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 3)
+        assert_equal(len(res.json['data']), 2)
         retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)

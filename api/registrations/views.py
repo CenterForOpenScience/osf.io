@@ -1,6 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import ValidationError
-
+from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.project.model import Q, Node
@@ -15,13 +14,18 @@ from api.registrations.serializers import (
 
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
-    NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
-    NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail)
+    NodeChildrenList, NodeCommentsList, NodeProvidersList,
+    NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeLinksList,
+    NodeFileDetail)
+
+from api.registrations.serializers import RegistrationNodeLinksSerializer
 
 from api.nodes.permissions import (
     ContributorOrPublic,
-    ReadOnlyIfRegistration)
-
+    ReadOnlyIfRegistration,
+    ExcludeRetractions,
+)
+from api.base.utils import get_object_or_error
 
 class RegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current registration based on the
@@ -30,6 +34,22 @@ class RegistrationMixin(NodeMixin):
 
     serializer_class = RegistrationSerializer
     node_lookup_url_kwarg = 'registration_id'
+
+    def get_node(self, check_object_permissions=True):
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
+        # Nodes that are folders/collections are treated as a separate resource, so if the client
+        # requests a collection through a node endpoint, we return a 404
+        if node.is_folder:
+            raise NotFound
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
+        return node
+
 
 
 class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
@@ -223,37 +243,48 @@ class RegistrationContributorsList(NodeContributorsList):
     view_category = 'registrations'
     view_name = 'registration-contributors'
 
+
 class RegistrationContributorDetail(NodeContributorDetail):
     view_category = 'registrations'
     view_name = 'registration-contributor-detail'
+
 
 class RegistrationChildrenList(NodeChildrenList):
     view_category = 'registrations'
     view_name = 'registration-children'
 
+
 class RegistrationCommentsList(NodeCommentsList):
     view_category = 'registrations'
     view_name = 'registration-comments'
+
 
 class RegistrationProvidersList(NodeProvidersList):
     view_category = 'registrations'
     view_name = 'registration-providers'
 
-class RegistrationNodeLinksList(NodeLinksList):
+
+class RegistrationNodeLinksList(NodeLinksList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-pointers'
+    serializer_class = RegistrationNodeLinksSerializer
 
-class RegistrationNodeLinksDetail(NodeLinksDetail):
+
+class RegistrationNodeLinksDetail(NodeLinksDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-pointer-detail'
+    serializer_class = RegistrationNodeLinksSerializer
+
 
 class RegistrationRegistrationsList(NodeRegistrationsList):
     view_category = 'registrations'
     view_name = 'registration-providers'
 
+
 class RegistrationFilesList(NodeFilesList):
     view_category = 'registrations'
     view_name = 'registration-files'
+
 
 class RegistrationFileDetail(NodeFileDetail):
     view_category = 'registrations'
