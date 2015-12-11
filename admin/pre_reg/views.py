@@ -139,7 +139,7 @@ def update_draft(request, draft_pk):
 
     schema_data = data.get('schema_data', {})
     try:
-        draft.update_metadata(schema_data)
+        draft.update_metadata(schema_data, comments_only=True)
         draft.save()
     except (NodeStateError):
         raise HTTPError(http.BAD_REQUEST)
