@@ -23,14 +23,21 @@ var EvernoteWidget = function(urls) {
     this.fetchNotes();
  };
 
+ EvernoteWidget.prototype.openEditDialog = function (note, event) {
+   $("#evernote-notedisplay")[0].value = note.title;
+ }
+
 // Skip if widget is not correctly configured
 if ($('#evernoteWidget').length) {
   var settingsUrl = window.contextVars.node.urls.api + 'evernote/settings/';
-  console.log(settingsUrl);
+
   $.getJSON( settingsUrl,  function( data ) {
      console.log(data.result.urls.notes);
      var urls = data.result.urls;
      var ew = new EvernoteWidget(urls);
      $osf.applyBindings(ew, '#evernoteWidget');
+
+     // apply tooltip to all btn-evernote
+     $(".btn-evernote").tooltip()
   });
 }
