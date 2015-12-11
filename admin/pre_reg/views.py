@@ -125,22 +125,22 @@ def reject_draft(request, draft_pk):
     return JsonResponse({})
 
 
-@csrf_exempt
-@login_required
-# @user_passes_test(is_in_prereg_group)
-def update_draft(request, draft_pk):
-    """Updates current draft to save admin comments
-
-    :param draft_pk: Unique id for current draft
-    :return: DraftRegistration obj
-    """
-    data = json.loads(request.body)
-    draft = get_draft_or_error(draft_pk)
-
-    schema_data = data.get('schema_data', {})
-    try:
-        draft.update_metadata(schema_data, comments_only=True)
-        draft.save()
-    except (NodeStateError):
-        raise HTTPError(http.BAD_REQUEST)
-    return JsonResponse(serializers.serialize_draft_registration(draft))
+# @csrf_exempt
+# @login_required
+# # @user_passes_test(is_in_prereg_group)
+# def update_draft(request, draft_pk):
+#     """Updates current draft to save admin comments
+#
+#     :param draft_pk: Unique id for current draft
+#     :return: DraftRegistration obj
+#     """
+#     data = json.loads(request.body)
+#     draft = get_draft_or_error(draft_pk)
+#
+#     schema_data = data.get('schema_data', {})
+#     try:
+#         draft.update_metadata(schema_data, comments_only=True)
+#         draft.save()
+#     except (NodeStateError):
+#         raise HTTPError(http.BAD_REQUEST)
+#     return JsonResponse(serializers.serialize_draft_registration(draft))
