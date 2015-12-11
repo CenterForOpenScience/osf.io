@@ -3054,6 +3054,69 @@ class TestProject(OsfTestCase):
         assert(self.child_node.has_permission(user, 'admin'))
 
 
+class TestParentNode(OsfTestCase):
+    def setUp(self):
+        super(TestParent, self).setUp()
+        # Create project
+        self.user = UserFactory()
+        self.auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user, description='The Dudleys strike again')
+        self.child = NodeFactory(parent=self.project, creator=self.user, description="Devon.")
+
+        self.registration = RegistrationFactory(project=self.project)
+        self.template = self.project.use_as_template(auth=self.auth)
+
+    def test_top_level_project_has_no_parent(self):
+        assert_equal(self.project.parent_node, None)
+
+    def test_child_project_has_correct_parent(self):
+        assert_equal(self.child.parent_node._id, self.project._id)
+
+    def test_grandchild_has_parent_of_child(self):
+        grandchild = NodeFactory(parent=self.child, description="Spike")
+        assert_equal(grandchild.parent_node._id, self.child._id)
+
+    def test_registration_has_no_parent(self):
+        assert_equal(self.registration.parent_node, None)
+
+    def test_registration_child_has_correct_parent(self):
+        registration_child = NodeFactory(parent=self.registration)
+        assert_equal(self.registration._id, registration_child.parent_node._id)
+
+    def test_registration_grandchild_has_correct_parent(self):
+        registration_child = NodeFactory(parent=self.registration)
+        registration_grandchild = NodeFactory(parent=registration_child)
+        assert_equal(registration_grandchild.parent_node._id, registration_child._id)
+
+    def test_fork_has_no_parent(self):
+        fork = self.project.fork_node(auth=self.auth)
+        assert_equal(fork.parent_node, None)
+
+    def test_fork_child_has_parent(self):
+        fork = self.project.fork_node(auth=self.auth)
+        fork_child = NodeFactory(parent=fork)
+        assert_equal(fork_child.parent_node._id, fork._id)
+
+    def test_fork_grandchild_has_child_id(self):
+        fork = self.project.fork_node(auth=self.auth)
+        fork_child = NodeFactory(parent=fork)
+        fork_grandchild = NodeFactory(parent=fork_child)
+        assert_equal(fork_grandchild.parent_node._id, fork_child._id)
+
+    def test_template_has_no_parent(self):
+        new_project = self.project.use_as_template(auth=self.auth)
+        assert_equal(new_project.parent_node, None)
+
+    def test_teplate_project_child_has_correct_parent(self):
+        template_child = NodeFactory(parent=self.template)
+        assert_equal(template_child.parent_node._id, self.template._id)
+
+    def test_template_project_grandchild_has_correct_root(self):
+        template_child = NodeFactory(parent=self.template)
+        new_project_grandchild = NodeFactory(parent=template_child)
+        assert_equal(new_project_grandchild.parent_node._id, template_child._id)
+
+
 class TestRoot(OsfTestCase):
     def setUp(self):
         super(TestRoot, self).setUp()
@@ -3061,6 +3124,8 @@ class TestRoot(OsfTestCase):
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user, description='foobar')
+
+        self.registration = RegistrationFactory(project=self.project)
 
     def test_top_level_project_has_own_root(self):
         assert(self.project.root._id, self.project._id)
@@ -3086,17 +3151,14 @@ class TestRoot(OsfTestCase):
         assert_equal(child_node.root._id, grandchild_node.root._id)
 
     def test_registration_has_own_root(self):
-        registration = RegistrationFactory(project=self.project)
-        assert_equal(registration.root._id, registration._id)
+        assert_equal(self.registration.root._id, self.registration._id)
 
     def test_registration_children_have_correct_root(self):
-        registration = RegistrationFactory(project=self.project)
-        registration_child = NodeFactory(parent=registration)
+        registration_child = NodeFactory(parent=self.registration)
         assert_equal(registration_child.root._id, registration._id)
 
     def test_registration_grandchildren_have_correct_root(self):
-        registration = RegistrationFactory(project=self.project)
-        registration_child = NodeFactory(parent=registration)
+        registration_child = NodeFactory(parent=self.registration)
         registration_grandchild = NodeFactory(parent=registration_child)
 
         assert_equal(registration_grandchild.root._id, registration._id)
