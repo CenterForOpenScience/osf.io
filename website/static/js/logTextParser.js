@@ -7,12 +7,10 @@ var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('js/logActionsList');
 
 var LogText = {
-    controller : function (logObject){
-        var self = this;
-        self.buildTemplate = function () {   // Build template in controller to run only once
-            var text = logActions[logObject.attributes.action];
-            var list = text.split(/(\${.*?})/);
-            return m('span.osf-log-item',[
+    view : function(ctrl, logObject) {
+        var text = logActions[logObject.attributes.action];
+        var list = text.split(/(\${.*?})/);
+        return m('span.osf-log-item',[
                 list.map(function(piece){
                     if(piece === '') { return; }
                     var startsWith = piece.substring(0,2);
@@ -24,12 +22,6 @@ var LogText = {
                     return piece;
                 })
             ]);
-        };
-        self.finalTemplate = self.buildTemplate();
-
-    },
-    view : function(ctrl, logObject) {
-        return ctrl.finalTemplate;
     }
 };
 
