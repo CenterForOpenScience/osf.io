@@ -5,7 +5,15 @@
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('js/logActionsList');
+var $ = require('jquery');  // jQuery
 
+/**
+ * Checks if the required parameter to complete the log is returned
+ * This may intentionally not be returned to make log anonymous
+ * @param param {string|number} The parameter to be used
+ * @param logObject {Object} the entire log object returned from the api
+ * @returns {boolean}
+ */
 var paramIsReturned = function(param, logObject){
     if(!param){
         var message = 'Expected parameter for Log action ' + logObject.attributes.action + ' was not returned from log api.';
@@ -13,6 +21,35 @@ var paramIsReturned = function(param, logObject){
         return false;
     }
     return true;
+};
+
+
+/**
+ * Returns the text parameters since their formatting is mainly the same
+ * @param param {string} The parameter to be used, has to be available under logObject.attributes.param
+ * @param text {string'} The text to be used if param is not available
+ * @param logObject {Object} the entire log object returned from the api
+ * @returns {*}
+ */
+var returnTextParams = function (param, text, logObject) {
+    var source = logObject.attributes.params[param];
+    if(paramIsReturned(source, logObject)){
+        if($.isArray(source)){
+            return m('span', [
+                source.map(function(item, index, arr){
+                    if(arr.length === 1 && index === 0){
+                        return m('span', item);
+                    }
+                    if(index === arr.length-1) {
+                        return m('span', ' and ' + item);
+                    }
+                    return m('span', item + ', ');
+                })
+            ]);
+        }
+        return m('span', '"' + source + '"');
+    }
+    return m('span', text);
 };
 
 var LogText = {
@@ -102,59 +139,47 @@ var LogPieces = {
     // The original title of node involved
     title_original: {
         view: function (ctrl, logObject) {
-            var title_original = logObject.attributes.params.title_original;
-            if(paramIsReturned(title_original, logObject)){
-                return m('span', '"' + title_original + '"');
-            }
-            return m('span', 'a title');
+            return returnTextParams('title_original', 'a title', logObject);
         }
     },
     // The new title of node involved
     title_new: {
         view: function (ctrl, logObject) {
-            var title_new = logObject.attributes.params.title_new;
-            if(paramIsReturned(title_new, logObject)){
-                return m('span', '"' + title_new + '"');
-            }
-            return m('span', 'a title');
+            return returnTextParams('title_new', 'a title', logObject);
         }
     },
     // Update fields for the node
     updated_fields: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            return returnTextParams('updated_fields', 'field(s)', logObject);
         }
     },
     // external identifiers on node
     identifiers: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            return returnTextParams('identifiers', 'identifier(s)', logObject);
         }
     },
     // Wiki page name
     page: {
         view: function (ctrl, logObject) {
-            var page = logObject.attributes.params.page;
-            if(paramIsReturned(page, logObject)){
-                return m('span', '"' + page + '"');
-            }
-            return m('span', 'a title');
+            return returnTextParams('page', 'a title', logObject);
         }
     },
     // Old wiki title that's renamed
     old_page: {
         view: function (ctrl, logObject) {
-            var old_page = logObject.attributes.params.page;
-            if(paramIsReturned(old_page, logObject)){
-                return m('span', '"' + old_page + '"');
-            }
-            return m('span', 'a title');
+            return returnTextParams('old_page', 'a title', logObject);
         }
     },
     // Wiki page version
     version: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            var version = logObject.attributes.params.version;
+            if(paramIsReturned(version, logObject)){
+                return m('span', version);
+            }
+            return m('span', '#');
         }
     },
     //

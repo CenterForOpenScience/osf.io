@@ -16,7 +16,7 @@ var logActions = {
     'tag_removed':  '${user} removed {$tag} from ${node}',
     'edit_title':   '${user} changed the title from ${title_original} to ${title_new}',
     'edit_description': '${user} edited description of ${node}',
-    'updated_fields':   '${user} changed the ${updated_fields} for ${node}',
+    'updated_fields':   '${user} changed the ${updated_fields} for ${node}', // i.e change category
     'external_ids_added':   '${user} created external identifiers ${identifiers} on ${node}',
     'contributor_added':    '${user} added ${contributors} as contributor(s) to ${node}',
     'contributor_removed':  '${user} removed ${contributors} as contributor(s) from ${node}',
