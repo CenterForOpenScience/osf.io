@@ -6,6 +6,14 @@
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('js/logActionsList');
 
+var paramIsReturned = function(param){
+    if(param){
+        return true;
+    } else {
+        throw new Error ('Expected parameter ' + param + ' for Log action ' + logObject.attributes.action + ' was not returned. ');
+    }
+};
+
 var LogText = {
     view : function(ctrl, logObject) {
         var text = logActions[logObject.attributes.action];
@@ -55,13 +63,22 @@ var LogPieces = {
     // Node that is linked to the node involved
     pointer: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            var linked_node = logObject.embeds.linked_node;
+            if(linked_node){
+                return m('a', {href: linked_node.data.links.html}, linked_node.data.attributes.title);
+            }
+            return m('span','a project' );
         }
     },
     // Node that acted as template to create a new node involved
     template: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            console.log(logObject);
+            var template_node = logObject.embeds.template_node;
+            if(template_node){
+                return m('a', {href: template_node.data.links.html}, template_node.data.attributes.title);
+            }
+            return m('span','a project' );
         }
     },
     // The original title of node involved

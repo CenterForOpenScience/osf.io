@@ -112,7 +112,7 @@ var FileBrowser = {
         self.data = m.prop([]);
         self.activityLogs = m.prop();
         self.getLogs = function _getLogs (nodeId) {
-            var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
+            var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
             m.request({method : 'GET', url : url, config : xhrconfig}).then(function(result){
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
