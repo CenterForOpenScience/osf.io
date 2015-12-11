@@ -15,7 +15,6 @@ ko.punches.enableAll();
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
-var waterbutler = require('./waterbutler');
 
 
 // Maximum length for comments, in characters
@@ -88,8 +87,6 @@ var BaseComment = function() {
 
     self.unreadComments = ko.observable(0);
 
-    self.pageNumber = ko.observable(0);
-
     self.level = 0;
 
     self.displayCount = ko.pureComputed(function() {
@@ -140,7 +137,24 @@ BaseComment.prototype.setupToolTips = function(elm) {
     });
 };
 
-BaseComment.prototype.fetch = function(nodeId, threadId) {
+BaseComment.prototype.fetchUserData = function() {
+    var self = this;
+    var request = osfHelpers.ajaxJSON(
+        'GET',
+        osfHelpers.apiV2Url('users/me/', {}),
+        {'isCors': true});
+    request.done(function(response) {
+        self.author = {
+            'id': response.data.id,
+            'url': response.data.links.html,
+            'name': response.data.attributes.full_name,
+            'gravatarUrl': response.data.links.profile_image
+        };
+        return self.author;
+    });
+};
+
+BaseComment.prototype.fetch = function(nodeId) {
     var self = this;
     var deferred = $.Deferred();
     if (self._loaded) {
@@ -169,7 +183,6 @@ BaseComment.prototype.fetch = function(nodeId, threadId) {
     });
     return deferred;
 };
-
 
 var setUnreadCommentCount = function(self) {
     var request = osfHelpers.ajaxJSON(
@@ -203,7 +216,6 @@ BaseComment.prototype.configureCommentsVisibility = function(nodeId) {
 
 BaseComment.prototype.submitReply = function() {
     var self = this;
-    var nodeUrl = '/' + self.$root.nodeId() + '/';
     if (!self.replyContent()) {
         self.replyErrorMessage('Please enter a comment');
         return;
@@ -240,8 +252,9 @@ BaseComment.prototype.submitReply = function() {
         self.cancelReply();
         self.replyContent(null);
         var newComment = new CommentModel(response.data, self, self.$root);
-        self.comments.unshift(newComment);
+        newComment.author = self.$root.author;
         newComment.loading(false);
+        self.comments.unshift(newComment);
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
@@ -259,7 +272,6 @@ var CommentModel = function(data, $parent, $root) {
     BaseComment.prototype.constructor.call(this);
 
     var self = this;
-    var userData = data.embeds.user.data;
 
     self.$parent = $parent;
     self.$root = $root;
@@ -274,12 +286,16 @@ var CommentModel = function(data, $parent, $root) {
     self.isAbuse = ko.observable(data.attributes.is_abuse);
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
-    self.author = {
-        'id': userData.id,
-        'url': userData.links.html,
-        'fullname': userData.attributes.full_name,
-        'gravatarUrl': userData.links.profile_image
-    };
+
+    if ('embeds' in data && 'user' in data.embeds) {
+        var userData = data.embeds.user.data;
+        self.author = {
+            'id': userData.id,
+            'url': userData.links.html,
+            'name': userData.attributes.full_name,
+            'gravatarUrl': userData.links.profile_image
+        };
+    }
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
@@ -567,7 +583,8 @@ var CommentListModel = function(options) {
         return self.comments().length > 0;
     });
 
-    self.fetch(options.nodeId, options.threadId);
+    self.fetchUserData();
+    self.fetch(options.nodeId);
 
 };
 
@@ -611,8 +628,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      rootId: Node._id,
  *      userName: User.fullname,
  *      canComment: User.canComment,
- *      hasChildren: Node.hasChildren,
- *      threadId: undefined }
+ *      hasChildren: Node.hasChildren}
  */
 var init = function(commentLinkSelector, commentPaneSelector, options) {
     var cp = new CommentPane(commentPaneSelector, {
