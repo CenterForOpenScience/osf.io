@@ -16,15 +16,29 @@ from tests.factories import ExternalAccountFactory
 from tests.factories import MockOAuth2Provider
 from tests.factories import ProjectFactory
 
+class MockConfig(AddonConfig):
+
+    def __init__(self):
+        super(MockConfig, self).__init__(
+            short_name='mockaddon',
+            full_name='Mock Addon',
+            owners=[],
+            categories=[]
+        )
 
 class MockNodeSettings(AddonOAuthNodeSettingsBase):
     oauth_provider = MockOAuth2Provider
+    config = MockConfig()
+    folder_id = 'foo'
+    folder_name = 'Foo'
+    folder_path = '/Foo'
 
     def deauthorize(*args, **kwargs):
         pass
 
 
 class MockUserSettings(AddonOAuthUserSettingsBase):
+    config = MockConfig
     oauth_provider = MockOAuth2Provider
 
 
