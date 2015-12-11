@@ -8,8 +8,7 @@ var logActions = require('js/logActionsList');
 
 var paramIsReturned = function(param, logObject){
     if(!param){
-        var message = 'Expected parameter ' + param + ' for Log action ' + logObject.attributes.action + ' was not returned from log api.';
-        console.error(message);
+        var message = 'Expected parameter for Log action ' + logObject.attributes.action + ' was not returned from log api.';
         Raven.captureMessage(message, {logObject: logObject});
         return false;
     }
@@ -73,14 +72,18 @@ var LogPieces = {
     // The tag added to item involved
     tag: {
         view: function (ctrl, logObject) {
-            return m('a', {href: '/search/?q=%22' + logObject.attributes.params.tag + '%22'}, logObject.attributes.params.tag);
-        }
+            var tag = logObject.attributes.params.tag;
+           if(paramIsReturned(tag, logObject)) {
+               return m('a', {href: '/search/?q=%22' + tag + '%22'}, tag);
+           }
+            return m('span', 'a tag');
+       }
     },
     // Node that is linked to the node involved
     pointer: {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
-            if(linked_node){
+            if(paramIsReturned(linked_node, logObject)){
                 return m('a', {href: linked_node.data.links.html}, linked_node.data.attributes.title);
             }
             return m('span','a project' );
@@ -90,7 +93,7 @@ var LogPieces = {
     template: {
         view: function (ctrl, logObject) {
             var template_node = logObject.embeds.template_node;
-            if(template_node){
+            if(paramIsReturned(template_node, logObject)){
                 return m('a', {href: template_node.data.links.html}, template_node.data.attributes.title);
             }
             return m('span','a project' );
@@ -100,7 +103,7 @@ var LogPieces = {
     title_original: {
         view: function (ctrl, logObject) {
             var title_original = logObject.attributes.params.title_original;
-            if(title_original){
+            if(paramIsReturned(title_original, logObject)){
                 return m('span', '"' + title_original + '"');
             }
             return m('span', 'a title');
@@ -110,7 +113,7 @@ var LogPieces = {
     title_new: {
         view: function (ctrl, logObject) {
             var title_new = logObject.attributes.params.title_new;
-            if(title_new){
+            if(paramIsReturned(title_new, logObject)){
                 return m('span', '"' + title_new + '"');
             }
             return m('span', 'a title');
@@ -131,13 +134,21 @@ var LogPieces = {
     // Wiki page name
     page: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            var page = logObject.attributes.params.page;
+            if(paramIsReturned(page, logObject)){
+                return m('span', '"' + page + '"');
+            }
+            return m('span', 'a title');
         }
     },
     // Old wiki title that's renamed
     old_page: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            var old_page = logObject.attributes.params.page;
+            if(paramIsReturned(old_page, logObject)){
+                return m('span', '"' + old_page + '"');
+            }
+            return m('span', 'a title');
         }
     },
     // Wiki page version

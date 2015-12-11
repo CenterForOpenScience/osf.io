@@ -24,7 +24,7 @@ var logActions = {
     'permissions_update':   '${user} changed permissions for ${node}',
     'made_contributor_visible':     '${user} made ${contributors} visible on ${node}',
     'made_contributor_invisible':   '${user} made ${contributors} invisible on ${node}',
-    'wiki_updated':     '${user} updated wiki page ${page} to ${version} of ${node}',
+    'wiki_updated':     '${user} updated wiki page ${page} to version ${version} of ${node}',
     'wiki_deleted':     '${user} deleted wiki page ${page} of ${node}',
     'wiki_renamed':     '${user} renamed wiki page ${old_page} to ${page} of ${node}',
     'made_wiki_public':     '${user} made the wiki of ${node} publicly editable',
