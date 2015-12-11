@@ -105,6 +105,8 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 if (viewModel.value()) {
                     if (item.data.name === viewModel.value()) {
                         item.css = 'fangorn-selected';
+                    } else if ( viewModel.value() === 'No file selected' && item.data.name === 'OSF Storage') {
+                        item.css = 'fangorn-selected';
                     }
                 }
 
