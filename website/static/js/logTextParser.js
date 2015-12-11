@@ -1,17 +1,19 @@
 /**
  * Parses text to return to the log items
  * Created by cos-caner on 12/4/15.
- * Remeber to embed nodes and user in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
+ * Remeber to embed nodes, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('js/logActionsList');
 
-var paramIsReturned = function(param){
-    if(param){
-        return true;
-    } else {
-        throw new Error ('Expected parameter ' + param + ' for Log action ' + logObject.attributes.action + ' was not returned. ');
+var paramIsReturned = function(param, logObject){
+    if(!param){
+        var message = 'Expected parameter ' + param + ' for Log action ' + logObject.attributes.action + ' was not returned from log api.';
+        console.error(message);
+        Raven.captureMessage(message, {logObject: logObject});
+        return false;
     }
+    return true;
 };
 
 var LogText = {
@@ -38,20 +40,34 @@ var LogPieces = {
     user: {
         view: function (ctrl, logObject) {
             var userObject = logObject.embeds.user;
-            return m('a', {href: userObject.data.links.html}, userObject.data.attributes.full_name);
+            if(paramIsReturned(userObject, logObject)) {
+                return m('a', {href: userObject.data.links.html}, userObject.data.attributes.full_name);
+            } else {
+                return m('span', 'a user');
+            }
         }
     },
     // Node involved
     node: {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.nodes;
-            return m('a', {href: nodeObject.data[0].links.html}, nodeObject.data[0].attributes.title);
+            if(paramIsReturned(nodeObject, logObject)){
+                return m('a', {href: nodeObject.data[0].links.html}, nodeObject.data[0].attributes.title);
+            } else {
+                return m('span', 'a project');
+            }
         }
     },
     // Contrubutor list of added, updated etc.
     contributors: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            var contributors = logObject.embeds.contributors;
+            if(paramIsReturned(contributors, logObject)) {
+                return contributors.map(function(item){
+                    return m('a', {href: '#'}, 'Person');
+                });
+            }
+            return m('span', 'some users');
         }
     },
     // The tag added to item involved
