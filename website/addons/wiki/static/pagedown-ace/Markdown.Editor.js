@@ -218,14 +218,24 @@ var Range = ace.require('ace/range').Range;
 
     };
 
-    var getImage = function(url, extensions, re) {
-        var exp = /(imgurl=)(.*?)(&)/;
+    /**
+     * Attempts to parse out an image from the url
+     *
+     * Uses the fact that Google Images uses imgurl= as a url parameter for the images original url
+     *
+     * @param url - The url we are attempting to parse
+     * @param validImgExtensions - The image extensions we allow on the wiki
+     * @param getExtension - regex to parse out extensions
+     * @returns {*} an imgurl if one is found, else returns undefined
+     */
+    var getImage = function(url, validImgExtensions, getExtension) {
+        var findImgUrl = /(imgurl=)(.*?)(&)/;
         try {
-            return exp.exec(url)[2];
+            return findImgUrl.exec(url)[2];
         } catch (err) {
-            var ext = re.exec(url)[1];
+            var ext = getExtension.exec(url)[1];
             try {
-                if (extensions.indexOf(ext.toLowerCase()) >= 0) {
+                if (validImgExtensions.indexOf(ext.toLowerCase()) >= 0) {
                     return url;
                 }
             } catch (err) {
@@ -235,6 +245,14 @@ var Range = ace.require('ace/range').Range;
         }
     };
 
+
+    /**
+     * Adds Image/Link Drag and Drop functionality to the Ace Editor
+     *
+     * @param editor - Ace Editor instance
+     * @param panels - PanelCollection used for getting TextAreaState
+     * @param cm - CommandManager
+     */
     var addDragNDrop = function(editor, panels, cm) {
         var element = editor.container;
         editor.getPosition = function(x, y) {
@@ -303,8 +321,8 @@ var Range = ace.require('ace/range').Range;
         element.addEventListener('drop', function(event) {
             event.preventDefault();
             event.stopPropagation();
-            var re = /(?:\.([^.]+))?$/;
-            var extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
+            var getExtension = /(?:\.([^.]+))?$/;
+            var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 
             var state = new TextareaState(panels);
             var offset = state.selection.length;
@@ -332,10 +350,10 @@ var Range = ace.require('ace/range').Range;
             if (!!html || !!url) {
                 var imgURL;
                 try {
-                    var src = /(src=")(.*?)(")/;
-                    imgURL = src.exec(url)[2];
+                    var getSrc = /(src=")(.*?)(")/;
+                    imgURL = getSrc.exec(html)[2];
                     if (imgURL.substring(0, 10) === 'data:image') {
-                        imgURL = getImage(url, extensions, re);
+                        imgURL = getImage(url, validImgExtensions, getExtension);
                         if (!imgURL) {
                             $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
                             fixupInputArea();
@@ -346,7 +364,7 @@ var Range = ace.require('ace/range').Range;
                     }
                 }
                 catch (err) {
-                    imgURL = getImage(url, extensions, re);
+                    imgURL = getImage(url, validImgExtensions, getExtension);
                     if (!!imgURL) {
                         cm.doLinkOrImage(init, fixupInputArea, true, imgURL);
                     }
@@ -372,9 +390,9 @@ var Range = ace.require('ace/range').Range;
                 }).done(function(path) {
                     if (!!path) {
                         $.each(files, function (i, file) {
-                            var ext = re.exec(file.name)[1];
-                            if (extensions.indexOf(ext.toLowerCase()) <= -1) {
-                                $osf.growl('Error', 'File type not supported', 'danger');
+                            var ext = getExtension.exec(file.name)[1];
+                            if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
+                                $osf.growl('Error', 'File type not supported (' +  file.name + ')', 'danger');
                             }
                             else {
                                 var waterbutler_url = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path + '?name=' + encodeURI(file.name) + '&type=file';
@@ -387,8 +405,7 @@ var Range = ace.require('ace/range').Range;
                                         beforeSend: $osf.setXHRAuthorization,
                                         data: file
                                     }).done(function (response) {
-                                        url = response.data.links.download + '?mode=render';
-                                        urls.splice(i, 0, url);
+                                        urls.splice(i, 0, response.data.links.download + '?mode=render');
                                     }).fail(function (data) {
                                         notUploaded(false);
                                     })
@@ -437,6 +454,13 @@ var Range = ace.require('ace/range').Range;
         });
     };
 
+    /**
+     * Checks to see whether there is already a 'Wiki Image Uploads' folder for the current node
+     *
+     * If the folder doesn't exist, it attempts to create the folder
+     *
+     * @returns {*} The folder's path attribute if it exists/was created
+     */
     var checkFolder = function() {
         var folder_url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/files/osfstorage/?filter[kind]=folder&filter[name]=wiki+image+uploads';
         return $.ajax({
