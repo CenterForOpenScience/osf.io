@@ -1750,6 +1750,24 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.save()
 
 class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """ Detail of the one primary_institution a node has, if any. Returns NotFound
+    if the node does not have a primary_instituion.
+
+    ##Attributes
+
+    OSF Institutions have the "institutions" `type`.
+
+        name           type               description
+        -------------------------------------------------------------------------
+        name           string             title of the institution
+        id             string             unique identifier in the OSF
+        logo_path      string             a path to the institution's static logo
+
+
+
+    #This Request/Response
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -1764,6 +1782,7 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
     view_category = 'nodes'
     view_name = 'node-institution-detail'
 
+    # overrides RetrieveAPIView
     def get_object(self):
         node = self.get_node()
         if not node.primary_institution:
@@ -1772,6 +1791,59 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
 
 
 class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
+    """ Relationship Endpoint for Node -> Instituion Relationship
+
+    Used to set the primary_institution of a node to an institution
+
+    ##Actions
+
+    ###Create
+
+        Method:        GET
+        URL:           /links/self
+        Query Params:  <none>
+        Success:       200,
+                       {
+                         "data": {                  # "data": null, if no institution
+                           "type": "institution",
+                           "id": <institution_id>
+                         },
+                         "links": {
+                           "self":,
+                           "related",
+                         }
+                       }
+
+    ###Create
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "institution",   # required
+                           "id": <institution_id>   # required
+                         }
+                       }
+        Success:       200
+
+    This requires both admin permission on the node, and for the user that is
+    making the request to be affiliated with the institution (`User.affiliated_institutions`)
+
+    ###Destroy
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           null
+                         }
+                       }
+        Success:       200
+
+    This requires admin permission on the node.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -1785,5 +1857,6 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
     view_category = 'nodes'
     view_name = 'node-relationships-institution'
 
+    # overrides RetrieveAPIView
     def get_object(self):
         return self.get_node()

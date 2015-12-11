@@ -20,6 +20,8 @@ from api.users.serializers import UserSerializer, UserDetailSerializer
 from .serializers import InstitutionSerializer
 
 class InstitutionMixin(object):
+    """Mixin with convenience method get_institution
+    """
 
     institution_lookup_url_kwarg = 'institution_id'
 
@@ -64,6 +66,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'institutions'
     view_name = 'institution-list'
 
+    # overrides ListAPIView
     def get_queryset(self):
         return Institution.find()
 
