@@ -4163,7 +4163,7 @@ class DraftRegistration(StoredObject):
     def get_authorizers(self):
         return authorizers.members_for(self.registration_schema.name)
 
-    def update_metadata(self, metadata):
+    def update_metadata(self, metadata, comments_only=False):
         changes = []
         for question_id, value in metadata.iteritems():
             old_value = self.registration_metadata.get(question_id)
@@ -4182,7 +4182,11 @@ class DraftRegistration(StoredObject):
                     key=lambda c: c['created']
                 )
                 if old_value.get('value') != value.get('value'):
-                    changes.append(question_id)
+                    if comments_only:
+                        # ingore any changes to non-comments
+                        metadata[question_id]['value'] = old_value['value']
+                    else:
+                        changes.append(question_id)
             else:
                 changes.append(question_id)
         self.registration_metadata.update(metadata)

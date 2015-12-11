@@ -34,6 +34,7 @@ def serialize_draft_registration(draft, auth=None):
         'flags': draft.flags,
         'urls': {
             'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id),
+            'update': node.api_url_for('update_draft_registration', draft_id=draft._id),
             'submit': node.api_url_for('submit_draft_for_review', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),
             'register': node.api_url_for('register_draft_registration', draft_id=draft._id),

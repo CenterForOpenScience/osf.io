@@ -27,6 +27,29 @@ var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
 );
 
 /**
+* Gets value from nested properties.
+*
+* @param  {Dict}    obj    The object to find value from
+* @param  {String}  path   Path to nested property
+* @return {String}
+*/
+var deep_value = function(obj, path){
+    for (var i=0, path=path.split('.'), len=path.length; i<len; i++){
+        if (obj === undefined) {
+            return "No title";
+        }
+        if (path[i].indexOf('(') === -1) {
+            obj = obj[path[i]];
+        } else {
+            var func = path[i].split('(');
+            obj = obj[func[0]]();
+        }
+
+    }
+    return obj;
+};
+
+/**
  * @class Comment
  * Model for storing/editing/deleting comments on form fields
  *
@@ -469,7 +492,20 @@ MetaSchema.prototype.askConsent = function(pre) {
 var Draft = function(params, metaSchema) {
     var self = this;
 
-    self.pk = params.pk;
+    self._saveManager = null;
+
+    self.pk = ko.observable(params.pk);
+    self.pk.subscribe(function(pk) {
+        if(pk) {
+            self._saveManager = new SaveManager(
+                self.urls.update,
+                null,
+                {
+                    dirty: self.dirtyCount
+                }
+            );
+        }
+    });
     self.schemaData = params.registration_metadata || {};
     self.metaSchema = metaSchema || new MetaSchema(params.registration_schema, self.schemaData);
     self.schema = ko.pureComputed(function() {
@@ -485,6 +521,23 @@ var Draft = function(params, metaSchema) {
     self.isPendingApproval = params.is_pending_approval;
     self.isApproved = params.is_approved;
 
+    self.status = ko.pureComputed(function() {
+        if(self.isApproved) {
+            return 'Approved';
+        }
+        else {
+            if (self.isPendingApproval) {
+                return 'Pending Approval';
+            }
+            else {
+                return 'n/a';
+            }
+        }
+    });   
+
+    self.flags = ko.observable(params.flags || {});
+    self.notes = ko.observable(params.notes || '');
+
     self.requiresApproval = ko.pureComputed(function() {
         return self.metaSchema && self.metaSchema.requiresApproval;
     });
@@ -496,6 +549,46 @@ var Draft = function(params, metaSchema) {
         return self.metaSchema.pages;
     });
 
+    /// AUTOSAVE
+    // An incrementing dirty flag. The 0 state represents not-dirty.
+    // States greater than 0 imply dirty, and incrementing the number
+    // allows for reliable mutations of the ko.observable.
+    self.dirtyCount = ko.observable(0);
+    self.needsSave = ko.computed(function() {
+        return self.dirtyCount();
+    }).extend({
+        rateLimit: 3000,
+        method: 'notifyWhenChangesStop'
+    });
+    $.each(self.metaSchema.pages || [], function(_, page) {
+        $.each(page.questions, function(_, question) {
+            question.value.subscribe(function() {
+                self.dirtyCount(self.dirtyCount() + 1);
+            });
+        });
+    });
+    self.notes.subscribe(function() {
+        self.dirtyCount(self.dirtyCount() + 1);
+    });
+    self.flags.subscribe(function() {
+        self.dirtyCount(self.dirtyCount() + 1);
+    });
+    self.needsSave.subscribe(function(dirty) {
+        if (dirty) {
+            self.save().then(function(last) {
+                if (self.dirtyCount() === last){
+                    self.dirtyCount(0);
+                }
+            }.bind(self, self.dirtyCount()));
+        }
+    });
+    /// END AUTOSAVE
+
+    
+    //TODO: fixme
+    self.title = 'Foo';
+    self.assignee = 'Bar';
+    
     self.userHasUnseenComment = ko.computed(function() {
         return $osf.any(
             $.map(self.pages(), function(page) {
@@ -523,6 +616,18 @@ var Draft = function(params, metaSchema) {
         });
         return Math.ceil(100 * (complete / questions.length));
     });
+
+    self.preview = ko.observable(false);
+};
+Draft.prototype.togglePreview = function(){
+    this.preview(!this.preview());
+};
+Draft.prototype.setFlag = function(flagName, value) {
+    var self = this;
+
+    var oldFlags = self.flags();
+    oldFlags[flagName] = value;
+    self.flags(oldFlags);
 };
 Draft.prototype.getUnseenComments = function() {
     var unseen = [];
@@ -671,6 +776,54 @@ Draft.prototype.reject = function() {
         }
     );
 };
+Draft.prototype.create = function(schemaData) {
+    var metaSchema = self.metaSchema;
+
+    var request = $osf.postJSON(self.urls.create, {
+        schema_name: metaSchema.name,
+        schema_version: metaSchema.version,
+        schema_data: schemaData
+    });
+    request.done(function(response) {
+        self.urls = response.urls;
+        self.pk(response.pk);
+    });
+    return request;
+};
+Draft.prototype.save = function() {
+    var self = this;
+    var metaSchema = self.metaSchema;
+    var data = {};
+    $.each(metaSchema.pages, function(i, page) {
+        $.each(page.questions, function(_, question) {
+            var qid = question.id;
+            data[qid] = ko.toJS({
+                value: question.value(),
+                comments: question.comments(),
+                extra: question.extra
+            });
+        });
+    });
+    var request;
+    if (typeof self.pk === 'undefined') {
+        request = self.create(data);
+    } else {
+        request = self._saveManager.save({
+            schema_name: metaSchema.name,
+            schema_version: metaSchema.version,
+            schema_data: data
+        });
+    }
+    request.fail(function(xhr, status, error) {
+        Raven.captureMessage('Could not save draft registration', {
+            url: self.urls.update.replace('{draft_pk}', self.draft().pk),
+            textStatus: status,
+            error: error
+        });
+        $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
+    });
+    return request;
+};
 
 /**
  * @class RegistrationEditor
@@ -707,31 +860,12 @@ var RegistrationEditor = function(urls, editorId, preview) {
         });
         currentPage.active(true);
         History.replaceState({page: self.pages().indexOf(currentPage)});
+        currentPage.viewComments();
     });
 
     self.onLastPage = ko.pureComputed(function() {
         return self.currentPage() === self.pages()[self.pages().length - 1];
-    });
-
-    // An incrementing dirty flag. The 0 state represents not-dirty.
-    // States greater than 0 imply dirty, and incrementing the number
-    // allows for reliable mutations of the ko.observable.
-    self.dirtyCount = ko.observable(0);
-    self.needsSave = ko.computed(function() {
-        return self.dirtyCount();
-    }).extend({
-        rateLimit: 3000,
-        method: 'notifyWhenChangesStop'
-    });
-    self.currentPage.subscribe(function(page) {
-        // lazily apply subscriptions to question values
-        $.each(page.questions, function(_, question) {
-            question.value.subscribe(function() {
-                self.dirtyCount(self.dirtyCount() + 1);
-            });
-        });
-        page.viewComments();
-    });
+    });  
 
     self.validationErrors = ko.computed(function() {
         if (self.onLastPage()) {
@@ -847,17 +981,6 @@ RegistrationEditor.prototype.init = function(draft) {
         index = 0;
     }
     self.currentPage(pages[index]);
-
-    self.needsSave.subscribe(function(dirty) {
-        if (dirty) {
-            self.save().then(function(last) {
-                if (self.dirtyCount() === last){
-                    self.dirtyCount(0);
-                }
-            }.bind(self, self.dirtyCount()));
-        }
-    });
-
 
     self.currentQuestion(self.flatQuestions().shift());
 };
@@ -1035,39 +1158,6 @@ RegistrationEditor.prototype.submit = function() {
         }
     });
 };
-/**
- * Create a new draft
- **/
-RegistrationEditor.prototype.create = function(schemaData) {
-    var self = this;
-
-    var metaSchema = self.draft().metaSchema;
-
-    var request = $osf.postJSON(self.urls.create, {
-        schema_name: metaSchema.name,
-        schema_version: metaSchema.version,
-        schema_data: schemaData
-    });
-    request.done(function(response) {
-        var draft = self.draft();
-        draft.pk = response.pk;
-        self.draft(draft);
-        self.saveManager = new SaveManager(
-            self.urls.update.replace('{draft_pk}', draft.pk),
-            null,
-            {
-                dirty: self.dirtyCount
-            }
-        );
-    });
-    return request;
-};
-
-RegistrationEditor.prototype.putSaveData = function(payload) {
-    var self = this;
-    return self.saveManager.save(payload)
-        .then(self.updateData.bind(self));
-};
 
 RegistrationEditor.prototype.saveForLater = function() {
     var self = this;
@@ -1084,38 +1174,7 @@ RegistrationEditor.prototype.saveForLater = function() {
  * Save the current Draft
  **/
 RegistrationEditor.prototype.save = function() {
-    var self = this;
-    var metaSchema = self.draft().metaSchema;
-    var data = {};
-    $.each(metaSchema.pages, function(i, page) {
-        $.each(page.questions, function(_, question) {
-            var qid = question.id;
-            data[qid] = ko.toJS({
-                value: question.value(),
-                comments: question.comments(),
-                extra: question.extra
-            });
-        });
-    });
-    var request;
-    if (typeof self.draft().pk === 'undefined') {
-        request = self.create(self);
-    } else {
-        request = self.putSaveData({
-            schema_name: metaSchema.name,
-            schema_version: metaSchema.version,
-            schema_data: data
-        });
-    }
-    request.fail(function(xhr, status, error) {
-        Raven.captureMessage('Could not save draft registration', {
-            url: self.urls.update.replace('{draft_pk}', self.draft().pk),
-            textStatus: status,
-            error: error
-        });
-        $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
-    });
-    return request;
+    return this.draft().save();
 };
 
 RegistrationEditor.prototype.approveDraft = function() {
@@ -1210,6 +1269,17 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     });
 
     self.preview = ko.observable(false);
+    
+    self.sortBy = ko.observable('initiated');
+    self.sortedDrafts = ko.computed(function() {
+    var row = self.sortBy();
+        return self.drafts().sort(function (left, right) {
+            var a = deep_value(left, row).toString().toLowerCase();
+            var b = deep_value(right, row).toString().toLowerCase();
+            return a == b ? 0 :
+                (a < b ? -1 : 1);
+        });
+    });
 
     // bound functions
     self.getDraftRegistrations = $.getJSON.bind(null, self.urls.list);
@@ -1347,6 +1417,10 @@ RegistrationManager.prototype.previewDraft = function(draft) {
     $osf.block();
     window.location.assign(draft.urls.register_page);
     $osf.unblock();
+};
+
+RegistrationManager.prototype.formatDate = function(datetime) {
+    return datetime.toDateString();
 };
 
 
