@@ -73,7 +73,6 @@ var LogPieces = {
     // Node that acted as template to create a new node involved
     template: {
         view: function (ctrl, logObject) {
-            console.log(logObject);
             var template_node = logObject.embeds.template_node;
             if(template_node){
                 return m('a', {href: template_node.data.links.html}, template_node.data.attributes.title);
@@ -84,13 +83,21 @@ var LogPieces = {
     // The original title of node involved
     title_original: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            var title_original = logObject.attributes.params.title_original;
+            if(title_original){
+                return m('span', '"' + title_original + '"');
+            }
+            return m('span', 'a title');
         }
     },
     // The new title of node involved
     title_new: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            var title_new = logObject.attributes.params.title_new;
+            if(title_new){
+                return m('span', '"' + title_new + '"');
+            }
+            return m('span', 'a title');
         }
     },
     // Update fields for the node
