@@ -188,7 +188,7 @@ def check_key_expired(key, node, url):
 
     return url
 
-def _must_be_contributor_factory(include_public):
+def _must_be_contributor_factory(include_public, include_view_only=True):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
     whether the current project is public.
@@ -212,8 +212,11 @@ def _must_be_contributor_factory(include_public):
 
             kwargs['auth'].private_key = key
             if not node.is_public or not include_public:
-                if key not in node.private_link_keys_active:
-                    if not check_can_access(node=node, user=user, key=key):
+                if (key not in node.private_link_keys_active) or not include_view_only:
+                    if not include_view_only:
+                        if not check_can_access(node=node, user=user):
+                            raise HTTPError(http.UNAUTHORIZED)
+                    elif not check_can_access(node=node, user=user, key=key):
                         redirect_url = check_key_expired(key=key, node=node, url=request.url)
                         if request.headers.get('Content-Type') == 'application/json':
                             raise HTTPError(http.UNAUTHORIZED)
@@ -229,6 +232,7 @@ def _must_be_contributor_factory(include_public):
 # Create authorization decorators
 must_be_contributor = _must_be_contributor_factory(False)
 must_be_contributor_or_public = _must_be_contributor_factory(True)
+must_be_contributor_or_public_but_not_view_only = _must_be_contributor_factory(include_public=True, include_view_only=False)
 
 
 def must_have_addon(addon_name, model):
