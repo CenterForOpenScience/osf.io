@@ -115,6 +115,7 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
     view_category = 'institutions'
     view_name = 'institution-detail'
 
+    # overrides RetrieveAPIView
     def get_object(self):
         return self.get_institution()
 
@@ -138,6 +139,7 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
+    # overrides ODMFilterMixin
     def get_default_odm_query(self):
         inst = self.get_institution()
         inst_query = Q('primary_institution', 'eq', inst)
@@ -154,6 +156,7 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
         query = base_query & permission_query & inst_query
         return query
 
+    # overrides RetrieveAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
         return Node.find(query)
@@ -176,6 +179,7 @@ class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
     view_category = 'institutions'
     view_name = 'institution-node-detail'
 
+    # overrides RetrieveAPIView
     def get_object(self):
         inst = self.get_institution()
         node = self.get_node()
@@ -185,6 +189,8 @@ class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
 
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
+    """Users that have been authenticated with the institution.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -198,17 +204,21 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     view_category = 'institutions'
     view_name = 'institution-users'
 
+    # overrides ODMFilterMixin
     def get_default_odm_query(self):
         inst = self.get_institution()
         query = Q('affiliated_institutions', 'eq', inst)
         return query
 
+    # overrides RetrieveAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
         return User.find(query)
 
 
 class InstitutionUserDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
+    """Detail of User that has the institutions as one of its affiliated_institutions.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -221,6 +231,7 @@ class InstitutionUserDetail(JSONAPIBaseView, generics.RetrieveAPIView, Instituti
     view_category = 'institutions'
     view_name = 'institution-user-detail'
 
+    # overrides RetrieveAPIView
     def get_object(self):
         user = get_object_or_error(
             User,
