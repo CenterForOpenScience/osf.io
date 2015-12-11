@@ -95,10 +95,34 @@ def evernote_add_user_auth(auth, node_addon, user_addon, **kwargs):
 
 @must_have_addon('evernote', 'node')
 @must_be_addon_authorizer('evernote')
-def evernote_notes (node_addon, **kwargs):
-    return [{'firstName': 'Elinoor', 'lastName':'Dashwood'},
-            {'firstName': 'Marianne', 'lastName':'Dashwood'},
-           ]
+def evernote_notes(node_addon, **kwargs):
+
+    token = node_addon.external_account.oauth_key
+    client = utils.get_evernote_client(token)
+
+    # return notebook_id
+    # pull up notes for that notebook
+
+    try:
+        nb_name = node_addon.folder_name
+        nb_id = node_addon.folder_id
+    except:
+        nb_name = ''
+        nb_id = ''
+
+    # will want to pick up notes for the notebook
+    # start with calculating the number of notes in nb
+
+    notes = utils.notes_metadata(client, notebookGuid=nb_id,
+                    includeTitle=True,
+                    includeUpdated=True,
+                    includeCreated=True)
+
+    results = [{'title': note.title,
+              'guid': note.guid}
+              for note in notes]
+
+    return results
 
 
 @must_have_addon('evernote', 'node')
@@ -163,7 +187,8 @@ def evernote_widget(node_addon, **kwargs):
     ret = node_addon.config.to_json()
     ret.update({
         'complete': node_addon.complete,
-        'folder_id': node_addon.folder_id
+        'folder_id': node_addon.folder_id,
+        'folder_name': node_addon.folder_name
     })
 
     return ret

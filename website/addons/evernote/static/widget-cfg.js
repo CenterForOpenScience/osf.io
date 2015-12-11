@@ -10,13 +10,18 @@ var EvernoteWidget = function(urls) {
 
     console.log(urls);
 
-    self.hello_var = ko.observable("Happy Wednesday");
     self.notes = ko.observableArray();
-    $.getJSON(urls.notes, function (data) {
-      self.notes(data)
-    })
+    self.fetchNotes = $.getJSON.bind(null, urls.notes, function(notes) {
+       self.notes(notes);
+    });
+
+    self.init();
 
  }
+
+ EvernoteWidget.prototype.init = function() {
+    this.fetchNotes();
+ };
 
 // Skip if widget is not correctly configured
 if ($('#evernoteWidget').length) {

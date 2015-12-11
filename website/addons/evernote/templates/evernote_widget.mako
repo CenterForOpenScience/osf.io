@@ -1,8 +1,6 @@
-##<%inherit file="project/addon/widget.mako"/>
+<%inherit file="project/addon/widget.mako"/>
 <div id="evernoteWidget">
-  <div>Hello ${full_name}!  folder_id: ${folder_id}</div>
-  <div>hello var: <input data-bind="value: hello_var" /></div>
-  <div>hello mirror:<span data-bind="text: hello_var"></span></div>
+  <div>Notebook: ${folder_name}</div>
   <div class="col-md-12">
     <div class="row">
       <button class="btn btn-success" data-bind="click: openAddDialog"></button>
@@ -10,13 +8,13 @@
     <table>
     <thead>
       <tr>
-        <th>First name</th><th>Last name</th>
+        <th>Title</th><th>guid</th>
       </tr>
     </thead>
       <tbody data-bind="foreach: notes">
         <tr>
-            <td><input data-bind="value: firstName"/></td>
-            <td><input data-bind="value: lastName"/></td>
+            <td><div data-bind="text: title"/></td>
+            <td><div data-bind="text: guid"/></td>
         </tr>
       </tbody>
     </table>
