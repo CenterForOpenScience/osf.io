@@ -280,7 +280,10 @@ class ODMFilterMixin(FilterMixin):
             query_parts = []
             for field_name, params in filters.iteritems():
                 for group in params:
-                    query = Q(field_name, group['op'], group['value'])
+                    value = group['value']
+                    if value == 'null':
+                        value = None
+                    query = Q(field_name, group['op'], value)
                     query_parts.append(query)
             try:
                 query = functools.reduce(operator.and_, query_parts)
