@@ -229,9 +229,9 @@ var Range = ace.require('ace/range').Range;
      * @returns {*} an imgurl if one is found, else returns undefined
      */
     var getImage = function(url, validImgExtensions, getExtension) {
-        var findImgUrl = /(imgurl=)(.*?)(&)/;
+        var findImgUrl = /[?&]imgurl=([^&]+)/;
         try {
-            return findImgUrl.exec(url)[2];
+            return findImgUrl.exec(url)[1];
         } catch (err) {
             var ext = getExtension.exec(url)[1];
             try {
@@ -244,6 +244,87 @@ var Range = ace.require('ace/range').Range;
             return undefined;
         }
     };
+
+    var localHandler = function(files, cm, init, fixupInputArea) {
+        var multiple = files.length > 1;
+        var urls = [];
+        var num = cm.addLinkDef(init) + 1;
+        var deferred = [];
+        checkFolder().fail(function() {
+            notUploaded(multiple);
+        }).done(function(path) {
+            if (!!path) {
+                $.each(files, function (i, file) {
+                    var ext = getExtension.exec(file.name)[1];
+                    if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
+                        $osf.growl('Error', 'File type not supported (' +  file.name + ')', 'danger');
+                    }
+                    else {
+                        var waterbutler_url = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path + '?name=' + encodeURI(file.name) + '&type=file';
+                        deferred.push(
+                            $.ajax({
+                                url: waterbutler_url,
+                                type: 'PUT',
+                                processData: false,
+                                contentType: false,
+                                beforeSend: $osf.setXHRAuthorization,
+                                data: file
+                            }).done(function (response) {
+                                urls.splice(i, 0, response.data.links.download + '?mode=render');
+                            }).fail(function (data) {
+                                notUploaded(false);
+                            })
+                        );
+                    }
+                });
+                $.when.apply(null, deferred).done(function () {
+                    $.each(urls, function (i, url) {
+                        cm.doLinkOrImage(init, null, true, url, multiple, num + i);
+                    });
+                    fixupInputArea();
+                });
+            }
+            else {
+                notUploaded(multiple);
+            }
+        });
+    };
+
+    var remoteHandler = function(html, url, cm, init, fixupInputArea) {
+        var imgURL;
+        try {
+            var getSrc = /(src=")(.*?)(")/;
+            imgURL = getSrc.exec(html)[2];
+            if (imgURL.substring(0, 10) === 'data:image') {
+                imgURL = getImage(url, validImgExtensions, getExtension);
+                if (!imgURL) {
+                    $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
+                    fixupInputArea(init);
+                }
+            }
+            if (!!imgURL) {
+                cm.doLinkOrImage(init, fixupInputArea, true, imgURL);
+            }
+        }
+        catch (err) {
+            imgURL = getImage(url, validImgExtensions, getExtension);
+            if (!!imgURL) {
+                cm.doLinkOrImage(init, fixupInputArea, true, imgURL);
+            }
+            else {
+                if (url.substring(0, 10) === 'data:image') {
+                    $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
+                    fixupInputArea(init);
+                }
+                else {
+                    cm.doLinkOrImage(init, fixupInputArea, false, url);
+                }
+            }
+        }
+    };
+
+    var getExtension = /(?:\.([^.]+))?$/;
+    var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 
 
     /**
@@ -284,11 +365,26 @@ var Range = ace.require('ace/range').Range;
             this.session._signal("changeFrontMarker");
         };
 
-        element.addEventListener('dragenter', function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-        }, false);
 
+        editor.marker.put = function(url, file) {
+            $.ajax({
+                url: url,
+                type: 'PUT',
+                processData: false,
+                contentType: false,
+                beforeSend: $osf.setXHRAuthorization,
+                data: file
+            });
+        };
+
+        /**
+         * This is called when an item is dragged over the editor
+         *
+         * Enables the 'drop' stuff to happen later
+         *
+         * Also adds a second cursor that follows around the mouse cursor and signifies where the image/link will
+         * be inserted
+         */
         element.addEventListener('dragover', function(event) {
             event.preventDefault();
             event.stopPropagation();
@@ -307,22 +403,16 @@ var Range = ace.require('ace/range').Range;
 
         }, false);
 
-        editor.marker.put = function(url, file) {
-            $.ajax({
-                url: url,
-                type: 'PUT',
-                processData: false,
-                contentType: false,
-                beforeSend: $osf.setXHRAuthorization,
-                data: file
-            });
-        };
-
+        /**
+         * Called when a 'drop' occurs over the editor
+         *
+         * Takes a snapshot of what the current text is in order to be able to edit it as necessary
+         *
+         * Handles the errors that may occur with bad links/files
+         */
         element.addEventListener('drop', function(event) {
             event.preventDefault();
             event.stopPropagation();
-            var getExtension = /(?:\.([^.]+))?$/;
-            var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 
             var state = new TextareaState(panels);
             var offset = state.selection.length;
@@ -330,106 +420,65 @@ var Range = ace.require('ace/range').Range;
             if (!state) {
                 return;
             }
+
+            /**
+             * sets init to be the current state of the editor
+             *
+             * init.before is everything before the drag and drop cursor
+             *
+             * init.after is everything after the drag and drop cursor
+             */
             var init = state.getChunks();
             init.before  = editor.session.getTextRange(new Range(0,0,editor.marker.cursor.row, editor.marker.cursor.column));
             init.after = editor.session.getTextRange(new Range(editor.marker.cursor.row, editor.marker.cursor.column + offset, Number.MAX_VALUE, Number.MAX_VALUE));
 
+            /**
+             * Sets the values of the input area to be the current values of init.before, init.selection, and init.after
+             *
+             * init.before = everything before cursor/selection
+             *
+             * init.selection = text that is highlighted
+             *
+             * init.after = everything after cursor.selection
+             */
             var fixupInputArea = function () {
-
-                focusNoScroll(editor);
-
-                if (init) {
-                    state.setChunks(init);
-                }
-
+                state.setChunks(init);
                 state.restore();
-                //previewManager.refresh(); //OSF Note: removed for issue 3518
             };
+
+            /**
+             * If the item being dragged is from elsewhere online, html and/or URL will be defined
+             *
+             * html will be the HTML block for the element being dragged
+             *
+             * url will be some sort of url that is hopefully an image url (or an image can be parsed out)
+             *
+             * remoteHandler() will attempt to figure this out and react accordingly
+             */
             var html = event.dataTransfer.getData('text/html');
             var url = event.dataTransfer.getData('URL');
             if (!!html || !!url) {
-                var imgURL;
-                try {
-                    var getSrc = /(src=")(.*?)(")/;
-                    imgURL = getSrc.exec(html)[2];
-                    if (imgURL.substring(0, 10) === 'data:image') {
-                        imgURL = getImage(url, validImgExtensions, getExtension);
-                        if (!imgURL) {
-                            $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
-                            fixupInputArea();
-                        }
-                    }
-                    if (!!imgURL) {
-                        cm.doLinkOrImage(init, fixupInputArea, true, imgURL);
-                    }
-                }
-                catch (err) {
-                    imgURL = getImage(url, validImgExtensions, getExtension);
-                    if (!!imgURL) {
-                        cm.doLinkOrImage(init, fixupInputArea, true, imgURL);
-                    }
-                    else {
-                        if (url.substring(0, 10) === 'data:image') {
-                            $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
-                            fixupInputArea();
-                        }
-                        else {
-                            cm.doLinkOrImage(init, fixupInputArea, false, url);
-                        }
-                    }
-                }
+                remoteHandler(html, url, cm, init, fixupInputArea);
             }
+            /**
+             * If event.dataTransfer does not have html or url for the item(s), then try to upload it as a file
+             *
+             * localHandler() will deal with all of the error checking/handling for this
+             */
             else {
                 var files = event.dataTransfer.files;
-                var multiple = files.length > 1;
-                var urls = [];
-                var num = cm.addLinkDef(init) + 1;
-                var deferred = [];
-                checkFolder().fail(function() {
-                    notUploaded(multiple);
-                }).done(function(path) {
-                    if (!!path) {
-                        $.each(files, function (i, file) {
-                            var ext = getExtension.exec(file.name)[1];
-                            if (validImgExtensions.indexOf(ext.toLowerCase()) <= -1) {
-                                $osf.growl('Error', 'File type not supported (' +  file.name + ')', 'danger');
-                            }
-                            else {
-                                var waterbutler_url = ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage' + path + '?name=' + encodeURI(file.name) + '&type=file';
-                                deferred.push(
-                                    $.ajax({
-                                        url: waterbutler_url,
-                                        type: 'PUT',
-                                        processData: false,
-                                        contentType: false,
-                                        beforeSend: $osf.setXHRAuthorization,
-                                        data: file
-                                    }).done(function (response) {
-                                        urls.splice(i, 0, response.data.links.download + '?mode=render');
-                                    }).fail(function (data) {
-                                        notUploaded(false);
-                                    })
-                                );
-                            }
-                        });
-                        $.when.apply(null, deferred).done(function () {
-                            $.each(urls, function (i, url) {
-                                cm.doLinkOrImage(init, null, true, url, multiple, num + i);
-                            });
-                            fixupInputArea();
-                        });
-                    }
-                    else {
-                        notUploaded(multiple);
-                    }
-                });
-
+                localHandler(files, cm, init, fixupInputArea);
             }
             editor.marker.session.removeMarker(editor.marker.id);
             editor.marker.redraw();
             editor.marker.active = false;
         }, true);
 
+        /**
+         * Called if something is dragged over the editor and then dragged back out
+         *
+         * Removes the second cursor
+         */
         element.addEventListener('dragleave', function(event) {
             event.preventDefault();
             event.stopPropagation();
@@ -439,6 +488,8 @@ var Range = ace.require('ace/range').Range;
         });
     };
 
+    var imageFolder = 'Wiki Image Uploads';
+
     var notUploaded = function(multiple) {
         var files = multiple ? 'File(s)' : 'File';
         $osf.growl('Error', files + ' not uploaded. Please refresh the page and try ' +
@@ -446,9 +497,12 @@ var Range = ace.require('ace/range').Range;
             'if the problem persists.', 'danger');
     };
 
+    /**
+     * If the 'Wiki Image Uploads' folder does not exist for the current node, createFolder generates the request to create it
+     */
     var createFolder = function() {
         return $.ajax({
-            url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage/?name=Wiki+Image+Uploads&kind=folder',
+            url: ctx.waterbutlerURL + 'v1/resources/' + ctx.node.id + '/providers/osfstorage/?name=' + imageFolder.replace(/\s+/g, '+') + '&kind=folder',
             type:'PUT',
             beforeSend: $osf.setXHRAuthorization
         });
@@ -462,7 +516,7 @@ var Range = ace.require('ace/range').Range;
      * @returns {*} The folder's path attribute if it exists/was created
      */
     var checkFolder = function() {
-        var folder_url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/files/osfstorage/?filter[kind]=folder&filter[name]=wiki+image+uploads';
+        var folder_url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/files/osfstorage/?filter[kind]=folder&filter[name]=' + imageFolder.replace(/\s+/g, '+').toLowerCase();
         return $.ajax({
             url: folder_url,
             type: 'GET',
@@ -473,7 +527,7 @@ var Range = ace.require('ace/range').Range;
             if (json.data.length > 0) {
                 for (var i = 0, folder; folder = json.data[i]; i++) {
                     var name = folder.attributes.name;
-                    if (name === 'Wiki Image Uploads') {
+                    if (name === imageFolder) {
                         return folder.attributes.path;
                     }
                 }
@@ -483,7 +537,7 @@ var Range = ace.require('ace/range').Range;
                     return response.data.attributes.path;
                 });
             }
-        })
+        });
     };
 
     // before: contains all the text in the input box BEFORE the selection.
