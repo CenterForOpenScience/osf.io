@@ -103,7 +103,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 limitContents(item);
 
                 if (viewModel.value()) {
-                    if (item.data.path === viewModel.value()) {
+                    if (item.data.name === viewModel.value()) {
                         item.css = 'fangorn-selected';
                     }
                 }
