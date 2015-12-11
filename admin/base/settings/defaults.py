@@ -28,6 +28,14 @@ ALLOWED_HOSTS = [
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Sendgrip Email Settings - Using OSF credentials
+
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_HOST_USER = 'osf-smtp'
+EMAIL_HOST_PASSWORD = osf_settings.MAIL_PASSWORD # local.py
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
 # Application definition
 
 INSTALLED_APPS = (
