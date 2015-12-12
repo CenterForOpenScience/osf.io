@@ -26,4 +26,7 @@ def list_citation_styles():
 @must_be_contributor_or_public
 def node_citation(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    return {node.csl['id']: node.csl}
+    citationDict = {node.csl['id']: node.csl}
+    for citation in node.nonContributorCitations:
+        citationDict[citation['id']] = citation
+    return citationDict

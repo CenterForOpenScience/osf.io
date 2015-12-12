@@ -765,6 +765,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
+    nonContributorCitations = fields.DictionaryField(list=True)
+
     _meta = {
         'optimistic': True,
     }
@@ -2235,16 +2237,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         For details on this schema, see:
             https://github.com/citation-style-language/schema#csl-json-schema
         """
+
+        authors = [
+            contributor.csl_name  # method in auth/model.py which parses the names of authors
+            for contributor in self.visible_contributors
+        ]
+
         csl = {
             'id': self._id,
             'title': sanitize.unescape_entities(self.title),
-            'author': [
-                contributor.csl_name  # method in auth/model.py which parses the names of authors
-                for contributor in self.visible_contributors
-            ],
+            'author': authors,
             'publisher': 'Open Science Framework',
             'type': 'webpage',
-            'URL': self.display_absolute_url,
+            'URL': self.display_absolute_url
         }
 
         doi = self.get_identifier_value('doi')
