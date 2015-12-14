@@ -1799,29 +1799,12 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
 
     ###Create
 
-        Method:        GET
-        URL:           /links/self
-        Query Params:  <none>
-        Success:       200,
-                       {
-                         "data": {                  # "data": null, if no institution
-                           "type": "institution",
-                           "id": <institution_id>
-                         },
-                         "links": {
-                           "self":,
-                           "related",
-                         }
-                       }
-
-    ###Create
-
         Method:        PUT || PATCH
         URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
-                           "type": "institution",   # required
+                           "type": "institutions",   # required
                            "id": <institution_id>   # required
                          }
                        }

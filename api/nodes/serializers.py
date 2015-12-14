@@ -393,7 +393,7 @@ class NodeInstitutionRelationshipSerializer(JSONAPIRelationshipSerializer):
     })
 
     class Meta:
-        type_ = 'institution'
+        type_ = 'institutions'
 
     def get_self_link(self, obj):
         return obj.institution_relationship_url()

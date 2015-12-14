@@ -85,7 +85,7 @@ var institutionsViewModel = function() {
             {
                 'isCors': true,
                 'data': {
-                     'data': inst !== 'None' ? {'type': 'institution', 'id': inst} : null
+                     'data': inst !== 'None' ? {'type': 'institutions', 'id': inst} : null
                 },
                 fields: {xhrFields: {withCredentials: true}}
             }

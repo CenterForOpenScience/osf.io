@@ -759,6 +759,11 @@ class JSONAPISerializer(ser.Serializer):
         return ret
 
 class JSONAPIRelationshipSerializer(ser.Serializer):
+    """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
+    Provides a simplified serialization of the relationship, allowing for simple update request
+    bodies. Also provides links to itself and to the endpoint providing information about the related
+    object.
+    """
 
     def to_representation(self, obj, envelope='data'):
         ret = {}

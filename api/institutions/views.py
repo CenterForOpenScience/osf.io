@@ -36,9 +36,7 @@ class InstitutionMixin(object):
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView):
     """
-    Verified Institutions affiliated with COS
-
-    Paginated list of institutions
+    Paginated list of verified Institutions affiliated with COS
 
     ##Institution Attributes
 
@@ -99,8 +97,8 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
 
     ##Links
 
-        self:  the canonical api endpoint of this node
-        html:  this node's page on the OSF website
+        self:  the canonical api endpoint of this institution
+        html:  this institution's page on the OSF website
 
     #This Request/Response
 
@@ -165,32 +163,6 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
         return Node.find(query)
 
 
-class InstitutionNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin, InstitutionMixin):
-    """Detail of a node with this primary institution
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        ContributorOrPublic
-    )
-
-    required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NULL]
-    model_class = Node
-
-    serializer_class = NodeDetailSerializer
-    view_category = 'institutions'
-    view_name = 'institution-node-detail'
-
-    # overrides RetrieveAPIView
-    def get_object(self):
-        inst = self.get_institution()
-        node = self.get_node()
-        if node.primary_institution != inst:
-            raise NotFound
-        return node
-
-
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
     """Users that have been authenticated with the institution.
     """
@@ -217,31 +189,3 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     def get_queryset(self):
         query = self.get_query_from_request()
         return User.find(query)
-
-
-class InstitutionUserDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
-    """Detail of User that has the institutions as one of its affiliated_institutions.
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.INSTITUTION_READ, CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = UserDetailSerializer
-    view_category = 'institutions'
-    view_name = 'institution-user-detail'
-
-    # overrides RetrieveAPIView
-    def get_object(self):
-        user = get_object_or_error(
-            User,
-            self.kwargs['user_id'],
-            display_name='user'
-        )
-        inst = self.get_institution()
-        if inst not in user.affiliated_institutions:
-            raise NotFound
-        return user

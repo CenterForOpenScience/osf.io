@@ -20,7 +20,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         self.user.save()
         res = self.app.put_json_api(
             self.node_institution_url,
-            {'data': {'type': 'institution', 'id': self.institution._id}},
+            {'data': {'type': 'institutions', 'id': self.institution._id}},
             expect_errors=True,
             auth=self.user.auth
         )
@@ -31,7 +31,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         node = NodeFactory(creator=self.user)
         res = self.app.put_json_api(
             '/{0}nodes/{1}/relationships/institution/'.format(API_BASE, node._id),
-            {'data': {'type': 'institution', 'id': self.institution._id}},
+            {'data': {'type': 'institutions', 'id': self.institution._id}},
             expect_errors=True,
             auth=self.user.auth
         )
@@ -42,7 +42,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         node = NodeFactory(creator=self.user)
         res = self.app.put_json_api(
             '/{0}nodes/{1}/relationships/institution/'.format(API_BASE, node._id),
-            {'data': {'type': 'institution', 'id': 'not_an_id'}},
+            {'data': {'type': 'institutions', 'id': 'not_an_id'}},
             expect_errors=True,
             auth=self.user.auth
         )
@@ -68,13 +68,13 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         node = NodeFactory(creator=self.user)
         res = self.app.put_json_api(
             '/{0}nodes/{1}/relationships/institution/'.format(API_BASE, node._id),
-            {'data': {'type': 'institution', 'id': self.institution._id}},
+            {'data': {'type': 'institutions', 'id': self.institution._id}},
             auth=self.user.auth
         )
 
         assert_equal(res.status_code, 200)
         data = res.json['data']['data']
-        assert_equal(data['type'], 'institution')
+        assert_equal(data['type'], 'institutions')
         assert_equal(data['id'], self.institution._id)
         node.reload()
         assert_equal(node.primary_institution, self.institution)
@@ -85,13 +85,13 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         node = NodeFactory(creator=self.user)
         res = self.app.patch_json_api(
             '/{0}nodes/{1}/relationships/institution/'.format(API_BASE, node._id),
-            {'data': {'type': 'institution', 'id': self.institution._id}},
+            {'data': {'type': 'institutions', 'id': self.institution._id}},
             auth=self.user.auth
         )
 
         assert_equal(res.status_code, 200)
         data = res.json['data']['data']
-        assert_equal(data['type'], 'institution')
+        assert_equal(data['type'], 'institutions')
         assert_equal(data['id'], self.institution._id)
         node.reload()
         assert_equal(node.primary_institution, self.institution)
@@ -203,7 +203,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         res = self.app.get(self.node_institution_url)
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['data']['type'], 'institution')
+        assert_equal(res.json['data']['data']['type'], 'institutions')
         assert_equal(res.json['data']['data']['id'], self.institution._id)
 
     def test_retrieve_private_node_no_auth(self):
@@ -236,7 +236,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['data']['type'], 'institution')
+        assert_equal(res.json['data']['data']['type'], 'institutions')
         assert_equal(res.json['data']['data']['id'], self.institution._id)
 
     def test_retrieve_private_node_wrong_auth(self):
