@@ -3056,7 +3056,7 @@ class TestProject(OsfTestCase):
 
 class TestParentNode(OsfTestCase):
     def setUp(self):
-        super(TestParent, self).setUp()
+        super(TestParentNode, self).setUp()
         # Create project
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
