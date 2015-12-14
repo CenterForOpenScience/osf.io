@@ -902,6 +902,15 @@ class TestDisablingUsers(OsfTestCase):
         assert_false(self.user.is_disabled)
         assert_true(self.user.is_active)
 
+    def test_disable_user(self):
+        self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
+        self.user.save()
+        self.user.disable_user()
+
+        assert_true(self.user.is_disabled)
+        assert_true(isinstance(self.user.date_disabled, datetime.datetime))
+        assert_false(self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+
 
 class TestMergingUsers(OsfTestCase):
 

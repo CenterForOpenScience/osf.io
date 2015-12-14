@@ -977,6 +977,22 @@ class User(GuidStoredObject, AddonModelMixin):
         db = db or framework.mongo.database
         return analytics.get_total_activity_count(self._primary_key, db=db)
 
+    def disable_user(self):
+        import mailchimp
+        if settings.MAILCHIMP_API_KEY:
+            m = mailchimp.Mailchimp(settings.MAILCHIMP_API_KEY)
+            mailing_list = m.lists.list(filters={'list_name': settings.MAILCHIMP_GENERAL_LIST})
+            list_id = mailing_list['data'][0]['id']
+            m.lists.unsubscribe(id=list_id, email={'email': self.username}, send_goodbye=True)
+
+        # Update mailing_list user field
+        if self.mailchimp_mailing_lists is None:
+            self.mailchimp_mailing_lists = {}
+
+        self.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = False
+        self.is_disabled = True
+        self.save()
+
     @property
     def is_disabled(self):
         """Whether or not this account has been disabled.
