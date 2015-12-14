@@ -73,6 +73,10 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     #     return self.is_admin
 
     @property
+    def full_name(self):
+        return ("{0} {1}".format(self.first_name, self.last_name)).strip() or self.email
+
+    @property
     def osf_user(self):
         if not self.osf_id:
             raise RuntimeError('This user does not have an associated Osf User')
