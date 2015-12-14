@@ -205,25 +205,25 @@ var LogPieces = {
         //
     path: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            return returnTextParams('path', 'a file', logObject);
         }
     },
         //
     filename: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            return returnTextParams('filename', 'a title', logObject);
         }
     },
         //
     study: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            return returnTextParams('study', 'a study', logObject);
         }
     },
         //
     dataset: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            return returnTextParams('dataset', 'a dataset', logObject);
         }
     },
 };
