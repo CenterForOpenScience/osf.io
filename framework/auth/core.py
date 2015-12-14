@@ -990,9 +990,9 @@ class User(GuidStoredObject, AddonModelMixin):
     @is_disabled.setter
     def is_disabled(self, val):
         """Set whether or not this account has been disabled."""
-        if val:
+        if val and not self.date_disabled:
             self.date_disabled = dt.datetime.utcnow()
-        else:
+        elif val is False:
             self.date_disabled = None
 
     @property

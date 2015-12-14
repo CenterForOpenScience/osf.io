@@ -902,6 +902,19 @@ class TestDisablingUsers(OsfTestCase):
         assert_false(self.user.is_disabled)
         assert_true(self.user.is_active)
 
+    def test_is_disabled_idempotency(self):
+        self.user.is_disabled = True
+        self.user.save()
+
+        old_date_disabled = self.user.date_disabled
+
+        self.user.is_disabled = True
+        self.user.save()
+
+        new_date_disabled = self.user.date_disabled
+
+        assert_equal(new_date_disabled, old_date_disabled)
+
 
 class TestMergingUsers(OsfTestCase):
 
