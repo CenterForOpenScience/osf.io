@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
+import mailchimp
 import itertools
 import logging
 import re
@@ -978,7 +979,6 @@ class User(GuidStoredObject, AddonModelMixin):
         return analytics.get_total_activity_count(self._primary_key, db=db)
 
     def disable_user(self):
-        import mailchimp
         if settings.MAILCHIMP_API_KEY:
             m = mailchimp.Mailchimp(settings.MAILCHIMP_API_KEY)
             mailing_list = m.lists.list(filters={'list_name': settings.MAILCHIMP_GENERAL_LIST})
