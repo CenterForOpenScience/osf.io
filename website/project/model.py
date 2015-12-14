@@ -4149,6 +4149,16 @@ class DraftRegistration(StoredObject):
         else:
             return True
 
+    @property
+    def is_rejected(self):
+        if self.requires_approval:
+            if not self.approval:
+                return False
+            else:
+                return self.approval.is_rejected
+        else:
+            return False
+
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
         draft = cls(
