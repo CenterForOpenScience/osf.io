@@ -4,17 +4,55 @@ from framework.routing import Rule, json_renderer
 
 from website.addons.github import views
 
-settings_routes = {
+api_routes = {
     'rules': [
 
-        # Configuration
+        Rule(
+            [
+                '/settings/github/accounts/',
+            ],
+            'get',
+            views.github_account_list,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/github/settings/',
+                '/project/<pid>/node/<nid>/github/settings/'
+            ],
+            'get',
+            views.github_get_config,
+            json_renderer,
+        ),
+
         Rule(
             [
                 '/project/<pid>/github/settings/',
                 '/project/<pid>/node/<nid>/github/settings/',
             ],
-            'post',
+            'put',
             views.github_set_config,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/github/user_auth/',
+                '/project/<pid>/node/<nid>/github/user_auth/'
+            ],
+            'put',
+            views.github_import_auth,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/github/user_auth/',
+                '/project/<pid>/node/<nid>/github/user_auth/'
+            ],
+            'delete',
+            views.github_deauthorize_node,
             json_renderer,
         ),
 
@@ -50,12 +88,6 @@ settings_routes = {
             views.github_hook_callback,
             json_renderer,
         ),
-    ],
-    'prefix': '/api/v1',
-}
-
-api_routes = {
-    'rules': [
 
         Rule(
             '/github/repo/create/',

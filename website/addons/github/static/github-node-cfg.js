@@ -74,7 +74,7 @@ var GithubConfigHelper = (function() {
         });
 
         $('#githubImportToken').on('click', function() {
-            $osf.postJSON(
+            $osf.putJSON(
                 nodeApiUrl + 'github/user_auth/',
                 {}
             ).done(function() {

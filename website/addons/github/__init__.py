@@ -9,7 +9,7 @@ MODELS = [
 USER_SETTINGS_MODEL = model.GitHubUserSettings
 NODE_SETTINGS_MODEL = model.GitHubNodeSettings
 
-ROUTES = [routes.api_routes, routes.settings_routes]
+ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'github'
 FULL_NAME = 'GitHub'
