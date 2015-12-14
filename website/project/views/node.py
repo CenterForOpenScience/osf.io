@@ -584,9 +584,8 @@ def update_node(auth, node, **kwargs):
         for key in updated_field_names
         if key != 'logs'
     }
-    return {
-        'updated_fields': updated_fields_dict
-    }
+    node.save()
+    return {'status': 'success'}
 
 
 @must_be_valid_project
