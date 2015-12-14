@@ -30,7 +30,7 @@ def update_or_create(inst):
     return new_inst, True
 
 def add_institutions():
-    user = User.find_one(Q('username', 'eq', 'qwe@net.com'))
+    user = User.find_one(Q('username', 'eq', 'a@a.com'))
     user.affiliated_institutions = []
     user.save()
     for inst in INSTITUTIONS:

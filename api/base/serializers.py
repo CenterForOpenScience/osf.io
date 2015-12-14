@@ -765,15 +765,14 @@ class JSONAPIRelationshipSerializer(ser.Serializer):
     object.
     """
 
-    def to_representation(self, obj, envelope='data'):
-        ret = {}
+    def to_representation(self, obj):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
 
         data = collections.OrderedDict([
-            ('links', collections.OrderedDict()),
             ('data', collections.OrderedDict()),
+            ('links', collections.OrderedDict()),
         ])
         relation_id_field = self.fields['id']
 
@@ -783,8 +782,7 @@ class JSONAPIRelationshipSerializer(ser.Serializer):
         data['data'] = {'type': type_, 'id': relationship} if relationship else None
         data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
 
-        ret.update({envelope: data} if envelope else data)
-        return ret
+        return data
 
 
 def DevOnly(field):
