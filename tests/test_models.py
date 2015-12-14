@@ -902,10 +902,11 @@ class TestDisablingUsers(OsfTestCase):
         assert_false(self.user.is_disabled)
         assert_true(self.user.is_active)
 
-    def test_disable_user(self):
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_disable_account(self):
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
-        self.user.disable_user()
+        self.user.disable_account()
 
         assert_true(self.user.is_disabled)
         assert_true(isinstance(self.user.date_disabled, datetime.datetime))
