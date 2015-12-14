@@ -414,8 +414,7 @@ ${parent.javascript_bottom()}
         node: {
             hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
-            tags: ${ node['tags'] | sjson, n },
-            alternativeCitations: ${ node['alternative_citations'] | sjson, n}
+            tags: ${ node['tags'] | sjson, n }
         }
     });
 </script>
