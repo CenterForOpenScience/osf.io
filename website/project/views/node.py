@@ -582,10 +582,10 @@ def update_node(auth, node, **kwargs):
     updated_fields_dict = {
         key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
         for key in updated_field_names
-        if key != 'logs'
+        if key != 'logs' and key != 'date_modified'
     }
     node.save()
-    return {'status': 'success'}
+    return {'updated_fields': updated_fields_dict}
 
 
 @must_be_valid_project
