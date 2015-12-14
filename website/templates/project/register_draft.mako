@@ -10,63 +10,48 @@
     </div>
     <hr>
     <div class="row">
-        <div class="col-lg-12 large-12" style="padding-left: 30px">
-            <div data-bind="foreach: {data: draft.pages, as: 'page'}">
-                <h3 data-bind="attr.id: page.id, text: page.title"></h3>
-                <div data-bind="foreach: {data: page.questions, as: 'question'}">
-                    <p>
-                        <strong data-bind="attr.id: question.id, text: question.title"></strong>:
-                        <!-- ko if: value -->
-                        <span data-bind="text: question.value"></span>
-                        <!-- /ko -->
-                    </p>
-                </div>
+      <div class="col-lg-12 large-12" style="padding-left: 30px">
+         <div data-bind="foreach: {data: draft.pages, as: 'page'}">
+           <h3 data-bind="attr.id: page.id, text: page.title"></h3>
+             <div data-bind="foreach: {data: page.questions, as: 'question'}">
+               <p>
+                 <strong data-bind="attr.id: question.id, text: question.title"></strong>:
+                 <span data-bind="previewQuestion: $root.editor.context(question, $root.editor)"></span>
+               </p>
+             </div>
             </div>
         </div>
     </div>
-    <div class="row-md-12">
-        <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
+    <div class="row-md-12 scripted">
+        <span data-bind="ifnot: draft.isPendingApproval">
+          <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
 
-## TODO(lyndsysimon): Factor these buttons out when prereg is merged in.
-##         <span data-bind="if: draft.metaSchema.name === 'Prereg Challenge'" >
-##           <a type="button" class="btn btn-success pull-right" data-bind="click: submitForReview">Submit to the Pre-Registration Challenge</a>
-##           <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: registerDraft">Register without review</button>
-##         </span>
+          <button id="register-submit" type="button" class="btn btn-success pull-right"
+                  style="margin-left: 5px;"
+                  data-bind="visible: draft.requiresApproval,
+                             click: draft.submitForReview,
+                             enable: editor.canSubmit">
+            Submit for review
+          </button>
+        </span>
+        <span data-bind="if: draft.isPendingApproval">
+          <a type="button" class="btn btn-default pull-left" href="${web_url_for('node_registrations', pid=node['id'], tab='drafts')}"> Back </a>
+        </span>
 
-            <button id="register-submit" type="button" class="btn btn-success pull-right" data-bind="click: registerDraft">Register</button>
-## TODO(lyndsysimon): This button is not applicable until prereg is merged in.
-##             <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: submitForReview, visible: draft.requiresApproval">Submit for review</button>
+        <span data-bind="if: draft.metaSchema.name === 'Prereg Challenge'">
+          <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview">Register without review</button>
+        </span>
+
+        <button id="register-submit" type="button" class="btn btn-success pull-right"
+                style="margin-left: 5px;"
+                data-bind="visible: !draft.requiresApproval(), click: draft.beforeRegister.bind(draft, null)">
+          Register
+        </button>
     </div>
 </div>
 
-<script type="text/html" id="preRegistrationTemplate">
-  <ul data-bind="foreach: preRegisterPrompts">
-    <li data-bind="html: $data"></li>
-  </ul>
-  <div class="form-group">
-    <label class="control-label">Registration Choice</label>
-    <select class="form-control" data-bind="options: registrationOptions,
-                                            value: registrationChoice,
-                                            optionsText: 'message',
-                                            optionsValue: 'value',
-                                            event: {change: checkShowEmbargoDatePicker}" ></select>
-  </div>
-  <span data-bind="visible: showEmbargoDatePicker">
-    <div class="form-group">
-      <label class="control-label">
-        Embargo End Date 
-      </label>
-      <input type="text" class="form-control" data-bind="datePicker: {value: $root.pikaday, valid: isEmbargoEndDateValid}">
-    </div>
-  </span>
-  <em class="text-danger" data-bind="validationMessage: $root.pikaday"></em>
-  <div class="modal-footer">
-    <button class="btn btn-default" data-bind="click: close">Cancel</button>
-    <button class="btn btn-success" data-bind="click: register, enable: canRegister">
-      Register
-    </button>
-  </div>
-</script>
+<%include file="project/registration_utils.mako" />
+<%include file="project/registration_editor_extensions.mako" />
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}

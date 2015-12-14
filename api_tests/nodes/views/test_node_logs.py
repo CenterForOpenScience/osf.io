@@ -8,7 +8,9 @@ from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase, assert_datetime_equal
 from tests.factories import (
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RegistrationFactory,
+    RetractedRegistrationFactory
 )
 import datetime
 
@@ -120,3 +122,11 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), len(self.public_project.logs))
         assert_equal(res.json['data'][API_LATEST]['attributes']['action'], 'pointer_created')
+
+    def test_cannot_access_retracted_node_logs(self):
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/logs/'.format(API_BASE, registration._id)
+        retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)

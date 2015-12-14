@@ -8,11 +8,7 @@ from framework.exceptions import PermissionsError
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
-from website.addons.zotero.tests.factories import (
-    ZoteroAccountFactory,
-    ZoteroUserSettingsFactory,
-    ExternalAccountFactory,
-)
+from website.addons.zotero.tests.factories import ZoteroAccountFactory
 from website.addons.zotero.provider import ZoteroCitationsProvider
 
 from pyzotero.zotero_errors import UserNotAuthorised
@@ -64,13 +60,6 @@ class ZoteroProviderTestCase(OsfTestCase):
             'Fake Key'
         )
 
-    def test_zotero_has_access(self):
-        mock_client = mock.Mock()
-        mock_client.collections.return_value = UserNotAuthorised
-        self.provider._client = mock_client
-        self.provider._client
-        assert_raises(HTTPError(403))
-
 class ZoteroNodeSettingsTestCase(OsfTestCase):
 
     def setUp(self):
@@ -104,7 +93,7 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
         assert_equal(api, 'testapi')
 
     def test_set_auth(self):
-        external_account = ExternalAccountFactory()
+        external_account = ZoteroAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
@@ -139,7 +128,7 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
         )
 
     def test_set_auth_wrong_user(self):
-        external_account = ExternalAccountFactory()
+        external_account = ZoteroAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
@@ -150,7 +139,7 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
             )
 
     def test_deauthorize(self):
-        self.node_settings.external_account = ExternalAccountFactory()
+        self.node_settings.external_account = ZoteroAccountFactory()
         self.node_settings.zotero_list_id = 'something'
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
@@ -168,7 +157,7 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
         assert_in('project', params)
 
     def test_clear_auth(self):
-        self.node_settings.external_account = ExternalAccountFactory()
+        self.node_settings.external_account = ZoteroAccountFactory()
         self.node_settings.zotero_list_id = 'something'
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
@@ -183,7 +172,7 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
         folder_id = 'fake-folder-id'
         folder_name = 'fake-folder-name'
 
-        external_account = ExternalAccountFactory()
+        external_account = ZoteroAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
 
@@ -222,7 +211,7 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
         assert_equal(log.params['folder_name'], folder_name)
 
     def test_has_auth_false(self):
-        external_account = ExternalAccountFactory()
+        external_account = ZoteroAccountFactory()
 
         assert_false(self.node_settings.has_auth)
 
@@ -240,7 +229,7 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
         assert_false(self.node_settings.has_auth)
 
     def test_has_auth_true(self):
-        external_account = ExternalAccountFactory()
+        external_account = ZoteroAccountFactory()
         self.user.external_accounts.append(external_account)
 
         self.node_settings.set_auth(external_account, self.user)
@@ -291,7 +280,7 @@ class ZoteroUserSettingsTestCase(OsfTestCase):
         self.node = ProjectFactory()
         self.user = self.node.creator
 
-        self.external_account = ExternalAccountFactory()
+        self.external_account = ZoteroAccountFactory()
 
         self.user.external_accounts.append(self.external_account)
         self.user.save()
@@ -350,7 +339,7 @@ class ZoteroUserSettingsTestCase(OsfTestCase):
         assert_false(
             self.user_settings.verify_oauth_access(
                 node=self.node,
-                external_account=ExternalAccountFactory()
+                external_account=ZoteroAccountFactory()
             )
         )
 

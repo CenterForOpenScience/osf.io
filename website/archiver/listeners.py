@@ -46,7 +46,9 @@ def archive_callback(dst):
     root_job.sent = True
     root_job.save()
     if root_job.success:
-        dst.sanction.ask(root.active_contributors())
+        # Prevent circular import with app.py
+        from website.archiver import tasks
+        tasks.archive_success.delay(dst_pk=root._id)
     else:
         archiver_utils.handle_archive_fail(
             ARCHIVER_UNCAUGHT_ERROR,
