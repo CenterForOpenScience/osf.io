@@ -770,7 +770,7 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-            'alternative_citations': [citation.to_json() for citation in node.alternativeCitations],
+            'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': bool(node.draft_registrations_active)
         },
         'parent_node': {
@@ -1057,13 +1057,7 @@ def node_child_tree(user, node_ids):
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
     tree = node_child_tree(auth.user, [node._id])
-    if tree:
-        return tree
-    else:
-        raise HTTPError(
-            http.FORBIDDEN,
-            data=dict(message_long='User does not have read permission.')
-        )
+    return tree
 
 
 @must_be_contributor_or_public

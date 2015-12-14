@@ -769,7 +769,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
-    alternativeCitations = fields.ForeignField('alternativecitation', list=True, backref='citations')
+    alternative_citations = fields.ForeignField('alternativecitation', list=True, backref='citations')
 
     _meta = {
         'optimistic': True,
@@ -2017,7 +2017,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.permissions = {}
         forked.visible_contributor_ids = []
 
-        for citation in self.alternativeCitations:
+        for citation in self.alternative_citations:
             forked.add_citation(
                 auth=auth,
                 citation=citation.clone(),
@@ -2101,7 +2101,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
-        registered.alternativeCitations = self.alternativeCitations
+        registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
@@ -2178,7 +2178,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not citation:
             citation = AlternativeCitation(**kwargs)
         citation.save()
-        self.alternativeCitations.append(citation)
+        self.alternative_citations.append(citation)
         if log:
             self.add_log(
                 action=NodeLog.CITATION_ADDED,
@@ -2219,7 +2219,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return instance
 
     def remove_citation(self, auth, instance, save=True, log=True):
-        self.alternativeCitations.remove(instance)
+        self.alternative_citations.remove(instance)
         if log:
             self.add_log(
                 action=NodeLog.CITATION_REMOVED,
@@ -4076,8 +4076,8 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
 class AlternativeCitation(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    name = fields.StringField(required=True)
-    text = fields.StringField(required=True)
+    name = fields.StringField(required=True, validate=MaxLengthValidator(256))
+    text = fields.StringField(required=True, validate=MaxLengthValidator(2048))
 
     def to_json(self):
         return {

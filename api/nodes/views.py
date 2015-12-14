@@ -1550,7 +1550,7 @@ class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, 
     view_name = 'alternative-citations'
 
     def get_queryset(self):
-        return self.get_node().alternativeCitations
+        return self.get_node().alternative_citations
 
 class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Details about an alternative citations for a project.
@@ -1594,7 +1594,7 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
 
     def get_object(self):
         try:
-            return self.get_node().alternativeCitations.find(Q('_id', 'eq', str(self.kwargs['citation_id'])))[0]
+            return self.get_node().alternative_citations.find(Q('_id', 'eq', str(self.kwargs['citation_id'])))[0]
         except IndexError:
             raise NotFound
 
@@ -1799,6 +1799,11 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     Comments can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
     operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
     (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
+    + `filter[target]=target_id` -- filter comments based on their target id.
+
+    The list of comments can be filtered by target id. For example, to get all comments with target = project,
+    the target_id would be the project_id.
 
     #This Request/Response
     """
