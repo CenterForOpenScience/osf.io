@@ -185,13 +185,21 @@ var LogPieces = {
     //
     source: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            var source = logObject.attributes.params.source;
+            if(paramIsReturned(source, logObject)){
+                return m('a', {href: source.url}, source.materialized);
+            }
+            return m('span','a name/location' );
         }
     },
     //
     destination: {
         view: function (ctrl, logObject) {
-            return m('span', 'Placeholder');
+            var destination = logObject.attributes.params.destination;
+            if(paramIsReturned(destination, logObject)){
+                return m('a', {href: destination.url}, destination.materialized);
+            }
+            return m('span','a new name/location' );
         }
     },
         //
