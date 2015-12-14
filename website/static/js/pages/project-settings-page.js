@@ -54,55 +54,8 @@ if ($('#wgrid').length) {
         });
     });
 }
-
-
-var institutionsViewModel = function() {
-    ko.punches.enableAll();
-    var self = this;
-    self.primaryInstitution = ko.observable('None');
-    self.availableInstitutions = ko.observable();
-    $.ajax({
-        url: ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/?embed=institutions',
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
-        self.availableInstitutions(response.data.embeds.institutions.data);
-    });
-    $.ajax({
-        url: ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institution',
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
-        if (response.data.attributes){
-            self.primaryInstitution(response.data.attributes.name);
-        }
-    });
-    self.submitInst = function() {
-        var inst = $('input[name=primaryInst]:checked', '#selectedInst').val();
-        $osf.ajaxJSON(
-            'PUT',
-            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/',
-            {
-                'isCors': true,
-                'data': {
-                     'data': inst !== 'None' ? {'type': 'institutions', 'id': inst} : null
-                },
-                fields: {xhrFields: {withCredentials: true}}
-            }
-        ).done(function (response) {
-                $osf.growl('It worked!');
-                self.primaryInstitution(inst);
-        }).fail(function (response) {
-            $osf.growl('Error!');
-        });
-    };
-};
-
 $(document).ready(function() {
-    var self = this;
-    self.instViewModel = new institutionsViewModel();
     // Apply KO bindings for Project Settings
-    $osf.applyBindings(self.instViewModel, '#Institutions');
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
     for (var i = 0; i < keys.length; i++) {
@@ -300,4 +253,3 @@ $(document).ready(function() {
     });
 
 });
-

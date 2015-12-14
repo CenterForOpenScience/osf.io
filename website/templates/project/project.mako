@@ -21,9 +21,6 @@
                     % endif
                 % endif
                 <h2 class="node-title">
-                    % if node['institution']:
-                        <img class="img-circle" height="75" width="75" id="instLogo" data-bind="attr: {src: instLogoPath}">
-                    % endif
                     <span id="nodeTitleEditable" class="overflow"> ${node['title']}</span>
                 </h2>
             </div>
@@ -197,8 +194,6 @@
                       </license-picker>
                     </p>
                  % endif
-                <span id="institution">Affiliated Institution:</span>
-                <span class="text-muted"> ${node['institution']} </span>
             </div>
         </div>
 
