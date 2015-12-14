@@ -1,6 +1,5 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound
 
 from modularodm import Q
 
@@ -12,10 +11,8 @@ from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
-from api.nodes.views import NodeMixin
-from api.nodes.serializers import NodeSerializer, NodeDetailSerializer
-from api.nodes.permissions import ContributorOrPublic
-from api.users.serializers import UserSerializer, UserDetailSerializer
+from api.nodes.serializers import NodeSerializer
+from api.users.serializers import UserSerializer
 
 from .serializers import InstitutionSerializer
 

@@ -21,7 +21,6 @@ var InstitutionViewModel = function() {
         console.log(response.data);
         self.allNodes(response.data);
     }).fail(function(response){
-        debugger;
     });
 };
 
