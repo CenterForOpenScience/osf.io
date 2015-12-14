@@ -292,16 +292,16 @@
                                 <span data-bind="text: text"></span>
                             <!-- /ko -->
                             <!-- ko if: view() === 'edit' -->
-                                <div class="f-w-xl m-t-md">Citation Name</div>
-                                <input data-bind="if: name !== undefined, value: name" class="form-control"/>
+                                <div class="f-w-xl m-t-md">Citation name</div>
+                                <input data-bind="if: name !== undefined, value: name" placeholder="Required" class="form-control"/>
                                 <div class="f-w-xl m-t-sm">Citation</div>
-                                <textarea data-bind="if: text !== undefined, value: text" class="form-control" rows="4"></textarea>
+                                <textarea data-bind="if: text !== undefined, value: text" placeholder="Required" class="form-control" rows="4"></textarea>
                                 <div data-bind="visible: showMessages, css: 'text-danger'">
                                     <p class="m-t-sm" data-bind="validationMessage: name"></p>
                                     <p class="m-t-sm" data-bind="validationMessage: text"></p>
                                 </div>
                                 <div class="m-t-md">
-                                    <button class="btn btn-danger" data-bind="click: function() {cancel($parent)}">Cancel</button>
+                                    <button class="btn btn-default" data-bind="click: function() {cancel($parent)}">Cancel</button>
                                     <button class="btn btn-success" data-bind="click: function() {save($parent)}">Save</button>
                                 </div>
                             <!-- /ko -->
@@ -309,7 +309,7 @@
                     </div>
                     % if 'admin' in user['permissions'] and not node['is_registration']:
                         <!-- ko ifnot: editing() -->
-                            <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default m-t-md"><i class="fa fa-plus"></i> Add Citation</button>
+                        <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default btn-sm m-t-md"><i class="fa fa-plus"></i> Add Citation</button>
                         <!-- /ko -->
                     % endif
                 </div>
