@@ -218,34 +218,10 @@ var Range = ace.require('ace/range').Range;
 
     };
 
-    /**
-     * Attempts to parse out an image from the url
-     *
-     * Uses the fact that Google Images uses imgurl= as a url parameter for the images original url
-     *
-     * @param url - The url we are attempting to parse
-     * @param validImgExtensions - The image extensions we allow on the wiki
-     * @param getExtension - regex to parse out extensions
-     * @returns {*} an imgurl if one is found, else returns undefined
-     */
-    var getImage = function(url, validImgExtensions, getExtension) {
-        var findImgUrl = /[?&]imgurl=([^&]+)/;
-        try {
-            return findImgUrl.exec(url)[1];
-        } catch (err) {
-            var ext = getExtension.exec(url)[1];
-            try {
-                if (validImgExtensions.indexOf(ext.toLowerCase()) >= 0) {
-                    return url;
-                }
-            } catch (err) {
-                return undefined;
-            }
-            return undefined;
-        }
-    };
+    var getExtension = /(?:\.([^.]+))?$/;
+    var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
 
-    var localHandler = function(files, cm, init, fixupInputArea) {
+    var localFileHandler = function(files, cm, init, fixupInputArea) {
         var multiple = files.length > 1;
         var urls = [];
         var num = cm.addLinkDef(init) + 1;
@@ -290,42 +266,29 @@ var Range = ace.require('ace/range').Range;
         });
     };
 
-    var remoteHandler = function(html, url, cm, init, fixupInputArea) {
-        var imgURL;
-        try {
-            var getSrc = /(src=")(.*?)(")/;
-            imgURL = getSrc.exec(html)[2];
-            if (imgURL.substring(0, 10) === 'data:image') {
-                imgURL = getImage(url, validImgExtensions, getExtension);
-                if (!imgURL) {
-                    $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
-                    fixupInputArea(init);
-                }
-            }
-            if (!!imgURL) {
-                cm.doLinkOrImage(init, fixupInputArea, true, imgURL);
-            }
+    var remoteFileHandler = function(html, url, cm, init, fixupInputArea) {
+        var getSrc = /src="([^"]+)"/;
+        var src = getSrc.exec(html);
+        //The best way to get the image is from the src attribute of image html if available
+        //If not we will move forward with the URL that is provided to us
+        var imgURL = src ? src[1] : url;
+
+        //We currently do not support data:image URL's
+        if (imgURL.substring(0, 10) === 'data:image') {
+            $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
+            fixupInputArea(init);
+            return;
         }
-        catch (err) {
-            imgURL = getImage(url, validImgExtensions, getExtension);
-            if (!!imgURL) {
-                cm.doLinkOrImage(init, fixupInputArea, true, imgURL);
-            }
-            else {
-                if (url.substring(0, 10) === 'data:image') {
-                    $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
-                    fixupInputArea(init);
-                }
-                else {
-                    cm.doLinkOrImage(init, fixupInputArea, false, url);
-                }
-            }
+        //if we got the image url from src we can treat it as an image
+        var isImg = src;
+        if (!isImg) {
+            //Check our url to see if it ends in a valid image extension.
+            //If yes, we can treat it as an image.  Otherwise, it gets treated as a normal link
+            var ext = getExtension.exec(imgURL)[1];
+            isImg = !!ext ? validImgExtensions.indexOf(ext.toLowerCase()) > -1 : false;
         }
+        cm.doLinkOrImage(init, fixupInputArea, isImg, url);
     };
-
-    var getExtension = /(?:\.([^.]+))?$/;
-    var validImgExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
-
 
     /**
      * Adds Image/Link Drag and Drop functionality to the Ace Editor
@@ -350,6 +313,7 @@ var Range = ace.require('ace/range').Range;
         editor.marker.active = false;
         editor.marker.update = function(html, markerLayer, session, config) {
             var height = config.lineHeight;
+
             var width = config.characterWidth;
             var top = markerLayer.$getTop(this.cursor.row, config);
             var left = markerLayer.$padding + this.cursor.column * width;
@@ -453,21 +417,21 @@ var Range = ace.require('ace/range').Range;
              *
              * url will be some sort of url that is hopefully an image url (or an image can be parsed out)
              *
-             * remoteHandler() will attempt to figure this out and react accordingly
+             * remoteFileHandler() will attempt to figure this out and react accordingly
              */
             var html = event.dataTransfer.getData('text/html');
             var url = event.dataTransfer.getData('URL');
             if (!!html || !!url) {
-                remoteHandler(html, url, cm, init, fixupInputArea);
+                remoteFileHandler(html, url, cm, init, fixupInputArea);
             }
             /**
              * If event.dataTransfer does not have html or url for the item(s), then try to upload it as a file
              *
-             * localHandler() will deal with all of the error checking/handling for this
+             * localFileHandler() will deal with all of the error checking/handling for this
              */
             else {
                 var files = event.dataTransfer.files;
-                localHandler(files, cm, init, fixupInputArea);
+                localFileHandler(files, cm, init, fixupInputArea);
             }
             editor.marker.session.removeMarker(editor.marker.id);
             editor.marker.redraw();
