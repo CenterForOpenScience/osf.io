@@ -1599,7 +1599,7 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
             raise NotFound
 
     def perform_destroy(self, instance):
-        self.get_node().remove_citation(get_user_auth(self.request), instance)
+        self.get_node().remove_citation(get_user_auth(self.request), instance, save=True)
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.

@@ -341,7 +341,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], "There is already an alternative citation named 'name2'")
+        assert_equal(res.json['errors'][0]['detail'], "There is already a citation named 'name2'")
         citation.reload()
         assert_equal(citation.name, "name")
 
@@ -354,7 +354,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], "There is already an alternative citation named 'name2'")
+        assert_equal(res.json['errors'][0]['detail'], "There is already a citation named 'name2'")
         citation.reload()
         assert_equal(citation.name, "name")
 
@@ -538,7 +538,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 2)
         errors = [error['detail'] for error in res.json['errors']]
-        assert_in("There is already an alternative citation named 'name2'", errors)
+        assert_in("There is already a citation named 'name2'", errors)
         assert_in("Citation matches 'name2'", errors)
         citation.reload()
         assert_equal(citation.text, "text")
@@ -554,7 +554,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 2)
         errors = [error['detail'] for error in res.json['errors']]
-        assert_in("There is already an alternative citation named 'name2'", errors)
+        assert_in("There is already a citation named 'name2'", errors)
         assert_in("Citation matches 'name2'", errors)
         citation.reload()
         assert_equal(citation.text, "text")
@@ -927,7 +927,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], "There is already an alternative citation named 'name2'")
+        assert_equal(res.json['errors'][0]['detail'], "There is already a citation named 'name2'")
         citation.reload()
         assert_equal(citation.text, "text")
         assert_equal(citation.name, "name")
@@ -941,7 +941,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], "There is already an alternative citation named 'name2'")
+        assert_equal(res.json['errors'][0]['detail'], "There is already a citation named 'name2'")
         citation.reload()
         assert_equal(citation.text, "text")
         assert_equal(citation.name, "name")

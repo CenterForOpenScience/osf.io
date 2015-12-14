@@ -294,21 +294,21 @@ on
 </script>
 
 <script type="text/html" id="citation_added">
-added an alternative citation named {{ params.citation }}
+added a citation named {{ params.citation.name }}
 </script>
 
 <script type="text/html" id="citation_edited">
 {{#if params.citation.new_name}}
-  changed the name of an alternative citation from {{ params.citation.name }} to {{ params.citation.new_name }}
+  changed the name of a citation from {{ params.citation.name }} to {{ params.citation.new_name }}
   {{#if params.citation.new_text}}
     and edited its text
   {{/if}}
 {{/if}}
 {{#ifnot params.citation.new_name}}
-  edited the text of an alternative citation named {{ params.citation.name }}
+  edited the text of a citation named {{ params.citation.name }}
 {{/ifnot}}
 </script>
 
 <script type="text/html" id="citation_removed">
-removed an alternative citation named {{ params.citation }}
+removed a citation named {{ params.citation.name }}
 </script>

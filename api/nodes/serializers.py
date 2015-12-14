@@ -392,7 +392,7 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
             raise ValidationError(detail=errors)
         node = self.context['view'].get_node()
         auth = Auth(self.context['request']._user)
-        citation = node.add_citation(auth, **validated_data)
+        citation = node.add_citation(auth, save=True, **validated_data)
         return citation
 
     def update(self, instance, validated_data):
@@ -401,7 +401,7 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
             raise ValidationError(detail=errors)
         node = self.context['view'].get_node()
         auth = Auth(self.context['request']._user)
-        instance = node.edit_citation(auth, instance, **validated_data)
+        instance = node.edit_citation(auth, instance, save=True, **validated_data)
         return instance
 
     def error_checker(self, data):
@@ -410,7 +410,7 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
         text = data.get('text', None)
         citations = self.context['view'].get_node().alternative_citations
         if not (self.instance and self.instance.name == name) and citations.find(Q('name', 'eq', name)).count() > 0:
-            errors.append("There is already an alternative citation named '{}'".format(name))
+            errors.append("There is already a citation named '{}'".format(name))
         if not (self.instance and self.instance.text == text):
             matching_citations = citations.find(Q('text', 'eq', text))
             if matching_citations.count() > 0:

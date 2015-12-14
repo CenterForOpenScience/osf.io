@@ -83,7 +83,7 @@ var AlternativeModel = function(citation, view, parent) {
                     return true;
                 },
                 'message': function() {
-                    return 'There is already an alternative citation named \'' + self.name() + '\'';
+                    return 'There is already a citation named \'' + self.name() + '\'';
                 }
             }
         });
