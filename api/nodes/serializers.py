@@ -39,7 +39,7 @@ class NodeSerializer(JSONAPISerializer):
         'date_modified',
         'registration',
         'root',
-        'parent_node'
+        'parent'
     ])
 
     id = IDField(source='_id', read_only=True)
@@ -104,9 +104,10 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_pointers_count'},
     )))
 
-    parent_node = RelationshipField(
+    parent = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<parent_id>'}
+        related_view_kwargs={'node_id': '<parent_node._id>'},
+        source_field='parent_node'
     )
 
     registrations = DevOnly(HideIfRegistration(RelationshipField(
