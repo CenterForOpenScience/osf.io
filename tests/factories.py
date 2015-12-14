@@ -165,7 +165,7 @@ class PrivateLinkFactory(ModularOdmFactory):
     FACTORY_FOR = PrivateLink
 
     name = "link"
-    key = "foobarblaz"
+    key = Sequence(lambda n: 'foobar{}'.format(n))
     anonymous = False
     creator = SubFactory(AuthUserFactory)
 
@@ -577,6 +577,11 @@ class MockOAuthAddonUserSettings(addons_base.AddonOAuthUserSettingsBase):
 
 class MockOAuthAddonNodeSettings(addons_base.AddonOAuthNodeSettingsBase):
     oauth_provider = MockOAuth2Provider
+
+    folder_id = 'foo'
+    folder_name = 'Foo'
+    folder_path = '/Foo'
+
 
 
 class ArchiveTargetFactory(ModularOdmFactory):

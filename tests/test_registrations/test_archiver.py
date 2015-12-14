@@ -4,6 +4,9 @@ import functools
 import json
 import logging
 import itertools
+import random
+import copy
+import re
 
 import celery
 import mock  # noqa
@@ -36,12 +39,12 @@ from website.archiver.decorators import fail_archive_on_error
 from website import mails
 from website import settings
 from website.util import waterbutler_url_for
-from website.project.model import Node, NodeLog
+from website.project.model import Node, NodeLog, ensure_schemas, MetaSchema
 from website.addons.base import StorageAddonBase
-from website.util import api_url_for
 
 from tests import factories
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, fake
+from tests import utils as test_utils
 
 
 SILENT_LOGGERS = (
@@ -50,6 +53,83 @@ SILENT_LOGGERS = (
 )
 for each in SILENT_LOGGERS:
     logging.getLogger(each).setLevel(logging.CRITICAL)
+
+def _unique(factory):
+    used = []
+    @functools.wraps(factory)
+    def wrapper():
+        item = factory()
+        over = 0
+        while item in used:
+            if over > 100:
+                raise RuntimeError('Tried 100 times to generate a unqiue value, stopping.')
+            item = factory()
+            over += 1
+        used.append(item)
+        return item
+    return wrapper
+
+sha256_factory = _unique(fake.sha256)
+name_factory = _unique(fake.word)
+
+def file_factory(sha256=None):
+    fname = name_factory()
+    return {
+        'path': '/' + fname,
+        'name': fname,
+        'kind': 'file',
+        'size': random.randint(4, 4000),
+        'extra': {
+            'hashes': {
+                'sha256': sha256 or sha256_factory()
+            }
+        }
+    }
+
+def folder_factory(depth, num_files, num_folders, path_above):
+    new_path = os.path.join(path_above.rstrip('/'), fake.word())
+    return {
+        'path': new_path,
+        'kind': 'folder',
+        'children': [
+            file_factory()
+            for i in range(num_files)
+        ] + [
+            folder_factory(depth - 1, num_files, num_folders, new_path)
+        ] if depth > 0 else []
+    }
+
+def file_tree_factory(depth, num_files, num_folders):
+    return {
+        'path': '/',
+        'kind': 'folder',
+        'children': [
+            file_factory()
+            for i in range(num_files)
+        ] + [
+            folder_factory(depth - 1, num_files, num_folders, '/')
+        ] if depth > 0 else []
+    }
+
+def select_files_from_tree(file_tree):
+    """
+    Select a file from every depth of a file_tree. This implementation relies on:
+      - every folder has a subtree of equal depth (i.e. any folder selection is
+      adequate to select a file from the maximum depth)
+    The file_tree_factory fulfills this condition.
+    """
+    selected = {}
+    stack = [file_tree]
+    while len(stack):
+        file_node = stack.pop(0)
+        target_files = [f for f in file_node['children'] if f['kind'] == 'file']
+        if target_files:
+            target_file = target_files[0]
+            selected[target_file['extra']['hashes']['sha256']] = target_file
+        target_folders = [f for f in file_node['children'] if f['kind'] == 'folder']
+        if target_folders:
+            stack.append(target_folders[0])
+    return selected
 
 FILE_TREE = {
     'path': '/',
@@ -313,17 +393,262 @@ class TestArchiverTasks(ArchiverTestCase):
             )
         ))
 
-class TestArchiverUtils(ArchiverTestCase):
+    def test_archive_success(self):
+        ensure_schemas()
+        file_tree = file_tree_factory(3, 3, 3)
+        selected_files = select_files_from_tree(file_tree)
 
-    # TODO (samchrisinger, HarryRybacki): implement new tests for registration approvals
-    #@mock.patch('framework.tasks.handlers.enqueue_task')
-    #def test_archive_success_adds_registered_logs(self, mock_enqueue):
-    #    proj = factories.ProjectFactory()
-    #    len_logs = len(proj.logs)
-    #    reg = factories.RegistrationFactory(project=proj, archive=True)
-    #    archiver_utils.archive_success(reg, proj.creator)
-    #    assert_equal(len(proj.logs), len_logs + 1)
-    #    assert_equal([p for p in proj.logs][-1].action, NodeLog.PROJECT_REGISTERED)
+        node = factories.NodeFactory(creator=self.user)
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        data = {
+            ('q_' + selected_file['name']): {
+                'value': fake.word(),
+                'extra': {
+                    'selectedFileName': selected_file['name'],
+                    'nodeId': node._id,
+                    'sha256': sha256,
+                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(node._id, selected_file['path'])
+                }
+            }
+            for sha256, selected_file in selected_files.items()
+        }
+        object_types = {
+            ('q_' + selected_file['name'] + '_obj'): {
+                'value': {
+                    name_factory(): {
+                        'value': fake.word(),
+                        'extra': {
+                            'selectedFileName': selected_file['name'],
+                            'nodeId': node._id,
+                            'sha256': sha256,
+                            'viewUrl': '/project/{0}/files/osfstorage{1}'.format(node._id, selected_file['path'])
+                        }
+                    },
+                    name_factory(): {
+                        'value': fake.word()
+                    }
+                }
+            }
+            for sha256, selected_file in selected_files.items()
+        }
+        data.update(copy.deepcopy(object_types))
+        other_questions = {
+            'q{}'.format(i): {
+                'value': fake.word()
+            }
+            for i in range(5)
+        }
+        data.update(other_questions)
+
+        with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
+            with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
+                archive_success(registration._id)
+                for key, question in registration.registered_meta[prereg_schema._id].items():
+                    target = None
+                    if isinstance(question['value'], dict):
+                        target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra']][0]
+                    elif 'extra' in question and 'hashes' in question['extra']:
+                        target = question
+
+                    if target:
+                        assert_in(registration._id, target['extra']['viewUrl'])
+                        assert_not_in(node._id, target['extra']['viewUrl'])
+                        del selected_files[target['extra']['sha256']]
+                    else:
+                        # check non-file questions are unmodified
+                        assert_equal(data[key]['value'], question['value'])
+                assert_false(selected_files)
+
+    def test_archive_success_with_components(self):
+        ensure_schemas()
+        node = factories.NodeFactory(creator=self.user)
+        comp1 = factories.NodeFactory(parent=node, creator=self.user)
+        factories.NodeFactory(parent=comp1, creator=self.user)
+        factories.NodeFactory(parent=node, creator=self.user)
+        nodes = [n for n in node.node_and_primary_descendants()]
+
+        file_trees = {
+            n._id: file_tree_factory(3, 3, 3)
+            for n in nodes
+        }
+
+        selected_files = {}
+        selected_file_node_index = {}
+        for n in nodes:
+            file_tree = file_trees[n._id]
+            selected = select_files_from_tree(file_tree)
+            selected_file_node_index.update({
+                sha256: n._id
+                for sha256 in selected.keys()
+            })
+            selected_files.update(selected)  # select files from each Node
+
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        data = {
+            ('q_' + selected_file['name']): {
+                'value': fake.word(),
+                'extra': {
+                    'sha256': sha256,
+                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                        selected_file_node_index[sha256],
+                        selected_file['path']
+                    ),
+                    'selectedFileName': selected_file['name'],
+                    'nodeId': selected_file_node_index[sha256]
+                }
+            }
+            for sha256, selected_file in selected_files.items()
+        }
+        object_types = {
+            ('q_' + selected_file['name'] + '_obj'): {
+                'value': {
+                    name_factory(): {
+                        'value': fake.word(),
+                        'extra': {
+                            'sha256': sha256,
+                            'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                                selected_file_node_index[sha256],
+                                selected_file['path']
+                            ),
+                            'selectedFileName': selected_file['name'],
+                            'nodeId': selected_file_node_index[sha256]
+                        }
+                    },
+                    name_factory(): {
+                        'value': fake.word()
+                    }
+                }
+            }
+            for sha256, selected_file in selected_files.items()
+        }
+        data.update(object_types)
+        other_questions = {
+            'q{}'.format(i): {
+                'value': fake.word()
+            }
+            for i in range(5)
+        }
+        data.update(other_questions)
+
+        with test_utils.mock_archive(node, schema=prereg_schema, data=copy.deepcopy(data), autocomplete=True, autoapprove=True) as registration:
+            patches = []
+            for n in registration.node_and_primary_descendants():
+                file_tree = file_trees[n.registered_from._id]
+                osfstorage = n.get_addon('osfstorage')
+                patch = mock.patch.object(
+                    osfstorage,
+                    '_get_file_tree',
+                    mock.Mock(return_value=file_tree)
+                )
+                patch.start()
+                patches.append(patch)
+            archive_success(registration._id)
+
+            for key, question in registration.registered_meta[prereg_schema._id].items():
+                target = None
+                if isinstance(question['value'], dict):
+                    target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra']][0]
+                elif 'extra' in question and 'sha256' in question['extra']:
+                    target = question
+
+                if target:
+                    node_id = re.search(
+                        r'^/project/(?P<node_id>\w{5}).+$',
+                        target['extra']['viewUrl']
+                    ).groupdict()['node_id']
+                    assert_in(
+                        node_id,
+                        [r._id for r in registration.node_and_primary_descendants()]
+                    )
+                    if target['extra']['sha256'] in selected_files:
+                        del selected_files[target['extra']['sha256']]
+                else:
+                    # check non-file questions are unmodified
+                    assert_equal(data[key]['value'], question['value'])
+            # ensure each selected file was checked
+            assert_false(selected_files)
+
+            for patch in patches:
+                patch.stop()
+
+    def test_archive_success_different_name_same_sha(self):
+        ensure_schemas()
+        file_tree = file_tree_factory(0, 0, 0)
+        fake_file = file_factory()
+        fake_file2 = file_factory(sha256=fake_file['extra']['hashes']['sha256'])
+        file_tree['children'] = [fake_file, fake_file2]
+
+        node = factories.NodeFactory(creator=self.user)
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        data = {
+            ('q_' + fake_file['name']): {
+                'value': fake.word(),
+                'extra': {
+                    'sha256': fake_file['extra']['hashes']['sha256'],
+                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                        node._id,
+                        fake_file['path']
+                    ),
+                    'selectedFileName': fake_file['name'],
+                    'nodeId': node._id
+                }
+            }
+        }
+
+        with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
+            with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
+                archive_success(registration._id)
+                for key, question in registration.registered_meta[prereg_schema._id].items():
+                    assert_equal(question['extra']['selectedFileName'], fake_file['name'])
+
+    def test_archive_success_same_file_in_component(self):
+        ensure_schemas()
+        file_tree = file_tree_factory(3, 3, 3)
+        selected = select_files_from_tree(file_tree).values()[0]
+
+        child_file_tree = file_tree_factory(0, 0, 0)
+        child_file_tree['children'] = [selected]
+
+        node = factories.NodeFactory(creator=self.user)
+        child = factories.NodeFactory(creator=self.user, parent=node)
+
+        prereg_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        data = {
+            ('q_' + selected['name']): {
+                'value': fake.word(),
+                'extra': {
+                    'sha256': selected['extra']['hashes']['sha256'],
+                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
+                        child._id,
+                        selected['path']
+                    ),
+                    'selectedFileName': selected['name'],
+                    'nodeId': child._id
+                }
+            }
+        }
+
+        with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
+            with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
+                archive_success(registration._id)
+                child_reg = registration.nodes[0]
+                for key, question in registration.registered_meta[prereg_schema._id].items():
+                    assert_in(child_reg._id, question['extra']['viewUrl'])
+
+
+class TestArchiverUtils(ArchiverTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_handle_archive_fail(self, mock_send_mail):
@@ -420,6 +745,104 @@ class TestArchiverUtils(ArchiverTestCase):
         archiver_utils.link_archive_provider(wo, self.user)
         assert_true(archiver_utils.has_archive_provider(wo, self.user))
 
+    def test_get_file_map(self):
+        node = factories.NodeFactory(creator=self.user)
+        file_tree = file_tree_factory(3, 3, 3)
+        with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
+            file_map = archiver_utils.get_file_map(node)
+        stack = [file_tree]
+        file_map = {
+            sha256: value
+            for sha256, value, _ in file_map
+        }
+        while len(stack):
+            item = stack.pop(0)
+            if item['kind'] == 'file':
+                sha256 = item['extra']['hashes']['sha256']
+                assert_in(sha256, file_map)
+                map_file = file_map[sha256]
+                assert_equal(item, map_file)
+            else:
+                stack = stack + item['children']
+
+    def test_get_file_map_with_components(self):
+        node = factories.NodeFactory()
+        comp1 = factories.NodeFactory(parent=node)
+        comp1a = factories.NodeFactory(parent=comp1)
+        comp2 = factories.NodeFactory(parent=node)
+
+        file_trees = {
+            n._id: file_tree_factory(3, 3, 3)
+            for n in [node, comp1, comp1a, comp2]
+        }
+
+        patches = []
+        for n in [node, comp1, comp1a, comp2]:
+            file_tree = file_trees[n._id]
+            osfstorage = n.get_addon('osfstorage')
+            patch = mock.patch.object(osfstorage, '_get_file_tree', mock.Mock(return_value=file_tree))
+            patch.start()
+            patches.append(patch)
+
+        file_map = archiver_utils.get_file_map(node)
+        stack = file_trees.values()
+        file_map = {
+            sha256: value
+            for sha256, value, _ in file_map
+        }
+        while len(stack):
+            item = stack.pop(0)
+            if item['kind'] == 'file':
+                sha256 = item['extra']['hashes']['sha256']
+                assert_in(sha256, file_map)
+                map_file = file_map[sha256]
+                assert_equal(item, map_file)
+            else:
+                stack = stack + item['children']
+
+        for patch in patches:
+            patch.stop()
+
+    def test_get_file_map_memoization(self):
+        node = factories.NodeFactory()
+        comp1 = factories.NodeFactory(parent=node)
+        comp1a = factories.NodeFactory(parent=comp1)
+        comp2 = factories.NodeFactory(parent=node)
+
+        file_trees = {
+            n._id: file_tree_factory(3, 3, 3)
+            for n in [node, comp1, comp1a, comp2]
+        }
+        patches = {}
+        mocks = {}
+        for n in [node, comp1, comp1a, comp2]:
+            file_tree = file_trees[n._id]
+            osfstorage = n.get_addon('osfstorage')
+            mocked = mock.Mock(return_value=file_tree)
+            patch = mock.patch.object(osfstorage, '_get_file_tree', mocked)
+            patch.start()
+            patches[n._id] = patch
+            mocks[n._id] = mocked
+        # first call
+        file_map = archiver_utils.get_file_map(node)
+        file_map = {
+            sha256: value
+            for sha256, value, _ in file_map
+        }
+        for mocked in mocks.values():
+            mocked.assert_called_once()
+        # second call
+        file_map = archiver_utils.get_file_map(node)
+        file_map = {
+            sha256: value
+            for sha256, value, _ in file_map
+        }
+        for mocked in mocks.values():
+            mocked.assert_called_once()
+        for patch in patches.values():
+            patch.stop()
+
+
 class TestArchiverListeners(ArchiverTestCase):
 
     @mock.patch('website.archiver.tasks.archive')
@@ -478,7 +901,8 @@ class TestArchiverListeners(ArchiverTestCase):
         assert_false(mock_fail.called)
 
     @mock.patch('website.mails.send_mail')
-    def test_archive_callback_done_success(self, mock_send):
+    @mock.patch('website.archiver.tasks.archive_success.delay')
+    def test_archive_callback_done_success(self, mock_send, mock_archive_success):
         for addon in ['osfstorage', 'dropbox']:
             self.dst.archive_job.update_target(addon, ARCHIVER_SUCCESS)
         self.dst.archive_job.save()
@@ -486,7 +910,8 @@ class TestArchiverListeners(ArchiverTestCase):
         mock_send.assert_called()
 
     @mock.patch('website.mails.send_mail')
-    def test_archive_callback_done_embargoed(self, mock_send):
+    @mock.patch('website.archiver.tasks.archive_success.delay')
+    def test_archive_callback_done_embargoed(self, mock_send, mock_archive_success):
         end_date = datetime.datetime.now() + datetime.timedelta(days=30)
         self.dst.archive_job.meta = {
             'embargo_urls': {
@@ -562,7 +987,8 @@ class TestArchiverListeners(ArchiverTestCase):
             assert_false(node.archive_job.archive_tree_finished())
 
     @mock.patch('website.mails.send_mail')
-    def test_archive_callback_on_tree_sends_only_one_email(self, mock_send_success):
+    @mock.patch('website.archiver.tasks.archive_success.delay')
+    def test_archive_callback_on_tree_sends_only_one_email(self, mock_send_success, mock_arhive_success):
         proj = factories.NodeFactory()
         child = factories.NodeFactory(parent=proj)
         factories.NodeFactory(parent=child)
@@ -634,25 +1060,6 @@ class TestArchiverScripts(ArchiverTestCase):
         for pk in legacy:
             assert_false(pk in failed)
 
-class TestArchiverDebugRoutes(ArchiverTestCase):
-
-    def test_debug_route_does_not_exist(self):
-        route = None
-        try:
-            route = api_url_for('archiver_debug', nid=self.dst._id)
-            assert(False)
-        except AssertionError:
-            assert(False)
-        except:
-            assert(True)
-        if route:
-            try:
-                self.app.get(route)
-                assert(False)
-            except AssertionError:
-                assert(False)
-            except:
-                assert(True)
 
 class TestArchiverDecorators(ArchiverTestCase):
 
@@ -681,7 +1088,8 @@ class TestArchiverBehavior(OsfTestCase):
 
     @mock.patch('website.project.model.Node.update_search')
     @mock.patch('website.mails.send_mail')
-    def test_archiving_nodes_added_to_search_on_archive_success_if_public(self, mock_send, mock_update_search):
+    @mock.patch('website.archiver.tasks.archive_success.delay')
+    def test_archiving_nodes_added_to_search_on_archive_success_if_public(self, mock_send, mock_update_search, mock_archive_success):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj)
         reg.save()

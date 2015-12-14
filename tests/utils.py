@@ -118,7 +118,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         sanction = registration.root.sanction
         with contextlib.nested(
             mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
-            mock.patch.object(sanction, 'ask')
+            mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
         ):
             archiver_listeners.archive_callback(registration)
     if autoapprove:
