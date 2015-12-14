@@ -408,7 +408,7 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
         errors = []
         name = data.get('name', None)
         text = data.get('text', None)
-        citations = self.context['view'].get_node().alternativeCitations
+        citations = self.context['view'].get_node().alternative_citations
         if not (self.instance and self.instance.name == name) and citations.find(Q('name', 'eq', name)).count() > 0:
             errors.append("There is already an alternative citation named '{}'".format(name))
         if not (self.instance and self.instance.text == text):
