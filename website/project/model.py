@@ -2017,6 +2017,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.permissions = {}
         forked.visible_contributor_ids = []
 
+        for citation in self.alternative_citations:
+            forked.add_citation(
+                auth=auth,
+                citation=citation.clone(),
+                log=False,
+                save=False
+            )
+
         forked.add_contributor(
             contributor=user,
             permissions=CREATOR_PERMISSIONS,
