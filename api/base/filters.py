@@ -189,9 +189,10 @@ class FilterMixin(object):
         :param basestring field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
-        if isinstance(field, RelationshipField):
-            return field_name
-        return field.source or field_name
+        source = field.source
+        if source == '*':
+            source = field.source_field or None
+        return source or field_name
 
     def convert_value(self, value, field):
         """Used to convert incoming values from query params to the appropriate types for filter comparisons
