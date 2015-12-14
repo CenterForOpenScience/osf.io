@@ -1,11 +1,13 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
+from rest_framework.exceptions import ValidationError
+from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.models import Node, User, Comment
+from website.models import Node, User, Comment, AlternativeCitation
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
@@ -373,3 +375,47 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
+
+class NodeAlternativeCitationSerializer(JSONAPISerializer):
+
+    id = IDField(source="_id", read_only=True)
+    type = TypeField()
+    name = ser.CharField(required=True)
+    text = ser.CharField(required=True)
+
+    class Meta:
+        type_ = 'citations'
+
+    def create(self, validated_data):
+        errors = self.error_checker(validated_data)
+        if len(errors) > 0:
+            raise ValidationError(detail=errors)
+        node = self.context['view'].get_node()
+        citation = AlternativeCitation(**validated_data)
+        citation.save()
+        node.alternative_citations.append(citation)
+        node.save()
+        return citation
+
+    def update(self, instance, validated_data):
+        errors = self.error_checker(validated_data)
+        if len(errors) > 0:
+            raise ValidationError(detail=errors)
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.save()
+        return instance
+
+    def error_checker(self, data):
+        errors = []
+        name = data.get('name', None)
+        text = data.get('text', None)
+        citations = self.context['view'].get_node().alternative_citations
+        if not (self.instance and self.instance.name == name) and citations.find(Q('name', 'eq', name)).count() > 0:
+            errors.append("There is already an alternative citation named '{}'".format(name))
+        if not (self.instance and self.instance.text == text):
+            matching_citations = citations.find(Q('text', 'eq', text))
+            if matching_citations.count() > 0:
+                names = "', '".join([str(citation.name) for citation in matching_citations])
+                errors.append("Citation matches '{}'".format(names))
+        return errors
