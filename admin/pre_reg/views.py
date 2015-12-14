@@ -10,7 +10,8 @@ import httplib as http
 
 from modularodm import Q
 
-import serializers
+from admin.pre_reg import serializers
+from admin.pre_reg.forms import DraftRegistrationForm
 # from admin.common_auth.models import MyUser
 
 from framework.mongo.utils import get_or_http_error
@@ -19,6 +20,20 @@ from website.project.model import MetaSchema, DraftRegistration
 from website.exceptions import NodeStateError
 
 get_draft_or_error = functools.partial(get_or_http_error, DraftRegistration)
+
+def get_prereg_drafts(user=None):
+    prereg_schema = MetaSchema.find_one(
+        Q('name', 'eq', 'Prereg Challenge') &
+        Q('schema_version', 'eq', 2)
+    )
+    all_drafts = DraftRegistration.find(
+        Q('registration_schema', 'eq', prereg_schema) &
+        Q('approval', 'ne', None)
+    )
+    if user:
+        # TODO filter by assignee
+        pass
+    return all_drafts
 
 
 def is_in_prereg_group(user):
@@ -48,10 +63,14 @@ def prereg(request):
     # reviewers = MyUser.objects.prereg_users()
     reviewers = ['admin_placeholder']
 
-    #context = {'user_info': user, 'reviewers': reviewers, 'user': request.user}
+    drafts = [serializers.serialize_draft_registration(d, json_safe=False) for d in get_prereg_drafts()]
+    for d in drafts:
+        d['form'] = DraftRegistrationForm(d)
+
     context = {
         'user_info': user,
-        'reviewers': reviewers
+        'reviewers': reviewers,
+        'drafts': drafts
     }
     return render(request, 'pre_reg/prereg.html', context)
 
