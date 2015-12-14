@@ -209,7 +209,7 @@ def update_user(auth):
             # Remove old primary email from subscribed mailing lists
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
                 if subscription:
-                    mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
+                    mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
             user.username = username
 
     ###################
@@ -510,7 +510,7 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
+            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",
