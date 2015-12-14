@@ -14,9 +14,9 @@ https_cache = cachecontrol.CacheControlAdapter()
 default_adapter = HTTPAdapter()
 
 
-class GitHub(object):
+class GitHubClient(object):
 
-    def __init__(self, access_token=None, token_type=None):
+    def __init__(self, access_token=None, token_type='bearer'):
 
         self.access_token = access_token
         if access_token and token_type:
