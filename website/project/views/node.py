@@ -23,6 +23,7 @@ from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import new_node, new_private_link
 from website.project.decorators import (
+    must_be_contributor_or_public_but_not_anonymized,
     must_be_contributor_or_public,
     must_be_contributor,
     must_be_valid_project,
@@ -263,13 +264,13 @@ def node_fork_page(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_be_contributor_or_public_but_not_anonymized
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_be_contributor_or_public_but_not_anonymized
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
@@ -1056,13 +1057,7 @@ def node_child_tree(user, node_ids):
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
     tree = node_child_tree(auth.user, [node._id])
-    if tree:
-        return tree
-    else:
-        raise HTTPError(
-            http.FORBIDDEN,
-            data=dict(message_long='User does not have read permission.')
-        )
+    return tree
 
 
 @must_be_contributor_or_public
