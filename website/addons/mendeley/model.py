@@ -3,6 +3,7 @@
 import time
 
 import mendeley
+from mendeley.exception import MendeleyApiException
 from modularodm import fields
 
 from website.addons.base import AddonOAuthNodeSettingsBase
@@ -14,6 +15,7 @@ from website.addons.mendeley.api import APISession
 from website.oauth.models import ExternalProvider
 from website.util import web_url_for
 
+from framework.exceptions import HTTPError
 
 class Mendeley(ExternalProvider):
     name = 'Mendeley'
@@ -70,6 +72,17 @@ class Mendeley(ExternalProvider):
                 'expires_at': time.mktime(self.account.expires_at.timetuple()),
                 'token_type': 'bearer',
             })
+
+            #Check if Mendeley can be accessed
+            try:
+                self._client.folders.list()
+            except MendeleyApiException as error:
+                self._client = None
+                if error.status == 403:
+                    raise HTTPError(403)
+                else:
+                    raise HTTPError(error.status)
+
         return self._client
 
     def citation_lists(self, extract_folder):
@@ -319,6 +332,22 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
     def clear_auth(self):
         self.mendeley_list_id = None
         return super(MendeleyNodeSettings, self).clear_auth()
+
+    def deauthorize(self, auth=None, add_log=True):
+        """Remove user authorization from this node and log the event."""
+        if add_log:
+            self.owner.add_log(
+                'mendeley_node_deauthorized',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                },
+                auth=auth,
+            )
+
+        self.clear_auth()
+
+        self.save()
 
     def set_auth(self, *args, **kwargs):
         self.mendeley_list_id = None

@@ -15,6 +15,8 @@
     <link href="{% static 'vendor/bower_components/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
     <!-- Ionicons -->
     <link href="//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" rel="stylesheet" type="text/css" />
+    <!-- Font Awesome Icons -->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
     <!-- Theme style -->
     <link href="{% static 'vendor/bower_components/admin-lte/dist/css/AdminLTE.min.css' %}" rel="stylesheet" type="text/css" />
         <!-- AdminLTE Skins. -->
@@ -30,13 +32,14 @@
     <script src="{% static 'vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js' %}"></script>
 
     {% block top_includes %}
-     
+
     {% endblock %}
   </head>
   <body class="skin-blue sidebar-mini">
     <div class="wrapper">
 
       <!-- Main Header -->
+      {% block header %}
       <header class="main-header">
 
         <!-- Logo -->
@@ -46,7 +49,6 @@
           <!-- logo for regular state and mobile devices -->
           <span class="logo-lg"><b>OSF</b>Admin</span>
         </a>
-
         <!-- Header Navbar -->
         <nav class="navbar navbar-static-top" role="navigation">
           <!-- Navbar Right Menu -->
@@ -60,12 +62,14 @@
                 </a>
               </li>
               <li>
-                <a href="/logout/" class="btn btn-danger btn-flat">Sign out</a>
+                <a href="{% url 'auth:logout' %}" class="btn btn-danger btn-flat">Sign out</a>
               </li>
             </ul>
           </div>
         </nav>
+        {% endblock %}
       </header>
+      {% block sidebar %}
       <!-- Left side column. contains the logo and sidebar -->
       <aside class="main-sidebar">
 
@@ -75,11 +79,12 @@
           <ul class="sidebar-menu">
             <li class="header">Menu</li>
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
+            <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Pre-reg Prize</span></a></li>
           </ul><!-- /.sidebar-menu -->
         </section>
         <!-- /.sidebar -->
       </aside>
-
+      {% endblock %}
       <!-- Content Wrapper. Contains page content -->
       <div class="content-wrapper">
         <!-- Content Header (Page header) -->
@@ -95,7 +100,7 @@
       <!-- Main Footer -->
       <footer class="main-footer">
         <!-- Default to the left -->
-        <strong>Copyright &copy; 2015 <a href="//www.osf.io">osf.io</a>.</strong> All rights reserved.
+        <strong>Copyright &copy; 2015 <a href="http://www.osf.io">osf.io</a>.</strong> All rights reserved.
       </footer>
 
     </div><!-- ./wrapper -->
@@ -104,8 +109,12 @@
     {% render_bundle 'admin-base-page' %}
     <script src="{% static 'vendor/bower_components/admin-lte/dist/js/app.min.js' %}"></script>
 
+    <!-- Included JS -->
+    {% render_bundle 'vendor' %}
+    {% render_bundle 'admin-base-page' %}
+
     {% block bottom_js %}
-      
+
     {% endblock %}
 
   </body>

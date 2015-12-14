@@ -5,6 +5,7 @@ import urllib
 import urlparse
 import bson.objectid
 import httplib as http
+from datetime import datetime
 
 import itsdangerous
 
@@ -13,6 +14,7 @@ from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
 
 from framework.flask import redirect
+from framework.mongo import database
 
 from website import settings
 
@@ -145,16 +147,26 @@ def before_request():
         # Create empty session
         # TODO: Shoudn't need to create a session for Basic Auth
         session = Session()
+        set_session(session)
 
         if user:
+            user_addon = user.get_addon('twofactor')
+            if user_addon and user_addon.is_confirmed:
+                otp = request.headers.get('X-OSF-OTP')
+                if otp is None or not user_addon.verify_code(otp):
+                    # Must specify two-factor authentication OTP code or invalid two-factor
+                    # authentication OTP code.
+                    session.data['auth_error_code'] = http.UNAUTHORIZED
+                    return
+
             session.data['auth_user_username'] = user.username
             session.data['auth_user_id'] = user._primary_key
             session.data['auth_user_fullname'] = user.fullname
+            user.date_last_login = datetime.utcnow()
+            user.save()
         else:
             # Invalid key: Not found in database
-            session.data['auth_error_code'] = http.FORBIDDEN
-
-        set_session(session)
+            session.data['auth_error_code'] = http.UNAUTHORIZED
         return
 
     cookie = request.cookies.get(settings.COOKIE_NAME)
@@ -162,11 +174,11 @@ def before_request():
         try:
             session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
             session = Session.load(session_id) or Session(_id=session_id)
-            set_session(session)
+        except itsdangerous.BadData:
             return
-        except:
-            pass
-
+        if session.data.get('auth_user_id'):
+            database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
+        set_session(session)
 
 def after_request(response):
     if session.data.get('auth_user_id'):

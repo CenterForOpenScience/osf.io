@@ -57,6 +57,7 @@ class TrashedFileNode(StoredObject):
     checkout = fields.AbstractForeignField('User')
     deleted_by = fields.AbstractForeignField('User')
     deleted_on = fields.DateTimeField(auto_now_add=True)
+    tags = fields.ForeignField('Tag', list=True)
 
     @property
     def deep_url(self):
@@ -91,7 +92,16 @@ class StoredFileNode(StoredObject):
         'unique': False,
         'key_or_list': [
             ('path', pymongo.ASCENDING),
-            ('node', pymongo.ASCENDING)
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING)
+        ]
+    }, {
+        'unique': False,
+        'key_or_list': [
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING)
         ]
     }]
 
@@ -119,6 +129,9 @@ class StoredFileNode(StoredObject):
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
     checkout = fields.AbstractForeignField('User')
+
+    #Tags for a file, currently only used for osfStorage
+    tags = fields.ForeignField('Tag', list=True)
 
     # For Django compatibility
     @property
@@ -263,6 +276,14 @@ class FileNode(object):
         return StoredFileNode.find_one(cls._filter(qs)).wrapped()
 
     @classmethod
+    def files_checked_out(cls, user):
+        """
+        :param user: The user with checkedout files
+        :return: A queryset of all FileNodes checked out by user
+        """
+        return cls.find(Q('checkout', 'eq', user))
+
+    @classmethod
     def load(cls, _id):
         """A proxy for StoredFileNode.load requires the wrapped version of the found value
         to be an instance of cls.
@@ -332,7 +353,7 @@ class FileNode(object):
         Implemented top level so that child class may override it
         and just call super.save rather than self.stored_object.save
         """
-        self.stored_object.save()
+        return self.stored_object.save()
 
     def serialize(self, **kwargs):
         return {
@@ -569,6 +590,7 @@ class File(FileNode):
                 modified=None,
                 contentType=None,
                 downloads=self.get_download_count(),
+                checkout=self.checkout._id if self.checkout else None,
             )
 
         version = self.versions[-1]
@@ -576,6 +598,7 @@ class File(FileNode):
             super(File, self).serialize(),
             size=version.size,
             downloads=self.get_download_count(),
+            checkout=self.checkout._id if self.checkout else None,
             version=version.identifier if self.versions else None,
             contentType=version.content_type if self.versions else None,
             modified=version.date_modified.isoformat() if version.date_modified else None,
