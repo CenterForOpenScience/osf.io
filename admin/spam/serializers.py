@@ -5,7 +5,7 @@ from modularodm import Q
 def serialize_comment(comment, full=False):
     comment = {
         'id': comment._id,
-        'author': comment.user,
+        'author': User.load(comment.user._id),
         'date_created': comment.date_created,
         'date_modified': comment.date_modified,
         'content': comment.content,

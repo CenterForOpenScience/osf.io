@@ -3,10 +3,7 @@
 {% block title %}
     <title>Email</title>
 {% endblock title %}
-{# stylesheets #}
 {% block content %}
-    {{ block.super }}
-
     <div class="container-fluid">
         <div class="row">
             <div class="btn-group col-sm-12">
@@ -14,7 +11,7 @@
                    class="btn btn-primary">
                     Back to list
                 </a>
-                <a href="{% url 'spam:detail' comment.id %}"
+                <a href="javascript:window.history.back();"
                    class="btn btn-default">
                     Back to detail
                 </a>
@@ -40,13 +37,13 @@
                 </label>
                 <select id="email">
                     {% for email in comment.author.emails %}
-                        {% if email.primary %}
-                            <option value="{{ email.address }}" selected>
-                                {{ email.address }}
+                        {% if forloop.counter0 == 0 %}
+                            <option value="{{ email }}" selected>
+                                {{ email }}
                             </option>
                         {% else %}
-                            <option value="{{ email.address }}">
-                                {{ email.address }}
+                            <option value="{{ email }}">
+                                {{ email }}
                             </option>
                         {% endif %}
                     {% endfor %}
