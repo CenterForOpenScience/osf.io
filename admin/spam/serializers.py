@@ -1,12 +1,11 @@
 from website.project.model import Comment, User
-from website.profile.utils import serialize_user
 from modularodm import Q
 
 
 def serialize_comment(comment, full=False):
     comment = {
         'id': comment._id,
-        'author': serialize_user(comment.user, full=full),
+        'author': User.load(comment.user._id),
         'date_created': comment.date_created,
         'date_modified': comment.date_modified,
         'content': comment.content,
@@ -19,24 +18,16 @@ def serialize_comment(comment, full=False):
     comment.update(
         category=comment['reports'][0]['category'],
     )
-    # comment['author'].update(
-    #
-    # )
     return comment
 
 
 def retrieve_comment(id, full_user=False):
-    query = Q("_id", 'eq', id)
-    comment = Comment.find_one(query)
-    return serialize_comment(comment, full=full_user)
+    return serialize_comment(Comment.load(id), full=full_user)
 
 
 def serialize_comments():
     query = Q('reports', 'ne', {})
-    return [
-        serialize_comment(c)
-        for c in Comment.find(query)
-    ]
+    return map(serialize_comment, Comment.find(query))
 
 
 def serialize_reports(reports):
@@ -48,7 +39,7 @@ def serialize_reports(reports):
 
 def serialize_report(user, report):
     return {
-        'reporter': serialize_user(User.load(user)),
+        'reporter': User.load(user),
         'category': report.get('category', None),
         'reason': report.get('text', None),
     }

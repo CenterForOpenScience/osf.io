@@ -92,6 +92,9 @@
         <!-- Main content -->
         <section class="content">
           {% block content %}
+          <h1>
+           Welcome to the OSF Admin Home Page
+          </h1>
           <!-- Your Page Content Here -->
           {% endblock %}
         </section><!-- /.content -->
@@ -104,10 +107,6 @@
       </footer>
 
     </div><!-- ./wrapper -->
-    <!-- Included JS -->
-    {% render_bundle 'vendor' %}
-    {% render_bundle 'admin-base-page' %}
-    <script src="{% static 'vendor/bower_components/admin-lte/dist/js/app.min.js' %}"></script>
 
     <!-- Included JS -->
     {% render_bundle 'vendor' %}
