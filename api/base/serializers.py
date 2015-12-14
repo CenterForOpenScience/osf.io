@@ -684,8 +684,9 @@ class JSONAPISerializer(ser.Serializer):
                         data['embeds'][field.field_name] = result
                 else:
                     try:
-                        if not (is_anonymous and hasattr(field, 'view_name') and
-                                        isinstance(field.root, DoNotRelateWhenAnonymous) != -1):
+                        if not (is_anonymous and
+                                hasattr(field, 'view_name') and not
+                                isinstance(field.root, DoNotRelateWhenAnonymous)):
                             data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
                         continue
