@@ -3155,13 +3155,13 @@ class TestRoot(OsfTestCase):
 
     def test_registration_children_have_correct_root(self):
         registration_child = NodeFactory(parent=self.registration)
-        assert_equal(registration_child.root._id, registration._id)
+        assert_equal(registration_child.root._id, self.registration._id)
 
     def test_registration_grandchildren_have_correct_root(self):
         registration_child = NodeFactory(parent=self.registration)
         registration_grandchild = NodeFactory(parent=registration_child)
 
-        assert_equal(registration_grandchild.root._id, registration._id)
+        assert_equal(registration_grandchild.root._id, self.registration._id)
 
     def test_fork_has_own_root(self):
         fork = self.project.fork_node(auth=self.auth)
