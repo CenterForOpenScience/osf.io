@@ -12,13 +12,12 @@ class RegistrationSerializer(NodeSerializer):
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
                                  help_text='Whether this registration has been retracted.')
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
+    embargo_end_date = HideIfRetraction(ser.SerializerMethodField(help_text='When will embargo be lifted?'))
     retraction_justification = ser.CharField(source='retraction.justification', read_only=True)
     pending_retraction = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
         help_text='Is this registration pending retraction?'))
-    pending_registration_approval = HideIfRetraction(ser.BooleanField(source='sanction.pending_approval', read_only=True,
+    pending_registration_approval = HideIfRetraction(ser.BooleanField(source='sanction.is_pending_approval', read_only=True,
         help_text='Does this registration have a sanction pending approval?'))
-    pending_embargo = HideIfRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
-        help_text='Is this registration pending embargo?'))
     registered_meta = HideIfRetraction(ser.SerializerMethodField(
         help_text='A dictionary with embargo end date, whether registration choice was immediate or embargoed,'
                   ' and answers to supplemental registration questions'))
@@ -93,6 +92,11 @@ class RegistrationSerializer(NodeSerializer):
                 return meta_values
             except ValueError:
                 return meta_values
+        return None
+
+    def get_embargo_end_date(self, obj):
+        if obj.embargo_end_date:
+            return obj.embargo_end_date
         return None
 
     def get_registration_supplement(self, obj):
