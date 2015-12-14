@@ -73,7 +73,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        data = res.json['data']['data']
+        data = res.json['data']
         assert_equal(data['type'], 'institutions')
         assert_equal(data['id'], self.institution._id)
         node.reload()
@@ -90,7 +90,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        data = res.json['data']['data']
+        data = res.json['data']
         assert_equal(data['type'], 'institutions')
         assert_equal(data['id'], self.institution._id)
         node.reload()
@@ -133,7 +133,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['data'], None)
+        assert_equal(res.json['data'], None)
         node.reload()
         assert_equal(node.primary_institution, None)
 
@@ -185,7 +185,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['data'], None)
+        assert_equal(res.json['data'], None)
         node.reload()
         assert_equal(node.primary_institution, None)
 
@@ -193,8 +193,8 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         res = self.app.get(self.node_institution_url)
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['data'], None)
-        assert_in(self.node_institution_url, res.json['data']['links']['self'])
+        assert_equal(res.json['data'], None)
+        assert_in(self.node_institution_url, res.json['links']['self'])
 
     def test_retrieve_public_node_with_inst(self):
         self.node.primary_institution = self.institution
@@ -203,8 +203,8 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         res = self.app.get(self.node_institution_url)
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['data']['type'], 'institutions')
-        assert_equal(res.json['data']['data']['id'], self.institution._id)
+        assert_equal(res.json['data']['type'], 'institutions')
+        assert_equal(res.json['data']['id'], self.institution._id)
 
     def test_retrieve_private_node_no_auth(self):
         self.node.is_public = False
@@ -223,7 +223,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['data'], None)
+        assert_equal(res.json['data'], None)
 
     def test_retrieve_private_node_with_auth_with_inst(self):
         node = NodeFactory(is_public=False, creator=self.user)
@@ -236,8 +236,8 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['data']['type'], 'institutions')
-        assert_equal(res.json['data']['data']['id'], self.institution._id)
+        assert_equal(res.json['data']['type'], 'institutions')
+        assert_equal(res.json['data']['id'], self.institution._id)
 
     def test_retrieve_private_node_wrong_auth(self):
         self.node.is_public = False
