@@ -197,6 +197,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
     whether the current project is public.
 
     :param bool include_public: Check whether current project is public
+    :param bool include_view_only_anon: Checks view_only anonymized links
     :return: Authorization decorator
 
     """
@@ -243,7 +244,7 @@ def _must_be_contributor_factory(include_public, include_view_only_anon=True):
 # Create authorization decorators
 must_be_contributor = _must_be_contributor_factory(False)
 must_be_contributor_or_public = _must_be_contributor_factory(True)
-must_be_contributor_or_public_but_not_view_only = _must_be_contributor_factory(include_public=True, include_view_only_anon=False)
+must_be_contributor_or_public_but_not_anonymized = _must_be_contributor_factory(include_public=True, include_view_only_anon=False)
 
 
 def must_have_addon(addon_name, model):
