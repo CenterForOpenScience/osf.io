@@ -716,6 +716,7 @@ class JSONAPISerializer(ser.Serializer):
 
         fields = [field for field in self.fields.values() if not field.write_only and field.field_name not in to_be_removed]
         invalid_embeds = self.invalid_embeds(fields, embeds)
+        invalid_embeds = invalid_embeds - set(to_be_removed)
         if invalid_embeds:
             raise InvalidQueryStringError(parameter='embed',
                                           detail='The following fields are not embeddable: {}'.format(', '.join(invalid_embeds)))
