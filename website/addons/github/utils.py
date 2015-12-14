@@ -8,7 +8,7 @@ from github3.repos.branch import Branch
 from framework.exceptions import HTTPError
 from website.addons.base.exceptions import HookError
 
-from website.addons.github.api import GitHub
+from website.addons.github.api import GitHubClient
 
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {
@@ -61,7 +61,7 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     :param GitHub connection: GitHub API object. If None, one will be created
         from the addon's user settings.
     """
-    connection = connection or GitHub.from_settings(addon.user_settings)
+    connection = connection or GitHubClient.from_settings(addon.user_settings)
 
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
