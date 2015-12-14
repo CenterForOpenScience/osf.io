@@ -395,7 +395,7 @@ class TestNodeFiltering(ApiTestCase):
         node_structure = [2, [1, 2]]
         render_generations_from_node_structure_list(self.project_one, node_structure)
 
-        url = '/{}nodes/?filter[parent_node]=null'.format(API_BASE)
+        url = '/{}nodes/?filter[parent]=null'.format(API_BASE)
 
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
