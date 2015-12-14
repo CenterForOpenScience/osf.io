@@ -1572,7 +1572,7 @@ def make_url_map(app):
             'post',
             project_views.contributor.invite_contributor_post,
             json_renderer
-        ),
+        )
     ], prefix='/api/v1')
 
     # Set up static routing for addons

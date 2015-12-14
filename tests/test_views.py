@@ -160,6 +160,39 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.request.GET['key'], self.link.key)
 
+    def test_cannot_access_registrations_or_forks_with_anon_key(self):
+        anonymous_link = PrivateLinkFactory(anonymous=True)
+        anonymous_link.nodes.append(self.project)
+        anonymous_link.save()
+        self.project.is_public = False
+        self.project.save()
+        url = self.project_url + 'registrations/?view_only={}'.format(anonymous_link.key)
+        res = self.app.get(url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
+        url = self.project_url + 'forks/?view_only={}'.format(anonymous_link.key)
+
+        res = self.app.get(url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
+    def test_can_access_registrations_and_forks_with_not_anon_key(self):
+        link = PrivateLinkFactory(anonymous=False)
+        link.nodes.append(self.project)
+        link.save()
+        self.project.is_public = False
+        self.project.save()
+        url = self.project_url + 'registrations/?view_only={}'.format(self.link.key)
+        res = self.app.get(url)
+
+        assert_equal(res.status_code, 200)
+
+        url = self.project_url + 'forks/?view_only={}'.format(self.link.key)
+        res = self.app.get(url)
+
+        assert_equal(res.status_code, 200)
+
     def test_check_can_access_valid(self):
         contributor = AuthUserFactory()
         self.project.add_contributor(contributor, auth=Auth(self.project.creator))
@@ -1108,8 +1141,8 @@ class TestGetNodeTree(OsfTestCase):
         child = NodeFactory(parent=project, creator=self.user2)
         url = project.api_url_for('get_node_tree')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
-        assert_equal(res.json['message_long'], 'User does not have read permission.')
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, [])
 
     # Parent node should show because of user2 read access, the children should not
     def test_get_node_parent_not_admin(self):
