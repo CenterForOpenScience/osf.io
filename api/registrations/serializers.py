@@ -3,7 +3,9 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
-from api.nodes.serializers import NodeSerializer, NodeLinksSerializer
+from api.nodes.serializers import NodeSerializer
+from api.nodes.serializers import NodeLinksSerializer
+from api.nodes.serializers import NodeContributorsSerializer
 from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly
 
 
@@ -63,7 +65,7 @@ class RegistrationSerializer(NodeSerializer):
 
     node_links = DevOnly(HideIfRetraction(RelationshipField(
         related_view='registrations:registration-pointers',
-        related_view_kwargs={'registration_id': '<pk>'},
+        related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'}
     )))
 
@@ -84,7 +86,7 @@ class RegistrationSerializer(NodeSerializer):
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_url'})
 
     def get_registration_url(self, obj):
-        return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': obj._id})
+        return absolute_reverse('registrations:registration-detail', kwargs={'node_id': obj._id})
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
@@ -124,11 +126,23 @@ class RegistrationDetailSerializer(RegistrationSerializer):
 
 class RegistrationNodeLinksSerializer(NodeLinksSerializer):
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['registration_id']
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
             'registrations:registration-pointer-detail',
             kwargs={
-                'registration_id': node_id,
+                'node_id': node_id,
                 'node_link_id': obj._id
+            }
+        )
+
+
+class RegistrationContributorsSerializer(NodeContributorsSerializer):
+    def get_absolute_url(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'registrations:node-contributor-detail',
+            kwargs={
+                'node_id': node_id,
+                'user_id': obj._id
             }
         )

@@ -9,7 +9,8 @@ from api.base.views import JSONAPIBaseView
 from api.base.serializers import HideIfRetraction
 from api.registrations.serializers import (
     RegistrationSerializer,
-    RegistrationDetailSerializer
+    RegistrationDetailSerializer,
+    RegistrationContributorsSerializer
 )
 
 from api.nodes.views import (
@@ -28,11 +29,11 @@ from api.base.utils import get_object_or_error
 
 class RegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current registration based on the
-    current URL. By default, fetches the current registration based on the registration_id kwarg.
+    current URL. By default, fetches the current registration based on the node_id kwarg.
     """
 
     serializer_class = RegistrationSerializer
-    node_lookup_url_kwarg = 'registration_id'
+    node_lookup_url_kwarg = 'node_id'
 
     def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
@@ -237,27 +238,28 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
         return registration
 
 
-class RegistrationContributorsList(NodeContributorsList):
+class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-contributors'
 
 
-class RegistrationContributorDetail(NodeContributorDetail):
+class RegistrationContributorDetail(NodeContributorDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-contributor-detail'
+    serializer_class = RegistrationContributorsSerializer
 
 
-class RegistrationChildrenList(NodeChildrenList):
+class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-children'
 
 
-class RegistrationCommentsList(NodeCommentsList):
+class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-comments'
 
 
-class RegistrationProvidersList(NodeProvidersList):
+class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-providers'
 
@@ -274,16 +276,16 @@ class RegistrationNodeLinksDetail(NodeLinksDetail, RegistrationMixin):
     serializer_class = RegistrationNodeLinksSerializer
 
 
-class RegistrationRegistrationsList(NodeRegistrationsList):
+class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-providers'
 
 
-class RegistrationFilesList(NodeFilesList):
+class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-files'
 
 
-class RegistrationFileDetail(NodeFileDetail):
+class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-file-detail'

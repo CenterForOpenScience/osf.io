@@ -2208,7 +2208,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def absolute_api_v2_url(self):
         if self.is_registration:
-            return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': self._id})
+            return absolute_reverse('registrations:registration-detail', kwargs={'node_id': self._id})
         if self.is_folder:
             return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
