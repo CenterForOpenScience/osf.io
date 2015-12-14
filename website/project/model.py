@@ -2017,6 +2017,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.permissions = {}
         forked.visible_contributor_ids = []
 
+        for citation in self.alternativeCitations:
+            forked.add_citation(
+                auth=auth,
+                citation=citation.clone(),
+                log=False,
+                save=False
+            )
+
         forked.add_contributor(
             contributor=user,
             permissions=CREATOR_PERMISSIONS,
@@ -2166,8 +2174,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-    def add_citation(self, auth, save=True, log=True, **kwargs):
-        citation = AlternativeCitation(**kwargs)
+    def add_citation(self, auth, save=True, log=True, citation=None, **kwargs):
+        if not citation:
+            citation = AlternativeCitation(**kwargs)
         citation.save()
         self.alternativeCitations.append(citation)
         if log:
