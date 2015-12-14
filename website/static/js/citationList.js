@@ -69,7 +69,7 @@ var AlternativeModel = function(citation, view, parent) {
 
         self.name.extend({
             required: {
-                message: '\'Citation Name\' is required'
+                message: '"Citation name" is required'
             },
             validation: {
                 validator: function() {
@@ -83,13 +83,13 @@ var AlternativeModel = function(citation, view, parent) {
                     return true;
                 },
                 'message': function() {
-                    return 'There is already an alternative citation named \'' + self.name() + '\'';
+                    return 'There is already a citation named \'' + self.name() + '\'';
                 }
             }
         });
         self.text.extend({
             required: {
-                message: '\'Citation\' is required'
+                message: '"Citation" is required'
             },
             validation: {
                 validator: function() {

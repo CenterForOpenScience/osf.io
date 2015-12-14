@@ -45,7 +45,7 @@ $('body').on('nodeLoad', function(event, data) {
     }
 });
 
-// Initialize comment pane w/ it's viewmodel
+// Initialize comment pane w/ its viewmodel
 var $comments = $('#comments');
 if ($comments.length) {
     var userName = window.contextVars.currentUser.name;

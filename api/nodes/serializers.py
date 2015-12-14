@@ -7,7 +7,7 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.models import Node, User, Comment, AlternativeCitation
+from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
@@ -391,19 +391,17 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
         if len(errors) > 0:
             raise ValidationError(detail=errors)
         node = self.context['view'].get_node()
-        citation = AlternativeCitation(**validated_data)
-        citation.save()
-        node.alternative_citations.append(citation)
-        node.save()
+        auth = Auth(self.context['request']._user)
+        citation = node.add_citation(auth, save=True, **validated_data)
         return citation
 
     def update(self, instance, validated_data):
         errors = self.error_checker(validated_data)
         if len(errors) > 0:
             raise ValidationError(detail=errors)
-        instance.name = validated_data.get('name', instance.name)
-        instance.text = validated_data.get('text', instance.text)
-        instance.save()
+        node = self.context['view'].get_node()
+        auth = Auth(self.context['request']._user)
+        instance = node.edit_citation(auth, instance, save=True, **validated_data)
         return instance
 
     def error_checker(self, data):
@@ -412,7 +410,7 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
         text = data.get('text', None)
         citations = self.context['view'].get_node().alternative_citations
         if not (self.instance and self.instance.name == name) and citations.find(Q('name', 'eq', name)).count() > 0:
-            errors.append("There is already an alternative citation named '{}'".format(name))
+            errors.append("There is already a citation named '{}'".format(name))
         if not (self.instance and self.instance.text == text):
             matching_citations = citations.find(Q('text', 'eq', text))
             if matching_citations.count() > 0:

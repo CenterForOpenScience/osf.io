@@ -401,6 +401,10 @@ class NodeLog(StoredObject):
     COMMENT_REMOVED = 'comment_removed'
     COMMENT_UPDATED = 'comment_updated'
 
+    CITATION_ADDED = 'citation_added'
+    CITATION_EDITED = 'citation_edited'
+    CITATION_REMOVED = 'citation_removed'
+
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
@@ -418,7 +422,7 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
 
-    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED]
+    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -2161,6 +2165,66 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 )
             if save:
                 self.save()
+
+    def add_citation(self, auth, save=False, log=True, **kwargs):
+        citation = AlternativeCitation(**kwargs)
+        citation.save()
+        self.alternative_citations.append(citation)
+        citation_dict = {'name': citation.name, 'text': citation.text}
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_ADDED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation_dict
+                },
+                auth=auth,
+                save=False
+            )
+            if save:
+                self.save()
+        return citation
+
+    def edit_citation(self, auth, instance, save=False, log=True, **kwargs):
+        citation = {'name': instance.name, 'text': instance.text}
+        new_name = kwargs.get('name', instance.name)
+        new_text = kwargs.get('text', instance.text)
+        if new_name != instance.name:
+            instance.name = new_name
+            citation['new_name'] = new_name
+        if new_text != instance.text:
+            instance.text = new_text
+            citation['new_text'] = new_text
+        instance.save()
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_EDITED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation
+                },
+                auth=auth,
+                save=False
+            )
+        if save:
+            self.save()
+        return instance
+
+    def remove_citation(self, auth, instance, save=False, log=True):
+        citation = {'name': instance.name, 'text': instance.text}
+        self.alternative_citations.remove(instance)
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_REMOVED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation
+                },
+                auth=auth,
+                save=False
+            )
+        if save:
+            self.save()
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
