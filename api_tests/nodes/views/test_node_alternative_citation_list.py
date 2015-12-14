@@ -149,7 +149,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], "There is already an alternative citation named 'name'")
+        assert_equal(res.json['errors'][0]['detail'], "There is already a citation named 'name'")
         project.reload()
         assert_equal(len(project.alternative_citations), 1)
 
@@ -161,7 +161,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
                                     errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], "There is already an alternative citation named 'name'")
+        assert_equal(res.json['errors'][0]['detail'], "There is already a citation named 'name'")
         project.reload()
         assert_equal(len(project.alternative_citations), 1)
 
@@ -330,7 +330,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 2)
         errors = [error['detail'] for error in res.json['errors']]
-        assert_in("There is already an alternative citation named 'name'", errors)
+        assert_in("There is already a citation named 'name'", errors)
         assert_in("Citation matches 'name'", errors)
         project.reload()
         assert_equal(len(project.alternative_citations), 1)
@@ -344,7 +344,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 2)
         errors = [error['detail'] for error in res.json['errors']]
-        assert_in("There is already an alternative citation named 'name'", errors)
+        assert_in("There is already a citation named 'name'", errors)
         assert_in("Citation matches 'name'", errors)
         project.reload()
         assert_equal(len(project.alternative_citations), 1)

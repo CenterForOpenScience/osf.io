@@ -309,7 +309,7 @@
                     </div>
                     % if 'admin' in user['permissions'] and not node['is_registration']:
                         <!-- ko ifnot: editing() -->
-                            <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default m-t-md"><i class="fa fa-plus"></i> Add Alternative Citation</button>
+                            <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default m-t-md"><i class="fa fa-plus"></i> Add Citation</button>
                         <!-- /ko -->
                     % endif
                 </div>

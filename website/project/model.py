@@ -2174,17 +2174,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-    def add_citation(self, auth, save=True, log=True, citation=None, **kwargs):
-        if not citation:
-            citation = AlternativeCitation(**kwargs)
+    def add_citation(self, auth, save=False, log=True, **kwargs):
+        citation = AlternativeCitation(**kwargs)
         citation.save()
         self.alternative_citations.append(citation)
+        citation_dict = {'name': citation.name, 'text': citation.text}
         if log:
             self.add_log(
                 action=NodeLog.CITATION_ADDED,
                 params={
                     'node': self._primary_key,
-                    'citation': citation.name
+                    'citation': citation_dict
                 },
                 auth=auth,
                 save=False
@@ -2193,8 +2193,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.save()
         return citation
 
-    def edit_citation(self, auth, instance, save=True, log=True, **kwargs):
-        citation = {'name': instance.name}
+    def edit_citation(self, auth, instance, save=False, log=True, **kwargs):
+        citation = {'name': instance.name, 'text': instance.text}
         new_name = kwargs.get('name', instance.name)
         new_text = kwargs.get('text', instance.text)
         if new_name != instance.name:
@@ -2218,14 +2218,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         return instance
 
-    def remove_citation(self, auth, instance, save=True, log=True):
+    def remove_citation(self, auth, instance, save=False, log=True):
+        citation = {'name': instance.name, 'text': instance.text}
         self.alternative_citations.remove(instance)
         if log:
             self.add_log(
                 action=NodeLog.CITATION_REMOVED,
                 params={
                     'node': self._primary_key,
-                    'citation': instance.name
+                    'citation': citation
                 },
                 auth=auth,
                 save=False
