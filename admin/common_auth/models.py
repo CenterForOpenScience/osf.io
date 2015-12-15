@@ -81,3 +81,6 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         if not self.osf_id:
             raise RuntimeError('This user does not have an associated Osf User')
         return OsfUserModel.load(self.osf_id)
+
+    def is_in_group(self, group):
+        return self.groups.filter(name=group).exists()

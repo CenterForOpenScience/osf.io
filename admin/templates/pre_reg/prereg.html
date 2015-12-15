@@ -41,7 +41,7 @@
     <div class="col-md-2">
       <br />
       <span class="btn-group form-inline">
-        {% if draft.is_pending_approval %}
+        <fieldset {{ draft.is_pending_approval|yesno:',disabled' }}>
         <form action="{% url 'pre_reg:approve_draft' draft.pk %}" method="POST" style="display: inline">
           <input type="hidden" name="page" value="{{ page.number }}">
           <input type="submit" style="margin-right: 5px"
@@ -54,7 +54,7 @@
                  class="btn btn-danger prereg-draft-reject"
                  value="Reject"/>
         </form>
-        {% endif %}
+        </fieldset>
       </span>
       <br />
       <br />

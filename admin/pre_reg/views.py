@@ -1,6 +1,6 @@
 import functools
 
-from django.contrib.auth.decorators import login_required  # , user_passes_test
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
@@ -13,7 +13,6 @@ from modularodm import Q
 
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
-# from admin.common_auth.models import MyUser
 
 from framework.mongo.utils import get_or_http_error
 from framework.exceptions import HTTPError
@@ -27,25 +26,27 @@ def get_prereg_drafts(user=None):
         Q('name', 'eq', 'Prereg Challenge') &
         Q('schema_version', 'eq', 2)
     )
-    all_drafts = DraftRegistration.find(
+    query = (
         Q('registration_schema', 'eq', prereg_schema) &
         Q('approval', 'ne', None)
     )
     if user:
-        # TODO filter by assignee
         pass
-    return all_drafts
-
+        # TODO: filter by assignee; this requires multiple levels of Prereg admins-
+        # one level that can see all drafts, and another than can see only the ones they're assigned.
+        # As a followup to this, we need to make sure this applies to approval/rejection/commenting endpoints
+        # query = query & Q('_metaschema_flags.assignee', 'eq', user._id)
+    return DraftRegistration.find(query)
 
 def is_in_prereg_group(user):
     """Determines whether a user is in the prereg_group
     :param user: User wanting access to prereg material
     :return: True if prereg False if not
     """
-    return user.groups.filter(name='prereg_group').exists()
+    return user.is_in_group('prereg_group')
 
 @login_required
-# @user_passes_test(is_in_prereg_group)
+@user_passes_test(is_in_prereg_group)
 def prereg(request, page_number):
     """Redirects to prereg page if user has prereg access
     :param request: Current logged in user
@@ -71,7 +72,7 @@ def prereg(request, page_number):
     return render(request, 'pre_reg/prereg.html', context)
 
 @login_required
-# @user_passes_test(is_in_prereg_group)
+@user_passes_test(is_in_prereg_group)
 def view_draft(request, draft_pk):
     """Redirects to prereg form review page if user has prereg access
     :param draft_pk: Unique id for selected draft
@@ -84,7 +85,7 @@ def view_draft(request, draft_pk):
     return render(request, 'pre_reg/edit_draft_registration.html', context)
 
 @login_required
-# @user_passes_test(is_in_prereg_group)
+@user_passes_test(is_in_prereg_group)
 def get_drafts(request):
     """Determines whether a user is in the general_administrator_group
     :param user: User wanting access to administrator material
@@ -107,7 +108,7 @@ def get_drafts(request):
 
 @csrf_exempt
 @login_required
-# @user_passes_test(is_in_prereg_group)
+@user_passes_test(is_in_prereg_group)
 def approve_draft(request, draft_pk):
     """Approves current draft
     :param user: Current logged in user
@@ -122,7 +123,7 @@ def approve_draft(request, draft_pk):
 
 @csrf_exempt
 @login_required
-# @user_passes_test(is_in_prereg_group)
+@user_passes_test(is_in_prereg_group)
 def reject_draft(request, draft_pk):
     """Rejects current draft
     :param user: Current logged in user
@@ -154,8 +155,11 @@ def update_draft(request, draft_pk):
         draft.save()
     else:
         schema_data = data.get('schema_data', {})
+        data = draft.registration_metadata
+        for key, value in data.items():
+            data[key]['comments'] = schema_data.get(key, {}).get('comments', [])
         try:
-            draft.update_metadata(schema_data)
+            draft.update_metadata(data)
             draft.save()
         except (NodeStateError):
             raise HTTPError(http.BAD_REQUEST)
