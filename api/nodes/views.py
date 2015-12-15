@@ -11,7 +11,7 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
+from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
@@ -265,7 +265,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
-            if self.request.query_params.get('skip_uneditable', False) == 'True':
+            if is_truthy(self.request.query_params.get('skip_uneditable', False)):
                 has_permission = []
                 for node in nodes:
                     if node.can_edit(auth):

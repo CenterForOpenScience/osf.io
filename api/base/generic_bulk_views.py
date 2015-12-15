@@ -8,7 +8,7 @@ from website.project.model import Q
 from website.util.permissions import ADMIN
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException, Gone
-from api.base.utils import is_bulk_request
+from api.base.utils import is_bulk_request, is_truthy
 
 
 class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
@@ -135,7 +135,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
 
         # If skip_uneditable=True in query_params, skip resources for which the user does not have admin permissions
         # and delete the remaining resources
-        if self.request.query_params.get('skip_uneditable', 'False') == 'True' and skipped:
+        if is_truthy(self.request.query_params.get('skip_uneditable', False)) and skipped:
             self.perform_bulk_destroy(allowed)
             return Response(status=status.HTTP_200_OK, data={'meta': {'errors': skipped}})
 
