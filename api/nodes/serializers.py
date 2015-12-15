@@ -206,6 +206,7 @@ class NodeDetailSerializer(NodeSerializer):
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
+    non_anonymized_fields = ['bibliographic', 'permission']
     filterable_fields = frozenset([
         'id',
         'bibliographic',
@@ -233,9 +234,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'contributors'
-
-    def absolute_url(self, obj):
-        return obj.absolute_url
 
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']

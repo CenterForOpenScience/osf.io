@@ -128,6 +128,8 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixi
     to contributors and administrators on the parent node. Only the user who created the comment has permission
     to edit and delete the comment.
 
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
     ##Attributes
 
     OSF comment entities have the "comments" `type`.
