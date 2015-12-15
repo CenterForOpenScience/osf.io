@@ -1,4 +1,3 @@
-import mock
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
@@ -11,8 +10,7 @@ from website.app import init_app
 from website.addons.twofactor.utils import serialize_settings, serialize_urls
 
 class TestUtils(OsfTestCase):
-    @mock.patch('website.addons.twofactor.models.push_status_message')
-    def setUp(self, mocked):
+    def setUp(self):
         super(TestUtils, self).setUp()
         self.user = AuthUserFactory()
         self.user_addon = self.user.get_or_add_addon('twofactor')

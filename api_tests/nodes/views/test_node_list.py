@@ -15,7 +15,8 @@ from tests.factories import (
     FolderFactory,
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RetractedRegistrationFactory
 )
 
 
@@ -31,6 +32,10 @@ class TestNodeList(ApiTestCase):
         self.public = ProjectFactory(is_public=True, creator=self.user)
 
         self.url = '/{}nodes/'.format(API_BASE)
+
+    def tearDown(self):
+        super(TestNodeList, self).tearDown()
+        Node.remove()
 
     def test_only_returns_non_deleted_public_projects(self):
         res = self.app.get(self.url)
@@ -77,11 +82,19 @@ class TestNodeList(ApiTestCase):
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
-    def test_node_list_does_not_return_registrations(self):
+    def test_node_list_returns_registrations(self):
         registration = RegistrationFactory(project=self.public, creator=self.user)
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_not_in(registration._id, ids)
+        assert_in(registration._id, ids)
+
+    def test_omit_retracted_registration(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public)
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 3)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
 
 
 class TestNodeFiltering(ApiTestCase):
@@ -1263,6 +1276,20 @@ class TestNodeBulkUpdateSkipUneditable(ApiTestCase):
 
     def test_skip_uneditable_bulk_update_query_param_required(self):
         url = '/{}nodes/'.format(API_BASE)
+        res = self.app.put_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.title)
+        assert_equal(self.public_project_two.title, self.title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+    def test_skip_uneditable_equals_false_bulk_update(self):
+        url = '/{}nodes/?skip_uneditable=False'.format(API_BASE)
         res = self.app.put_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 403)
         self.public_project.reload()

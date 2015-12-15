@@ -17,6 +17,7 @@ from website.util import waterbutler_url_for
 from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse import serializer
 from website.addons.dataverse.provider import DataverseProvider
+from website.addons.dataverse.utils import DataverseNodeLogger
 
 
 class AddonDataverseUserSettings(AddonOAuthUserSettingsBase):
@@ -70,6 +71,25 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def complete(self):
         return bool(self.has_auth and self.dataset_doi is not None)
+
+    @property
+    def folder_id(self):
+        return self.dataset_id
+
+    @property
+    def folder_path(self):
+        pass
+
+    @property
+    def nodelogger(self):
+        # TODO: Use this for all log actions
+        auth = None
+        if self.user_settings:
+            auth = Auth(self.user_settings.owner)
+        return DataverseNodeLogger(
+            node=self.owner,
+            auth=auth
+        )
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
         kwargs = dict(

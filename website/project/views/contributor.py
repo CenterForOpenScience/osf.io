@@ -323,7 +323,13 @@ def project_contributors_post(auth, node, **kwargs):
     # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
 
-    return {'status': 'success'}, 201
+    return {
+        'status': 'success',
+        'contributors': profile_utils.serialize_contributors(
+            node.visible_contributors,
+            node=node,
+        )
+    }, 201
 
 
 @no_auto_transaction
