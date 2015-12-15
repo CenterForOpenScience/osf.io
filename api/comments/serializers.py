@@ -42,9 +42,9 @@ class CommentSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
-    is_abuse = ser.SerializerMethodField()
-    has_children = ser.SerializerMethodField()
-    can_edit = ser.SerializerMethodField()
+    is_abuse = ser.SerializerMethodField(help_text='Whether the current user reported this comment.')
+    has_children = ser.SerializerMethodField(help_text='Whether this comment has any replies.')
+    can_edit = ser.SerializerMethodField(help_text='Whether the current user can edit this comment.')
 
     # LinksField.to_representation adds link to "self"
     links = LinksField({})
