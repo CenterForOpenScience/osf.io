@@ -93,6 +93,14 @@
                 <input class="form-control" data-bind="value: scholar" placeholder="profileID"/>
                 </div>
             </div>
+            
+            <div class="form-group">
+                <label>ResearchGate</label>
+                <div class="input-group">
+                <span class="input-group-addon">https://researchgate.net/profile/</span>
+                <input class="form-control" data-bind="value: researchGate" placeholder="profileID"/>
+                </div>
+            </div>
 
             <div class="p-t-lg p-b-lg">
 
