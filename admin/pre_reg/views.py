@@ -54,7 +54,11 @@ def prereg(request, page_number):
     """
     paginator = Paginator(get_prereg_drafts(), 5)
 
-    page_number = int(page_number or request.GET.get('page', 1))
+    try:
+        page_number = int(page_number or request.GET.get('page'))
+    except (TypeError, ValueError):
+        page_number = 1
+
     page = paginator.page(page_number)
 
     try:
