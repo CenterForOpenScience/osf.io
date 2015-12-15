@@ -2,7 +2,10 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+var pikaday = require('pikaday');
 require('knockout.validation');
+
+var iconmap = require('js/iconmap');
 
 var makeExtender = function(interceptor) {
     return function(target, options) {
@@ -206,6 +209,108 @@ ko.bindingHandlers.fadeVisible = {
     }
 };
 
+var tooltip = function(el, valueAccessor) {
+    var params = valueAccessor();
+    $(el).tooltip(params);
+};
+// Run Bootstrap tooltip JS automagically
+// http://getbootstrap.com/javascript/#tooltips
+ko.bindingHandlers.tooltip = {
+    init: tooltip,
+    update: tooltip
+};
+// Attach view model logic to global keypress events
+ko.bindingHandlers.onKeyPress = {
+    init: function(el, valueAccessor) {
+        $(window).keydown(function(e) {
+            var params = valueAccessor();
+            if (e.keyCode === params.keyCode) {
+                params.listener(e);
+            }
+        });
+    }
+};
+
+/* A binding handler to convert lists into formatted lists, e.g.:
+ * [dog] -> dog
+ * [dog, cat] -> dog and cat
+ * [dog, cat, fish] -> dog, cat, and fish
+ *
+ * This handler should not be used for user inputs.
+ *
+ * Example use:
+ * <span data-bind="listing: {data: ['Alpha', 'Beta', 'Gamma'],
+ *                            map: function(item) {return item.charAt(0) + '.';}}"></span>
+ * yields
+ * <span ...>A., B., and G.</span>
+ */
+ko.bindingHandlers.listing = {
+    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+        var value = valueAccessor();
+        var valueUnwrapped = ko.unwrap(value);
+        var map = valueUnwrapped.map || function(item) {return item;};
+        var data = valueUnwrapped.data || [];
+        var keys = [];
+        if (!Array.isArray(data)) {
+            keys = Object.keys(data);
+        }
+        else {
+            keys = data;
+        }
+        var list = ko.utils.arrayMap(keys, function(key, index) {
+            var ret;
+            if (index === 0){
+                ret = '';
+            }
+            else if (index === 1){
+                if (valueUnwrapped.length === 2) {
+                    ret = ' and ';
+                }
+                else {
+                    ret = ', ';
+                }
+            }
+            else {
+                ret = ', and ';
+            }
+            ret += map(key, data[key]);
+            return ret;
+        }).join('');
+        $(element).text(list);
+    }
+};
+
+/**
+ * Takes over anchor scrolling and scrolls to anchor positions within elements
+ * Example:
+ * <span data-bind='anchorScroll'></span>
+ */
+ko.bindingHandlers.anchorScroll = {
+    init: function(elem, valueAccessor) {
+        var buffer = valueAccessor().buffer || 100;
+        var element = valueAccessor().elem || elem;
+        var offset;
+        $(element).on('click', 'a[href^="#"]', function (event) {
+            var $item = $(this);
+            var $element = $(element);
+            if(!$item.attr('data-model') && $item.attr('href') !== '#') {
+                event.preventDefault();
+                // get location of the target
+                var target = $item.attr('href');
+                // if target has a scrollbar scroll it, otherwise scroll the page
+                if ( $element.get(0).scrollHeight > $element.innerHeight() ) {
+                    offset = $(target).position();
+                    $element.scrollTop(offset.top - buffer);
+                } else {
+                    offset = $(target).offset();
+                    $(window).scrollTop(offset.top - 100); // This is fixed to 100 because of the fixed navigation menus on the page
+                }
+            }
+        });
+    }
+};
+
+
 ko.bindingHandlers.groupOptions = {
     /** Map a list of lists to a select with optgroup headings
      *
@@ -259,8 +364,72 @@ ko.bindingHandlers.groupOptions = {
     }
 };
 
-// Expose public utilities
+/**
+ * Creates a pikaday date picker in place. Optionally takes in a function
+ * that verifies the selected date is valid
+ * Example:
+ * <input type="text" data-bind="datePicker: value">
+ * or
+ * <input type="text" data-bind="datePicker: {value: value, value: isValid}">
+ */
+ko.bindingHandlers.datePicker = {
+    init: function(elem, valueAccessor) {
+        var opts = valueAccessor();
+        var value;
+        var valid = function() { return true; };
+        if ($.isFunction(opts)) {
+            value = opts;
+        }
+        else {
+            value = opts.value;
+            valid = opts.valid || valid;
+        }
+        var picker = new pikaday({
+            bound: true,
+            field: elem,
+            onSelect: function(){
+                value(picker.toString());
+                valid();
+            }
+        });
+    }
+};
 
+ /**
+ * Adds class returned from iconmap to the element. The value accessor should be the
+ * category of the node.
+ * Example:
+ * <span data-bind="getIcon: 'analysis'"></span>
+ */
+ko.bindingHandlers.getIcon = {
+    init: function(elem, valueAccessor) {
+        var icon;
+        var category = valueAccessor();
+        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+            icon = iconmap.componentIcons[category];
+        }
+        else {
+            icon = iconmap.projectIcons[category];
+        }
+        $(elem).addClass(icon);
+    }
+};
+
+
+/**
+ * Allows data-bind to be called without a div so the layout of the page is not effected.
+ * Example:
+ * <!-- ko stopBinding: true -->
+ */
+ko.bindingHandlers.stopBinding = {
+    init: function() {
+        return { controlsDescendantBindings: true };
+    }
+};
+
+ko.virtualElements.allowedBindings.stopBinding = true;
+
+// Expose public utilities
 module.exports = {
     makeExtender: makeExtender,
     addExtender: addExtender,

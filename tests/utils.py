@@ -10,6 +10,9 @@ from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
+from tests.base import get_default_metaschema
+DEFAULT_METASCHEMA = get_default_metaschema()
+
 def requires_module(module):
     def decorator(fn):
         @functools.wraps(fn)
@@ -66,7 +69,7 @@ def assert_not_logs(log_action, node_key, index=-1):
     return outer_wrapper
 
 @contextlib.contextmanager
-def mock_archive(project, schema=None, auth=None, template=None, data=None, parent=None,
+def mock_archive(project, schema=None, auth=None, data=None, parent=None,
                  autocomplete=True, autoapprove=False):
     """ A context manager for registrations. When you want to call Node#register_node in
     a test but do not want to deal with any of this side effects of archiver, this
@@ -93,13 +96,17 @@ def mock_archive(project, schema=None, auth=None, template=None, data=None, pare
         assert_false(registration.archiving)
         assert_false(registration.is_pending_registration)
     """
-    schema = schema or None
+    schema = schema or DEFAULT_METASCHEMA
     auth = auth or Auth(project.creator)
-    template = template or ''
     data = data or ''
 
     with mock.patch('framework.tasks.handlers.enqueue_task'):
-        registration = project.register_node(schema, auth, template, data, parent)
+        registration = project.register_node(
+            schema=schema,
+            auth=auth,
+            data=data,
+            parent=parent,
+        )
     registration.root.require_approval(project.creator)
     if autocomplete:
         root_job = registration.root.archive_job
@@ -110,7 +117,7 @@ def mock_archive(project, schema=None, auth=None, template=None, data=None, pare
         sanction = registration.root.sanction
         with contextlib.nested(
             mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
-            mock.patch.object(sanction, 'ask')
+            mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
         ):
             archiver_listeners.archive_callback(registration)
     if autoapprove:
@@ -127,3 +134,12 @@ def make_drf_request(*args, **kwargs):
     http_request.META['SERVER_PORT'] = 8000
     # A DRF Request wraps a Django HttpRequest
     return Request(http_request, *args, **kwargs)
+
+
+class MockAuth(object):
+
+    def __init__(self, user):
+        self.user = user
+        self.logged_in = True
+
+mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))

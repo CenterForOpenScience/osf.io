@@ -100,6 +100,10 @@ def add_poster_by_email(conference, message):
 
         utils.provision_node(conference, message, node, user)
         utils.record_message(message, created)
+    # Prevent circular import error
+    from framework.auth import signals as auth_signals
+    if user_created:
+        auth_signals.user_confirmed.send(user)
 
     utils.upload_attachments(user, node, message.attachments)
 
@@ -218,9 +222,12 @@ def conference_results(meeting):
         'settings': settings,
     }
 
+def conference_submissions(**kwargs):
+    """Return data for all OSF4M submissions.
 
-def conference_view(**kwargs):
-    meetings = []
+    The total number of submissions for each meeting is calculated and cached
+    in the Conference.num_submissions field.
+    """
     submissions = []
     for conf in Conference.find():
         # For efficiency, we filter by tag first, then node
@@ -237,16 +244,26 @@ def conference_view(**kwargs):
         for idx, node in enumerate(projects):
             submissions.append(_render_conference_node(node, idx, conf))
         num_submissions = len(projects)
+        # Cache the number of submissions
+        conf.num_submissions = num_submissions
+        conf.save()
         if num_submissions < settings.CONFERENCE_MIN_COUNT:
+            continue
+    submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
+
+    return {'submissions': submissions}
+
+def conference_view(**kwargs):
+    meetings = []
+    for conf in Conference.find():
+        if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
         meetings.append({
             'name': conf.name,
             'active': conf.active,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
-            'count': num_submissions,
+            'count': conf.num_submissions,
         })
 
-    submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
     meetings.sort(key=lambda meeting: meeting['count'], reverse=True)
-
-    return {'meetings': meetings, 'submissions': submissions}
+    return {'meetings': meetings}

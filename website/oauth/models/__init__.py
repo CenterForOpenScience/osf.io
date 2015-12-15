@@ -265,6 +265,9 @@ class ExternalProvider(object):
         # call the hook for subclasses to parse values from the response
         info.update(self.handle_callback(response))
 
+        return self._set_external_account(user, info)
+
+    def _set_external_account(self, user, info):
         try:
             # create a new ``ExternalAccount`` ...
             self.account = ExternalAccount(
@@ -422,6 +425,19 @@ class ApiOAuth2Application(StoredObject):
         resp = client.revoke_application_tokens(self.client_id, self.client_secret)  # noqa
 
         self.is_active = False
+
+        if save:
+            self.save()
+        return True
+
+    def reset_secret(self, save=False):
+        """
+        Reset the secret of an ApiOAuth2Application
+        Revokes all tokens
+        """
+        client = cas.get_client()
+        client.revoke_application_tokens(self.client_id, self.client_secret)
+        self.client_secret = generate_client_secret()
 
         if save:
             self.save()

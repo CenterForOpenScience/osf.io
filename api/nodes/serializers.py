@@ -1,5 +1,7 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
+from rest_framework.exceptions import ValidationError
+from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
 from framework.auth.core import Auth
@@ -9,11 +11,10 @@ from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
+from api.base.utils import get_object_or_error, absolute_reverse
+from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
+                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly, HideIfRegistration, HideIfRetraction)
 from api.base.exceptions import InvalidModelValueError
-from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
-from api.base.serializers import (LinksField, JSONAPIHyperlinkedIdentityField, DevOnly,
-                                  JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink,
-                                  IDField, TypeField, TargetTypeField, JSONAPIListField)
 
 
 class NodeTagField(ser.Field):
@@ -49,54 +50,75 @@ class NodeSerializer(JSONAPISerializer):
 
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
+    category = HideIfRetraction(ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string))
     date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
+    date_modified = HideIfRetraction(ser.DateTimeField(read_only=True))
     registration = ser.BooleanField(read_only=True, source='is_registration')
-    fork = ser.BooleanField(read_only=True, source='is_fork')
-    collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
-    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
-    tags = JSONAPIListField(child=NodeTagField(), required=False)
+    fork = HideIfRetraction(ser.BooleanField(read_only=True, source='is_fork'))
+    collection = HideIfRetraction(DevOnly(ser.BooleanField(read_only=True, source='is_folder')))
+    dashboard = HideIfRetraction(ser.BooleanField(read_only=True, source='is_dashboard'))
+    tags = HideIfRetraction(JSONAPIListField(child=NodeTagField(), required=False))
 
     # Public is only write-able by admins--see update method
-    public = ser.BooleanField(source='is_public', required=False,
+    public = HideIfRetraction(ser.BooleanField(source='is_public', required=False,
                               help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
                                         'permission. Write and admin access are the same for '
                                         'public and private nodes. Administrators on a parent '
-                                        'node have implicit read permissions for all child nodes',
+                                        'node have implicit read permissions for all child nodes')
                               )
 
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
-    children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
-                                                lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
+    children = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-children',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_node_count'},
+    ))
 
-    contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
-                                                    lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
+    comments = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-comments',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'unread': 'get_unread_comments_count'}))
 
-    files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
-                                             link_type='related')
-
-    comments = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-comments', lookup_field='pk', lookup_url_kwarg='node_id',
-                                               link_type='related', meta={'unread': 'get_unread_comments_count'})
-
-    node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
-
-    parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
-                                              lookup_url_kwarg='node_id')
-
-    registrations = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
-                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}))
-
-    forked_from = JSONAPIHyperlinkedIdentityField(
-        view_name='nodes:node-detail',
-        lookup_field='forked_from_id',
-        link_type='related',
-        lookup_url_kwarg='node_id'
+    contributors = RelationshipField(
+        related_view='nodes:node-contributors',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_contrib_count'},
     )
+
+    files = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-providers',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
+
+    forked_from = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<forked_from_id>'}
+    ))
+
+    node_links = DevOnly(HideIfRetraction(RelationshipField(
+        related_view='nodes:node-pointers',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_pointers_count'},
+    )))
+
+    parent = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<parent_id>'}
+    ))
+
+    registrations = DevOnly(HideIfRegistration(RelationshipField(
+        related_view='nodes:node-registrations',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_registration_count'}
+    )))
+
+    logs = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-logs',
+        related_view_kwargs={'node_id': '<pk>'},
+    ))
 
     class Meta:
         type_ = 'nodes'
@@ -149,13 +171,15 @@ class NodeSerializer(JSONAPISerializer):
         """
         assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
-        tags = validated_data.get('tags')
-        if tags is not None:
+        old_tags = set([tag._id for tag in node.tags])
+        if 'tags' in validated_data:
+            current_tags = set(validated_data.get('tags'))
             del validated_data['tags']
-            current_tags = set(tags)
+        elif self.partial:
+            current_tags = set(old_tags)
         else:
             current_tags = set()
-        old_tags = set([tag._id for tag in node.tags])
+
         for new_tag in (current_tags - old_tags):
             node.add_tag(new_tag, auth=auth)
         for deleted_tag in (old_tags - current_tags):
@@ -197,18 +221,15 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
-    links = LinksField(add_dev_only_items({
-        'html': 'absolute_url',
+    links = LinksField({
         'self': 'get_absolute_url'
-    }, {
-        'profile_image': 'profile_image_url',
-    }))
-    users = JSONAPIHyperlinkedIdentityField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id',
-                                             link_type='related')
+    })
 
-    def profile_image_url(self, user):
-        size = self.context['request'].query_params.get('profile_image_size')
-        return user.profile_image_url(size=size)
+    users = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<pk>'},
+        always_embed=True
+    )
 
     class Meta:
         type_ = 'contributors'
@@ -283,8 +304,12 @@ class NodeLinksSerializer(JSONAPISerializer):
     # title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
     #                                                                      'points to')
 
-    target_node = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='pk', link_type='related',
-                                              lookup_url_kwarg='node_id')
+    target_node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<pk>'},
+        always_embed=True
+
+    )
     class Meta:
         type_ = 'node_links'
 
@@ -307,14 +332,21 @@ class NodeLinksSerializer(JSONAPISerializer):
         user = request.user
         auth = Auth(user)
         node = self.context['view'].get_node()
-        pointer_node = Node.load(validated_data['_id'])
-        if not pointer_node:
-            raise exceptions.NotFound('Node not found.')
+        target_node_id = validated_data['_id']
+        pointer_node = Node.load(target_node_id)
+        if not pointer_node or pointer_node.is_folder:
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/node_links/data/id'},
+                detail='Target Node \'{}\' not found.'.format(target_node_id)
+            )
         try:
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
         except ValueError:
-            raise exceptions.ValidationError('Node link to node {} already in list'.format(pointer_node._id))
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/node_links/data/id'},
+                detail='Target Node \'{}\' already pointed to by \'{}\'.'.format(target_node_id, node._id)
+            )
 
     def update(self, instance, validated_data):
         pass
@@ -328,7 +360,12 @@ class NodeProviderSerializer(JSONAPISerializer):
     path = ser.CharField(read_only=True)
     node = ser.CharField(source='node_id', read_only=True)
     provider = ser.CharField(read_only=True)
-    files = NodeFileHyperLink(kind='folder', read_only=True, link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
+    files = NodeFileHyperLinkField(
+        related_view='nodes:node-files',
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder',
+        never_embed=True
+    )
     links = LinksField({
         'upload': WaterbutlerLink(),
         'new_folder': WaterbutlerLink(kind='folder')
@@ -340,3 +377,45 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
+
+class NodeAlternativeCitationSerializer(JSONAPISerializer):
+
+    id = IDField(source="_id", read_only=True)
+    type = TypeField()
+    name = ser.CharField(required=True)
+    text = ser.CharField(required=True)
+
+    class Meta:
+        type_ = 'citations'
+
+    def create(self, validated_data):
+        errors = self.error_checker(validated_data)
+        if len(errors) > 0:
+            raise ValidationError(detail=errors)
+        node = self.context['view'].get_node()
+        auth = Auth(self.context['request']._user)
+        citation = node.add_citation(auth, save=True, **validated_data)
+        return citation
+
+    def update(self, instance, validated_data):
+        errors = self.error_checker(validated_data)
+        if len(errors) > 0:
+            raise ValidationError(detail=errors)
+        node = self.context['view'].get_node()
+        auth = Auth(self.context['request']._user)
+        instance = node.edit_citation(auth, instance, save=True, **validated_data)
+        return instance
+
+    def error_checker(self, data):
+        errors = []
+        name = data.get('name', None)
+        text = data.get('text', None)
+        citations = self.context['view'].get_node().alternative_citations
+        if not (self.instance and self.instance.name == name) and citations.find(Q('name', 'eq', name)).count() > 0:
+            errors.append("There is already a citation named '{}'".format(name))
+        if not (self.instance and self.instance.text == text):
+            matching_citations = citations.find(Q('text', 'eq', text))
+            if matching_citations.count() > 0:
+                names = "', '".join([str(citation.name) for citation in matching_citations])
+                errors.append("Citation matches '{}'".format(names))
+        return errors

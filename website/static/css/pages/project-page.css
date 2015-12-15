@@ -134,3 +134,9 @@
 .table-addon-terms td:first-child {
     word-break: normal;
 }
+
+/* Project Description */
+
+span#nodeDescriptionEditable{
+    white-space:pre-line;
+}

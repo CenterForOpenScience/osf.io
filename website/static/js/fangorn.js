@@ -341,7 +341,7 @@ function _fangornResolveToggle(item) {
         return togglePlus;
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
-        if (item.data.extra.checkout) {
+        if (item.data.extra && item.data.extra.checkout) {
             if (item.data.extra.checkout === window.contextVars.currentUser.id){
                 return checkedByUser;
             }
@@ -742,6 +742,8 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             }
         });
     }
+    var url = item.data.nodeUrl + 'files/' + item.data.provider + item.data.path;
+    addFileStatus(treebeard, file, true, '', url);
     treebeard.redraw();
 }
 
@@ -763,8 +765,13 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         msgText = 'Cannot upload directories, applications, or packages.';
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
+    } else if (xhr && xhr.status === 0){
+        msgText = 'Unable to reach the provider, please try again later. If the ' +
+                'problem persists, please contact support@osf.io.';
     } else {
-        msgText = message || DEFAULT_ERROR_MESSAGE;
+        //Osfstorage and most providers store message in {Object}message.{string}message,
+        //but some, like Dataverse, have it in {string} message.
+        msgText = message ? (message.message || message) : DEFAULT_ERROR_MESSAGE;
     }
     var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
@@ -780,14 +787,8 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    if (msgText !== 'Upload canceled.') {
-        $osf.growl(
-            'Error',
-            'Unable to reach the provider, please try again later. If the ' +
-            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
-            );
-    }
     treebeard.options.uploadInProgress = false;
+    addFileStatus(treebeard, file, false, msgText, '');
 }
 
 /**
@@ -1157,16 +1158,28 @@ function gotoFileEvent (item) {
  */
 function _fangornTitleColumn(item, col) {
     var tb = this;
+    if (typeof tb.options.links === 'undefined') {
+        tb.options.links = true;
+    }
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return _connectCheckTemplate.call(this, item);
     }
     if (item.kind === 'file' && item.data.permissions.view) {
-        return m('span.fg-file-links',{
-            onclick: function(event) {
-                event.stopImmediatePropagation();
-                gotoFileEvent.call(tb, item);
-            }
-        }, item.data.name);
+        var attrs = {};
+        if (tb.options.links) {
+            attrs =  {
+                className: 'fg-file-links',
+                onclick: function(event) {
+                    event.stopImmediatePropagation();
+                    gotoFileEvent.call(tb, item);
+                }
+            };
+        }
+        return m(
+            'span', 
+            attrs,
+            item.data.name
+        );
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
@@ -1988,6 +2001,67 @@ function _fangornOver(event, ui) {
 }
 
 /**
+ * Log the success or failure of a file action (upload, etc.) in treebeard
+ * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
+ * @param {Object} file File object that dropzone passes
+ * @param success Boolean on whether upload actually happened
+ * @param message String failure reason message, '' if success === true
+ * @param link String with url to file, '' if success === false
+ * @private
+ */
+function addFileStatus(treebeard, file, success, message, link){
+    treebeard.uploadStates.push(
+        {'name': file.name, 'success': success, 'link': link, 'message': message}
+    );
+}
+
+/**
+ * Triggers file status modal or growlboxes after upload queue is empty
+ * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
+ * @private
+ */
+var UPLOAD_MODAL_MIN_FILE_QUANTITY = 4;
+function _fangornQueueComplete(treebeard) {
+    var fileStatuses = treebeard.uploadStates;
+    treebeard.uploadStates = [];
+    var total = fileStatuses.length;
+    var failed = 0;
+    if (total >= UPLOAD_MODAL_MIN_FILE_QUANTITY) {
+        treebeard.modal.update(m('', [
+            m('', [
+                fileStatuses.map(function(status){
+                    if (!status.success){ failed++; }
+                    return m('',
+                        [
+                            m('.row', [
+                                m((status.success ? 'a[href="' + status.link + '"]' : '') + '.col-sm-10', status.name),
+                                m('.col-sm-1', m(status.success ? '.fa.fa-check[style="color: green"]' : '.fa.fa-times[style="color: red"]')),
+                                m('.col-sm-1', m(!status.success ? '.fa.fa-info[data-toggle="tooltip"][data-placement="top"][title="'+ status.message +'"]' : ''))
+                            ]),
+                            m('hr')
+                        ]
+                    );
+                })
+            ])
+        ]), m('', [
+            m('a.btn.btn-primary', {onclick: function() {treebeard.modal.dismiss();}}, 'Done'), //jshint ignore:line
+        ]), m('', [m('h3.break-word.modal-title', 'Upload Status'), m('p', total - failed + '/' + total + ' files succeeded.')]));
+        $('[data-toggle="tooltip"]').tooltip();
+    } else {
+        fileStatuses.map(function(status) {
+           if (!status.success) {
+                if (status.message !== 'Upload canceled.') {
+                    $osf.growl(
+                        'Error',
+                        status.message
+                    );
+                }
+           }
+        });
+    }
+}
+
+/**
  * Where the drop actions happen
  * @param event jQuery UI drop event
  * @param {Array} items List of items being dragged at the time. Each item is a _item object
@@ -2177,6 +2251,7 @@ tbOptions = {
     onload : function () {
         var tb = this;
         _loadTopLevelChildren.call(tb);
+        tb.uploadStates = [];
         tb.pendingFileOps = [];
         tb.select('#tb-tbody').on('click', function(event){
             if(event.target !== this) {
@@ -2225,6 +2300,7 @@ tbOptions = {
                     displaySize = Math.round(file.size / 10000) / 100;
                     msgText = 'One of the files is too large (' + displaySize + ' MB). Max file size is ' + item.data.accept.maxSize + ' MB.';
                     item.notify.update(msgText, 'warning', undefined, 3000);
+                    addFileStatus(treebeard, file, false, 'File is too large. Max file size is ' + item.data.accept.maxSize + ' MB.', '');
                     return false;
                 }
             }
@@ -2267,7 +2343,8 @@ tbOptions = {
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile,
-        drop : _fangornDropzoneDrop
+        drop : _fangornDropzoneDrop,
+        queuecomplete: _fangornQueueComplete
     },
     resolveRefreshIcon : function() {
         return m('i.fa.fa-refresh.fa-spin');
@@ -2319,7 +2396,7 @@ Fangorn.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
-    },
+    }
 };
 
 Fangorn.Components = {
