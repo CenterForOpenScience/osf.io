@@ -902,6 +902,29 @@ class TestDisablingUsers(OsfTestCase):
         assert_false(self.user.is_disabled)
         assert_true(self.user.is_active)
 
+    def test_is_disabled_idempotency(self):
+        self.user.is_disabled = True
+        self.user.save()
+
+        old_date_disabled = self.user.date_disabled
+
+        self.user.is_disabled = True
+        self.user.save()
+
+        new_date_disabled = self.user.date_disabled
+
+        assert_equal(new_date_disabled, old_date_disabled)
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_disable_account(self, mock_mail):
+        self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
+        self.user.save()
+        self.user.disable_account()
+
+        assert_true(self.user.is_disabled)
+        assert_true(isinstance(self.user.date_disabled, datetime.datetime))
+        assert_false(self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+
 
 class TestMergingUsers(OsfTestCase):
 

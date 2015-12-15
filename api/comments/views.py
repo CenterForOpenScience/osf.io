@@ -45,11 +45,12 @@ class CommentMixin(object):
         return comment
 
 
-class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin, ODMFilterMixin):
-    """List of replies to a comment. *Writeable*.
+class CommentRepliesList(JSONAPIBaseView, generics.ListAPIView, CommentMixin, ODMFilterMixin):
+    """List of replies to a comment. *Read-only*.
 
-    Paginated list of comment replies ordered by their `date_created.` Each resource contains the full representation
+    Paginated list of comment replies ordered by their `date_created`. Each resource contains the full representation
     of the comment, meaning additional requests to an individual comment's detail view are not necessary.
+    Comment replies can be created via the NodeCommentsList endpoint `/v2/nodes/node_id/comments`.
 
     ###Permissions
 
@@ -76,29 +77,6 @@ class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
-    ##Actions
-
-    ###Create
-
-        Method:        POST
-        URL:           /links/self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "comments",   # required
-                           "attributes": {
-                             "content":       {content},        # mandatory
-                             "deleted":       {is_deleted},     # optional
-                           }
-                         }
-                       }
-        Success:       201 CREATED + comment representation
-
-    To create a comment reply, issue a POST request against this endpoint.  The `content` field is mandatory. The
-    `deleted` field is optional and defaults to `False`. If the comment reply creation is successful the API will return
-    a 201 response with the representation of the new comment reply in the body. For the new comment reply's canonical
-    URL, see the `/links/self` field of the response.
-
     ##Query Params
 
     + `filter[deleted]=True|False` -- filter comment replies based on whether or not they are deleted.
@@ -112,6 +90,11 @@ class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     Comment replies can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
     operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
     (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
+    + `filter[target]=target_id` -- filter comments based on their target id.
+
+    The list of comments can be filtered by target id. For example, to get all comments with target = comment,
+    the target_id would be the comment_id.
 
     #This Request/Response
     """
@@ -138,14 +121,6 @@ class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     def get_queryset(self):
         return Comment.find(self.get_query_from_request())
 
-    # overrides ListCreateAPIView
-    def perform_create(self, serializer):
-        target = self.get_comment()
-        serializer.validated_data['user'] = self.request.user
-        serializer.validated_data['target'] = target
-        serializer.validated_data['node'] = target.node
-        serializer.save()
-
 
 class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixin):
     """Details about a specific comment. *Writeable*.
@@ -155,6 +130,8 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixi
     Comments on public nodes are given read-only access to everyone. Comments on private nodes are only visible
     to contributors and administrators on the parent node. Only the user who created the comment has permission
     to edit and delete the comment.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
 
     ##Attributes
 

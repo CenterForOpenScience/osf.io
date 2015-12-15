@@ -406,6 +406,10 @@ class NodeLog(StoredObject):
     COMMENT_REMOVED = 'comment_removed'
     COMMENT_UPDATED = 'comment_updated'
 
+    CITATION_ADDED = 'citation_added'
+    CITATION_EDITED = 'citation_edited'
+    CITATION_REMOVED = 'citation_removed'
+
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
@@ -423,7 +427,7 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
 
-    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED]
+    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -769,6 +773,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
+
+    alternative_citations = fields.ForeignField('alternativecitation', list=True, backref='citations')
 
     _meta = {
         'optimistic': True,
@@ -2016,6 +2022,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.permissions = {}
         forked.visible_contributor_ids = []
 
+        for citation in self.alternative_citations:
+            forked.add_citation(
+                auth=auth,
+                citation=citation.clone(),
+                log=False,
+                save=False
+            )
+
         forked.add_contributor(
             contributor=user,
             permissions=CREATOR_PERMISSIONS,
@@ -2092,6 +2106,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
@@ -2163,6 +2178,66 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 )
             if save:
                 self.save()
+
+    def add_citation(self, auth, save=False, log=True, **kwargs):
+        citation = AlternativeCitation(**kwargs)
+        citation.save()
+        self.alternative_citations.append(citation)
+        citation_dict = {'name': citation.name, 'text': citation.text}
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_ADDED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation_dict
+                },
+                auth=auth,
+                save=False
+            )
+            if save:
+                self.save()
+        return citation
+
+    def edit_citation(self, auth, instance, save=False, log=True, **kwargs):
+        citation = {'name': instance.name, 'text': instance.text}
+        new_name = kwargs.get('name', instance.name)
+        new_text = kwargs.get('text', instance.text)
+        if new_name != instance.name:
+            instance.name = new_name
+            citation['new_name'] = new_name
+        if new_text != instance.text:
+            instance.text = new_text
+            citation['new_text'] = new_text
+        instance.save()
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_EDITED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation
+                },
+                auth=auth,
+                save=False
+            )
+        if save:
+            self.save()
+        return instance
+
+    def remove_citation(self, auth, instance, save=False, log=True):
+        citation = {'name': instance.name, 'text': instance.text}
+        self.alternative_citations.remove(instance)
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_REMOVED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation
+                },
+                auth=auth,
+                save=False
+            )
+        if save:
+            self.save()
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
@@ -3268,7 +3343,7 @@ class PrivateLink(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    key = fields.StringField(required=True)
+    key = fields.StringField(required=True, unique=True)
     name = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
     anonymous = fields.BooleanField(default=False)
@@ -3305,7 +3380,9 @@ class PrivateLink(StoredObject):
 class Sanction(StoredObject):
     """Sanction class is a generic way to track approval states"""
     # Tell modularodm not to attach backends
-    abstract = True
+    _meta = {
+        'abstract': True,
+    }
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -3373,6 +3450,37 @@ class Sanction(StoredObject):
     def is_rejected(self):
         return self.state == Sanction.REJECTED
 
+    def approve(self, user):
+        raise NotImplementedError("Sanction subclasses must implement an approve method.")
+
+    def reject(self, user):
+        raise NotImplementedError("Sanction subclasses must implement an approve method.")
+
+    def _on_reject(self, user):
+        """Callback for rejection of a Sanction
+
+        :param User user:
+        """
+        raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
+
+    def _on_complete(self, user):
+        """Callback for when a Sanction has approval and enters the ACTIVE state
+
+        :param User user:
+        """
+        raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
+
+    def forcibly_reject(self):
+        self.state = Sanction.REJECTED
+
+
+class TokenApprovableSanction(Sanction):
+
+    # Tell modularodm not to attach backends
+    _meta = {
+        'abstract': True,
+    }
+
     def _validate_authorizer(self, user):
         """Subclasses may choose to provide extra restrictions on who can be an authorizer
 
@@ -3431,20 +3539,15 @@ class Sanction(StoredObject):
             self.state = Sanction.APPROVED
             self._on_complete(user)
 
-    def _on_reject(self, user, token):
-        """Callback for rejection of a Sanction
-
-        :param User user:
-        :param str token: user's approval token
+    def token_for_user(self, user, method):
         """
-        raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
-
-    def _on_complete(self, user):
-        """Callback for when a Sanction has approval and enters the ACTIVE state
-
-        :param User user:
+        :param str method: 'approval' | 'rejection'
         """
-        raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
+        try:
+            user_state = self.approval_state[user._id]
+        except KeyError:
+            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
+        return user_state['{0}_token'.format(method)]
 
     def approve(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
@@ -3464,10 +3567,7 @@ class Sanction(StoredObject):
         except KeyError:
             raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         self.state = Sanction.REJECTED
-        self._on_reject(user, token)
-
-    def forcibly_reject(self):
-        self.state = Sanction.REJECTED
+        self._on_reject(user)
 
     def _notify_authorizer(self, user):
         pass
@@ -3483,7 +3583,12 @@ class Sanction(StoredObject):
                 self._notify_non_authorizer(contrib)
 
 
-class EmailApprovableSanction(Sanction):
+class EmailApprovableSanction(TokenApprovableSanction):
+
+    # Tell modularodm not to attach backends
+    _meta = {
+        'abstract': True,
+    }
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
@@ -3690,7 +3795,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         registration = self._get_registration()
         return registration.has_permission(user, ADMIN)
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, user):
         parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
@@ -3809,7 +3914,7 @@ class Retraction(EmailApprovableSanction):
                 'registration_link': registration_link,
             }
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, user):
         parent_registration = Node.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
@@ -3962,7 +4067,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
         self.save()
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, user):
         register = self._get_registration()
         registered_from = register.registered_from
         register.delete_registration_tree(save=True)
@@ -3975,6 +4080,17 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
             auth=Auth(user),
         )
 
+class AlternativeCitation(StoredObject):
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    name = fields.StringField(required=True, validate=MaxLengthValidator(256))
+    text = fields.StringField(required=True, validate=MaxLengthValidator(2048))
+
+    def to_json(self):
+        return {
+            "id": self._id,
+            "name": self.name,
+            "text": self.text
+        }
 
 class DraftRegistrationApproval(Sanction):
 
@@ -4000,6 +4116,24 @@ class DraftRegistrationApproval(Sanction):
             raise NotImplementedError(
                 'TODO: add a generic email template for registration approvals'
             )
+
+    def approve(self, user):
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        if user._id not in draft.get_authorizers():
+            raise PermissionsError("This user does not have permission to approve this draft.")
+        self.state = Sanction.APPROVED
+        self._on_complete(user)
+
+    def reject(self, user):
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        if user._id not in draft.get_authorizers():
+            raise PermissionsError("This user does not have permission to approve this draft.")
+        self.state = Sanction.REJECTED
+        self._on_reject(user)
 
     def _on_complete(self, user):
         draft = DraftRegistration.find_one(
@@ -4171,3 +4305,11 @@ class DraftRegistration(StoredObject):
         if save:
             self.save()
         return register
+
+    def approve(self, user):
+        self.approval.approve(user)
+        self.approval.save()
+
+    def reject(self, user):
+        self.approval.reject(user)
+        self.approval.save()

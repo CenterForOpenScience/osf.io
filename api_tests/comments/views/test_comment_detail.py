@@ -118,7 +118,7 @@ class TestCommentDetailView(ApiTestCase):
         url = res.json['data']['relationships']['target']['links']['related']['href']
         expected_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         target_type = res.json['data']['relationships']['target']['links']['related']['meta']['type']
-        expected_type = 'node'
+        expected_type = 'nodes'
         assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
         assert_equal(target_type, expected_type)

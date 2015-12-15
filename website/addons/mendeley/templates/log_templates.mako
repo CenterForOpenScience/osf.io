@@ -8,3 +8,9 @@ deauthorized the Mendeley addon for
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
+
+<script type="text/html" id="mendeley_node_authorized">
+authorized the Mendeley addon for
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
