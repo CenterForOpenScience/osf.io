@@ -160,11 +160,15 @@ ko.bindingHandlers.osfUploader = {
     init: osfUploader
 };
 
+
+var uploaderCount = 0;
 var Uploader = function(question) {
 
     var self = this;
 
     question.showUploader = ko.observable(false);
+    question.uid = 'uploader_' + uploaderCount;
+    uploaderCount++;
     self.selectedFile = ko.observable({});
     self.selectedFile.subscribe(function(file) {
         if (file) {

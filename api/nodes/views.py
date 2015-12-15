@@ -13,7 +13,7 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.files.serializers import FileSerializer
-from api.comments.serializers import CommentSerializer
+from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 
@@ -24,6 +24,7 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
+    NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
 )
 from api.registrations.serializers import RegistrationSerializer
@@ -1507,6 +1508,91 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             and addon.complete
         ]
 
+class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
+    """List of alternative citations for a project.
+
+    ##Actions
+
+    ###Create Alternative Citation
+
+        Method:         POST
+        Body (JSON):    {
+                            "data": {
+                                "type": "citations",    # required
+                                "attributes": {
+                                    "name": {name},     # mandatory
+                                    "text": {text}      # mandatory
+                                }
+                            }
+                        }
+        Success:        201 Created + new citation representation
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        AdminOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
+
+    serializer_class = NodeAlternativeCitationSerializer
+    view_category = 'nodes'
+    view_name = 'alternative-citations'
+
+    def get_queryset(self):
+        return self.get_node().alternative_citations
+
+class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+    """Details about an alternative citations for a project.
+
+    ##Actions
+
+    ###Update Alternative Citation
+
+        Method:         PUT
+        Body (JSON):    {
+                            "data": {
+                                "type": "citations",    # required
+                                "id": {{id}}            # required
+                                "attributes": {
+                                    "name": {name},     # mandatory
+                                    "text": {text}      # mandatory
+                                }
+                            }
+                        }
+        Success:        200 Ok + updated citation representation
+
+    ###Delete Alternative Citation
+
+        Method:         DELETE
+        Success:        204 No content
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        AdminOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
+
+    serializer_class = NodeAlternativeCitationSerializer
+    view_category = 'nodes'
+    view_name = 'alternative-citation-detail'
+
+    def get_object(self):
+        try:
+            return self.get_node().alternative_citations.find(Q('_id', 'eq', str(self.kwargs['citation_id'])))[0]
+        except IndexError:
+            raise NotFound
+
+    def perform_destroy(self, instance):
+        self.get_node().remove_citation(get_user_auth(self.request), instance, save=True)
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.
@@ -1682,14 +1768,25 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                            "type": "comments",   # required
                            "attributes": {
                              "content":       {content},        # mandatory
-                             "deleted":       {is_deleted},     # optional
+                           },
+                           "relationships": {
+                             "target": {
+                               "data": {
+                                  "type": {target type}         # mandatory
+                                  "id": {target._id}            # mandatory
+                               }
+                             }
                            }
                          }
                        }
         Success:       201 CREATED + comment representation
 
-    To create a comment on this node, issue a POST request against this endpoint. The `content` field is mandatory.
-    The `deleted` field is optional and defaults to `False`. If the comment creation is successful the API will return
+    To create a comment on this node, issue a POST request against this endpoint. The comment target id and target type
+    must be specified. To create a comment on the node overview page, the target `type` would be "nodes" and the `id`
+    would be the node id. To reply to a comment on this node, the target `type` would be "comments" and the `id` would
+    be the id of the comment to reply to. The `content` field is mandatory.
+
+    If the comment creation is successful the API will return
     a 201 response with the representation of the new comment in the body. For the new comment's canonical URL, see the
     `/links/self` field of the response.
 
@@ -1737,9 +1834,23 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     def get_queryset(self):
         return Comment.find(self.get_query_from_request())
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CommentCreateSerializer
+        else:
+            return CommentSerializer
+
+    # overrides ListCreateAPIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(NodeCommentsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
     def perform_create(self, serializer):
         node = self.get_node()
         serializer.validated_data['user'] = self.request.user
-        serializer.validated_data['target'] = node
         serializer.validated_data['node'] = node
         serializer.save()
