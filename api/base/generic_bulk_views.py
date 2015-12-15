@@ -81,7 +81,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         resource_object_list = model_cls.find(Q('_id', 'in', requested_ids))
 
         for resource in resource_object_list:
-            if resource.is_deleted:
+            if getattr(resource, 'is_deleted', None):
                 raise Gone
 
         if len(resource_object_list) != len(request.data):
