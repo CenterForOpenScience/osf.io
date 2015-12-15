@@ -403,6 +403,11 @@ class User(GuidStoredObject, AddonModelMixin):
         return self._id
 
     @property
+    def contributed(self):
+        from website.project.model import Node
+        return Node.find(Q('contributor', 'contains', self._id))
+
+    @property
     def email(self):
         return self.username
 
