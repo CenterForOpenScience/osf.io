@@ -9,7 +9,7 @@ urlpatterns = [
     # url(r'^$', 'api.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
     url(r'^$', views.RegistrationList.as_view(), name=views.RegistrationList.view_name),
-    url(r'^(?P<registration_id>\w+)/$', views.RegistrationDetail.as_view(), name=views.RegistrationDetail.view_name),
+    url(r'^(?P<node_id>\w+)/$', views.RegistrationDetail.as_view(), name=views.RegistrationDetail.view_name),
     url(r'^(?P<node_id>\w+)/contributors/$', views.RegistrationContributorsList.as_view(), name=views.RegistrationContributorsList.view_name),
     url(r'^(?P<node_id>\w+)/contributors/(?P<user_id>\w+)/$', views.RegistrationContributorDetail.as_view(), name=views.RegistrationContributorDetail.view_name),
     url(r'^(?P<node_id>\w+)/children/$', views.RegistrationChildrenList.as_view(), name=views.RegistrationChildrenList.view_name),

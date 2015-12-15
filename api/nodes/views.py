@@ -34,7 +34,7 @@ from api.nodes.permissions import (
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
-    ExcludeRetractions
+    ExcludeRetractions,
 )
 from api.base.exceptions import ServiceUnavailableError
 from api.logs.serializers import NodeLogSerializer
@@ -64,7 +64,7 @@ class NodeMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder:
+        if node.is_folder or node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -234,7 +234,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
+            Q('is_folder', 'ne', True) &
+            Q('is_registration', 'ne', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
@@ -244,14 +245,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         query = base_query & permission_query
         return query
 
-    def filter_non_retracted_nodes(self, query):
-        nodes = Node.find(query)
-        # Refetching because this method needs to return a queryset instead of a
-        # list comprehension for subsequent filtering on ordering.
-        non_retracted_list = [node._id for node in nodes if not node.is_retracted]
-        non_retracted_nodes = Node.find(Q('_id', 'in', non_retracted_list))
-        return non_retracted_nodes
-
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
@@ -259,14 +252,14 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
-            nodes = self.filter_non_retracted_nodes(query)
+            nodes = Node.find(query)
             for node in nodes:
                 if not node.can_edit(auth):
                     raise PermissionDenied
             return nodes
         else:
             query = self.get_query_from_request()
-            return self.filter_non_retracted_nodes(query)
+            return Node.find(query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
