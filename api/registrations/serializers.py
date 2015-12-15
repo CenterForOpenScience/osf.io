@@ -9,19 +9,22 @@ from api.base.serializers import IDField, RelationshipField, LinksField, HideIfR
 
 class RegistrationSerializer(NodeSerializer):
 
-    retracted = ser.BooleanField(source='is_retracted', read_only=True,
-                                 help_text='Whether this registration has been retracted.')
-    date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    embargo_end_date = HideIfRetraction(ser.SerializerMethodField(help_text='When will embargo be lifted?'))
-    retraction_justification = ser.CharField(source='retraction.justification', read_only=True)
+    pending_embargo_approval = HideIfRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
+        help_text='The associated Embargo is awaiting approval by project admins.'))
+    pending_registration_approval = HideIfRetraction(ser.BooleanField(source='is_pending_registration', read_only=True,
+        help_text='The associated RegistrationApproval is awaiting approval by project admins.'))
     pending_retraction = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
-        help_text='Is this registration pending retraction?'))
-    pending_registration_approval = HideIfRetraction(ser.BooleanField(source='sanction.is_pending_approval', read_only=True,
-        help_text='Does this registration have a sanction pending approval?'))
-    registered_meta = HideIfRetraction(ser.SerializerMethodField(
-        help_text='A dictionary with embargo end date, whether registration choice was immediate or embargoed,'
-                  ' and answers to supplemental registration questions'))
+        help_text='The registration is awaiting retraction approval by project admins.'))
+    retracted = ser.BooleanField(source='is_retracted', read_only=True,
+                                 help_text='The registration has been retracted.')
+
+    date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
+    embargo_end_date = HideIfRetraction(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
+
+    retraction_justification = ser.CharField(source='retraction.justification', read_only=True)
     registration_supplement = ser.SerializerMethodField()
+    registered_meta = HideIfRetraction(ser.SerializerMethodField(
+        help_text='A dictionary with supplemental registration questions and responses.'))
 
     registered_by = HideIfRetraction(RelationshipField(
         related_view='users:user-detail',
