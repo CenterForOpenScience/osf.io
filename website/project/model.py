@@ -655,17 +655,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # titles, menus, etc.
     # Use an OrderedDict so that menu items show in the correct order
     CATEGORY_MAP = OrderedDict([
-        ('', 'Uncategorized'),
-        ('project', 'Project'),
-        ('hypothesis', 'Hypothesis'),
-        ('methods and measures', 'Methods and Measures'),
-        ('procedure', 'Procedure'),
-        ('instrumentation', 'Instrumentation'),
-        ('data', 'Data'),
-        ('software', 'Software'),
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
+        ('data', 'Data'),
+        ('hypothesis', 'Hypothesis'),
+        ('instrumentation', 'Instrumentation'),
+        ('methods and measures', 'Methods and Measures'),
+        ('procedure', 'Procedure'),
+        ('project', 'Project'),
+        ('software', 'Software'),
         ('other', 'Other'),
+        ('', 'Uncategorized')
     ])
 
     # Fields that are writable by Node.update
