@@ -26,9 +26,12 @@ class NodeTagField(ser.Field):
 
 
 class NodeSerializer(JSONAPISerializer):
-    # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
-    # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
-    # instance
+    """TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
+    handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
+    instance
+    filter_key is passed in the RelationshipField as to not interfere with source which operates in a specialized way
+    for HyperlinkedFields!
+    """
     filterable_fields = frozenset([
         'title',
         'description',
@@ -107,7 +110,7 @@ class NodeSerializer(JSONAPISerializer):
     parent = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<parent_node._id>'},
-        source_field='parent_node'
+        filter_key='parent_node'
     )
 
     registrations = DevOnly(HideIfRegistration(RelationshipField(

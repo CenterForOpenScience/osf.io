@@ -193,7 +193,7 @@ class FilterMixin(object):
         """
         source = field.source
         if source == '*':
-            source = getattr(field, 'source_field', None)
+            source = getattr(field, 'filter_key', None)
         return source or field_name
 
     def convert_value(self, value, field):
