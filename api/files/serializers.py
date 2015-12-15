@@ -140,13 +140,17 @@ class FileSerializer(JSONAPISerializer):
         return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
 
     def get_extra(self, obj):
-        extras = {}
-        if obj.versions:
+        metadata = {}
+        if obj.provider == 'osfstorage' and obj.versions:
             metadata = obj.versions[-1].metadata
-            extras['hashes'] = {  # mimic waterbutler response
-                'md5': metadata.get('md5', None),
-                'sha256': metadata.get('sha256', None),
-            }
+        elif obj.provider != 'osfstorage' and obj.history:
+            metadata = obj.history[-1].get('extra', {})
+
+        extras = {}
+        extras['hashes'] = {  # mimic waterbutler response
+            'md5': metadata.get('md5', None),
+            'sha256': metadata.get('sha256', None),
+        }
         return extras
 
     def user_id(self, obj):
