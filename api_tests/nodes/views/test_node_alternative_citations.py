@@ -37,10 +37,12 @@ def set_up_citation_and_project(admin, public=True, registration=False, contrib=
         citation2 = AlternativeCitationFactory(name='name2', text='text2')
         project.alternative_citations.append(citation2)
     project.save()
+    slug = 1 if bad else citation._id
     if registration:
         project = RegistrationFactory(project=project, is_public=public)
-    slug = 1 if bad else citation._id
-    citation_url = '/{}nodes/{}/citations/{}/'.format(API_BASE, project._id, slug)
+        citation_url = '/{}registrations/{}/citations/{}/'.format(API_BASE, project._id, slug)
+    else:
+        citation_url = '/{}nodes/{}/citations/{}/'.format(API_BASE, project._id, slug)
     if for_delete:
         return project, citation_url
     return citation, citation_url
