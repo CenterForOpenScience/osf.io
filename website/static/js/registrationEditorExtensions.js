@@ -240,7 +240,7 @@ var AuthorImport = function(data, $root) {
             });
     };
     self.getContributors().done(function(data) {
-        self.value(data);
+        self.question.value(data);
     });
     self.preview = function() {
         return self.value();
@@ -248,6 +248,8 @@ var AuthorImport = function(data, $root) {
     var callback = function(data) {
         self.value(self.serializeContributors(data));
     };
+
+    ko.cleanNode($('#addContributors')[0]);
     var adder = new ContribAdder(
         '#addContributors',
         node.title,
