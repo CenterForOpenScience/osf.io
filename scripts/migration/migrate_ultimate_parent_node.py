@@ -37,7 +37,8 @@ def do_migration():
             )
 
             assert node.root._id == node._id
-            logger.info('Saved Node {} with root {}'.format(node._id, node.root))
+            assert not getattr(node, 'parent_node', None)
+            logger.info('Parent Node Saving: Saved Node {} with root {}'.format(node._id, node.root))
 
             for child in children:
                 touched_counter += 1
@@ -51,8 +52,10 @@ def do_migration():
                 )
 
                 child.save()
+                logger.info('The child root id is {} and the node id is {}'.format(child.root._id, node._id))
+                logger.info('Child Node saved: Verifying that save Node {} with root {}'.format(child._id, child.root))
+                assert child.parent_node._id == child.parent_id
                 assert child.root._id == node._id
-                logger.info('Saved Node {} with root {}'.format(child._id, child.root))
 
     assert all_undeleted_nodes_count == touched_counter
 
