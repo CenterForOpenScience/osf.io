@@ -73,6 +73,15 @@ class TestNodeCommentsList(ApiTestCase):
         assert_equal(len(comment_json), 1)
         assert_in(self.comment._id, comment_ids)
 
+    def test_return_registration_comments_logged_in_contributor(self):
+        self._set_up_registration_with_comment()
+        res = self.app.get(self.registration_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_equal(len(comment_json), 1)
+        assert_in(self.registration_comment._id, comment_ids)
+
     def test_return_both_deleted_and_undeleted_comments(self):
         self._set_up_private_project_with_comment()
         deleted_comment = CommentFactory(node=self.private_project, user=self.user)
