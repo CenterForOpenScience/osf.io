@@ -20,9 +20,11 @@ from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
+from django.test import TestCase as DjangoTestCase
 
 
-from api.base.wsgi import application as django_app
+from api.base.wsgi import application as api_django_app
+from admin.base.wsgi import application as admin_django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
@@ -45,6 +47,7 @@ from website.project.signals import contributor_added
 from website.app import init_app
 from website.addons.base import AddonConfig
 from website.project.views.contributor import notify_added_contributor
+
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
@@ -182,15 +185,6 @@ class AppTestCase(unittest.TestCase):
                 signal.connect(receiver)
 
 
-class ApiAppTestCase(unittest.TestCase):
-    """Base `TestCase` for OSF API tests that require the WSGI app (but no database).
-    """
-
-    def setUp(self):
-        super(ApiAppTestCase, self).setUp()
-        self.app = TestAppJSONAPI(django_app)
-
-
 class JSONAPIWrapper(object):
     """
     Creates wrapper with stated content_type.
@@ -240,6 +234,21 @@ class TestAppJSONAPI(TestApp, JSONAPIWrapper):
     put_json_api = json_api_method('PUT')
     patch_json_api = json_api_method('PATCH')
     delete_json_api = json_api_method('DELETE')
+
+
+class ApiAppTestCase(unittest.TestCase):
+    """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
+    """
+    def setUp(self):
+        super(DjangoAppTestCase, self).setUp()
+        self.app = TestAppJSONAPI(api_django_app)
+
+
+class AdminAppTestCase(DjangoTestCase):
+    def setUp(self):
+        super(AdminAppTestCase, self).setUp()
+        self.app = TestApp(admin_django_app)
+
 
 class UploadTestCase(unittest.TestCase):
 
@@ -318,7 +327,10 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
     def setUp(self):
         super(ApiTestCase, self).setUp()
         settings.USE_EMAIL = False
-        
+
+
+class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
+    pass
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):

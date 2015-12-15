@@ -88,28 +88,6 @@ def view_draft(request, draft_pk):
     }
     return render(request, 'pre_reg/edit_draft_registration.html', context)
 
-@login_required
-@user_passes_test(is_in_prereg_group)
-def get_drafts(request):
-    """Determines whether a user is in the general_administrator_group
-    :param user: User wanting access to administrator material
-    :return: True if general administrator False if not
-    """
-    prereg_schema = MetaSchema.find_one(
-        Q('name', 'eq', 'Prereg Challenge') &
-        Q('schema_version', 'eq', 2)
-    )
-    all_drafts = DraftRegistration.find(
-        Q('registration_schema', 'eq', prereg_schema) &
-        Q('approval', 'ne', None)
-    )
-    serialized_drafts = {
-        'drafts': [serializers.serialize_draft_registration(d) for d in all_drafts]
-    }
-    return JsonResponse(
-        serialized_drafts
-    )
-
 @csrf_exempt
 @login_required
 @user_passes_test(is_in_prereg_group)

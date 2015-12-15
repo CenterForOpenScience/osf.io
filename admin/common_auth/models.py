@@ -53,8 +53,7 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
 
     def get_full_name(self):
-        # The user is identified by their email address
-        return self.email
+        return ("{0} {1}".format(self.first_name, self.last_name)).strip() or self.email
 
     def get_short_name(self):
         # The user is identified by their email address
@@ -71,10 +70,6 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     # def is_staff(self):
     #     "Is the user a member of staff?"
     #     return self.is_admin
-
-    @property
-    def full_name(self):
-        return ("{0} {1}".format(self.first_name, self.last_name)).strip() or self.email
 
     @property
     def osf_user(self):
