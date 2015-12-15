@@ -25,7 +25,7 @@ var find_index = function (array, str) {
 var remove_index = function (array, index) {
     var new_array = [];
     for (var i = 0; i < array.length; i++) {
-        if (i != index)
+        if (i !== index)
             new_array.push(array[i]);
     }
     return new_array;
@@ -33,29 +33,20 @@ var remove_index = function (array, index) {
 
 module.exports = {
     view: function (data, repr, opts) {
-
-        var clean_array = data.splice();
-
-        console.log("removing other");
-        var other_index = find_index(data, "Other");
+        var other_index = find_index(data, 'Other');
         var other = data[other_index];
         data = remove_index(data, other_index);
 
-
-        console.log("removing Uncat");
-        var uncat_index = find_index(data, "Uncategorized");
+        var uncat_index = find_index(data, 'Uncategorized');
         var uncat = data[uncat_index];
         data = remove_index(data, uncat_index);
 
-        console.log("Sorting");
         if (data[0].label) {
             data.sort(function (a, b) {
                 return a.label.localeCompare(b.label);
             });
         }
 
-        console.log("Pushing objects back");
-        console.log(other, uncat);
         data.push(other);
         data.push(uncat);
 
