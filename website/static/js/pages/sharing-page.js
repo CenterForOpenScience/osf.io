@@ -52,7 +52,8 @@ $(window).load(function() {
         privateLinkTable.viewModel.onWindowResize();
         rt.responsiveTable(linkTable[0]);
     }
-    $('table.responsive-table td:first-child a,button').on('click', function(e) {
+    $('table.responsive-table td:first-child a,' +
+        'table.responsive-table td:first-child button').on('click', function(e) {
         e.stopImmediatePropagation();
     });
 });
