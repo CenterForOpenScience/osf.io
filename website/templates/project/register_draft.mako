@@ -38,11 +38,9 @@
           <a type="button" class="btn btn-default pull-left" href="${web_url_for('node_registrations', pid=node['id'], tab='drafts')}"> Back </a>
         </span>
 
-        <!-- TODO(samchrisinger): Enable when post-registration file path updating is in
         <span data-bind="if: draft.metaSchema.name === 'Prereg Challenge'">
           <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: draft.registerWithoutReview">Register without review</button>
         </span>
-        -->
 
         <button id="register-submit" type="button" class="btn btn-success pull-right"
                 style="margin-left: 5px;"
