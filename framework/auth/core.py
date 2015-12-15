@@ -980,6 +980,19 @@ class User(GuidStoredObject, AddonModelMixin):
         db = db or framework.mongo.database
         return analytics.get_total_activity_count(self._primary_key, db=db)
 
+    def disable_account(self):
+        """
+        Disables user account, making is_disabled true, while also unsubscribing user
+        from mailchimp emails.
+        """
+        from website import mailchimp_utils
+        mailchimp_utils.unsubscribe_mailchimp(
+            list_name=settings.MAILCHIMP_GENERAL_LIST,
+            user_id=self._id,
+            username=self.username
+        )
+        self.is_disabled = True
+
     @property
     def is_disabled(self):
         """Whether or not this account has been disabled.
@@ -993,9 +1006,9 @@ class User(GuidStoredObject, AddonModelMixin):
     @is_disabled.setter
     def is_disabled(self, val):
         """Set whether or not this account has been disabled."""
-        if val:
+        if val and not self.date_disabled:
             self.date_disabled = dt.datetime.utcnow()
-        else:
+        elif val is False:
             self.date_disabled = None
 
     @property

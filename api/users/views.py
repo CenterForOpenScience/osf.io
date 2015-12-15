@@ -53,6 +53,9 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
     user, meaning additional requests to an individual user's detail view are not necessary.
 
+    Note that if an anonymous view_only key is being used, user information will not be serialized, and the id will be
+    an empty string. Relationships to a user object will not show in this case, either.
+
     The subroute [`/me/`](me/) is a special endpoint that always points to the currently logged-in user.
 
     ##User Attributes
@@ -127,6 +130,9 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     The User Detail endpoint retrieves information about the user whose id is the final part of the path.  If `me`
     is given as the id, the record of the currently logged-in user will be returned.  The returned information includes
     the user's bibliographic information and the date the user registered.
+
+    Note that if an anonymous view_only key is being used, user information will not be serialized, and the id will be
+    an empty string. Relationships to a user object will not show in this case, either.
 
     ##Attributes
 
