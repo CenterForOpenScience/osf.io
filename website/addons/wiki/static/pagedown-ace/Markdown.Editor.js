@@ -2,6 +2,10 @@
 // automatic rendering. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
+var $ = require('jquery');
+var $osf = require('js/osfHelpers');
+var Range = ace.require('ace/range').Range;
+var addDragNDrop = require('../dragNDrop');
 
 (function () {
 
@@ -12,6 +16,7 @@
         doc = window.document,
         re = window.RegExp,
         nav = window.navigator,
+        ctx = window.contextVars,
         SETTINGS = { lineLength: 72 },
 
     // Used to work around some browser bugs where we can't use feature testing.
@@ -198,6 +203,8 @@
             var previewManager = function(){};
             var uiManager;
 
+            addDragNDrop(aceEditor, panels, commandManager, TextareaState);
+
             var useragent = ace.require('ace/lib/useragent');
             var getKey = function (identifier) {
                 var keyStroke = keyStrokes[identifier][useragent.isMac ? "mac" : "win"];
@@ -210,7 +217,7 @@
             that.uiManager = uiManager;
         };
 
-    }
+    };
 
     // before: contains all the text in the input box BEFORE the selection.
     // after: contains all the text in the input box AFTER the selection.
@@ -779,7 +786,6 @@
             }
             */
 
-            var Range = ace.require('ace/range').Range;
             (function(range) {
                 stateObj.before = inputArea.session.getTextRange(new Range(0,0,range.start.row, range.start.column));
                 stateObj.selection = inputArea.session.getTextRange();
@@ -1886,8 +1892,7 @@
         });
     }
 
-    commandProto.doLinkOrImage = function (chunk, postProcessing, isImage) {
-
+    commandProto.doLinkOrImage = function (chunk, postProcessing, isImage, link, multiple, num) {
         chunk.trimWhitespace();
         chunk.findTags(/\s*!?\[/, /\][ ]?(?:\n[ ]*)?(\[.*?\])?/);
         var background;
@@ -1900,7 +1905,7 @@
 
         }
         else {
-            
+
             // We're moving start and end tag back into the selection, since (as we're in the else block) we're not
             // *removing* a link, but *adding* one, so whatever findTags() found is now back to being part of the
             // link text. linkEnteredCallback takes care of escaping any brackets.
@@ -1916,7 +1921,9 @@
             // Marks up the link and adds the ref.
             var linkEnteredCallback = function (link) {
 
-                background.parentNode.removeChild(background);
+                if (!!background) {
+                    background.parentNode.removeChild(background);
+                }
 
                 if (link !== null) {
                     // (                          $1
@@ -1938,14 +1945,23 @@
                     // would mean a zero-width match at the start. Since zero-width matches advance the string position,
                     // the first bracket could then not act as the "not a backslash" for the second.
                     chunk.selection = (" " + chunk.selection).replace(/([^\\](?:\\\\)*)(?=[[\]])/g, "$1\\").substr(1);
-                    
-                    var linkDef = " [999]: " + properlyEncoded(link);
 
-                    var num = that.addLinkDef(chunk, linkDef);
-                    chunk.startTag = isImage ? "![" : "[";
-                    chunk.endTag = "][" + num + "]";
+                    var linkDef;
+                    if (!num) {
+                        linkDef = "  [999]: " + properlyEncoded(link);
+                        num = that.addLinkDef(chunk, linkDef);
+                    }
+                    else {
+                        linkDef = "  [" + num + "]: " + properlyEncoded(link);
+                        that.addLinkDef(chunk, linkDef);
+                        if (!!multiple) {
+                            chunk.before += "![" + that.getString("imagedescription") + "][" + num + "]\n";
+                        }
+                    }
 
-                    if (!chunk.selection) {
+                    if (!chunk.selection && !multiple) {
+                        chunk.startTag = isImage ? "![" : "[";
+                        chunk.endTag = "][" + num + "]";
                         if (isImage) {
                             chunk.selection = that.getString("imagedescription");
                         }
@@ -1954,20 +1970,27 @@
                         }
                     }
                 }
-                postProcessing();
+                if (!!postProcessing) {
+                    postProcessing();
+                }
             };
 
-            background = ui.createBackground();
+            if (!link) {
+                background = ui.createBackground();
 
-            if (isImage) {
-                if (!this.hooks.insertImageDialog(linkEnteredCallback))
-                    ui.prompt(this.getString("imagedialog"), imageDefaultText, linkEnteredCallback);
+                if (isImage) {
+                    if (!this.hooks.insertImageDialog(linkEnteredCallback))
+                        ui.prompt(this.getString("imagedialog"), imageDefaultText, linkEnteredCallback);
+                }
+                else {
+                    if (!this.hooks.insertLinkDialog(linkEnteredCallback))
+                        ui.prompt(this.getString("linkdialog"), linkDefaultText, linkEnteredCallback);
+                }
+                return true;
             }
             else {
-                if (!this.hooks.insertLinkDialog(linkEnteredCallback))
-                    ui.prompt(this.getString("linkdialog"), linkDefaultText, linkEnteredCallback);
+                linkEnteredCallback(link);
             }
-            return true;
         }
     };
 

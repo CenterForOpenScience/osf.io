@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
@@ -17,6 +16,15 @@ from api.base.exceptions import Gone
 TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
 FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
 
+UPDATE_METHODS = ['PUT', 'PATCH']
+
+def is_bulk_request(request):
+    """
+    Returns True if bulk request.  Can be called as early as the parser.
+    """
+    content_type = request.content_type
+    return 'ext=bulk' in content_type
+
 def is_truthy(value):
     return value in TRUTHY
 
@@ -28,10 +36,11 @@ def get_user_auth(request):
     authenticated user attached to it.
     """
     user = request.user
+    private_key = request.query_params.get('view_only', None)
     if user.is_anonymous():
-        auth = Auth(None)
+        auth = Auth(None, private_key=private_key)
     else:
-        auth = Auth(user)
+        auth = Auth(user, private_key=private_key)
     return auth
 
 

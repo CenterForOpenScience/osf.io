@@ -2,6 +2,54 @@
 Changelog
 *********
 
+0.59.0 (2015-12-02)
+===================
+
+- Add Prereg Challenge workflow.
+- APIv2: Omit relationship objects for null and missing relationships.
+- APIv2: Support embedded resources.
+- Add button to reset client secret for developer applications.
+
+0.58.0 (2015-11-18)
+===================
+
+- Add draft registrations.
+
+0.57.0 (2015-11-17)
+===================
+
+- APIv2: Replace JSONAPIHyperlinkRelated field with RelationshipField.
+- APIv2: Add collections endpoints (staging/dev environments only).
+- APIv2: Fix ordering and pagination of OSF Storage files.
+- Add personal access tokens for APIv2.
+- APIv2: Access MD5 and SHA256 hashes for OSF Storage files.
+
+0.56.0 (2015-11-13)
+===================
+
+- APIv2: Add commenting endpoints.
+- APIv2: Add support for bulk operations using JSON API's Bulk Extension (experimental).
+- APIv2: Fix date_modified field for all fields.
+- UI fixes.
+
+0.55.0 (2015-11-04)
+===================
+
+- File Check-out/Check-in.
+- Add tags to files.
+- Search files by name and tags.
+- Add licenses to projects.
+- Multiple Google Drive accounts can be associated with a user account.
+- Redesign of OSF for Meetings landing page.
+- APIv2: Comparison operators for filtering.
+
+Migrations
+----------
+
+* scripts.migration.migrate_index_for_existing_files
+* scripts.googledrive.migrate_to_external_account
+* scripts.googledrive.connect_external_accounts
+
 0.54.0 (2015-10-25)
 ===================
 

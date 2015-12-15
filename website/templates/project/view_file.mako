@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<div id="alertBar"></div>
 
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
@@ -7,7 +8,8 @@
 <div class="row">
   <div class="col-sm-5">
     <h2 class="break-word">
-      ${file_name | h}
+      ## Split file name into two parts: with and without extension
+      ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
       % endif
@@ -37,10 +39,22 @@
           <div class="row tb-header-row">
               <i class="fa fa-file p-l-xs p-r-xs"></i>
               <div class="fangorn-toolbar-icon">
-                  <i class="fa fa-angle-right"></i>
+                  <i class="fa fa-angle-down"></i>
               </div>
           </div>
       </div>
+      %if (file_tags or 'write' in user['permissions']) and provider == 'osfstorage' and not error:
+       <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title">Tags</h3>
+            <div class="pull-right">
+            </div>
+        </div>
+        <div class="panel-body">
+            <input id="fileTags" value="${','.join(file_tags) if file_tags else ''}" />
+        </div>
+        </div>
+       %endif
   </div>
 
 <!-- The osf-logo spinner here is from mfr code base -->
@@ -164,6 +178,7 @@
             provider: ${ provider | sjson, n },
             safeName: ${ file_name | h, sjson},
             materializedPath: ${ materialized_path | sjson, n },
+            file_tags: ${file_tags if file_tags else False| sjson, n},
           urls: {
         %if error is None:
               render: ${ urls['render'] | sjson, n },

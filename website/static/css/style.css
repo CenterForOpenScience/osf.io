@@ -87,6 +87,8 @@ a {
     margin-top: -60px;
     padding-top: 60px;
     display: block;
+    z-index: -1;
+    position: relative;
 }
 
 .scripted {display: none;}
@@ -366,6 +368,7 @@ a {
 
 .user-settings-addon-auth {
     font-size: 13.5px;
+    border-bottom: 2px solid #DDD;
 }
 
 .default-authorized-by {
@@ -616,4 +619,18 @@ button.close {
 .tb-modal-shade {
     /*  Override z-index here to avoid clashing with navigation elements */
     z-index: 98 !important;
+}
+
+
+/* Cards
+-------------------------------------------------- */
+
+.toggle-icon {
+    color: #337ab7;
+    margin-right: 10px;
+}
+
+.header-content {
+    max-width: 75%;
+    display: inline-block
 }

@@ -260,7 +260,7 @@ utils.loadRawNormalized = function(result){
     var docID = encodeURIComponent(result.shareProperties.docID);
     return m.request({
         method: 'GET',
-        url: 'api/v1/share/documents/' + source + '/' + docID + '/',
+        url: '/api/v1/share/documents/' + source + '/' + docID + '/',
         unwrapSuccess: function(data) {
             var unwrapped = {};
             var normed = JSON.parse(data.normalized);
@@ -498,7 +498,6 @@ utils.generateColors = function (numColors) {
         color = colorsToGenerate.shift();
         if (typeof color === 'undefined') {
             colorsToGenerate = utils.getNewColors(colorsUsed);
-            colorsUsed = [];
         } else {
             colorsUsed.push(color);
             colorsOut.push(rgbToHex(color));

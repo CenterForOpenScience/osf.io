@@ -24,11 +24,12 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.auth.exceptions import InvalidTokenError
 from framework.tasks import handlers
+from framework.mongo import database
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
 from website.util import permissions
-from website.models import Node, Pointer, NodeLog
+from website.models import Node, Pointer, NodeLog, MetaSchema, DraftRegistration
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
     send_claim_email,
@@ -46,7 +47,7 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
-
+from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, _name_to_id
 
 from tests.base import (
     OsfTestCase,
@@ -54,15 +55,15 @@ from tests.base import (
     capture_signals,
     assert_is_redirect,
     assert_datetime_equal,
+    get_default_metaschema
 )
 from tests.factories import (
-    UserFactory, ApiOAuth2ApplicationFactory, ProjectFactory, WatchConfigFactory,
+    UserFactory, ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
-    ProjectWithAddonFactory, MockAddonNodeSettings,
+    ProjectWithAddonFactory, MockAddonNodeSettings, DraftRegistrationFactory
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
-
 
 class Addon(MockAddonNodeSettings):
     @property
@@ -159,6 +160,39 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.request.GET['key'], self.link.key)
 
+    def test_cannot_access_registrations_or_forks_with_anon_key(self):
+        anonymous_link = PrivateLinkFactory(anonymous=True)
+        anonymous_link.nodes.append(self.project)
+        anonymous_link.save()
+        self.project.is_public = False
+        self.project.save()
+        url = self.project_url + 'registrations/?view_only={}'.format(anonymous_link.key)
+        res = self.app.get(url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
+        url = self.project_url + 'forks/?view_only={}'.format(anonymous_link.key)
+
+        res = self.app.get(url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
+    def test_can_access_registrations_and_forks_with_not_anon_key(self):
+        link = PrivateLinkFactory(anonymous=False)
+        link.nodes.append(self.project)
+        link.save()
+        self.project.is_public = False
+        self.project.save()
+        url = self.project_url + 'registrations/?view_only={}'.format(self.link.key)
+        res = self.app.get(url)
+
+        assert_equal(res.status_code, 200)
+
+        url = self.project_url + 'forks/?view_only={}'.format(self.link.key)
+        res = self.app.get(url)
+
+        assert_equal(res.status_code, 200)
+
     def test_check_can_access_valid(self):
         contributor = AuthUserFactory()
         self.project.add_contributor(contributor, auth=Auth(self.project.creator))
@@ -187,7 +221,6 @@ class TestProjectViews(OsfTestCase):
 
     def setUp(self):
         super(TestProjectViews, self).setUp()
-        ensure_schemas()
         self.user1 = AuthUserFactory()
         self.user1.save()
         self.consolidate_auth1 = Auth(user=self.user1)
@@ -584,65 +617,11 @@ class TestProjectViews(OsfTestCase):
         assert_equal("tag_removed", self.project.logs[-1].action)
         assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
-    @mock.patch('website.archiver.tasks.archive')
-    def test_register_template_page(self, mock_archive):
-        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
-            self.project._primary_key)
-        self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
-        self.project.reload()
-        # A registration was added to the project's registration list
-        assert_equal(len(self.project.node__registrations), 1)
-        # A log event was saved
-        assert_equal(self.project.logs[-1].action, "registration_initiated")
-        # Most recent node is a registration
-        reg = Node.load(self.project.node__registrations[-1])
-        assert_true(reg.is_registration)
-
-    @mock.patch('website.archiver.tasks.archive')
-    def test_register_template_with_embargo_creates_embargo(self, mock_archive):
-        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
-            self.project._primary_key)
-        self.app.post_json(
-            url,
-            {
-                'registrationChoice': 'embargo',
-                'embargoEndDate': "Fri, 01 Jan {year} 05:00:00 GMT".format(year=str(dt.date.today().year + 1))
-            },
-            auth=self.auth)
-
-        self.project.reload()
-        # Most recent node is a registration
-        reg = Node.load(self.project.node__registrations[-1])
-        assert_true(reg.is_registration)
-        # The registration created is not public
-        assert_false(reg.is_public)
-        # The registration is pending an embargo that has not been approved
-        assert_true(reg.is_pending_embargo)
-
-    def test_register_template_page_with_invalid_template_name(self):
-        url = self.project.web_url_for('node_register_template_page', template='invalid')
-        res = self.app.get(url, expect_errors=True, auth=self.auth)
-        assert_equal(res.status_code, 404)
-        assert_in('Template not found', res)
-
-    def test_register_project_with_multiple_errors(self):
-        self.project.add_addon('addon1', auth=Auth(self.user1))
-        component = NodeFactory(parent=self.project, creator=self.user1)
-        component.add_addon('addon1', auth=Auth(self.user1))
-        component.add_addon('addon2', auth=Auth(self.user1))
-        self.project.save()
-        component.save()
-        url = self.project.api_url_for('project_before_register')
-        res = self.app.get(url, auth=self.auth)
-        data = res.json
-        assert_equal(res.status_code, 200)
-        assert_equal(len(data['errors']), 2)
-
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):
         # register a project
-        self.project.register_node(None, Auth(user=self.project.creator), '', None)
+        self.project.register_node(get_default_metaschema(), Auth(user=self.project.creator), '', None)
         # get the first registered project of a project
         url = self.project.api_url_for('get_registrations')
         res = self.app.get(url, auth=self.auth)
@@ -722,7 +701,7 @@ class TestProjectViews(OsfTestCase):
     def test_get_logs_page_num_beyond_limit(self):
         url = self.project.api_url_for('get_logs')
         size = 10
-        page_num = math.ceil(len(self.project.logs)/ float(size))
+        page_num = math.ceil(len(self.project.logs) / float(size))
         res = self.app.get(
             url, {'page': page_num}, auth=self.auth, expect_errors=True
         )
@@ -1123,6 +1102,65 @@ class TestChildrenViews(OsfTestCase):
         assert_equal(perm, 'admin')
 
 
+class TestGetNodeTree(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = AuthUserFactory()
+        self.user2 = AuthUserFactory()
+
+    def test_get_single_node(self):
+        project = ProjectFactory(creator=self.user)
+        # child = NodeFactory(parent=project, creator=self.user)
+
+        url = project.api_url_for('get_node_tree')
+        res = self.app.get(url, auth=self.user.auth)
+
+        node_id = res.json[0]['node']['id']
+        assert_equal(node_id, project._primary_key)
+
+    def test_get_node_with_children(self):
+        project = ProjectFactory(creator=self.user)
+        child1 = NodeFactory(parent=project, creator=self.user)
+        child2 = NodeFactory(parent=project, creator=self.user2)
+        child3 = NodeFactory(parent=project, creator=self.user)
+        url = project.api_url_for('get_node_tree')
+        res = self.app.get(url, auth=self.user.auth)
+        tree = res.json[0]
+        parent_node_id = tree['node']['id']
+        child1_id = tree['children'][0]['node']['id']
+        child2_id = tree['children'][1]['node']['id']
+        child3_id = tree['children'][2]['node']['id']
+        assert_equal(parent_node_id, project._primary_key)
+        assert_equal(child1_id, child1._primary_key)
+        assert_equal(child2_id, child2._primary_key)
+        assert_equal(child3_id, child3._primary_key)
+
+    def test_get_node_not_parent_owner(self):
+        project = ProjectFactory(creator=self.user2)
+        child = NodeFactory(parent=project, creator=self.user2)
+        url = project.api_url_for('get_node_tree')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, [])
+
+    # Parent node should show because of user2 read access, the children should not
+    def test_get_node_parent_not_admin(self):
+        project = ProjectFactory(creator=self.user)
+        project.add_contributor(self.user2, auth=Auth(self.user))
+        project.save()
+        child1 = NodeFactory(parent=project, creator=self.user)
+        child2 = NodeFactory(parent=project, creator=self.user)
+        child3 = NodeFactory(parent=project, creator=self.user)
+        url = project.api_url_for('get_node_tree')
+        res = self.app.get(url, auth=self.user2.auth)
+        tree = res.json[0]
+        parent_node_id = tree['node']['id']
+        children = tree['children']
+        assert_equal(parent_node_id, project._primary_key)
+        assert_equal(children, [])
+
+
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
@@ -1495,7 +1533,8 @@ class TestUserProfile(OsfTestCase):
 
         mock_client.lists.unsubscribe.assert_called_with(
             id=list_id,
-            email={'email': self.user.username}
+            email={'email': self.user.username},
+            send_goodbye=True
         )
         mock_client.lists.subscribe.assert_called_with(
             id=list_id,
@@ -1607,6 +1646,21 @@ class TestUserProfileApplicationsPage(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.NOT_FOUND)
 
+    def test_url_has_not_broken(self):
+        assert_equal(self.platform_app.url, self.detail_url)
+
+
+class TestUserProfileTokensPage(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserProfileTokensPage, self).setUp()
+        self.user = AuthUserFactory()
+        self.token = ApiOAuth2PersonalTokenFactory()
+        self.detail_url = web_url_for('personal_access_token_detail', _id=self.token._id)
+
+    def test_url_has_not_broken(self):
+        assert_equal(self.token.url, self.detail_url)
+
 
 class TestUserAccount(OsfTestCase):
 
@@ -1699,7 +1753,6 @@ class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
         super(TestAddingContributorViews, self).setUp()
-        ensure_schemas()
         self.creator = AuthUserFactory()
         self.project = ProjectFactory(creator=self.creator)
         # Authenticate all requests
@@ -1839,7 +1892,7 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_add_contributors_post_only_sends_one_email_to_unreg_user(
             self, mock_send_claim_email):
-        # Project has s
+        # Project has components
         comp1, comp2 = NodeFactory(
             creator=self.creator), NodeFactory(creator=self.creator)
         self.project.nodes.append(comp1)
@@ -1993,7 +2046,7 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
-        project.register_node(None, Auth(user=project.creator), '', None)
+        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None)
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
@@ -2079,7 +2132,6 @@ class TestUserInviteViews(OsfTestCase):
 
     def setUp(self):
         super(TestUserInviteViews, self).setUp()
-        ensure_schemas()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.invite_url = '/api/v1/project/{0}/invite_contributor/'.format(
@@ -4261,7 +4313,7 @@ class TestDashboardViews(OsfTestCase):
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
         project.register_node(
-            None, Auth(self.creator), '', '',
+            get_default_metaschema(), Auth(self.creator), '', '',
         )
 
         # Get the All My Registrations smart folder from the dashboard
@@ -4673,7 +4725,6 @@ class TestUserConfirmSignal(OsfTestCase):
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
-
 
 if __name__ == '__main__':
     unittest.main()

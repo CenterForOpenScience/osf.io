@@ -17,7 +17,9 @@ from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
-    FolderFactory
+    FolderFactory,
+    CommentFactory,
+    RetractedRegistrationFactory
 )
 
 from tests.utils import assert_logs, assert_not_logs
@@ -75,7 +77,7 @@ class TestNodeDetail(ApiTestCase):
     def test_top_level_project_has_no_parent(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['relationships']['parent']['links']['related']['href'], None)
+        assert_not_in('parent', res.json['data']['relationships'].keys())
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_child_project_has_parent(self):
@@ -98,7 +100,7 @@ class TestNodeDetail(ApiTestCase):
         expected_url = self.public_url + 'contributors/'
         assert_equal(urlparse(url).path, expected_url)
 
-    def test_node_has_pointers_link(self):
+    def test_node_has_node_links_link(self):
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['node_links']['links']['related']['href']
         expected_url = self.public_url + 'node_links/'
@@ -115,6 +117,19 @@ class TestNodeDetail(ApiTestCase):
         url = res.json['data']['relationships']['files']['links']['related']['href']
         expected_url = self.public_url + 'files/'
         assert_equal(urlparse(url).path, expected_url)
+
+    def test_node_has_comments_link(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_in('comments', res.json['data']['relationships'].keys())
+
+    def test_node_has_correct_unread_comments_count(self):
+        contributor = AuthUserFactory()
+        self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user), save=True)
+        comment = CommentFactory(node=self.public_project, target=self.public_project, user=contributor)
+        res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
+        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
+        assert_equal(unread_comments, 1)
 
     def test_node_properties(self):
         res = self.app.get(self.public_url)
@@ -133,17 +148,23 @@ class TestNodeDetail(ApiTestCase):
         )
         assert_equal(res.status_code, 404)
 
-    def test_registrations_cannot_be_returned_at_node_detail_endpoint(self):
+    def test_return_registrations_at_node_detail_endpoint(self):
         registration = RegistrationFactory(project=self.public_project, creator=self.user)
-        res = self.app.get('/{}nodes/{}/'.format(API_BASE, registration._id), auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This is a registration.')
+        res = self.app.get('/{}nodes/{}/'.format(API_BASE, registration._id), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['registration'], True)
 
     def test_cannot_return_folder_at_node_detail_endpoint(self):
         folder = FolderFactory(creator=self.user)
         res = self.app.get('/{}nodes/{}/'.format(API_BASE, folder._id), auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_cannot_return_a_retraction_at_node_detail_endpoint(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 class NodeCRUDTestCase(ApiTestCase):
 
@@ -392,6 +413,27 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(registration.title, original_title)
         assert_equal(registration.description, original_description)
+
+    def test_cannot_update_a_retraction(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        res = self.app.put_json_api(url, {
+            'data': {
+                'id': registration._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': fake.catch_phrase(),
+                    'description': fake.bs(),
+                    'category': 'hypothesis',
+                    'public': True
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
+        registration.reload()
+        assert_equal(res.status_code, 403)
+        assert_equal(registration.title, registration.title)
+        assert_equal(registration.description, registration.description)
 
     def test_update_private_project_logged_out(self):
         res = self.app.put_json_api(self.private_url, {
@@ -769,6 +811,16 @@ class TestNodeDelete(NodeCRUDTestCase):
         # Dashboards are a folder, so a 404 is returned
         assert_equal(res.status_code, 404)
 
+    def test_cannot_delete_a_retraction(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
+        registration.reload()
+        assert_equal(res.status_code, 403)
+        assert_equal(registration.title, registration.title)
+        assert_equal(registration.description, registration.description)
+
 
 class TestReturnDeletedNode(ApiTestCase):
     def setUp(self):
@@ -826,6 +878,7 @@ class TestNodeTags(ApiTestCase):
     def setUp(self):
         super(TestNodeTags, self).setUp()
         self.user = AuthUserFactory()
+        self.admin = AuthUserFactory()
         self.user_two = AuthUserFactory()
         self.read_only_contributor = AuthUserFactory()
 
@@ -833,6 +886,7 @@ class TestNodeTags(ApiTestCase):
         self.public_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
         self.private_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        self.private_project.add_contributor(self.admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
@@ -891,6 +945,27 @@ class TestNodeTags(ApiTestCase):
         reload_res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
         assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
+
+    def test_partial_update_project_does_not_clear_tags(self):
+        res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.admin.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        new_payload = {
+            'data': {
+                'id': self.private_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'public': True
+                }
+            }
+        }
+        res = self.app.patch_json_api(self.private_url, new_payload, auth=self.admin.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        new_payload['data']['attributes']['public'] = False
+        res = self.app.patch_json_api(self.private_url, new_payload, auth=self.admin.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
 
     def test_non_authenticated_user_cannot_add_tag_to_public_project(self):
         res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=None)

@@ -62,38 +62,17 @@ SerializeMixin.prototype.unserialize = function(data) {
     */
 var DateMixin = function() {
     var self = this;
+    self.ongoing = ko.observable(false);
     self.months = ['January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'];
     self.endMonth = ko.observable();
-    self.endYear = ko.observable().extend({
-        required: {
-            onlyIf: function() {
-                return !!self.endMonth();
-            },
-            message: 'Please enter a year for the end date.'
-        },
-        year: true,
-        pyDate: true
-    });
-    self.ongoing = ko.observable(false);
+    self.endYear = ko.observable();
     self.displayDate = ko.observable(' ');
     self.endView = ko.computed(function() {
         return (self.ongoing() ? 'ongoing' : self.displayDate());
     }, self);
     self.startMonth = ko.observable();
-    self.startYear = ko.observable().extend({
-        required: {
-            onlyIf: function() {
-                if (!!self.endMonth() || !!self.endYear() || self.ongoing() === true) {
-                    return true;
-                }
-            },
-            message: 'Please enter a year for the start date.'
-        },
-        year: true,
-        pyDate: true
-    });
-
+    self.startYear = ko.observable();
     self.start = ko.computed(function () {
         if (self.startMonth() && self.startYear()) {
             return new Date(self.startYear(),
@@ -111,7 +90,9 @@ var DateMixin = function() {
                     (self.monthToInt(self.endMonth()) - 1).toString());
         } else if (!self.endMonth() && self.endYear()) {
             self.displayDate(self.endYear());
-            return new Date(self.endYear(), '0', '1');
+            var today = new Date();
+            var date = new Date(self.endYear(), '11', '31');
+            return today > date ? date : today;
         }
     }, self).extend({
         notInFuture:true,
@@ -122,6 +103,35 @@ var DateMixin = function() {
         self.endYear('');
         return true;
     };
+
+    self.startYear.extend({
+        required: {
+            onlyIf: function() {
+                return !!self.endMonth() || !!self.endYear() || self.ongoing() || !!self.startMonth();
+            },
+            message: 'Please enter a year for the start date.'
+        },
+        year: true,
+        pyDate: true
+    });
+
+    self.endYear.extend({
+        required: {
+            onlyIf: function() {
+                return !!self.endMonth() || ((!!self.startYear() || !!self.startMonth()) && !self.ongoing());
+            },
+            message: function() {
+                if (!self.endMonth()) {
+                    return 'Please enter an end date or mark as ongoing.';
+                }
+                else {
+                    return 'Please enter a year for the end date.';
+                }
+            }
+        },
+        year: true,
+        pyDate: true
+    });
 };
 
 DateMixin.prototype.monthToInt = function(value) {
@@ -689,6 +699,9 @@ var ListViewModel = function(ContentModel, urls, modes) {
     * */
     self.dirty = function() {
         // if the length of the list has changed
+        if (self.originalItems === undefined) {
+            return false;
+        }
         if (self.originalItems.length !== self.contents().length) {
             return true;
         }
@@ -783,7 +796,7 @@ ListViewModel.prototype.removeContent = function(content) {
 
 ListViewModel.prototype.unserialize = function(data) {
     var self = this;
-    if(self.editAllowed) {
+    if (self.editAllowed) {
         self.editable(data.editable);
     } else {
         self.editable(false);
@@ -793,8 +806,10 @@ ListViewModel.prototype.unserialize = function(data) {
     }));
 
     // Ensure at least one item is visible
-    if (self.contents().length === 0) {
-        self.addContent();
+    if (self.mode() === 'edit') {
+        if (self.contents().length === 0) {
+            self.addContent();
+        }
     }
 
     self.setOriginal();
@@ -838,6 +853,18 @@ var JobViewModel = function() {
         }
     });
 
+    self.expandable = ko.computed(function() {
+        return self.department().length > 1 ||
+                self.title().length > 1 ||
+                self.startYear() !== null;
+    });
+
+    self.expanded = ko.observable(false);
+
+    self.toggle = function() {
+        self.expanded(!self.expanded());
+    };
+
     self.trackedProperties = [
         self.institution,
         self.department,
@@ -858,6 +885,7 @@ var JobViewModel = function() {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -879,6 +907,18 @@ var SchoolViewModel = function() {
         }
     });
 
+    self.expandable = ko.computed(function() {
+        return self.department().length > 1 ||
+                self.degree().length > 1 ||
+                self.startYear() !== null;
+    });
+
+    self.expanded = ko.observable(false);
+
+    self.toggle = function() {
+        self.expanded(!self.expanded());
+    };
+
     self.trackedProperties = [
         self.institution,
         self.department,
@@ -899,6 +939,7 @@ var SchoolViewModel = function() {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
