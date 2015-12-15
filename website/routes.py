@@ -21,6 +21,7 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from website import util
+from website import prereg
 from website import settings
 from website import language
 from website.util import paths
@@ -213,6 +214,13 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/api/v1/meetings/submissions/',
+            'get',
+            conference_views.conference_submissions,
+            json_renderer,
+        ),
+
+        Rule(
             '/presentations/',
             'get',
             conference_views.redirect_to_meetings,
@@ -221,6 +229,19 @@ def make_url_map(app):
 
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
 
+        Rule(
+            '/prereg/',
+            'get',
+            prereg.prereg_landing_page,
+            OsfWebRenderer('prereg_landing_page.mako', trust=False)
+        ),
+
+        Rule(
+            '/api/v1/prereg/draft_registrations/',
+            'get',
+            prereg.prereg_draft_registrations,
+            json_renderer,
+        ),
     ])
 
     # Site-wide API routes
@@ -270,7 +291,6 @@ def make_url_map(app):
             OsfWebRenderer('util/oauth_complete.mako'),
         ),
     ])
-
     process_rules(app, [
         Rule(
             [
@@ -863,14 +883,13 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/register/<template>/',
-                '/project/<pid>/node/<nid>/register/<template>/',
+                '/project/<pid>/register/<metaschema_id>/',
+                '/project/<pid>/node/<nid>/register/<metaschema_id>/',
             ],
             'get',
             project_views.register.node_register_template_page,
             OsfWebRenderer('project/register.mako', trust=False)
         ),
-
         Rule(
             [
                 '/project/<pid>/registrations/',
@@ -880,6 +899,30 @@ def make_url_map(app):
             project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako', trust=False)
         ),
+        Rule(
+            [
+                '/project/<pid>/registrations/',
+                '/project/<pid>/node/<nid>/registrations/',
+            ],
+            'post',
+            project_views.drafts.new_draft_registration,
+            OsfWebRenderer('project/edit_draft_registration.mako', trust=False)),
+        Rule(
+            [
+                '/project/<pid>/drafts/<draft_id>/',
+                '/project/<pid>/node/<nid>/drafts/<draft_id>/',
+            ],
+            'get',
+            project_views.drafts.edit_draft_registration_page,
+            OsfWebRenderer('project/edit_draft_registration.mako', trust=False)),
+        Rule(
+            [
+                '/project/<pid>/drafts/<draft_id>/register/',
+                '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
+            ],
+            'get',
+            project_views.drafts.draft_before_register_page,
+            OsfWebRenderer('project/register_draft.mako', trust=False)),
 
         # TODO: Can't create a registration locally, so can't test this one..?
         Rule(
@@ -1015,9 +1058,6 @@ def make_url_map(app):
             addon_views.addon_view_or_download_file_legacy,
             json_renderer
         ),
-
-
-
     ])
 
     # API
@@ -1145,6 +1185,28 @@ def make_url_map(app):
             '/project/<pid>/get_registrations/',
             '/project/<pid>/node/<nid>/get_registrations/',
         ], 'get', project_views.node.get_registrations, json_renderer),
+
+        # Draft Registrations
+        Rule([
+            '/project/<pid>/drafts/',
+        ], 'get', project_views.drafts.get_draft_registrations, json_renderer),
+        Rule([
+            '/project/<pid>/drafts/<draft_id>/',
+        ], 'get', project_views.drafts.get_draft_registration, json_renderer),
+        Rule([
+            '/project/<pid>/drafts/<draft_id>/',
+        ], 'put', project_views.drafts.update_draft_registration, json_renderer),
+        Rule([
+            '/project/<pid>/drafts/<draft_id>/',
+        ], 'delete', project_views.drafts.delete_draft_registration, json_renderer),
+        Rule([
+            '/project/<pid>/drafts/<draft_id>/submit/',
+        ], 'post', project_views.drafts.submit_draft_for_review, json_renderer),
+
+        # Meta Schemas
+        Rule([
+            '/project/drafts/schemas/',
+        ], 'get', project_views.drafts.get_metaschemas, json_renderer),
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
 
@@ -1286,7 +1348,6 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/pointer/fork/',
             ], 'post', project_views.node.fork_pointer, json_renderer,
         ),
-
         # View forks
         Rule([
             '/project/<pid>/forks/',
@@ -1299,19 +1360,17 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/beforeregister',
         ], 'get', project_views.register.project_before_register, json_renderer),
         Rule([
+            '/project/<pid>/drafts/<draft_id>/register/',
+            '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
+        ], 'post', project_views.drafts.register_draft_registration, json_renderer),
+        Rule([
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'get', project_views.register.node_register_template_page, json_renderer),
-
         Rule([
             '/project/<pid>/retraction/',
             '/project/<pid>/node/<nid>/retraction/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/register/<template>/',
-            '/project/<pid>/node/<nid>/register/<template>/',
-        ], 'post', project_views.register.node_register_template_page_post, json_renderer),
 
         Rule(
             [
@@ -1462,6 +1521,16 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/project/<pid>/tree/',
+                '/project/<pid>/node/<nid>/tree/'
+            ],
+            'get',
+            project_views.node.get_node_tree,
+            json_renderer,
+        ),
+
+        Rule(
             '/subscriptions/',
             'post',
             notification_views.configure_subscription,
@@ -1497,7 +1566,7 @@ def make_url_map(app):
             'post',
             project_views.contributor.invite_contributor_post,
             json_renderer
-        ),
+        )
     ], prefix='/api/v1')
 
     # Set up static routing for addons

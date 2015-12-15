@@ -98,6 +98,19 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             }
         );
     },
+    afterUpdate: function() {
+        var self = this;
+        if (self.nodeHasAuth() && !self.validCredentials()) {
+            var message;
+            if (self.userIsOwner()) {
+                message = self.messages.invalidCredOwner();
+            }
+            else {
+                message = self.messages.invalidCredNotOwner();
+            }
+            self.changeMessage(message, 'text-danger');
+        }
+    },
     _updateCustomFields: function(settings){
         this.validCredentials(settings.validCredentials);
     },

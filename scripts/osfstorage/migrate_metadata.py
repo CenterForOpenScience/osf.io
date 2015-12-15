@@ -23,6 +23,7 @@ def main():
         logger.info('Updating metadata for OsfStorageFileVersion {}'.format(each._id))
         if 'dry' not in sys.argv:
             each.update_metadata(each.metadata)
+            each.save()
 
 if __name__ == '__main__':
     # Set up storage backends

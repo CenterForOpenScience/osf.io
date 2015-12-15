@@ -18,9 +18,10 @@ from framework.exceptions import (
     PermissionsError,
     HTTPError,
 )
+from framework.auth import Auth
 
 from website import settings
-from website.addons.base import serializer
+from website.addons.base import serializer, logger
 from website.project.model import Node
 from website.util import waterbutler_url_for
 
@@ -348,6 +349,11 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if x.provider == self.oauth_provider.short_name
         ]
 
+    def delete(self, save=True):
+        for account in self.external_accounts:
+            self.revoke_oauth_access(account, save=False)
+        super(AddonOAuthUserSettingsBase, self).delete(save=save)
+
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
         # ensure the user owns the external_account
@@ -371,7 +377,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         self.save()
 
     @must_be_logged_in
-    def revoke_oauth_access(self, external_account, auth):
+    def revoke_oauth_access(self, external_account, auth, save=True):
         """Revoke all access to an ``ExternalAccount``.
 
         TODO: This should accept node and metadata params in the future, to
@@ -389,8 +395,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
-
-        self.save()
+        if save:
+            self.save()
 
     def verify_oauth_access(self, node, external_account, metadata=None):
         """Verify that access has been previously granted.
@@ -499,6 +505,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
                 node_addon.clear_auth()
 
 class AddonNodeSettingsBase(AddonSettingsBase):
+
     owner = fields.ForeignField('node', backref='addons')
 
     _meta = {
@@ -775,17 +782,71 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     oauth_provider = None
 
     @property
-    def has_auth(self):
-        """Instance has an external account and *active* permission to use it"""
-        if not (self.user_settings and self.external_account):
-            return False
-
-        return self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account
+    def folder_id(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_id' property."
         )
 
-    def set_auth(self, external_account, user):
+    @property
+    def folder_name(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_name' property."
+        )
+
+    @property
+    def folder_path(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_path' property."
+        )
+
+    @property
+    def nodelogger(self):
+        auth = None
+        if self.user_settings:
+            auth = Auth(self.user_settings.owner)
+        self._logger_class = getattr(
+            self,
+            '_logger_class',
+            type(
+                '{0}NodeLogger'.format(self.config.short_name.capitalize()),
+                (logger.AddonNodeLogger, ),
+                {'addon_short_name': self.config.short_name}
+            )
+        )
+        return self._logger_class(
+            node=self.owner,
+            auth=auth
+        )
+
+    @property
+    def complete(self):
+        return bool(
+            self.has_auth and
+            self.external_account and
+            self.user_settings.verify_oauth_access(
+                node=self.owner,
+                external_account=self.external_account,
+            )
+        )
+
+    @property
+    def has_auth(self):
+        """Instance has an external account and *active* permission to use it"""
+        return bool(
+            self.user_settings and self.user_settings.has_auth
+        ) and bool(
+            self.external_account and self.user_settings.verify_oauth_access(
+                node=self.owner,
+                external_account=self.external_account
+            )
+        )
+
+    def clear_settings(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'clear_settings' method."
+        )
+
+    def set_auth(self, external_account, user, log=True):
         """Connect the node addon to a user's external account.
 
         This method also adds the permission to use the account in the user's
@@ -804,6 +865,8 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         self.user_settings = user_settings
         self.external_account = external_account
 
+        if log:
+            self.nodelogger.log(action="node_authorized", save=True)
         self.save()
 
     def deauthorize(self, auth=None, add_log=False):
@@ -846,7 +909,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         """If removed contributor authorized this addon, remove addon authorization
         from owner.
         """
-        if self.has_auth and self.user_settings.owner == removed:
+        if self.user_settings and self.user_settings.owner == removed:
 
             # Delete OAuth tokens
             self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)
@@ -882,7 +945,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             save=False,
         )
         if self.has_auth and self.user_settings.owner == user:
-            clone.set_auth(self.external_account, user)
+            clone.set_auth(self.external_account, user, log=False)
             message = '{addon} authorization copied to forked {category}.'.format(
                 addon=self.config.full_name,
                 category=fork.project_or_component,
@@ -917,6 +980,16 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     # backwards compatibility
     before_register = before_register_message
+
+    def serialize_waterbutler_credentials(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must implement a 'serialize_waterbutler_credentials' method."
+        )
+
+    def serialize_waterbutler_settings(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must implement a 'serialize_waterbutler_settings' method."
+        )
 
 
 # TODO: No more magicks

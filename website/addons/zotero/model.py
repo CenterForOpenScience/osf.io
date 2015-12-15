@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from modularodm import fields
-from pyzotero import zotero
+from pyzotero import zotero, zotero_errors
+
+from framework.exceptions import HTTPError
 
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
@@ -43,12 +45,25 @@ class Zotero(ExternalProvider):
     @property
     def client(self):
         """An API session with Zotero"""
+
         if not self._client:
             self._client = zotero.Zotero(self.account.provider_id, 'user', self.account.oauth_key)
+
+            # Check if Zotero can be accessed with current credentials
+            try:
+                self._client.collections()
+            except zotero_errors.PyZoteroError as err:
+                self._client = None
+                if isinstance(err, zotero_errors.UserNotAuthorised):
+                    raise HTTPError(403)
+                else:
+                    raise err
+
         return self._client
 
     def citation_lists(self, extract_folder):
         """List of CitationList objects, derived from Zotero collections"""
+
         client = self.client
 
         # Note: Pagination is the only way to ensure all of the collections
@@ -172,6 +187,18 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
     @property
     def provider_name(self):
         return 'zotero'
+
+    @property
+    def folder_id(self):
+        return self.zotero_list_id
+
+    @property
+    def folder_name(self):
+        return self.selected_folder_name
+
+    @property
+    def folder_path(self):
+        return self.selected_folder_name
 
     def set_auth(self, *args, **kwargs):
         self.zotero_list_id = None

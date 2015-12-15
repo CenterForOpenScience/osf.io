@@ -19,7 +19,21 @@ from api.base.exceptions import (
     InvalidFilterFieldError
 )
 from api.base import utils
+from api.base.serializers import RelationshipField, TargetField
 
+def sort_multiple(fields):
+    fields = list(fields)
+    def sort_fn(a, b):
+        while fields:
+            field = fields.pop(0)
+            a_field = getattr(a, field)
+            b_field = getattr(b, field)
+            if a_field > b_field:
+                return 1
+            elif a_field < b_field:
+                return -1
+        return 0
+    return sort_fn
 
 class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
@@ -29,9 +43,7 @@ class ODMOrderingFilter(OrderingFilter):
         ordering = self.get_ordering(request, queryset, view)
         if ordering:
             if not isinstance(queryset, modularodm_queryset.BaseQuerySet) and isinstance(ordering, (list, tuple)):
-                # for lists call sorted, list.sort doesn't take a key
-                order_key = ordering[0]
-                sorted_list = sorted(queryset, key=operator.attrgetter(order_key))
+                sorted_list = sorted(queryset, cmp=sort_multiple(ordering))
                 return sorted_list
             return queryset.sort(*ordering)
         return queryset
@@ -60,6 +72,8 @@ class FilterMixin(object):
     COMPARABLE_FIELDS = NUMERIC_FIELDS + DATE_FIELDS
 
     LIST_FIELDS = (ser.ListField, )
+
+    RELATIONSHIP_FIELDS = (RelationshipField, TargetField)
 
     def __init__(self, *args, **kwargs):
         super(FilterMixin, self).__init__(*args, **kwargs)
@@ -202,7 +216,8 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
-        elif isinstance(field, self.LIST_FIELDS):
+        elif isinstance(field, (self.LIST_FIELDS, self.RELATIONSHIP_FIELDS)) \
+                or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
             return value
         else:
             try:
@@ -243,7 +258,10 @@ class ODMFilterMixin(FilterMixin):
         raise NotImplementedError('Must define get_default_odm_query')
 
     def get_query_from_request(self):
-        param_query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
+        if self.request.parser_context['kwargs'].get('is_embedded'):
+            param_query = None
+        else:
+            param_query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
         default_query = self.get_default_odm_query()
 
         if param_query:
@@ -299,7 +317,7 @@ class ListFilterMixin(FilterMixin):
 
     def get_queryset_from_request(self):
         default_queryset = self.get_default_queryset()
-        if self.request.QUERY_PARAMS:
+        if not self.kwargs.get('is_embedded') and self.request.QUERY_PARAMS:
             param_queryset = self.param_queryset(self.request.QUERY_PARAMS, default_queryset)
             return param_queryset
         else:

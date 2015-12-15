@@ -1,7 +1,7 @@
 import mock
 from nose.tools import *  # noqa
 
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import ProjectFactory, AuthUserFactory
 
 from framework.auth import Auth
@@ -237,9 +237,8 @@ class TestCallbacks(OsfTestCase):
     @mock.patch('website.addons.figshare.model.AddonFigShareNodeSettings.archive_errors')
     def test_does_not_get_copied_to_registrations(self, mock_errors, mock_archive):
         registration = self.project.register_node(
-            schema=None,
+            schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
-            template='Template1',
             data='hodor'
         )
         assert_false(registration.has_addon('figshare'))

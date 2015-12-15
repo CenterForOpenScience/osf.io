@@ -445,13 +445,18 @@ class User(GuidStoredObject, AddonModelMixin):
         return user
 
     @classmethod
-    def create_unconfirmed(cls, username, password, fullname, do_confirm=True):
+    def create_unconfirmed(cls, username, password, fullname, do_confirm=True,
+                           campaign=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
         user.add_unconfirmed_email(username)
         user.is_registered = False
+        if campaign:
+            # needed to prevent cirular import
+            from framework.auth.campaigns import system_tag_for_campaign  # skipci
+            user.system_tags.append(system_tag_for_campaign(campaign))
         return user
 
     @classmethod
@@ -972,6 +977,19 @@ class User(GuidStoredObject, AddonModelMixin):
         db = db or framework.mongo.database
         return analytics.get_total_activity_count(self._primary_key, db=db)
 
+    def disable_account(self):
+        """
+        Disables user account, making is_disabled true, while also unsubscribing user
+        from mailchimp emails.
+        """
+        from website import mailchimp_utils
+        mailchimp_utils.unsubscribe_mailchimp(
+            list_name=settings.MAILCHIMP_GENERAL_LIST,
+            user_id=self._id,
+            username=self.username
+        )
+        self.is_disabled = True
+
     @property
     def is_disabled(self):
         """Whether or not this account has been disabled.
@@ -985,9 +1003,9 @@ class User(GuidStoredObject, AddonModelMixin):
     @is_disabled.setter
     def is_disabled(self, val):
         """Set whether or not this account has been disabled."""
-        if val:
+        if val and not self.date_disabled:
             self.date_disabled = dt.datetime.utcnow()
-        else:
+        elif val is False:
             self.date_disabled = None
 
     @property
@@ -1232,45 +1250,46 @@ class User(GuidStoredObject, AddonModelMixin):
         # be sure to reconnect it at the end of this code block. Import done here to prevent circular import error.
         from website.project.signals import contributor_added
         from website.project.views.contributor import notify_added_contributor
-        contributor_added.disconnect(notify_added_contributor)
+        from website.util import disconnected_from
+
         # - projects where the user was a contributor
-        for node in user.node__contributed:
-            # Skip dashboard node
-            if node.is_dashboard:
-                continue
-            # if both accounts are contributor of the same project
-            if node.is_contributor(self) and node.is_contributor(user):
-                if node.permissions[user._id] > node.permissions[self._id]:
-                    permissions = node.permissions[user._id]
+        with disconnected_from(signal=contributor_added, listener=notify_added_contributor):
+            for node in user.node__contributed:
+                # Skip dashboard node
+                if node.is_dashboard:
+                    continue
+                # if both accounts are contributor of the same project
+                if node.is_contributor(self) and node.is_contributor(user):
+                    if node.permissions[user._id] > node.permissions[self._id]:
+                        permissions = node.permissions[user._id]
+                    else:
+                        permissions = node.permissions[self._id]
+                    node.set_permissions(user=self, permissions=permissions)
+
+                    visible1 = self._id in node.visible_contributor_ids
+                    visible2 = user._id in node.visible_contributor_ids
+                    if visible1 != visible2:
+                        node.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+
                 else:
-                    permissions = node.permissions[self._id]
-                node.set_permissions(user=self, permissions=permissions)
+                    node.add_contributor(
+                        contributor=self,
+                        permissions=node.get_permissions(user),
+                        visible=node.get_visible(user),
+                        log=False,
+                    )
 
-                visible1 = self._id in node.visible_contributor_ids
-                visible2 = user._id in node.visible_contributor_ids
-                if visible1 != visible2:
-                    node.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
-
-            else:
-                node.add_contributor(
-                    contributor=self,
-                    permissions=node.get_permissions(user),
-                    visible=node.get_visible(user),
-                    log=False,
-                )
-
-            try:
-                node.remove_contributor(
-                    contributor=user,
-                    auth=Auth(user=self),
-                    log=False,
-                )
-            except ValueError:
-                logger.error('Contributor {0} not in list on node {1}'.format(
-                    user._id, node._id
-                ))
-            node.save()
-        contributor_added.connect(notify_added_contributor)
+                try:
+                    node.remove_contributor(
+                        contributor=user,
+                        auth=Auth(user=self),
+                        log=False,
+                    )
+                except ValueError:
+                    logger.error('Contributor {0} not in list on node {1}'.format(
+                        user._id, node._id
+                    ))
+                node.save()
 
         # - projects where the user was the creator
         for node in user.node__created:

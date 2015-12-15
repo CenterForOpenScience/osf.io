@@ -14,26 +14,29 @@ from framework.mongo import StoredObject
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import from_mongo, get_or_http_error
+from framework.mongo.utils import get_or_http_error
 
 from website import language
 
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
-from website.project import clean_template_name, new_node, new_private_link
+from website.project import new_node, new_private_link
 from website.project.decorators import (
+    must_be_contributor_or_public_but_not_anonymized,
     must_be_contributor_or_public,
     must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
+    http_error_if_disk_saving_mode
 )
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
+from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
@@ -43,8 +46,8 @@ from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
 
-r_strip_html = lambda collection: rapply(collection, strip_html)
 
+r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
 
 @must_be_valid_project
@@ -248,12 +251,8 @@ def project_before_template(auth, node, **kwargs):
 
 @must_be_logged_in
 @must_be_valid_project
+@http_error_if_disk_saving_mode
 def node_fork_page(auth, node, **kwargs):
-    if settings.DISK_SAVING_MODE:
-        raise HTTPError(
-            http.METHOD_NOT_ALLOWED,
-            redirect_url=node.url
-        )
     try:
         fork = node.fork_node(auth)
     except PermissionsError:
@@ -265,13 +264,13 @@ def node_fork_page(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_be_contributor_or_public_but_not_anonymized
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_be_contributor_or_public_but_not_anonymized
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
@@ -375,6 +374,7 @@ def view_project(auth, node, **kwargs):
 
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
+
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
     ret['addon_widget_js'] = list(collect_addon_js(
@@ -749,13 +749,8 @@ def _view_project(node, auth, primary=False):
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id,
-            'registered_meta': [
-                {
-                    'name_no_ext': from_mongo(meta),
-                    'name_clean': clean_template_name(meta),
-                }
-                for meta in node.registered_meta or []
-            ],
+            'registered_meta': node.registered_meta,
+            'registered_schemas': serialize_meta_schemas(node.registered_schema),
             'registration_count': len(node.node__registrations),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
@@ -776,6 +771,8 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
+            'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
+            'has_draft_registrations': bool(node.draft_registrations_active)
         },
         'parent_node': {
             'exists': parent is not None,
@@ -814,7 +811,7 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'node_categories': Node.CATEGORY_MAP,
+        'node_categories': Node.CATEGORY_MAP
     }
     return data
 
@@ -1006,6 +1003,62 @@ def get_children(auth, node, **kwargs):
             if not each.is_deleted
         ]
     return _render_nodes(nodes, auth)
+
+
+def node_child_tree(user, node_ids):
+    """ Format data to test for node privacy settings for use in treebeard.
+    """
+    items = []
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        assert node, '{} is not a valid Node.'.format(node_id)
+
+        can_read = node.has_permission(user, 'read')
+        can_read_children = node.has_permission_on_children(user, 'read')
+        if not can_read and not can_read_children:
+            continue
+        children = []
+        # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
+        # user is contributor on a component of the project/node
+        can_write = node.has_permission(user, 'admin')
+        children.extend(node_child_tree(
+            user,
+            [
+                n._id
+                for n in node.nodes
+                if n.primary and
+                not n.is_deleted
+            ]
+        ))
+        item = {
+            'node': {
+                'id': node_id,
+                'url': node.url if can_read else '',
+                'title': node.title if can_read else 'Private Project',
+                'is_public': node.is_public,
+                'can_write': can_write
+            },
+            'user_id': user._id,
+            'children': children,
+            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'view': can_read,
+            }
+        }
+
+        items.append(item)
+
+    return items
+
+
+@must_be_logged_in
+@must_be_valid_project
+def get_node_tree(auth, **kwargs):
+    node = kwargs.get('node') or kwargs['project']
+    tree = node_child_tree(auth.user, [node._id])
+    return tree
 
 
 @must_be_contributor_or_public
@@ -1368,6 +1421,7 @@ def abbrev_authors(node):
 
 def serialize_pointer(pointer, auth):
     node = get_pointer_parent(pointer)
+
     if node.can_view(auth):
         return {
             'id': node._id,

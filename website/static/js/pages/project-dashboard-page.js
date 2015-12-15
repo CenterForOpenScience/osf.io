@@ -20,6 +20,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
+var NodesPrivacy = require('js/nodesPrivacy');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -31,11 +32,20 @@ $('body').on('nodeLoad', function(event, data) {
         new pointers.PointerManager('#addPointer', window.contextVars.node.title);
         new LogFeed('#logScope', nodeApiUrl + 'log/');
     }
+    // Initialize CitationWidget if user isn't viewing through an anonymized VOL
+    if (!data.node.anonymous && !data.node.isRetracted) {
+        var citations = data.node.alternative_citations;
+        new CitationList('#citationList', citations, data.user);
+        new CitationWidget('#citationStyleInput', '#citationText');
+    }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
+    if (window.contextVars.currentUser.isAdmin) {
+        new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data.node.is_public);
+    }
 });
 
-// Initialize comment pane w/ it's viewmodel
+// Initialize comment pane w/ its viewmodel
 var $comments = $('#comments');
 if ($comments.length) {
     var userName = window.contextVars.currentUser.name;
@@ -44,11 +54,6 @@ if ($comments.length) {
     Comment.init('#commentPane', userName, canComment, hasChildren);
 }
 
-// Initialize CitationWidget if user isn't viewing through an anonymized VOL
-if (!ctx.node.anonymous && !ctx.node.isRetracted) {
-    new CitationList('#citationList');
-    new CitationWidget('#citationStyleInput', '#citationText');
-}
 $(document).ready(function () {
 
     $('#contributorsList').osfToggleHeight();

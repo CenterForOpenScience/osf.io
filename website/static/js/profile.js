@@ -699,6 +699,9 @@ var ListViewModel = function(ContentModel, urls, modes) {
     * */
     self.dirty = function() {
         // if the length of the list has changed
+        if (self.originalItems === undefined) {
+            return false;
+        }
         if (self.originalItems.length !== self.contents().length) {
             return true;
         }
@@ -793,7 +796,7 @@ ListViewModel.prototype.removeContent = function(content) {
 
 ListViewModel.prototype.unserialize = function(data) {
     var self = this;
-    if(self.editAllowed) {
+    if (self.editAllowed) {
         self.editable(data.editable);
     } else {
         self.editable(false);
@@ -803,8 +806,10 @@ ListViewModel.prototype.unserialize = function(data) {
     }));
 
     // Ensure at least one item is visible
-    if (self.contents().length === 0) {
-        self.addContent();
+    if (self.mode() === 'edit') {
+        if (self.contents().length === 0) {
+            self.addContent();
+        }
     }
 
     self.setOriginal();
@@ -848,6 +853,18 @@ var JobViewModel = function() {
         }
     });
 
+    self.expandable = ko.computed(function() {
+        return self.department().length > 1 ||
+                self.title().length > 1 ||
+                self.startYear() !== null;
+    });
+
+    self.expanded = ko.observable(false);
+
+    self.toggle = function() {
+        self.expanded(!self.expanded());
+    };
+
     self.trackedProperties = [
         self.institution,
         self.department,
@@ -868,6 +885,7 @@ var JobViewModel = function() {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -889,6 +907,18 @@ var SchoolViewModel = function() {
         }
     });
 
+    self.expandable = ko.computed(function() {
+        return self.department().length > 1 ||
+                self.degree().length > 1 ||
+                self.startYear() !== null;
+    });
+
+    self.expanded = ko.observable(false);
+
+    self.toggle = function() {
+        self.expanded(!self.expanded());
+    };
+
     self.trackedProperties = [
         self.institution,
         self.department,
@@ -909,6 +939,7 @@ var SchoolViewModel = function() {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 

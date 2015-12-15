@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """Various text used throughout the website, e.g. status messages, errors, etc.
 """
@@ -23,6 +22,8 @@ REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confi
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
 ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'''
+
+AFTER_SUBMIT_FOR_REVIEW = "Your submission has been received. You will be notified within ten business days regarding the status of your submission. If you have questions you may contact us at prereg@cos.io."
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
@@ -107,7 +108,6 @@ BEFORE_FORK_HAS_POINTERS = (
 )
 
 REGISTRATION_INFO = '''
-
 <p>Registration creates a frozen version of the project that can never be
 edited or deleted but can be retracted. You can register your project by
 selecting a registration form, entering information about your project, and
@@ -133,18 +133,18 @@ of the registration.</p>
 '''
 
 REGISTRATION_EMBARGO_INFO = '''
-<p>You can choose whether to make your registration public immediately or
+You can choose whether to make your registration public immediately or
 embargo it for up to four years. At the end of the embargo period the registration
 is automatically made public. After becoming public, the only way to remove a
 registration is to retract it. Retractions show only the registration title,
 contributors, and description to indicate that a registration was made and
-later retracted.</p>
-
-<p>If you choose to embargo your registration, a notification will be sent to
+later retracted.
+<br /><br />
+If you choose to embargo your registration, a notification will be sent to
 all other project contributors. Other administrators will have 48 hours to
 approve or cancel creating the registration. If any other administrator rejects the
 registration, it will be canceled. If all other administrators approve or do
-nothing, the registration will be confirmed and enter its embargo period.</p>
+nothing, the registration will be confirmed and enter its embargo period.
 '''
 
 BEFORE_REGISTRATION_INFO = '''
