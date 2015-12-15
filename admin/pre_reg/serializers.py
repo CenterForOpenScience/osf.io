@@ -25,8 +25,8 @@ def serialize_draft_registration(draft, json_safe=True):
         'is_approved': draft.is_approved,
         'is_rejected': draft.is_rejected,
         'notes': draft.notes,
-        'proof_of_publication': draft.flags.get('hasProofOfPublication'),
-        'payment_sent': draft.flags.get('paymentSent'),
+        'proof_of_publication': draft.flags.get('proof_of_publication'),
+        'payment_sent': draft.flags.get('payment_sent'),
         'assignee': draft.flags.get('assignee'),
         'title': draft.registration_metadata['q1']['value'],
     }

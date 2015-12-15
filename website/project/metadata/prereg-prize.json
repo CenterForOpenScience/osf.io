@@ -2,8 +2,8 @@
     "name": "Prereg Challenge",
     "version": 2,
     "flags": {
-        "paymentSent": false,
-        "hasProofOfPublication": false,
+        "payment_sent": false,
+        "proof_of_publication": false,
         "assignee": null
     },
     "config": {

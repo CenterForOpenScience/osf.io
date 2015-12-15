@@ -4071,12 +4071,10 @@ class DraftRegistrationApproval(Sanction):
         # clear out previous registration options
         self.meta = {}
         self.save()
-        # remove reference to approval from draft
+
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
-        draft.approval = None
-        draft.save()
         self._send_rejection_email(user, draft)
 
 
@@ -4128,6 +4126,10 @@ class DraftRegistration(StoredObject):
                     self._metaschema_flags[flag] = value
             self.save()
         return self._metaschema_flags
+
+    @flags.setter
+    def flags(self, flags):
+        self._metaschema_flags.update(flags)
 
     notes = fields.StringField()
 
@@ -4203,9 +4205,6 @@ class DraftRegistration(StoredObject):
             initiated_by=initiated_by,
             meta=meta
         )
-        authorizers = self.get_authorizers()
-        for user in authorizers:
-            approval.add_authorizer(user)
         approval.save()
         self.approval = approval
         if save:

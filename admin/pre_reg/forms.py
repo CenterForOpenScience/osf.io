@@ -17,6 +17,11 @@ class DraftRegistrationForm(forms.Form):
     payment_sent = forms.BooleanField(
         label="Payment sent"
     )
+    assignee = forms.ChoiceField(
+        label="Assignee",
+        choices=get_prereg_reviewers
+    )
+
     notes = forms.CharField(
         label="Notes",
         widget=forms.Textarea(
@@ -24,10 +29,6 @@ class DraftRegistrationForm(forms.Form):
                 'style': 'height: 50px;'
             }
         )
-    )
-    assignee = forms.ChoiceField(
-        label="Assignee",
-        choices=get_prereg_reviewers
     )
 
 

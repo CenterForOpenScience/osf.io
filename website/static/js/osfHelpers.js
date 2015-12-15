@@ -218,23 +218,31 @@ var handleEditableError = function(response) {
     return 'Error: ' + response.responseJSON.message_long;
 };
 
-var block = function(message) {
-    $.blockUI({
-        css: {
-            border: 'none',
-            padding: '15px',
-            backgroundColor: '#000',
-            '-webkit-border-radius': '10px',
-            '-moz-border-radius': '10px',
-            opacity: 0.5,
-            color: '#fff'
-        },
-        message: message || 'Please wait'
-    });
+var block = function(message, $element) {
+    ($element ? $element.block : $.blockUI).call(
+        $element || window,
+        {
+            css: {
+                border: 'none',
+                padding: '15px',
+                backgroundColor: '#000',
+                '-webkit-border-radius': '10px',
+                '-moz-border-radius': '10px',
+                opacity: 0.5,
+                color: '#fff'
+            },
+            message: message || 'Please wait'
+        }
+    );
 };
 
-var unblock = function() {
-    $.unblockUI();
+var unblock = function(element) {
+    if (element) {
+        $(element).unblock();
+    }
+    else {
+        $.unblockUI();
+    }
 };
 
 var joinPrompts = function(prompts, base) {

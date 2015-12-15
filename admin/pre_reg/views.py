@@ -2,8 +2,9 @@ import functools
 
 from django.contrib.auth.decorators import login_required  # , user_passes_test
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.core.paginator import Paginator, EmptyPage
 
 import json
 import httplib as http
@@ -43,41 +44,35 @@ def is_in_prereg_group(user):
     """
     return user.groups.filter(name='prereg_group').exists()
 
-
 @login_required
 # @user_passes_test(is_in_prereg_group)
-def prereg(request):
+def prereg(request, page_number):
     """Redirects to prereg page if user has prereg access
     :param request: Current logged in user
     :return: Redirect to prereg page with username, reviewers, and user obj
     """
-    #prereg_admin = request.user.has_perm('auth.prereg_admin')
-    #user = {
-    #     'username': str(request.user.username),
-    #     'admin': json.dumps(prereg_admin)
-    # }
-    user = {
-        'username': 'user_placeholder',
-        'admin': 'admin_placeholder'
-    }
-    # reviewers = MyUser.objects.prereg_users()
-    reviewers = ['admin_placeholder']
+    paginator = Paginator(get_prereg_drafts(), 5)
 
-    drafts = [serializers.serialize_draft_registration(d, json_safe=False) for d in get_prereg_drafts()]
-    for d in drafts:
-        d['form'] = DraftRegistrationForm(d)
+    page_number = int(page_number or request.GET.get('page', 1))
+    page = paginator.page(page_number)
+
+    try:
+        drafts = [serializers.serialize_draft_registration(d, json_safe=False) for d in page]
+    except EmptyPage:
+        drafts = []
+
+    for draft in drafts:
+        draft['form'] = DraftRegistrationForm(draft)
 
     context = {
-        'user_info': user,
-        'reviewers': reviewers,
-        'drafts': drafts
+        'drafts': drafts,
+        'page': page
     }
     return render(request, 'pre_reg/prereg.html', context)
 
-
 @login_required
 # @user_passes_test(is_in_prereg_group)
-def prereg_form(request, draft_pk):
+def view_draft(request, draft_pk):
     """Redirects to prereg form review page if user has prereg access
     :param draft_pk: Unique id for selected draft
     :return: Redirect to prereg form review page with draft obj
@@ -87,7 +82,6 @@ def prereg_form(request, draft_pk):
         'draft': serializers.serialize_draft_registration(draft)
     }
     return render(request, 'pre_reg/edit_draft_registration.html', context)
-
 
 @login_required
 # @user_passes_test(is_in_prereg_group)
@@ -111,7 +105,6 @@ def get_drafts(request):
         serialized_drafts
     )
 
-
 @csrf_exempt
 @login_required
 # @user_passes_test(is_in_prereg_group)
@@ -125,8 +118,7 @@ def approve_draft(request, draft_pk):
 
     user = request.user.osf_user
     draft.approve(user)
-    return JsonResponse({})
-
+    return redirect('pre_reg:prereg', permanent=True, page_number=int(request.POST.get('page', 1)))
 
 @csrf_exempt
 @login_required
@@ -141,12 +133,10 @@ def reject_draft(request, draft_pk):
 
     user = request.user.osf_user
     draft.reject(user)
-    return JsonResponse({})
-
+    return redirect('pre_reg:prereg', permanent=True, page_number=int(request.POST.get('page', 1)))
 
 @csrf_exempt
 @login_required
-# @user_passes_test(is_in_prereg_group)
 def update_draft(request, draft_pk):
     """Updates current draft to save admin comments
 
@@ -156,10 +146,17 @@ def update_draft(request, draft_pk):
     data = json.loads(request.body)
     draft = get_draft_or_error(draft_pk)
 
-    schema_data = data.get('schema_data', {})
-    try:
-        draft.update_metadata(schema_data)
+    if 'admin_settings' in data:
+        admin_settings = data['admin_settings']
+        draft.notes = admin_settings.get('notes', draft.notes)
+        del admin_settings['notes']
+        draft.flags = admin_settings
         draft.save()
-    except (NodeStateError):
-        raise HTTPError(http.BAD_REQUEST)
+    else:
+        schema_data = data.get('schema_data', {})
+        try:
+            draft.update_metadata(schema_data)
+            draft.save()
+        except (NodeStateError):
+            raise HTTPError(http.BAD_REQUEST)
     return JsonResponse(serializers.serialize_draft_registration(draft))

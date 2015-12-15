@@ -1,48 +1,92 @@
 {% extends 'base.html' %}
 {% load render_bundle from webpack_loader %}
+{% load filters %}
 
 {% block content %}
-<script type="application/javascript">
-   var prereg_user = {{ user_info|safe }};
-   var prereg_reviewers = {{ reviewers|safe }};
-</script>
-<div class="container-fluid" id="prereg-row">
+<div class="container-fluid">
   {% for draft in drafts %}
-  <div class="row well">
+  <div class="row osf-box osx-box-round prereg-draft" style="padding-top: 10px; padding-bottom: 10px;">
     <div class="col-md-4">
       <!-- Approval state -->
-      {% if draft.is_pending_approval %}
-      <h4><span class="label label-lg label-warning">Pending Approval</span></h4>
-      {% elif draft.is_approved %}
-      <h4><span class="label label-lg label-success">Approved</span></h4>
-      {% elif draft.is_rejected %}
-      <h4><span class="label label-lg label-danger">Rejected</span></h4>
-      {% endif %}
-      <!-- Info --> 
+      <h4>
+        {% if draft.is_pending_approval %}
+        <span
+           class="prereg-draft-state prereg-draft-state-pending label label-lg label-warning">Pending Approval</span>
+        {% elif draft.is_approved %}
+        <span
+           class="prereg-draft-state prereg-draft-state-approved label label-lg label-success">Approved</span>
+        {% elif draft.is_rejected %}
+        <span
+           class="prereg-draft-state prereg-draft-state-rejected label label-lg label-danger">Rejected</span>
+        {% endif %}
+      </h4>
+      <!-- Info -->
       <h3> {{ draft.title }} </h3>
       <span class="text-muted"> Applicant </span> <strong> {{ draft.initiator.full_name }}</strong>
       submitted on <strong>{{ draft.initiated | date:"N dS" }}</strong> at <strong>{{draft.initiated | date:"g:i a" }}</strong>
       <br />
       <a href="mailto:{{ draft.initiator.username }}">{{ draft.initiator.username }} </a>
-    </div>    
-    <div class="col-md-8 form">
+    </div>
+    <div class="col-md-6 form">
+      <form class="prereg-draft-form" action="{% url 'pre_reg:update_draft' draft.pk %}">
       <!-- Form -->
-      <form action="{% url 'pre_reg:update_draft' draft.pk %}">
       {% for field in draft.form %}
-        <div class="form-group">
-          {{ field.label_tag }}
-          {{ field }}
-        </div>
+      <div class="form-group">
+        {{ field.label_tag }}
+        {{ field }}
+      </div>
       {% endfor %}
-        <input class="pull-right btn btn-primary" type="submit" value="Save"></input>
-        <a style="margin-right: 10px" target="_blank"
-           href="{% url 'pre_reg:view_draft' draft.pk %}" class="pull-right btn btn-default">View Draft</a>
-      </form>
+    </form>
     </div>
+    <div class="col-md-2">
+      <br />
+      <span class="btn-group form-inline">
+        {% if draft.is_pending_approval %}
+        <form action="{% url 'pre_reg:approve_draft' draft.pk %}" method="POST" style="display: inline">
+          <input type="hidden" name="page" value="{{ page.number }}">
+          <input type="submit" style="margin-right: 5px"
+                 class="btn btn-warning prereg-draft-approve"
+                 value="Approve"/>
+        </form>
+        <form action="{% url 'pre_reg:reject_draft' draft.pk %}" method="POST" style="display: inline">
+          <input type="hidden" name="page" value="{{ page.number }}">
+          <input type="submit"
+                 class="btn btn-danger prereg-draft-reject"
+                 value="Reject"/>
+        </form>
+        {% endif %}
+      </span>
+      <br />
+      <br />
+      <hr />
+      <br />
+      <span class="btn-group">
+        <a style="margin-right: 5px" target="_blank"
+           href="{% url 'pre_reg:view_draft' draft.pk %}" class="btn btn-default">View Draft</a>
+        <button class="btn btn-primary prereg-draft-save">Save</button>
+      </span>
     </div>
+  </div>
   {% endfor %}
+</div>
+<div class="pagination pull-right">
+  <span class="step-links">
+    {% if page.has_previous %}
+    <a class="btn btn-default" href="?page=1">first</a>
+    <a class="btn btn-primary" href="?page={{ page.previous_page_number }}">previous</a>
+    {% endif %}
+
+    <span style="margin: 5px" class="current">
+      Page {{ page.number }} of {{ page.paginator.num_pages }}.
+    </span>
+
+    {% if page.has_next %}
+    <a class="btn btn-primary" href="?page={{ page.next_page_number }}">next</a>
+    <a class="btn btn-default" href="?page={{ page.paginator.num_pages }}">last</a>
+ {% endif %}
+  </span>
 </div>
 {% endblock %}
 {% block bottom_js %}
-
+  {% render_bundle 'prereg-admin-page' %}
 {% endblock %}
