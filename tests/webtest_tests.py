@@ -87,7 +87,7 @@ class TestAUser(OsfTestCase):
         # Goes to homepage, already logged in
         res = self.app.get('/', auth=self.user.auth).follow(auth=self.user.auth)
         # Clicks Dashboard link in navbar
-        res = res.click('My Dashboard', index=0, auth=self.user.auth)
+        res = res.click('My Projects', index=0, auth=self.user.auth)
         assert_in('Projects', res)  # Projects heading
 
     def test_does_not_see_osffiles_in_user_addon_settings(self):

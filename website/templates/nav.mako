@@ -22,7 +22,7 @@
     <div id="navbar" class="navbar-collapse collapse navbar-right">
       <ul class="nav navbar-nav">
         % if user_name:
-            <li><a href="/dashboard/">My Dashboard</a></li>
+            <li><a href="/dashboard/">My Projects</a></li>
         % endif
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Browse <span class="caret"></span></a>
