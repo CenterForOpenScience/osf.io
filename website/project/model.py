@@ -2309,8 +2309,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def _root(self):
-        if self.parent_node:
-            return self.parent_node._root
+        if self._parent_node:
+            return self._parent_node._root
         else:
             return self
 
