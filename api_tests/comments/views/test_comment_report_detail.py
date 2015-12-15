@@ -33,6 +33,7 @@ class TestReportDetailView(ApiTestCase):
 
     def _set_up_public_project_comment_reports(self):
         self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
+        self.public_project.comment_level = 'private'
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_project, user=self.contributor)
         self.public_comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
@@ -83,7 +84,7 @@ class TestReportDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_logged_in_non_contributor_reporter_can_view_report_detail(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory.build(node=project, user=project.creator)
         comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()
@@ -137,7 +138,7 @@ class TestReportDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_logged_in_non_contributor_reporter_can_update_report_detail(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory.build(node=project, user=project.creator)
         comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()
@@ -206,7 +207,7 @@ class TestReportDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_logged_in_non_contributor_reporter_can_delete_report_detail(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory.build(node=project, user=project.creator)
         comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()

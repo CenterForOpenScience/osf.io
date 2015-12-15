@@ -133,7 +133,6 @@ class TestNodeCommentCreate(ApiTestCase):
     def _set_up_public_project_with_public_comment_level(self):
         """ Public project configured so that any logged-in user can comment."""
         self.project_with_public_comment_level = ProjectFactory(is_public=True, creator=self.user)
-        self.project_with_public_comment_level.comment_level = 'public'
         self.project_with_public_comment_level.save()
         self.public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project_with_public_comment_level._id)
 
@@ -246,10 +245,10 @@ class TestNodeCommentCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
 
-    def test_public_node_non_contributor_cannot_comment(self):
+    def test_public_node_non_contributor_can_comment(self):
         self._set_up_public_project()
         res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 201)
 
     def test_public_node_logged_out_user_cannot_comment(self):
         self._set_up_public_project()

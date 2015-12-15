@@ -4197,7 +4197,7 @@ class TestComments(OsfTestCase):
         project = ProjectFactory()
         user = UserFactory()
         project.set_privacy('private')
-        project.add_contributor(user, 'read')
+        project.add_contributor(user, ['read'])
         project.save()
 
         assert_true(project.can_comment(Auth(user=user)))

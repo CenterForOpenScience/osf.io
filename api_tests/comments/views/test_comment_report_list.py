@@ -86,11 +86,10 @@ class TestCommentReportsView(ApiTestCase):
         assert_equal(len(report_json), 0)
         assert_not_in(self.contributor._id, report_ids)
 
-    def test_public_node_non_contributor_does_not_see_report(self):
+    def test_public_node_non_contributor_does_see_report(self):
         self._set_up_public_project_comment_reports()
         res = self.app.get(self.public_url, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.status_code, 200)
 
     def test_public_node_logged_out_user_cannot_view_reports(self):
         self._set_up_public_project_comment_reports()
@@ -98,7 +97,7 @@ class TestCommentReportsView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_non_contributor_reporter_can_view_report(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory.build(node=project, user=project.creator)
         comment.reports = comment.reports or {}
         comment.reports[self.non_contributor._id] = {'category': 'spam', 'text': 'This is spam.'}
@@ -218,10 +217,10 @@ class TestCommentReportsView(ApiTestCase):
         res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    def test_public_node_logged_in_non_contributor_cannot_report_comment(self):
+    def test_public_node_logged_in_non_contributor_can_report_comment(self):
         self._set_up_public_project_comment_reports()
         res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 201)
 
     def test_public_node_contributor_can_report_comment(self):
         self._set_up_public_project_comment_reports()
@@ -237,7 +236,7 @@ class TestCommentReportsView(ApiTestCase):
             comment (comment_level == 'public), non-contributors
             can also report comments.
         """
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory(node=project, user=project.creator)
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
 
