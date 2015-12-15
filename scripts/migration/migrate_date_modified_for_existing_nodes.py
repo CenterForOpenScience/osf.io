@@ -30,7 +30,6 @@ def main():
         node.save()
         logger.info('Node {0} "date_modified" added'.format(node._id))
 
-
 if __name__ == '__main__':
 
     dry_run = 'dry' in sys.argv
