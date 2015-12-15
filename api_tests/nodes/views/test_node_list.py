@@ -1168,6 +1168,15 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
+    def test_bulk_partial_update_privacy_has_no_effect_on_tags(self):
+        self.public_project.add_tag('tag1', Auth(self.public_project.creator), save=True)
+        payload = {'id': self.public_project._id, 'type': 'nodes', 'attributes': {'public': False}}
+        res = self.app.patch_json_api(self.url, {'data': [payload]}, auth=self.user.auth, bulk=True)
+        assert_equal(res.status_code, 200)
+        self.public_project.reload()
+        assert_equal(self.public_project.tags, ['tag1'])
+        assert_equal(self.public_project.is_public, False)
+
 
 class TestNodeBulkDelete(ApiTestCase):
 
