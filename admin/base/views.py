@@ -8,7 +8,10 @@ from admin.common_auth.models import MyUser
 
 @login_required
 def home(request):
-    context = {'user': request.user}
+    context = {
+        'user': request.user,
+        'user_groups': map(lambda g: g.name, request.user.groups.all())
+    }
     return render(request, 'home.html', context)
 
 def password_reset_done(request, **kwargs):
