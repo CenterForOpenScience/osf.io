@@ -13,7 +13,7 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.files.serializers import FileSerializer
-from api.comments.serializers import CommentSerializer
+from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 
@@ -1775,14 +1775,25 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                            "type": "comments",   # required
                            "attributes": {
                              "content":       {content},        # mandatory
-                             "deleted":       {is_deleted},     # optional
+                           },
+                           "relationships": {
+                             "target": {
+                               "data": {
+                                  "type": {target type}         # mandatory
+                                  "id": {target._id}            # mandatory
+                               }
+                             }
                            }
                          }
                        }
         Success:       201 CREATED + comment representation
 
-    To create a comment on this node, issue a POST request against this endpoint. The `content` field is mandatory.
-    The `deleted` field is optional and defaults to `False`. If the comment creation is successful the API will return
+    To create a comment on this node, issue a POST request against this endpoint. The comment target id and target type
+    must be specified. To create a comment on the node overview page, the target `type` would be "nodes" and the `id`
+    would be the node id. To reply to a comment on this node, the target `type` would be "comments" and the `id` would
+    be the id of the comment to reply to. The `content` field is mandatory.
+
+    If the comment creation is successful the API will return
     a 201 response with the representation of the new comment in the body. For the new comment's canonical URL, see the
     `/links/self` field of the response.
 
@@ -1830,9 +1841,23 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     def get_queryset(self):
         return Comment.find(self.get_query_from_request())
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CommentCreateSerializer
+        else:
+            return CommentSerializer
+
+    # overrides ListCreateAPIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(NodeCommentsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
     def perform_create(self, serializer):
         node = self.get_node()
         serializer.validated_data['user'] = self.request.user
-        serializer.validated_data['target'] = node
         serializer.validated_data['node'] = node
         serializer.save()
