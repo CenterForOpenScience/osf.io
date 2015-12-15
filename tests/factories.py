@@ -551,6 +551,8 @@ class MockOAuth2Provider(ExternalProvider):
 
     auth_url_base = "https://mock2.com/auth"
     callback_url = "https://mock2.com/callback"
+    auto_refresh_url = "https://mock2.com/callback"
+    refresh_time = 300
 
     def handle_callback(self, response):
         return {

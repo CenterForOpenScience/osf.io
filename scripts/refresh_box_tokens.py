@@ -12,7 +12,7 @@ from scripts import utils as scripts_utils
 from website.app import init_app
 from website.oauth.models import ExternalAccount
 from website.addons.base.exceptions import AddonError
-from website.addons.box.utils import refresh_oauth_key
+from website.addons.box.model import Box
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -37,7 +37,7 @@ def main(delta, dry_run):
         )
         if not dry_run:
             try:
-                refresh_oauth_key(record, force=True)
+                Box(record).refresh_oauth_key(force=True)
             except AddonError as ex:
                 logger.error(ex.message)
 
