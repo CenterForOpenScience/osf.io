@@ -184,12 +184,23 @@ BaseComment.prototype.fetch = function(nodeId) {
 };
 
 var setUnreadCommentCount = function(self) {
+    var url;
+    if (self.page() === FILES) {
+        url = osfHelpers.apiV2Url('files/' + self.$root.rootId() + '/', {query: 'related_counts=True'});
+    } else {
+        url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/', {query: 'related_counts=True'});
+    }
+
     var request = osfHelpers.ajaxJSON(
         'GET',
-        osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/', {query: 'related_counts=True'}),
+        url,
         {'isCors': true});
     request.done(function(response) {
-        self.unreadComments(response.data.relationships.comments.links.related.meta.unread.node);
+        if (self.page() === FILES) {
+            self.unreadComments(response.data.relationships.comments.links.related.meta.unread);
+        } else {
+            self.unreadComments(response.data.relationships.comments.links.related.meta.unread.node);
+        }
     });
 };
 
