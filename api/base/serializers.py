@@ -615,6 +615,11 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
+
+        # if PATCH request, the child serializer's partial attribute needs to be True
+        if self.context['request'].method == 'PATCH':
+            self.child.partial = True
+
         if len(instance) != len(validated_data):
             raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
 
