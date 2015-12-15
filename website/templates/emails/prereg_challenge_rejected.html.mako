@@ -1,4 +1,4 @@
-Dear ${fullname},
+Dear ${user.fullname},
 
 Thank you for submitting your research plan to the Preregistration Challenge. 
 

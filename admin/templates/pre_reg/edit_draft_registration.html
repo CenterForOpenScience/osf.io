@@ -17,24 +17,6 @@
 
 <div class="container scripted" id="draftRegistrationScope">
   <div class="row">
-    <div class="col-md-11">
-        <span class="btn-group pull-right">
-          <a data-bind="click: $root.approveDraft,
-                        tooltip: {
-                          position: 'top',
-                          title: 'Approve'
-                        }" class="btn btn-success" type="button">
-            <i class="fa fa-check"></i> Approve
-          </a>
-          <a data-bind="click: $root.rejectDraft,
-                        tooltip: {
-                          position: 'top',
-                          title: 'Reject'
-                        }" class="btn btn-danger" type="button">
-            <i class="fa fa-remove"></i> Reject
-          </a>
-        </span>
-      </div>
     <h3>
       <div class="row">
         <div class="col-md-9">
@@ -79,8 +61,6 @@
                   </span>
                 </div>
                 <div class="row">
-                  <button data-bind="click: save" type="button" class="btn btn-primary">Save
-                  </button>
                   <!-- ko ifnot: onLastPage -->
                   <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
                   <!-- /ko -->
