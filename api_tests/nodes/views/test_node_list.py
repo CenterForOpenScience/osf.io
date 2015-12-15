@@ -1564,5 +1564,22 @@ class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
         assert_equal(self.project_one.is_deleted, True)
         assert_equal(self.project_two.is_deleted, True)
 
+    def test_skip_uneditable_does_not_have_admin_permission_for_any_nodes(self):
+        payload = {
+            'data': [
+                {
+                    'id': self.project_three._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': self.project_four._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+
 
 
