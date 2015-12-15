@@ -34,7 +34,7 @@ class TestNodeCommentsList(ApiTestCase):
     def _set_up_registration_with_comment(self):
         self.registration = RegistrationFactory(creator=self.user)
         self.registration_comment = CommentFactory(node=self.registration, user=self.user)
-        self.registration_url = '/{}nodes/{}/comments/'.format(API_BASE, self.registration._id)
+        self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
 
     def test_return_public_node_comments_logged_out_user(self):
         self._set_up_public_project_with_comment()
@@ -101,7 +101,7 @@ class TestNodeCommentsList(ApiTestCase):
         url = '/{}nodes/{}/comments/'.format(API_BASE, registration._id)
         retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
 
 class TestNodeCommentCreate(ApiTestCase):

@@ -148,11 +148,10 @@ class TestNodeDetail(ApiTestCase):
         )
         assert_equal(res.status_code, 404)
 
-    def test_return_registrations_at_node_detail_endpoint(self):
+    def test_can_not_return_registrations_at_node_detail_endpoint(self):
         registration = RegistrationFactory(project=self.public_project, creator=self.user)
-        res = self.app.get('/{}nodes/{}/'.format(API_BASE, registration._id), auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['registration'], True)
+        res = self.app.get('/{}nodes/{}/'.format(API_BASE, registration._id), auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
     def test_cannot_return_folder_at_node_detail_endpoint(self):
         folder = FolderFactory(creator=self.user)
@@ -164,7 +163,7 @@ class TestNodeDetail(ApiTestCase):
         url = '/{}nodes/{}/'.format(API_BASE, registration._id)
         retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
 class NodeCRUDTestCase(ApiTestCase):
 
@@ -410,7 +409,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             }
         }, auth=self.user.auth, expect_errors=True)
         registration.reload()
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
         assert_equal(registration.title, original_title)
         assert_equal(registration.description, original_description)
 
@@ -431,7 +430,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             }
         }, auth=self.user.auth, expect_errors=True)
         registration.reload()
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
         assert_equal(registration.title, registration.title)
         assert_equal(registration.description, registration.description)
 
@@ -817,7 +816,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
         registration.reload()
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
         assert_equal(registration.title, registration.title)
         assert_equal(registration.description, registration.description)
 

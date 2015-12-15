@@ -188,8 +188,8 @@
             </div>
         </td>
         <td>
-            <div class="header" data-bind="visible: expanded() || !$root.collapsed()"></div>
-            <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
+            <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
+            <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
                 <ul class="private-link-list narrow-list" data-bind="foreach: nodesList">
                     <li data-bind="style:{marginLeft: $data.scale}">
                         <span data-bind="getIcon: $data.category"></span>
@@ -199,20 +199,20 @@
             </div>
         </td>
         <td>
-            <div class="header" data-bind="visible: expanded() || !$root.collapsed()"></div>
-            <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
+            <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
+            <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
                 <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
             </div>
         </td>
         <td>
-            <div class="header" data-bind="visible: expanded() || !$root.collapsed()"></div>
-            <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
+            <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
+            <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
                 <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block"></a>
             </div>
         </td>
         <td>
-            <div class="header" data-bind="visible: expanded() || !$root.collapsed()"></div>
-            <div class="td-content" data-bind="visible: expanded() || !$root.collapsed()">
+            <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
+            <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
                 <span data-bind="html: anonymousDisplay"></span>
                 <!-- ko if: $root.nodeIsPublic && anonymous -->
                 <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="fa fa-question-circle fa-sm"></i>
@@ -282,7 +282,7 @@
                        click: $root.collapsed() ? toggleExpand : null">
             <!-- ko if: ($parent === 'contrib' && $root.isSortable()) -->
                 <span class="fa fa-bars sortable-bars"></span>
-                <img class="m-l-md" data-bind="attr: {src: contributor.gravatar_url}" />
+                <img class="m-l-xs" data-bind="attr: {src: contributor.gravatar_url}" />
             <!-- /ko -->
             <!-- ko ifnot: ($parent === 'contrib' && $root.isSortable()) -->
                 <img data-bind="attr: {src: contributor.gravatar_url}" />
@@ -307,8 +307,8 @@
             </span>
         </td>
         <td class="permissions">
-            <div class="header" data-bind="visible: contributor.expanded() || !$root.collapsed()"></div>
-            <div class="td-content" data-bind="visible: contributor.expanded() || !$root.collapsed()">
+            <div class="header" data-bind="visible: contributor.expanded() && $root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: contributor.canEdit() -->
                     <span data-bind="visible: !deleteStaged()">
                         <select class="form-control input-sm" data-bind="
@@ -330,8 +330,8 @@
             </div>
         </td>
         <td>
-            <div class="header" data-bind="visible: contributor.expanded() || !$root.collapsed()"></div>
-            <div class="td-content" data-bind="visible: contributor.expanded() || !$root.collapsed()">
+            <div class="header" data-bind="visible: contributor.expanded() && $root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <input
                     type="checkbox" class="biblio visible-filter"
                     data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin && !deleteStaged()"
@@ -339,7 +339,7 @@
             </div>
         </td>
         <td>
-            <div class="td-content" data-bind="visible: contributor.expanded() || !$root.collapsed()">
+            <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: contributor.canEdit() -->
                     <!-- ko ifnot: deleteStaged -->
                         <!-- Note: Prevent clickBubble so that removing a

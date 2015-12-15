@@ -1,6 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import ValidationError
-
+from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.project.model import Q, Node
@@ -10,26 +9,46 @@ from api.base.views import JSONAPIBaseView
 from api.base.serializers import HideIfRetraction
 from api.registrations.serializers import (
     RegistrationSerializer,
-    RegistrationDetailSerializer
+    RegistrationDetailSerializer,
+    RegistrationContributorsSerializer
 )
 
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
-    NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail)
+    NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
+    NodeAlternativeCitationsList, NodeAlternativeCitationDetail)
+
+from api.registrations.serializers import RegistrationNodeLinksSerializer
 
 from api.nodes.permissions import (
     ContributorOrPublic,
-    ReadOnlyIfRegistration)
-
+    ReadOnlyIfRegistration,
+)
+from api.base.utils import get_object_or_error
 
 class RegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current registration based on the
-    current URL. By default, fetches the current registration based on the registration_id kwarg.
+    current URL. By default, fetches the current registration based on the node_id kwarg.
     """
 
     serializer_class = RegistrationSerializer
-    node_lookup_url_kwarg = 'registration_id'
+    node_lookup_url_kwarg = 'node_id'
+
+    def get_node(self, check_object_permissions=True):
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
+        # Nodes that are folders/collections are treated as a separate resource, so if the client
+        # requests a collection through a node endpoint, we return a 404
+        if node.is_folder:
+            raise NotFound
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
+        return node
 
 
 class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
@@ -219,42 +238,64 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
         return registration
 
 
-class RegistrationContributorsList(NodeContributorsList):
+class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-contributors'
 
-class RegistrationContributorDetail(NodeContributorDetail):
+
+class RegistrationContributorDetail(NodeContributorDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-contributor-detail'
+    serializer_class = RegistrationContributorsSerializer
 
-class RegistrationChildrenList(NodeChildrenList):
+
+class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-children'
 
-class RegistrationCommentsList(NodeCommentsList):
+
+class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-comments'
 
-class RegistrationProvidersList(NodeProvidersList):
+
+class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-providers'
 
-class RegistrationNodeLinksList(NodeLinksList):
+
+class RegistrationNodeLinksList(NodeLinksList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-pointers'
+    serializer_class = RegistrationNodeLinksSerializer
 
-class RegistrationNodeLinksDetail(NodeLinksDetail):
+
+class RegistrationNodeLinksDetail(NodeLinksDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-pointer-detail'
+    serializer_class = RegistrationNodeLinksSerializer
 
-class RegistrationRegistrationsList(NodeRegistrationsList):
+
+class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-providers'
 
-class RegistrationFilesList(NodeFilesList):
+
+class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-files'
 
-class RegistrationFileDetail(NodeFileDetail):
+
+class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-file-detail'
+
+
+class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-alternative-citations'
+
+
+class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-alternative-citation-detail'

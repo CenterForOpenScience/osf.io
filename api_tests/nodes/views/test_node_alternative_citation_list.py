@@ -50,13 +50,17 @@ def create_project(creator, public=True, contrib=None, citation=False, registrat
 class TestCreateAlternativeCitations(ApiTestCase):
     def request(self, data, errors=False, is_admin=False, is_contrib=True, logged_out=False, **kwargs):
         admin = AuthUserFactory()
+        registration = kwargs.get('registration', None)
         if is_admin:
             user = admin
         elif not logged_out:
             user = AuthUserFactory()
             kwargs['contrib'] = user if is_contrib else None
         project = create_project(admin, **kwargs)
-        project_url = '/{}nodes/{}/citations/'.format(API_BASE, project._id)
+        if registration:
+            project_url = '/{}registrations/{}/citations/'.format(API_BASE, project._id)
+        else:
+            project_url = '/{}nodes/{}/citations/'.format(API_BASE, project._id)
         if not logged_out:
             res = self.app.post_json_api(project_url, data, auth=user.auth, expect_errors=errors)
         else:
@@ -744,16 +748,21 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         assert_equal(len(registration.alternative_citations), 0)
 
+
 class TestGetAlternativeCitations(ApiTestCase):
     def request(self, errors=False, is_admin=False, is_contrib=True, logged_out=False, **kwargs):
         admin = AuthUserFactory()
+        registration = kwargs.get('registration', None)
         if is_admin:
             user = admin
         elif not logged_out:
             user = AuthUserFactory()
             kwargs['contrib'] = user if is_contrib else None
         project = create_project(admin, citation=True, **kwargs)
-        project_url = '/{}nodes/{}/citations/'.format(API_BASE, project._id)
+        if registration:
+            project_url = '/{}registrations/{}/citations/'.format(API_BASE, project._id)
+        else:
+            project_url = '/{}nodes/{}/citations/'.format(API_BASE, project._id)
         if not logged_out:
             res = self.app.get(project_url, auth=user.auth, expect_errors=errors)
         else:
@@ -825,7 +834,7 @@ class TestGetAlternativeCitations(ApiTestCase):
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
-    def test_get_all__citations_admin_public_reg(self):
+    def test_get_all_citations_admin_public_reg(self):
         res = self.request(registration=True,
                            is_admin=True)
         assert_equal(res.status_code, 200)
