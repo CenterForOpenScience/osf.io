@@ -34,7 +34,7 @@ from website.oauth.models import (
 )
 from website.project.model import (
     Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
-    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig,
+    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig, AlternativeCitation,
     ensure_schemas
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
@@ -165,9 +165,10 @@ class PrivateLinkFactory(ModularOdmFactory):
     FACTORY_FOR = PrivateLink
 
     name = "link"
-    key = "foobarblaz"
+    key = Sequence(lambda n: 'foobar{}'.format(n))
     anonymous = False
     creator = SubFactory(AuthUserFactory)
+
 
 class AbstractNodeFactory(ModularOdmFactory):
     FACTORY_FOR = Node
@@ -271,6 +272,23 @@ class RegistrationFactory(AbstractNodeFactory):
         reg.save()
         return reg
 
+
+class RetractedRegistrationFactory(AbstractNodeFactory):
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+
+        registration = kwargs.pop('registration', None)
+        registration.is_public = True
+        user = kwargs.pop('user', registration.creator)
+
+        registration.retract_registration(user)
+        retraction = registration.retraction
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(user, token)
+        retraction.save()
+
+        return retraction
 
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer
@@ -560,6 +578,11 @@ class MockOAuthAddonUserSettings(addons_base.AddonOAuthUserSettingsBase):
 class MockOAuthAddonNodeSettings(addons_base.AddonOAuthNodeSettingsBase):
     oauth_provider = MockOAuth2Provider
 
+    folder_id = 'foo'
+    folder_name = 'Foo'
+    folder_path = '/Foo'
+
+
 
 class ArchiveTargetFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveTarget
@@ -568,6 +591,19 @@ class ArchiveTargetFactory(ModularOdmFactory):
 class ArchiveJobFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveJob
 
+class AlternativeCitationFactory(ModularOdmFactory):
+    FACTORY_FOR = AlternativeCitation
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        name = kwargs.get('name')
+        text = kwargs.get('text')
+        instance = target_class(
+            name=name,
+            text=text
+        )
+        instance.save()
+        return instance
 
 class DraftRegistrationFactory(ModularOdmFactory):
     FACTORY_FOR = DraftRegistration
@@ -596,7 +632,6 @@ class DraftRegistrationFactory(ModularOdmFactory):
             data=registration_metadata,
         )
         return draft
-
 
 class NodeLicenseRecordFactory(ModularOdmFactory):
     FACTORY_FOR = NodeLicenseRecord
