@@ -10,7 +10,6 @@ from admin.common_auth.models import MyUser
 def home(request):
     context = {
         'user': request.user,
-        'user_groups': map(lambda g: g.name, request.user.groups.all())
     }
     return render(request, 'home.html', context)
 

@@ -84,3 +84,6 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
 
     def is_in_group(self, group):
         return self.groups.filter(name=group).exists()
+
+    def group_names(self):
+        return self.groups.all().values_list('name', flat=True)
