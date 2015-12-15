@@ -97,6 +97,7 @@ class FileSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
     date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
+    date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
 
     files = NodeFileHyperLinkField(
@@ -138,6 +139,17 @@ class FileSerializer(JSONAPISerializer):
             mod_dt = obj.history[-1].get('modified', None)
 
         return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
+
+    def get_date_created(self, obj):
+        creat_dt = None
+        if obj.provider == 'osfstorage' and obj.versions:
+            creat_dt = obj.versions[0].date_created
+        elif obj.provider != 'osfstorage' and obj.history:
+            # Non-osfstorage files don't store a created date, so instead get the modified date of the
+            # earliest entry in the file history.
+            creat_dt = obj.history[0].get('modified', None)
+
+        return creat_dt and creat_dt.replace(tzinfo=pytz.utc)
 
     def get_extra(self, obj):
         metadata = {}
