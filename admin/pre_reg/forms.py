@@ -1,6 +1,9 @@
+import itertools
+
 from django import forms
 
 from admin.pre_reg.utils import get_prereg_reviewers
+PREREG_REVIEWERS = itertools.chain(((None, 'None'), ), get_prereg_reviewers())
 
 class DraftRegistrationForm(forms.Form):
 
@@ -19,7 +22,7 @@ class DraftRegistrationForm(forms.Form):
     )
     assignee = forms.ChoiceField(
         label="Assignee",
-        choices=get_prereg_reviewers
+        choices=PREREG_REVIEWERS
     )
 
     notes = forms.CharField(

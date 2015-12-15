@@ -1,12 +1,13 @@
-import itertools
+from django.db.models.functions import Concat
+from django.db.models import Value
 
-from django.contrib.auth import models
+from admin.common_auth.models import MyUser
 
 def get_prereg_reviewers():
-    return itertools.chain(
-        ((None, 'None'), ),
-        (
-            (u.email, u.full_name)
-            for u in models.Group.objects.get(name='prereg_group').user_set.all()
-        )
+    return MyUser.objects.filter(
+        groups__name='prereg_group'
+    ).annotate(
+        fuller_name=Concat('first_name', Value(' '), 'last_name')
+    ).values_list(
+        'email', 'fuller_name'
     )
