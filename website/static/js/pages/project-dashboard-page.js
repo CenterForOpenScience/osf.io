@@ -32,6 +32,12 @@ $('body').on('nodeLoad', function(event, data) {
         new pointers.PointerManager('#addPointer', window.contextVars.node.title);
         new LogFeed('#logScope', nodeApiUrl + 'log/');
     }
+    // Initialize CitationWidget if user isn't viewing through an anonymized VOL
+    if (!data.node.anonymous && !data.node.isRetracted) {
+        var citations = data.node.alternative_citations;
+        new CitationList('#citationList', citations, data.user);
+        new CitationWidget('#citationStyleInput', '#citationText');
+    }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
     if (window.contextVars.currentUser.isAdmin) {
@@ -54,11 +60,6 @@ if ($comments.length) {
     Comment.init('#commentsLink', '.comment-pane', options);
 }
 
-// Initialize CitationWidget if user isn't viewing through an anonymized VOL
-if (!ctx.node.anonymous && !ctx.node.isRetracted) {
-    new CitationList('#citationList');
-    new CitationWidget('#citationStyleInput', '#citationText');
-}
 $(document).ready(function () {
 
     $('#contributorsList').osfToggleHeight();

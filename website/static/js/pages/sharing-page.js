@@ -48,8 +48,8 @@ $(function() {
 
 $(window).load(function() {
     cm.viewModel.onWindowResize();
-    privateLinkTable.viewModel.onWindowResize();
-    if (linkTable !== undefined) {
+    if (!!privateLinkTable){
+        privateLinkTable.viewModel.onWindowResize();
         rt.responsiveTable(linkTable[0]);
     }
     $('table.responsive-table td:first-child a,button').on('click', function(e) {
@@ -58,6 +58,8 @@ $(window).load(function() {
 });
 
 $(window).resize(function() {
-    privateLinkTable.viewModel.onWindowResize();
+    if (!!privateLinkTable) {
+        privateLinkTable.viewModel.onWindowResize();
+    }
     cm.viewModel.onWindowResize();
 });
