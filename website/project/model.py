@@ -662,7 +662,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ('procedure', 'Procedure'),
         ('instrumentation', 'Instrumentation'),
         ('data', 'Data'),
-        ('software','Software'),
+        ('software', 'Software'),
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
         ('other', 'Other'),
