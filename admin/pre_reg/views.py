@@ -47,7 +47,7 @@ def is_in_prereg_group(user):
 
 @login_required
 @user_passes_test(is_in_prereg_group)
-def prereg(request, page_number):
+def prereg(request):
     """Redirects to prereg page if user has prereg access
     :param request: Current logged in user
     :return: Redirect to prereg page with username, reviewers, and user obj
@@ -55,7 +55,7 @@ def prereg(request, page_number):
     paginator = Paginator(get_prereg_drafts(), 5)
 
     try:
-        page_number = int(page_number or request.GET.get('page'))
+        page_number = int(request.GET.get('page'))
     except (TypeError, ValueError):
         page_number = 1
 
