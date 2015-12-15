@@ -26,7 +26,7 @@ def do_migration():
         if not getattr(node, '_parent_node', None):
             touched_counter += 1
             node.save()
-            children = [child for child in node.get_descendants_recursive(include=lambda n: n.primary)]
+            children = [child for child in node.get_descendants_recursive(include=lambda n: n.primary and not n.is_deleted)]
             logger.info(
                 '{}/{}: touched node {} with children {}'.format(
                     touched_counter,
@@ -52,7 +52,7 @@ def do_migration():
 
                 child.save()
                 assert child.root._id == node._id
-                logger.info('Saved Node {} with root {}'.format(child._id, child.ultimate_parent))
+                logger.info('Saved Node {} with root {}'.format(child._id, child.root))
 
     assert all_undeleted_nodes_count == touched_counter
 
