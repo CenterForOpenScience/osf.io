@@ -697,7 +697,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
 
-
     self.pages = ko.computed(function () {
         // empty array if self.draft is not set.
         return self.draft() ? self.draft().pages() : [];
@@ -1116,6 +1115,35 @@ RegistrationEditor.prototype.save = function() {
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
     return request;
+};
+
+RegistrationEditor.prototype.approveDraft = function() {
+    var self = this;
+
+    var draft = self.draft();
+    draft.approve().done(function() {
+        $osf.block();
+        $.post(self.urls.approve.replace('{draft_pk}', draft.pk))
+            .done(function() {
+                window.location.assign(self.urls.list);
+            }).fail(function() {
+                bootbox.alert('There was a problem approving this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
+            }).always($osf.unblock);
+    });
+};
+RegistrationEditor.prototype.rejectDraft = function() {
+    var self = this;
+
+    var draft = self.draft();
+    draft.reject().done(function() {
+        $osf.block();
+        $.post(self.urls.reject.replace('{draft_pk}', draft.pk))
+            .done(function() {
+                window.location.assign(self.urls.list);
+            }).fail(function() {
+                bootbox.alert('There was a problem rejecting this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
+            }).always($osf.unblock);
+    });
 };
 
 /**
