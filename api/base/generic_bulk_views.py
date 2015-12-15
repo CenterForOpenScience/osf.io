@@ -7,7 +7,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from website.project.model import Q
 from website.util.permissions import ADMIN
 from api.base.settings import BULK_SETTINGS
-from api.base.exceptions import Conflict, JSONAPIException
+from api.base.exceptions import Conflict, JSONAPIException, Gone
 from api.base.utils import is_bulk_request
 
 
@@ -79,6 +79,10 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         model_cls = request.parser_context['view'].model_class
         requested_ids = [data['id'] for data in request.data]
         resource_object_list = model_cls.find(Q('_id', 'in', requested_ids))
+
+        for resource in resource_object_list:
+            if resource.is_deleted:
+                raise Gone
 
         if len(resource_object_list) != len(request.data):
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
