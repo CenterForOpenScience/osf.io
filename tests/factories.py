@@ -34,7 +34,7 @@ from website.oauth.models import (
 )
 from website.project.model import (
     Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
-    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig,
+    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig, AlternativeCitation,
     ensure_schemas
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
@@ -591,6 +591,19 @@ class ArchiveTargetFactory(ModularOdmFactory):
 class ArchiveJobFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveJob
 
+class AlternativeCitationFactory(ModularOdmFactory):
+    FACTORY_FOR = AlternativeCitation
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        name = kwargs.get('name')
+        text = kwargs.get('text')
+        instance = target_class(
+            name=name,
+            text=text
+        )
+        instance.save()
+        return instance
 
 class DraftRegistrationFactory(ModularOdmFactory):
     FACTORY_FOR = DraftRegistration
@@ -619,7 +632,6 @@ class DraftRegistrationFactory(ModularOdmFactory):
             data=registration_metadata,
         )
         return draft
-
 
 class NodeLicenseRecordFactory(ModularOdmFactory):
     FACTORY_FOR = NodeLicenseRecord
