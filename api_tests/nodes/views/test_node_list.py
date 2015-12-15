@@ -1523,7 +1523,7 @@ class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
         Node.remove()
 
     def test_skip_uneditable_bulk_delete(self):
-        res = self.app.delete_json_api(self.url, self.payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        res = self.app.delete_json_api(self.url, self.payload, auth=self.user_one.auth, bulk=True)
         assert_equal(res.status_code, 200)
         skipped = res.json['meta']['errors']
         assert_items_equal([skipped[0]['id'], skipped[1]['id']],
@@ -1541,3 +1541,28 @@ class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
         res = self.app.get('/{}nodes/'.format(API_BASE), auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 4)
+
+    def test_skip_uneditable_has_admin_permission_for_all_nodes(self):
+        payload = {
+            'data': [
+                {
+                    'id': self.project_one._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': self.project_two._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, bulk=True)
+        assert_equal(res.status_code, 204)
+        self.project_one.reload()
+        self.project_two.reload()
+
+        assert_equal(self.project_one.is_deleted, True)
+        assert_equal(self.project_two.is_deleted, True)
+
+
+
