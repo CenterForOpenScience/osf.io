@@ -244,10 +244,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         query = base_query & permission_query
         return query
 
-    def filter_non_retracted_nodes(self, query):
-        nodes = Node.find(query)
-        return nodes
-
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
@@ -255,14 +251,14 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
-            nodes = self.filter_non_retracted_nodes(query)
+            nodes = Node.find(query)
             for node in nodes:
                 if not node.can_edit(auth):
                     raise PermissionDenied
             return nodes
         else:
             query = self.get_query_from_request()
-            return self.filter_non_retracted_nodes(query)
+            return Node.find(query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
