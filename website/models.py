@@ -11,6 +11,7 @@ from website.project.model import (
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData,
     Retraction, Embargo, RegistrationApproval,
+    AlternativeCitation,
     DraftRegistrationApproval, DraftRegistration,
 )
 from website.oauth.models import ApiOAuth2Application, ExternalAccount, ApiOAuth2PersonalToken
@@ -37,7 +38,7 @@ MODELS = (
     CitationStyle, ExternalAccount, Identifier,
     Embargo, Retraction, RegistrationApproval,
     ArchiveJob, ArchiveTarget, BlacklistGuid,
-    QueuedMail,
+    QueuedMail, AlternativeCitation,
     DraftRegistration, DraftRegistrationApproval,
     NodeLicense, NodeLicenseRecord
 )

@@ -87,6 +87,8 @@ a {
     margin-top: -60px;
     padding-top: 60px;
     display: block;
+    z-index: -1;
+    position: relative;
 }
 
 .scripted {display: none;}
