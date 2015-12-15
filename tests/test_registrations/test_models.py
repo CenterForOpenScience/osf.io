@@ -183,6 +183,4 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
     def test_on_reject(self, mock_send_mail):
         self.approval._on_reject(self.user)
         assert_equal(self.approval.meta, {})
-        assert_is_none(self.draft.approval)
-        assert_false(self.draft.is_pending_review)
         assert_true(mock_send_mail.called_once)
