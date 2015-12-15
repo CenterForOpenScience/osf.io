@@ -139,10 +139,9 @@ var FileViewPage = {
                 dataType: 'json',
                 async: true,
                 url: fileWebViewUrl,
-                beforeSend: $osf.setXHRAuthorization,
-                success:function(response) {
-                    window.contextVars.file.urls.external = response.data.extra.webView;
-                }
+                beforeSend: $osf.setXHRAuthorization 
+            }).done(function(response) {
+                window.contextVars.file.urls.external = response.data.extra.webView;
             });
             self.file.urls.revisions = waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {sha: $osf.urlParams().branch});
             self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render', branch: $osf.urlParams().branch});
