@@ -1,6 +1,8 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 
+from framework.auth.core import Auth
+
 from website.project.model import AlternativeCitation
 
 from modularodm.exceptions import ValidationError
@@ -15,7 +17,7 @@ class ModelTests(OsfTestCase):
         OsfTestCase.setUp(self)
         self.user = UserFactory()
         self.node = ProjectFactory(creator=self.user)
-        self.citation = AlternativeCitation(name='Initial Citation', text='This is my test citation')
+        self.citation = AlternativeCitation(name='name', text='text')
         self.citation.save()
         self.node.alternative_citations.append(self.citation)
 
@@ -59,6 +61,29 @@ class ModelTests(OsfTestCase):
         citation.save()
         self.node.save()
         assert_equal(self.node.alternative_citations[0].text, "New citation text")
+
+    def test_model_fork(self):
+        fork = self.node.fork_node(auth=Auth(self.user))
+        assert_equal(len(self.node.alternative_citations), len(fork.alternative_citations), 1)
+        assert_equal(self.node.alternative_citations[0].name, fork.alternative_citations[0].name, 'name')
+        assert_equal(self.node.alternative_citations[0].text, fork.alternative_citations[0].text, 'text')
+        assert_not_equal(self.node.alternative_citations[0]._id, fork.alternative_citations[0]._id)
+
+    def test_model_fork_change_name(self):
+        fork = self.node.fork_node(auth=Auth(self.user))
+        assert_equal(len(self.node.alternative_citations), len(fork.alternative_citations), 1)
+        fork.alternative_citations[0].name = "new name"
+        assert_not_equal(self.node.alternative_citations[0].name, fork.alternative_citations[0].name)
+        assert_equal(self.node.alternative_citations[0].text, fork.alternative_citations[0].text, 'text')
+        assert_not_equal(self.node.alternative_citations[0]._id, fork.alternative_citations[0]._id)
+
+    def test_model_fork_change_text(self):
+        fork = self.node.fork_node(auth=Auth(self.user))
+        assert_equal(len(self.node.alternative_citations), len(fork.alternative_citations), 1)
+        fork.alternative_citations[0].text = "new text"
+        assert_not_equal(self.node.alternative_citations[0].text, fork.alternative_citations[0].text)
+        assert_equal(self.node.alternative_citations[0].name, fork.alternative_citations[0].name, 'name')
+        assert_not_equal(self.node.alternative_citations[0]._id, fork.alternative_citations[0]._id)
 
 if __name__ == '__main__':
     unittest.main()
