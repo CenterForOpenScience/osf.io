@@ -83,6 +83,7 @@ class FileSerializer(JSONAPISerializer):
         'node',
         'kind',
         'path',
+        'materialized_path',
         'size',
         'provider',
         'last_touched',
@@ -95,6 +96,8 @@ class FileSerializer(JSONAPISerializer):
     path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
     size = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
+    materialized_path = ser.CharField(
+        read_only=True, help_text='The Unix-style path of this object relative to the provider root')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
     date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
