@@ -225,7 +225,7 @@ class Comment(GuidStoredObject):
             view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
             n_unread = Comment.find(Q('node', 'eq', node) &
                                     Q('user', 'ne', user) &
-                                    Q('is_deleted', 'eq', False) &
+                                    Q('is_deleted', 'ne', True) &
                                     (Q('date_created', 'gt', view_timestamp) |
                                     Q('date_modified', 'gt', view_timestamp))).count()
         return n_unread
