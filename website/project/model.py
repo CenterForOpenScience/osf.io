@@ -2174,8 +2174,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-    def add_citation(self, auth, save=False, log=True, **kwargs):
-        citation = AlternativeCitation(**kwargs)
+    def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
+        if not citation:
+            citation = AlternativeCitation(**kwargs)
         citation.save()
         self.alternative_citations.append(citation)
         citation_dict = {'name': citation.name, 'text': citation.text}
