@@ -55,17 +55,7 @@
                     <strong>Message</strong>
                 </label>
                 <div class="form-group">
-                    <textarea id="message" rows="10" cols="80">
-Dear {{ comment.author.fullname }},
-
-Your comment on the OSF was flagged as spam. We would like to moderate a solution and believe your input would be helpful.
-
-Context:
-"{{ comment.content }}"
-
-Sincerely,
-The folks at COS
-                    </textarea>
+                    {% include 'spam/email_template.html' with item=comment %}
                 </div>
                 <button type="submit" class="btn btn-primary">
                     Submit
