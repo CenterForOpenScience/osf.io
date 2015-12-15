@@ -42,7 +42,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         node_settings.save()
         assert_is_none(node_settings.folder_id)
 
-    @mock.patch("website.addons.box.model.refresh_oauth_key")
+    @mock.patch("website.addons.box.model.Box.refresh_oauth_key")
     def test_serialize_credentials(self, mock_refresh):
         mock_refresh.return_value = True
         super(TestNodeSettings, self).test_serialize_credentials()

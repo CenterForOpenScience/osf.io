@@ -5,11 +5,13 @@ import logging
 import datetime
 import functools
 import httplib as http
+import time
 import urlparse
 import uuid
 
 from flask import request
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
+from oauthlib.oauth2 import InvalidGrantError
 from requests.exceptions import HTTPError as RequestsHTTPError
 
 from modularodm import fields, Q
@@ -25,6 +27,7 @@ from framework.mongo.utils import unique_on
 from framework.mongo.validators import string_required
 from framework.sessions import session
 from website import settings
+from website.addons.base.exceptions import InvalidAuthError
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.util import web_url_for
@@ -113,6 +116,10 @@ class ExternalProvider(object):
 
     # Default to OAuth v2.0.
     _oauth_version = OAUTH2
+
+    # Providers that have expiring tokens must override these
+    auto_refresh_url = None
+    refresh_time = 0
 
     def __init__(self, account=None):
         super(ExternalProvider, self).__init__()
@@ -363,6 +370,75 @@ class ExternalProvider(object):
         :return dict:
         """
         pass
+
+    def refresh_oauth_key(self, force=False, extra={}, resp_auth_token_key='access_token',
+                          resp_refresh_token_key='refresh_token', resp_expiry_fn=None):
+        """Handles the refreshing of an oauth_key for account associated with this provider.
+           Not all addons need to use this, as some do not have oauth_keys that expire.
+
+        Subclasses must define the following for this functionality:
+        `auto_refresh_url` - URL to use when refreshing tokens. Must use HTTPS
+        `refresh_time` - Time (in seconds) that the oauth_key should be refreshed after.
+                            Typically half the duration of validity. Cannot be 0.
+
+        Providers may have different keywords in their response bodies, kwargs
+        `resp_*_key` allow subclasses to override these if necessary.
+
+        kwarg `resp_expiry_fn` allows subclasses to specify a function that will return the
+        datetime-formatted oauth_key expiry key, given a successful refresh response from
+        `auto_refresh_url`. A default using 'expires_at' as a key is provided.
+        """
+        # Ensure this is an authenticated Provider that uses token refreshing
+        if not (self.account and self.auto_refresh_url):
+            return
+
+        # Ensure this Provider is for a valid addon
+        if not (self.client_id and self.client_secret):
+            return
+
+        # Ensure a refresh is needed
+        if not (force or self._needs_refresh()):
+            return
+
+        resp_expiry_fn = resp_expiry_fn or (lambda x: datetime.datetime.utcfromtimestamp(time.time() + float(x['expires_in'])))
+
+        client = OAuth2Session(
+            self.client_id,
+            token={
+                'access_token': self.account.oauth_key,
+                'refresh_token': self.account.refresh_token,
+                'token_type': 'Bearer',
+                'expires_in': '-30',
+            }
+        )
+
+        extra.update({
+            'client_id': self.client_id,
+            'client_secret': self.client_secret
+        })
+
+        try:
+            token = client.refresh_token(
+                self.auto_refresh_url,
+                **extra
+            )
+        except InvalidGrantError:
+            raise InvalidAuthError()
+        else:
+            self.account.oauth_key = token[resp_auth_token_key]
+            self.account.refresh_token = token[resp_refresh_token_key]
+            self.account.expires_at = resp_expiry_fn(token)
+            self.account.save()
+
+    def _needs_refresh(self):
+        """Determines whether or not an associated ExternalAccount needs
+        a oauth_key.
+
+        return bool: True if needs_refresh
+        """
+        if self.refresh_time and self.account.expires_at:
+            return (self.account.expires_at - datetime.datetime.utcnow()).total_seconds() < self.refresh_time
+        return False
 
 
 class ApiOAuth2Scope(StoredObject):
