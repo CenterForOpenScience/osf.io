@@ -194,7 +194,9 @@ class SpamMixin(StoredObject):
     #  - retracted: if a report has been retracted
     #  - category: What type of spam does the reporter believe this is
     #  - message: Comment on the comment
-    reports = fields.DictionaryField(list=True, default=[], validate=validate_reports)
+    reports = fields.DictionaryField(
+        list=True, default=[], validate=validate_reports
+    )
 
     def flag_spam(self, save=False):
         # If ham and unedited then tell user that they should read it again
@@ -277,7 +279,6 @@ class Comment(GuidStoredObject, SpamMixin):
     #   'icpnw': {'category': 'hate', 'message': 'offensive'},
     #   'cdi38': {'category': 'spam', 'message': 'godwins law'},
     # }
-    reports = fields.DictionaryField(validate=validate_comment_reports)
 
     # For Django compatibility
     @property
