@@ -16,7 +16,8 @@ from api.registrations.serializers import (
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
-    NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail)
+    NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
+    NodeAlternativeCitationsList, NodeAlternativeCitationDetail)
 
 from api.nodes.permissions import (
     ContributorOrPublic,
@@ -258,3 +259,11 @@ class RegistrationFilesList(NodeFilesList):
 class RegistrationFileDetail(NodeFileDetail):
     view_category = 'registrations'
     view_name = 'registration-file-detail'
+
+class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList):
+    view_category = 'registrations'
+    view_name = 'registration-alternative-citations'
+
+class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail):
+    view_category = 'registrations'
+    view_name = 'registration-alternative-citation-detail'

@@ -50,13 +50,17 @@ def create_project(creator, public=True, contrib=None, citation=False, registrat
 class TestCreateAlternativeCitations(ApiTestCase):
     def request(self, data, errors=False, is_admin=False, is_contrib=True, logged_out=False, **kwargs):
         admin = AuthUserFactory()
+        registration = kwargs.get('registration', None)
         if is_admin:
             user = admin
         elif not logged_out:
             user = AuthUserFactory()
             kwargs['contrib'] = user if is_contrib else None
         project = create_project(admin, **kwargs)
-        project_url = '/{}nodes/{}/citations/'.format(API_BASE, project._id)
+        if registration:
+            project_url = '/{}registrations/{}/citations/'.format(API_BASE, project._id)
+        else:
+            project_url = '/{}nodes/{}/citations/'.format(API_BASE, project._id)
         if not logged_out:
             res = self.app.post_json_api(project_url, data, auth=user.auth, expect_errors=errors)
         else:
