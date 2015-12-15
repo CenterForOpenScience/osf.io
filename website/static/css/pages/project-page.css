@@ -135,10 +135,8 @@
     word-break: normal;
 }
 
-
 /* Project Description */
 
 span#nodeDescriptionEditable{
-    white-space:nowrap;
+    white-space:pre-line;
 }
-

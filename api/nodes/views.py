@@ -13,7 +13,7 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.files.serializers import FileSerializer
-from api.comments.serializers import CommentSerializer
+from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 
@@ -24,6 +24,7 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
+    NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
 )
 from api.registrations.serializers import RegistrationSerializer
@@ -33,7 +34,7 @@ from api.nodes.permissions import (
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
-    ExcludeRetractions
+    ExcludeRetractions,
 )
 from api.base.exceptions import ServiceUnavailableError
 from api.logs.serializers import NodeLogSerializer
@@ -63,7 +64,7 @@ class NodeMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder:
+        if node.is_folder or node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -233,7 +234,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
+            Q('is_folder', 'ne', True) &
+            Q('is_registration', 'ne', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
@@ -243,14 +245,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         query = base_query & permission_query
         return query
 
-    def filter_non_retracted_nodes(self, query):
-        nodes = Node.find(query)
-        # Refetching because this method needs to return a queryset instead of a
-        # list comprehension for subsequent filtering on ordering.
-        non_retracted_list = [node._id for node in nodes if not node.is_retracted]
-        non_retracted_nodes = Node.find(Q('_id', 'in', non_retracted_list))
-        return non_retracted_nodes
-
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
@@ -258,14 +252,14 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
-            nodes = self.filter_non_retracted_nodes(query)
+            nodes = Node.find(query)
             for node in nodes:
                 if not node.can_edit(auth):
                     raise PermissionDenied
             return nodes
         else:
             query = self.get_query_from_request()
-            return self.filter_non_retracted_nodes(query)
+            return Node.find(query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -1514,6 +1508,91 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             and addon.complete
         ]
 
+class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
+    """List of alternative citations for a project.
+
+    ##Actions
+
+    ###Create Alternative Citation
+
+        Method:         POST
+        Body (JSON):    {
+                            "data": {
+                                "type": "citations",    # required
+                                "attributes": {
+                                    "name": {name},     # mandatory
+                                    "text": {text}      # mandatory
+                                }
+                            }
+                        }
+        Success:        201 Created + new citation representation
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        AdminOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
+
+    serializer_class = NodeAlternativeCitationSerializer
+    view_category = 'nodes'
+    view_name = 'alternative-citations'
+
+    def get_queryset(self):
+        return self.get_node().alternative_citations
+
+class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+    """Details about an alternative citations for a project.
+
+    ##Actions
+
+    ###Update Alternative Citation
+
+        Method:         PUT
+        Body (JSON):    {
+                            "data": {
+                                "type": "citations",    # required
+                                "id": {{id}}            # required
+                                "attributes": {
+                                    "name": {name},     # mandatory
+                                    "text": {text}      # mandatory
+                                }
+                            }
+                        }
+        Success:        200 Ok + updated citation representation
+
+    ###Delete Alternative Citation
+
+        Method:         DELETE
+        Success:        204 No content
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        AdminOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
+
+    serializer_class = NodeAlternativeCitationSerializer
+    view_category = 'nodes'
+    view_name = 'alternative-citation-detail'
+
+    def get_object(self):
+        try:
+            return self.get_node().alternative_citations.find(Q('_id', 'eq', str(self.kwargs['citation_id'])))[0]
+        except IndexError:
+            raise NotFound
+
+    def perform_destroy(self, instance):
+        self.get_node().remove_citation(get_user_auth(self.request), instance, save=True)
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.
@@ -1689,14 +1768,25 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                            "type": "comments",   # required
                            "attributes": {
                              "content":       {content},        # mandatory
-                             "deleted":       {is_deleted},     # optional
+                           },
+                           "relationships": {
+                             "target": {
+                               "data": {
+                                  "type": {target type}         # mandatory
+                                  "id": {target._id}            # mandatory
+                               }
+                             }
                            }
                          }
                        }
         Success:       201 CREATED + comment representation
 
-    To create a comment on this node, issue a POST request against this endpoint. The `content` field is mandatory.
-    The `deleted` field is optional and defaults to `False`. If the comment creation is successful the API will return
+    To create a comment on this node, issue a POST request against this endpoint. The comment target id and target type
+    must be specified. To create a comment on the node overview page, the target `type` would be "nodes" and the `id`
+    would be the node id. To reply to a comment on this node, the target `type` would be "comments" and the `id` would
+    be the id of the comment to reply to. The `content` field is mandatory.
+
+    If the comment creation is successful the API will return
     a 201 response with the representation of the new comment in the body. For the new comment's canonical URL, see the
     `/links/self` field of the response.
 
@@ -1713,6 +1803,11 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     Comments can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
     operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
     (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
+    + `filter[target]=target_id` -- filter comments based on their target id.
+
+    The list of comments can be filtered by target id. For example, to get all comments with target = project,
+    the target_id would be the project_id.
 
     #This Request/Response
     """
@@ -1739,9 +1834,23 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     def get_queryset(self):
         return Comment.find(self.get_query_from_request())
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CommentCreateSerializer
+        else:
+            return CommentSerializer
+
+    # overrides ListCreateAPIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(NodeCommentsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
     def perform_create(self, serializer):
         node = self.get_node()
         serializer.validated_data['user'] = self.request.user
-        serializer.validated_data['target'] = node
         serializer.validated_data['node'] = node
         serializer.save()

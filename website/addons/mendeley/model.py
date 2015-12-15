@@ -329,6 +329,18 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
     def provider_name(self):
         return 'mendeley'
 
+    @property
+    def folder_id(self):
+        return self.mendeley_list_id
+
+    @property
+    def folder_name(self):
+        return self.selected_folder_name
+
+    @property
+    def folder_path(self):
+        return self.selected_folder_name
+
     def clear_auth(self):
         self.mendeley_list_id = None
         return super(MendeleyNodeSettings, self).clear_auth()

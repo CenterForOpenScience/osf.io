@@ -7,6 +7,7 @@ var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
+var ContribAdder = require('js/contribAdder');
 
 var node = window.contextVars.node;
 
@@ -159,17 +160,23 @@ ko.bindingHandlers.osfUploader = {
     init: osfUploader
 };
 
+
+var uploaderCount = 0;
 var Uploader = function(question) {
 
     var self = this;
 
     question.showUploader = ko.observable(false);
+    question.uid = 'uploader_' + uploaderCount;
+    uploaderCount++;
     self.selectedFile = ko.observable({});
     self.selectedFile.subscribe(function(file) {
         if (file) {
             question.extra({
                 selectedFileName: file.data.name,
+                nodeId: file.data.nodeId,
                 viewUrl: '/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path,
+                sha256: file.data.extra.hashes.sha256,
                 hasSelectedFile: true
             });
             question.value(file.data.name);
@@ -178,7 +185,7 @@ var Uploader = function(question) {
             question.extra({
                 selectedFileName: NO_FILE
             });
-            question.value(null);
+            question.value(NO_FILE);
         }
     });
     self.hasSelectedFile = ko.computed(function() {
@@ -209,89 +216,48 @@ var Uploader = function(question) {
 
 var AuthorImport = function(data, $root, preview) {
     var self = this;
-
     self.question = data;
-    self.contributors = ko.observable();
 
-    /**
-     * Makes ajax request for a project's contributors
-     */
+    self.serializeContributors = function(data) {
+        return $.map(data.contributors, function(c) {
+            return c.fullname;
+        }).join(', ');
+    };
     self.makeContributorsRequest = function() {
+        var self = this;
         var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
         return $.getJSON(contributorsUrl);
     };
-    /**
-     * Returns the `user_fullname` of each contributor attached to a node.
-     **/
     self.getContributors = function() {
+        var self = this;
         return self.makeContributorsRequest()
             .then(function(data) {
-                return $.map(data.contributors, function(c) { return c.fullname; });
-            }).fail(function(xhr, status, error) {
-                Raven.captureMessage('Could not GET contributors', {
-                    url: window.contextVars.node.urls.api + 'get_contributors/',
-                    textStatus: status,
-                    error: error
-                });
-                $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
+                return self.serializeContributors(data);
+            }).fail(function() {
+                $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
+                           'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                           'problem persists.');
             });
     };
-
-    if (!preview) {
-        self.getContributors().done(function(data) {
-            self.contributors(data);
-        });
-    }
-
-    self.setContributorBoxes = function(value) {
-        var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-        $.each(boxes, function(i, box) {
-            this.checked = value;
-        });
-    };
+    self.getContributors().done(function(data) {
+        self.question.value(data);
+    });
     self.preview = function() {
         return self.value();
     };
-
-    self.authorDialog = function() {
-
-        bootbox.dialog({
-            title: 'Choose which contributors to import:',
-            message: function() {
-                ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
-            },
-            buttons: {
-                cancel: {
-                    label: 'Cancel',
-                    className: 'btn-default',
-                    callback: bootbox.hideAll
-                },
-                select: {
-                    label: 'Import',
-                    className: 'btn-primary',
-                    callback: function() {
-                        var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-                        var authors = [];
-                        $.each(boxes, function(i, box) {
-                            if( this.checked ) {
-                                authors.push(this.value);
-                            }
-                        });
-                        if (authors && authors.length) {
-                            var oldValue = self.question.value();
-                            if (!/^\s*$/.test(oldValue || '')) {
-                                self.question.value(oldValue + ', ' + authors.join(', '));
-                            }
-                            else {
-                                self.question.value(authors.join(', '));
-                            }
-                        }
-                    }
-                }
-
-            }
-        });
+    var callback = function(data) {
+        self.value(self.serializeContributors(data));
     };
+
+    ko.cleanNode($('#addContributors')[0]);
+    var adder = new ContribAdder(
+        '#addContributors',
+        node.title,
+        node.id,
+        null,
+        null,
+        {async: true, callback: callback}
+    );
 
     $.extend(self, data);
 };
