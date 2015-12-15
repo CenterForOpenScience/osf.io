@@ -769,7 +769,9 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         msgText = 'Unable to reach the provider, please try again later. If the ' +
                 'problem persists, please contact support@osf.io.';
     } else {
-        msgText = message.message || message || DEFAULT_ERROR_MESSAGE;
+        //Osfstorage and most providers store message in {Object}message.{string}message,
+        //but some, like Dataverse, have it in {string} message.
+        msgText = message ? (message.message || message) : DEFAULT_ERROR_MESSAGE;
     }
     var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
@@ -785,7 +787,6 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-
     treebeard.options.uploadInProgress = false;
     addFileStatus(treebeard, file, false, msgText, '');
 }
