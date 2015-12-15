@@ -201,12 +201,7 @@ class TestCommentDetailView(ApiTestCase):
                 'id': self.comment._id,
                 'type': 'comments',
                 'attributes': {
-                    'content': ('contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent'
-                    + 'contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcon'
-                    + 'tentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentconten'
-                    + 'tcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentco'
-                    + 'ntentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentconte'
-                    + 'ntcontentcontentcontentcontentcontentcontent'),
+                    'content': ''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 1)]),
                     'deleted': False
                 }
             }
@@ -214,7 +209,7 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.put_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'],
-                     'Ensure this field has no more than ' + str(osf_settings.COMMENT_MAXLENGTH) + ' characters.')
+                     'Ensure this field has no more than {} characters.'.format(str(osf_settings.COMMENT_MAXLENGTH)))
 
     def test_update_comment_cannot_be_empty(self):
         self._set_up_private_project_with_comment()

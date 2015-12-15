@@ -415,6 +415,14 @@ class TestNodeCommentCreate(ApiTestCase):
                 'type': 'comments',
                 'attributes': {
                     'content': '   '
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': self.private_project._id
+                        }
+                    }
                 }
             }
         }
@@ -429,6 +437,14 @@ class TestNodeCommentCreate(ApiTestCase):
                 'type': 'comments',
                 'attributes': {
                     'content': '<em>Cool</em> <strong>Comment</strong>'
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': self.private_project._id
+                        }
+                    }
                 }
             }
         }
@@ -442,19 +458,22 @@ class TestNodeCommentCreate(ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': ('contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent'
-                    + 'contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcon'
-                    + 'tentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentconten'
-                    + 'tcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentco'
-                    + 'ntentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentconte'
-                    + 'ntcontentcontentcontentcontentcontentcontent')
+                    'content': (''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 1)]))
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': self.private_project._id
+                        }
+                    }
                 }
             }
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'],
-                     'Ensure this field has no more than ' + str(osf_settings.COMMENT_MAXLENGTH) + ' characters.')
+                     'Ensure this field has no more than {} characters.'.format(str(osf_settings.COMMENT_MAXLENGTH)))
 
     def test_create_comment_invalid_target_node(self):
         url = '/{}nodes/{}/comments/'.format(API_BASE, 'abcde')

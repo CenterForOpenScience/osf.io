@@ -134,7 +134,10 @@ class CommentCreateSerializer(CommentSerializer):
                 detail='Invalid comment target \'{}\'.'.format(target_id)
             )
         validated_data['target'] = target
-        validated_data['content'] = validated_data.pop('get_content')
+        content = validated_data.pop('get_content')
+        validated_data['content'] = content.strip()
+        if not validated_data['content']:
+            raise ValidationError('Comment cannot be empty.')
         if node and node.can_comment(auth):
             comment = Comment.create(auth=auth, **validated_data)
         else:
