@@ -280,6 +280,8 @@ def find_registration_file(value, node):
             return value, node_id
     raise RuntimeError()
 
+VIEW_FILE_URL_TEMPLATE = '/project/{node_id}/files/osfstorage/{path}/'
+
 @celery_app.task
 def archive_success(dst_pk):
     """Archiver's final callback. For the time being the use case for this task
@@ -319,22 +321,14 @@ def archive_success(dst_pk):
                     if subvalue.get('extra', {}).get('sha256'):
                         registration_file, node_id = find_registration_file(subvalue, dst)
                         subvalue['extra'].update({
-                            'viewUrl': Node.load(node_id).web_url_for(
-                                'addon_view_or_download_file',
-                                provider='osfstorage',
-                                path=registration_file['path'].lstrip('/')
-                            )
+                            'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
                         })
                     question['value'][subkey] = subvalue
             else:
                 if question.get('extra', {}).get('sha256'):
                     registration_file, node_id = find_registration_file(question, dst)
                     question['extra'].update({
-                        'viewUrl': Node.load(node_id).web_url_for(
-                            'addon_view_or_download_file',
-                            provider='osfstorage',
-                            path=registration_file['path'].lstrip('/')
-                        )
+                        'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
                     })
             updated_metadata[key] = question
         prereg_metadata.update(updated_metadata)
