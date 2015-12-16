@@ -774,7 +774,11 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
-        msgText = message ? (message.message || message) : DEFAULT_ERROR_MESSAGE;
+        if (message){
+            msgText = message.message ? message.message : (typeof message == 'string' ? message : DEFAULT_ERROR_MESSAGE)
+        } else {
+            msgText = DEFAULT_ERROR_MESSAGE
+        }
     }
     var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
