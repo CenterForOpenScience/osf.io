@@ -1,9 +1,9 @@
 import requests
 
 from modularodm import Q
-from rest_framework import status
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.status import is_server_error
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -126,7 +126,7 @@ class WaterButlerMixin(object):
         if waterbutler_request.status_code == 404:
             raise NotFound
 
-        if status.is_server_error(waterbutler_request.status_code):
+        if is_server_error(waterbutler_request.status_code):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
         try:
