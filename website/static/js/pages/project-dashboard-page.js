@@ -48,10 +48,15 @@ $('body').on('nodeLoad', function(event, data) {
 // Initialize comment pane w/ its viewmodel
 var $comments = $('#comments');
 if ($comments.length) {
-    var userName = window.contextVars.currentUser.name;
     var canComment = window.contextVars.currentUser.canComment;
     var hasChildren = window.contextVars.node.hasChildren;
-    Comment.init('#commentPane', userName, canComment, hasChildren);
+    var currentUser = {
+        id: ctx.currentUser.id,
+        url: ctx.currentUser.urls.profile,
+        name: ctx.currentUser.fullname,
+        gravatarUrl: ctx.currentUser.gravatarUrl
+    };
+    Comment.init('#commentPane', canComment, hasChildren, currentUser);
 }
 
 $(document).ready(function () {

@@ -81,7 +81,6 @@ var BaseComment = function() {
     self.submittingReply = ko.observable(false);
 
     self.comments = ko.observableArray();
-
     self.unreadComments = ko.observable(0);
 
     self.displayCount = ko.computed(function() {
@@ -129,23 +128,6 @@ BaseComment.prototype.setupToolTips = function(elm) {
         } else {
             $item.find('[data-toggle="tooltip"]').tooltip({container: 'body'});
         }
-    });
-};
-
-BaseComment.prototype.fetchUserData = function() {
-    var self = this;
-    var request = osfHelpers.ajaxJSON(
-        'GET',
-        osfHelpers.apiV2Url('users/me/', {}),
-        {'isCors': true});
-    request.done(function(response) {
-        self.author = {
-            'id': response.data.id,
-            'url': response.data.links.html,
-            'name': response.data.attributes.full_name,
-            'gravatarUrl': response.data.links.profile_image
-        };
-        return self.author;
     });
 };
 
@@ -226,9 +208,7 @@ BaseComment.prototype.submitReply = function() {
     request.done(function(response) {
         self.cancelReply();
         self.replyContent(null);
-        var commentModel = new CommentModel(response.data, self, self.$root);
-        commentModel.author = self.$root.author;
-        self.comments.unshift(commentModel);
+        self.comments.unshift(new CommentModel(response.data, self, self.$root));
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
@@ -279,6 +259,8 @@ var CommentModel = function(data, $parent, $root) {
             'name': userData.attributes.full_name,
             'gravatarUrl': userData.links.profile_image
         };
+    } else {
+        self.author = self.$root.author;
     }
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
@@ -571,7 +553,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, canComment, hasChildren) {
+var CommentListModel = function(canComment, hasChildren, currentUser) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -582,12 +564,10 @@ var CommentListModel = function(userName, canComment, hasChildren) {
 
     self.editors = 0;
     self.commented = ko.observable(false);
-    self.userName = ko.observable(userName);
     self.canComment = ko.observable(canComment);
     self.hasChildren = ko.observable(hasChildren);
     self.discussion = ko.observableArray();
-
-    self.fetchUserData();
+    self.author = currentUser;
     self.fetch();
     self.fetchDiscussion();
 
@@ -629,9 +609,9 @@ var onOpen = function() {
     });
 };
 
-var init = function(selector, userName, canComment, hasChildren) {
+var init = function(selector, canComment, hasChildren, currentUser) {
     new CommentPane(selector, {onOpen: onOpen});
-    var viewModel = new CommentListModel(userName, canComment, hasChildren);
+    var viewModel = new CommentListModel(canComment, hasChildren, currentUser);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');
