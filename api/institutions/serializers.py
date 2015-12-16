@@ -27,3 +27,8 @@ class InstitutionSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'institutions'
+
+class InstitutionAuthSerializer():
+    def update(self, *args, **kwargs):
+        import ipdb; ipdb.set_trace()
+    pass

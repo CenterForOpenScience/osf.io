@@ -166,3 +166,6 @@ SWAGGER_SETTINGS = {
 }
 
 DEBUG_TRANSACTIONS = DEBUG
+
+JWT_SECRET = 'osf_api_cas_login_jwt_secret_32b'
+JWE_SECRET = 'osf_api_cas_login_jwe_secret_32b'

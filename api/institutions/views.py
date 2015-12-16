@@ -7,6 +7,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import Institution, Node, User
 
+from api.base import settings
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
@@ -14,7 +15,8 @@ from api.base.utils import get_object_or_error
 from api.nodes.serializers import NodeSerializer
 from api.users.serializers import UserSerializer
 
-from .serializers import InstitutionSerializer
+from .parsers import InstitutionAuthParser
+from .serializers import InstitutionSerializer, InstitutionAuthSerializer
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -186,3 +188,16 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     def get_queryset(self):
         query = self.get_query_from_request()
         return User.find(query)
+
+class InstitutionAuth(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
+    permission_classes = ()
+    required_read_scopes = []
+    required_write_scopes = []
+    parser_classes = (InstitutionAuthParser,)
+    serializer_class = InstitutionAuthSerializer
+    view_category = 'institutions'
+    view_name = 'institution-auth'
+
+    def get_queryset(self):
+        data = self.request.data
+        return Institution.load(data)
