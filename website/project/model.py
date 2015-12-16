@@ -218,7 +218,7 @@ class Comment(GuidStoredObject):
         return self.absolute_api_v2_url
 
     def get_comment_page_url(self):
-        if self.page == Comment.FILES:
+        if isinstance(self.root_target, StoredFileNode):
             file_guid = self.root_target.get_guid()._id
             return settings.DOMAIN + str(file_guid) + '/'
         else:
@@ -298,6 +298,12 @@ class Comment(GuidStoredObject):
     @classmethod
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)
+        log_dict = {
+                    'project': comment.node.parent_id,
+                    'node': comment.node._id,
+                    'user': comment.user._id,
+                    'comment': comment._id,
+                    }
         if isinstance(comment.target, Comment):
             comment.root_target = comment.target.root_target
         else:
@@ -306,6 +312,7 @@ class Comment(GuidStoredObject):
         if isinstance(comment.root_target, Node):
             comment.page = 'node'
         elif isinstance(comment.root_target, StoredFileNode):
+            log_dict['file'] = {'name': comment.root_target.name, 'url': comment.get_comment_page_url()}
             comment.page = 'files'
             file_key = comment.root_target._id
             comment.node.commented_files[file_key] = comment.node.commented_files.get(file_key, 0) + 1
@@ -315,12 +322,7 @@ class Comment(GuidStoredObject):
 
         comment.node.add_log(
             NodeLog.COMMENT_ADDED,
-            {
-                'project': comment.node.parent_id,
-                'node': comment.node._id,
-                'user': comment.user._id,
-                'comment': comment._id,
-            },
+            log_dict,
             auth=auth,
             save=False,
         )
@@ -331,58 +333,68 @@ class Comment(GuidStoredObject):
         return comment
 
     def edit(self, content, auth, save=False):
+        log_dict = {
+                    'project': self.node.parent_id,
+                    'node': self.node._id,
+                    'user': self.user._id,
+                    'comment': self._id,
+                    }
+        if isinstance(self.root_target, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
         self.content = content
         self.modified = True
         self.node.add_log(
             NodeLog.COMMENT_UPDATED,
-            {
-                'project': self.node.parent_id,
-                'node': self.node._id,
-                'user': self.user._id,
-                'comment': self._id,
-            },
+            log_dict,
             auth=auth,
             save=False,
         )
+        self.node.save()
         if save:
             self.save()
 
     def delete(self, auth, save=False):
+        log_dict = {
+                    'project': self.node.parent_id,
+                    'node': self.node._id,
+                    'user': self.user._id,
+                    'comment': self._id,
+                    }
         self.is_deleted = True
-        if self.page == Comment.FILES:
+        if isinstance(self.root_target, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
             self.node.commented_files[self.root_target._id] -= 1
             if self.node.commented_files[self.root_target._id] == 0:
                 del self.node.commented_files[self.root_target._id]
         self.node.add_log(
             NodeLog.COMMENT_REMOVED,
-            {
-                'project': self.node.parent_id,
-                'node': self.node._id,
-                'user': self.user._id,
-                'comment': self._id,
-            },
+            log_dict,
             auth=auth,
             save=False,
         )
+        self.node.save()
         if save:
             self.save()
 
     def undelete(self, auth, save=False):
         self.is_deleted = False
-        if self.page == Comment.FILES:
+        log_dict = {
+                    'project': self.node.parent_id,
+                    'node': self.node._id,
+                    'user': self.user._id,
+                    'comment': self._id,
+                    }
+        if isinstance(self.root_target, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
             file_key = self.root_target._id
             self.node.commented_files[file_key] = self.node.commented_files.get(file_key, 0) + 1
         self.node.add_log(
             NodeLog.COMMENT_ADDED,
-            {
-                'project': self.node.parent_id,
-                'node': self.node._id,
-                'user': self.user._id,
-                'comment': self._id,
-            },
+            log_dict,
             auth=auth,
             save=False,
         )
+        self.node.save()
         if save:
             self.save()
 
