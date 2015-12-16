@@ -2,6 +2,26 @@
 Changelog
 *********
 
+0.61.0 (unreleased)
+===================
+
+- File commenting.
+- Drag and drop images into wiki pages.
+- APIv2: Support view-only link keys.
+- APIv2: Support filtering against multiple ids, e.g. ?filter[id]=abc12,def34
+
+0.60.0 (unreleased)
+===================
+
+- UI updates to Contributors page. Adds filtering and responsiveness.
+- UI updates to Employment and Education profile sections
+- Add custom citations to projects.
+- Multiple Dropbox accounts can be associated with a user account.
+- Prereg beta: Many bug fixes and UI improvements, including author import.
+- APIv2: Bulk extension support for collections endpoints.
+- APIv2: Require target_id and type to be passed when creating comments.
+- APIv2: Allow filtering on relationships, e.g. filtering by a comment's target with ?filter[target]=<target_id>
+
 0.59.0 (2015-12-02)
 ===================
 
