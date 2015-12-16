@@ -5,6 +5,7 @@ Django settings for the admin project.
 import os
 from urlparse import urlparse
 from website import settings as osf_settings
+from django.contrib import messages
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
@@ -32,7 +33,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 EMAIL_HOST = 'smtp.sendgrid.net'
 EMAIL_HOST_USER = 'osf-smtp'
-EMAIL_HOST_PASSWORD = osf_settings.MAIL_PASSWORD # local.py
+EMAIL_HOST_PASSWORD = osf_settings.MAIL_PASSWORD  # local.py
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
@@ -87,6 +88,12 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
 )
+
+MESSAGE_TAGS = {
+    messages.SUCCESS: 'text-success',
+    messages.ERROR: 'text-danger',
+    messages.WARNING: 'text-warning',
+}
 
 TEMPLATES = [
     {

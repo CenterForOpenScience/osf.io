@@ -5,14 +5,13 @@ from django.shortcuts import render, redirect
 from django.utils.http import urlsafe_base64_decode
 from admin.common_auth.models import MyUser
 
-
 @login_required
 def home(request):
     context = {'user': request.user}
     return render(request, 'home.html', context)
 
 def password_reset_done(request, **kwargs):
-    messages.success(request, 'You have successfully reset your password and activated your admin account. Thank you')
+    messages.success(request, 'You have successfully reset your password and activated your admin account.')
     return redirect('auth:login')
 
 def password_reset_confirm_custom(request, **kwargs):
