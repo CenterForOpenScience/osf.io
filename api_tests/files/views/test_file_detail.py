@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import pytz
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
@@ -13,6 +14,14 @@ from tests.factories import (
     AuthUserFactory
 )
 
+
+# stolen from^W^Winspired by DRF rest_framework.fields.DateTimeField.to_representation
+def _dt_to_iso8601(value):
+    iso8601 = value.isoformat()
+    if iso8601.endswith('+00:00'):
+        iso8601 = iso8601[:-9] + 'Z'  # offset upped to 9 to get rid of 3 ms decimal points
+
+    return iso8601
 
 class TestFileView(ApiTestCase):
     def setUp(self):
@@ -53,11 +62,13 @@ class TestFileView(ApiTestCase):
             'path': self.file.path,
             'kind': self.file.kind,
             'name': self.file.name,
+            'materialized_path': self.file.materialized_path,
             'last_touched': None,
             'provider': self.file.provider,
             'size': self.file.versions[-1].size,
             # HACK: odm's dates are weird
-            'date_modified': self.file.versions[-1].date_created.isoformat()[:-3],
+            'date_modified': _dt_to_iso8601(self.file.versions[-1].date_created.replace(tzinfo=pytz.utc)),
+            'date_created': _dt_to_iso8601(self.file.versions[0].date_created.replace(tzinfo=pytz.utc)),
             'extra': {
                 'hashes': {
                     'md5': None,
