@@ -141,7 +141,6 @@
     }, {
         "id": "page3",
         "title": "Variables",
-        "type": "object",
         "description": "In this section you can describe all variables (both manipulated and measured variables) that will later be used in your confirmatory analysis plan. In your analysis plan, you will have the opportunity to describe how each variable will be used. If you have variables which you are measuring for exploratory analyses, you are not required to list them, though you are permitted to do so.",
         "questions": [{
             "qid": "q11",
@@ -259,7 +258,6 @@
         }, {
             "qid": "q17",
             "nav": "Randomization",
-            "type": "object",
             "title": "Randomization",
             "description": "If you are doing a randomized study, how will you randomize, and at what level? ",
             "help": "We will use block randomization, where each participant will be randomly assigned to one of the four equally sized, predetermined blocks. The random number list used to create these four blocks will be created using the web applications available at http://random.org. <br /><br /> How responses will be evaluated: Typical randomization techniques include: simple, block, stratified, and adaptive covariate randomization. If randomization is required for the study, the method should be specified here, not simply the source of random numbers.",
