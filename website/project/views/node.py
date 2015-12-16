@@ -726,6 +726,7 @@ def _view_project(node, auth, primary=False, check_files=False):
         'node': {
             'id': node._primary_key,
             'title': node.title,
+            'display_title': get_display_title(node.title),
             'category': node.category_display,
             'category_short': node.category,
             'node_type': node.project_or_component,
@@ -1455,3 +1456,8 @@ def get_pointed(auth, node, **kwargs):
         for each in node.pointed
         if not get_pointer_parent(each).is_folder
     ]}
+
+def get_display_title(title):
+    if len(title) > 20:
+        return '%s...' % (title[:15].strip())
+    return title

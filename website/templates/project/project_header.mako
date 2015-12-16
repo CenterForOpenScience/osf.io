@@ -30,10 +30,14 @@
 
                     % endif
                         <li>
-                            <a href="${node['url']}"  class="project-title"> 
-                                ${ node['title'] }
+                            <a href="${node['url']}"  class="project-title">
                                 % if user['unread_comments']['node'] > 0:
+                                    ${ node['display_title'] }
                                     <span class="badge">${user['unread_comments']['node']}</span>
+                                % else:
+                                    <span class="project-title">
+                                        ${ node['title'] }
+                                    </span>
                                 % endif
                             </a>
                         </li>
