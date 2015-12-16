@@ -29,15 +29,15 @@ var AddProject = {
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
         self.categoryList = [
-            { id: 'catProject', value: 'project', label: 'Project'},
-            { id: 'catHypothesis', value: 'hypothesis', label : 'Hypothesis' },
-            { id: 'catmethods', value: 'methods and measures', label :  'Methods and Measures'},
-            { id: 'catprocedure', value: 'procedure', label:  'Procedure'},
-            { id: 'catinstrumentation', value: 'instrumentation', label: 'Instrumentation'},
-            { id: 'catdata', value: 'data', label:  'Data'},
-            { id: 'catanalysis', value: 'analysis', label: 'Analysis'},
-            { id: 'catcommunication', value: 'communication',label: 'Communication'},
-            { id: 'catother', value: 'other', label: 'Other'}
+            { value: 'project', label: 'Project'},
+            { value: 'hypothesis', label : 'Hypothesis' },
+            { value: 'methods and measures', label :  'Methods and Measures'},
+            { value: 'procedure', label:  'Procedure'},
+            { value: 'instrumentation', label: 'Instrumentation'},
+            { value: 'data', label:  'Data'},
+            { value: 'analysis', label: 'Analysis'},
+            { value: 'communication',label: 'Communication'},
+            { value: 'other', label: 'Other'}
         ];
         self.newProjectCategory = m.prop(self.categoryList[0].value);
         self.goToProjectLink = m.prop('');
@@ -89,13 +89,13 @@ var AddProject = {
                     m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                         m('span[aria-hidden="true"]','×'),
                     ]),
-                    m('h3.modal-title#addProject', 'Add New Project')
+                    m('h3.modal-title', 'Add New Project')
                 ]),
                 m('.modal-body', [
                     m('', [
                         m('.form-group.m-v-sm', [
                             m('label[for="projectName].f-w-lg.text-bigger', 'Project Name'),
-                            m('input[type="text"].form-control#projectName', {
+                            m('input[type="text"].form-control', {
                                 onkeyup: function(ev){
                                     if (ev.which === 13) {
                                          ctrl.add();
@@ -107,7 +107,7 @@ var AddProject = {
                         ]),
                         m('.form-group.m-v-sm', [
                             m('label[for="projectDesc].f-w-lg.text-bigger', 'Project Description'),
-                            m('textarea.form-control#projectDesc', {
+                            m('textarea.form-control', {
                                 onkeyup: function(ev){
                                     ctrl.newProjectDesc($(this).val());
                                 },
@@ -120,7 +120,6 @@ var AddProject = {
                                 return m('.radio', m('label', [  m('input', {
                                     type: 'radio',
                                     name: 'projectCategory',
-                                    id: cat.id,
                                     value: cat.value,
                                     checked: ctrl.newProjectCategory() === cat.value,
                                     onchange : m.withAttr('value', ctrl.newProjectCategory)
