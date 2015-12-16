@@ -16,14 +16,14 @@ urlpatterns = [
                          url(r'^auth/', include('admin.common_auth.urls', namespace='auth')),
                          url(r'^reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
                             views.password_reset_confirm_custom, name='password_reset_confirm'),
-                         url(r'^reset/done/$', views.password_reset_done,
-                            name='password_reset_complete'),
+                         url(r'^resetpassword/$', 'django.contrib.auth.views.password_reset', name='reset_password'),
+                         url(r'^password_reset_done/$', 'django.contrib.auth.views.password_reset_done', name='password_reset_done'),
                          url(r'^accounts/password_change/$',
                             'django.contrib.auth.views.password_change',
-                            {'post_change_redirect' : '/admin/accounts/password_change/done/'},
+                            {'post_change_redirect': '/admin/accounts/password_change/done/'},
                             name="password_change"),
                          url(r'^accounts/password_change/done/$',
-                            'django.contrib.auth.views.password_change_done', {'template_name': 'registration/password_reset_done.html'}),
+                            'django.contrib.auth.views.password_change_done', {'template_name': 'registration/password_change_done.html'}),
                          )
                 )
         )
