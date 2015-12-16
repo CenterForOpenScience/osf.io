@@ -98,7 +98,7 @@ var AddProject = {
                         m('.form-group.m-v-sm', [
                             m('label[for="projectName].f-w-lg.text-bigger', 'Project Name'),
                             m('input[type="text"].form-control', {
-                                onkeyup: function(ev){
+                                onchange: function(ev){
                                     if (ev.which === 13) {
                                          ctrl.add();
                                     }
@@ -110,7 +110,7 @@ var AddProject = {
                         m('.form-group.m-v-sm', [
                             m('label[for="projectDesc].f-w-lg.text-bigger', 'Project Description'),
                             m('textarea.form-control', {
-                                onkeyup: m.withAttr('value', ctrl.newProjectDesc),
+                                onchange: m.withAttr('value', ctrl.newProjectDesc),
                                 value : ctrl.newProjectDesc()
                             })
                         ]),
