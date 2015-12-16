@@ -9,7 +9,6 @@ var m = require('mithril');
  */
 var find_index = function (array, str) {
     for (var i = 0; i < array.length; i++) {
-        console.log(array[i].label);
         if (array[i].label === str)
             return i;
     }
@@ -46,10 +45,8 @@ module.exports = {
                 return a.label.localeCompare(b.label);
             });
         }
-
         data.push(other);
         data.push(uncat);
-
         return [
             m('div', {
                 className: 'legend-grid'
