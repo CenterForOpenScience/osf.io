@@ -230,9 +230,7 @@ var AuthorImport = function(data, $root, preview) {
      **/
     self.getContributors = function() {
         return self.makeContributorsRequest()
-            .then(function(data) {
-                return $.map(data.contributors, function(c) { return c.fullname; });
-            }).fail(function(xhr, status, error) {
+            .fail(function(xhr, status, error) {
                 Raven.captureMessage('Could not GET contributors', {
                     url: window.contextVars.node.urls.api + 'get_contributors/',
                     textStatus: status,
@@ -242,8 +240,8 @@ var AuthorImport = function(data, $root, preview) {
             });
     };
 
-    self.serializeContributors = function(data) {
-        return $.map(data.contributors, function(c) {
+    self.serializeContributors = function(contributors) {
+        return $.map(contributors, function(c) {
             return c.fullname;
         }).join(', ');
     };
@@ -252,20 +250,11 @@ var AuthorImport = function(data, $root, preview) {
         var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
         return $.getJSON(contributorsUrl);
     };
-    self.getContributors = function() {
-        var self = this;
-        return self.makeContributorsRequest()
-            .then(function(data) {
-                return self.serializeContributors(data);
-            }).fail(function() {
-                $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
-                           'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                           'problem persists.');
-            });
-    };
+
+    self.contributors = ko.observable([]);
     if (!preview) {
         self.getContributors().done(function(data) {
-            self.contributors(data);
+            self.question.value(self.serializeContributors(data.contributors));
         });
     }
 
@@ -273,7 +262,7 @@ var AuthorImport = function(data, $root, preview) {
         return self.value();
     };
     var callback = function(data) {
-        self.value(self.serializeContributors(data));
+        self.question.value(self.serializeContributors(data.contributors));
     };
 
     if ($('#addContributors').length > 0) {
