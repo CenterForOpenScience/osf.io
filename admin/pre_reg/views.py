@@ -37,7 +37,7 @@ def get_prereg_drafts(user=None):
         # one level that can see all drafts, and another than can see only the ones they're assigned.
         # As a followup to this, we need to make sure this applies to approval/rejection/commenting endpoints
         # query = query & Q('_metaschema_flags.assignee', 'eq', user._id)
-    return DraftRegistration.find(query)
+    return DraftRegistration.find(query).sort('-datetime_initiated')
 
 def is_in_prereg_group(user):
     """Determines whether a user is in the prereg_group
