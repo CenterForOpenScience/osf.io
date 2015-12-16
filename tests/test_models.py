@@ -3215,20 +3215,20 @@ class TestRoot(OsfTestCase):
             assert_in(node_id, found_ids)
 
     def test_get_descendants_recursive_returns_in_depth_order(self):
-        # Build up a family of nodes
-        node_structure = [5, 2, [1, 2], 3, [10, 2, 1], 2, [4, [2, 2], 6]]
-        render_generations_from_node_structure_list(self.project, node_structure)
+        """Test the get_descendants_recursive function to make sure its
+        not returning any new nodes that we're not expecting
+        """
+        child_node_one = NodeFactory(parent=self.project)
+        child_node_two = NodeFactory(parent=self.project)
+        NodeFactory(parent=child_node_one)
+        NodeFactory(parent=child_node_two)
 
         parent_list = [self.project._id]
-        nodes_touched = 0
         # Verifies, for every node in the list, that parent, we've seen before, in order.
         for project in self.project.get_descendants_recursive():
             parent_list.append(project._id)
             if project.parent:
                 assert_in(project.parent._id, parent_list)
-                nodes_touched += 1
-        assert_not_equal(nodes_touched, 0)
-        assert_equal(nodes_touched, 42)
 
 
 class TestTemplateNode(OsfTestCase):
