@@ -8,9 +8,7 @@ from admin.common_auth.models import MyUser
 
 @login_required
 def home(request):
-    context = {
-        'user': request.user,
-    }
+    context = {}
     return render(request, 'home.html', context)
 
 def password_reset_done(request, **kwargs):
