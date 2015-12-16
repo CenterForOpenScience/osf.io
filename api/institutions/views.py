@@ -189,7 +189,7 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
         query = self.get_query_from_request()
         return User.find(query)
 
-class InstitutionAuth(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
+class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
     permission_classes = ()
     required_read_scopes = []
     required_write_scopes = []
@@ -198,6 +198,3 @@ class InstitutionAuth(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     view_category = 'institutions'
     view_name = 'institution-auth'
 
-    def get_queryset(self):
-        data = self.request.data
-        return Institution.load(data)

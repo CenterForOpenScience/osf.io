@@ -13,8 +13,7 @@ class InstitutionAuthParser(BaseParser):
     media_type = 'text/plain'
 
     def parse(self, stream, *args, **kwargs):
-        value = stream.read().replace('-', '+').replace('_', '/')
-        import ipdb; ipdb.set_trace()
+        value = stream.read()
         try:
             data = jwt.decode(
                 jwe.decrypt(value, settings.JWE_SECRET),
@@ -24,5 +23,8 @@ class InstitutionAuthParser(BaseParser):
             )
         except (jwt.InvalidTokenError, KeyError):
             raise HTTPError(httplib.FORBIDDEN)
-        data['data'] = json.load(data['data'])
-        import ipdb; ipdb.set_trace()
+
+        username = data['sub']
+        data = json.loads(data['data'])
+
+        return {'username': username, 'data': data}
