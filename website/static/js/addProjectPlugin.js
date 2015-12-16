@@ -28,7 +28,18 @@ var AddProject = {
         };
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
-        self.newProjectCategory = 'project';
+        self.categoryList = [
+            { id: 'catProject', value: 'project', label: 'Project'},
+            { id: 'catHypothesis', value: 'hypothesis', label : 'Hypothesis' },
+            { id: 'catmethods', value: 'methods and measures', label :  'Methods and Measures'},
+            { id: 'catprocedure', value: 'procedure', label:  'Procedure'},
+            { id: 'catinstrumentation', value: 'instrumentation', label: 'Instrumentation'},
+            { id: 'catdata', value: 'data', label:  'Data'},
+            { id: 'catanalysis', value: 'analysis', label: 'Analysis'},
+            { id: 'catcommunication', value: 'communication',label: 'Communication'},
+            { id: 'catother', value: 'other', label: 'Other'}
+        ];
+        self.newProjectCategory = m.prop(self.categoryList[0].value);
         self.goToProjectLink = m.prop('');
         self.errorMessageType = m.prop('unknown');
         self.errorMessage = {
@@ -105,15 +116,16 @@ var AddProject = {
                         ]),
                         m('.f-w-lg.text-bigger','Category'),
                         m('.category-radio.p-h-md', [
-                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catProject][value="project][checked="checked"]',{ onchange : ctrl.chooseCategory }), 'Project'])),
-                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catHypothesis][value="hypothesis"]',{ onchange : ctrl.chooseCategory }), 'Hypothesis'])),
-                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catmethods][value="methods and measures"]',{ onchange : ctrl.chooseCategory }), 'Methods and Measures'])),
-                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catprocedure][value="procedure"]',{ onchange : ctrl.chooseCategory }), 'Procedure'])),
-                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catinstrumentation][value="instrumentation"]',{ onchange : ctrl.chooseCategory }), 'Instrumentation'])),
-                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catdata][value="data"]',{ onchange : ctrl.chooseCategory }), 'Data'])),
-                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catanalysis][value="analysis"]',{ onchange : ctrl.chooseCategory }), 'Analysis'])),
-                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catcommunication][value="communication"]',{ onchange : ctrl.chooseCategory }), 'Communication'])),
-                            m('.radio', m('label', [m('input[type="radio"][name="projectCategory][id="catother][value="other"]',{ onchange : ctrl.chooseCategory }), 'Other']))
+                            ctrl.categoryList.map(function(cat){
+                                return m('.radio', m('label', [  m('input', {
+                                    type: 'radio',
+                                    name: 'projectCategory',
+                                    id: cat.id,
+                                    value: cat.value,
+                                    checked: ctrl.newProjectCategory() === cat.value,
+                                    onchange : m.withAttr('value', ctrl.newProjectCategory)
+                                }), cat.label ]));
+                            })
                         ])
                     ])
                 ]),
