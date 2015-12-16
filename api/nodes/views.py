@@ -1,9 +1,10 @@
 import requests
 
 from modularodm import Q
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
-from rest_framework.status import is_server_error
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -126,7 +127,7 @@ class WaterButlerMixin(object):
         if waterbutler_request.status_code == 404:
             raise NotFound
 
-        if is_server_error(waterbutler_request.status_code):
+        if status.is_server_error(waterbutler_request.status_code):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
         try:
@@ -311,6 +312,23 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             if not node.has_permission(user, ADMIN):
                 return False
         return True
+
+    def bulk_destroy_skip_uneditable(self, resource_object_list, user, object_type):
+        """
+        If skip_uneditable=True in query_params, skip the resources for which the user does not have
+        admin permissions and delete the remaining resources
+        """
+        allowed = []
+        skipped = []
+        for resource in resource_object_list:
+            if resource.has_permission(user, ADMIN):
+                allowed.append(resource)
+            else:
+                skipped.append({'id': resource._id, 'type': object_type})
+
+        if is_truthy(self.request.query_params.get('skip_uneditable', False)) and skipped:
+            self.perform_bulk_destroy(allowed)
+            return Response(status=status.HTTP_200_OK, data={'meta': {'errors': skipped}})
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):

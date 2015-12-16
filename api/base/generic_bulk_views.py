@@ -5,10 +5,9 @@ from rest_framework_bulk import generics as bulk_generics
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from website.project.model import Q
-from website.util.permissions import ADMIN
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException, Gone
-from api.base.utils import is_bulk_request, is_truthy
+from api.base.utils import is_bulk_request
 
 
 class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
@@ -95,6 +94,13 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         """
         return True
 
+    def bulk_destroy_skip_uneditable(self, resource_list, user, object_type):
+        """
+        Override on view if allowing bulk delete request to skip resources for which the user does not have permission
+        to delete
+        """
+        pass
+
     # Overrides BulkDestroyAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         """
@@ -125,19 +131,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         if not self.allow_bulk_destroy_resources(user, resource_object_list):
             raise PermissionDenied
 
-        allowed = []
-        skipped = []
-        for resource in resource_object_list:
-            if resource.has_permission(user, ADMIN):
-                allowed.append(resource)
-            else:
-                skipped.append({'id': resource._id, 'type': object_type})
-
-        # If skip_uneditable=True in query_params, skip resources for which the user does not have admin permissions
-        # and delete the remaining resources
-        if is_truthy(self.request.query_params.get('skip_uneditable', False)) and skipped:
-            self.perform_bulk_destroy(allowed)
-            return Response(status=status.HTTP_200_OK, data={'meta': {'errors': skipped}})
+        self.bulk_destroy_skip_uneditable(resource_object_list, user, object_type)
 
         self.perform_bulk_destroy(resource_object_list)
         return Response(status=status.HTTP_204_NO_CONTENT)
