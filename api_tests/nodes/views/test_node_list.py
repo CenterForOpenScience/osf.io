@@ -111,20 +111,9 @@ class TestNodeList(ApiTestCase):
 
         res = self.app.get(self.url+'?embed=root&embed=parent', auth=self.user.auth)
 
-        projects_with_correct_root = 0
-        for project in res.json['data']:
-            root_id = project['embeds']['root']['data']['id']
-
-            if project['embeds']['parent'].get('data'):
-                parent_id = project['embeds']['parent']['data']['id']
-                if parent_id == project_one._id:
-                    if root_id == project_one._id:
-                        assert_equal(root_id, project_one._id)
-                        projects_with_correct_root += 1
-            elif root_id == project['id']:
-                projects_with_correct_root += 1
-
-        assert_equal(projects_with_correct_root, 4)
+        for project_json in res.json['data']:
+            project = Node.load(project_json['id'])
+            assert_equal(project_json['embeds']['root']['data']['id'], project.root._id)
 
 
 
