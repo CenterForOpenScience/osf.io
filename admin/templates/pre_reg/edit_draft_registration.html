@@ -13,6 +13,9 @@
      fullname: 'Prereg Admin'
    };
    window.contextVars.draft = {{ draft | jsonify | safe }};
+   window.contextVars.urls = {
+     updateDraft: '{% url 'pre_reg:update_draft' draft.pk %}'
+   };
 </script>
 
 <div class="container scripted" id="draftRegistrationScope">

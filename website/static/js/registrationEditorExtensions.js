@@ -242,12 +242,6 @@ var AuthorImport = function(data, $root, preview) {
             });
     };
 
-    if (!preview) {
-        self.getContributors().done(function(data) {
-            self.contributors(data);
-        });
-    }
-
     self.serializeContributors = function(data) {
         return $.map(data.contributors, function(c) {
             return c.fullname;
@@ -269,9 +263,12 @@ var AuthorImport = function(data, $root, preview) {
                            'problem persists.');
             });
     };
-    self.getContributors().done(function(data) {
-        self.question.value(data);
-    });
+    if (!preview) {
+        self.getContributors().done(function(data) {
+            self.contributors(data);
+        });
+    }
+
     self.preview = function() {
         return self.value();
     };
