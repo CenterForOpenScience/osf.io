@@ -94,6 +94,16 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label>Academia</label>
+                <div class="input-group">
+                <span class="input-group-addon">https://</span>
+                <input class="form-control" data-bind="value: academia1" placeholder="institution"/>
+                <span class="input-group-addon">.academia.edu/</span>
+                <input class="form-control" data-bind="value: academia2" placeholder="profileID"/>
+                </div>
+            </div>
+
             <div class="p-t-lg p-b-lg">
 
                 <button

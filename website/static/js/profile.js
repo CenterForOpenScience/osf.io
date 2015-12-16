@@ -20,7 +20,8 @@ var socialRules = {
     twitter: /twitter\.com\/(\w+)/i,
     linkedIn: /.*\/?(in\/.*|profile\/.*|pub\/.*)/i,
     impactStory: /impactstory\.org\/([\w\.-]+)/i,
-    github: /github\.com\/(\w+)/i
+    github: /github\.com\/(\w+)/i,
+    academia: /(\w+)\.academia\.edu\/(\w+)/i,
 };
 
 var cleanByRule = function(rule) {
@@ -536,7 +537,15 @@ var SocialViewModel = function(urls, modes) {
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.github)}),
         self, 'github', 'https://github.com/'
     );
-
+    self.academia1 = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.academia)}),
+        self, 'academia1', 'https://'
+    );
+    self.academia2 = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.academia)}),
+        self, 'academia2', '.academia.edu/'
+    );
+    
     self.trackedProperties = [
         self.profileWebsites,
         self.orcid,
@@ -545,7 +554,9 @@ var SocialViewModel = function(urls, modes) {
         self.scholar,
         self.linkedIn,
         self.impactStory,
-        self.github
+        self.github,
+        self.academia1,
+        self.academia2,
     ];
 
     var validated = ko.validatedObservable(self);
@@ -562,7 +573,8 @@ var SocialViewModel = function(urls, modes) {
             {label: 'GitHub', text: self.github(), value: self.github.url()},
             {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
             {label: 'ImpactStory', text: self.impactStory(), value: self.impactStory.url()},
-            {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()}
+            {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()},
+            {label: 'Academia', text: self.academia1() + '.academia.edu/' + self.academia2(), value: self.academia1.url() + self.academia2.url()},
         ];
     });
 
