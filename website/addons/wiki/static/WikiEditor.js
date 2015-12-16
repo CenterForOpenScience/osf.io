@@ -80,8 +80,8 @@ function ViewModel(url, viewText) {
         }
     });
 
-    self.setAutocom = function() {
-        self.autocom(!self.autocom());
+    self.setAutocom = function(auto) {
+        self.autocom(auto);
         return true;
     };
 
@@ -169,6 +169,12 @@ function ViewModel(url, viewText) {
             return 'There are unsaved changes to your wiki. If you exit ' +
                 'the page now, those changes may be lost.';
         }
+    });
+
+    $(document).ready(function() {
+        $('#autocom').on('change', function() {
+            self.setAutocom($(this).is(':checked'));
+        });
     });
 
 }

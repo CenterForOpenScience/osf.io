@@ -38,6 +38,7 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
             enableSnippets: autocom,
             enableLiveAutocompletion: autocom
         });
+        self.editor.focus();
     });
 
     if (!collaborative) {

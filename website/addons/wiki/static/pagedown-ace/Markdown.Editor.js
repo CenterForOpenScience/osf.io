@@ -1645,11 +1645,34 @@
                 buttonRow.appendChild(button);
                 return button;
             };
-            //spacer function was initially there
+            var makeCheckBox = function (div_id, cb_id, XShift, text) {
+                var li = document.createElement("li");
+                li.id = div_id;
+                li.style.left = xPosition + "px";
+                xPosition += 25;
+                li.XShift = XShift;
+                var cb = document.createElement("input");
+                cb.id = cb_id;
+                cb.type = "checkbox";
+                cb.checked = "checked";
+                var sp = document.createElement("span");
+                sp.innerHTML = " " + text.trim();
+                // sp.style.marginLeft = "5px"
+                li.appendChild(cb);
+                li.appendChild(sp);
+                buttonRow.appendChild(li);
+            }
+            var makeSpacer = function (num) {
+                var spacer = document.createElement("li");
+                spacer.className = "wmd-spacer wmd-spacer" + num;
+                spacer.id = "wmd-spacer" + num + postfix;
+                buttonRow.appendChild(spacer);
+                xPosition += 25;
+            }
 
             buttons.bold = makeButton("wmd-bold-button", getStringAndKey("bold"), "0px", bindCommand("doBold"));
             buttons.italic = makeButton("wmd-italic-button", getStringAndKey("italic"), "-20px", bindCommand("doItalic"));
-            //make spacer 1
+            makeSpacer(1)
             buttons.link = makeButton("wmd-link-button", getStringAndKey("link"), "-40px", bindCommand(function (chunk, postProcessing) {
                 return this.doLinkOrImage(chunk, postProcessing, false);
             }));
@@ -1658,7 +1681,7 @@
             buttons.image = makeButton("wmd-image-button", getStringAndKey("image"), "-100px", bindCommand(function (chunk, postProcessing) {
                 return this.doLinkOrImage(chunk, postProcessing, true);
             }));
-            //make spacer 2
+            makeSpacer(2)
             buttons.olist = makeButton("wmd-olist-button", getStringAndKey("olist"), "-120px", bindCommand(function (chunk, postProcessing) {
                 this.doList(chunk, postProcessing, true);
             }));
@@ -1667,14 +1690,14 @@
             }));
             buttons.heading = makeButton("wmd-heading-button", getStringAndKey("heading"), "-160px", bindCommand("doHeading"));
             buttons.hr = makeButton("wmd-hr-button", getStringAndKey("hr"), "-180px", bindCommand("doHorizontalRule"));
-            //make spacer 3
+            makeSpacer(3)
             buttons.undo = makeButton("wmd-undo-button", getStringAndKey("undo"), "-200px", null);
             buttons.undo.execute = function (manager) { inputBox.session.getUndoManager().undo(); };
 
             buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
-
-            //make spacer 4
+            makeSpacer(4)
+            makeCheckBox("auto", "autocom", "-240px", "Autocomplete");
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
