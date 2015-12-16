@@ -119,6 +119,7 @@ class TestNodeList(ApiTestCase):
                 parent_id = project['embeds']['parent']['data']['id']
                 if parent_id == project_one._id:
                     if root_id == project_one._id:
+                        assert_equal(root_id, project_one._id)
                         projects_with_correct_root += 1
             elif root_id == project['id']:
                 projects_with_correct_root += 1
