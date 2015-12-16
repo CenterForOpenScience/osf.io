@@ -217,7 +217,6 @@ var Uploader = function(question) {
 var AuthorImport = function(data, $root, preview) {
     var self = this;
     self.question = data;
-    self.contributors = ko.observable();
 
     /**
      * Makes ajax request for a project's contributors
@@ -231,9 +230,7 @@ var AuthorImport = function(data, $root, preview) {
      **/
     self.getContributors = function() {
         return self.makeContributorsRequest()
-            .then(function(data) {
-                return $.map(data.contributors, function(c) { return c.fullname; });
-            }).fail(function(xhr, status, error) {
+            .fail(function(xhr, status, error) {
                 Raven.captureMessage('Could not GET contributors', {
                     url: window.contextVars.node.urls.api + 'get_contributors/',
                     textStatus: status,
@@ -243,14 +240,8 @@ var AuthorImport = function(data, $root, preview) {
             });
     };
 
-    if (!preview) {
-        self.getContributors().done(function(data) {
-            self.contributors(data);
-        });
-    }
-
-    self.serializeContributors = function(data) {
-        return $.map(data.contributors, function(c) {
+    self.serializeContributors = function(contributors) {
+        return $.map(contributors, function(c) {
             return c.fullname;
         }).join(', ');
     };
@@ -259,36 +250,32 @@ var AuthorImport = function(data, $root, preview) {
         var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
         return $.getJSON(contributorsUrl);
     };
-    self.getContributors = function() {
-        var self = this;
-        return self.makeContributorsRequest()
-            .then(function(data) {
-                return self.serializeContributors(data);
-            }).fail(function() {
-                $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
-                           'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                           'problem persists.');
-            });
-    };
-    self.getContributors().done(function(data) {
-        self.question.value(data);
-    });
+
+    self.contributors = ko.observable([]);
+    if (!preview) {
+        self.getContributors().done(function(data) {
+            self.question.value(self.serializeContributors(data.contributors));
+        });
+    }
+
     self.preview = function() {
         return self.value();
     };
     var callback = function(data) {
-        self.value(self.serializeContributors(data));
+        self.question.value(self.serializeContributors(data.contributors));
     };
 
-    ko.cleanNode($('#addContributors')[0]);
-    var adder = new ContribAdder(
-        '#addContributors',
-        node.title,
-        node.id,
-        null,
-        null,
-        {async: true, callback: callback}
-    );
+    if ($('#addContributors').length > 0) {
+        ko.cleanNode($('#addContributors')[0]);
+        var adder = new ContribAdder(
+            '#addContributors',
+            node.title,
+            node.id,
+            null,
+            null,
+            {async: true, callback: callback}
+        );
+    }
 
     $.extend(self, data);
 };

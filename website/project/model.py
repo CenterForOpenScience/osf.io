@@ -4091,6 +4091,9 @@ class DraftRegistrationApproval(Sanction):
 
     mode = Sanction.ANY
 
+    # TODO generalize this behavior
+    DRAFT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/draft/{draft_id}'
+
     # Since draft registrations that require approval are not immediately registered,
     # meta stores registration_choice and embargo_end_date (when applicable)
     meta = fields.DictionaryField(default=dict)
@@ -4102,10 +4105,11 @@ class DraftRegistrationApproval(Sanction):
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
                 user=user,
-                draft_url=draft.branched_from.web_url_for(
-                    'edit_draft_registration_page',
+                draft_url=self.DRAFT_URL_TEMPLATE.format(
+                    node_id=draft.branched_from,
                     draft_id=draft._id
-                )
+                ),
+                mimetype='html'
             )
         else:
             raise NotImplementedError(
@@ -4157,12 +4161,10 @@ class DraftRegistrationApproval(Sanction):
         # clear out previous registration options
         self.meta = {}
         self.save()
-        # remove reference to approval from draft
+
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
-        draft.approval = None
-        draft.save()
         self._send_rejection_email(user, draft)
 
 
@@ -4206,14 +4208,19 @@ class DraftRegistration(StoredObject):
     def flags(self):
         if not self._metaschema_flags:
             self._metaschema_flags = {}
-            meta_schema = self.registration_schema
-            if meta_schema:
-                schema = meta_schema.schema
-                flags = schema.get('flags', {})
-                for flag, value in flags.iteritems():
+        meta_schema = self.registration_schema
+        if meta_schema:
+            schema = meta_schema.schema
+            flags = schema.get('flags', {})
+            for flag, value in flags.iteritems():
+                if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
             self.save()
         return self._metaschema_flags
+
+    @flags.setter
+    def flags(self, flags):
+        self._metaschema_flags.update(flags)
 
     notes = fields.StringField()
 
@@ -4234,6 +4241,16 @@ class DraftRegistration(StoredObject):
                 return self.approval.is_approved
         else:
             return True
+
+    @property
+    def is_rejected(self):
+        if self.requires_approval:
+            if not self.approval:
+                return False
+            else:
+                return self.approval.is_rejected
+        else:
+            return False
 
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
@@ -4279,9 +4296,6 @@ class DraftRegistration(StoredObject):
             initiated_by=initiated_by,
             meta=meta
         )
-        authorizers = self.get_authorizers()
-        for user in authorizers:
-            approval.add_authorizer(user)
         approval.save()
         self.approval = approval
         if save:
