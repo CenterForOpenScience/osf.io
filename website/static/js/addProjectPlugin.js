@@ -79,6 +79,8 @@ var AddProject = {
         self.reset = function _reset(){
             self.newProjectName('');
             self.viewState('form');
+            self.newProjectDesc('');
+            self.newProjectCategory(self.categoryList[0].value);
             $('.modal').modal('hide');
         };
     },
