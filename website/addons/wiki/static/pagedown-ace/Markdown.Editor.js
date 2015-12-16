@@ -1,5 +1,6 @@
-﻿// OSF Note: This file has been changed for UI reasons and to prevent
-// automatic rendering. This is only here for the toolbar
+﻿// OSF Note: This file has been changed for UI reasons, to prevent
+// automatic rendering, and to add a checkbox for toggling snippet
+// autocompletion. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
 
@@ -1657,7 +1658,6 @@
                 cb.checked = "checked";
                 var sp = document.createElement("span");
                 sp.innerHTML = " " + text.trim();
-                // sp.style.marginLeft = "5px"
                 li.appendChild(cb);
                 li.appendChild(sp);
                 buttonRow.appendChild(li);
@@ -1672,7 +1672,7 @@
 
             buttons.bold = makeButton("wmd-bold-button", getStringAndKey("bold"), "0px", bindCommand("doBold"));
             buttons.italic = makeButton("wmd-italic-button", getStringAndKey("italic"), "-20px", bindCommand("doItalic"));
-            makeSpacer(1)
+            makeSpacer(1);
             buttons.link = makeButton("wmd-link-button", getStringAndKey("link"), "-40px", bindCommand(function (chunk, postProcessing) {
                 return this.doLinkOrImage(chunk, postProcessing, false);
             }));
@@ -1681,7 +1681,7 @@
             buttons.image = makeButton("wmd-image-button", getStringAndKey("image"), "-100px", bindCommand(function (chunk, postProcessing) {
                 return this.doLinkOrImage(chunk, postProcessing, true);
             }));
-            makeSpacer(2)
+            makeSpacer(2);
             buttons.olist = makeButton("wmd-olist-button", getStringAndKey("olist"), "-120px", bindCommand(function (chunk, postProcessing) {
                 this.doList(chunk, postProcessing, true);
             }));
@@ -1690,13 +1690,13 @@
             }));
             buttons.heading = makeButton("wmd-heading-button", getStringAndKey("heading"), "-160px", bindCommand("doHeading"));
             buttons.hr = makeButton("wmd-hr-button", getStringAndKey("hr"), "-180px", bindCommand("doHorizontalRule"));
-            makeSpacer(3)
+            makeSpacer(3);
             buttons.undo = makeButton("wmd-undo-button", getStringAndKey("undo"), "-200px", null);
             buttons.undo.execute = function (manager) { inputBox.session.getUndoManager().undo(); };
 
             buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
-            makeSpacer(4)
+            makeSpacer(4);
             makeCheckBox("auto", "autocom", "-240px", "Autocomplete");
 
             if (helpOptions) {
