@@ -238,12 +238,17 @@ OTHER_QUESTIONS = set(SCHEMA_DATA.keys()) - EXISTING_UPLOADERS - EXISTING_OPTION
 def check_migration(orig_data, draft):
     # check for uploader added
     for qid in UPLOADERS_ADDED:
-        assert_equal(
-            orig_data[qid]['value'],
-            draft.registration_metadata[qid]['value']['question']['value']
-        )
+        if qid not in orig_data:
+            continue
+        if orig_data[qid]['value']:
+            assert_equal(
+                orig_data[qid]['value'],
+                draft.registration_metadata[qid]['value']['question']['value']
+            )
     # check for regular uploader type
     for qid in EXISTING_UPLOADERS:
+        if qid not in orig_data:
+            continue
         assert_equal(
             orig_data[qid]['value'],
             draft.registration_metadata[qid]['value']
@@ -265,12 +270,14 @@ def check_migration(orig_data, draft):
                 )
     # check for properties on object type
     for qid in EXISTING_OPTIONAL_UPLOADERS:
+        if qid not in orig_data:
+            continue
         uid = [k for k in orig_data[qid]['value'].keys() if 'uploader' in k][0]
         assert_equal(
             orig_data[qid]['value'][uid].get('value'),
-            draft.registration_metadata[qid]['value']['uploader'].get('value', '')
+            draft.registration_metadata[qid]['value']['uploader'].get('value')
         )
-        if orig_data[qid]['value'][uid]['extra']:
+        if orig_data[qid]['value'][uid].get('extra'):
             assert_equal(
                 orig_data[qid]['value'][uid]['extra'].get('selectedFileName'),
                 draft.registration_metadata[qid]['value']['uploader'].get('extra', {}).get('selectedFileName'),
@@ -288,6 +295,8 @@ def check_migration(orig_data, draft):
                 )
     # check everything else
     for qid in OTHER_QUESTIONS:
+        if qid not in orig_data:
+            continue
         assert_equal(
             orig_data[qid]['value'],
             draft.registration_metadata[qid]['value']

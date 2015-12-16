@@ -1,7 +1,8 @@
 """
-A script to migrate draft registration metadata on Prereg Challenge submissions. The structure of some schema items
+a script to migrate draft registration metadata on Prereg Challenge submissions. The structure of some schema items
 has changed to include optional file uploads, and existing file upload values need to be updated.
 """
+import sys
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 import re
@@ -16,6 +17,8 @@ from website.models import (
     Node
 )
 from website.files.models import osfstorage
+
+init_app(set_backends=True, routes=False)
 
 PREREG_SCHEMA = MetaSchema.find_one(
     Q('name', 'eq', 'Prereg Challenge') &
@@ -56,7 +59,7 @@ def migrate_draft_metadata(draft, test=False):
         qtype = question['type']
         metadata_value = deepcopy(draft.registration_metadata.get(qid, {}))
         if qtype == 'osf-upload':
-            if not metadata_value['value']:
+            if not metadata_value.get('value'):
                 continue  # no file selected
             extra = metadata_value.get('extra')
             if extra:
@@ -78,7 +81,10 @@ def migrate_draft_metadata(draft, test=False):
             else:
                 pass  # no metadata, skipping
         elif 'properties' in question:
-            if not isinstance(metadata_value['value'], dict):  # uploader added to question
+            value = metadata_value.get('value')
+            if not value:
+                continue  # no response
+            if not isinstance(value, dict):  # uploader added to question
                 metadata_value['value'] = {
                     'question': {
                         'value': metadata_value['value']
@@ -91,9 +97,6 @@ def migrate_draft_metadata(draft, test=False):
             for prop in question['properties']:
                 old_value = deepcopy(draft.registration_metadata[qid])
                 if prop['type'] == 'osf-upload':
-                    value = metadata_value.get('value', {})
-                    if not value:
-                        continue  # no file selected
                     try:
                         uid, uploader = [(k, v) for k, v in value.items() if 'uploader' in k][0]
                     except IndexError:
@@ -142,8 +145,6 @@ def main(dry_run=False, test=False):
             raise RuntimeError("Dry run, rolling back transaction")
 
 if __name__ == '__main__':
-    import sys
-    init_app(set_backends=True, routes=False)
     dry = 'dry' in sys.argv
     test = 'test' in sys.argv
     main(dry, test)
