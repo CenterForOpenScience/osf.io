@@ -367,18 +367,19 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint.")
 
     def test_filtering_on_root(self):
-        # Build up a family of nodes
-        node_structure = [5, 2, [1, 2], 3, [10, 2], 2, [4, [2, 2], 6]]
-        render_generations_from_node_structure_list(self.project_one, node_structure)
+        root = ProjectFactory(is_public=True)
+        child = ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=child, is_public=True)
         # create some unrelated projects
         ProjectFactory(title="Road Dogg Jesse James", is_public=True)
         ProjectFactory(title="Badd *** Billy Gunn", is_public=True)
 
-        url = '/{}nodes/?filter[root]={}'.format(API_BASE, self.project_one._id)
+        url = '/{}nodes/?filter[root]={}'.format(API_BASE, root._id)
 
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 42)
+        assert_equal(res.json['links']['meta']['total'], 4)
 
     def test_filtering_on_null_parent(self):
         # Build up a family of nodes not to be included
