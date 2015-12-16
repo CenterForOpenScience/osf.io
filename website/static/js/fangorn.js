@@ -747,6 +747,9 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     treebeard.redraw();
 }
 
+function _fangornDropzoneRemovedFile(treebeard, file, message, xhr) {
+    addFileStatus(treebeard, file, false, 'Upload Canceled.', '');
+}
 /**
  * runs when Dropzone's error hook runs. Notifies user with error.
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
@@ -765,9 +768,9 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         msgText = 'Cannot upload directories, applications, or packages.';
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
-    } else if (xhr && xhr.status === 0){
+    } else if (xhr && xhr.status === 0) {
         msgText = 'Unable to reach the provider, please try again later. If the ' +
-                'problem persists, please contact support@osf.io.';
+            'problem persists, please contact support@osf.io.';
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
@@ -787,8 +790,11 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
+    console.log(file);
     treebeard.options.uploadInProgress = false;
-    addFileStatus(treebeard, file, false, msgText, '');
+    if (msgText !== 'Upload canceled.') {
+        addFileStatus(treebeard, file, false, msgText, '');
+    }
 }
 
 /**
@@ -2340,6 +2346,7 @@ tbOptions = {
         sending : _fangornSending,
         complete : _fangornComplete,
         success : _fangornDropzoneSuccess,
+        removedfile: _fangornDropzoneRemovedFile,
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile,
