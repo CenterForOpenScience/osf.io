@@ -349,9 +349,9 @@ class Comment(GuidStoredObject):
             auth=auth,
             save=False,
         )
-        self.save()
+        self.node.save()
         if save:
-            self.node.save()
+            self.save()
 
     def delete(self, auth, save=False):
         log_dict = {
@@ -372,9 +372,9 @@ class Comment(GuidStoredObject):
             auth=auth,
             save=False,
         )
-        self.save()
+        self.node.save()
         if save:
-            self.node.save()
+            self.save()
 
     def undelete(self, auth, save=False):
         self.is_deleted = False
@@ -394,9 +394,9 @@ class Comment(GuidStoredObject):
             auth=auth,
             save=False,
         )
-        self.save()
+        self.node.save()
         if save:
-            self.node.save()
+            self.save()
 
     def report_abuse(self, user, save=False, **kwargs):
         """Report that a comment is abuse.

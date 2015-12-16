@@ -426,6 +426,16 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return ret
 
 
+class FileCommentRelationshipField(RelationshipField):
+    def __init_(self, **kwargs):
+        super(FileCommentRelationshipField, self).__init__(**kwargs)
+
+    def get_url(self, obj, view_name, request, format):
+        if obj.kind == 'folder':
+            raise SkipField
+        return super(FileCommentRelationshipField, self).get_url(obj, view_name, request, format)
+
+
 class TargetField(ser.Field):
     """
     Field that returns a nested dict with the url (constructed based
