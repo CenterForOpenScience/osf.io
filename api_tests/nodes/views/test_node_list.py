@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
+from modularodm import Q
 from framework.auth.core import Auth
 
 from website.models import Node, NodeLog
@@ -382,15 +383,22 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.json['links']['meta']['total'], 4)
 
     def test_filtering_on_null_parent(self):
-        # Build up a family of nodes not to be included
-        node_structure = [2, [1, 2]]
-        render_generations_from_node_structure_list(self.project_one, node_structure)
+        # add some nodes TO be included
+        new_user = AuthUserFactory()
+        root = ProjectFactory(is_public=True)
+        ProjectFactory(is_public=True)
+        # Build up a some of nodes not to be included
+        child = ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=child, is_public=True)
 
         url = '/{}nodes/?filter[parent]=null'.format(API_BASE)
 
-        res = self.app.get(url, auth=self.user_one.auth)
+        res = self.app.get(url, auth=new_user.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 4)
+
+        public_root_nodes = Node.find(Q('is_public', 'eq', True) & Q('parent_node', 'eq', None))
+        assert_equal(len(res.json['data']), public_root_nodes.count())
 
 
 class TestNodeCreate(ApiTestCase):
