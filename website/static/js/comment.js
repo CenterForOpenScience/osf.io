@@ -20,8 +20,6 @@ var markdown = require('js/markdown');
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
 
-var TOGGLELEVEL = 2;
-
 var ABUSE_CATEGORIES = {
     spam: 'Spam or advertising',
     hate: 'Hate speech',
@@ -84,10 +82,7 @@ var BaseComment = function() {
     self.submittingReply = ko.observable(false);
 
     self.comments = ko.observableArray();
-
     self.unreadComments = ko.observable(0);
-
-    self.level = 0;
 
     self.displayCount = ko.pureComputed(function() {
         if (self.unreadComments() !== 0) {
@@ -320,8 +315,6 @@ var CommentModel = function(data, $parent, $root) {
         return 'Modified ' + relativeDate(self.dateModified());
     });
 
-    self.level = $parent.level + 1;
-
     self.loading = ko.observable(true);
     self.showChildren = ko.observable(false);
 
@@ -361,10 +354,6 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.nodeUrl = '/' + self.$root.nodeId() + '/';
-
-    if (self.level < TOGGLELEVEL) {
-        self.toggle();
-    }
 
 };
 
