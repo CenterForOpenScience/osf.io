@@ -279,15 +279,17 @@ var AuthorImport = function(data, $root, preview) {
         self.value(self.serializeContributors(data));
     };
 
-    ko.cleanNode($('#addContributors')[0]);
-    var adder = new ContribAdder(
-        '#addContributors',
-        node.title,
-        node.id,
-        null,
-        null,
-        {async: true, callback: callback}
-    );
+    if ($('#addContributors').length > 0) {
+        ko.cleanNode($('#addContributors')[0]);
+        var adder = new ContribAdder(
+            '#addContributors',
+            node.title,
+            node.id,
+            null,
+            null,
+            {async: true, callback: callback}
+        );
+    }
 
     $.extend(self, data);
 };

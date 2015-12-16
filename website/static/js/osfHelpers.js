@@ -752,6 +752,19 @@ var any = function(listOfBools) {
     return false;
 };
 
+/** 
+ * A helper for creating a style-guide conformant bootbox modal. Returns a promise.
+ * @param {String} title: 
+ * @param {String} message:
+ * @param {String} actionButtonLabel:
+ * @param {Object} options: optional options
+ * @param {String} options.actionButtonClass: CSS class for action button, default 'btn-success'
+ * @param {String} options.cancelButtonLabel: label for cancel button, default 'Cancel'
+ * @param {String} options.cancelButtonClass: CSS class for cancel button, default 'btn-default'
+ *
+ * @example
+ * dialog('Hello', 'Just saying hello', 'Say hi').done(successCallback).fail(doNothing);
+ **/
 var dialog = function(title, message, actionButtonLabel, options) {
     var ret = $.Deferred();
     options = $.extend({}, {
@@ -781,6 +794,7 @@ var dialog = function(title, message, actionButtonLabel, options) {
     });
     return ret.promise();
 };
+
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
