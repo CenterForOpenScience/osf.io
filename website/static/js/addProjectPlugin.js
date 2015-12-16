@@ -62,7 +62,7 @@ var AddProject = {
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);
             self.newProjectName('');
-            m.redraw(true);
+            //m.redraw(true);
 
         };
         self.reset = function _reset(){
