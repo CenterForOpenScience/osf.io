@@ -16,6 +16,8 @@ from website.project.decorators import (
     must_have_permission
 )
 
+import ENML2HTML
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -123,10 +125,16 @@ def evernote_note(node_addon, noteid, **kwargs):
     client = utils.get_evernote_client(token)
     note = utils.get_note(client, noteid,
         withContent=True,
-        withResourcesData=True)
+        withResourcesData=False)
+
+    # convert to HTML
+    mediaStore = utils.MyMediaStore(client.get_note_store(), note.guid)
+    html = ENML2HTML.ENMLToHTML(note.content, pretty=True, header=False,
+          media_store=mediaStore)
 
     return {'noteid': noteid,
-            'content': note.content}
+            'content': note.content,
+            'html':html}
 
 @must_have_addon('evernote', 'node')
 @must_be_addon_authorizer('evernote')

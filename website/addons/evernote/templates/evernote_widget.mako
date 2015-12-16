@@ -19,7 +19,7 @@
             <span data-bind="text: guid"></span>
           </p>
         </div>
-        <textarea id="evernote-notedisplay"></textarea>
+        <div id="evernote-notedisplay"></div>
       </div>
 
   </div>

@@ -32,7 +32,7 @@ var EvernoteWidget = function(urls) {
    var note = $.getJSON(this.urls.note + note.guid +"/");
 
    note.done(function(data) {
-     $("#evernote-notedisplay")[0].value = data.content;
+     $("#evernote-notedisplay").html(data.html);
    });
 
  };
