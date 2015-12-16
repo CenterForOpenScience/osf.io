@@ -319,15 +319,17 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         """
         allowed = []
         skipped = []
+
+        if not is_truthy(self.request.query_params.get('skip_uneditable', False)):
+            return None
+
         for resource in resource_object_list:
             if resource.has_permission(user, ADMIN):
                 allowed.append(resource)
             else:
                 skipped.append({'id': resource._id, 'type': object_type})
 
-        if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-            return {'skipped': skipped, 'allowed': allowed}
-        return None
+        return {'skipped': skipped, 'allowed': allowed}
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
