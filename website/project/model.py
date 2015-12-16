@@ -394,8 +394,9 @@ class Comment(GuidStoredObject):
             auth=auth,
             save=False,
         )
+        self.save()
         if save:
-            self.save()
+            self.node.save()
 
     def report_abuse(self, user, save=False, **kwargs):
         """Report that a comment is abuse.
