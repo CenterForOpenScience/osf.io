@@ -2,6 +2,11 @@
 {% load render_bundle from webpack_loader %}
 {% load filters %}
 
+{% block top_includes %}
+  {% load static %}
+  <link type="text/css" rel="stylesheet" href="{% static 'css/prereg.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
   {% for draft in drafts %}
