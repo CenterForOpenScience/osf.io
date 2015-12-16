@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage
+from django.core.urlresolvers import reverse
 
 import json
 import httplib as http
@@ -102,7 +103,7 @@ def approve_draft(request, draft_pk):
 
     user = request.user.osf_user
     draft.approve(user)
-    return redirect('pre_reg:prereg', permanent=True, page_number=int(request.POST.get('page', 1)))
+    return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 @csrf_exempt
 @login_required
@@ -117,7 +118,7 @@ def reject_draft(request, draft_pk):
 
     user = request.user.osf_user
     draft.reject(user)
-    return redirect('pre_reg:prereg', permanent=True, page_number=int(request.POST.get('page', 1)))
+    return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 @csrf_exempt
 @login_required
