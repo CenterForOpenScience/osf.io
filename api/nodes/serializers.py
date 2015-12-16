@@ -172,21 +172,14 @@ class NodeSerializer(JSONAPISerializer):
         auth = self.get_user_auth(self.context['request'])
         user = auth.user
         n_unread = 0
-        removed_files = []
         for file_id in obj.commented_files:
             file_obj = File.load(file_id)
             if obj.get_addon(file_obj.provider):
                 try:
                     exists = self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider, check_object_permissions=False)
                 except (exceptions.NotFound, exceptions.PermissionDenied):
-                    removed_files.append(file_id)
-        for file_id in removed_files:
-            del obj.commented_files[file_id]
-            obj.save()
-
-        for file_id in obj.commented_files:
-            n_unread += Comment.find_unread(user, obj, page='files', root_id=file_id)
-
+                    continue
+                n_unread += Comment.find_unread(user, obj, page='files', root_id=file_id)
         return n_unread
 
     def create(self, validated_data):
