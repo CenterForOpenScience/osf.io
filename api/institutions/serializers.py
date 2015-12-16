@@ -81,5 +81,5 @@ class InstitutionAuthSerializer(ser.Serializer):
             user.institutions_metadata[institution._id] = current_data
         user.save()
 
-        import ipdb; ipdb.set_trace()
+        return user
 
