@@ -388,7 +388,6 @@ var Collections  = {
                 args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
             });
             self.newCollectionName('');
-            m.redraw(true);
             self.dismissModal();
         };
         self.deleteCollection = function(){
@@ -516,14 +515,19 @@ var Collections  = {
                                                 ctrl.newCollectionName($(this).val());
                                             },
                                             value : ctrl.newCollectionName()
-
                                         })
                                     ])
                                 ]),
                                 m('p.m-t-sm', 'After you create your collection drag and drop projects to the collection. ')
                             ]),
                             m('.modal-footer', [
-                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
+                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]',
+                                    {
+                                        onclick : function(){
+                                            ctrl.dismissModal();
+                                            ctrl.newCollectionName('');
+                                        }
+                                    }, 'Cancel'),
                                 m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
                             ])
                         ])
