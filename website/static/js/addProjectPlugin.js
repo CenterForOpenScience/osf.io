@@ -108,9 +108,7 @@ var AddProject = {
                         m('.form-group.m-v-sm', [
                             m('label[for="projectDesc].f-w-lg.text-bigger', 'Project Description'),
                             m('textarea.form-control', {
-                                onkeyup: function(ev){
-                                    ctrl.newProjectDesc($(this).val());
-                                },
+                                onkeyup: m.withAttr('value', ctrl.newProjectDesc),
                                 value : ctrl.newProjectDesc()
                             })
                         ]),
