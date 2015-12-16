@@ -7,7 +7,7 @@ from tests import factories
 from tests.base import OsfTestCase, fake
 from tests.utils import unique
 
-from scripts.prereg.migrate_metadata_for_uploaders import migrate_draft_metadata
+from scripts.prereg.migrate_metadata_for_uploaders import migrate_draft_metadata, parse_view_url
 
 from website.files.models import osfstorage
 
@@ -235,6 +235,65 @@ UPLOADERS_ADDED = set(('q11', 'q12', 'q13'))
 
 OTHER_QUESTIONS = set(SCHEMA_DATA.keys()) - EXISTING_UPLOADERS - EXISTING_OPTIONAL_UPLOADERS - UPLOADERS_ADDED
 
+def check_migration(orig_data, draft):
+    # check for uploader added
+    for qid in UPLOADERS_ADDED:
+        assert_equal(
+            orig_data[qid]['value'],
+            draft.registration_metadata[qid]['value']['question']['value']
+        )
+    # check for regular uploader type
+    for qid in EXISTING_UPLOADERS:
+        assert_equal(
+            orig_data[qid]['value'],
+            draft.registration_metadata[qid]['value']
+        )
+        if orig_data[qid]['extra']:
+            assert_equal(
+                orig_data[qid]['extra'].get('selectedFileName'),
+                draft.registration_metadata[qid]['extra'].get('selectedFileName'),
+            )
+            assert_equal(
+                orig_data[qid]['extra']['viewUrl'],
+                draft.registration_metadata[qid]['extra']['viewUrl'],
+            )
+            if orig_data[qid]['extra'].get('viewUrl'):
+                node_id, path = parse_view_url(orig_data[qid]['extra']['viewUrl'])
+                assert_equal(
+                    draft.registration_metadata[qid]['extra']['nodeId'],
+                    node_id
+                )
+    # check for properties on object type
+    for qid in EXISTING_OPTIONAL_UPLOADERS:
+        uid = [k for k in orig_data[qid]['value'].keys() if 'uploader' in k][0]
+        assert_equal(
+            orig_data[qid]['value'][uid].get('value'),
+            draft.registration_metadata[qid]['value']['uploader'].get('value', '')
+        )
+        if orig_data[qid]['value'][uid]['extra']:
+            assert_equal(
+                orig_data[qid]['value'][uid]['extra'].get('selectedFileName'),
+                draft.registration_metadata[qid]['value']['uploader'].get('extra', {}).get('selectedFileName'),
+            )
+            sqid = [k for k in orig_data[qid]['value'].keys() if not k == uid][0]
+            assert_equal(
+                orig_data[qid]['value'][sqid].get('value'),
+                draft.registration_metadata[qid]['value']['question'].get('value', '')
+            )
+            if orig_data[qid]['extra'].get('viewUrl'):
+                node_id, path = parse_view_url(orig_data[qid]['extra'].get('viewUrl'))
+                assert_equal(
+                    draft.registration_metadata[qid]['value'][sqid]['extra']['nodeId'],
+                    node_id
+                )
+    # check everything else
+    for qid in OTHER_QUESTIONS:
+        assert_equal(
+            orig_data[qid]['value'],
+            draft.registration_metadata[qid]['value']
+        )
+
+
 class TestMigratePreregMetadata(OsfTestCase):
 
     def setUp(self):
@@ -246,73 +305,39 @@ class TestMigratePreregMetadata(OsfTestCase):
 
     @mock.patch.object(osfstorage, 'OsfStorageFileNode', FakeFileNode)
     def test_migrate_draft_metadata(self):
-        orig_data = deepcopy(SCHEMA_DATA)
+        orig_data = SCHEMA_DATA
         migrate_draft_metadata(self.draft)
-        # check for uploader added
-        for qid in UPLOADERS_ADDED:
-            assert_equal(
-                orig_data[qid]['value'],
-                self.draft.registration_metadata[qid]['value']['question']['value']
-            )
-        # check for regular uploader type
-        for qid in EXISTING_UPLOADERS:
-            assert_equal(
-                orig_data[qid]['value'],
-                self.draft.registration_metadata[qid]['value']
-            )
-            assert_equal(
-                orig_data[qid]['extra'].get('selectedFileName'),
-                self.draft.registration_metadata[qid]['extra'].get('selectedFileName'),
-            )
-            assert_equal(
-                orig_data[qid]['extra']['viewUrl'],
-                self.draft.registration_metadata[qid]['extra']['viewUrl'],
-            )
-            if qid == 'q26':
-                assert_equal(
-                    self.draft.registration_metadata[qid]['extra']['nodeId'],
-                    NODE_ID
-                )
-                assert_equal(
-                    self.draft.registration_metadata[qid]['extra']['sha256'],
-                    FILE_ONE['sha256']
-                )
-                assert_equal(
-                    self.draft.registration_metadata[qid]['extra']['selectedFileName'],
-                    FILE_ONE['name']
-                )
-        # check for properties on object type
-        for qid in EXISTING_OPTIONAL_UPLOADERS:
-            uid = [k for k in orig_data[qid]['value'].keys() if 'uploader' in k][0]
-            assert_equal(
-                orig_data[qid]['value'][uid].get('value'),
-                self.draft.registration_metadata[qid]['value']['uploader'].get('value', '')
-            )
-            assert_equal(
-                orig_data[qid]['value'][uid]['extra'].get('selectedFileName'),
-                self.draft.registration_metadata[qid]['value']['uploader'].get('extra', {}).get('selectedFileName'),
-            )
-            if qid == 'q7':
-                assert_equal(
-                    self.draft.registration_metadata[qid]['value']['uploader']['extra']['nodeId'],
-                    NODE_ID
-                )
-                assert_equal(
-                    self.draft.registration_metadata[qid]['value']['uploader']['extra']['sha256'],
-                    FILE_TWO['sha256']
-                )
-                assert_equal(
-                    self.draft.registration_metadata[qid]['value']['uploader']['extra']['selectedFileName'],
-                    FILE_TWO['name']
-                )
-                assert_equal(
-                    orig_data[qid]['value'][uid]['extra']['viewUrl'],
-                    self.draft.registration_metadata[qid]['value']['uploader']['extra']['viewUrl']
-                )
 
-        # check everything else
-        for qid in OTHER_QUESTIONS:
-            assert_equal(
-                orig_data[qid]['value'],
-                self.draft.registration_metadata[qid]['value']
-            )
+        check_migration(orig_data, self.draft)
+
+        # check for regular uploader type
+        assert_equal(
+            self.draft.registration_metadata['q26']['extra']['nodeId'],
+            NODE_ID
+        )
+        assert_equal(
+            self.draft.registration_metadata['q26']['extra']['sha256'],
+            FILE_ONE['sha256']
+        )
+        assert_equal(
+            self.draft.registration_metadata['q26']['extra']['selectedFileName'],
+            FILE_ONE['name']
+        )
+        # check for properties on object type
+        uid = [k for k in orig_data['q7']['value'].keys() if 'uploader' in k][0]
+        assert_equal(
+            self.draft.registration_metadata['q7']['value']['uploader']['extra']['nodeId'],
+            NODE_ID
+        )
+        assert_equal(
+            self.draft.registration_metadata['q7']['value']['uploader']['extra']['sha256'],
+            FILE_TWO['sha256']
+        )
+        assert_equal(
+            self.draft.registration_metadata['q7']['value']['uploader']['extra']['selectedFileName'],
+            FILE_TWO['name']
+        )
+        assert_equal(
+            orig_data['q7']['value'][uid]['extra']['viewUrl'],
+            self.draft.registration_metadata['q7']['value']['uploader']['extra']['viewUrl']
+        )

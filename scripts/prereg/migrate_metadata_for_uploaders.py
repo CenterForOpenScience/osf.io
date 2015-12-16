@@ -9,6 +9,7 @@ from copy import deepcopy
 
 from framework.transactions.context import TokuTransaction
 
+from website.app import init_app
 from website.models import (
     MetaSchema,
     DraftRegistration,
@@ -45,8 +46,12 @@ def parse_view_url(view_url):
         items = match.groupdict()
         return items['node_id'], items['path']
 
-def migrate_draft_metadata(draft):
+def migrate_draft_metadata(draft, test=False):
     for question in PREREG_QUESTIONS:
+        orig_data = None
+        if test:
+            orig_data = deepcopy(draft.registration_metadata)
+
         qid = question['qid']
         qtype = question['type']
         metadata_value = deepcopy(draft.registration_metadata.get(qid, {}))
@@ -84,6 +89,7 @@ def migrate_draft_metadata(draft):
                 })
                 continue
             for prop in question['properties']:
+                old_value = deepcopy(draft.registration_metadata[qid])
                 if prop['type'] == 'osf-upload':
                     value = metadata_value.get('value', {})
                     if not value:
@@ -93,7 +99,6 @@ def migrate_draft_metadata(draft):
                     except IndexError:
                         pass  # TODO
                     extra = uploader.get('extra')
-                    old_value = deepcopy(draft.registration_metadata[qid])
                     if not extra:
                         del old_value['value'][uid]
                         old_value['value']['uploader'] = {}
@@ -108,20 +113,31 @@ def migrate_draft_metadata(draft):
                             'selectedFileName': file_name,
                             'nodeId': node_id
                         })
-                    draft.update_metadata(
-                        {
-                            qid: old_value
-                        }
-                    )
+                else:
+                    value = metadata_value.get('value', {})
+                    # we can assume all prereg sumbissions have at most 2 properties
+                    sqid, question = [(k, v) for k, v in value.items() if 'uploader' not in k][0]
+                    if not sqid == 'question':
+                        old_value['value']['question'] = question
+                        del old_value['value'][sqid]
+                draft.update_metadata(
+                    {
+                        qid: old_value
+                    }
+                )
+    if test:
+        from scripts.tests.test_migrate_metadata_for_uploaders import check_migration  # noqa
+        check_migration(orig_data, draft)
+
     draft.save()
 
-def main(dry_run=False):
+def main(dry_run=False, test=False):
     with TokuTransaction():
         prereg_drafts = DraftRegistration.find(
             Q('registration_schema', 'eq', PREREG_SCHEMA)
         )
         for draft in prereg_drafts:
-            migrate_draft_metadata(draft)
+            migrate_draft_metadata(draft, test)
         if dry_run:
             raise RuntimeError("Dry run, rolling back transaction")
 
@@ -129,4 +145,5 @@ if __name__ == '__main__':
     import sys
     init_app(set_backends=True, routes=False)
     dry = 'dry' in sys.argv
-    main(dry)
+    test = 'test' in sys.argv
+    main(dry, test)
