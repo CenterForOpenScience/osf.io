@@ -326,9 +326,9 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             else:
                 skipped.append({'id': resource._id, 'type': object_type})
 
-        if is_truthy(self.request.query_params.get('skip_uneditable', False)) and skipped:
-            self.perform_bulk_destroy(allowed)
-            return Response(status=status.HTTP_200_OK, data={'meta': {'errors': skipped}})
+        if is_truthy(self.request.query_params.get('skip_uneditable', False)):
+            return {'skipped': skipped, 'allowed': allowed}
+        return None
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
