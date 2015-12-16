@@ -33,9 +33,7 @@
                             <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                         % endif
 
-                        % if include_wiki_settings:
-                            <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
-                        % endif
+                        <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
 
                         % if 'admin' in user['permissions']:
                             <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
@@ -132,15 +130,14 @@
                         <form id="selectAddonsForm">
 
                             % for category in addon_categories:
-
                                 <%
-                                    addons = [
-                                        addon
-                                        for addon in addons_available
-                                        if category in addon.categories
-                                    ]
+                                    addons = []
+                                    for addon in addons_available:
+                                        if category in addon.categories and addon.short_name != 'wiki':
+                                            addons.append(addon)
+                                        elif addon.short_name == 'wiki':
+                                            wiki = addon
                                 %>
-
                                 % if addons:
                                     <h3>${category.capitalize()}</h3>
 
@@ -203,35 +200,54 @@
 
         % endif  ## End Select Addons
 
-        % if include_wiki_settings:  ## Begin Configure Wiki
+        % if not node['is_registration']:
 
-            % if not node['is_registration']:
+            <div class="panel panel-default">
+                <span id="configureWikiAnchor" class="anchor"></span>
 
-                <div class="panel panel-default">
-                    <span id="configureWikiAnchor" class="anchor"></span>
-
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Wiki</h3>
-                    </div>
-                    <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These settings control who can edit your wiki. To make a wiki editable by all OSF users, make your project/component public.</p>
-                    </div>
-                    <form id="wikiSettings" class="osf-treebeard-minimal">
-                        <div id="wgrid">
-                            <div class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-lg"></div>
-                                <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
-                            </div>
-                        </div>
-                        <div class="help-block" style="padding-left: 15px">
-                            <p id="configureWikiMessage"></p>
-                        </div>
-                    </form>
+                <div class="panel-heading clearfix">
+                    <h3 class="panel-title">Configure Wiki</h3>
                 </div>
+                <div class="panel-body">
+                    %if wiki:
+                        <form id="selectWikiForm">
+                            <h3>Enable Wiki</h3>
 
-            %endif
-
-        % endif ## End Configure Wiki
+                            <div>
+                                <label>
+                                    <input
+                                            type="checkbox"
+                                            name="${wiki.short_name}"
+                                            class="wiki-select"
+                                        ${'checked' if wiki.short_name in addons_enabled else ''}
+                                        ${'disabled' if (node['is_registration'] or bool(wiki.added_mandatory)) else ''}
+                                    />
+                                    ${wiki.full_name}
+                                </label>
+                            </div>
+                            <div class="wiki-settings-message text-success" style="padding-top: 10px;"></div>
+                            <br>
+                        </form>
+                    %endif
+                    % if include_wiki_settings:
+                        <div class="help-block" style="padding-left: 15px">
+                            <p class="text-info">These settings control who can edit your wiki. To make a wiki editable by all OSF users, make your project/component public.</p>
+                        </div>
+                        <form id="wikiSettings" class="osf-treebeard-minimal">
+                            <div id="wgrid">
+                                <div class="spinner-loading-wrapper">
+                                    <div class="logo-spin logo-lg"></div>
+                                    <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
+                                </div>
+                            </div>
+                            <div class="help-block" style="padding-left: 15px">
+                                <p id="configureWikiMessage"></p>
+                            </div>
+                        </form>
+                    % endif
+                </div>
+            </div>
+        %endif
 
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting
 

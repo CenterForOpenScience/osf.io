@@ -252,5 +252,57 @@ $(document).ready(function() {
             }
         }
     });
+    $('.wiki-select').on('change', function() {
+        var that = this,
+            $that = $(that);
+        var wikiEnabled = $that.is(':checked');
+        var wikiWarning = wikiEnabled ? 'Are you sure you want to enable the Wiki?' : 'Are you sure you want to disable the Wiki?';
+        var wikiTitle = wikiEnabled ? 'Enable Wiki' : 'Disable Wiki';
+        var wikiUpdateMessage = $('#selectWikiForm').find('.wiki-settings-message');
+
+        function submit(wikiEnabled) {
+            $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: wikiEnabled}
+            ).done(function(response) {
+                if (wikiEnabled) {
+                    wikiUpdateMessage.text('Wiki Enabled');
+                }
+                else {
+                    wikiUpdateMessage.text('Wiki Disabled');
+                }
+                if ($osf.isSafari()) {
+                    //Safari can't update jquery style change before reloading. So delay is applied here
+                    setTimeout(function(){window.location.reload();}, 100);
+                } else {
+                    window.location.reload();
+                }
+            }).fail(function(xhr, status, error) {
+                $osf.growl('Error', 'Unable to update wiki');
+                Raven.captureMessage('Could not update wiki.', {
+                    url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
+                });
+            });
+        }
+
+        bootbox.confirm({
+            title: wikiTitle,
+            message: wikiWarning,
+            callback: function(confirmed) {
+                if (confirmed) {
+                    $(that).attr('checked', wikiEnabled);
+                    submit(wikiEnabled);
+                }
+                else {
+                    $(that).attr('checked', !wikiEnabled);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Confirm'
+                }
+            }
+        });
+
+    });
+
 
 });
