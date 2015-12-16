@@ -240,7 +240,7 @@ class ApiAppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
     """
     def setUp(self):
-        super(DjangoAppTestCase, self).setUp()
+        super(ApiAppTestCase, self).setUp()
         self.app = TestAppJSONAPI(api_django_app)
 
 
