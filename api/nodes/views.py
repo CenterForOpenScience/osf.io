@@ -307,10 +307,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         """User must have admin permissions to delete nodes."""
         if is_truthy(self.request.query_params.get('skip_uneditable', False)):
             return any([node.has_permission(user, ADMIN) for node in resource_list])
-        for node in resource_list:
-            if not node.has_permission(user, ADMIN):
-                return False
-        return True
+        return all([node.has_permission(user, ADMIN) for node in resource_list])
 
     def bulk_destroy_skip_uneditable(self, resource_object_list, user, object_type):
         """
