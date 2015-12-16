@@ -433,6 +433,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+        'ASCERM2016': {
+        'name': 'American Society of Civil Engineers Rocky Mountain Student Conference 2016',
+        'info_url': 'http://luninuxos.com/asce/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+    },
 }
 
 
