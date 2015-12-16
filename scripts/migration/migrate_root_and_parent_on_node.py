@@ -1,6 +1,9 @@
 """
-This will add an ultimate_parent field to all nodes.
-Ultimate_parent will be the primary key of the originating parent node
+This will add a parent field and a parent_node field to all nodes.
+Root  will be the primary key of the originating parent node.
+Parent_node will be the first primary parent
+Done so that you can filter on both root nodes and parent nodes with a DB query
+
 """
 
 import sys
