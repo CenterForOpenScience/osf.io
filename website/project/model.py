@@ -282,16 +282,16 @@ class Comment(GuidStoredObject):
         removed_files = []
         for file_id in node.commented_files:
             file_obj = File.load(file_id)
-            exists = file_obj and file_obj.touch(request.headers.get('Authorization'))
-            if not exists:
-                removed_files.append(file_id)
+            if node.get_addon(file_obj.provider):
+                exists = file_obj and file_obj.touch(request.headers.get('Authorization'))
+                if exists:
+                    n_unread += cls.find_unread(user, node, page='files', root_id=file_id)
+                else:
+                    removed_files.append(file_id)
 
         for file_id in removed_files:
             del node.commented_files[file_id]
             node.save()
-
-        for file_id in node.commented_files:
-            n_unread += cls.find_unread(user, node, page='files', root_id=file_id)
 
         return n_unread
 
