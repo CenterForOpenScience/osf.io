@@ -9,3 +9,6 @@ class AddonError(Exception):
 
 class HookError(AddonError):
     pass
+
+class InvalidAuthError(AddonError):
+    pass
