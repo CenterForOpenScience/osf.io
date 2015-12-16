@@ -18,11 +18,13 @@ class DraftRegistrationForm(forms.Form):
         )
     )
     payment_sent = forms.BooleanField(
-        label="Payment sent"
+        label="Payment sent",
+        required=False
     )
     assignee = forms.ChoiceField(
         label="Assignee",
-        choices=PREREG_REVIEWERS
+        choices=PREREG_REVIEWERS,
+        required=False,
     )
 
     notes = forms.CharField(
@@ -31,8 +33,6 @@ class DraftRegistrationForm(forms.Form):
             attrs={
                 'class': 'prereg-form-notes'
             }
-        )
+        ),
+        required=False
     )
-
-
-DraftRegistrationFormset = forms.formset_factory(DraftRegistrationForm)

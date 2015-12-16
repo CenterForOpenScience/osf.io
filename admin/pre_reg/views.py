@@ -1,5 +1,6 @@
 import functools
 
+from django.http import HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect
@@ -130,7 +131,10 @@ def update_draft(request, draft_pk):
     draft = get_draft_or_error(draft_pk)
 
     if 'admin_settings' in data:
-        admin_settings = data['admin_settings']
+        form = DraftRegistrationForm(data=data['admin_settings'])
+        if not form.is_valid():
+            return HttpResponseBadRequest("Invalid form data")
+        admin_settings = form.cleaned_data
         draft.notes = admin_settings.get('notes', draft.notes)
         del admin_settings['notes']
         draft.flags = admin_settings
