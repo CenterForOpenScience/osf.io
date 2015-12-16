@@ -29,7 +29,7 @@ class DraftRegistrationForm(forms.Form):
         label="Notes",
         widget=forms.Textarea(
             attrs={
-                'class': 'prereg-form-notes'
+                'style': 'height: 50px;'
             }
         )
     )
