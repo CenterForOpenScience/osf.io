@@ -32,6 +32,7 @@ function CitationWidget(inputSelector, displaySelector) {
 
 CitationWidget.prototype.init = function() {
     var self = this;
+
     // Initialize select2 for selecting citation style
     self.$input.select2({
         allowClear: true,
@@ -59,9 +60,10 @@ CitationWidget.prototype.init = function() {
         var styleRequest = $.get(styleUrl);
         var citationRequest = $.get(ctx.node.urls.api + 'citation/');
         $.when(styleRequest, citationRequest).done(function(style, data) {
-            var citeproc = citations.makeCiteproc(style[0], data[0], 'text');
+            var citeproc = citations.makeCiteproc(style[0], data[0], 'html');
             var items = citeproc.makeBibliography()[1];
-            self.$citationElement.text(items[0]).slideDown();
+            /* the safety of this was discussed with JIRA ticket OSF-4889 */
+            self.$citationElement.html(items[0]).slideDown();
         }).fail(function(jqxhr, status, error) {
             $osf.growl(
                 'Citation render failed',
