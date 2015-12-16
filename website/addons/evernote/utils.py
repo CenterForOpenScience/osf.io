@@ -92,3 +92,14 @@ def notes_metadata(client, **input_kw):
             offset += len(note_meta.notes)
         else:
             more_nm = False
+
+def get_note(client, guid,
+            withContent=False,
+            withResourcesData=False,
+            withResourcesRecognition=False,
+            withResourcesAlternateData=False):
+
+    # https://dev.evernote.com/doc/reference/NoteStore.html#Fn_NoteStore_getNote
+    noteStore = client.get_note_store()
+    return noteStore.getNote(guid, withContent, withResourcesData,
+                                 withResourcesRecognition, withResourcesAlternateData)

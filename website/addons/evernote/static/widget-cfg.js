@@ -8,7 +8,7 @@ var EvernoteWidget = function(urls) {
 
     self = this;
 
-    console.log(urls);
+    self.urls = urls;
 
     self.notes = ko.observableArray();
     self.fetchNotes = $.getJSON.bind(null, urls.notes, function(notes) {
@@ -24,20 +24,37 @@ var EvernoteWidget = function(urls) {
  };
 
  EvernoteWidget.prototype.openEditDialog = function (note, event) {
-   $("#evernote-notedisplay")[0].value = note.title;
- }
+
+
+   // make ajax call to note to retrieve some basic info about note
+   // ultimately, rendered html
+
+   var note = $.getJSON(this.urls.note + note.guid +"/");
+
+   note.done(function(data) {
+     $("#evernote-notedisplay")[0].value = data.content;
+   });
+
+ };
 
 // Skip if widget is not correctly configured
 if ($('#evernoteWidget').length) {
   var settingsUrl = window.contextVars.node.urls.api + 'evernote/settings/';
 
-  $.getJSON( settingsUrl,  function( data ) {
-     console.log(data.result.urls.notes);
-     var urls = data.result.urls;
-     var ew = new EvernoteWidget(urls);
-     $osf.applyBindings(ew, '#evernoteWidget');
+  var settings = $.getJSON(settingsUrl);
 
-     // apply tooltip to all btn-evernote
-     $(".btn-evernote").tooltip()
+  settings.done(function(data) {
+
+    var urls = data.result.urls;
+    var ew = new EvernoteWidget(urls);
+    $osf.applyBindings(ew, '#evernoteWidget');
+
+    // apply tooltip to all btn-evernote
+    $(".btn-evernote").tooltip()
+
+  });
+
+  settings.fail(function(){
+    console.log(arguments);
   });
 }

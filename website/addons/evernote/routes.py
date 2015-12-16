@@ -75,6 +75,15 @@ api_routes = {
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/evernote/note/',
+                '/project/<pid>/evernote/note/<noteid>/',
+            ],
+            'get',
+            views.evernote_note,
+            json_renderer,
+        ),
 
 
 
