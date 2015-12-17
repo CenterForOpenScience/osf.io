@@ -12,6 +12,8 @@ import math
 import time
 
 from nose.tools import *  # noqa PEP8 asserts
+
+from framework.guid.signals import guid_stored_object_saved
 from tests.test_features import requires_search
 
 from modularodm import Q
@@ -1837,7 +1839,7 @@ class TestAddingContributorViews(OsfTestCase):
         with capture_signals() as mock_signals:
             deserialize_contributors(self.project, serialized,
                                      auth=Auth(self.creator))
-        assert_equal(mock_signals.signals_sent(), set([unreg_contributor_added]))
+        assert_equal(mock_signals.signals_sent(), set([unreg_contributor_added, guid_stored_object_saved]))
 
     def test_serialize_unregistered_with_record(self):
         name, email = fake.name(), fake.email()
@@ -3170,7 +3172,8 @@ class TestAuthViews(OsfTestCase):
                 }
             )
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
-                                                       auth.signals.unconfirmed_user_created]))
+                                                       auth.signals.unconfirmed_user_created,
+                                                       guid_stored_object_saved]))
         mock_send_confirm_email.assert_called()
 
     @mock.patch('framework.auth.views.send_confirm_email')
@@ -3186,7 +3189,8 @@ class TestAuthViews(OsfTestCase):
                 'register-password2': password
             })
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
-                                                       auth.signals.unconfirmed_user_created]))
+                                                       auth.signals.unconfirmed_user_created,
+                                                       guid_stored_object_saved]))
         mock_send_confirm_email.assert_called()
 
     def test_resend_confirmation_get(self):
@@ -4714,7 +4718,7 @@ class TestUserConfirmSignal(OsfTestCase):
             res = self.app.post(url, payload)
             assert_equal(res.status_code, 302)
 
-        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed, guid_stored_object_saved]))
 
     def test_confirm_user_signal_called_when_user_confirms_email(self):
         unconfirmed_user = UnconfirmedUserFactory()
@@ -4727,7 +4731,7 @@ class TestUserConfirmSignal(OsfTestCase):
             res = self.app.get(url)
             assert_equal(res.status_code, 302)
 
-        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed, guid_stored_object_saved]))
 
 if __name__ == '__main__':
     unittest.main()

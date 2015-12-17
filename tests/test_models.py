@@ -12,6 +12,7 @@ import random
 import string
 from dateutil import parser
 
+from framework.guid.signals import guid_stored_object_saved
 from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
@@ -970,7 +971,7 @@ class TestMergingUsers(OsfTestCase):
 
         with capture_signals() as mock_signals:
             self._merge_dupe()
-            assert_equal(mock_signals.signals_sent(), set([user_merged]))
+            assert_equal(mock_signals.signals_sent(), set([user_merged, guid_stored_object_saved]))
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api):
@@ -2407,7 +2408,7 @@ class TestProject(OsfTestCase):
             self.project.add_contributors(contributors=contributors, auth=self.auth)
             self.project.save()
             assert_in(user, self.project.contributors)
-            assert_equal(mock_signals.signals_sent(), set([contributor_added]))
+            assert_equal(mock_signals.signals_sent(), set([contributor_added, guid_stored_object_saved]))
 
     def test_add_unregistered_contributor(self):
         self.project.add_unregistered_contributor(

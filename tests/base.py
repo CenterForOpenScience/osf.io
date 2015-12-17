@@ -318,7 +318,7 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
     def setUp(self):
         super(ApiTestCase, self).setUp()
         settings.USE_EMAIL = False
-        
+
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):

@@ -13,12 +13,12 @@ class TestVarnish(object):
     local_python_base_url = 'http://localhost:8000/v2/'
 
     def setUp(self):
-        if not settings.RUN_VARNISH_IN_DEV:
+        if not settings.ENABLE_VARNISH:
             return
         self.authorization = HTTPBasicAuth('mocha@osf.io', 'password')
 
     def test_compare_python_responses_to_varnish_responses(self):
-        if not settings.RUN_VARNISH_IN_DEV:
+        if not settings.ENABLE_VARNISH:
             return
         querystrings = dict(
             nodes=[
@@ -181,7 +181,7 @@ class TestVarnish(object):
                     assert unicode(rel_key) not in embed_keys, 'Relationship mismatch: {}'.format(rel_key)
 
     def test_cache_invalidation(self):
-        if not settings.RUN_VARNISH_IN_DEV:
+        if not settings.ENABLE_VARNISH:
             return
         payload = dict(
             data=dict(

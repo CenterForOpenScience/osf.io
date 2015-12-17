@@ -1,9 +1,11 @@
 import urlparse
+from httplib import BadStatusLine
+
 import celery
 from celery.utils.log import get_task_logger
 import requests
 from django.conf import settings
-
+from requests.packages.urllib3.exceptions import ConnectionError
 
 from framework.tasks import app as celery_app
 from framework.tasks.utils import logged
@@ -21,22 +23,21 @@ def get_varnish_servers():
 @celery_app.task(base=VarnishTask, name='caching_tasks.ban_url')
 @logged('ban_url')
 def ban_url(url):
-    parsed_url = urlparse.urlparse(url)
+    if settings.ENABLE_VARNISH:
+        parsed_url = urlparse.urlparse(url)
 
-    for host in get_varnish_servers():
-        varnish_parsed_url = urlparse.urlparse(host)
-        ban_url = '{scheme}://{netloc}{path}.*'.format(
-            scheme=varnish_parsed_url.scheme,
-            netloc=varnish_parsed_url.netloc,
-            path=parsed_url.path
-        )
-        response = requests.request('BAN', ban_url, headers=dict(
-            Host=parsed_url.hostname
-        ))
-        if not response.ok:
-            logger.error('Banning {} failed with message {}'.format(
-                url,
-                response.text
+        for host in get_varnish_servers():
+            varnish_parsed_url = urlparse.urlparse(host)
+            ban_url = '{scheme}://{netloc}{path}.*'.format(
+                scheme=varnish_parsed_url.scheme,
+                netloc=varnish_parsed_url.netloc,
+                path=parsed_url.path
+            )
+            response = requests.request('BAN', ban_url, headers=dict(
+                Host=parsed_url.hostname
             ))
-        else:
-            logger.info('Banned {}'.format(url))
+            if not response.ok:
+                logger.error('Banning {} failed with message {}'.format(
+                    url,
+                    response.text
+                ))

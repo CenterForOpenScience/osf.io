@@ -40,7 +40,7 @@ def enqueue_task(signature):
     try:
         if signature not in g._celery_tasks:
             g._celery_tasks.append(signature)
-    except RuntimeError:
+    except (RuntimeError, AttributeError):
         signature()
 
 
