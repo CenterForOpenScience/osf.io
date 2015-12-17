@@ -32,6 +32,7 @@ class NodeSerializer(JSONAPISerializer):
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
     filterable_fields = frozenset([
+        'id',
         'title',
         'description',
         'public',

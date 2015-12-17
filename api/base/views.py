@@ -12,6 +12,7 @@ from .utils import absolute_reverse
 
 from .requests import EmbeddedRequest
 
+
 class JSONAPIBaseView(generics.GenericAPIView):
 
     def __init__(self, **kwargs):
@@ -139,6 +140,10 @@ def root(request, format=None):
     Boolean fields should be queried with `true` or `false`.
 
         /nodes/?filter[registered]=true
+
+    You can request multiple resources by filtering on id and placing comma-separated values in your query parameter.
+
+        /nodes/?filter[id]=aegu6,me23a
 
     ###Embedding
 
