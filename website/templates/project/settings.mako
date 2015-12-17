@@ -215,7 +215,6 @@
                             </div>
                             <div>
                                 <label>
-                                    <br>
                                     <input
                                             type="checkbox"
                                             name="${wiki.short_name}"
@@ -223,7 +222,7 @@
                                         ${'checked' if wiki.short_name in addons_enabled else ''}
                                         ${'disabled' if (node['is_registration'] or bool(wiki.added_mandatory)) else ''}
                                     />
-                                    Enable the wiki in your project.
+                                    Enable the wiki in <b>${node['title']}</b>.
                                 </label>
                             </div>
                             <div class="wiki-settings-message text-success" style="padding-top: 10px;"></div>
@@ -233,7 +232,11 @@
                     % if include_wiki_settings:
                         <h3>Configure</h3>
                         <div style="padding-left: 15px">
-                            <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, your project/component must be public.</p>
+                            %if  node['is_public']:
+                                <p class="text">Control who can edit <b>${node['title']}'s</b> wiki.</p>
+                            %else:
+                                <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
+                            %endif
                         </div>
                         <form id="wikiSettings" class="osf-treebeard-minimal">
                             <div id="wgrid">
