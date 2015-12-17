@@ -220,6 +220,7 @@
 #wmd-button-bar {
     float:left;
     margin: auto;
+    margin-bottom: 10px;
     -webkit-box-flex: 0 0 auto;
     -webkit-flex: 0 0 auto;
     -ms-flex: 0 0 auto;
@@ -281,9 +282,8 @@
     border: 1px solid #999999;
     background-color: #F5F5F5;
 }
-#auto {
+#wmd-autocom-toggle {
     margin-left:5px;
-    margin-bottom: 10px;
     list-style: none;
     display: inline-block;
     float: left;
