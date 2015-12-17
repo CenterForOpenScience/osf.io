@@ -43,11 +43,11 @@ def get_file_sha256(node_id, path):
 
 def parse_view_url(view_url):
     match = re.search(
-        r'/project/(?P<node_id>\w+)/files/osfstorage/(?P<path>\w+)$',
+        r'/project/(?P<node_id>\w+)/files/osfstorage/(?P<path>\w+)/?$',
         view_url
     )
     if not match:
-        raise RuntimeError
+        raise RuntimeError('Invalid view URL: {0}'.format(view_url))
     else:
         items = match.groupdict()
         return items['node_id'], items['path']
