@@ -291,16 +291,22 @@ var Question = function(questionSchema, data) {
  *
  * @param {function}: save: save function for the current registrationDraft
  **/
-Question.prototype.addComment = function(save) {
+Question.prototype.addComment = function(save, page, event) {
     var self = this;
 
     var comment = new Comment({
         value: self.nextComment()
     });
     comment.seenBy.push($osf.currentUser().id);
-    self.comments.push(comment);
-    self.nextComment('');
-    save();
+
+    var $comments = $(event.target).closest('.registration-editor-comments');
+    $osf.block('Saving...', $comments);
+    save()
+        .always($osf.unblock.bind(null, $comments))
+        .then(function () {
+            self.comments.push(comment);
+            self.nextComment('');
+        });
 };
 /**
  * Shows/hides the Question example
@@ -768,6 +774,9 @@ var RegistrationEditor = function(urls, editorId, preview) {
             question.value.subscribe(function() {
                 self.dirtyCount(self.dirtyCount() + 1);
             });
+        });
+        page.comments.subscribe(function() {
+            self.dirtyCount(self.dirtyCount() + 1);
         });
         page.viewComments();
     });

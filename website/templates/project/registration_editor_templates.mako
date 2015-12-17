@@ -129,6 +129,7 @@
 
 <!-- Commentable -->
 <script type="text/html" id="commentable">
+  <div class="registration-editor-comments">
     <h4> Comments </h4>
     <ul class="list-group" id="commentList" data-bind="foreach: {data: comments, as: 'comment'}">
         <li class="list-group-item">
@@ -179,9 +180,13 @@
                         valueUpdate: 'keyup'" />
       <span class="input-group-btn">
         <button class="btn btn-primary"
-                data-bind="click: currentQuestion.addComment.bind(currentQuestion, $root.save.bind($root)),
+                data-bind="click: currentQuestion.addComment.bind(
+                             currentQuestion, 
+                             $root.save.bind($root)
+                           ),
                            enable: currentQuestion.allowAddNext">Add</button>
       </span>
     </div>
+  </div>
 </script>
 <%include file="registration_editor_extensions.mako" />
