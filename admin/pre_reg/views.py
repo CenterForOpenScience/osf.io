@@ -1,5 +1,6 @@
 import functools
 import operator
+from copy import deepcopy
 
 from django.http import HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -40,7 +41,8 @@ def get_prereg_drafts(user=None, filters=tuple()):
         # As a followup to this, we need to make sure this applies to approval/rejection/commenting endpoints
         # query = query & Q('_metaschema_flags.assignee', 'eq', user._id)
     return sorted(
-        DraftRegistration.find(query, key=operator.attrgetter('approval.initiation_date'))
+        DraftRegistration.find(query),
+        key=operator.attrgetter('approval.initiation_date')
     )
 
 def is_in_prereg_group(user):
@@ -145,7 +147,7 @@ def update_draft(request, draft_pk):
         draft.save()
     else:
         schema_data = data.get('schema_data', {})
-        data = draft.registration_metadata
+        data = deepcopy(draft.registration_metadata)
         for key, value in data.items():
             data[key]['comments'] = schema_data.get(key, {}).get('comments', [])
         try:
