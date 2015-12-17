@@ -1654,6 +1654,8 @@
                 li.XShift = XShift;
                 var label = document.createElement("label");
                 label.style.fontWeight = "normal"; 
+                label.style.position =  "relative"; 
+                label.style.top = "-5px";
                 var cb = document.createElement("input");
                 cb.id = cb_id;
                 cb.type = "checkbox";
