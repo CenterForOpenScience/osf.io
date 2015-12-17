@@ -311,11 +311,12 @@
                             <!-- /ko -->
                         </div>
                     </div>
-                    % if 'admin' in user['permissions'] and not node['is_registration']:
-                        <!-- ko ifnot: editing() -->
-                        <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default btn-sm m-t-md"><i class="fa fa-plus"></i> Add Citation</button>
-                        <!-- /ko -->
-                    % endif
+                    ## Disable custom citations for now
+                    ## % if 'admin' in user['permissions'] and not node['is_registration']:
+                    ##     <!-- ko ifnot: editing() -->
+                    ##     <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default btn-sm m-t-md"><i class="fa fa-plus"></i> Add Citation</button>
+                    ##     <!-- /ko -->
+                    ## % endif
                 </div>
                 <p><strong>More</strong></p>
                 <div id="citationStylePanel" class="citation-picker">

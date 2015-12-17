@@ -15,7 +15,6 @@ Changelog
 
 - UI updates to Contributors page. Adds filtering and responsiveness.
 - UI updates to Employment and Education profile sections
-- Add custom citations to projects.
 - Multiple Dropbox accounts can be associated with a user account.
 - Prereg beta: Many bug fixes and UI improvements, including author import.
 - APIv2: Bulk extension support for collections endpoints.
