@@ -486,7 +486,7 @@ class CommentFactory(ModularOdmFactory):
             target=target,
             *args, **kwargs
         )
-        if isinstance(target, cls):
+        if isinstance(target, target_class):
             instance.root_target = target.root_target
         else:
             instance.root_target = target
@@ -503,7 +503,7 @@ class CommentFactory(ModularOdmFactory):
             target=target,
             *args, **kwargs
         )
-        if isinstance(target, cls):
+        if isinstance(target, target_class):
             instance.root_target = target.root_target
         else:
             instance.root_target = target

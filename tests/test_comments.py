@@ -201,7 +201,7 @@ class TestCommentModel(OsfTestCase):
     def test_create_sends_comment_added_signal(self):
         with capture_signals() as mock_signals:
             comment = Comment.create(
-                auth=self.auth,
+                auth=self.consolidated_auth,
                 user=self.comment.user,
                 node=self.comment.node,
                 target=self.comment.target,
@@ -346,7 +346,8 @@ class TestCommentModel(OsfTestCase):
         comment = CommentFactory(node=project, user=project.creator)
 
         url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=user.auth)
+        payload = {'page': 'node', 'rootId': project._id}
+        res = self.app.put_json(url, payload, auth=user.auth)
         user.reload()
         n_unread = Comment.find_unread(user=user, node=project)
         assert_equal(n_unread, 0)

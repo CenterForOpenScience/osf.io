@@ -241,7 +241,6 @@ class Comment(GuidStoredObject):
         default_timestamp = datetime.datetime(1970, 1, 1, 12, 0, 0)
         n_unread = 0
         if node.is_contributor(user):
-            view_timestamp = user.get_node_comment_timestamps(node, page)
             if not page:
                 return cls.n_unread_node_comments(user, node) + cls.n_unread_file_comments(user, node)
             elif page == 'node':
@@ -250,6 +249,7 @@ class Comment(GuidStoredObject):
                 if root_id is None:
                     return cls.n_unread_file_comments(user, node)
                 else:
+                    view_timestamp = user.get_node_comment_timestamps(node, page)
                     if isinstance(view_timestamp, dict):
                         view_timestamp = view_timestamp.get(root_id, default_timestamp)
                     root_target = File.load(root_id)
@@ -274,7 +274,7 @@ class Comment(GuidStoredObject):
                             (Q('date_created', 'gt', view_timestamp) |
                             Q('date_modified', 'gt', view_timestamp)) &
                             Q('is_deleted', 'eq', False) &
-                            Q('page', 'eq', 'node')).count()
+                            Q('root_target', 'eq', node)).count()
 
     @classmethod
     def n_unread_file_comments(cls, user, node):
