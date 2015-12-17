@@ -71,12 +71,16 @@
             ## TODO: Abstract me
             username: ${ user['username'] | sjson, n },
             id: ${ user_id | sjson, n },
-            urls: {api: userApiUrl},
+            urls: {
+                api: userApiUrl,
+                profile: ${user_url | sjson, n}
+            },
             isContributor: ${ user.get('is_contributor', False) | sjson, n },
             fullname: ${ user['fullname'] | sjson, n },
             isAdmin: ${ user.get('is_admin', False) | sjson, n},
             canComment: ${ user['can_comment'] | sjson, n},
-            canEdit: ${ user['can_edit'] | sjson, n}
+            canEdit: ${ user['can_edit'] | sjson, n},
+            gravatarUrl: ${user_gravatar | sjson, n}
         },
         node: {
             ## TODO: Abstract me
