@@ -4103,8 +4103,7 @@ class DraftRegistrationApproval(Sanction):
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
                 user=user,
-                draft_url=draft.absolute_url,
-                mimetype='html'
+                draft_url=draft.absolute_url
             )
         else:
             raise NotImplementedError(
