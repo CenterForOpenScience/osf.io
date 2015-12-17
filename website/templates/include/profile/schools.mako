@@ -154,7 +154,7 @@
                     <!-- ko ifnot: expandable() -->
                         <div class="panel panel-default">
                             <div class="panel-heading no-bottom-border">
-                                <div class="header-content">
+                                <div>
                                     <h5>{{ institution }}</h5>
                                 </div>
                             </div>
