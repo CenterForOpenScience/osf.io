@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 import datetime as dt
-import mock
 from nose.tools import *  # noqa PEP8 asserts
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
@@ -9,7 +8,6 @@ from framework.exceptions import PermissionsError
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.project.model import Comment, NodeLog
 from website.project.signals import comment_added
-from website.project.views.node import _view_project
 
 
 from tests.base import (
@@ -27,61 +25,15 @@ class TestCommentViews(OsfTestCase):
     def setUp(self):
         super(TestCommentViews, self).setUp()
         self.project = ProjectFactory(is_public=True)
-        self.consolidated_auth = Auth(user=self.project.creator)
-        self.non_contributor = AuthUserFactory()
         self.user = AuthUserFactory()
         self.project.add_contributor(self.user)
         self.project.save()
         self.user.save()
 
-    def _configure_project(self, project, comment_level):
-
-        project.comment_level = comment_level
-        project.save()
-
-    def _add_comment(self, project, content=None, **kwargs):
-
-        content = content if content is not None else 'hammer to fall'
-        url = project.api_url + 'comment/'
-        return self.app.post_json(
-            url,
-            {
-                'content': content,
-                'isPublic': 'public',
-                'page': 'node',
-                'target': project._id
-            },
-            **kwargs
-        )
-
-    @mock.patch('website.project.views.comment.get_root_target_title')
-    def _add_comment_files(self, project, mock_get_title, content=None, path=None, provider='osfstorage', **kwargs):
-        project.add_addon(provider, auth=Auth(self.user))
-        path = path if path is not None else 'mudhouse_coffee.txt'
-        addon = project.get_addon(provider)
-        if provider == 'dropbox':
-            addon.folder = '/'
-        guid, _ = addon.find_or_create_file_guid('/' + path)
-        content = content if content is not None else 'large hot mocha'
-        url = project.api_url + 'comment/'
-        mock_get_title.return_value = 'files'
-        return self.app.post_json(
-            url,
-            {
-                'content': content,
-                'isPublic': 'public',
-                'page': 'files',
-                'target': guid._id
-            },
-            **kwargs
-        )
-
-    def test_view_comments_updates_user_comments_view_timestamp(self):
-        CommentFactory(node=self.project, page='node')
-
+    def test_view_project_comments_updates_user_comments_view_timestamp(self):
         url = self.project.api_url_for('update_comments_timestamp')
         res = self.app.put_json(url, {
-            'page':'node',
+            'page': 'node',
             'rootId': self.project._id
         }, auth=self.user.auth)
         self.user.reload()
@@ -91,89 +43,39 @@ class TestCommentViews(OsfTestCase):
         assert_datetime_equal(user_timestamp, view_timestamp)
 
     def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
+        non_contributor = AuthUserFactory()
         url = self.project.api_url_for('update_comments_timestamp')
         res = self.app.put_json(url, {
-            'page':'node',
+            'page': 'node',
             'rootId': self.project._id
         }, auth=self.user.auth)
 
-        self.non_contributor.reload()
-        assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
+        non_contributor.reload()
+        assert_not_in(self.project._id, non_contributor.comments_viewed_timestamp)
 
     def test_view_comments_updates_user_comments_view_timestamp_files(self):
-        path = 'skittles.txt'
-        self._add_comment_files(self.project, content='Red orange yellow skittles', path=path, provider='osfstorage', auth=self.project.creator.auth)
-        addon = self.project.get_addon('osfstorage')
-        guid, _ = addon.find_or_create_file_guid('/' + path)
+        osfstorage = self.project.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        test_file = root_node.append_file('test_file')
+        test_file.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
 
         url = self.project.api_url_for('update_comments_timestamp')
         res = self.app.put_json(url, {
             'page': 'files',
-            'rootId': guid._id
+            'rootId': test_file._id
         }, auth=self.user.auth)
         self.user.reload()
 
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['files'][guid._id]
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]['files'][test_file._id]
         view_timestamp = dt.datetime.utcnow()
         assert_datetime_equal(user_timestamp, view_timestamp)
-
-    def test_n_unread_comments_overview(self):
-        self._add_comment(self.project, auth=self.project.creator.auth)
-        self.project.reload()
-        res = _view_project(self.project, auth=Auth(user=self.user))
-        assert_equal(res['user']['unread_comments']['node'], 1)
-
-    @mock.patch('website.project.views.node.check_file_exists')
-    def test_n_unread_comments_files(self, mock_check_file_exists):
-        mock_check_file_exists.return_value = True, 1
-        self._add_comment_files(self.project, auth=self.project.creator.auth)
-        self.project.reload()
-        self._add_comment_files(
-            self.project,
-            content=None,
-            path=None,
-            provider='github',
-            auth=self.project.creator.auth
-        )
-        self.project.reload()
-        self._add_comment_files(
-            self.project,
-            content='I failed my test',
-            path='transcript.pdf',
-            provider='dropbox',
-            auth=self.project.creator.auth
-        )
-        self.project.reload()
-        res = _view_project(self.project, auth=Auth(user=self.user))
-        assert_equal(res['user']['unread_comments']['files'], 3)
-
-    @mock.patch('website.project.views.node.check_file_exists')
-    def test_n_unread_comments_total(self, mock_check_file_exists):
-        mock_check_file_exists.return_value = True, 1
-        self._add_comment_files(self.project, auth=self.project.creator.auth)
-        self.project.reload()
-        self._add_comment(self.project, auth=self.project.creator.auth)
-        self._add_comment_files(
-            self.project,
-            content=None,
-            path=None,
-            provider='github',
-            auth=self.project.creator.auth
-        )
-        self.project.reload()
-
-        self._add_comment_files(
-            self.project,
-            content='I failed my test',
-            path='transcript.pdf',
-            provider='dropbox',
-            auth=self.project.creator.auth
-        )
-        self.project.reload()
-
-        res = _view_project(self.project, auth=Auth(user=self.user))['user']['unread_comments']
-        assert_equal(res['node'], 1)
-        assert_equal(res['files'], 3)
 
 
 class TestCommentModel(OsfTestCase):

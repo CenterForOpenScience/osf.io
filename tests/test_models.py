@@ -30,7 +30,7 @@ from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
-from website.project.signals import contributor_added, comment_added
+from website.project.signals import contributor_added
 from website.project.model import (
     Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo, MetaSchema, DraftRegistration
