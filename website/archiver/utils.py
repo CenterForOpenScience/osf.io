@@ -26,6 +26,7 @@ def send_archiver_size_exceeded_mails(src, user, stat_result):
         mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
         user=user,
         src=src,
+        can_change_preferences=False,
         mimetype='html',
     )
 
@@ -44,6 +45,7 @@ def send_archiver_copy_error_mails(src, user, results):
         user=user,
         src=src,
         results=results,
+        can_change_preferences=False,
         mimetype='html',
     )
 
@@ -61,6 +63,7 @@ def send_archiver_file_not_found_mails(src, user, results):
         user=user,
         src=src,
         results=results,
+        can_change_preferences=False,
         mimetype='html',
     )
 
@@ -78,6 +81,7 @@ def send_archiver_uncaught_error_mails(src, user, results):
         user=user,
         src=src,
         results=results,
+        can_change_preferences=False,
         mimetype='html',
     )
 
