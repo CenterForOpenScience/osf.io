@@ -5,6 +5,7 @@ def create_test_file(node, user):
     osfstorage = node.get_addon('osfstorage')
     root_node = osfstorage.get_root()
     test_file = root_node.append_file('test_file')
+    test_file.get_guid(create=True)
     test_file.create_version(user, {
         'object': '06d80e',
         'service': 'cloud',

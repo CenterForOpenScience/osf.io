@@ -1,7 +1,7 @@
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
-from api_tests.utils import create_test_file
+from api_tests import utils as test_utils
 from tests.base import ApiTestCase
 from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory
 
@@ -237,7 +237,7 @@ class TestFileCommentReportDetailView(ApiTestCase):
     def _set_up_private_project_file_comment_reports(self):
         self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
-        self.file = create_test_file(self.private_project, self.user)
+        self.file = test_utils.create_test_file(self.private_project, self.user)
         self.comment = CommentFactory.build(node=self.private_project, target=self.file, user=self.contributor)
         self.comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
         self.comment.save()
@@ -246,7 +246,7 @@ class TestFileCommentReportDetailView(ApiTestCase):
     def _set_up_public_project_file_comment_reports(self):
         self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
-        self.public_file = create_test_file(self.public_project, self.user)
+        self.public_file = test_utils.create_test_file(self.public_project, self.user)
         self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_file, user=self.contributor)
         self.public_comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
         self.public_comment.save()
@@ -297,7 +297,7 @@ class TestFileCommentReportDetailView(ApiTestCase):
 
     def test_public_node_logged_in_non_contributor_reporter_can_view_file_comment_report_detail(self):
         project = ProjectFactory(is_public=True, comment_level='public')
-        test_file = create_test_file(project, self.user)
+        test_file = test_utils.create_test_file(project, self.user)
         comment = CommentFactory.build(node=project, target=test_file, user=project.creator)
         comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()
@@ -352,7 +352,7 @@ class TestFileCommentReportDetailView(ApiTestCase):
 
     def test_public_node_logged_in_non_contributor_reporter_can_update_report_detail(self):
         project = ProjectFactory(is_public=True, comment_level='public')
-        test_file = create_test_file(project, self.user)
+        test_file = test_utils.create_test_file(project, self.user)
         comment = CommentFactory.build(node=project, target=test_file, user=project.creator)
         comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()
@@ -422,7 +422,7 @@ class TestFileCommentReportDetailView(ApiTestCase):
 
     def test_public_node_logged_in_non_contributor_reporter_can_delete_report_detail(self):
         project = ProjectFactory(is_public=True, comment_level='public')
-        test_file = create_test_file(project, self.user)
+        test_file = test_utils.create_test_file(project, self.user)
         comment = CommentFactory.build(node=project, target=test_file, user=project.creator)
         comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()

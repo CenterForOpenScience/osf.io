@@ -36,7 +36,7 @@ class CommentSerializer(JSONAPISerializer):
     content = AuthorizedCharField(source='get_content', max_length=osf_settings.COMMENT_MAXLENGTH)
     page = ser.CharField(read_only=True)
 
-    target = TargetField(link_type='related', meta={'type': 'get_target_type', 'title': 'get_target_title'})
+    target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
     node = RelationshipField(related_view='nodes:node-detail', related_view_kwargs={'node_id': '<node._id>'})
     replies = RelationshipField(self_view='nodes:node-comments', self_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<pk>'})
@@ -100,10 +100,6 @@ class CommentSerializer(JSONAPISerializer):
                 detail='Invalid comment target type.'
             )
 
-    def get_target_title(self, obj):
-        return obj.name if isinstance(obj, StoredFileNode) else ''
-
-
 class CommentCreateSerializer(CommentSerializer):
 
     target_type = ser.SerializerMethodField(method_name='get_validated_target_type')
@@ -154,7 +150,7 @@ class CommentCreateSerializer(CommentSerializer):
         validated_data['content'] = content.strip()
         if not validated_data['content']:
             raise ValidationError('Comment cannot be empty.')
-        
+
         if node and node.can_comment(auth):
             comment = Comment.create(auth=auth, **validated_data)
         else:
