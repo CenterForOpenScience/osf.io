@@ -736,12 +736,13 @@ var Information = {
                             m('p', [
                                 m('span', item.data.attributes.description)
                             ]),
+                            item.data.attributes.tags.length > 0 ?
                             m('p.m-t-md', [
                                 m('h5', 'Tags'),
                                 item.data.attributes.tags.map(function(tag){
                                     return m('span.tag', tag);
                                 })
-                            ]),
+                            ]) : '',
                             m('p.m-t-md', [
                                 m('h5', 'Jump to Page'),
                                 m('a.p-xs', { href : item.data.links.html + 'wiki/home'}, 'Wiki'),
