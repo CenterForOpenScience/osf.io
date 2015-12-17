@@ -5,7 +5,6 @@ import os
 import re
 import logging
 import pymongo
-import requests
 import datetime
 from dateutil.parser import parse as parse_date
 import urlparse
@@ -292,11 +291,11 @@ class Comment(GuidStoredObject):
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)
         log_dict = {
-                    'project': comment.node.parent_id,
-                    'node': comment.node._id,
-                    'user': comment.user._id,
-                    'comment': comment._id,
-                    }
+            'project': comment.node.parent_id,
+            'node': comment.node._id,
+            'user': comment.user._id,
+            'comment': comment._id,
+        }
         if isinstance(comment.target, Comment):
             comment.root_target = comment.target.root_target
         else:
@@ -327,11 +326,11 @@ class Comment(GuidStoredObject):
 
     def edit(self, content, auth, save=False):
         log_dict = {
-                    'project': self.node.parent_id,
-                    'node': self.node._id,
-                    'user': self.user._id,
-                    'comment': self._id,
-                    }
+            'project': self.node.parent_id,
+            'node': self.node._id,
+            'user': self.user._id,
+            'comment': self._id,
+        }
         if isinstance(self.root_target, StoredFileNode):
             log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
         self.content = content
@@ -348,11 +347,11 @@ class Comment(GuidStoredObject):
 
     def delete(self, auth, save=False):
         log_dict = {
-                    'project': self.node.parent_id,
-                    'node': self.node._id,
-                    'user': self.user._id,
-                    'comment': self._id,
-                    }
+            'project': self.node.parent_id,
+            'node': self.node._id,
+            'user': self.user._id,
+            'comment': self._id,
+        }
         self.is_deleted = True
         if isinstance(self.root_target, StoredFileNode):
             log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
@@ -372,11 +371,11 @@ class Comment(GuidStoredObject):
     def undelete(self, auth, save=False):
         self.is_deleted = False
         log_dict = {
-                    'project': self.node.parent_id,
-                    'node': self.node._id,
-                    'user': self.user._id,
-                    'comment': self._id,
-                    }
+            'project': self.node.parent_id,
+            'node': self.node._id,
+            'user': self.user._id,
+            'comment': self._id,
+        }
         if isinstance(self.root_target, StoredFileNode):
             log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
             file_key = self.root_target._id

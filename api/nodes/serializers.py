@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from rest_framework.exceptions import ValidationError
@@ -176,7 +174,7 @@ class NodeSerializer(JSONAPISerializer):
             file_obj = File.load(file_id)
             if obj.get_addon(file_obj.provider):
                 try:
-                    exists = self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider, check_object_permissions=False)
+                    self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider, check_object_permissions=False)
                 except (exceptions.NotFound, exceptions.PermissionDenied):
                     continue
                 n_unread += Comment.find_unread(user, obj, page='files', root_id=file_id)

@@ -297,7 +297,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.self_meta = self_meta
         self.always_embed = always_embed
         self.filter = filter
-        
+
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
             assert related_kwargs is not None, 'Must provide related view kwargs.'
