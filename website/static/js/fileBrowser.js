@@ -93,11 +93,12 @@ var FileBrowser = {
         ];
 
         var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'sort' : 'date_created'}});
-        m.request({method : 'GET', url : collectionsUrl, config : xhrconfig}).then(function(result){
+        var promise = m.request({method : 'GET', url : collectionsUrl, config : xhrconfig});
+        promise.then(function(result){
             console.log(result);
-           result.data.forEach(function(node){
+            result.data.forEach(function(node){
                self.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : false, node : node }, node.attributes.title));
-           });
+            });
         });
 
         self.breadcrumbs = m.prop([
@@ -113,12 +114,14 @@ var FileBrowser = {
         self.activityLogs = m.prop();
         self.getLogs = function _getLogs (nodeId) {
             var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
-            m.request({method : 'GET', url : url, config : xhrconfig}).then(function(result){
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            promise.then(function(result){
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
                 });
                 self.activityLogs(result.data);
             });
+            return promise;
         };
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
@@ -191,8 +194,9 @@ var FileBrowser = {
             if (typeof url !== 'string'){
                 throw new Error('Url argument for updateList needs to be string');
             }
-            m.request({method : 'GET', url : url, config : xhrconfig})
-                .then(success, error);
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            promise.then(success, error);
+            return promise;
         };
 
         // BREADCRUMBS
@@ -382,18 +386,20 @@ var Collections  = {
                     }
                 }
             };
-            m.request({method : 'POST', url : url, config : xhrconfig, data : data}).then(function(result){
+            var promise = m.request({method : 'POST', url : url, config : xhrconfig, data : data})
+            promise.then(function(result){
                 console.log(result);
                 var node = result.data;
                 args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
             });
             self.newCollectionName('');
             self.dismissModal();
+            return promise;
         };
         self.deleteCollection = function(){
             var url = args.collectionMenuObject().item.data.node.links.self;
-            m.request({method : 'DELETE', url : url, config : xhrconfig}).then(function(result){
-                console.log(url, result);
+            var promise = m.request({method : 'DELETE', url : url, config : xhrconfig});
+            promise.then(function(result){
                 for ( var i = 0; i < args.collections.length; i++) {
                     var item = args.collections[i];
                     if (item.data.node && item.data.node.id === args.collectionMenuObject().item.data.node.id){
@@ -403,6 +409,7 @@ var Collections  = {
                 }
             });
             self.dismissModal();
+            return promise;
         };
         self.renameCollection = function () {
             console.log(args.collectionMenuObject());
@@ -418,12 +425,14 @@ var Collections  = {
                     }
                 }
             };
-            m.request({method : 'PATCH', url : url, config : xhrconfig, data : data}).then(function(result){
+            var promise = m.request({method : 'PATCH', url : url, config : xhrconfig, data : data})
+            promise.then(function(result){
                 console.log(url, result);
                 args.collectionMenuObject().item.label = title;
                 m.redraw(true);
             });
             self.dismissModal();
+            return promise;
         };
     },
     view : function (ctrl, args) {
@@ -595,7 +604,7 @@ var Collections  = {
 };
 
 /**
- * Breadcrumbs Module.
+ * Breadcrumbs Module
  * @constructor
  */
 
