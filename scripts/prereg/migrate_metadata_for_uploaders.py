@@ -66,6 +66,8 @@ def migrate_draft_metadata(draft, test=False):
                 continue  # no file selected
             extra = metadata_value.get('extra')
             if extra:
+                if not extra.get('viewUrl'):
+                    continue
                 node_id, path = parse_view_url(extra.get('viewUrl', ''))
                 sha256 = get_file_sha256(node_id, path)
                 file_name = extra.get('selectedFileName')
@@ -109,6 +111,8 @@ def migrate_draft_metadata(draft, test=False):
                         del old_value['value'][uid]
                         old_value['value']['uploader'] = {}
                     else:
+                        if not extra.get('viewUrl'):
+                            continue
                         node_id, path = parse_view_url(extra.get('viewUrl', ''))
                         sha256 = get_file_sha256(node_id, path)
                         file_name = extra.get('selectedFileName')
