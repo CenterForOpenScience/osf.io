@@ -1652,14 +1652,17 @@
                 li.style.left = xPosition + "px";
                 xPosition += 25;
                 li.XShift = XShift;
+                var label = document.createElement("label");
+                label.style.fontWeight = "normal"; 
                 var cb = document.createElement("input");
                 cb.id = cb_id;
                 cb.type = "checkbox";
                 cb.checked = "checked";
                 var sp = document.createElement("span");
                 sp.innerHTML = " " + text.trim();
-                li.appendChild(cb);
-                li.appendChild(sp);
+                label.appendChild(cb);
+                label.appendChild(sp);
+                li.appendChild(label);
                 buttonRow.appendChild(li);
             };
             var makeSpacer = function (num) {
