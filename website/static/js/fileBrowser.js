@@ -749,7 +749,7 @@ var Information = {
                                 m('a.p-xs', { href : item.data.links.html + 'settings/'}, 'Settings'),
                             ])
                         ]),
-                        m('[role="tabpanel"].tab-pane.active#tab-activity',[
+                        m('[role="tabpanel"].tab-pane#tab-activity',[
                             m.component(ActivityLogs, { activityLogs : args.activityLogs })
                         ])
                     ])
