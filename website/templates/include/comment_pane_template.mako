@@ -23,11 +23,8 @@
         <div data-bind="if: canComment" style="margin-top: 20px">
             <form class="form">
                 <div class="form-group">
-                    <span data-bind="if:commented">
+                    <span>
                         <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
-                    </span>
-                    <span data-bind="ifnot:commented">
-                        <textarea class="form-control" placeholder="Add the first comment on this page!" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </span>
                 </div>
                 <div data-bind="if: replyNotEmpty" class="form-group">

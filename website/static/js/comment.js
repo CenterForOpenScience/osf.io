@@ -594,21 +594,17 @@ var CommentListModel = function(options) {
     self.MAXLENGTH = MAXLENGTH;
 
     self.editors = 0;
-    self.canComment = ko.observable(options.canComment);
-    self.hasChildren = ko.observable(options.hasChildren);
-
+    self.nodeId = ko.observable(options.nodeId);
+    self.nodeApiUrl = options.nodeApiUrl;
     self.page(options.page);
     self.id = ko.observable(options.rootId);
     self.rootId = ko.observable(options.rootId);
-    self.nodeId = ko.observable(options.nodeId);
-    self.nodeApiUrl = options.nodeApiUrl;
+    self.canComment = ko.observable(options.canComment);
+    self.hasChildren = ko.observable(options.hasChildren);
+    self.author = options.currentUser;
 
     self.togglePane = options.togglePane;
 
-    self.commented = ko.pureComputed(function(){
-        return self.comments().length > 0;
-    });
-    self.author = options.currentUser;
     self.fetch(options.nodeId);
 
 };
@@ -651,7 +647,6 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      nodeApiUrl: Node.api_url,
  *      page: 'node',
  *      rootId: Node._id,
- *      userName: User.fullname,
  *      canComment: User.canComment,
  *      hasChildren: Node.hasChildren, 
  *      currentUser: {
