@@ -939,10 +939,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def draft_registrations_active(self):
-        return DraftRegistration.find(
-            Q('branched_from', 'eq', self) &
-            Q('registered_node', 'eq', None)
+        drafts = DraftRegistration.find(
+            Q('branched_from', 'eq', self)
         )
+        for draft in drafts:
+            if not draft.registered_node or draft.registered_node.is_deleted:
+                yield draft
+
+    @property
+    def has_active_draft_registrations(self):
+        try:
+            next(self.draft_registrations_active)
+        except StopIteration:
+            return False
+        else:
+            return True
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
