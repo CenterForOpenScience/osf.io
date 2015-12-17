@@ -230,7 +230,8 @@
                         </form>
                     %endif
                     % if include_wiki_settings:
-                        <div class="help-block" style="padding-left: 15px">
+                        <h3>Enable Wiki</h3>
+                        <div style="padding-left: 15px">
                             <p class="text-info">These settings control who can edit your wiki. To make a wiki editable by all OSF users, make your project/component public.</p>
                         </div>
                         <form id="wikiSettings" class="osf-treebeard-minimal">
