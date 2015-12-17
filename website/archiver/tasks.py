@@ -14,6 +14,7 @@ from website.archiver import (
     ARCHIVER_FAILURE,
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_NETWORK_ERROR,
+    ARCHIVER_FILE_NOT_FOUND,
     ARCHIVER_UNCAUGHT_ERROR,
     NO_ARCHIVE_LIMIT,
     AggregateStatResult,
@@ -53,12 +54,22 @@ class ArchiverStateError(Exception):
         self.info = info
 
 
+class ArchivedFileNotFound(Exception):
+
+    def __init__(self, file_name, node_id, *args, **kwargs):
+        super(ArchivedFileNotFound, self).__init__(*args, **kwargs)
+        self.file_name = file_name
+        self.node_id = node_id
+
+
 class ArchiverTask(celery.Task):
     abstract = True
     max_retries = 0
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         job = ArchiveJob.load(kwargs.get('job_pk'))
+        import pydevd
+        pydevd.settrace('localhost', port=54735, stdoutToServer=True, stderrToServer=True)
         if not job:
             raise ArchiverStateError({
                 'exception': exc,
@@ -77,6 +88,12 @@ class ArchiverTask(celery.Task):
         elif isinstance(exc, HTTPError):
             dst.archive_status = ARCHIVER_NETWORK_ERROR
             errors = dst.archive_job.target_info()
+        elif isinstance(exc, ArchivedFileNotFound):
+            dst.archive_status = ARCHIVER_FILE_NOT_FOUND
+            errors = {
+                'file_name': exc.file_name,
+                'node': Node.load(exc.node_id)
+            }
         else:
             dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
             errors = [einfo]
@@ -278,12 +295,13 @@ def find_registration_file(value, node):
         registered_from_id = Node.load(node_id).registered_from._id
         if sha256 == orig_sha256 and registered_from_id == orig_node and orig_name == value['name']:
             return value, node_id
-    raise RuntimeError()
+    raise ArchivedFileNotFound(file_name=orig_name, node_id=orig_node)
 
 VIEW_FILE_URL_TEMPLATE = '/project/{node_id}/files/osfstorage/{path}/'
 
-@celery_app.task
-def archive_success(dst_pk):
+@celery_app.task(base=ArchiverTask, name="archiver.archive_success")
+@logged('archive_success')
+def archive_success(dst_pk, job_pk):
     """Archiver's final callback. For the time being the use case for this task
     is to rewrite references to files selected in a registration schema (the Prereg
     Challenge being the first to expose this feature). The created references point
@@ -320,9 +338,15 @@ def archive_success(dst_pk):
                     registration_file = None
                     if subvalue.get('extra', {}).get('sha256'):
                         registration_file, node_id = find_registration_file(subvalue, dst)
-                        subvalue['extra'].update({
-                            'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
-                        })
+                        if not registration_file:
+                            subvalue['extra'].update({
+                                'selectedFileName': 'File not found',
+                                'viewUrl': ''
+                            })
+                        else:
+                            subvalue['extra'].update({
+                                'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
+                            })
                     question['value'][subkey] = subvalue
             else:
                 if question.get('extra', {}).get('sha256'):
@@ -334,4 +358,8 @@ def archive_success(dst_pk):
         prereg_metadata.update(updated_metadata)
         dst.registered_meta[prereg_schema._id] = prereg_metadata
         dst.save()
+
+    job = ArchiveJob.load(job_pk)
+    job.sent = True
+    job.save()
     dst.sanction.ask(dst.active_contributors())
