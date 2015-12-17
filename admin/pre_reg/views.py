@@ -23,7 +23,7 @@ from website.exceptions import NodeStateError
 
 get_draft_or_error = functools.partial(get_or_http_error, DraftRegistration)
 
-def get_prereg_drafts(user=None):
+def get_prereg_drafts(user=None, filters=tuple()):
     prereg_schema = MetaSchema.find_one(
         Q('name', 'eq', 'Prereg Challenge') &
         Q('schema_version', 'eq', 2)
@@ -54,7 +54,7 @@ def prereg(request):
     :param request: Current logged in user
     :return: Redirect to prereg page with username, reviewers, and user obj
     """
-    paginator = Paginator(get_prereg_drafts(), 5)
+    paginator = Paginator(get_prereg_drafts(user=request.user), 5)
 
     try:
         page_number = int(request.GET.get('page'))
