@@ -381,7 +381,7 @@ class Comment(GuidStoredObject):
             file_key = self.root_target._id
             self.node.commented_files[file_key] = self.node.commented_files.get(file_key, 0) + 1
         self.node.add_log(
-            NodeLog.COMMENT_ADDED,
+            NodeLog.COMMENT_RESTORED,
             log_dict,
             auth=auth,
             save=False,
@@ -494,6 +494,7 @@ class NodeLog(StoredObject):
     COMMENT_ADDED = 'comment_added'
     COMMENT_REMOVED = 'comment_removed'
     COMMENT_UPDATED = 'comment_updated'
+    COMMENT_RESTORED = 'comment_restored'
 
     CITATION_ADDED = 'citation_added'
     CITATION_EDITED = 'citation_edited'

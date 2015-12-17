@@ -132,7 +132,7 @@ class TestCommentModel(OsfTestCase):
         self.comment.undelete(auth=self.consolidated_auth)
         assert_equal(self.comment.is_deleted, False)
         assert_equal(len(self.comment.node.logs), 3)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_RESTORED)
 
     def test_report_abuse(self):
         user = UserFactory()
