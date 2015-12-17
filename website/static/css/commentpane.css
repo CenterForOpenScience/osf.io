@@ -13,6 +13,12 @@
     }
 }
 
+@media (min-width: 768px) and (max-width: 991px) {
+    .cp-handle-div {
+        width: 70px!important;
+    }
+}
+
 .comment-info {
   padding-bottom: 10px;
 }

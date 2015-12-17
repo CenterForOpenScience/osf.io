@@ -726,7 +726,7 @@ def _view_project(node, auth, primary=False, check_files=False):
         'node': {
             'id': node._primary_key,
             'title': node.title,
-            'display_title': get_display_title(node.title),
+            'display_title': get_display_title(node),
             'category': node.category_display,
             'category_short': node.category,
             'node_type': node.project_or_component,
@@ -810,9 +810,9 @@ def _view_project(node, auth, primary=False, check_files=False):
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': dashboard_id,
             'unread_comments': {
-                'node': n_unread_node,
-                'files': n_unread_files,
-                'total': n_unread_node + n_unread_files
+                'node': get_display_number(n_unread_node),
+                'files': get_display_number(n_unread_files),
+                'total': get_display_number(n_unread_node + n_unread_files)
             }
         },
         'badges': _get_badge(user),
@@ -1457,7 +1457,14 @@ def get_pointed(auth, node, **kwargs):
         if not get_pointer_parent(each).is_folder
     ]}
 
-def get_display_title(title):
-    if len(title) > 20:
-        return '%s...' % (title[:15].strip())
-    return title
+def get_display_title(node):
+    if node.parent_node and len(node.title) > 11:
+        return '{}...'.format(node.title[:10].strip())
+    elif len(node.title) > 12:
+        return '{}...'.format(node.title[:11].strip())
+    return node.title
+
+def get_display_number(number):
+    if number > 99:
+        return '99+'
+    return number
