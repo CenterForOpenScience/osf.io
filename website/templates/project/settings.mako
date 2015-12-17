@@ -200,21 +200,22 @@
 
         % endif  ## End Select Addons
 
-        % if not node['is_registration']:
 
+        % if not node['is_registration']:   ## Begin Wiki Config
             <div class="panel panel-default">
                 <span id="configureWikiAnchor" class="anchor"></span>
-
                 <div class="panel-heading clearfix">
                     <h3 class="panel-title">Configure Wiki</h3>
                 </div>
+
                 <div class="panel-body">
                     %if wiki:
                         <form id="selectWikiForm">
-                            <h3>Enable Wiki</h3>
-
+                            <div style="padding-left: 15px">
+                            </div>
                             <div>
                                 <label>
+                                    <br>
                                     <input
                                             type="checkbox"
                                             name="${wiki.short_name}"
@@ -222,17 +223,17 @@
                                         ${'checked' if wiki.short_name in addons_enabled else ''}
                                         ${'disabled' if (node['is_registration'] or bool(wiki.added_mandatory)) else ''}
                                     />
-                                    ${wiki.full_name}
+                                    Enable the wiki in your project.
                                 </label>
                             </div>
                             <div class="wiki-settings-message text-success" style="padding-top: 10px;"></div>
-                            <br>
                         </form>
                     %endif
+
                     % if include_wiki_settings:
-                        <h3>Enable Wiki</h3>
+                        <h3>Configure</h3>
                         <div style="padding-left: 15px">
-                            <p class="text-info">These settings control who can edit your wiki. To make a wiki editable by all OSF users, make your project/component public.</p>
+                            <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, your project/component must be public.</p>
                         </div>
                         <form id="wikiSettings" class="osf-treebeard-minimal">
                             <div id="wgrid">
@@ -248,7 +249,7 @@
                     % endif
                 </div>
             </div>
-        %endif
+        %endif ## End Wiki Config
 
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting
 
