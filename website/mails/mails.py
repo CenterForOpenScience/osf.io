@@ -224,7 +224,7 @@ ARCHIVE_FILE_NOT_FOUND_DESK = Mail(
 )
 ARCHIVE_FILE_NOT_FOUND_USER = Mail(
     'archive_file_not_found_user',
-    subject=PROBLEM_REGISTERING
+    subject='Registration failed because of altered files'
 )
 
 ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(

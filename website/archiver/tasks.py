@@ -24,7 +24,7 @@ from website.archiver.model import ArchiveJob
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
-from website.project.model import Node, MetaSchema
+from website.project.model import Node, MetaSchema, DraftRegistration
 from website import settings
 from website.app import init_addons, do_set_backends
 
@@ -56,10 +56,13 @@ class ArchiverStateError(Exception):
 
 class ArchivedFileNotFound(Exception):
 
-    def __init__(self, file_name, node_id, *args, **kwargs):
+    def __init__(self, registration, missing_files, *args, **kwargs):
         super(ArchivedFileNotFound, self).__init__(*args, **kwargs)
-        self.file_name = file_name
-        self.node_id = node_id
+
+        self.draft_registration = DraftRegistration.find_one(
+            Q('registered_node', 'eq', registration)
+        )
+        self.missing_files = missing_files
 
 
 class ArchiverTask(celery.Task):
@@ -89,8 +92,8 @@ class ArchiverTask(celery.Task):
         elif isinstance(exc, ArchivedFileNotFound):
             dst.archive_status = ARCHIVER_FILE_NOT_FOUND
             errors = {
-                'file_name': exc.file_name,
-                'node': Node.load(exc.node_id)
+                'missing_files': exc.missing_files,
+                'draft': exc.draft_registration
             }
         else:
             dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
@@ -293,7 +296,16 @@ def find_registration_file(value, node):
         registered_from_id = Node.load(node_id).registered_from._id
         if sha256 == orig_sha256 and registered_from_id == orig_node and orig_name == value['name']:
             return value, node_id
-    raise ArchivedFileNotFound(file_name=orig_name, node_id=orig_node)
+    return None, None
+
+def find_question(schema, qid):
+    for page in schema['pages']:
+        questions = {
+            q['qid']: q
+            for q in page['questions']
+        }
+        if qid in questions:
+            return questions[qid]
 
 VIEW_FILE_URL_TEMPLATE = '/project/{node_id}/files/osfstorage/{path}/'
 
@@ -327,6 +339,7 @@ def archive_success(dst_pk, job_pk):
         Q('name', 'eq', 'Prereg Challenge') &
         Q('schema_version', 'eq', 2)
     )
+    missing_files = []
     if prereg_schema in dst.registered_schema:
         prereg_metadata = dst.registered_meta[prereg_schema._id]
         updated_metadata = {}
@@ -336,6 +349,12 @@ def archive_success(dst_pk, job_pk):
                     registration_file = None
                     if subvalue.get('extra', {}).get('sha256'):
                         registration_file, node_id = find_registration_file(subvalue, dst)
+                        if not registration_file:
+                            missing_files.append({
+                                'file_name': subvalue['extra']['selectedFileName'],
+                                'question_title': find_question(prereg_schema.schema, key)['title']
+                            })
+                            continue
                         subvalue['extra'].update({
                             'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
                         })
@@ -343,10 +362,23 @@ def archive_success(dst_pk, job_pk):
             else:
                 if question.get('extra', {}).get('sha256'):
                     registration_file, node_id = find_registration_file(question, dst)
+                    if not registration_file:
+                        missing_files.append({
+                            'file_name': question['extra']['selectedFileName'],
+                            'question_title': find_question(prereg_schema.schema, key)['title']
+                        })
+                        continue
                     question['extra'].update({
                         'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
                     })
             updated_metadata[key] = question
+
+        if missing_files:
+            raise ArchivedFileNotFound(
+                registration=dst,
+                missing_files=missing_files
+            )
+
         prereg_metadata.update(updated_metadata)
         dst.registered_meta[prereg_schema._id] = prereg_metadata
         dst.save()
