@@ -286,9 +286,9 @@ Question.prototype.addComment = function(save, page, event) {
 
     var $comments = $(event.target).closest('.registration-editor-comments');
     $osf.block('Saving...', $comments);
-    save()
+    return save()
         .always($osf.unblock.bind(null, $comments))
-        .then(function () {
+        .done(function () {
             self.comments.push(comment);
             self.nextComment('');
         });

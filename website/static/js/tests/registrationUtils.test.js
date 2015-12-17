@@ -438,12 +438,27 @@ describe('Question', () => {
         });
     });
     describe('#addComment', () => {
-        it('creates a new Comment using the value of Question.nextComment, and clears Question.nextComment', () => {
+        before(() => {
+            sinon.stub($osf, 'block');
+            sinon.stub($osf, 'unblock');
+        });
+        after(() => {
+            $osf.block.restore();
+            $osf.unblock.restore();
+        });
+        it('creates a new Comment using the value of Question.nextComment, and clears Question.nextComment', (done) => {
             assert.equal(q.comments().length, 0);
             q.nextComment('A good comment');
-            q.addComment(function() {});
-            assert.equal(q.comments().length, 1);
-            assert.equal(q.nextComment(), '');
+            var ret = $.Deferred();
+            var saved = q.addComment(function() {
+                return ret.promise();
+            }, {}, {target: null});
+            ret.resolve();
+            saved.always(function() {
+                assert.equal(q.comments().length, 1);
+                assert.equal(q.nextComment(), '');
+                done();
+            });
         });
         it('calls the provided save function'), () => {
             var mock = new sinon.spy();
@@ -835,4 +850,3 @@ describe('RegistrationEditor', () => {
         });
     });
 });
-
