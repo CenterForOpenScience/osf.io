@@ -4103,9 +4103,6 @@ class DraftRegistrationApproval(Sanction):
 
     mode = Sanction.ANY
 
-    # TODO generalize this behavior
-    DRAFT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/draft/{draft_id}'
-
     # Since draft registrations that require approval are not immediately registered,
     # meta stores registration_choice and embargo_end_date (when applicable)
     meta = fields.DictionaryField(default=dict)
@@ -4117,11 +4114,7 @@ class DraftRegistrationApproval(Sanction):
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
                 user=user,
-                draft_url=self.DRAFT_URL_TEMPLATE.format(
-                    node_id=draft.branched_from,
-                    draft_id=draft._id
-                ),
-                mimetype='html'
+                draft_url=draft.absolute_url
             )
         else:
             raise NotImplementedError(
@@ -4184,6 +4177,8 @@ class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
+    URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/draft/{draft_id}'
+
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
     # Original Node a draft registration is associated with
@@ -4235,6 +4230,17 @@ class DraftRegistration(StoredObject):
         self._metaschema_flags.update(flags)
 
     notes = fields.StringField()
+
+    @property
+    def url(self):
+        return self.URL_TEMPLATE.format(
+            node_id=self.branched_from,
+            draft_id=self._id
+        )
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
 
     @property
     def requires_approval(self):
