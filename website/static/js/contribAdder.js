@@ -315,6 +315,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         ).done(function(response) {
             if (self.async) {
+                self.contributors($.map(response.contributors, function(contrib) {
+                    return contrib.id;
+                }));
                 self.hide();
                 $osf.unblock();
                 if (self.callback) {
