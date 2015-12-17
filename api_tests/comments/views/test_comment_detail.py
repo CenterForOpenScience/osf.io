@@ -3,7 +3,7 @@ from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings
-from api_tests.nodes.views.test_node_comments_list import _create_test_file
+from api_tests.utils import create_test_file
 from tests.base import ApiTestCase
 from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, RegistrationFactory
 
@@ -550,7 +550,7 @@ class TestFileCommentDetailView(ApiTestCase):
     def _set_up_private_project_with_file_comment(self):
         self.private_project = ProjectFactory.build(is_public=False, creator=self.user, comment_level='private')
         self.private_project.add_contributor(self.contributor, save=True)
-        self.file = _create_test_file(self.private_project, self.user)
+        self.file = create_test_file(self.private_project, self.user)
         self.comment = CommentFactory(node=self.private_project, target=self.file, user=self.user)
         self.private_url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
         self.payload = self._set_up_payload(self.comment._id)
@@ -558,14 +558,14 @@ class TestFileCommentDetailView(ApiTestCase):
     def _set_up_public_project_with_file_comment(self):
         self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level='private')
         self.public_project.add_contributor(self.contributor, save=True)
-        self.public_file = _create_test_file(self.public_project, self.user)
+        self.public_file = create_test_file(self.public_project, self.user)
         self.public_comment = CommentFactory(node=self.public_project, target=self.public_file, user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
         self.public_comment_payload = self._set_up_payload(self.public_comment._id)
 
     def _set_up_registration_with_file_comment(self):
         self.registration = RegistrationFactory(creator=self.user, comment_level='private')
-        self.registration_file = _create_test_file(self.registration, self.user)
+        self.registration_file = create_test_file(self.registration, self.user)
         self.registration_comment = CommentFactory(node=self.registration, target=self.registration_file, user=self.user)
         self.registration_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
 
@@ -703,7 +703,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_public_node_non_contributor_commenter_can_update_file_comment(self):
         project = ProjectFactory(is_public=True, comment_level='public')
-        test_file = _create_test_file(project, project.creator)
+        test_file = create_test_file(project, project.creator)
         comment = CommentFactory(node=project, target=test_file, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = self._set_up_payload(comment._id)
@@ -912,7 +912,7 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_public_node_non_contributor_commenter_can_delete_file_comment(self):
         project = ProjectFactory(is_public=True, comment_level='public')
-        test_file = _create_test_file(project, project.creator)
+        test_file = create_test_file(project, project.creator)
         comment = CommentFactory(node=project, target=test_file, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = {
