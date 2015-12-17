@@ -74,7 +74,7 @@ var remoteFileHandler = function(html, url, cm, init, fixupInputArea) {
         var ext = getExtension(imgURL);
         isImg = !!ext ? validImgExtensions.indexOf(ext.toLowerCase()) > -1 : false;
     }
-    cm.doLinkOrImage(init, fixupInputArea, isImg, url);
+    cm.doLinkOrImage(init, fixupInputArea, isImg, imgURL);
 };
 
 /**
