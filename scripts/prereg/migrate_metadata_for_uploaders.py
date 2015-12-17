@@ -19,6 +19,8 @@ from website.models import (
 )
 from website.files.models import osfstorage
 
+from scripts import utils as script_utils
+
 init_app(set_backends=True, routes=False)
 
 logger = logging.getLogger(__name__)
