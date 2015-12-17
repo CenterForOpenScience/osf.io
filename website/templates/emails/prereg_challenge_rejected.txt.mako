@@ -2,7 +2,7 @@ Dear ${user.fullname},
 
 Thank you for submitting your research plan to the Preregistration Challenge. 
 
-Reviewers have made comments on your plan. We require that you address the comments found on ${draft_url} this page and resubmit. 
+Reviewers have made comments on your plan. We require that you address the comments found on ${draft_url} and resubmit. 
 
 Each submission must pass this review process in which the statistical methods of the proposed study and its analyses are checked for completeness and adherence to Preregistration Challenge eligibility requirements (https://cos.io/prereg). This review does not assess the substance of the research, or the validity of the research design or statistical methodology. This review has no impact on the independent editorial decisions of any journal.
 

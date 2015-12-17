@@ -445,7 +445,8 @@ class TestArchiverTasks(ArchiverTestCase):
 
         with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
-                archive_success(registration._id, None)
+                job = factories.ArchiveJobFactory()
+                archive_success(registration._id, job._id)
                 for key, question in registration.registered_meta[prereg_schema._id].items():
                     target = None
                     if isinstance(question['value'], dict):
@@ -548,7 +549,8 @@ class TestArchiverTasks(ArchiverTestCase):
                 )
                 patch.start()
                 patches.append(patch)
-            archive_success(registration._id, None)
+            job = factories.ArchiveJobFactory()
+            archive_success(registration._id, job._id)
 
             for key, question in registration.registered_meta[prereg_schema._id].items():
                 target = None
@@ -606,7 +608,8 @@ class TestArchiverTasks(ArchiverTestCase):
 
         with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
-                archive_success(registration._id, None)
+                job = factories.ArchiveJobFactory()
+                archive_success(registration._id, job._id)
                 for key, question in registration.registered_meta[prereg_schema._id].items():
                     assert_equal(question['extra']['selectedFileName'], fake_file['name'])
 
@@ -642,7 +645,8 @@ class TestArchiverTasks(ArchiverTestCase):
 
         with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
-                archive_success(registration._id, None)
+                job = factories.ArchiveJobFactory()
+                archive_success(registration._id, job._id)
                 child_reg = registration.nodes[0]
                 for key, question in registration.registered_meta[prereg_schema._id].items():
                     assert_in(child_reg._id, question['extra']['viewUrl'])
@@ -677,6 +681,7 @@ class TestArchiverUtils(ArchiverTestCase):
             src=self.src,
             mail=mails.ARCHIVE_COPY_ERROR_USER,
             results={},
+            can_change_preferences=False,
             mimetype='html',
         )
         args_desk = dict(
@@ -705,6 +710,7 @@ class TestArchiverUtils(ArchiverTestCase):
             user=self.user,
             src=self.src,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
+            can_change_preferences=False,
             mimetype='html',
         )
         args_desk = dict(
