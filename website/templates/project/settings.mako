@@ -25,7 +25,7 @@
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
-                        <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
+                        <li><a href="#configureNodeAnchor">${node['node_type'].capitalize()}</a></li>
 
                         <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
@@ -33,13 +33,13 @@
                             <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                         % endif
 
-                        <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
+                        <li><a href="#configureWikiAnchor">Wiki</a></li>
 
                         % if 'admin' in user['permissions']:
-                            <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
+                            <li><a href="#configureCommentingAnchor">Commenting</a></li>
                         % endif
 
-                        <li><a href="#configureNotificationsAnchor">Configure Email Notifications</a></li>
+                        <li><a href="#configureNotificationsAnchor">Email Notifications</a></li>
 
                     % endif
 
@@ -67,7 +67,7 @@
                 <div class="panel panel-default">
                     <span id="configureNodeAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
+                        <h3 id="configureNode" class="panel-title">${node['node_type'].capitalize()}</h3>
                     </div>
 
                     <div id="projectSettings" class="panel-body">
@@ -205,7 +205,7 @@
             <div class="panel panel-default">
                 <span id="configureWikiAnchor" class="anchor"></span>
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Configure Wiki</h3>
+                    <h3 class="panel-title">Wiki</h3>
                 </div>
 
                 <div class="panel-body">
@@ -261,7 +261,7 @@
                 <div class="panel panel-default">
                     <span id="configureCommentingAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Commenting</h3>
+                        <h3 class="panel-title">Commenting</h3>
                     </div>
 
                     <div class="panel-body">
@@ -304,7 +304,7 @@
                 <div class="panel panel-default">
                     <span id="configureNotificationsAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Email Notifications</h3>
+                        <h3 class="panel-title">Email Notifications</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
                         <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
