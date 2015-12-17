@@ -1,11 +1,9 @@
 import urlparse
-from httplib import BadStatusLine
 
 import celery
-from celery.utils.log import get_task_logger
 import requests
+from celery.utils.log import get_task_logger
 from django.conf import settings
-from requests.packages.urllib3.exceptions import ConnectionError
 
 from framework.tasks import app as celery_app
 from framework.tasks.utils import logged
