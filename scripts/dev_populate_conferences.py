@@ -433,6 +433,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+        'ASCERM2016': {
+        'name': 'ASCE Rocky Mountain Student Conference 2016',
+        'info_url': 'http://luninuxos.com/asce/',
+        'logo_url': 'http://s29.postimg.org/7sgmx7ryv/2016_ASCE_Rocky_Mtn_banner.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+    },
 }
 
 
