@@ -3,7 +3,7 @@ a script to migrate draft registration metadata on Prereg Challenge submissions.
 has changed to include optional file uploads, and existing file upload values need to be updated.
 """
 import sys
-imort logging
+import logging
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 import re
