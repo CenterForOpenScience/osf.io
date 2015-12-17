@@ -68,8 +68,6 @@ class ArchiverTask(celery.Task):
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         job = ArchiveJob.load(kwargs.get('job_pk'))
-        import pydevd
-        pydevd.settrace('localhost', port=54735, stdoutToServer=True, stderrToServer=True)
         if not job:
             raise ArchiverStateError({
                 'exception': exc,
@@ -338,15 +336,9 @@ def archive_success(dst_pk, job_pk):
                     registration_file = None
                     if subvalue.get('extra', {}).get('sha256'):
                         registration_file, node_id = find_registration_file(subvalue, dst)
-                        if not registration_file:
-                            subvalue['extra'].update({
-                                'selectedFileName': 'File not found',
-                                'viewUrl': ''
-                            })
-                        else:
-                            subvalue['extra'].update({
-                                'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
-                            })
+                        subvalue['extra'].update({
+                            'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
+                        })
                     question['value'][subkey] = subvalue
             else:
                 if question.get('extra', {}).get('sha256'):

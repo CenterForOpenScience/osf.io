@@ -445,7 +445,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
         with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
-                archive_success(registration._id)
+                archive_success(registration._id, None)
                 for key, question in registration.registered_meta[prereg_schema._id].items():
                     target = None
                     if isinstance(question['value'], dict):
@@ -548,7 +548,7 @@ class TestArchiverTasks(ArchiverTestCase):
                 )
                 patch.start()
                 patches.append(patch)
-            archive_success(registration._id)
+            archive_success(registration._id, None)
 
             for key, question in registration.registered_meta[prereg_schema._id].items():
                 target = None
@@ -606,7 +606,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
         with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
-                archive_success(registration._id)
+                archive_success(registration._id, None)
                 for key, question in registration.registered_meta[prereg_schema._id].items():
                     assert_equal(question['extra']['selectedFileName'], fake_file['name'])
 
@@ -642,7 +642,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
         with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
-                archive_success(registration._id)
+                archive_success(registration._id, None)
                 child_reg = registration.nodes[0]
                 for key, question in registration.registered_meta[prereg_schema._id].items():
                     assert_in(child_reg._id, question['extra']['viewUrl'])
