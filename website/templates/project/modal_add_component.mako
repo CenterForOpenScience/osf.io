@@ -22,6 +22,10 @@
                             %endfor
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label><input id="inheritContributors" name="category" name="inherit" class="form-control" value="true" type="checkbox">Add Contributors from ${node['title']}</label>
+                    </div>
+
                 </div><!-- end modal-body -->
                 <div class="modal-footer">
                     <a id="confirm" href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
