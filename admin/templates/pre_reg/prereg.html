@@ -28,7 +28,7 @@
       <!-- Info -->
       <h3> {{ draft.title }} </h3>
       <span class="text-muted"> Applicant </span> <strong> {{ draft.initiator.full_name }}</strong>
-      submitted on <strong>{{ draft.initiated | date:"N dS" }}</strong> at <strong>{{draft.initiated | date:"g:i a" }}</strong>
+      submitted on <strong>{{ draft.submitted | date:"N dS" }}</strong> at <strong>{{draft.submitted | date:"g:i a" }}</strong>
       <br />
       <a href="mailto:{{ draft.initiator.username }}">{{ draft.initiator.username }} </a>
     </div>

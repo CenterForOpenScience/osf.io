@@ -1,4 +1,5 @@
 import functools
+import operator
 
 from django.http import HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -38,7 +39,9 @@ def get_prereg_drafts(user=None, filters=tuple()):
         # one level that can see all drafts, and another than can see only the ones they're assigned.
         # As a followup to this, we need to make sure this applies to approval/rejection/commenting endpoints
         # query = query & Q('_metaschema_flags.assignee', 'eq', user._id)
-    return DraftRegistration.find(query).sort('-datetime_initiated')
+    return sorted(
+        DraftRegistration.find(query, key=operator.attrgetter('approval.initiation_date'))
+    )
 
 def is_in_prereg_group(user):
     """Determines whether a user is in the prereg_group
