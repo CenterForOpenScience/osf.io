@@ -1355,7 +1355,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         first_save = not self._is_loaded
 
         if first_save and self.is_dashboard:
-            existing_dashboards = self.creator.node__contributed.find(
+            existing_dashboards = self.find_for_user(
+                self.creator,
                 Q('is_dashboard', 'eq', True)
             )
             if existing_dashboards.count() > 0:
@@ -2254,7 +2255,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return log
 
     def find_for_user(self, user, subquery=None):
-        combined_query = Node.find(Q('contributor', 'contains', user))
+        combined_query = Q('contributor', 'contains', user._id)
 
         if subquery is not None:
             combined_query = combined_query & subquery
