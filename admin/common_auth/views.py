@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, logout as logout_user, login as au
 from django.shortcuts import render, redirect
 
 from forms import LoginForm, CustomUserRegistrationForm
+from .models import MyUser
 
 def login(request):
     if request.user.is_authenticated():
@@ -36,14 +37,10 @@ def register(request):
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
             password = form.cleaned_data['password']
-            user = User.objects.create_user(username=email,
-                first_name=email, last_name=last_name, password=password)
+            user = MyUser.objects.create_user(username=email,
+                first_name=first_name, last_name=last_name, password=password)
             user.save()
-            # Send email
-
-
-
-
+            # Send email invitation (set passwordreset form and save)
 
             user = authenticate(username=email, password=password)
             auth_login(request, user)
@@ -56,4 +53,3 @@ def register(request):
         form = CustomUserRegistrationForm()
         context = {'form': form}
         return render(request, 'register.html', context)
-
