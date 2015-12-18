@@ -119,7 +119,7 @@ class TestDeleteNodeLink(ApiTestCase):
     def test_cannot_delete_if_registration(self):
         registration = RegistrationFactory(project=self.public_project)
 
-        url = '/{}nodes/{}/node_links/'.format(
+        url = '/{}registrations/{}/node_links/'.format(
             API_BASE,
             registration._id,
         )

@@ -123,7 +123,7 @@ def make_new_node_settings(node, node_settings_document, external_account=None, 
         }
     )
     node.reload()
-    node_settings_instance = node.get_or_add_addon('dropbox', auth=None, override=True)
+    node_settings_instance = node.get_or_add_addon('dropbox', auth=None, override=True, log=False)
     node_settings_instance.folder = node_settings_document['folder']
     node_settings_instance.save()
     if external_account and user_settings_instance:
