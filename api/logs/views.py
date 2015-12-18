@@ -252,4 +252,3 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
             return []
         added_users = User.find(Q('_id', 'in', added_contrib_ids))
         return added_users
-
