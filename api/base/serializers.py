@@ -274,6 +274,15 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
     )
 
+    # Field can handle a filter_key, which operates as the source field (but
+    is named differently to not interfere with HyperLinkedIdentifyField's source
+
+    example:
+    parent = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<parent_node._id>'},
+        filter_key='parent_node'
+    )
     """
     json_api_link = True  # serializes to a links object
 

@@ -32,8 +32,6 @@ class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
-    # filter_key is passed in the RelationshipField as to not interfere with source which operates in a specialized way
-    # for HyperlinkedFields!
     filterable_fields = frozenset([
         'id',
         'title',
