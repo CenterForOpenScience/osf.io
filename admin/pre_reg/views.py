@@ -1,4 +1,6 @@
 import functools
+import operator
+from copy import deepcopy
 
 from django.http import HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -23,7 +25,7 @@ from website.exceptions import NodeStateError
 
 get_draft_or_error = functools.partial(get_or_http_error, DraftRegistration)
 
-def get_prereg_drafts(user=None):
+def get_prereg_drafts(user=None, filters=tuple()):
     prereg_schema = MetaSchema.find_one(
         Q('name', 'eq', 'Prereg Challenge') &
         Q('schema_version', 'eq', 2)
@@ -38,7 +40,10 @@ def get_prereg_drafts(user=None):
         # one level that can see all drafts, and another than can see only the ones they're assigned.
         # As a followup to this, we need to make sure this applies to approval/rejection/commenting endpoints
         # query = query & Q('_metaschema_flags.assignee', 'eq', user._id)
-    return DraftRegistration.find(query).sort('-datetime_initiated')
+    return sorted(
+        DraftRegistration.find(query),
+        key=operator.attrgetter('approval.initiation_date')
+    )
 
 def is_in_prereg_group(user):
     """Determines whether a user is in the prereg_group
@@ -54,7 +59,7 @@ def prereg(request):
     :param request: Current logged in user
     :return: Redirect to prereg page with username, reviewers, and user obj
     """
-    paginator = Paginator(get_prereg_drafts(), 5)
+    paginator = Paginator(get_prereg_drafts(user=request.user), 5)
 
     try:
         page_number = int(request.GET.get('page'))
@@ -142,7 +147,7 @@ def update_draft(request, draft_pk):
         draft.save()
     else:
         schema_data = data.get('schema_data', {})
-        data = draft.registration_metadata
+        data = deepcopy(draft.registration_metadata)
         for key, value in data.items():
             data[key]['comments'] = schema_data.get(key, {}).get('comments', [])
         try:

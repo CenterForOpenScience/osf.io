@@ -20,6 +20,7 @@ def serialize_draft_registration(draft, json_safe=True):
         'registration_schema': serialize_meta_schema(draft.registration_schema),
         'initiated': iso8601format(draft.datetime_initiated) if json_safe else draft.datetime_initiated,
         'updated': iso8601format(draft.datetime_updated) if json_safe else draft.datetime_updated,
+        'submitted': iso8601format(draft.approval.initiation_date) if json_safe else draft.approval.initiation_date,
         'requires_approval': draft.requires_approval,
         'is_pending_approval': draft.is_pending_review,
         'is_approved': draft.is_approved,
