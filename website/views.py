@@ -110,15 +110,11 @@ def index(auth):
 
 
 def find_dashboard(user):
-    dashboard_folder = user.node__contributed.find(
-        Q('is_dashboard', 'eq', True)
-    )
+    dashboard_folder = Node.find_for_user(user, subquery=Q('is_dashboard', 'eq', True))
 
     if dashboard_folder.count() == 0:
         new_dashboard(user)
-        dashboard_folder = user.node__contributed.find(
-            Q('is_dashboard', 'eq', True)
-        )
+        dashboard_folder = Node.find_for_user(user, Q('is_dashboard', 'eq', True))
     return dashboard_folder[0]
 
 
