@@ -180,7 +180,7 @@ class Comment(GuidStoredObject):
     modified = fields.BooleanField(default=False)
 
     is_deleted = fields.BooleanField(default=False)
-    content = fields.StringField()
+    content = fields.StringField(validate=MaxLengthValidator(settings.COMMENT_MAXLENGTH))
 
     # Dictionary field mapping user IDs to dictionaries of report details:
     # {

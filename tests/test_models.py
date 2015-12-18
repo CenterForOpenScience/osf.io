@@ -4126,6 +4126,17 @@ class TestComments(OsfTestCase):
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
+    def test_create_comment_content_cannot_exceed_max_length(self):
+        with assert_raises(ValidationValueError):
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+                content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH + 1)])
+            )
+
     def test_create_sends_comment_added_signal(self):
         with capture_signals() as mock_signals:
             comment = Comment.create(
