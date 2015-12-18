@@ -70,13 +70,19 @@ class TestRegistrationDetail(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "This is not a registration.")
 
+    def test_do_not_return_registration_in_node_detail(self):
+        url = '/{}nodes/{}/'.format(API_BASE, self.public_registration._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], "Not found.")
+
     def test_retractions_display_limited_fields(self):
         registration = RegistrationFactory(creator=self.user, project=self.public_project, public=True)
         url = '/{}registrations/{}/'.format(API_BASE, registration._id)
         retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         retraction.justification = 'We made a major error.'
         retraction.save()
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         assert_items_equal(res.json['data']['attributes'], {

@@ -39,7 +39,8 @@ class TestRegistrationEmbeds(ApiTestCase):
         url = '/{0}registrations/{1}/?embed=children'.format(API_BASE, self.registration._id)
 
         res = self.app.get(url, auth=self.user.auth)
-        embeds = res.json['data']['embeds']
+        json = res.json
+        embeds = json['data']['embeds']
         assert_equal(len(embeds['children']['data']), 2)
         titles = [self.child1.title, self.child2.title]
         for child in embeds['children']['data']:
