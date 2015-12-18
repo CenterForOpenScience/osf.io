@@ -94,17 +94,12 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     order = ('-date', )
 
     def get_queryset(self):
-        log = NodeLog.load(self.kwargs.get('log_id'))
-        if not log:
-            raise NotFound(
-                detail='No log matching that log_id could be found.'
-            )
-        else:
-            auth_user = get_user_auth(self.request)
-            return [
-                node for node in log.node__logged
-                if node.can_view(auth_user)
-            ]
+        log = self.get_log()
+        auth_user = get_user_auth(self.request)
+        return [
+            node for node in log.node__logged
+            if node.can_view(auth_user)
+        ]
 
 
 class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
