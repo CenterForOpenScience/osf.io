@@ -3,6 +3,7 @@ This will add a date_modified field to all nodes.  Date_modified will be equival
 """
 import sys
 import logging
+from modularodm import Q
 from website.app import init_app
 from website import models
 from scripts import utils as script_utils
@@ -25,7 +26,7 @@ def main():
 
     logger.warn('Date_modified field will be added to all nodes.')
 
-    for node in models.Node.find():
+    for node in models.Node.find(Q('date_modified', 'eq', None)):
         node.date_modified = date_updated(node)
         node.save()
         logger.info('Node {0} "date_modified" added'.format(node._id))
