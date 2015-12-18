@@ -1211,122 +1211,52 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
 
     def test_bulk_update_consistency(self):
         big_node = ProjectFactory(is_public=True, creator=self.user)
-        child_one = NodeFactory(parent=big_node, creator=self.user, is_public=False)
-        child_two = NodeFactory(parent=big_node, creator=self.user, is_public=False)
-        child_three = NodeFactory(parent=big_node, creator=self.user, is_public=False)
-        child_four = NodeFactory(parent=big_node, creator=self.user, is_public=False)
-        child_five = NodeFactory(parent=big_node, creator=self.user, is_public=False)
-        child_six = NodeFactory(parent=big_node, creator=self.user, is_public=False)
-        child_seven = NodeFactory(parent=big_node, creator=self.user, is_public=False)
-        child_eight = NodeFactory(parent=big_node, creator=self.user, is_public=False)
-        child_nine = NodeFactory(parent=big_node, creator=self.user, is_public=False)
-        child_ten = NodeFactory(parent=big_node, creator=self.user, is_public=False)
+        child_nodes = []
+        big_payload = {'data': []}
 
-        url = '/{}nodes/'.format(API_BASE)
-        get_url = '/{}nodes/{}/children/'.format(API_BASE, big_node._id)
-        big_payload = {'data': [
-            {
-                'id': child_one._id,
+        # Make 10 children for PATCHING in a bulk request
+        for i in range(0,9):
+            child_nodes.append(NodeFactory(parent=big_node, creator=self.user, is_public=False))
+            big_payload['data'].append({
+                'id': child_nodes[i]._id,
                 'type': 'nodes',
                 'attributes': {
                     'public': True
                 }
-            },
-            {
-                'id': child_two._id,
-                'type': 'nodes',
-                'attributes': {
-                    'public': True
-                }
-            },
-            {
-                'id': child_three._id,
-                'type': 'nodes',
-                'attributes': {
-                    'public': True
-                }
-            },
-            {
-                'id': child_four._id,
-                'type': 'nodes',
-                'attributes': {
-                    'public': True
-                }
-            },
-            {
-                'id': child_five._id,
-                'type': 'nodes',
-                'attributes': {
-                    'public': True
-                }
-            },
-            {
-                'id': child_six._id,
-                'type': 'nodes',
-                'attributes': {
-                    'public': True
-                }
-            },
-            {
-                'id': child_seven._id,
-                'type': 'nodes',
-                'attributes': {
-                    'public': True
-                }
-            },
-            {
-                'id': child_eight._id,
-                'type': 'nodes',
-                'attributes': {
-                    'public': True
-                }
-            },
-            {
-                'id': child_nine._id,
-                'type': 'nodes',
-                'attributes': {
-                    'public': True
-                }
-            },
-            {
-                'id': child_ten._id,
-                'type': 'nodes',
-                'attributes': {
-                    'public': True
-                }
-            }
-        ]}
-        children_ids = [
-            child_one._id,
-            child_two._id,
-            child_three._id,
-            child_four._id,
-            child_five._id,
-            child_six._id,
-            child_seven._id,
-            child_eight._id,
-            child_nine._id,
-            child_ten._id,
-        ]
-        res_patch = self.app.patch_json_api(url, big_payload, auth=self.user.auth, bulk=True)
+            })
+        # Do PATCH
+        patch_url = '/{}nodes/'.format(API_BASE)
+        res_patch = self.app.patch_json_api(patch_url, big_payload, auth=self.user.auth, bulk=True)
+
+        # Immediately get via ModularODM
         big_node_get = Node.find_one(Q('_id', 'eq', big_node._id))
         children = big_node_get.nodes
+
+        # GET via the v2 API
+        get_url = '/{}nodes/{}/children/'.format(API_BASE, big_node._id)
         res_get = self.app.get(get_url, auth=self.user.auth)
+
+        # Ensure patched return is correct (Most likely to work, so is run first)
         assert_equal(res_patch.status_code, 200)
         patch_json_data = res_patch.json['data']
-        assert_equal(len(patch_json_data), len(children_ids))
+        assert_equal(len(patch_json_data), len(child_nodes))
         for item in patch_json_data:
             assert_equal(item['attributes']['public'], True)
 
+        # Ensure V2 GET return is correct (Fairly likely to work, so is run second)
         assert_equal(res_get.status_code, 200)
         get_json_data = res_get.json['data']
-        assert_equal(len(get_json_data), len(children_ids))
+        assert_equal(len(get_json_data), len(child_nodes))
         for item in get_json_data:
             assert_equal(item['attributes']['public'], True)
 
-        assert_equal(len(children), len(children_ids))
+        # Ensure ModularODM find is correct (Least likely to work, so is run third)
+        assert_equal(len(children), len(child_nodes))
+        run_count = 0
         for node in children:
-            assert_equal(node.is_public, True)
+            # A node.reload() here would make this pass
+            assert_equal(node.is_public, True, "Failed on node {}".format(run_count))
+            run_count += 1
 
 
 class TestNodeBulkDelete(ApiTestCase):
