@@ -46,6 +46,8 @@ from tests import factories
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
 
+from tests.utils import unique as _unique
+
 
 SILENT_LOGGERS = (
     'framework.tasks.utils',
@@ -53,21 +55,6 @@ SILENT_LOGGERS = (
 )
 for each in SILENT_LOGGERS:
     logging.getLogger(each).setLevel(logging.CRITICAL)
-
-def _unique(factory):
-    used = []
-    @functools.wraps(factory)
-    def wrapper():
-        item = factory()
-        over = 0
-        while item in used:
-            if over > 100:
-                raise RuntimeError('Tried 100 times to generate a unqiue value, stopping.')
-            item = factory()
-            over += 1
-        used.append(item)
-        return item
-    return wrapper
 
 sha256_factory = _unique(fake.sha256)
 name_factory = _unique(fake.word)

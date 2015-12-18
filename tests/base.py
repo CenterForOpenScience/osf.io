@@ -32,6 +32,7 @@ from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
+from framework.tasks.handlers import celery_before_request
 
 from website.project.model import (
     Node, NodeLog, Tag, WatchConfig, MetaSchema,
@@ -171,7 +172,7 @@ class AppTestCase(unittest.TestCase):
         self.context = test_app.test_request_context()
         self.context.push()
         with self.context:
-            g._celery_tasks = []
+            celery_before_request()
         for signal in self.DISCONNECTED_SIGNALS:
             for receiver in self.DISCONNECTED_SIGNALS[signal]:
                 signal.disconnect(receiver)
