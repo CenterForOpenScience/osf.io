@@ -9,8 +9,23 @@ from api.base.filters import ODMFilterMixin
 from api.base.utils import get_user_auth, get_object_or_error
 from api.base import permissions as base_permissions
 from api.nodes.serializers import NodeSerializer
+from api.users.serializers import UserSerializer
 from api.logs.serializers import NodeLogSerializer
 from api.base.views import JSONAPIBaseView
+
+
+class LogMixin(object):
+    """
+    Mixin with convenience method get_log
+    """
+
+    def get_log(self):
+        log = NodeLog.load(self.kwargs.get('log_id'))
+        if not log:
+            raise NotFound(
+                detail='No log matching that log_id could be found.'
+            )
+        return log
 
 
 class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
