@@ -59,24 +59,7 @@ var logActions = {
     'osf_storage_file_added' : '${user} added ${path} to OSF Storage in ${node}',
     'osf_storage_folder_created' : '${user} created folder ${path} in OSF Storage in ${node}',
     'osf_storage_file_updated' : '${user} updated file ${path} in OSF Storage in ${node}',
-    'osf_storage_file_removed' : '${user} removed ${path} from OSF Storage in ${node}',
-    'box_file_added' : '${user} added a ${file} to Box in ${node}',
-    'box_folder_created' : '${user} created folder ${path} in Box in ${node}',
-    'box_file_updated' : '${user} updated file ${path} in Box in ${node}',
-    'box_file_removed' : '${user} removed ${path} from Box in ${node}',
-    'box_folder_selected': '${user} linked Box folder ${folder} to ${node}',
-    'box_node_deauthorized' : '${user} deauthorized the Box addon for ${node}',
-    'box_node_authorized' : '${user} authorized the Box addon for ${node}',
-    'dataverse_file_added' : '${user} added file ${filename} to Dataverse dataset {$dataset} in ${node}',
-    'dataverse_file_removed' : '${user} removed file ${filename} from Dataverse dataset ${dataset} in ${node}',
-    'dataverse_dataset_linked' : '${user} linked Dataverse dataset ${dataset} to ${node}',
-    'dataverse_study_linked' : '${user} linked Dataverse dataset ${study} to ${node}',
-    'dataverse_dataset_published' : '${user} published a new version of Dataverse dataset ${dataset} to ${node}',
-    'dataverse_study_released' : '${user} published a new version of Dataverse dataset ${study} to ${node}',
-    'dataverse_node_authorized' : '${user} authorized the Dataverse addon for ${node}',
-    'dataverse_node_deauthorized' : '${user} deauthorized the Dataverse addon for ${node}',
-    'dataverse_node_deauthorized_no_user' : 'Dataverse addon for ${node} deauthorized'
-
+    'osf_storage_file_removed' : '${user} removed ${path} from OSF Storage in ${node}'
 };
 
 module.exports = logActions;
