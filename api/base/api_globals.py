@@ -8,3 +8,6 @@ api_globals = threading.local()
 
 # Store a reference to the current Django request. Threads may be reused; empty after request.
 api_globals.request = None
+
+# Set _celery_tasks to be used in 'framework.tasks.enqueue_task'
+api_globals._celery_tasks = None

@@ -3,24 +3,34 @@
 import logging
 import functools
 
-from flask import g
 from celery import group
 
 from website import settings
 
-
 logger = logging.getLogger(__name__)
+
+def dynamic_import(module):
+    parts = module.split('.')
+    module = None
+    while len(parts):
+        if module:
+            module = getattr(module, parts.pop(0))
+        else:
+            module = __import__(parts.pop(0))
+    return module
 
 
 def celery_before_request():
-    g._celery_tasks = []
+    thread_locals = dynamic_import(settings.THREAD_LOCALS)
+    thread_locals._celery_tasks = []
 
 
 def celery_teardown_request(error=None):
+    thread_locals = dynamic_import(settings.THREAD_LOCALS)
     if error is not None:
         return
     try:
-        tasks = g._celery_tasks
+        tasks = thread_locals._celery_tasks
         if tasks:
             if settings.USE_CELERY:
                 group(tasks).apply_async()
@@ -33,13 +43,15 @@ def celery_teardown_request(error=None):
 
 
 def enqueue_task(signature):
-    """If working in a request context, push task signature to ``g`` to run
-    after request is complete; else run signature immediately.
+    """If working in a request context, push task signature to the app's
+    thread local variables to run after request is complete; else run
+    signature immediately.
     :param signature: Celery task signature
     """
+    thread_locals = dynamic_import(settings.THREAD_LOCALS)
     try:
-        if signature not in g._celery_tasks:
-            g._celery_tasks.append(signature)
+        if signature not in thread_locals._celery_tasks:
+            thread_locals._celery_tasks.append(signature)
     except RuntimeError:
         signature()
 

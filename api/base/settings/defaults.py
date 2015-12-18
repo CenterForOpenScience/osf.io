@@ -166,3 +166,5 @@ SWAGGER_SETTINGS = {
 }
 
 DEBUG_TRANSACTIONS = DEBUG
+
+osf_settings.THREAD_LOCALS = 'api.base.api_globals'
