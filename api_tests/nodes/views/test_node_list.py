@@ -1228,9 +1228,9 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         patch_url = '/{}nodes/'.format(API_BASE)
         res_patch = self.app.patch_json_api(patch_url, big_payload, auth=self.user.auth, bulk=True)
 
-        # Immediately get via ModularODM
-        big_node_get = Node.find_one(Q('_id', 'eq', big_node._id))
-        children = big_node_get.nodes
+        # Immediately find via ModularODM
+        big_node_found = Node.find_one(Q('_id', 'eq', big_node._id))
+        children = big_node_found.nodes
 
         # GET via the v2 API
         get_url = '/{}nodes/{}/children/'.format(API_BASE, big_node._id)
