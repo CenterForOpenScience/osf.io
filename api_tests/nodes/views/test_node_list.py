@@ -425,7 +425,9 @@ class TestNodeFiltering(ApiTestCase):
 
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 4)
+
+        root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root', 'eq', root._id))
+        assert_equal(len(res.json['data']), root_nodes.count())
 
     def test_filtering_on_null_parent(self):
         # add some nodes TO be included
