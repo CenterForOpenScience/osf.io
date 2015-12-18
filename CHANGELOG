@@ -10,7 +10,7 @@ Changelog
 - APIv2: Support view-only link keys.
 - APIv2: Support filtering against multiple ids, e.g. ?filter[id]=abc12,def34
 
-0.60.0 (unreleased)
+0.60.0 (2015-12-17)
 ===================
 
 - UI updates to Contributors page. Adds filtering and responsiveness.
