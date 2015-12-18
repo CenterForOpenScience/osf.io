@@ -27,7 +27,6 @@
                                                 <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
                                             </li>
                                         <!-- /ko -->
-
                                 </ul>
                             </div>
                         </div>
@@ -108,11 +107,8 @@
                             <li data-bind="css: {disabled: !nextPageExists()}">
                                 <a href="#" data-bind="click: pageNext"> Next Page</a>
                             </li>
-
                         </ul>
                         <!-- /ko -->
-
-
                         <div class="buffer"></div>
                     </div><!--col-->
                 </div><!--row-->

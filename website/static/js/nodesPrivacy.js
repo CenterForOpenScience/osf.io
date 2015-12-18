@@ -81,11 +81,6 @@ function patchNodesPrivacy(nodes) {
             return;
         }
         return patchNodesPrivacy(nodes);
-    }).fail(function(xhr, status, error) {
-        $osf.growl('Error', 'Unable to update project privacy');
-        Raven.captureMessage('Could not PATCH project settings.', {
-            url: nodesV2Url, status: status, error: error
-        });
     });
 }
 
@@ -136,7 +131,6 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
             type: 'GET',
             dataType: 'json'
         }).done(function(response) {
-            var i = 0;
             self.nodesOriginal = getNodesOriginal(response[0], self.nodesOriginal);
             Object.size = function(obj) {
                 var size = 0, key;
@@ -209,6 +203,13 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
             return node.changed;
         });
         patchNodesPrivacy(nodesChanged).then(function () {
+            window.location.reload();
+        }).fail(function(xhr, status, error) {
+            $osf.growl('Error', 'Unable to update project privacy');
+            Raven.captureMessage('Could not PATCH project settings.', {
+                url: window.contextVars.apiV2Prefix + 'nodes/', status: status, error: error
+            });
+            self.clear();
             window.location.reload();
         });
     };
