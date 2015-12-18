@@ -7,7 +7,6 @@ import logging
 import unittest
 import functools
 import datetime as dt
-from flask import g
 from json import dumps
 
 import blinker
