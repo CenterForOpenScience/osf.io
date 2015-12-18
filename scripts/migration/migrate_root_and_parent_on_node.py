@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def do_migration():
     init_app(routes=False)
-    logger.warn('ultimate_parent field will be added to all nodes.')
+    logger.warn('parent and root fields will be added to all nodes.')
     all_undeleted_nodes = models.Node.find(Q('is_deleted', 'eq', False))
     all_undeleted_nodes_count = all_undeleted_nodes.count()
     touched_counter = 0
