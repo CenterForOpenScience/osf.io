@@ -2,6 +2,7 @@ from pymongo.errors import OperationFailure
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
 
 from framework.transactions import commands, messages, utils
+from framework.tasks.handlers import celery_teardown_request
 
 from .api_globals import api_globals
 
@@ -70,12 +71,15 @@ class DjangoGlobalMiddleware(object):
     """
     def process_request(self, request):
         api_globals.request = request
+        api_globals._celery_tasks = []
 
     def process_exception(self, request, exception):
         sentry_exception_handler(request=request)
         api_globals.request = None
+        api_globals._celery_tasks = None
         return None
 
     def process_response(self, request, response):
         api_globals.request = None
+        celery_teardown_request(error=None)
         return response
