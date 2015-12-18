@@ -398,6 +398,7 @@ class TestProjectUtils(OsfTestCase):
         regs = [r for r in project_utils.recent_public_registrations(7)]
         assert_equal(len(regs), 7)
 
+
 class TestSignalUtils(unittest.TestCase):
 
     def setUp(self):
@@ -418,4 +419,5 @@ class TestSignalUtils(unittest.TestCase):
         with util.disconnected_from(self.signal_, self.listener):
             self.signal_.send()
         self.mock_listener.assert_not_called()
+
 

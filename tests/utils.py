@@ -117,7 +117,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         sanction = registration.root.sanction
         with contextlib.nested(
             mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
-            mock.patch.object(sanction, 'ask')
+            mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
         ):
             archiver_listeners.archive_callback(registration)
     if autoapprove:
@@ -143,3 +143,27 @@ class MockAuth(object):
         self.logged_in = True
 
 mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
+
+def unique(factory):
+    """
+    Turns a factory function into a new factory function that guarentees unique return
+    values. Note this uses regular item equivalence to check uniqueness, so this may not
+    behave as expected with factories with complex return values.
+
+    Example use:
+    unique_name_factory = unique(fake.name)
+    unique_name = unique_name_factory()
+    """
+    used = []
+    @functools.wraps(factory)
+    def wrapper():
+        item = factory()
+        over = 0
+        while item in used:
+            if over > 100:
+                raise RuntimeError('Tried 100 times to generate a unqiue value, stopping.')
+            item = factory()
+            over += 1
+        used.append(item)
+        return item
+    return wrapper

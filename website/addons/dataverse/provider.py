@@ -38,16 +38,6 @@ class DataverseProvider(object):
         except PermissionsError:
             raise HTTPError(http.FORBIDDEN)
 
-        node = node_addon.owner
-        node.add_log(
-            action='dataverse_node_authorized',
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-            },
-            auth=Auth(user=user),
-        )
-
         result = self.serializer(
             node_settings=node_addon,
             user_settings=user.get_addon('dataverse'),

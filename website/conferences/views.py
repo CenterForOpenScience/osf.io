@@ -100,6 +100,10 @@ def add_poster_by_email(conference, message):
 
         utils.provision_node(conference, message, node, user)
         utils.record_message(message, created)
+    # Prevent circular import error
+    from framework.auth import signals as auth_signals
+    if user_created:
+        auth_signals.user_confirmed.send(user)
 
     utils.upload_attachments(user, node, message.attachments)
 

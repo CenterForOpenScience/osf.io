@@ -6,8 +6,8 @@
 
 ## Embargo related logs
 <script type="text/html" id="embargo_approved">
-approved embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+approved embargoed registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="embargo_approved_no_user">
@@ -16,7 +16,7 @@ Embargo for
 </script>
 
 <script type="text/html" id="embargo_cancelled">
-cancelled embargo of
+cancelled embargoed registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
@@ -32,29 +32,29 @@ Embargo for
 
 <script type="text/html" id="embargo_initiated">
 initiated an embargoed registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 ## Retraction related logs
 <script type="text/html" id="retraction_approved">
-approved retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+approved retraction of registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="retraction_cancelled">
-cancelled retraction of
+cancelled retraction of registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
-initiated retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+initiated retraction of registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 ## Registration related Logs
 <script type="text/html" id="registration_initiated">
 initiated registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="registration_cancelled">
@@ -290,5 +290,31 @@ created external identifiers
 <span data-bind="text: 'doi:' + params.identifiers.doi"></span> and
 <span data-bind="text: 'ark:' + params.identifiers.ark"></span>
 on
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
+<script type="text/html" id="citation_added">
+added a citation ({{ params.citation.name }})
+to
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
+<script type="text/html" id="citation_edited">
+{{#if params.citation.new_name}}
+updated a citation name from {{ params.citation.name }} to <strong>{{ params.citation.new_name }}</strong>
+  {{#if params.citation.new_text}}
+    and edited its text
+  {{/if}}
+{{/if}}
+{{#ifnot params.citation.new_name}}
+edited the text of a citation ({{ params.citation.name }})
+{{/ifnot}}
+on
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
+<script type="text/html" id="citation_removed">
+removed a citation ({{ params.citation.name }})
+from
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>

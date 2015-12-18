@@ -48,8 +48,8 @@
 </script>
 
 <script type="text/html" id="object">
-  <span data-bind="foreach: {data: $root.iterObject($data.properties)}">
-    <div data-bind="template: {data: $root.context(value, $root), name: value.type}"></div>
+  <span data-bind="foreach: $data.properties">
+    <div data-bind="template: {data: $root.context($data, $root), name: $data.type}"></div>
     <hr />
   </span>
 </script>

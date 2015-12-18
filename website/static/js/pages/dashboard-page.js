@@ -8,7 +8,7 @@
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
-var jstz = require('jstimezonedetect').jstz;
+var jstz = require('jstimezonedetect');
 
 // Knockout components for the onboarder
 require('js/onboarder.js');

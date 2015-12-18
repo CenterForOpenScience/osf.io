@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
