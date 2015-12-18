@@ -133,37 +133,37 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.status_code, 404)
 
 
-    class TestNodeLogAddedContributors(LogsTestCase):
+class TestNodeLogAddedContributors(ApiTestCase):
 
-        def setUp(self):
-            super(TestNodeLogAddedContributors, self).setUp()
-            self.user = AuthUserFactory()
-            self.node = ProjectFactory(is_public=False)
-            self.node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.node.creator), log=True, save=True)
-            self.url = '/{}logs/'.format(API_BASE)
+    def setUp(self):
+        super(TestNodeLogAddedContributors, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(is_public=False)
+        self.node.add_contributor(self.user, auth=Auth(self.node.creator), log=True, save=True)
+        self.url = '/{}logs/'.format(API_BASE)
 
-        def test_log_returns_added_contributors_relationship(self):
-            log_id = self.node.logs[1]._id
-            url = self.url + '{}/'.format(log_id)
-            res = self.app.get(url, auth=self.user.auth)
-            assert_equal(res.status_code, 200)
-            json_data = res.json['data']
-            added_contributors_url = json_data['relationships']['added_contributors']['links']['related']['href']
-            assert_equal(urlparse.urlparse(added_contributors_url).path, url + 'added_contributors/')
+    def test_log_returns_added_contributors_relationship(self):
+        log_id = self.node.logs[1]._id
+        url = self.url + '{}/'.format(log_id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        json_data = res.json['data']
+        added_contributors_url = json_data['relationships']['added_contributors']['links']['related']['href']
+        assert_equal(urlparse.urlparse(added_contributors_url).path, url + 'added_contributors/')
 
-            res = self.app.get(added_contributors_url)
-            added_contributor_id = res.json['data'][0]['id']
-            assert_equal(self.user._id, added_contributor_id)
+        res = self.app.get(added_contributors_url)
+        added_contributor_id = res.json['data'][0]['id']
+        assert_equal(self.user._id, added_contributor_id)
 
-        def test_log_added_contributors_link_leads_to_empty_list(self):
-            log_id = self.node.logs[0]._id
-            url = self.url + '{}/'.format(log_id)
-            res = self.app.get(url, auth=self.user.auth)
-            assert_equal(res.status_code, 200)
-            json_data = res.json['data']
-            added_contributors_url = json_data['relationships']['added_contributors']['links']['related']['href']
-            assert_equal(urlparse.urlparse(added_contributors_url).path, url + 'added_contributors/')
+    def test_log_added_contributors_link_leads_to_empty_list(self):
+        log_id = self.node.logs[0]._id
+        url = self.url + '{}/'.format(log_id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        json_data = res.json['data']
+        added_contributors_url = json_data['relationships']['added_contributors']['links']['related']['href']
+        assert_equal(urlparse.urlparse(added_contributors_url).path, url + 'added_contributors/')
 
-            res = self.app.get(added_contributors_url)
-            assert_equal(res.json['data'], [])
+        res = self.app.get(added_contributors_url)
+        assert_equal(res.json['data'], [])
 
