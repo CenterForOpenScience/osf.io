@@ -56,7 +56,7 @@ from tests.factories import (
     NodeLicenseRecordFactory, DraftRegistrationFactory
 )
 from tests.test_features import requires_piwik
-from tests.utils import mock_archive, render_generations_from_node_structure_list
+from tests.utils import mock_archive
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
