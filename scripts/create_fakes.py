@@ -29,6 +29,7 @@ Examples:
 
 """
 from __future__ import print_function, absolute_import
+import ast
 import sys
 import argparse
 import logging
@@ -281,6 +282,9 @@ def parse_args():
     parser.add_argument('--presentation', dest='presentation_name', type=str, default=None)
     parser.add_argument('-r', '--registration', dest='is_registration', type=bool, default=False)
     return parser.parse_args()
+
+def evaluate_argument(string):
+    return ast.literal_eval(string)
 
 
 def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration):
