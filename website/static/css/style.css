@@ -534,6 +534,7 @@ select {
 .tag {
     text-decoration:none;
     display: inline-block;
+    word-break:break-all;
     background: #DEF;
     margin-right: 5px;
     margin-bottom:5px;

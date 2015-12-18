@@ -143,3 +143,27 @@ class MockAuth(object):
         self.logged_in = True
 
 mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
+
+def unique(factory):
+    """
+    Turns a factory function into a new factory function that guarentees unique return
+    values. Note this uses regular item equivalence to check uniqueness, so this may not
+    behave as expected with factories with complex return values.
+
+    Example use:
+    unique_name_factory = unique(fake.name)
+    unique_name = unique_name_factory()
+    """
+    used = []
+    @functools.wraps(factory)
+    def wrapper():
+        item = factory()
+        over = 0
+        while item in used:
+            if over > 100:
+                raise RuntimeError('Tried 100 times to generate a unqiue value, stopping.')
+            item = factory()
+            over += 1
+        used.append(item)
+        return item
+    return wrapper

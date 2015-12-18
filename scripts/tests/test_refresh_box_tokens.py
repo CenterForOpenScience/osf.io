@@ -28,11 +28,11 @@ class TestRefreshTokens(OsfTestCase):
             factories.BoxAccountFactory(expires_at=now + datetime.timedelta(days=8)),
             factories.BoxAccountFactory(expires_at=now + datetime.timedelta(days=6)),
         ]
-        targets = list(get_targets(delta=relativedelta(days=7)))
+        targets = list(get_targets(delta=relativedelta(days=-7)))
         assert_equal(records[1]._id, targets[0]._id)
         assert_not_in(records[0], targets)
 
-    @mock.patch('scripts.refresh_box_tokens.refresh_oauth_key')
+    @mock.patch('scripts.refresh_box_tokens.Box.refresh_oauth_key')
     def test_refresh(self, mock_refresh):
         fake_account = factories.BoxAccountFactory(expires_at=datetime.datetime.utcnow())
         main(delta=relativedelta(days=7), dry_run=False)
