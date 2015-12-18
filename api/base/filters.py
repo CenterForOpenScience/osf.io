@@ -238,9 +238,9 @@ class FilterMixin(object):
                 )
         elif isinstance(field, (self.LIST_FIELDS, self.RELATIONSHIP_FIELDS)) \
                 or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
+            if value == 'null':
+                value = None
             return value
-        elif value == 'null':
-            return None
         else:
             try:
                 return field.to_internal_value(value)
@@ -301,8 +301,7 @@ class ODMFilterMixin(FilterMixin):
             query_parts = []
             for field_name, params in filters.iteritems():
                 for group in params:
-                    value = self.convert_value(group['value'], field_name)
-                    query = Q(field_name, group['op'], value)
+                    query = Q(field_name, group['op'], group['value'])
                     query_parts.append(query)
             try:
                 query = functools.reduce(operator.and_, query_parts)
