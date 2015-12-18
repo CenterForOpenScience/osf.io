@@ -25,14 +25,29 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
 
 class NodeLogParamsSerializer(RestrictedDictSerializer):
 
-    tags = ser.CharField(read_only=True)
-    title_original = ser.CharField(read_only=True)
-    title_new = ser.CharField(read_only=True)
-    updated_fields = ser.ListField(read_only=True)
     addon = ser.CharField(read_only=True)
-    source = NodeLogFileParamsSerializer(read_only=True)
-    target = NodeLogFileParamsSerializer(read_only=True)
+    bucket = ser.CharField(read_only=True)
+    data_set = ser.CharField(read_only=True, source='dataset')
+    figshare_title = ser.CharField(read_only=True, source='figshare.title')
+    forward_url = ser.CharField(read_only=True)
+    github_user = ser.CharField(read_only=True, source='github.user')
+    github_repo = ser.CharField(read_only=True, source='github.repo')
+    filename = ser.CharField(read_only=True)
+    folder = ser.CharField(read_only=True)
+    folder_name = ser.CharField(read_only=True)
     identifiers = NodeLogIdentifiersSerializer(read_only=True)
+    old_page = ser.CharField(read_only=True)
+    page = ser.CharField(read_only=True)
+    path = ser.CharField(read_only=True)
+    source = NodeLogFileParamsSerializer(read_only=True)
+    study = ser.CharField(read_only=True)
+    tag = ser.CharField(read_only=True)
+    tags = ser.CharField(read_only=True)
+    target = NodeLogFileParamsSerializer(read_only=True)
+    title_new = ser.CharField(read_only=True)
+    title_original = ser.CharField(read_only=True)
+    updated_fields = ser.ListField(read_only=True)
+    version = ser.CharField(read_only=True)
 
 
 class NodeLogSerializer(JSONAPISerializer):
@@ -60,6 +75,10 @@ class NodeLogSerializer(JSONAPISerializer):
     linked_node = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<params.pointer.id>'}
+    )
+    template_node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<params.template_node.id>'}
     )
 
     def get_absolute_url(self, obj):

@@ -1521,6 +1521,16 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/project/<pid>/tree/',
+                '/project/<pid>/node/<nid>/tree/'
+            ],
+            'get',
+            project_views.node.get_node_tree,
+            json_renderer,
+        ),
+
+        Rule(
             '/subscriptions/',
             'post',
             notification_views.configure_subscription,
@@ -1556,7 +1566,7 @@ def make_url_map(app):
             'post',
             project_views.contributor.invite_contributor_post,
             json_renderer
-        ),
+        )
     ], prefix='/api/v1')
 
     # Set up static routing for addons

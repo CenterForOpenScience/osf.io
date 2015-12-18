@@ -11,7 +11,8 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RetractedRegistrationFactory
 )
 from tests.utils import assert_logs
 
@@ -84,6 +85,13 @@ class TestNodeLinksList(ApiTestCase):
         res = self.app.get(self.public_url)
         res_json = res.json['data']
         assert_equal(len(res_json), original_length - 1)
+
+    def test_cannot_access_retracted_node_links_list(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
 
 class TestNodeLinkCreate(ApiTestCase):
@@ -437,7 +445,7 @@ class TestNodeLinkCreate(ApiTestCase):
             }
         }
         res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
     def test_create_node_pointer_no_type(self):
         payload = {
@@ -729,7 +737,7 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
         payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.public_pointer_project._id}}}}]}
         res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
     def test_bulk_creates_node_pointer_no_type(self):
         payload = {'data': [{'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.user_two_project._id}}}}]}
@@ -847,7 +855,7 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
         url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
 
         res = self.app.delete_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
     def test_bulk_deletes_public_node_pointers_logged_out(self):
         res = self.app.delete_json_api(self.public_url, self.public_payload, expect_errors=True, bulk=True)

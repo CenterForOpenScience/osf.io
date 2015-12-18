@@ -103,7 +103,7 @@ var FileViewPage = {
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
                 self.requestDone = true;
-                self.file.checkoutUser = resp.data.relationships.checkout.links.related.href ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
+                self.file.checkoutUser = resp.data.relationships.checkout ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
                 if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
                         m('strong', 'File is checked out.'),
@@ -134,6 +134,15 @@ var FileViewPage = {
         });
 
         if ($osf.urlParams().branch) {
+            var fileWebViewUrl = waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {branch : $osf.urlParams().branch});
+            $.ajax({
+                dataType: 'json',
+                async: true,
+                url: fileWebViewUrl,
+                beforeSend: $osf.setXHRAuthorization 
+            }).done(function(response) {
+                window.contextVars.file.urls.external = response.data.extra.webView;
+            });
             self.file.urls.revisions = waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {sha: $osf.urlParams().branch});
             self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render', branch: $osf.urlParams().branch});
         }

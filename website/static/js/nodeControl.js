@@ -162,6 +162,7 @@ var ProjectViewModel = function(data) {
         return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
 
+
     // Add icon to title
     self.icon = '';
     var category = data.node.category_short;

@@ -46,6 +46,8 @@ from tests import factories
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
 
+from tests.utils import unique as _unique
+
 
 SILENT_LOGGERS = (
     'framework.tasks.utils',
@@ -53,21 +55,6 @@ SILENT_LOGGERS = (
 )
 for each in SILENT_LOGGERS:
     logging.getLogger(each).setLevel(logging.CRITICAL)
-
-def _unique(factory):
-    used = []
-    @functools.wraps(factory)
-    def wrapper():
-        item = factory()
-        over = 0
-        while item in used:
-            if over > 100:
-                raise RuntimeError('Tried 100 times to generate a unqiue value, stopping.')
-            item = factory()
-            over += 1
-        used.append(item)
-        return item
-    return wrapper
 
 sha256_factory = _unique(fake.sha256)
 name_factory = _unique(fake.word)
@@ -445,7 +432,8 @@ class TestArchiverTasks(ArchiverTestCase):
 
         with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
-                archive_success(registration._id)
+                job = factories.ArchiveJobFactory()
+                archive_success(registration._id, job._id)
                 for key, question in registration.registered_meta[prereg_schema._id].items():
                     target = None
                     if isinstance(question['value'], dict):
@@ -548,7 +536,8 @@ class TestArchiverTasks(ArchiverTestCase):
                 )
                 patch.start()
                 patches.append(patch)
-            archive_success(registration._id)
+            job = factories.ArchiveJobFactory()
+            archive_success(registration._id, job._id)
 
             for key, question in registration.registered_meta[prereg_schema._id].items():
                 target = None
@@ -606,7 +595,8 @@ class TestArchiverTasks(ArchiverTestCase):
 
         with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
-                archive_success(registration._id)
+                job = factories.ArchiveJobFactory()
+                archive_success(registration._id, job._id)
                 for key, question in registration.registered_meta[prereg_schema._id].items():
                     assert_equal(question['extra']['selectedFileName'], fake_file['name'])
 
@@ -642,7 +632,8 @@ class TestArchiverTasks(ArchiverTestCase):
 
         with test_utils.mock_archive(node, schema=prereg_schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_tree)):
-                archive_success(registration._id)
+                job = factories.ArchiveJobFactory()
+                archive_success(registration._id, job._id)
                 child_reg = registration.nodes[0]
                 for key, question in registration.registered_meta[prereg_schema._id].items():
                     assert_in(child_reg._id, question['extra']['viewUrl'])
@@ -677,6 +668,7 @@ class TestArchiverUtils(ArchiverTestCase):
             src=self.src,
             mail=mails.ARCHIVE_COPY_ERROR_USER,
             results={},
+            can_change_preferences=False,
             mimetype='html',
         )
         args_desk = dict(
@@ -705,6 +697,7 @@ class TestArchiverUtils(ArchiverTestCase):
             user=self.user,
             src=self.src,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
+            can_change_preferences=False,
             mimetype='html',
         )
         args_desk = dict(
