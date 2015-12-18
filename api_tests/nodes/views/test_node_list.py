@@ -104,7 +104,13 @@ class TestNodeList(ApiTestCase):
         for project in res.json['data']:
             if project['relationships'].get('root', None):
                 projects_with_root += 1
-        assert_equal(projects_with_root, 2)
+        assert_not_equal(projects_with_root, 0)
+        assert_true(
+            all([each['relationships'].get(
+                'root'
+            ) is not None for each in res.json['data']])
+        )
+
 
     def test_node_list_has_proper_root(self):
         project_one = ProjectFactory(title="Project One", is_public=True)
