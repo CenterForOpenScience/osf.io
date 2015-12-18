@@ -401,6 +401,10 @@ class NodeLog(StoredObject):
     COMMENT_REMOVED = 'comment_removed'
     COMMENT_UPDATED = 'comment_updated'
 
+    CITATION_ADDED = 'citation_added'
+    CITATION_EDITED = 'citation_edited'
+    CITATION_REMOVED = 'citation_removed'
+
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
@@ -418,7 +422,7 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
 
-    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED]
+    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -767,6 +771,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
+    alternative_citations = fields.ForeignField('alternativecitation', list=True, backref='citations')
+
     _meta = {
         'optimistic': True,
     }
@@ -935,10 +941,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def draft_registrations_active(self):
-        return DraftRegistration.find(
-            Q('branched_from', 'eq', self) &
-            Q('registered_node', 'eq', None)
+        drafts = DraftRegistration.find(
+            Q('branched_from', 'eq', self)
         )
+        for draft in drafts:
+            if not draft.registered_node or draft.registered_node.is_deleted:
+                yield draft
+
+    @property
+    def has_active_draft_registrations(self):
+        try:
+            next(self.draft_registrations_active)
+        except StopIteration:
+            return False
+        else:
+            return True
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -2017,6 +2034,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.permissions = {}
         forked.visible_contributor_ids = []
 
+        for citation in self.alternative_citations:
+            forked.add_citation(
+                auth=auth,
+                citation=citation.clone(),
+                log=False,
+                save=False
+            )
+
         forked.add_contributor(
             contributor=user,
             permissions=CREATOR_PERMISSIONS,
@@ -2093,6 +2118,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
@@ -2165,6 +2191,67 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
+    def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
+        if not citation:
+            citation = AlternativeCitation(**kwargs)
+        citation.save()
+        self.alternative_citations.append(citation)
+        citation_dict = {'name': citation.name, 'text': citation.text}
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_ADDED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation_dict
+                },
+                auth=auth,
+                save=False
+            )
+            if save:
+                self.save()
+        return citation
+
+    def edit_citation(self, auth, instance, save=False, log=True, **kwargs):
+        citation = {'name': instance.name, 'text': instance.text}
+        new_name = kwargs.get('name', instance.name)
+        new_text = kwargs.get('text', instance.text)
+        if new_name != instance.name:
+            instance.name = new_name
+            citation['new_name'] = new_name
+        if new_text != instance.text:
+            instance.text = new_text
+            citation['new_text'] = new_text
+        instance.save()
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_EDITED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation
+                },
+                auth=auth,
+                save=False
+            )
+        if save:
+            self.save()
+        return instance
+
+    def remove_citation(self, auth, instance, save=False, log=True):
+        citation = {'name': instance.name, 'text': instance.text}
+        self.alternative_citations.remove(instance)
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_REMOVED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation
+                },
+                auth=auth,
+                save=False
+            )
+        if save:
+            self.save()
+
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
         params['node'] = params.get('node') or params.get('project')
@@ -2214,7 +2301,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def absolute_api_v2_url(self):
         if self.is_registration:
-            return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': self._id})
+            return absolute_reverse('registrations:registration-detail', kwargs={'node_id': self._id})
         if self.is_folder:
             return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
@@ -2736,7 +2823,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor)
+            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
 
             return True
 
@@ -4006,6 +4093,17 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
             auth=Auth(user),
         )
 
+class AlternativeCitation(StoredObject):
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    name = fields.StringField(required=True, validate=MaxLengthValidator(256))
+    text = fields.StringField(required=True, validate=MaxLengthValidator(2048))
+
+    def to_json(self):
+        return {
+            "id": self._id,
+            "name": self.name,
+            "text": self.text
+        }
 
 class DraftRegistrationApproval(Sanction):
 
@@ -4022,10 +4120,7 @@ class DraftRegistrationApproval(Sanction):
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
                 user=user,
-                draft_url=draft.branched_from.web_url_for(
-                    'edit_draft_registration_page',
-                    draft_id=draft._id
-                )
+                draft_url=draft.absolute_url
             )
         else:
             raise NotImplementedError(
@@ -4077,18 +4172,18 @@ class DraftRegistrationApproval(Sanction):
         # clear out previous registration options
         self.meta = {}
         self.save()
-        # remove reference to approval from draft
+
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
-        draft.approval = None
-        draft.save()
         self._send_rejection_email(user, draft)
 
 
 class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+
+    URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/draft/{draft_id}'
 
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
@@ -4126,16 +4221,32 @@ class DraftRegistration(StoredObject):
     def flags(self):
         if not self._metaschema_flags:
             self._metaschema_flags = {}
-            meta_schema = self.registration_schema
-            if meta_schema:
-                schema = meta_schema.schema
-                flags = schema.get('flags', {})
-                for flag, value in flags.iteritems():
+        meta_schema = self.registration_schema
+        if meta_schema:
+            schema = meta_schema.schema
+            flags = schema.get('flags', {})
+            for flag, value in flags.iteritems():
+                if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
             self.save()
         return self._metaschema_flags
 
+    @flags.setter
+    def flags(self, flags):
+        self._metaschema_flags.update(flags)
+
     notes = fields.StringField()
+
+    @property
+    def url(self):
+        return self.URL_TEMPLATE.format(
+            node_id=self.branched_from,
+            draft_id=self._id
+        )
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
 
     @property
     def requires_approval(self):
@@ -4154,6 +4265,16 @@ class DraftRegistration(StoredObject):
                 return self.approval.is_approved
         else:
             return True
+
+    @property
+    def is_rejected(self):
+        if self.requires_approval:
+            if not self.approval:
+                return False
+            else:
+                return self.approval.is_rejected
+        else:
+            return False
 
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
@@ -4199,9 +4320,6 @@ class DraftRegistration(StoredObject):
             initiated_by=initiated_by,
             meta=meta
         )
-        authorizers = self.get_authorizers()
-        for user in authorizers:
-            approval.add_authorizer(user)
         approval.save()
         self.approval = approval
         if save:

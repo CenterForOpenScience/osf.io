@@ -129,4 +129,4 @@ class TestNodeLogList(ApiTestCase):
         url = '/{}nodes/{}/logs/'.format(API_BASE, registration._id)
         retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
