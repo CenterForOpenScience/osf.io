@@ -1,52 +1,47 @@
 require('css/legend.css');
 var m = require('mithril');
 
-/** Finds the index of a string in an array
- *
- * @param {Array} array The array to search through
- * @param {String} str The string to find
- * @returns {*}
- */
-var find_index = function (array, str) {
-    for (var i = 0; i < array.length; i++) {
-        if (array[i].label === str)
-            return i;
-    }
-    return -1;
-};
-
-/** Removes an index from an array immutably
- *
- * @param {Array} array the array to modify
- * @param {Int} index the index to remove
- * @returns {*} a new array missing the index value
- */
-var remove_index = function (array, index) {
-    var new_array = [];
-    for (var i = 0; i < array.length; i++) {
-        if (i !== index)
-            new_array.push(array[i]);
-    }
-    return new_array;
-};
-
 module.exports = {
     view: function (data, repr, opts) {
-        var other_index = find_index(data, 'Other');
-        var other = data[other_index];
-        data = remove_index(data, other_index);
-
-        var uncat_index = find_index(data, 'Uncategorized');
-        var uncat = data[uncat_index];
-        data = remove_index(data, uncat_index);
-
         if (data[0].label) {
+            /* sorting should be:
+               [ (IN alpha order), Other, Uncategorized]
+
+                sort a b
+                    a == Uncat     =  1
+                    b == Uncat     = -1
+                    a == Other
+                        b == Uncat = -1
+                        otherswise =  1
+                    b == Other
+                        a == Uncat =  1
+                        otherwise  = -1
+                    otherwise      = compare a b
+             */
             data.sort(function (a, b) {
+                // Uncategorized should come last
+                if(a.label === 'Uncategorized') return  1;
+                if(b.label === 'Uncategorized') return -1;
+
+                // Other should come second to last
+                if(a.label === 'Other') {
+                    if(b.label === 'Uncategorized') {
+                        return -1;
+                    }
+                    return 1;
+                }
+
+                if(b.label === 'Other') {
+                    if(a.label === 'Uncategorized') {
+                        return 1;
+                    }
+                    return -1;
+                }
+
+                // Otherwise order regularly
                 return a.label.localeCompare(b.label);
             });
         }
-        data.push(other);
-        data.push(uncat);
         return [
             m('div', {
                 className: 'legend-grid'
