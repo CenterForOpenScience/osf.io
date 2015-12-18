@@ -103,7 +103,7 @@ class TestNodeFilesList(ApiTestCase):
         url = '/{}nodes/{}/files/'.format(API_BASE, registration._id)
         retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
     def test_returns_public_files_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)

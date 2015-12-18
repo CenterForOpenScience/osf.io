@@ -4,6 +4,8 @@ from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
 from api.nodes.serializers import NodeSerializer
+from api.nodes.serializers import NodeLinksSerializer
+from api.nodes.serializers import NodeContributorsSerializer
 from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly
 
 
@@ -72,6 +74,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<parent_id>'}
     ))
 
+    logs = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-logs',
+        related_view_kwargs={'node_id': '<pk>'},
+    ))
+
     # TODO: Finish me
 
     # TODO: Override create?
@@ -79,7 +86,7 @@ class RegistrationSerializer(NodeSerializer):
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_url'})
 
     def get_registration_url(self, obj):
-        return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': obj._id})
+        return absolute_reverse('registrations:registration-detail', kwargs={'node_id': obj._id})
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
@@ -115,3 +122,27 @@ class RegistrationDetailSerializer(RegistrationSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class RegistrationNodeLinksSerializer(NodeLinksSerializer):
+    def get_absolute_url(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'registrations:registration-pointer-detail',
+            kwargs={
+                'node_id': node_id,
+                'node_link_id': obj._id
+            }
+        )
+
+
+class RegistrationContributorsSerializer(NodeContributorsSerializer):
+    def get_absolute_url(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'registrations:node-contributor-detail',
+            kwargs={
+                'node_id': node_id,
+                'user_id': obj._id
+            }
+        )

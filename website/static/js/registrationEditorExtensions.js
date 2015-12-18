@@ -160,11 +160,15 @@ ko.bindingHandlers.osfUploader = {
     init: osfUploader
 };
 
+
+var uploaderCount = 0;
 var Uploader = function(question) {
 
     var self = this;
 
     question.showUploader = ko.observable(false);
+    question.uid = 'uploader_' + uploaderCount;
+    uploaderCount++;
     self.selectedFile = ko.observable({});
     self.selectedFile.subscribe(function(file) {
         if (file) {
@@ -236,7 +240,7 @@ var AuthorImport = function(data, $root) {
             });
     };
     self.getContributors().done(function(data) {
-        self.value(data);
+        self.question.value(data);
     });
     self.preview = function() {
         return self.value();
@@ -244,14 +248,18 @@ var AuthorImport = function(data, $root) {
     var callback = function(data) {
         self.value(self.serializeContributors(data));
     };
-    var adder = new ContribAdder(
-        '#addContributors',
-        node.title,
-        node.id,
-        null,
-        null,
-        {async: true, callback: callback}
-    );
+
+    if ($('#addContributors').length > 0) {
+        ko.cleanNode($('#addContributors')[0]);
+        var adder = new ContribAdder(
+            '#addContributors',
+            node.title,
+            node.id,
+            null,
+            null,
+            {async: true, callback: callback}
+        );
+    }
 
     $.extend(self, data);
 };
