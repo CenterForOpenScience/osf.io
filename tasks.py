@@ -924,6 +924,12 @@ def update_citation_styles():
     total = parse_citation_styles.main()
     print("Parsed {} styles".format(total))
 
+
 @task
 def clean(verbose=False):
     run('find . -name "*.pyc" -delete', echo=True)
+
+
+@task(default=True)
+def usage():
+    run('invoke --list')

@@ -36,10 +36,11 @@ def get_user_auth(request):
     authenticated user attached to it.
     """
     user = request.user
+    private_key = request.query_params.get('view_only', None)
     if user.is_anonymous():
-        auth = Auth(None)
+        auth = Auth(None, private_key=private_key)
     else:
-        auth = Auth(user)
+        auth = Auth(user, private_key=private_key)
     return auth
 
 

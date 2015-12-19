@@ -9,7 +9,9 @@ from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RegistrationFactory,
+    RetractedRegistrationFactory
 )
 from tests.utils import assert_logs, assert_not_logs
 
@@ -88,6 +90,13 @@ class TestContributorDetail(NodeCRUDTestCase):
 
     def test_get_private_node_invalid_user_detail_contributor_auth(self):
         res = self.app.get(self.private_url_base.format('invalid'), auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_can_not_access_retracted_contributor_detail(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/contributors/{}/'.format(API_BASE, registration._id, self.user._id)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
 

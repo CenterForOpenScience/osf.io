@@ -14,6 +14,7 @@ require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
  * Example: <div data-bind="ace: currentText" id="editor"></div>
  */
 var editor;
+
 ko.bindingHandlers.ace = {
     init: function (element, valueAccessor) {
         editor = ace.edit(element.id);  // jshint ignore: line
@@ -25,6 +26,7 @@ ko.bindingHandlers.ace = {
             valueAccessor()(editor.getValue());
         });
     },
+
     update: function (element, valueAccessor) {
         var content = editor.getValue();        // Content of ace editor
         var value = ko.unwrap(valueAccessor()); // Value from view model

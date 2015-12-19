@@ -1,5 +1,7 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
+from rest_framework.exceptions import ValidationError
+from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
 from framework.auth.core import Auth
@@ -11,7 +13,8 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
-                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
+                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
+                                  HideIfRegistration)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -30,6 +33,7 @@ class NodeSerializer(JSONAPISerializer):
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
     filterable_fields = frozenset([
+        'id',
         'title',
         'description',
         'public',
@@ -63,8 +67,7 @@ class NodeSerializer(JSONAPISerializer):
                                         'to everyone. Private nodes require explicit read '
                                         'permission. Write and admin access are the same for '
                                         'public and private nodes. Administrators on a parent '
-                                        'node have implicit read permissions for all child nodes',
-                              )
+                                        'node have implicit read permissions for all child nodes')
 
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
@@ -107,11 +110,11 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<parent_id>'}
     )
 
-    registrations = DevOnly(RelationshipField(
+    registrations = DevOnly(HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_registration_count'}
-    ))
+    )))
 
     logs = RelationshipField(
         related_view='nodes:node-logs',
@@ -169,13 +172,15 @@ class NodeSerializer(JSONAPISerializer):
         """
         assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
-        tags = validated_data.get('tags')
-        if tags is not None:
+        old_tags = set([tag._id for tag in node.tags])
+        if 'tags' in validated_data:
+            current_tags = set(validated_data.get('tags'))
             del validated_data['tags']
-            current_tags = set(tags)
+        elif self.partial:
+            current_tags = set(old_tags)
         else:
             current_tags = set()
-        old_tags = set([tag._id for tag in node.tags])
+
         for new_tag in (current_tags - old_tags):
             node.add_tag(new_tag, auth=auth)
         for deleted_tag in (old_tags - current_tags):
@@ -202,6 +207,7 @@ class NodeDetailSerializer(NodeSerializer):
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
+    non_anonymized_fields = ['bibliographic', 'permission']
     filterable_fields = frozenset([
         'id',
         'bibliographic',
@@ -229,9 +235,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'contributors'
-
-    def absolute_url(self, obj):
-        return obj.absolute_url
 
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
@@ -373,3 +376,45 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
+
+class NodeAlternativeCitationSerializer(JSONAPISerializer):
+
+    id = IDField(source="_id", read_only=True)
+    type = TypeField()
+    name = ser.CharField(required=True)
+    text = ser.CharField(required=True)
+
+    class Meta:
+        type_ = 'citations'
+
+    def create(self, validated_data):
+        errors = self.error_checker(validated_data)
+        if len(errors) > 0:
+            raise ValidationError(detail=errors)
+        node = self.context['view'].get_node()
+        auth = Auth(self.context['request']._user)
+        citation = node.add_citation(auth, save=True, **validated_data)
+        return citation
+
+    def update(self, instance, validated_data):
+        errors = self.error_checker(validated_data)
+        if len(errors) > 0:
+            raise ValidationError(detail=errors)
+        node = self.context['view'].get_node()
+        auth = Auth(self.context['request']._user)
+        instance = node.edit_citation(auth, instance, save=True, **validated_data)
+        return instance
+
+    def error_checker(self, data):
+        errors = []
+        name = data.get('name', None)
+        text = data.get('text', None)
+        citations = self.context['view'].get_node().alternative_citations
+        if not (self.instance and self.instance.name == name) and citations.find(Q('name', 'eq', name)).count() > 0:
+            errors.append("There is already a citation named '{}'".format(name))
+        if not (self.instance and self.instance.text == text):
+            matching_citations = citations.find(Q('text', 'eq', text))
+            if matching_citations.count() > 0:
+                names = "', '".join([str(citation.name) for citation in matching_citations])
+                errors.append("Citation matches '{}'".format(names))
+        return errors
