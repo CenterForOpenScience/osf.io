@@ -4119,6 +4119,7 @@ class TestComments(OsfTestCase):
             node=self.comment.node,
             target=self.comment.target,
             is_public=True,
+            content='This is a comment.'
         )
         assert_equal(comment.user, self.comment.user)
         assert_equal(comment.node, self.comment.node)
@@ -4145,6 +4146,7 @@ class TestComments(OsfTestCase):
                 node=self.comment.node,
                 target=self.comment.target,
                 is_public=True,
+                content='This is a comment.'
             )
         assert_equal(mock_signals.signals_sent(), set([comment_added]))
 

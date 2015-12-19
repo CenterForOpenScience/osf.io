@@ -1095,12 +1095,12 @@ class TestSendEmails(OsfTestCase):
 
         # reply to user (note: notify is called from Comment.create)
         reply = Comment.create(
-                auth=Auth(project.creator),
-                user=project.creator,
-                node=project,
-                content=content,
-                target=target,
-                is_public=True,
+            auth=Auth(project.creator),
+            user=project.creator,
+            node=project,
+            content=content,
+            target=target,
+            is_public=True,
         )
         assert_true(mock_notify.called)
         assert_equal(mock_notify.call_count, 2)
