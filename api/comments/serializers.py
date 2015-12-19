@@ -52,6 +52,11 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
+    def validate_content(self, value):
+        if value is None or not value.strip():
+            raise ValidationError('Comment cannot be empty.')
+        return value
+
     def get_is_abuse(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
@@ -73,9 +78,6 @@ class CommentSerializer(JSONAPISerializer):
         if validated_data:
             if 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
-                content = content.strip()
-                if not content:
-                    raise ValidationError('Comment cannot be empty.')
                 comment.edit(content, auth=auth, save=True)
             if validated_data.get('is_deleted', None) is True:
                 comment.delete(auth, save=True)
@@ -104,7 +106,7 @@ class CommentCreateSerializer(CommentSerializer):
         target_type = self.context['request'].data.get('target_type')
         expected_target_type = self.get_target_type(target)
         if target_type != expected_target_type:
-            raise Conflict('Invalid target type. Expected \"{0}\", got \"{1}.\"'.format(expected_target_type, target_type))
+            raise Conflict('Invalid target type. Expected "{0}", got "{1}."'.format(expected_target_type, target_type))
         return target_type
 
     def get_target(self, node_id, target_id):
@@ -134,10 +136,6 @@ class CommentCreateSerializer(CommentSerializer):
                 detail='Invalid comment target \'{}\'.'.format(target_id)
             )
         validated_data['target'] = target
-        content = validated_data.pop('get_content')
-        validated_data['content'] = content.strip()
-        if not validated_data['content']:
-            raise ValidationError('Comment cannot be empty.')
         if node and node.can_comment(auth):
             comment = Comment.create(auth=auth, **validated_data)
         else:
