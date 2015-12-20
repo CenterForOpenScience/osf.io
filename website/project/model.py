@@ -17,7 +17,7 @@ from django.core.urlresolvers import reverse
 
 from modularodm import Q
 from modularodm import fields
-from modularodm.validators import MaxLengthValidator
+from modularodm.validators import MaxLengthValidator, ValueNotEmptyValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
@@ -180,7 +180,8 @@ class Comment(GuidStoredObject):
     modified = fields.BooleanField(default=False)
 
     is_deleted = fields.BooleanField(default=False)
-    content = fields.StringField(required=True, validate=MaxLengthValidator(settings.COMMENT_MAXLENGTH))
+    content = fields.StringField(required=True,
+                                 validate=(MaxLengthValidator(settings.COMMENT_MAXLENGTH), ValueNotEmptyValidator()))
 
     # Dictionary field mapping user IDs to dictionaries of report details:
     # {

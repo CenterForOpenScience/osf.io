@@ -4138,6 +4138,42 @@ class TestComments(OsfTestCase):
                 content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH + 1)])
             )
 
+    def test_create_comment_content_cannot_be_none(self):
+        with assert_raises(ValidationError) as error:
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+                content=None
+        )
+        assert_equal(error.exception.message, 'Value <content> is required.')
+
+    def test_create_comment_content_cannot_be_empty(self):
+        with assert_raises(ValidationValueError) as error:
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+                content=''
+        )
+        assert_equal(error.exception.message, 'Ensure this value is not empty.')
+
+    def test_create_comment_content_cannot_be_whitespace(self):
+        with assert_raises(ValidationValueError) as error:
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+                content='    '
+        )
+        assert_equal(error.exception.message, 'Ensure this value is not empty.')
+
     def test_create_sends_comment_added_signal(self):
         with capture_signals() as mock_signals:
             comment = Comment.create(
