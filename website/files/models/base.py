@@ -149,6 +149,14 @@ class StoredFileNode(StoredObject):
     def deep_url(self):
         return self.wrapped().deep_url
 
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
     def wrapped(self):
         """Wrap self in a FileNode subclass
         """
@@ -167,10 +175,6 @@ class StoredFileNode(StoredObject):
             if not create:
                 return None
         return Guid.generate(self)
-
-    # used by django and DRF
-    def get_absolute_url(self):
-        return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
 
 
 class FileNodeMeta(type):

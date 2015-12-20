@@ -427,8 +427,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
 
 class FileCommentRelationshipField(RelationshipField):
-    def __init_(self, **kwargs):
-        super(FileCommentRelationshipField, self).__init__(**kwargs)
 
     def get_url(self, obj, view_name, request, format):
         if obj.kind == 'folder':

@@ -69,7 +69,7 @@ class CommentSerializer(JSONAPISerializer):
         return obj.user._id == user._id
 
     def get_has_children(self, obj):
-        return bool(Comment.find(Q('target', 'eq', obj)).count())
+        return Comment.find(Q('target', 'eq', obj)).count() > 0
 
     def update(self, comment, validated_data):
         assert isinstance(comment, Comment), 'comment must be a Comment'
