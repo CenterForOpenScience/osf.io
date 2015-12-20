@@ -236,7 +236,7 @@ class Comment(GuidStoredObject):
         return self.content
 
     @classmethod
-    def find_unread(cls, user, node, page=None, root_id=None, check=False):
+    def find_n_unread(cls, user, node, page=None, root_id=None, check=False):
         default_timestamp = datetime.datetime(1970, 1, 1, 12, 0, 0)
         n_unread = 0
         if node.is_contributor(user):
@@ -284,7 +284,7 @@ class Comment(GuidStoredObject):
                 exists = file_obj and file_obj.touch(request.headers.get('Authorization'))
                 if not exists:
                     continue
-                n_unread += cls.find_unread(user, node, page='files', root_id=file_id)
+                n_unread += cls.find_n_unread(user, node, page='files', root_id=file_id)
         return n_unread
 
     @classmethod

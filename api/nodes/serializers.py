@@ -157,7 +157,7 @@ class NodeSerializer(JSONAPISerializer):
     def get_unread_comments_count(self, obj):
         auth = self.get_user_auth(self.context['request'])
         user = auth.user
-        node_comments = Comment.find_unread(user=user, node=obj, page='node')
+        node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
         file_comments = self.get_unread_file_comments(obj)
 
         return {
@@ -177,7 +177,7 @@ class NodeSerializer(JSONAPISerializer):
                     self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider, check_object_permissions=False)
                 except (exceptions.NotFound, exceptions.PermissionDenied):
                     continue
-                n_unread += Comment.find_unread(user, obj, page='files', root_id=file_id)
+                n_unread += Comment.find_n_unread(user, obj, page='files', root_id=file_id)
         return n_unread
 
     def create(self, validated_data):

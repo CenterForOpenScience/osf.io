@@ -217,7 +217,7 @@ class TestCommentModel(OsfTestCase):
             comment.get_content(auth=None)
 
     def test_find_unread_is_zero_when_no_comments(self):
-        n_unread = Comment.find_unread(user=UserFactory(), node=ProjectFactory())
+        n_unread = Comment.find_n_unread(user=UserFactory(), node=ProjectFactory())
         assert_equal(n_unread, 0)
 
     def test_find_unread_new_comments(self):
@@ -226,7 +226,7 @@ class TestCommentModel(OsfTestCase):
         project.add_contributor(user)
         project.save()
         comment = CommentFactory(node=project, user=project.creator)
-        n_unread = Comment.find_unread(user=user, node=project)
+        n_unread = Comment.find_n_unread(user=user, node=project)
         assert_equal(n_unread, 1)
 
     def test_find_unread_includes_comment_replies(self):
@@ -236,7 +236,7 @@ class TestCommentModel(OsfTestCase):
         project.save()
         comment = CommentFactory(node=project, user=user)
         reply = CommentFactory(node=project, target=comment, user=project.creator)
-        n_unread = Comment.find_unread(user=user, node=project)
+        n_unread = Comment.find_n_unread(user=user, node=project)
         assert_equal(n_unread, 1)
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-5193
@@ -251,7 +251,7 @@ class TestCommentModel(OsfTestCase):
         payload = {'page': 'node', 'rootId': project._id}
         res = self.app.put_json(url, payload, auth=user.auth)
         user.reload()
-        n_unread = Comment.find_unread(user=user, node=project)
+        n_unread = Comment.find_n_unread(user=user, node=project)
         assert_equal(n_unread, 0)
 
         # Edit previously read comment
@@ -260,7 +260,7 @@ class TestCommentModel(OsfTestCase):
             content='edited',
             save=True
         )
-        n_unread = Comment.find_unread(user=user, node=project)
+        n_unread = Comment.find_n_unread(user=user, node=project)
         assert_equal(n_unread, 1)
 
     def test_find_unread_does_not_include_deleted_comments(self):
@@ -269,5 +269,5 @@ class TestCommentModel(OsfTestCase):
         project.add_contributor(user)
         project.save()
         comment = CommentFactory(node=project, user=project.creator, is_deleted=True)
-        n_unread = Comment.find_unread(user=user, node=project)
+        n_unread = Comment.find_n_unread(user=user, node=project)
         assert_equal(n_unread, 0)
