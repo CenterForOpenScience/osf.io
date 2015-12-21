@@ -1,7 +1,7 @@
 from datetime import datetime
 from scripts.update_comments import update_comments_viewed_timestamp
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, CommentFactory
+from tests.factories import UserFactory
 from nose.tools import *  # PEP8 asserts
 
 
