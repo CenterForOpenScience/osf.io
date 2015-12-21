@@ -12,6 +12,7 @@ Migrations
 ----------
 
 - python -m scripts.migration.migrate_date_modified_for_existing_nodes
+- python -m scripts.migration.migrate_root_and_parent_on_node
 
 0.61.0 (unreleased)
 ===================
@@ -20,11 +21,6 @@ Migrations
 - Drag and drop images into wiki pages.
 - APIv2: Support view-only link keys.
 - APIv2: Support filtering against multiple ids, e.g. ?filter[id]=abc12,def34
-
-Migrations
-----------
-
-- scripts.migration.migrate_root_and_parent_on_node
 
 0.60.0 (2015-12-17)
 ===================
