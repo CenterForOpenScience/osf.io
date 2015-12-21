@@ -114,23 +114,26 @@ class CommentCreateSerializer(CommentSerializer):
 
     def get_target(self, node_id, target_id):
         node = Node.load(target_id)
-        if node and node_id != target_id:
-            raise ValueError('Cannot post comment to another node.')
-        elif target_id == node_id:
-            return node
-        else:
-            comment = Comment.load(target_id)
-            if comment:
-                if comment.node._id == node_id:
-                    return comment
-                else:
-                    raise ValueError('Cannot post reply to comment on another node.')
+        comment = Comment.load(target_id)
+        target_file = StoredFileNode.load(target_id)
+
+        if node:
+            if node_id == target_id:
+                return node
             else:
-                target_file = StoredFileNode.load(target_id)
-                if target_file and target_file.node._id == node_id:
-                    return target_file
-                else:
-                    raise ValueError('Cannot post comment to file on another node.')
+                raise ValueError('Cannot post comment to another node.')
+        elif comment:
+            if comment.node._id == node_id:
+                return comment
+            else:
+                raise ValueError('Cannot post reply to comment on another node.')
+        elif target_file:
+            if target_file.node._id == node_id:
+                return target_file
+            else:
+                raise ValueError('Cannot post comment to file on another node.')
+        else:
+            raise ValueError('Invalid comment target.')
 
     def create(self, validated_data):
         user = validated_data['user']
