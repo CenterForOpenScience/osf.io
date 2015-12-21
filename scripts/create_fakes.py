@@ -310,6 +310,4 @@ def main():
 
 if __name__ == '__main__':
     init_app(set_backends=True, routes=False)
-    for i in range(0,35):
-        create_fake_user()
     main()
