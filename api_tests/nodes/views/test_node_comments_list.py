@@ -129,7 +129,7 @@ class TestNodeCommentsListFiles(ApiTestCase):
         self.registration = RegistrationFactory(creator=self.user)
         self.registration_file = test_utils.create_test_file(self.registration, self.user)
         self.registration_comment = CommentFactory(node=self.registration, user=self.user, target=self.registration_file, page='files')
-        self.registration_url = '/{}nodes/{}/comments/'.format(API_BASE, self.registration._id)
+        self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
 
     def test_return_public_file_comments_logged_out_user(self):
         self._set_up_public_project_with_file_comment()

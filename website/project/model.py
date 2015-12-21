@@ -237,7 +237,6 @@ class Comment(GuidStoredObject):
 
     @classmethod
     def find_n_unread(cls, user, node, page=None, root_id=None, check=False):
-        default_timestamp = datetime.datetime(1970, 1, 1, 12, 0, 0)
         n_unread = 0
         if node.is_contributor(user):
             if not page:

@@ -1341,7 +1341,7 @@ class User(GuidStoredObject, AddonModelMixin):
             a dictionary of timestamps for when comments were last viewed on files.
         """
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
-        timestamps = self.comments_viewed_timestamp.get(node._id,  {})
+        timestamps = self.comments_viewed_timestamp.get(node._id, {})
         if page == 'node':
             page_timestamps = timestamps.get(page, default_timestamp)
         elif page == 'files':
