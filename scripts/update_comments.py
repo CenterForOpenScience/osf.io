@@ -2,18 +2,22 @@
 Update User.comments_viewed_timestamp field & comments model.
 Accompanies https://github.com/CenterForOpenScience/osf.io/pull/1762
 """
+import logging
+import sys
+
 from modularodm import Q
+
 from framework.auth.core import User
+from framework.transactions.context import TokuTransaction
+
 from website.models import Comment
 from website.app import init_app
-import logging
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
 
 
 def main():
-    init_app(routes=False, set_backends=True)
     update_comments_viewed_timestamp()
     update_comments()
 
@@ -36,5 +40,11 @@ def update_comments():
 
 
 if __name__ == '__main__':
-    script_utils.add_file_logger(logger, __file__)
-    main()
+    dry = '--dry' in sys.argv
+    if not dry:
+        script_utils.add_file_logger(logger, __file__)
+    init_app(routes=False, set_backends=True)
+    with TokuTransaction:
+        main()
+        if dry:
+            raise Exception('Dry Run -- Aborting Transaction')
