@@ -87,13 +87,27 @@ var FileBrowser = {
         };
         self.refreshView = m.prop(true); // Internal loading indicator
         self.currentPage = m.prop(1); // Used with pagination
+        self.allProjectsLoaded = m.prop(false);
+        self.allProjects = m.prop([]);
 
         // Default system collections
         self.collections = [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors' }, systemCollection : true}, 'All My Projects'),
-            new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : true}, 'All My Registrations'),
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
+            new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations'),
         ];
 
+        // Helper function to add properties for Treebeard to work properly
+        self.addTbProperties = function(value){
+            value.data.map(function (item) {
+                item.kind = 'folder';
+                item.uid = item.id;
+                item.name = item.attributes.title;
+                item.date = new $osf.FormattableDate(item.attributes.date_modified);
+            });
+            return value;
+        };
+
+        // Load collection list
         var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'sort' : 'date_created'}});
         var promise = m.request({method : 'GET', url : collectionsUrl, config : xhrconfig});
         promise.then(function(result){
@@ -103,16 +117,22 @@ var FileBrowser = {
             });
         });
 
+        // Initial Breadcrumb for All my projects
         self.breadcrumbs = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : true}, 'All My Projects'),
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
         ]);
+        // Calculate name filters
         self.nameFilters = [
             new LinkObject('name', { id : '8q36f', query : { 'related_counts' : true }}, 'Caner Uguz'),
         ];
+        // Calculate tag filters
         self.tagFilters = [
             new LinkObject('tag', { tag : 'something', query : { 'related_counts' : true }}, 'Something Else'),
         ];
+        // Placeholder for node data
         self.data = m.prop([]);
+
+        // Activity Logs
         self.activityLogs = m.prop();
         self.getLogs = function _getLogs (nodeId) {
             var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
@@ -130,7 +150,7 @@ var FileBrowser = {
         self.updateFilesData = function(linkObject) {
             if (linkObject.link !== self.currentLink) {
                 self.updateBreadcrumbs(linkObject);
-                self.updateList(linkObject.link);
+                self.updateList(linkObject);
                 self.currentLink = linkObject.link;
             }
             self.showSidebar(false);
@@ -154,15 +174,39 @@ var FileBrowser = {
             self.updateFilesData(filter);
         };
 
+        // GETTING THE NODES
+        self.updateList = function(linkObject, success, error){
+            self.refreshView(true);
+            if(linkObject.data.systemCollection === 'nodes' && self.allProjectsLoaded()){
+                self.data(self.allProjects());
+                self.reload(true);
+                self.refreshView(false);
+                return;
+            }
+            if (success === undefined){
+                success = self.updateListSuccess;
+            }
+            if(linkObject.data.systemCollection === 'nodes'){
+                self.loadingNodes = true;
+            }
+            if (error === undefined){
+                error = self.updateListError;
+            }
+            var url = linkObject.link;
+            if (typeof url !== 'string'){
+                throw new Error('Url argument for updateList needs to be string');
+            }
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            promise.then(success, error);
+            return promise;
+        };
         self.updateListSuccess = function(value) {
-            console.log(value);
-            value.data.map(function (item) {
-                item.kind = 'folder';
-                item.uid = item.id;
-                item.name = item.attributes.title;
-                item.date = new $osf.FormattableDate(item.attributes.date_modified);
-            });
-            self.data(value);
+            value = self.addTbProperties(value);
+            if(self.loadingPages){
+                self.data().data = self.data().data.concat(value.data);
+            } else {
+                self.data(value);
+            }
             if(value.data[0]){ // If we have projects to show get first project's logs
                 self.getLogs(value.data[0].id);
             } else {
@@ -173,10 +217,26 @@ var FileBrowser = {
                     self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'This project has no subcomponents. Add new.'));
                 }
             }
+            // if we have more pages keep loading the pages
+            if (value.links.next) {
+                self.loadingPages = true;
+                var collData = {};
+                if(!self.allProjectsLoaded()) {
+                    collData = { systemCollection : 'nodes' };
+                }
+                self.updateList({link : value.links.next, data : collData });
+                return; // stop here so the reloads below don't run
+            } else {
+                self.loadingPages = false;
+            }
+            if(self.loadingNodes) {
+                self.allProjects(self.data());
+                self.loadingNodes = false;
+                self.allProjectsLoaded(true);
+            }
             self.reload(true);
             self.refreshView(false);
         };
-
         self.updateListError = function(result){
             self.nonLoadTemplate(m('.fb-error.text-danger', [
                 m('p','Projects couldn\'t load.'),
@@ -187,22 +247,7 @@ var FileBrowser = {
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
         };
 
-        // Refresh the Grid
-        self.updateList = function(url, success, error){
-            self.refreshView(true);
-            if (success === undefined){
-                success = self.updateListSuccess;
-            }
-            if (error === undefined){
-                error = self.updateListError;
-            }
-            if (typeof url !== 'string'){
-                throw new Error('Url argument for updateList needs to be string');
-            }
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
-            promise.then(success, error);
-            return promise;
-        };
+
 
         // BREADCRUMBS
         self.updateBreadcrumbs = function(linkObject){
@@ -284,10 +329,10 @@ var FileBrowser = {
             });
         };
         self.init = function () {
-            var loadUrl = $osf.apiV2Url(self.collections[0].data.path, {
-                query : self.collections[0].data.query
-            });
-            self.updateList(loadUrl);
+            //var loadUrl = $osf.apiV2Url(self.collections[0].data.path, {
+            //    query : self.collections[0].data.query
+            //});
+            self.updateList(self.collections[0]);
             self.resetCollectionMenu();
         };
         self.init();
