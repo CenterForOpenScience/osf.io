@@ -216,6 +216,15 @@ ARCHIVE_COPY_ERROR_DESK = Mail(
 ARCHIVE_COPY_ERROR_USER = Mail(
     'archive_copy_error_user',
     subject=PROBLEM_REGISTERING
+
+)
+ARCHIVE_FILE_NOT_FOUND_DESK = Mail(
+    'archive_file_not_found_desk',
+    subject=PROBLEM_REGISTERING
+)
+ARCHIVE_FILE_NOT_FOUND_USER = Mail(
+    'archive_file_not_found_user',
+    subject='Registration failed because of altered files'
 )
 
 ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(

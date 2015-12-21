@@ -16,6 +16,11 @@ from api.base import utils
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
 
+from website.models import PrivateLink
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
+
+
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
     """
     Properly handles formatting of self and related links according to JSON API.
@@ -42,6 +47,22 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
         })
 
     return ret
+
+def is_anonymized(request):
+    is_anonymous = False
+    private_key = request.query_params.get('view_only', None)
+    if private_key is not None:
+        try:
+            link = PrivateLink.find_one(Q('key', 'eq', private_key))
+        except NoResultsFound:
+            link = None
+        if link is not None:
+            is_anonymous = link.anonymous
+    return is_anonymous
+
+
+class DoNotRelateWhenAnonymous(object):
+    pass
 
 
 class HideIfRegistration(ser.Field):
@@ -123,7 +144,7 @@ def _url_val(val, obj, serializer, **kwargs):
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
         if getattr(serializer, 'field', None):
             serializer = serializer.parent
-        url = getattr(serializer, val)(obj)
+        url = getattr(serializer, val)(obj) if obj is not None else None
     else:
         url = val
 
@@ -143,11 +164,12 @@ class IDField(ser.CharField):
 
     # Overrides CharField
     def to_internal_value(self, data):
-        request = self.context['request']
-        if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
-            id_field = getattr(self.root.instance, self.source, '_id')
-            if id_field != data:
-                raise Conflict()
+        request = self.context.get('request')
+        if request:
+            if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
+                id_field = getattr(self.root.instance, self.source, '_id')
+                if id_field != data:
+                    raise Conflict()
         return super(IDField, self).to_internal_value(data)
 
 
@@ -252,11 +274,20 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
     )
 
+    # Field can handle a filter_key, which operates as the source field (but
+    is named differently to not interfere with HyperLinkedIdentifyField's source
+
+    example:
+    parent = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<parent_node._id>'},
+        filter_key='parent_node'
+    )
     """
     json_api_link = True  # serializes to a links object
 
     def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-                 self_meta=None, related_meta=None, always_embed=False, **kwargs):
+                 self_meta=None, related_meta=None, always_embed=False, filter_key=None, **kwargs):
         related_view = related_view
         self_view = self_view
         related_kwargs = related_view_kwargs
@@ -266,6 +297,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.related_meta = related_meta
         self.self_meta = self_meta
         self.always_embed = always_embed
+        self.filter_key = filter_key
 
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
@@ -684,8 +716,18 @@ class JSONAPISerializer(ser.Serializer):
         ])
 
         embeds = self.context.get('embed', {})
-        fields = [field for field in self.fields.values() if not field.write_only]
+
+        is_anonymous = is_anonymized(self.context['request'])
+        to_be_removed = []
+        if is_anonymous and hasattr(self, 'non_anonymized_fields'):
+            # Drop any fields that are not specified in the `non_anonymized_fields` variable.
+            allowed = set(self.non_anonymized_fields)
+            existing = set(self.fields.keys())
+            to_be_removed = existing - allowed
+
+        fields = [field for field in self.fields.values() if not field.write_only and field.field_name not in to_be_removed]
         invalid_embeds = self.invalid_embeds(fields, embeds)
+        invalid_embeds = invalid_embeds - set(to_be_removed)
         if invalid_embeds:
             raise InvalidQueryStringError(parameter='embed',
                                           detail='The following fields are not embeddable: {}'.format(', '.join(invalid_embeds)))
@@ -710,7 +752,10 @@ class JSONAPISerializer(ser.Serializer):
                         data['embeds'][field.field_name] = result
                 else:
                     try:
-                        data['relationships'][field.field_name] = field.to_representation(attribute)
+                        if not (is_anonymous and
+                                hasattr(field, 'view_name') and not
+                                isinstance(field.root, DoNotRelateWhenAnonymous)):
+                            data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
                         continue
             elif field.field_name == 'id':

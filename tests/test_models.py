@@ -2057,7 +2057,6 @@ class TestNodeTraversals(OsfTestCase):
         self.root = ProjectFactory(creator=self.user)
 
     def test_next_descendants(self):
-
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
         comp1a.add_contributor(self.viewer, auth=self.auth, permissions='read')
@@ -3076,6 +3075,183 @@ class TestProject(OsfTestCase):
         self.child_node.save()
 
         assert(self.child_node.has_permission(user, 'admin'))
+
+
+class TestParentNode(OsfTestCase):
+    def setUp(self):
+        super(TestParentNode, self).setUp()
+        # Create project
+        self.user = UserFactory()
+        self.auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user, description='The Dudleys strike again')
+        self.child = NodeFactory(parent=self.project, creator=self.user, description="Devon.")
+
+        self.registration = RegistrationFactory(project=self.project)
+        self.template = self.project.use_as_template(auth=self.auth)
+
+    def test_top_level_project_has_no_parent(self):
+        assert_equal(self.project.parent_node, None)
+
+    def test_child_project_has_correct_parent(self):
+        assert_equal(self.child.parent_node._id, self.project._id)
+
+    def test_grandchild_has_parent_of_child(self):
+        grandchild = NodeFactory(parent=self.child, description="Spike")
+        assert_equal(grandchild.parent_node._id, self.child._id)
+
+    def test_registration_has_no_parent(self):
+        assert_equal(self.registration.parent_node, None)
+
+    def test_registration_child_has_correct_parent(self):
+        registration_child = NodeFactory(parent=self.registration)
+        assert_equal(self.registration._id, registration_child.parent_node._id)
+
+    def test_registration_grandchild_has_correct_parent(self):
+        registration_child = NodeFactory(parent=self.registration)
+        registration_grandchild = NodeFactory(parent=registration_child)
+        assert_equal(registration_grandchild.parent_node._id, registration_child._id)
+
+    def test_fork_has_no_parent(self):
+        fork = self.project.fork_node(auth=self.auth)
+        assert_equal(fork.parent_node, None)
+
+    def test_fork_child_has_parent(self):
+        fork = self.project.fork_node(auth=self.auth)
+        fork_child = NodeFactory(parent=fork)
+        assert_equal(fork_child.parent_node._id, fork._id)
+
+    def test_fork_grandchild_has_child_id(self):
+        fork = self.project.fork_node(auth=self.auth)
+        fork_child = NodeFactory(parent=fork)
+        fork_grandchild = NodeFactory(parent=fork_child)
+        assert_equal(fork_grandchild.parent_node._id, fork_child._id)
+
+    def test_template_has_no_parent(self):
+        new_project = self.project.use_as_template(auth=self.auth)
+        assert_equal(new_project.parent_node, None)
+
+    def test_teplate_project_child_has_correct_parent(self):
+        template_child = NodeFactory(parent=self.template)
+        assert_equal(template_child.parent_node._id, self.template._id)
+
+    def test_template_project_grandchild_has_correct_root(self):
+        template_child = NodeFactory(parent=self.template)
+        new_project_grandchild = NodeFactory(parent=template_child)
+        assert_equal(new_project_grandchild.parent_node._id, template_child._id)
+
+
+class TestRoot(OsfTestCase):
+    def setUp(self):
+        super(TestRoot, self).setUp()
+        # Create project
+        self.user = UserFactory()
+        self.auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user, description='foobar')
+
+        self.registration = RegistrationFactory(project=self.project)
+
+    def test_top_level_project_has_own_root(self):
+        assert(self.project.root._id, self.project._id)
+
+    def test_child_project_has_root_of_parent(self):
+        child = NodeFactory(parent=self.project)
+        assert_equal(child.root._id, self.project._id)
+        assert_equal(child.root._id, self.project.root._id)
+
+    def test_grandchild_root_relationships(self):
+        child_node_one = NodeFactory(parent=self.project)
+        child_node_two = NodeFactory(parent=self.project)
+        grandchild_from_one = NodeFactory(parent=child_node_one)
+        grandchild_from_two = NodeFactory(parent=child_node_two)
+
+        assert_equal(child_node_one.root._id, child_node_two.root._id)
+        assert_equal(grandchild_from_one.root._id, grandchild_from_two.root._id)
+        assert_equal(grandchild_from_two.root._id, self.project.root._id)
+
+    def test_grandchild_has_root_of_immediate_parent(self):
+        child_node = NodeFactory(parent=self.project)
+        grandchild_node = NodeFactory(parent=child_node)
+        assert_equal(child_node.root._id, grandchild_node.root._id)
+
+    def test_registration_has_own_root(self):
+        assert_equal(self.registration.root._id, self.registration._id)
+
+    def test_registration_children_have_correct_root(self):
+        registration_child = NodeFactory(parent=self.registration)
+        assert_equal(registration_child.root._id, self.registration._id)
+
+    def test_registration_grandchildren_have_correct_root(self):
+        registration_child = NodeFactory(parent=self.registration)
+        registration_grandchild = NodeFactory(parent=registration_child)
+
+        assert_equal(registration_grandchild.root._id, self.registration._id)
+
+    def test_fork_has_own_root(self):
+        fork = self.project.fork_node(auth=self.auth)
+        assert_equal(fork.root._id, fork._id)
+
+    def test_fork_children_have_correct_root(self):
+        fork = self.project.fork_node(auth=self.auth)
+        fork_child = NodeFactory(parent=fork)
+        assert_equal(fork_child.root._id, fork._id)
+
+    def test_fork_grandchildren_have_correct_root(self):
+        fork = self.project.fork_node(auth=self.auth)
+        fork_child = NodeFactory(parent=fork)
+        fork_grandchild = NodeFactory(parent=fork_child)
+        assert_equal(fork_grandchild.root._id, fork._id)
+
+    def test_template_project_has_own_root(self):
+        new_project = self.project.use_as_template(auth=self.auth)
+        assert_equal(new_project.root._id, new_project._id)
+
+    def test_template_project_child_has_correct_root(self):
+        new_project = self.project.use_as_template(auth=self.auth)
+        new_project_child = NodeFactory(parent=new_project)
+        assert_equal(new_project_child.root._id, new_project._id)
+
+    def test_template_project_grandchild_has_correct_root(self):
+        new_project = self.project.use_as_template(auth=self.auth)
+        new_project_child = NodeFactory(parent=new_project)
+        new_project_grandchild = NodeFactory(parent=new_project_child)
+        assert_equal(new_project_grandchild.root._id, new_project._id)
+
+    def test_node_find_returns_correct_nodes(self):
+        # Build up a family of nodes
+        child_node_one = NodeFactory(parent=self.project)
+        child_node_two = NodeFactory(parent=self.project)
+        NodeFactory(parent=child_node_one)
+        NodeFactory(parent=child_node_two)
+        # Create a rogue node that's not related at all
+        NodeFactory()
+
+        family_ids = [self.project._id] + [r._id for r in self.project.get_descendants_recursive()]
+        family_nodes = Node.find(Q('root', 'eq', self.project._id))
+        number_of_nodes = family_nodes.count()
+
+        assert_equal(number_of_nodes, 5)
+        found_ids = []
+        for node in family_nodes:
+            assert_in(node._id, family_ids)
+            found_ids.append(node._id)
+        for node_id in family_ids:
+            assert_in(node_id, found_ids)
+
+    def test_get_descendants_recursive_returns_in_depth_order(self):
+        """Test the get_descendants_recursive function to make sure its
+        not returning any new nodes that we're not expecting
+        """
+        child_node_one = NodeFactory(parent=self.project)
+        child_node_two = NodeFactory(parent=self.project)
+        NodeFactory(parent=child_node_one)
+        NodeFactory(parent=child_node_two)
+
+        parent_list = [self.project._id]
+        # Verifies, for every node in the list, that parent, we've seen before, in order.
+        for project in self.project.get_descendants_recursive():
+            parent_list.append(project._id)
+            if project.parent:
+                assert_in(project.parent._id, parent_list)
 
 
 class TestTemplateNode(OsfTestCase):

@@ -1,8 +1,8 @@
 from rest_framework import serializers as ser
 from framework.auth.core import Auth
-from website.project.model import Comment
+from website.project.model import Comment, Node
 from rest_framework.exceptions import ValidationError, PermissionDenied
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse
 from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
@@ -48,18 +48,6 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
-    def create(self, validated_data):
-        user = validated_data['user']
-        auth = Auth(user)
-        node = validated_data['node']
-
-        validated_data['content'] = validated_data.pop('get_content')
-        if node and node.can_comment(auth):
-            comment = Comment.create(auth=auth, **validated_data)
-        else:
-            raise PermissionDenied("Not authorized to comment on this project.")
-        return comment
-
     def update(self, comment, validated_data):
         assert isinstance(comment, Comment), 'comment must be a Comment'
         auth = Auth(self.context['request'].user)
@@ -73,10 +61,62 @@ class CommentSerializer(JSONAPISerializer):
         return comment
 
     def get_target_type(self, obj):
-        object_type = obj._name
-        if not object_type or object_type not in ['comment', 'node']:
-            raise InvalidModelValueError('Invalid comment target.')
-        return object_type
+        if isinstance(obj, Node):
+            return 'nodes'
+        elif isinstance(obj, Comment):
+            return 'comments'
+        else:
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/target/links/related/meta/type'},
+                detail='Invalid comment target type.'
+            )
+
+
+class CommentCreateSerializer(CommentSerializer):
+
+    target_type = ser.SerializerMethodField(method_name='get_validated_target_type')
+
+    def get_validated_target_type(self, obj):
+        target = obj.target
+        target_type = self.context['request'].data.get('target_type')
+        expected_target_type = self.get_target_type(target)
+        if target_type != expected_target_type:
+            raise Conflict('Invalid target type. Expected \"{0}\", got \"{1}.\"'.format(expected_target_type, target_type))
+        return target_type
+
+    def get_target(self, node_id, target_id):
+        node = Node.load(target_id)
+        if node and node_id != target_id:
+            raise ValueError('Cannot post comment to another node.')
+        elif target_id == node_id:
+            return Node.load(node_id)
+        else:
+            comment = Comment.load(target_id)
+            if comment:
+                return comment
+            else:
+                raise ValueError
+
+    def create(self, validated_data):
+        user = validated_data['user']
+        auth = Auth(user)
+        node = validated_data['node']
+        target_id = self.context['request'].data.get('id')
+
+        try:
+            target = self.get_target(node._id, target_id)
+        except ValueError:
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/target/data/id'},
+                detail='Invalid comment target \'{}\'.'.format(target_id)
+            )
+        validated_data['target'] = target
+        validated_data['content'] = validated_data.pop('get_content')
+        if node and node.can_comment(auth):
+            comment = Comment.create(auth=auth, **validated_data)
+        else:
+            raise PermissionDenied("Not authorized to comment on this project.")
+        return comment
 
 
 class CommentDetailSerializer(CommentSerializer):

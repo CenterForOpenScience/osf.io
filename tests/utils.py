@@ -10,6 +10,7 @@ from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
+from tests.factories import NodeFactory
 from tests.base import get_default_metaschema
 DEFAULT_METASCHEMA = get_default_metaschema()
 
@@ -136,6 +137,24 @@ def make_drf_request(*args, **kwargs):
     return Request(http_request, *args, **kwargs)
 
 
+def render_generations_from_parent(parent, num_generations):
+    current_gen = parent
+    for generation in xrange(0, num_generations):
+        next_gen = NodeFactory(parent=current_gen, is_public=True)
+        current_gen = next_gen
+    return current_gen
+
+
+def render_generations_from_node_structure_list(parent, node_structure_list):
+    new_parent = None
+    for node_number in node_structure_list:
+        if isinstance(node_number, list):
+            render_generations_from_node_structure_list(new_parent or parent, node_number)
+        else:
+            new_parent = render_generations_from_parent(parent, node_number)
+    return new_parent
+
+
 class MockAuth(object):
 
     def __init__(self, user):
@@ -143,3 +162,27 @@ class MockAuth(object):
         self.logged_in = True
 
 mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
+
+def unique(factory):
+    """
+    Turns a factory function into a new factory function that guarentees unique return
+    values. Note this uses regular item equivalence to check uniqueness, so this may not
+    behave as expected with factories with complex return values.
+
+    Example use:
+    unique_name_factory = unique(fake.name)
+    unique_name = unique_name_factory()
+    """
+    used = []
+    @functools.wraps(factory)
+    def wrapper():
+        item = factory()
+        over = 0
+        while item in used:
+            if over > 100:
+                raise RuntimeError('Tried 100 times to generate a unqiue value, stopping.')
+            item = factory()
+            over += 1
+        used.append(item)
+        return item
+    return wrapper

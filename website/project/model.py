@@ -759,6 +759,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked', index=True)
     registered_from = fields.ForeignField('node', backref='registrations', index=True)
+    root = fields.ForeignField('node', index=True)
+    parent_node = fields.ForeignField('node', index=True)
 
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
@@ -939,10 +941,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def draft_registrations_active(self):
-        return DraftRegistration.find(
-            Q('branched_from', 'eq', self) &
-            Q('registered_node', 'eq', None)
+        drafts = DraftRegistration.find(
+            Q('branched_from', 'eq', self)
         )
+        for draft in drafts:
+            if not draft.registered_node or draft.registered_node.is_deleted:
+                yield draft
+
+    @property
+    def has_active_draft_registrations(self):
+        try:
+            next(self.draft_registrations_active)
+        except StopIteration:
+            return False
+        else:
+            return True
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1368,6 +1381,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         else:
             suppress_log = False
 
+        self.root = self._root._id
+        self.parent_node = self._parent_node
+
+        # If you're saving a property, do it above this super call
         saved_fields = super(Node, self).save(*args, **kwargs)
 
         if first_save and is_original and not suppress_log:
@@ -2111,7 +2128,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             node.save()
 
         if parent:
-            registered.parent_node = parent
+            registered._parent_node = parent
 
         # After register callback
         for addon in original.get_addons():
@@ -2174,8 +2191,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-    def add_citation(self, auth, save=False, log=True, **kwargs):
-        citation = AlternativeCitation(**kwargs)
+    def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
+        if not citation:
+            citation = AlternativeCitation(**kwargs)
         citation.save()
         self.alternative_citations.append(citation)
         citation_dict = {'name': citation.name, 'text': citation.text}
@@ -2283,7 +2301,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def absolute_api_v2_url(self):
         if self.is_registration:
-            return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': self._id})
+            return absolute_reverse('registrations:registration-detail', kwargs={'node_id': self._id})
         if self.is_folder:
             return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
@@ -2358,7 +2376,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ]
 
     @property
-    def parent_node(self):
+    def _parent_node(self):
         """The parent node, if it exists, otherwise ``None``. Note: this
         property is named `parent_node` rather than `parent` to avoid a
         conflict with the `parent` back-reference created by the `nodes`
@@ -2371,15 +2389,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             pass
         return None
 
-    @parent_node.setter
-    def parent_node(self, parent):
+    @_parent_node.setter
+    def _parent_node(self, parent):
         parent.nodes.append(self)
         parent.save()
 
     @property
-    def root(self):
-        if self.parent_node:
-            return self.parent_node.root
+    def _root(self):
+        if self._parent_node:
+            return self._parent_node._root
         else:
             return self
 
@@ -2805,7 +2823,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor)
+            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
 
             return True
 
@@ -4102,10 +4120,7 @@ class DraftRegistrationApproval(Sanction):
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
                 user=user,
-                draft_url=draft.branched_from.web_url_for(
-                    'edit_draft_registration_page',
-                    draft_id=draft._id
-                )
+                draft_url=draft.absolute_url
             )
         else:
             raise NotImplementedError(
@@ -4157,18 +4172,18 @@ class DraftRegistrationApproval(Sanction):
         # clear out previous registration options
         self.meta = {}
         self.save()
-        # remove reference to approval from draft
+
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
-        draft.approval = None
-        draft.save()
         self._send_rejection_email(user, draft)
 
 
 class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+
+    URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/draft/{draft_id}'
 
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
@@ -4206,16 +4221,32 @@ class DraftRegistration(StoredObject):
     def flags(self):
         if not self._metaschema_flags:
             self._metaschema_flags = {}
-            meta_schema = self.registration_schema
-            if meta_schema:
-                schema = meta_schema.schema
-                flags = schema.get('flags', {})
-                for flag, value in flags.iteritems():
+        meta_schema = self.registration_schema
+        if meta_schema:
+            schema = meta_schema.schema
+            flags = schema.get('flags', {})
+            for flag, value in flags.iteritems():
+                if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
             self.save()
         return self._metaschema_flags
 
+    @flags.setter
+    def flags(self, flags):
+        self._metaschema_flags.update(flags)
+
     notes = fields.StringField()
+
+    @property
+    def url(self):
+        return self.URL_TEMPLATE.format(
+            node_id=self.branched_from,
+            draft_id=self._id
+        )
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
 
     @property
     def requires_approval(self):
@@ -4234,6 +4265,16 @@ class DraftRegistration(StoredObject):
                 return self.approval.is_approved
         else:
             return True
+
+    @property
+    def is_rejected(self):
+        if self.requires_approval:
+            if not self.approval:
+                return False
+            else:
+                return self.approval.is_rejected
+        else:
+            return False
 
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
@@ -4279,9 +4320,6 @@ class DraftRegistration(StoredObject):
             initiated_by=initiated_by,
             meta=meta
         )
-        authorizers = self.get_authorizers()
-        for user in authorizers:
-            approval.add_authorizer(user)
         approval.save()
         self.approval = approval
         if save:
