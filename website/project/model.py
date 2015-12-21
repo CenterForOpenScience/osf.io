@@ -2910,6 +2910,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.is_registration:
                 if self.is_pending_embargo:
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
+                elif self.is_pending_registration:
+                    raise NodeStateError("An unapproved registration cannot be made public.")
                 if self.embargo_end_date and not self.is_pending_embargo:
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
