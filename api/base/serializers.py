@@ -4,6 +4,7 @@ import collections
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from django.core.urlresolvers import resolve, reverse
+from django.http.request import QueryDict
 from rest_framework.fields import SkipField
 
 from framework.auth import core as auth_core
@@ -396,20 +397,18 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 else:
                     url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
-                        url += self.format_filter(obj)
+                        url = '{}?filter{}'.format(url, self.format_filter(obj))
                     urls[view_name] = url
         if not urls['self'] and not urls['related']:
             urls = None
         return urls
 
     def format_filter(self, obj):
-        filter_query = '?'
+        qd = QueryDict(mutable=True)
         filter_fields = self.filter.keys()
         for field_name in filter_fields:
-            filter_query += 'filter[{0}]={1}'.format(field_name, self.lookup_attribute(obj, self.filter[field_name]))
-            if filter_fields.index(field_name) != len(filter_fields) - 1:
-                filter_query += '&'
-        return filter_query
+            qd.update({'[{}]'.format(field_name): self.lookup_attribute(obj, self.filter[field_name])})
+        return qd.urlencode(safe=['[', ']'])
 
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
