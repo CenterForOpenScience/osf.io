@@ -278,13 +278,13 @@ class Comment(GuidStoredObject):
     @classmethod
     def n_unread_file_comments(cls, user, node):
         n_unread = 0
-        for file_id in node.commented_files:
-            file_obj = File.load(file_id)
+        commented_files = File.find(Q('_id', 'in', node.commented_files.keys()))
+        for file_obj in commented_files:
             if node.get_addon(file_obj.provider):
                 exists = file_obj and file_obj.touch(request.headers.get('Authorization'))
                 if not exists:
                     continue
-                n_unread += cls.find_n_unread(user, node, page='files', root_id=file_id)
+                n_unread += cls.find_n_unread(user, node, page='files', root_id=file_obj._id)
         return n_unread
 
     @classmethod
