@@ -16,8 +16,8 @@ color_map = {
     'files': 'magenta'
 }
 
-NUMBER_OF_DAY_DATA_POINTS = 100
-NUMBER_OF_USERS_TO_SAMPLE = 3
+NUMBER_OF_DAY_DATA_POINTS = 30
+NUMBER_OF_USERS_TO_SAMPLE = 1
 
 def recent_time_frame(days=NUMBER_OF_DAY_DATA_POINTS):
     now = dt.utcnow()
@@ -27,12 +27,9 @@ def build_time_query(end):
     return Q('date', 'gt', end - timedelta(days=1)) & Q('date', 'lt', end)
 
 def order_users_get(sample_size=NUMBER_OF_USERS_TO_SAMPLE):
-    us = User.find()
-    points = {u.get_activity_points(): u for u in us}
-    ordered = collections.OrderedDict(sorted(points.items()))
-    ordered = ordered.values()
+    ordered = sorted(list(User.find()), key=lambda x: x.get_activity_points(), reverse=True)
     l = len(ordered)
-    return ordered[1: sample_size], ordered[int(l/3)+1: int(l/3)+1 + sample_size], ordered[int(l/1.5)+1: int(l/1.5) + sample_size+1]
+    return ordered[int(l/40): int(l/40) + sample_size], ordered[int(l/20): int(l/20) + sample_size], ordered[int(l/10): int(l/10) + sample_size], ordered[int(l/5): int(l/5) + sample_size]
 
 def get_agg_for_user(user, date):
     return {
@@ -45,12 +42,13 @@ def get_agg_for_user(user, date):
 
 
 def main():
-    top, mid, bot = order_users_get()
+    top, mid, bot, bot2 = order_users_get()
     days_in_last_week = recent_time_frame()
     top_agg = {str(day): {} for day in days_in_last_week}
     mid_agg = {str(day): {} for day in days_in_last_week}
     bot_agg = {str(day): {} for day in days_in_last_week}
-    aggs = [(top, top_agg), (mid, mid_agg), (bot, bot_agg)]
+    bot2_agg = {str(day): {} for day in days_in_last_week}
+    aggs = [(top, top_agg), (mid, mid_agg), (bot, bot_agg), (bot2, bot2_agg)]
     for sample, agg in aggs:
         for user in sample:
             for day in days_in_last_week:
@@ -64,10 +62,9 @@ def main():
         )
     days_map = top_agg.keys()
     days = range(1, len(days_in_last_week) + 1)
-    plots = plt.subplots(3)[1]
+    plots = plt.subplots(4)[1]
     plots[0].set_ylabel('Number of events')
     plots[0].set_xlabel('Day of the week')
-    plots[0].set_title('Top users (100%)')
     plots[0].plot(
         days, [top_agg[day].get('comments') for day in days_map], color_map['comments'],
              days, [top_agg[day].get('wiki') for day in days_map], color_map['wiki'],
@@ -77,7 +74,6 @@ def main():
              )
     plots[1].set_ylabel('Number of events')
     plots[1].set_xlabel('Day of the week')
-    plots[1].set_title('Middle users (66%)')
     plots[1].plot(
             days, [mid_agg[day].get('comments') for day in days_map], color_map['comments'],
              days, [mid_agg[day].get('wiki') for day in days_map], color_map['wiki'],
@@ -87,7 +83,6 @@ def main():
              )
     plots[2].set_ylabel('Number of events')
     plots[2].set_xlabel('Day of the week')
-    plots[2].set_title('Bottom users (33%)')
     plots[2].plot(
             days, [bot_agg[day].get('comments') for day in days_map], color_map['comments'],
             days, [bot_agg[day].get('wiki') for day in days_map], color_map['wiki'],
@@ -95,6 +90,15 @@ def main():
              days, [bot_agg[day].get('nodes') for day in days_map], color_map['nodes'],
             days, [bot_agg[day].get('files') for day in days_map], color_map['files'],
              )
+    plots[3].set_ylabel('Number of events')
+    plots[3].set_xlabel('Day of the week')
+    plots[3].plot(
+            days, [bot2_agg[day].get('comments') for day in days_map], color_map['comments'],
+            days, [bot2_agg[day].get('wiki') for day in days_map], color_map['wiki'],
+            days, [bot2_agg[day].get('registrations') for day in days_map], color_map['registrations'],
+             days, [bot2_agg[day].get('nodes') for day in days_map], color_map['nodes'],
+            days, [bot2_agg[day].get('files') for day in days_map], color_map['files'],
+    )
     plt.show()
 
 
