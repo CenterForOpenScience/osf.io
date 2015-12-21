@@ -114,7 +114,8 @@ class TestCommentModel(OsfTestCase):
     def test_edit(self):
         self.comment.edit(
             auth=self.consolidated_auth,
-            content='edited'
+            content='edited',
+            save=True
         )
         assert_equal(self.comment.content, 'edited')
         assert_true(self.comment.modified)
@@ -122,14 +123,14 @@ class TestCommentModel(OsfTestCase):
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
 
     def test_delete(self):
-        self.comment.delete(auth=self.consolidated_auth)
+        self.comment.delete(auth=self.consolidated_auth, save=True)
         assert_equal(self.comment.is_deleted, True)
         assert_equal(len(self.comment.node.logs), 2)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
 
     def test_undelete(self):
-        self.comment.delete(auth=self.consolidated_auth)
-        self.comment.undelete(auth=self.consolidated_auth)
+        self.comment.delete(auth=self.consolidated_auth, save=True)
+        self.comment.undelete(auth=self.consolidated_auth, save=True)
         assert_equal(self.comment.is_deleted, False)
         assert_equal(len(self.comment.node.logs), 3)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_RESTORED)
