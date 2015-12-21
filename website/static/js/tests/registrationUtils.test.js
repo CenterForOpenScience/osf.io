@@ -11,10 +11,13 @@ var $osf = require('js/osfHelpers');
 var registrationUtils = require('js/registrationUtils');
 var Comment = registrationUtils.Comment; // jshint ignore:line
 var Question = registrationUtils.Question;
+var Page = registrationUtils.Page;
 var MetaSchema = registrationUtils.MetaSchema;
 var Draft = registrationUtils.Draft;
 var RegistrationEditor = registrationUtils.RegistrationEditor;
 var RegistrationManager = registrationUtils.RegistrationManager;
+
+sinon.collection.restore();
 
 function makeComment(data){
     data = $.extend({}, {
@@ -40,6 +43,22 @@ function makeQuestion(props, data) {
     };
     return [new Question(props, data), props, data];
 }
+
+function makePage(props, data) {
+    var questions = [];
+    for (var i = 0; i < 3; i++) {
+        questions.push(makeQuestion()[1]);
+    }
+    props = $.extend({}, {
+        id: faker.internet.ip(),
+        title: faker.internet.domainWord(),
+        description: faker.lorem.sentence(),
+        questions: questions
+    }, props);
+    data = data || {};
+    return [new Page(props, data), props, data];
+}
+
 function makeMetaSchema() {
     var questions = [];
     for (var i = 0; i < 3; i++) {
@@ -87,9 +106,9 @@ describe('Comment', () => {
         window.contextVars.currentUser = {
             fullname: faker.name.findName(),
             id: 1
-        };        
+        };
     });
-    
+
     describe('#constructor', () => {
         it('loads in optional instantiation data', () => {
             var user = {
@@ -309,18 +328,19 @@ describe('Question', () => {
             assert.equal(q.value(), data.value);
         });
         it('maps object-type Question\'s properties property to sub-Questions', () => {
-            var props = {
-                foo: {
+            var props = [
+                {
+                    id: 'foo',
                     type: 'number'
                 }
-            };
+            ];
             var obj = new Question({
                 qid: 'foo',
                 type: 'object',
                 properties: props
             }, {});
-            assert.equal(obj.properties.foo.id, 'foo');
-            assert.isDefined(obj.properties.foo.value);
+            assert.equal(obj.properties[0].id, 'foo');
+            assert.isDefined(obj.properties[0].value);
         });
         it('maps comments into Comment instances', () => {
             var question = makeQuestion(null, {
@@ -364,11 +384,49 @@ describe('Question', () => {
         });
     });
     describe('#isComplete', () => {
-        it('is true if the Question\'s value is not blank', () => {
-            q.value(null);
-            assert.isFalse(q.isComplete());
-            q.value('not blank');
-            assert.isTrue(q.isComplete());
+        it('is always true if the question is not required', () => {
+            var question = makeQuestion({required: false})[0];
+            question.value(null);
+            assert.isTrue(question.isComplete());
+
+            var p1 = makeQuestion({id: 'p1', required: false})[1];
+            var p2 = makeQuestion({id: 'p2', required: false})[1];
+
+            question = makeQuestion({
+                required: false,
+                type: 'object',
+                properties: [
+                    p1,
+                    p2
+                ]
+            })[0];
+            assert.isTrue(question.isComplete());
+        });
+        it('is true if the Question is required and its value is not blank', () => {
+            var question = makeQuestion({required: true})[0];
+            question.value(null);
+            assert.isFalse(question.isComplete());
+            question.value('not blank');
+            assert.isTrue(question.isComplete());
+
+            var p1 = makeQuestion({id: 'p1', required: true})[1];
+            var p2 = makeQuestion({id: 'p2', required: false})[1];
+
+            question = makeQuestion({
+                required: false,
+                type: 'object',
+                properties: [
+                    p1,
+                    p2
+                ]
+            }, {
+                value: {
+                    p1: {
+                        value: 'foo'
+                    }
+                }
+            })[0];
+            assert.isTrue(question.isComplete());
         });
     });
     describe('#isValid', () => {
@@ -394,11 +452,60 @@ describe('Question', () => {
             assert.isTrue(mock.called);
         };
     });
-    describe('#toggleExample', () => {
-        it('toggles the value of Question.showExample', () => {
-            assert.isFalse(q.showExample());
-            q.toggleExample();
-            assert.isTrue(q.showExample());
+});
+
+describe('Page', () => {
+    describe('#constructor', () => {
+        it('loads optional instantiation data', () => {
+            var pageProps = makePage()[1];
+            var page = new Page(pageProps, {});
+
+            assert.equal(page.id, pageProps.id);
+            assert.equal(page.title, pageProps.title);
+            assert.equal(page.description, pageProps.description);
+        });
+        it('maps question properties and data to Question instances', () => {
+            var pageProps = makePage()[1];
+            var data = {};
+            $.each(pageProps.questions, function(_, question) {
+                data[question.qid] = {
+                    value: faker.internet.domainWord()
+                };
+            });
+            var page = new Page(pageProps, data);
+
+            assert.equal(page.questions.length, pageProps.questions.length);
+
+            var q1 = page.questions[0];
+            assert.equal(q1.value(), data[q1.id].value);
+        });
+    });
+    describe('#comments', () => {
+        it('aggregates comments across page questions', () => {
+            var pageComments = [];
+            var questionSchema = {};
+            var questionData = {};
+            for(var i = 0; i < 3; i++) {
+                var comments = [];
+                for (var j = 0; j < 3; j++) {
+                    var c = makeComment({
+                        created: (new Date()).toISOString()
+                    })[1];
+                    comments.push(c);
+                    pageComments.push(c);
+                }
+                var q = new makeQuestion({}, {comments: comments});
+                questionSchema[q[0].id] = q[1];
+                questionData[q[0].id] = q[2];
+            }
+            var page = makePage({questions: questionSchema}, questionData)[0];
+            var commentTimestamps = $.map(pageComments, function(comment) {
+                return comment.created;
+            });
+            assert.equal(page.comments().length, pageComments.length);
+            $.each(page.comments(), function(_, comment) {
+                assert.isTrue(commentTimestamps.indexOf(comment.created.toISOString()) !== -1);
+            });
         });
     });
 });
@@ -438,6 +545,23 @@ describe('MetaSchema', () => {
             });
         });
     });
+    describe('#askConsent', (done) => {
+        var mockDialog;
+        before(() => {
+            mockDialog = sinon.stub(bootbox, 'dialog');
+        });
+        after(() => {
+            bootbox.dialog.restore();
+        });
+        it('opens a bootbox dialog and returns a promise', () =>{
+            var ms = makeMetaSchema()[0];
+            var ret = ms.askConsent();
+            assert.property(ret, 'done');
+            assert.property(ret, 'fail');
+            assert.property(ret, 'always');
+            assert.isTrue(mockDialog.called);
+        });
+    });
 });
 
 describe('Draft', () => {
@@ -471,13 +595,13 @@ describe('Draft', () => {
             assert.equal(draft.initiator.id, params.initiator.id);
             assert.equal(draft.updated.toString(), params.updated.toString());
         });
-        /* TODO(samchrisinger): update me
         it('calculates a percent completion based on the passed registration_metadata', () => {
-            var ms = makeMetaSchema()[2];
+            var ms = makeMetaSchema()[0];
 
             var data = {};
             var questions = ms.flatQuestions();
             $.each(questions, function(i, q) {
+                q.required = true;
                 q.value('value');
                 data[q.id] = {
                     value: 'value'
@@ -498,7 +622,6 @@ describe('Draft', () => {
             var draft = new Draft(params, ms);
             assert.equal(draft.completion(), 100);
         });
-         */
     });
     describe('#beforeRegister', () => {
         var endpoints = [{
@@ -648,13 +771,6 @@ describe('RegistrationEditor', () => {
         it('loads draft data', () => {
             assert.equal(editor.draft(), draft);
         });
-        /* TODO(samchrisinger): update tests
-        it('#loads schema data into the schema', () => {
-            $.each(questions, function(i, q) {
-                assert.equal(q.value(), metaData[q.id].value);
-            });
-        });
-         */
     });
     describe('#create', () => {
         var postJSONStub;
@@ -672,7 +788,6 @@ describe('RegistrationEditor', () => {
             editor.updateData.restore();
         });
         it('POSTs to the create URL with the current draft state', (done) => {
-
             editor.create({}).always(function() {
                 assert.deepEqual(
                     postJSONStub.args[0][1].schema_data,
@@ -694,7 +809,6 @@ describe('RegistrationEditor', () => {
         afterEach(() => {
             editor.putSaveData.restore();
         });
-        /* TODO(samchrisinger): update tests
         it('PUTs to the update URL with the current draft state', () => {
             var metaSchema = draft.metaSchema;
             questions[0].value('Updated');
@@ -703,8 +817,9 @@ describe('RegistrationEditor', () => {
             var data = {};
             $.each(questions, function(i, q) {
                 data[q.id] = {
-                    value: q.value()
-                    // comments: []
+                    value: q.value(),
+                    comments: [],
+                    extra: {}
                 };
             });
 
@@ -718,7 +833,6 @@ describe('RegistrationEditor', () => {
                 )
             );
         });
-         */
     });
 });
 

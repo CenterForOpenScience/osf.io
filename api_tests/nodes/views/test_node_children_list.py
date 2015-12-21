@@ -114,7 +114,7 @@ class TestNodeChildrenList(ApiTestCase):
         retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
         url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
 
 class TestNodeChildrenListFiltering(ApiTestCase):
@@ -252,7 +252,7 @@ class TestNodeChildCreate(ApiTestCase):
                 }
             }
         }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
     def test_creates_child_no_type(self):
         child = {
@@ -443,7 +443,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                 }
             }]
         }, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
         self.project.reload()
         assert_equal(len(self.project.nodes), 0)

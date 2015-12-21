@@ -902,6 +902,29 @@ class TestDisablingUsers(OsfTestCase):
         assert_false(self.user.is_disabled)
         assert_true(self.user.is_active)
 
+    def test_is_disabled_idempotency(self):
+        self.user.is_disabled = True
+        self.user.save()
+
+        old_date_disabled = self.user.date_disabled
+
+        self.user.is_disabled = True
+        self.user.save()
+
+        new_date_disabled = self.user.date_disabled
+
+        assert_equal(new_date_disabled, old_date_disabled)
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_disable_account(self, mock_mail):
+        self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
+        self.user.save()
+        self.user.disable_account()
+
+        assert_true(self.user.is_disabled)
+        assert_true(isinstance(self.user.date_disabled, datetime.datetime))
+        assert_false(self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+
 
 class TestMergingUsers(OsfTestCase):
 
@@ -1409,6 +1432,22 @@ class TestNode(OsfTestCase):
         # Non-contrib can't make project private
         with assert_raises(PermissionsError):
             project.set_privacy('private', Auth(non_contrib))
+
+    def test_set_privacy_pending_embargo(self):
+        project = ProjectFactory(creator=self.user, is_public=False)
+        with mock_archive(project, embargo=True, autocomplete=True) as registration:
+            assert_true(registration.embargo.is_pending_approval)
+            assert_true(registration.is_pending_embargo)
+            with assert_raises(NodeStateError):
+                registration.set_privacy('public', Auth(project.creator))
+
+    def test_set_privacy_pending_registration(self):
+        project = ProjectFactory(creator=self.user, is_public=False)
+        with mock_archive(project, embargo=False, autocomplete=True) as registration:
+            assert_true(registration.registration_approval.is_pending_approval)
+            assert_true(registration.is_pending_registration)
+            with assert_raises(NodeStateError):
+                registration.set_privacy('public', Auth(project.creator))
 
     def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self):
         n_orig_logs = len(self.parent.get_aggregate_logs_queryset(Auth(self.user)))
@@ -3015,9 +3054,25 @@ class TestProject(OsfTestCase):
         )
 
     def test_date_modified(self):
-        self.project.logs.append(NodeLogFactory())
+        contrib = UserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator))
+        self.project.save()
+
         assert_equal(self.project.date_modified, self.project.logs[-1].date)
         assert_not_equal(self.project.date_modified, self.project.date_created)
+
+    def test_date_modified_create_registration(self):
+        registration = RegistrationFactory(project=self.project)
+        self.project.save()
+
+        assert_equal(self.project.date_modified, self.project.logs[-1].date)
+        assert_not_equal(self.project.date_modified, self.project.date_created)
+
+    def test_date_modified_create_component(self):
+        self.component = NodeFactory(creator=self.user, parent=self.project)
+        self.project.save()
+
+        assert_equal(self.project.date_modified, self.project.date_created)
 
     def test_replace_contributor(self):
         contrib = UserFactory()
