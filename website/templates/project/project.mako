@@ -33,12 +33,16 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions'] and not node['is_pending_embargo']:
-                            <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
+                        % if 'admin' in user['permissions'] and not node['is_registration']:
+                            <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
+                            ## TODO: Uncomment when APIv2 concurrency issues are fixed
+                            ## <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
                         % endif
                     % else:
                         % if 'admin' in user['permissions'] and not node['is_registration']:
-                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
+                            <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
+                            ## TODO: Uncomment when APIv2 concurrency issues are fixed
+                            ## <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     % endif
@@ -308,11 +312,12 @@
                             <!-- /ko -->
                         </div>
                     </div>
-                    % if 'admin' in user['permissions'] and not node['is_registration']:
-                        <!-- ko ifnot: editing() -->
-                        <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default btn-sm m-t-md"><i class="fa fa-plus"></i> Add Citation</button>
-                        <!-- /ko -->
-                    % endif
+                    ## Disable custom citations for now
+                    ## % if 'admin' in user['permissions'] and not node['is_registration']:
+                    ##     <!-- ko ifnot: editing() -->
+                    ##     <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default btn-sm m-t-md"><i class="fa fa-plus"></i> Add Citation</button>
+                    ##     <!-- /ko -->
+                    ## % endif
                 </div>
                 <p><strong>More</strong></p>
                 <div id="citationStylePanel" class="citation-picker">

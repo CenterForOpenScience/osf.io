@@ -28,7 +28,7 @@ from framework.auth import Auth
 from website.app import init_app
 from website import models, security
 from framework.auth import utils
-from tests.factories import UserFactory, ProjectFactory, NodeFactory
+from tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory
 from faker.providers import BaseProvider
 
 
@@ -268,13 +268,17 @@ def parse_args():
     parser.add_argument('-n', '--name', dest='name', type=str, default=None)
     parser.add_argument('-t', '--tags', dest='n_tags', type=int, default=5)
     parser.add_argument('--presentation', dest='presentation_name', type=str, default=None)
+    parser.add_argument('-r', '--registration', dest='is_registration', type=bool, default=False)
     return parser.parse_args()
 
 
-def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name):
+def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration):
     auth = Auth(user=creator)
     project_title = name if name else fake.science_sentence()
-    project = ProjectFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
+    if not is_registration:
+        project = ProjectFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
+    else:
+        project = RegistrationFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
     project.set_privacy(privacy)
     for _ in range(n_users):
         contrib = create_fake_user()
@@ -299,7 +303,7 @@ def main():
     for i in range(args.n_projects):
         name = args.name + str(i) if args.name else ''
         create_fake_project(creator, args.n_users, args.privacy, args.n_components, name, args.n_tags,
-                            args.presentation_name)
+                            args.presentation_name, args.is_registration)
     print('Created {n} fake projects.'.format(n=args.n_projects))
     sys.exit(0)
 

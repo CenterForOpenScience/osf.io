@@ -775,6 +775,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow, index=True)
+    date_modified = fields.DateTimeField()
 
     # Privacy
     is_public = fields.BooleanField(default=False, index=True)
@@ -804,7 +805,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', backref='registered', list=True, default=list)
     # A set of <metaschema._id>: <schema> pairs, where <schema> is a
-    # flat set of <question_id>: <response> pairs-- these quesiton ids_above
+    # flat set of <question_id>: <response> pairs-- these question ids_above
     # map the the ids in the registrations MetaSchema (see registered_schema).
     # {
     #   <question_id>: {
@@ -1035,10 +1036,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def draft_registrations_active(self):
-        return DraftRegistration.find(
-            Q('branched_from', 'eq', self) &
-            Q('registered_node', 'eq', None)
+        drafts = DraftRegistration.find(
+            Q('branched_from', 'eq', self)
         )
+        for draft in drafts:
+            if not draft.registered_node or draft.registered_node.is_deleted:
+                yield draft
+
+    @property
+    def has_active_draft_registrations(self):
+        try:
+            next(self.draft_registrations_active)
+        except StopIteration:
+            return False
+        else:
+            return True
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1888,16 +1900,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
         return list(reversed(self.logs)[:n])
 
-    @property
-    def date_modified(self):
-        '''The most recent datetime when this node was modified, based on
-        the logs.
-        '''
-        try:
-            return self.logs[-1].date
-        except IndexError:
-            return self.date_created
-
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
 
@@ -2270,8 +2272,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-    def add_citation(self, auth, save=False, log=True, **kwargs):
-        citation = AlternativeCitation(**kwargs)
+    def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
+        if not citation:
+            citation = AlternativeCitation(**kwargs)
         citation.save()
         self.alternative_citations.append(citation)
         citation_dict = {'name': citation.name, 'text': citation.text}
@@ -2339,8 +2342,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             foreign_user=foreign_user,
             params=params,
         )
+
         if log_date:
             log.date = log_date
+
+        self.date_modified = log.date.replace(tzinfo=None)
+
         log.save()
         self.logs.append(log)
         if save:
@@ -2379,7 +2386,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def absolute_api_v2_url(self):
         if self.is_registration:
-            return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': self._id})
+            return absolute_reverse('registrations:registration-detail', kwargs={'node_id': self._id})
         if self.is_folder:
             return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
@@ -2999,6 +3006,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.is_registration:
                 if self.is_pending_embargo:
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
+                elif self.is_pending_registration:
+                    raise NodeStateError("An unapproved registration cannot be made public.")
                 if self.embargo_end_date and not self.is_pending_embargo:
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
@@ -4198,10 +4207,7 @@ class DraftRegistrationApproval(Sanction):
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
                 user=user,
-                draft_url=draft.branched_from.web_url_for(
-                    'edit_draft_registration_page',
-                    draft_id=draft._id
-                )
+                draft_url=draft.absolute_url
             )
         else:
             raise NotImplementedError(
@@ -4253,18 +4259,18 @@ class DraftRegistrationApproval(Sanction):
         # clear out previous registration options
         self.meta = {}
         self.save()
-        # remove reference to approval from draft
+
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
-        draft.approval = None
-        draft.save()
         self._send_rejection_email(user, draft)
 
 
 class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+
+    URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/draft/{draft_id}'
 
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
@@ -4302,16 +4308,32 @@ class DraftRegistration(StoredObject):
     def flags(self):
         if not self._metaschema_flags:
             self._metaschema_flags = {}
-            meta_schema = self.registration_schema
-            if meta_schema:
-                schema = meta_schema.schema
-                flags = schema.get('flags', {})
-                for flag, value in flags.iteritems():
+        meta_schema = self.registration_schema
+        if meta_schema:
+            schema = meta_schema.schema
+            flags = schema.get('flags', {})
+            for flag, value in flags.iteritems():
+                if flag not in self._metaschema_flags:
                     self._metaschema_flags[flag] = value
             self.save()
         return self._metaschema_flags
 
+    @flags.setter
+    def flags(self, flags):
+        self._metaschema_flags.update(flags)
+
     notes = fields.StringField()
+
+    @property
+    def url(self):
+        return self.URL_TEMPLATE.format(
+            node_id=self.branched_from,
+            draft_id=self._id
+        )
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
 
     @property
     def requires_approval(self):
@@ -4330,6 +4352,16 @@ class DraftRegistration(StoredObject):
                 return self.approval.is_approved
         else:
             return True
+
+    @property
+    def is_rejected(self):
+        if self.requires_approval:
+            if not self.approval:
+                return False
+            else:
+                return self.approval.is_rejected
+        else:
+            return False
 
     @classmethod
     def create_from_node(cls, node, user, schema, data=None):
@@ -4375,9 +4407,6 @@ class DraftRegistration(StoredObject):
             initiated_by=initiated_by,
             meta=meta
         )
-        authorizers = self.get_authorizers()
-        for user in authorizers:
-            approval.add_authorizer(user)
         approval.save()
         self.approval = approval
         if save:

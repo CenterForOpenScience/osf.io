@@ -6,6 +6,7 @@ from website.archiver import (
     StatResult, AggregateStatResult,
     ARCHIVER_NETWORK_ERROR,
     ARCHIVER_SIZE_EXCEEDED,
+    ARCHIVER_FILE_NOT_FOUND,
 )
 from website.archiver.model import ArchiveJob
 
@@ -25,6 +26,7 @@ def send_archiver_size_exceeded_mails(src, user, stat_result):
         mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
         user=user,
         src=src,
+        can_change_preferences=False,
         mimetype='html',
     )
 
@@ -43,9 +45,27 @@ def send_archiver_copy_error_mails(src, user, results):
         user=user,
         src=src,
         results=results,
+        can_change_preferences=False,
         mimetype='html',
     )
 
+def send_archiver_file_not_found_mails(src, user, results):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.ARCHIVE_FILE_NOT_FOUND_DESK,
+        user=user,
+        src=src,
+        results=results,
+    )
+    mails.send_mail(
+        to_addr=user.username,
+        mail=mails.ARCHIVE_FILE_NOT_FOUND_USER,
+        user=user,
+        src=src,
+        results=results,
+        can_change_preferences=False,
+        mimetype='html',
+    )
 
 def send_archiver_uncaught_error_mails(src, user, results):
     mails.send_mail(
@@ -61,6 +81,7 @@ def send_archiver_uncaught_error_mails(src, user, results):
         user=user,
         src=src,
         results=results,
+        can_change_preferences=False,
         mimetype='html',
     )
 
@@ -70,6 +91,8 @@ def handle_archive_fail(reason, src, dst, user, result):
         send_archiver_copy_error_mails(src, user, result)
     elif reason == ARCHIVER_SIZE_EXCEEDED:
         send_archiver_size_exceeded_mails(src, user, result)
+    elif reason == ARCHIVER_FILE_NOT_FOUND:
+        send_archiver_file_not_found_mails(src, user, result)
     else:  # reason == ARCHIVER_UNCAUGHT_ERROR
         send_archiver_uncaught_error_mails(src, user, result)
     dst.root.sanction.forcibly_reject()
