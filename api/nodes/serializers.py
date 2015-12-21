@@ -155,8 +155,7 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def get_unread_comments_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
-        user = auth.user
+        user = self.context['request'].user
         node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
         file_comments = self.get_unread_file_comments(obj)
 
@@ -167,8 +166,7 @@ class NodeSerializer(JSONAPISerializer):
         }
 
     def get_unread_file_comments(self, obj):
-        auth = self.get_user_auth(self.context['request'])
-        user = auth.user
+        user = self.context['request'].user
         n_unread = 0
         commented_files = File.find(Q('_id', 'in', obj.commented_files.keys()))
         for file_obj in commented_files:

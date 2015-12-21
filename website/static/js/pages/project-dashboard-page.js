@@ -59,7 +59,6 @@ if ($comments.length) {
         nodeApiUrl: window.contextVars.node.urls.api,
         page: 'node',
         rootId: window.contextVars.node.id,
-        userName: window.contextVars.currentUser.name,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
         currentUser: currentUser

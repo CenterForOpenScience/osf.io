@@ -11,7 +11,7 @@
         <%include file="include/comment_pane_template.mako"/>
     % else:
         <div class="alert alert-warning" role="alert">
-            Comments for this addon is not yet supported.
+            Comments for this addon are not yet supported.
         </div>
     % endif
 % endif
@@ -178,7 +178,6 @@
     </script>
     %endif
     <script type="text/javascript">
-      <% import json %>
       window.contextVars = $.extend(true, {}, window.contextVars, {
         file: {
             size: ${size | sjson, n },
@@ -210,8 +209,7 @@
         node: {
           urls: {
             files: ${ urls['files'] | sjson, n }
-          },
-          hasComments: ${json.dumps(node['has_comments'])}
+          }
         },
         panelsUsed: ['edit', 'view'],
         currentUser: {

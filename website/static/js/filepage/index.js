@@ -509,10 +509,9 @@ if ($comments.length) {
         nodeApiUrl: window.contextVars.node.urls.api,
         page: 'files',
         rootId: window.contextVars.file.id,
-        userName: window.contextVars.currentUser.name,
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
-        currentUser: currentUser,
+        currentUser: currentUser
     };
     CommentModel.init('#commentsLink', '.comment-pane', options);
 }

@@ -693,7 +693,7 @@ def _should_show_wiki_widget(node, user):
         return has_wiki
 
 
-def _view_project(node, auth, primary=False, check_files=False):
+def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
@@ -719,7 +719,7 @@ def _view_project(node, auth, primary=False, check_files=False):
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     n_unread_node = Comment.find_n_unread(user, node, page='node')
-    n_unread_files = Comment.find_n_unread(user, node, page='files', check=check_files)
+    n_unread_files = Comment.find_n_unread(user, node, page='files')
     data = {
         'node': {
             'id': node._primary_key,
