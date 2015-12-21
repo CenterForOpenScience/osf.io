@@ -69,7 +69,7 @@ def main():
                         str(day): {key: val + (agg[str(day)].get(key) or 0) for key, val in data.iteritems()}}
                 )
                 count += 1
-                print('Log n aggregation: ' + int(str((count/float(NUMBER_OF_DAY_DATA_POINTS))*100)) + '% Done')
+                print('Log n aggregation: ' + str((count/float(NUMBER_OF_DAY_DATA_POINTS))*100) + '% Done')
         agg.update(
             {key: {k: v/float(len(sample)) for k, v in val.iteritems()} for key, val in agg.iteritems()}
         )
