@@ -26,7 +26,7 @@ def build_time_query(end):
     return Q('date', 'gt', end - timedelta(days=1)) & Q('date', 'lt', end)
 
 def order_users_get(sample_size=NUMBER_OF_USERS_TO_SAMPLE):
-    users = User.find()
+    users = list(User.find())
     for user in users:
         how_many = len(list(NodeLog.find(Q('user', 'eq', user))))
         if how_many < 1:
@@ -38,7 +38,7 @@ def order_users_get(sample_size=NUMBER_OF_USERS_TO_SAMPLE):
 
 def get_agg_for_user(user, date):
     ret = {}
-    nodes = list(Node.find('contributors', 'contains', user._id))
+    nodes = list(Node.find(Q('contributors', 'contains', user._id)))
     for node in nodes:
         query_aggs = {
             'comments': len(list(NodeLog.find(Q('was_connected_to', 'eq', node) & Q('action', 'eq', NodeLog.COMMENT_ADDED) & build_time_query(date)))),
