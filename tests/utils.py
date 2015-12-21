@@ -1,6 +1,7 @@
 import contextlib
 import functools
 import mock
+import datetime
 
 from django.http import HttpRequest
 from nose import SkipTest
@@ -70,11 +71,13 @@ def assert_not_logs(log_action, node_key, index=-1):
 
 @contextlib.contextmanager
 def mock_archive(project, schema=None, auth=None, data=None, parent=None,
+                 embargo=False, embargo_end_date=None,
                  autocomplete=True, autoapprove=False):
     """ A context manager for registrations. When you want to call Node#register_node in
     a test but do not want to deal with any of this side effects of archiver, this
     helper allows for creating a registration in a safe fashion.
 
+    :param bool embargo: embargo the registration (rather than RegistrationApproval)
     :param bool autocomplete: automatically finish archival?
     :param bool autoapprove: automatically approve registration approval?
 
@@ -107,7 +110,16 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
             data=data,
             parent=parent,
         )
-    registration.root.require_approval(project.creator)
+    if embargo:
+        embargo_end_date = embargo_end_date or (
+            datetime.datetime.now() + datetime.timedelta(days=20)
+        )
+        registration.root.embargo_registration(
+            project.creator,
+            embargo_end_date
+        )
+    else:
+        registration.root.require_approval(project.creator)
     if autocomplete:
         root_job = registration.root.archive_job
         root_job.status = ARCHIVER_SUCCESS
@@ -143,3 +155,27 @@ class MockAuth(object):
         self.logged_in = True
 
 mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
+
+def unique(factory):
+    """
+    Turns a factory function into a new factory function that guarentees unique return
+    values. Note this uses regular item equivalence to check uniqueness, so this may not
+    behave as expected with factories with complex return values.
+
+    Example use:
+    unique_name_factory = unique(fake.name)
+    unique_name = unique_name_factory()
+    """
+    used = []
+    @functools.wraps(factory)
+    def wrapper():
+        item = factory()
+        over = 0
+        while item in used:
+            if over > 100:
+                raise RuntimeError('Tried 100 times to generate a unqiue value, stopping.')
+            item = factory()
+            over += 1
+        used.append(item)
+        return item
+    return wrapper

@@ -391,6 +391,8 @@ class UserRegistrations(UserNodes):
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationSerializer
+    view_category = 'users'
+    view_name = 'user-registrations'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
