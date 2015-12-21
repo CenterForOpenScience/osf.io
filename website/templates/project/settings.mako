@@ -250,6 +250,9 @@
                             </div>
                         </form>
                     % endif
+                    % if not include_wiki_settings:
+                        <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
+                    %endif
                 </div>
             </div>
         %endif ## End Wiki Config
