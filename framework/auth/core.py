@@ -1336,7 +1336,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
-    def get_node_comment_timestamps(self, node, page):
+    def get_node_comment_timestamps(self, node, page, file_id=None):
         """ Returns the timestamp for when comments were last viewed on a node or
             a dictionary of timestamps for when comments were last viewed on files.
         """
@@ -1346,6 +1346,8 @@ class User(GuidStoredObject, AddonModelMixin):
             page_timestamps = timestamps.get(page, default_timestamp)
         elif page == 'files':
             page_timestamps = timestamps.get(page, {})
+            if file_id:
+                page_timestamps = page_timestamps.get(file_id, default_timestamp)
         return page_timestamps
 
 

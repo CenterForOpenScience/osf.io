@@ -248,8 +248,7 @@ class Comment(GuidStoredObject):
                 if root_id is None:
                     return cls.n_unread_file_comments(user, node)
                 else:
-                    page_timestamp = user.get_node_comment_timestamps(node, page)
-                    view_timestamp = page_timestamp.get(root_id, default_timestamp)
+                    view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
                     root_target = File.load(root_id)
                     if check:
                         if not (root_target and root_target.touch(request.headers.get('Authorization'))):
