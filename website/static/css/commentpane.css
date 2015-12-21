@@ -69,13 +69,20 @@
 }
 
 .cp-sidebar {
-    height: 98%;
+    height: 95%;
     margin-left: 1px;  /* Note: Should be the same as .cp-bar:width */
     background-color: whitesmoke;
     padding: 10px;
-    padding-bottom: 70px;
     overflow-y: auto;
     box-shadow: -1px 0 3px lightgrey;
+}
+
+/*
+* Note: Separate class needed because padding does not get applied to overflow elements in firefox:
+* http://stackoverflow.com/questions/13471910/css-applying-padding-to-box-with-scroll-bottom-padding-doesnt-work
+*/
+.cp-sidebar-content {
+    padding-bottom: 70px!important;
 }
 
 .unselectable {

@@ -10,38 +10,39 @@
 
 
     <div class="comments cp-sidebar">
-        <button type="button" class="close visible-xs text-smaller" data-bind="click: togglePane">
-            <i class="fa fa-times"></i>
-        </button>
-        <h4>
-            <span data-bind="if: page() == 'node' ">${node['title']} Discussion</span>
-            %if file_name:
-                <span data-bind="if: page() == 'files'">Files | ${file_name} Discussion</span>
-            %endif
-        </h4>
+        <div class="cp-sidebar-content">
+            <button type="button" class="close visible-xs text-smaller" data-bind="click: togglePane">
+                <i class="fa fa-times"></i>
+            </button>
+            <h4>
+                <span data-bind="if: page() == 'node' ">${node['title']} Discussion</span>
+                %if file_name:
+                    <span data-bind="if: page() == 'files'">Files | ${file_name} Discussion</span>
+                %endif
+            </h4>
 
-        <div data-bind="if: canComment" style="margin-top: 20px">
-            <form class="form">
-                <div class="form-group">
-                    <span>
-                        <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
-                    </span>
-                </div>
-                <div data-bind="if: replyNotEmpty" class="form-group">
-                    <div class="clearfix">
-                        <div class="pull-right">
-                            <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
-                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: submittingReply}">{{commentButtonText}}</a>
-                            <span data-bind="text: replyErrorMessage" class="text-danger"></span>
+            <div data-bind="if: canComment" style="margin-top: 20px">
+                <form class="form">
+                    <div class="form-group">
+                        <span>
+                            <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
+                        </span>
+                    </div>
+                    <div data-bind="if: replyNotEmpty" class="form-group">
+                        <div class="clearfix">
+                            <div class="pull-right">
+                                <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
+                                <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: submittingReply}">{{commentButtonText}}</a>
+                                <span data-bind="text: replyErrorMessage" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="text-danger">{{errorMessage}}</div>
-            </form>
+                    <div class="text-danger">{{errorMessage}}</div>
+                </form>
+            </div>
+
+            <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
         </div>
-
-        <div data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
-
     </div>
 
 </div>
