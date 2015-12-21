@@ -268,7 +268,13 @@ function _poResolveToggle(item) {
  */
 function _poResolveLazyLoad(item) {
     var node = item.data;
-    return $osf.apiV2Url('nodes/' + node.uid + '/children', {});
+    return $osf.apiV2Url('nodes/', {
+        query : {
+            'filter[root]' : node.id,
+            'related_counts' : true,
+            'embed' : 'contributors'
+        }
+    });
 }
 
 /**
@@ -450,7 +456,10 @@ var tbOptions = {
         ];
     },
     lazyLoadPreprocess : function (value) {
-        value.data.map(function(item){
+        // For when we load root filtered nodes this is removing the parent from the returned list. requires the root to be in relationship object
+        value.data.map(function(item, index){
+
+
             item.kind = 'folder';
             item.uid = item.id;
             item.name = item.attributes.title;
