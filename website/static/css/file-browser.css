@@ -182,6 +182,20 @@
     border: none;
 }
 
+.spinner-div {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba(255, 255, 255, 0.87);
+    z-index: 9;
+    text-align: center;
+    font-size: 33px;
+    color: #ccc;
+    padding-top: 36%;
+}
+
 /* Responsive Style */
 @media only screen and (min-width : 1200px) {
 

@@ -85,6 +85,7 @@ var FileBrowser = {
         self.resetCollectionMenu = function () {
             self.collectionMenuObject({item : {label:null}, x : 0, y : 0});
         };
+        self.refreshView = m.prop(true); // Internal loading indicator
 
         // Default system collections
         self.collections = [
@@ -172,6 +173,7 @@ var FileBrowser = {
                 }
             }
             self.reload(true);
+            self.refreshView(false);
         };
 
         self.updateListError = function(result){
@@ -180,11 +182,13 @@ var FileBrowser = {
                 m('p', m('.btn.btn-link', { onclick : self.updateFilter.bind(null, self.collections[0])},' Reload \'All My Projects\''))
             ]));
             console.error(result);
+            self.refreshView(false);
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
         };
 
         // Refresh the Grid
         self.updateList = function(url, success, error){
+            self.refreshView(true);
             if (success === undefined){
                 success = self.updateListSuccess;
             }
@@ -345,7 +349,8 @@ var FileBrowser = {
                     tagFilters : ctrl.tagFilters
                 })
             ]) : '',
-            m('.fb-main', { style : poStyle },
+            m('.fb-main', { style : poStyle },[
+                ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
                 ctrl.data().data.length === 0 ? ctrl.nonLoadTemplate() : m('#poOrganizer',  m.component( ProjectOrganizer, {
                         filesData : ctrl.data,
                         updateSelected : ctrl.updateSelected,
@@ -355,6 +360,7 @@ var FileBrowser = {
                         dragContainment : args.wrapperSelector
                     })
                 )
+                ]
             ),
             infoPanel,
             m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected}),
