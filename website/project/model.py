@@ -234,6 +234,8 @@ class Comment(GuidStoredObject):
     @classmethod
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)
+        if not comment.node.can_comment(auth):
+            raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
         comment.save()
 
         comment.node.add_log(
@@ -254,6 +256,8 @@ class Comment(GuidStoredObject):
         return comment
 
     def edit(self, content, auth, save=False):
+        if not self.node.can_comment(auth) or self.user._id != auth.user._id:
+            raise PermissionsError('{0!r} does not have permission to edit this comment'.format(auth.user))
         self.content = content
         self.modified = True
         self.node.add_log(
@@ -271,6 +275,8 @@ class Comment(GuidStoredObject):
             self.save()
 
     def delete(self, auth, save=False):
+        if not self.node.can_comment(auth) or self.user._id != auth.user._id:
+            raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
         self.is_deleted = True
         self.node.add_log(
             NodeLog.COMMENT_REMOVED,
@@ -287,6 +293,8 @@ class Comment(GuidStoredObject):
             self.save()
 
     def undelete(self, auth, save=False):
+        if not self.node.can_comment(auth) or self.user._id != auth.user._id:
+            raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
         self.is_deleted = False
         self.node.add_log(
             NodeLog.COMMENT_ADDED,

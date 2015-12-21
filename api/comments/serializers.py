@@ -1,5 +1,6 @@
 from rest_framework import serializers as ser
 from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
 from website.project.model import Comment, Node
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
@@ -78,11 +79,20 @@ class CommentSerializer(JSONAPISerializer):
         if validated_data:
             if 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
-                comment.edit(content, auth=auth, save=True)
+                try:
+                    comment.edit(content, auth=auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to edit this comment.')
             if validated_data.get('is_deleted', None) is True:
-                comment.delete(auth, save=True)
+                try:
+                    comment.delete(auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to delete this comment.')
             elif comment.is_deleted:
-                comment.undelete(auth, save=True)
+                try:
+                    comment.undelete(auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to undelete this comment.')
         return comment
 
     def get_target_type(self, obj):
@@ -136,10 +146,11 @@ class CommentCreateSerializer(CommentSerializer):
                 detail='Invalid comment target \'{}\'.'.format(target_id)
             )
         validated_data['target'] = target
-        if node and node.can_comment(auth):
+        validated_data['content'] = validated_data.pop('get_content')
+        try:
             comment = Comment.create(auth=auth, **validated_data)
-        else:
-            raise PermissionDenied("Not authorized to comment on this project.")
+        except PermissionsError:
+            raise PermissionDenied('Not authorized to comment on this project.')
         return comment
 
 
