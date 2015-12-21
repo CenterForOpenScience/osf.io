@@ -1,4 +1,3 @@
-import collections
 from datetime import datetime as dt
 from datetime import timedelta
 import matplotlib.pyplot as plt
@@ -6,7 +5,7 @@ import matplotlib.pyplot as plt
 from modularodm import Q
 
 from website.app import init_app
-from website.models import NodeLog, User
+from website.models import NodeLog, User, Node
 
 color_map = {
     'comments': 'red',
@@ -27,19 +26,29 @@ def build_time_query(end):
     return Q('date', 'gt', end - timedelta(days=1)) & Q('date', 'lt', end)
 
 def order_users_get(sample_size=NUMBER_OF_USERS_TO_SAMPLE):
-    ordered = sorted(list(User.find()), key=lambda x: x.get_activity_points(), reverse=True)
+    users = User.find()
+    for user in users:
+        how_many = len(list(NodeLog.find(Q('user', 'eq', user))))
+        if how_many < 1:
+            users.remove(user)
+    ordered = sorted(users, key=lambda x: x.get_activity_points(), reverse=True)
+
     l = len(ordered)
-    return ordered[int(l/40): int(l/40) + sample_size], ordered[int(l/20): int(l/20) + sample_size], ordered[int(l/10): int(l/10) + sample_size], ordered[int(l/5): int(l/5) + sample_size]
+    return ordered[int(l/50): int(l/50) + sample_size], ordered[int(l/40): int(l/40) + sample_size], ordered[int(l/30): int(l/30) + sample_size], ordered[int(l/20): int(l/20) + sample_size]
 
 def get_agg_for_user(user, date):
-    return {
-        'comments': len(list(NodeLog.find(Q('user', 'eq', user) & Q('action', 'eq', NodeLog.COMMENT_ADDED) & build_time_query(date)))),
-        'wiki': len(list(NodeLog.find(Q('user', 'eq', user) & Q('action', 'eq', NodeLog.WIKI_UPDATED) & build_time_query(date)))),
-        'registrations': len(list(NodeLog.find(Q('user', 'eq', user) & Q('action', 'eq', NodeLog.PROJECT_REGISTERED) & build_time_query(date)))),
-        'nodes': len(list(NodeLog.find(Q('user', 'eq', user) & (Q('action', 'eq', NodeLog.PROJECT_CREATED) | Q('action', 'eq', NodeLog.NODE_CREATED)) & build_time_query(date)))),
-        'files': len(list(NodeLog.find(Q('user', 'eq', user) & (Q('action', 'eq', 'osf_storage_file_updated') | Q('action', 'eq', 'osf_storage_file_added')) & build_time_query(date)))),
-    }
-
+    ret = {}
+    nodes = list(Node.find('contributors', 'contains', user._id))
+    for node in nodes:
+        query_aggs = {
+            'comments': len(list(NodeLog.find(Q('was_connected_to', 'eq', node) & Q('action', 'eq', NodeLog.COMMENT_ADDED) & build_time_query(date)))),
+            'wiki': len(list(NodeLog.find(Q('was_connected_to', 'eq', node) & Q('action', 'eq', NodeLog.WIKI_UPDATED) & build_time_query(date)))),
+            'registrations': len(list(NodeLog.find(Q('was_connected_to', 'eq', node) & Q('action', 'eq', NodeLog.PROJECT_REGISTERED) & build_time_query(date)))),
+            'nodes': len(list(NodeLog.find(Q('was_connected_to', 'eq', node) & (Q('action', 'eq', NodeLog.PROJECT_CREATED) | Q('action', 'eq', NodeLog.NODE_CREATED)) & build_time_query(date)))),
+            'files': len(list(NodeLog.find(Q('was_connected_to', 'eq', node) & (Q('action', 'eq', 'osf_storage_file_updated') | Q('action', 'eq', 'osf_storage_file_added')) & build_time_query(date)))),
+        }
+        ret.update({k: (ret.get(k) or 0 + v) for k, v in query_aggs.iteritems()})
+    return ret
 
 def main():
     top, mid, bot, bot2 = order_users_get()
