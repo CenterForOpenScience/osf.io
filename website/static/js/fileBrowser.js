@@ -398,7 +398,7 @@ var FileBrowser = {
             ]) : '',
             m('.fb-main', { style : poStyle },[
                 ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
-                ctrl.data().data.length === 0 ? ctrl.nonLoadTemplate() : [ m('#poOrganizer',  m.component( ProjectOrganizer, {
+                ctrl.data().data.length === 0 ? ctrl.nonLoadTemplate() : m('#poOrganizer',  m.component( ProjectOrganizer, {
                         filesData : ctrl.data,
                         updateSelected : ctrl.updateSelected,
                         updateFilesData : ctrl.updateFilesData,
@@ -406,11 +406,8 @@ var FileBrowser = {
                         reload : ctrl.reload,
                         dragContainment : args.wrapperSelector
                     })
-                ),
-                    m('.fb-paginate', m.component(Paginator, { ctrl : ctrl }))
-                ]
-                ]
-            ),
+                )
+            ]),
             infoPanel,
             m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected}),
             mobile && ctrl.showSidebar() ? m('.fb-overlay') : ''
@@ -759,23 +756,6 @@ var Filters = {
                         );
                     })
                 ])
-            ]
-        );
-    }
-};
-
-/**
- * Paginator
- * @constructor
- */
-var Paginator = {
-    view : function (ctrl, args) {
-        var pageNum = 1;
-        return m('.fb-paginator.text-center',
-            [
-                m('span.btn.btn-link', [ m('i.fa.fa-angle-left'), 'Previous']),
-                m('span', 'Page: ' + args.ctrl.currentPage()),
-                m('span.btn.btn-link', [ 'Next', m('i.fa.fa-angle-right')])
             ]
         );
     }
