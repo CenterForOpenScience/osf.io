@@ -4160,7 +4160,7 @@ class TestComments(OsfTestCase):
                 is_public=True,
                 content=''
         )
-        assert_equal(error.exception.message, 'Ensure this value is not empty.')
+        assert_equal(error.exception.message, 'Value must not be empty.')
 
     def test_create_comment_content_cannot_be_whitespace(self):
         with assert_raises(ValidationValueError) as error:
@@ -4172,7 +4172,7 @@ class TestComments(OsfTestCase):
                 is_public=True,
                 content='    '
         )
-        assert_equal(error.exception.message, 'Ensure this value is not empty.')
+        assert_equal(error.exception.message, 'Value must not be empty.')
 
     def test_create_sends_comment_added_signal(self):
         with capture_signals() as mock_signals:
