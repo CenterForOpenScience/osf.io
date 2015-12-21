@@ -65,7 +65,7 @@ function patchNodesPrivacy(nodes) {
             }
         };
     });
-    return $.ajax({
+    return $3.ajax({
         url: nodesV2Url,
         type: 'PATCH',
         dataType: 'json',
