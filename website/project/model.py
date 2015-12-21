@@ -335,15 +335,15 @@ class Comment(GuidStoredObject):
             log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
         self.content = content
         self.modified = True
-        self.node.add_log(
-            NodeLog.COMMENT_UPDATED,
-            log_dict,
-            auth=auth,
-            save=False,
-        )
-        self.node.save()
         if save:
             self.save()
+            self.node.add_log(
+                NodeLog.COMMENT_UPDATED,
+                log_dict,
+                auth=auth,
+                save=False,
+            )
+            self.node.save()
 
     def delete(self, auth, save=False):
         log_dict = {
@@ -358,15 +358,15 @@ class Comment(GuidStoredObject):
             self.node.commented_files[self.root_target._id] -= 1
             if self.node.commented_files[self.root_target._id] == 0:
                 del self.node.commented_files[self.root_target._id]
-        self.node.add_log(
-            NodeLog.COMMENT_REMOVED,
-            log_dict,
-            auth=auth,
-            save=False,
-        )
-        self.node.save()
         if save:
             self.save()
+            self.node.add_log(
+                NodeLog.COMMENT_REMOVED,
+                log_dict,
+                auth=auth,
+                save=False,
+            )
+            self.node.save()
 
     def undelete(self, auth, save=False):
         self.is_deleted = False
@@ -380,15 +380,15 @@ class Comment(GuidStoredObject):
             log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
             file_key = self.root_target._id
             self.node.commented_files[file_key] = self.node.commented_files.get(file_key, 0) + 1
-        self.node.add_log(
-            NodeLog.COMMENT_RESTORED,
-            log_dict,
-            auth=auth,
-            save=False,
-        )
-        self.node.save()
         if save:
             self.save()
+            self.node.add_log(
+                NodeLog.COMMENT_RESTORED,
+                log_dict,
+                auth=auth,
+                save=False,
+            )
+            self.node.save()
 
     def report_abuse(self, user, save=False, **kwargs):
         """Report that a comment is abuse.

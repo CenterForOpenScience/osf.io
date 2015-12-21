@@ -717,7 +717,7 @@ def _view_project(node, auth, primary=False, check_files=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message, 'info', dismissible=False, trust=True)
+                status.push_status_message(message, kind='info', dismissible=False, trust=True)
     n_unread_node = Comment.find_n_unread(user, node, page='node')
     n_unread_files = Comment.find_n_unread(user, node, page='files', check=check_files)
     data = {
