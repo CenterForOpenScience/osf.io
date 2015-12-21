@@ -212,7 +212,7 @@
 <%include file="project/modal_add_component.mako"/>
 
 % if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_template.mako"/>
+    <%include file="include/comment_pane_template.mako"/>
 % endif
 
 <div class="row">
@@ -226,6 +226,7 @@
         }'></div>
         %endif
 
+        <!-- Files -->
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Files</h3>
@@ -412,7 +413,6 @@ ${parent.javascript_bottom()}
     // Hack to allow mako variables to be accessed to JS modules
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
-            name: ${ user_full_name | sjson, n },
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n }
         },

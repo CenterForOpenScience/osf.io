@@ -9,6 +9,7 @@ from framework.exceptions import PermissionsError
 
 from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
+from website.files.models.base import File
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
@@ -154,9 +155,28 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def get_unread_comments_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
-        user = auth.user
-        return Comment.find_unread(user=user, node=obj)
+        user = self.context['request'].user
+        node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
+        file_comments = self.get_unread_file_comments(obj)
+
+        return {
+            'total': node_comments + file_comments,
+            'node': node_comments,
+            'files': file_comments
+        }
+
+    def get_unread_file_comments(self, obj):
+        user = self.context['request'].user
+        n_unread = 0
+        commented_files = File.find(Q('_id', 'in', obj.commented_files.keys()))
+        for file_obj in commented_files:
+            if obj.get_addon(file_obj.provider):
+                try:
+                    self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider, check_object_permissions=False)
+                except (exceptions.NotFound, exceptions.PermissionDenied):
+                    continue
+                n_unread += Comment.find_n_unread(user, obj, page='files', root_id=file_obj._id)
+        return n_unread
 
     def create(self, validated_data):
         node = Node(**validated_data)

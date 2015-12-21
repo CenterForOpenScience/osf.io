@@ -49,12 +49,24 @@ $('body').on('nodeLoad', function(event, data) {
 });
 
 // Initialize comment pane w/ its viewmodel
-var $comments = $('#comments');
+var $comments = $('.comments');
 if ($comments.length) {
-    var userName = window.contextVars.currentUser.name;
-    var canComment = window.contextVars.currentUser.canComment;
-    var hasChildren = window.contextVars.node.hasChildren;
-    Comment.init('#commentPane', userName, canComment, hasChildren);
+    var currentUser = {
+        id: ctx.currentUser.id,
+        url: ctx.currentUser.urls.profile,
+        fullname: ctx.currentUser.fullname,
+        gravatarUrl: ctx.currentUser.gravatarUrl
+    };
+    var options = {
+        nodeId : window.contextVars.node.id,
+        nodeApiUrl: window.contextVars.node.urls.api,
+        page: 'node',
+        rootId: window.contextVars.node.id,
+        canComment: window.contextVars.currentUser.canComment,
+        hasChildren: window.contextVars.node.hasChildren,
+        currentUser: currentUser
+    };
+    Comment.init('#commentsLink', '.comment-pane', options);
 }
 
 $(document).ready(function () {

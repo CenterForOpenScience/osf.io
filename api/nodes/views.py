@@ -95,7 +95,9 @@ class WaterButlerMixin(object):
         node = self.get_node(check_object_permissions=False)
         path = self.kwargs[self.path_lookup_url_kwarg]
         provider = self.kwargs[self.provider_lookup_url_kwarg]
+        return self.get_file_object(node, path, provider)
 
+    def get_file_object(self, node, path, provider, check_object_permissions=True):
         if provider == 'osfstorage':
             # Kinda like /me for a user
             # The one odd case where path is not really path
@@ -108,8 +110,8 @@ class WaterButlerMixin(object):
                     Q('_id', 'eq', path.strip('/')) &
                     Q('is_file', 'eq', not path.endswith('/'))
                 )
-
-            self.check_object_permissions(self.request, obj)
+            if check_object_permissions:
+                self.check_object_permissions(self.request, obj)
 
             return obj
 
@@ -135,7 +137,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -301,7 +303,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         instance.save()
 
 
-class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
     """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -1763,6 +1765,9 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         date_modified  iso8601 timestamp  timestamp when the comment was last updated
         modified       boolean            has this comment been edited?
         deleted        boolean            is this comment deleted?
+        is_abuse       boolean            has this comment been reported by the current user?
+        has_children   boolean            does this comment have replies?
+        can_edit       boolean            can the current user edit this comment?
 
     ##Links
 
@@ -1841,7 +1846,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('target', 'eq', self.get_node())
+        return Q('node', 'eq', self.get_node()) & (Q('root_target', 'ne', None))
 
     def get_queryset(self):
         return Comment.find(self.get_query_from_request())

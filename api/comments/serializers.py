@@ -1,9 +1,12 @@
 from rest_framework import serializers as ser
+from modularodm import Q
 from framework.auth.core import Auth
+from website.files.models import StoredFileNode
 from website.project.model import Comment, Node
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse
+from api.base.settings import osf_settings
 from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
                                   RelationshipField,
@@ -24,23 +27,28 @@ class CommentSerializer(JSONAPISerializer):
         'deleted',
         'date_created',
         'date_modified',
+        'page',
         'target'
     ])
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = AuthorizedCharField(source='get_content')
+    content = AuthorizedCharField(source='get_content', max_length=osf_settings.COMMENT_MAXLENGTH)
+    page = ser.CharField(read_only=True)
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
     node = RelationshipField(related_view='nodes:node-detail', related_view_kwargs={'node_id': '<node._id>'})
-    replies = RelationshipField(self_view='comments:comment-replies', self_view_kwargs={'comment_id': '<pk>'})
+    replies = RelationshipField(self_view='nodes:node-comments', self_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<pk>'})
     reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<pk>'})
 
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
+    is_abuse = ser.SerializerMethodField(help_text='Whether the current user reported this comment.')
+    has_children = ser.SerializerMethodField(help_text='Whether this comment has any replies.')
+    can_edit = ser.SerializerMethodField(help_text='Whether the current user can edit this comment.')
 
     # LinksField.to_representation adds link to "self"
     links = LinksField({})
@@ -48,12 +56,31 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
+    def get_is_abuse(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return False
+        return user._id in obj.reports
+
+    def get_can_edit(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return False
+        return obj.user._id == user._id
+
+    def get_has_children(self, obj):
+        return Comment.find(Q('target', 'eq', obj)).count() > 0
+
     def update(self, comment, validated_data):
         assert isinstance(comment, Comment), 'comment must be a Comment'
         auth = Auth(self.context['request'].user)
         if validated_data:
             if 'get_content' in validated_data:
-                comment.edit(validated_data['get_content'], auth=auth, save=True)
+                content = validated_data.pop('get_content')
+                content = content.strip()
+                if not content:
+                    raise ValidationError('Comment cannot be empty.')
+                comment.edit(content, auth=auth, save=True)
             if validated_data.get('is_deleted', None) is True:
                 comment.delete(auth, save=True)
             elif comment.is_deleted:
@@ -65,12 +92,13 @@ class CommentSerializer(JSONAPISerializer):
             return 'nodes'
         elif isinstance(obj, Comment):
             return 'comments'
+        elif isinstance(obj, StoredFileNode):
+            return 'files'
         else:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/target/links/related/meta/type'},
                 detail='Invalid comment target type.'
             )
-
 
 class CommentCreateSerializer(CommentSerializer):
 
@@ -86,16 +114,26 @@ class CommentCreateSerializer(CommentSerializer):
 
     def get_target(self, node_id, target_id):
         node = Node.load(target_id)
-        if node and node_id != target_id:
-            raise ValueError('Cannot post comment to another node.')
-        elif target_id == node_id:
-            return Node.load(node_id)
-        else:
-            comment = Comment.load(target_id)
-            if comment:
+        comment = Comment.load(target_id)
+        target_file = StoredFileNode.load(target_id)
+
+        if node:
+            if node_id == target_id:
+                return node
+            else:
+                raise ValueError('Cannot post comment to another node.')
+        elif comment:
+            if comment.node._id == node_id:
                 return comment
             else:
-                raise ValueError
+                raise ValueError('Cannot post reply to comment on another node.')
+        elif target_file:
+            if target_file.node._id == node_id:
+                return target_file
+            else:
+                raise ValueError('Cannot post comment to file on another node.')
+        else:
+            raise ValueError('Invalid comment target.')
 
     def create(self, validated_data):
         user = validated_data['user']
@@ -111,7 +149,11 @@ class CommentCreateSerializer(CommentSerializer):
                 detail='Invalid comment target \'{}\'.'.format(target_id)
             )
         validated_data['target'] = target
-        validated_data['content'] = validated_data.pop('get_content')
+        content = validated_data.pop('get_content')
+        validated_data['content'] = content.strip()
+        if not validated_data['content']:
+            raise ValidationError('Comment cannot be empty.')
+
         if node and node.can_comment(auth):
             comment = Comment.create(auth=auth, **validated_data)
         else:

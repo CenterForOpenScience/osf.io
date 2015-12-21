@@ -10,6 +10,7 @@ from website.util import permissions
 from website.util.sanitize import strip_html
 
 from api.base.settings.defaults import API_BASE
+from api_tests import utils as test_utils
 
 from tests.base import ApiTestCase, fake
 from tests.factories import (
@@ -126,10 +127,27 @@ class TestNodeDetail(ApiTestCase):
     def test_node_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()
         self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user), save=True)
-        comment = CommentFactory(node=self.public_project, target=self.public_project, user=contributor)
+        comment = CommentFactory(node=self.public_project, target=self.public_project, user=contributor, page='node')
         res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
-        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
-        assert_equal(unread_comments, 1)
+        unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
+        unread_comments_total = unread['total']
+        unread_comments_node = unread['node']
+        assert_equal(unread_comments_total, 1)
+        assert_equal(unread_comments_node, 1)
+
+    def test_node_has_correct_unread_file_comments_count(self):
+        contributor = AuthUserFactory()
+        self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user))
+        test_file = test_utils.create_test_file(self.public_project, self.user)
+        comment = CommentFactory(node=self.public_project, target=test_file, user=contributor, page='files')
+        comment.node.commented_files[comment.root_target._id] = 1
+        self.public_project.save()
+        res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
+        unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
+        unread_comments_total = unread['total']
+        unread_comments_files = unread['files']
+        assert_equal(unread_comments_total, 1)
+        assert_equal(unread_comments_files, 1)
 
     def test_node_properties(self):
         res = self.app.get(self.public_url)
