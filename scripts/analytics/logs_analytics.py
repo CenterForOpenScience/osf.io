@@ -26,13 +26,14 @@ def build_time_query(end):
     return Q('date', 'gt', end - timedelta(days=1)) & Q('date', 'lt', end)
 
 def order_users_get(sample_size=NUMBER_OF_USERS_TO_SAMPLE):
+    print('Begin finding users.')
     users = list(User.find())
     for user in users:
         how_many = len(list(NodeLog.find(Q('user', 'eq', user))))
         if how_many < 1:
             users.remove(user)
     ordered = sorted(users, key=lambda x: x.get_activity_points(), reverse=True)
-
+    print('Found users.')
     l = len(ordered)
     return ordered[int(l/50): int(l/50) + sample_size], ordered[int(l/40): int(l/40) + sample_size], ordered[int(l/30): int(l/30) + sample_size], ordered[int(l/20): int(l/20) + sample_size]
 
@@ -58,6 +59,7 @@ def main():
     bot_agg = {str(day): {} for day in days_in_last_week}
     bot2_agg = {str(day): {} for day in days_in_last_week}
     aggs = [(top, top_agg), (mid, mid_agg), (bot, bot_agg), (bot2, bot2_agg)]
+    count = 0
     for sample, agg in aggs:
         for user in sample:
             for day in days_in_last_week:
@@ -66,6 +68,8 @@ def main():
                     {
                         str(day): {key: val + (agg[str(day)].get(key) or 0) for key, val in data.iteritems()}}
                 )
+                count += 1
+                print('Log n aggregation: ' + int(str((count/float(NUMBER_OF_DAY_DATA_POINTS))*100)) + '% Done')
         agg.update(
             {key: {k: v/float(len(sample)) for k, v in val.iteritems()} for key, val in agg.iteritems()}
         )
