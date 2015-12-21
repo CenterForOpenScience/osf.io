@@ -28,7 +28,7 @@ def build_time_query(end):
 
 def order_users_get(sample_size=NUMBER_OF_USERS_TO_SAMPLE):
     us = User.find()
-    points = {u.get_activity_points: u for u in us}
+    points = {u.get_activity_points(): u for u in us}
     ordered = collections.OrderedDict(sorted(points.items()))
     ordered = ordered.values()
     l = len(ordered)
