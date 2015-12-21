@@ -4119,7 +4119,9 @@ class DraftRegistrationApproval(Sanction):
 
     def _send_rejection_email(self, user, draft):
         schema = draft.registration_schema
-        if schema.name == 'Prereg Challenge':
+        prereg_schema = prereg_utils.get_prereg_schema()
+
+        if schema._id == prereg_schema:
             mails.send_mail(
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
