@@ -158,15 +158,22 @@ var AddContributorViewModel = oop.extend(Paginator, {
     getContributors: function() {
         var self = this;
         self.notification(false);
-        return $.getJSON(
-            self.nodeApiUrl + 'get_contributors/', {},
-            function(result) {
-                var contributors = result.contributors.map(function(userData) {
-                    return userData.id;
-                });
-                self.contributors(contributors);
-            }
-        );
+        var url = window.contextVars.apiV2Prefix + 'nodes/' + window.contextVars.node.id + '/contributors/';
+
+        return $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json',
+            contentType: 'application/vnd.api+json;',
+            crossOrigin: true,
+            xhrFields: {withCredentials: true},
+            processData: false
+        }).done(function(response) {
+            var contributors = response.data.map(function(user) {
+                return user.id;
+            });
+            self.contributors(contributors);
+        });
     },
     getEditableChildren: function() {
         var self = this;
