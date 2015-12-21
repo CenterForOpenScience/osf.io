@@ -69,7 +69,7 @@
 }
 
 .cp-sidebar {
-    height: 100%;
+    height: 98%;
     margin-left: 1px;  /* Note: Should be the same as .cp-bar:width */
     background-color: whitesmoke;
     padding: 10px;
