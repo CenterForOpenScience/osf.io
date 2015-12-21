@@ -4120,7 +4120,7 @@ class DraftRegistrationApproval(Sanction):
         schema = draft.registration_schema
         prereg_schema = prereg_utils.get_prereg_schema()
 
-        if schema._id == prereg_schema:
+        if schema._id == prereg_schema._id:
             mails.send_mail(
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
