@@ -5,7 +5,8 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 require('jquery-ui');
 require('knockout-sortable');
-
+var ContribAdder = require('js/contribAdder');
+var ContribRemover = require('js/contribRemover');
 var rt = require('js/responsiveTable');
 var $osf = require('./osfHelpers');
 require('js/filters');
@@ -462,11 +463,39 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
 function ContribManager(selector, contributors, adminContributors, user, isRegistration, table, adminTable) {
     var self = this;
+    //shouter allows communication between ContribManager and ContribRemover, in particular which contributor needs to
+    // be removed is passed to ContribRemover
+    var contribShouter = new ko.subscribable();
+    var changeShouter = new ko.subscribable();
     self.selector = selector;
     self.$element = $(selector);
     self.contributors = contributors;
     self.adminContributors = adminContributors;
     self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, table, adminTable);
+    $('body').on('nodeLoad', function(event, data) {
+        // If user is a contributor, initialize the contributor modal
+        // controller
+        if (data.user.can_edit) {
+            new ContribAdder(
+                '#addContributors',
+                data.node.title,
+                data.node.id,
+                data.parent_node.id,
+                data.parent_node.title
+            );
+            new ContribRemover(
+                '#removeContributor',
+                data.node.title,
+                data.node.id,
+                data.user.username,
+                data.user.id,
+                contribShouter,
+                changeShouter
+            );
+
+
+        }
+    });
     self.init();
 }
 
