@@ -408,7 +408,7 @@ var FileBrowser = {
                             ctrl.showSidebar(!ctrl.showSidebar());
                         }
                     }, m('.fa.fa-bars')) : '',
-                    m('span.m-r-md', ctrl.data().links.meta.total + ' Projects'),
+                    m('span.m-r-md.hidden-xs', ctrl.data().links.meta.total + ' Projects'),
                     m('#poFilter.m-r-xs'),
                     !mobile ? m('button.btn', {
                         'class' : infoButtonClass,
@@ -441,7 +441,7 @@ var FileBrowser = {
                     tagFilters : ctrl.tagFilters
                 })
             ]) : '',
-            m('.fb-main', { style : poStyle },[
+            mobile && ctrl.showSidebar() ? '' : m('.fb-main', { style : poStyle },[
                 ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
                 ctrl.data().data.length === 0 ? ctrl.nonLoadTemplate() : m('#poOrganizer',  m.component( ProjectOrganizer, {
                         filesData : ctrl.data,
