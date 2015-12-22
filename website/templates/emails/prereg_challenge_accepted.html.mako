@@ -1,4 +1,4 @@
-Dear ${user.fullname},
+Dear ${user.fullname | u},
 
 We are happy to let you know that your research plan has been verified for completeness and registered on the OSF at the following URL: <a href="${registration_url}">${registration_url}</a>.
 

@@ -147,7 +147,6 @@ def make_drf_request(*args, **kwargs):
     # A DRF Request wraps a Django HttpRequest
     return Request(http_request, *args, **kwargs)
 
-
 class MockAuth(object):
 
     def __init__(self, user):
