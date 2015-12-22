@@ -105,7 +105,7 @@ def index(auth):
 
     """
     if auth.user:
-        return redirect(web_url_for('dashboard'))
+        return redirect(web_url_for('home'))
     return {}
 
 
@@ -234,6 +234,10 @@ def dashboard(auth):
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': dashboard_id,
             }
+
+@must_be_logged_in
+def home(auth):
+    return {}
 
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):

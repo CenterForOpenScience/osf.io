@@ -19,14 +19,9 @@ var moment = require('moment');
 var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
-var legendView = require('js/components/legend').view;
 var Fangorn = require('js/fangorn');
 
-var nodeCategories = require('json!built/nodeCategories.json');
 
-// copyMode can be 'copy', 'move', 'forbidden', or null.
-// This is set at draglogic and is used as global within this module
-var copyMode = null;
 // Initialize projectOrganizer object (separate from the ProjectOrganizer constructor at the end)
 var projectOrganizer = {};
 
@@ -38,13 +33,6 @@ var linkID;
 var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
 var ENTER_KEY = 13;
-
-var projectOrganizerCategories = $.extend({}, {
-    collection: 'Collections',
-    smartCollection: 'Smart Collections',
-    project: 'Project',
-    link:  'Link'
-}, nodeCategories);
 
 var LinkObject;
 /**
@@ -95,6 +83,41 @@ projectOrganizer.myProjects = new Bloodhound({
     }
 });
 
+
+/**
+ * Organize flat list of nodes returned from server to a hierarchical list
+ * @param {Array} flatData flat list of nodes as returned from the server
+ * @returns {Array} root a hierarchical list of the nodes
+ */
+function _makeTree (flatData) {
+    var root = {id:0, children: [], data : {} };
+    var node_list = { 0 : root};
+    for (var i = 0; i < flatData.length; i++) {
+        var n = flatData[i];
+        var parentLink = n.relationships.parent.links.related.href; // Find where parent id string can be extracted
+        var parentID = parentLink.split('/')[5];
+
+        if(!node_list[n.id]){ // If this node is not in the object list, add it
+            node_list[n.id] = { id: n.id, data : n, children : [] };
+        } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
+            node_list[n.id].id = n.id;
+            node_list[n.id].data = n;
+        }
+
+        if(parentID && parentID !== n.id && !n.attributes.registration ) {
+            if(!node_list[parentID]){
+                node_list[parentID] = { children : [] };
+            }
+            node_list[parentID].children.push(node_list[n.id]);
+
+        } else {
+            node_list[0].children.push(node_list[n.id]);
+        }
+    }
+    console.log(root, node_list);
+    return root;
+}
+
 /**
  * Edits the template for the column titles.
  * Used here to make smart folder italicized
@@ -112,11 +135,7 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if(node.links.html){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title),
-            m('span', { ondblclick : function(){
-                var linkObject = new LinkObject('node', node, node.attributes.title);
-                tb.options.updateFilesData(linkObject);
-            }}, ' -Open')
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title)
         ];
     } else {
         return  m('span', { 'class' : css}, node.attributes.title);
@@ -131,11 +150,13 @@ function _poTitleColumn(item) {
  */
 // TODO : May need refactor based on the api data
 function _poContributors(item) {
-    if (!item.data.contributors) {
+    var contributorList = item.data.embeds.contributors.data;
+    if (contributorList.length === 0) {
         return '';
     }
 
-    return item.data.contributors.map(function (person, index, arr) {
+    return contributorList.map(function (person, index, arr) {
+        var name = person.embeds.users.data.attributes.family_name;
         var comma;
         if (index === 0) {
             comma = '';
@@ -148,7 +169,7 @@ function _poContributors(item) {
         if (index === 2) {
             return m('span', ' + ' + (arr.length - 2));
         }
-        return m('span', comma + person.name);
+        return m('span', comma + name);
     });
 }
 
@@ -172,30 +193,45 @@ function _poModified(item) {
  * @private
  */
 function _poResolveRows(item) {
+    var mobile = window.innerWidth < 767; // true if mobile view
 
     var css = '',
-        default_columns;
+        default_columns = [];
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     } else {
         item.css = '';
     }
 
-     default_columns = [{
+    default_columns.push({
         data : 'name',  // Data field name
         folderIcons : true,
         filter : true,
         css : 'po-draggable', // All projects are draggable since we separated collections from the grid
         custom : _poTitleColumn
-    }, {
-        data : 'contributors',
-        filter : false,
-        custom : _poContributors
-    }, {
-        data : 'dateModified',
-        filter : false,
-        custom : _poModified
-    }];
+    });
+
+    if (!mobile) {
+        default_columns.push({
+            data : 'contributors',
+            filter : false,
+            custom : _poContributors
+        }, {
+            data : 'dateModified',
+            filter : false,
+            custom : _poModified
+        });
+    } else {
+        default_columns.push({
+            data : 'name',
+            filter : false,
+            custom : function (row){
+                return m('.btn.btn-default.btn-sm[data-toggle="modal"][data-target="#infoModal"]', {
+                }, m('i.fa.fa-info-circle.text-muted'));
+            }
+        });
+    }
+
     return default_columns;
 }
 
@@ -206,20 +242,35 @@ function _poResolveRows(item) {
  */
 function _poColumnTitles() {
     var columns = [];
-    columns.push({
-        title: 'Name',
-        width : '50%',
-        sort : true,
-        sortType : 'text'
-    }, {
-        title : 'Contributors',
-        width : '25%',
-        sort : false
-    }, {
-        title : 'Modified',
-        width : '25%',
-        sort : false
-    });
+    var mobile = window.innerWidth < 767; // true if mobile view
+    if(!mobile){
+        columns.push({
+            title: 'Name',
+            width : '50%',
+            sort : true,
+            sortType : 'text'
+        },{
+            title : 'Contributors',
+            width : '25%',
+            sort : false
+        }, {
+            title : 'Modified',
+            width : '25%',
+            sort : false
+        });
+    } else {
+        columns.push({
+            title: 'Name',
+            width : '90%',
+            sort : true,
+            sortType : 'text'
+        },{
+            title : '',
+            width : '10%',
+            sort : false
+        });
+    }
+
     return columns;
 }
 
@@ -252,7 +303,13 @@ function _poResolveToggle(item) {
  */
 function _poResolveLazyLoad(item) {
     var node = item.data;
-    return $osf.apiV2Url('nodes/' + node.uid + '/children', {});
+    return $osf.apiV2Url('nodes/', {
+        query : {
+            'filter[root]' : node.id,
+            'related_counts' : true,
+            'embed' : 'contributors'
+        }
+    });
 }
 
 /**
@@ -365,10 +422,10 @@ var tbOptions = {
     multiselect : true,
     hoverClassMultiselect : 'fangorn-selected',
     sortButtonSelector : {
-        up : 'i.fa.fa-chevron-up',
-        down : 'i.fa.fa-chevron-down'
+        up : 'i.fa.fa-angle-up',
+        down : 'i.fa.fa-angle-down'
     },
-    sortDepth : 1,
+    sortDepth : 0,
     onload : function () {
         var tb = this,
             rowDiv = tb.select('.tb-row');
@@ -376,6 +433,7 @@ var tbOptions = {
         $('.gridWrapper').on('mouseout', function () {
             tb.select('.tb-row').removeClass('po-hover');
         });
+        m.render(document.getElementById('poFilter'), tb.options.filterTemplate.call(this));
     },
     ontogglefolder : function (item, event) {
         if (!item.open) {
@@ -400,37 +458,80 @@ var tbOptions = {
     xhrconfig : function(xhr) {
         xhr.withCredentials = true;
     },
-    lazyLoadPreprocess : function(value){
+    ondblclickrow : function(item, event){
         var tb = this;
-        value.data.map(function(item){
+        var node = item.data;
+        var linkObject = new LinkObject('node', node, node.attributes.title);
+        // Get ancestors
+        linkObject.ancestors = [];
+        function getAncestors (item) {
+            var parent = item.parent();
+            if(parent && parent.id > tb.treeData.id) {
+                linkObject.ancestors.unshift(parent);
+                getAncestors(parent);
+            }
+        }
+        getAncestors(item);
+        tb.options.updateFilesData(linkObject);
+    },
+    hScroll : 300,
+    filterTemplate : function() {
+        var tb = this;
+        return [
+            m('input.form-control[placeholder="' + tb.options.filterPlaceholder + '"][type="text"]', {
+                style: 'display:inline;',
+                onkeyup: tb.filter,
+                onchange: m.withAttr('value', tb.filterText),
+                value: tb.filterText()
+            }),
+            m('.filterReset', { onclick : function () {
+                tb.resetFilter.call(tb);
+                $('#poFilter>input').val('');
+            } }, tb.options.removeIcon())
+        ];
+    },
+    lazyLoadPreprocess : function (value) {
+        // For when we load root filtered nodes this is removing the parent from the returned list. requires the root to be in relationship object
+        var treeData = _makeTree(value.data);
+        value.data.map(function(item, index){
             item.kind = 'folder';
             item.uid = item.id;
-            // TODO: Dummy data, remove this when api is ready
-            item.contributors = [{
-                id: '8q36f',
-                name : 'Dummy User'
-            }];
+            item.name = item.attributes.title;
+            item.date = new $osf.FormattableDate(item.attributes.date_modified);
         });
-        console.log('Lazyload processed', value.data);
-        return value.data;
+
+        return value;
     }
 };
 
 var ProjectOrganizer = {
     controller : function (args) {
-        var poOptions = $.extend(
-            {
-                updateSelected : args.updateSelected,
-                updateFilesData : args.updateFilesData,
-                filesData: args.filesData()
-            },
-            tbOptions
-        );
         LinkObject = args.LinkObject;
-        this.tb = new Treebeard(poOptions, true);
+        var self = this;
+        self.updateTB = function(){
+            var poOptions = $.extend(
+                {
+                    updateSelected : args.updateSelected,
+                    updateFilesData : args.updateFilesData,
+                    filesData: args.filesData().data,
+                    wrapperSelector : args.wrapperSelector,
+                    dragContainment : args.dragContainment
+                },
+                tbOptions
+            );
+            var tb = new Treebeard(poOptions, true);
+            m.redraw.strategy('all');
+            return tb;
+        };
+        self.tb = self.updateTB();
     },
     view : function (ctrl, args) {
-        return m('.fb-project-organizer#projectOrganizer', ctrl.tb);
+        var tb = ctrl.tb;
+        if (args.reload()) {
+            tb = ctrl.updateTB();
+            args.reload(false);
+        }
+        return m('.fb-project-organizer#projectOrganizer', tb );
     }
 };
 
