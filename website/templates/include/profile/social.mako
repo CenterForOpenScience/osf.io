@@ -98,9 +98,9 @@
                 <label>Academia</label>
                 <div class="input-group">
                 <span class="input-group-addon">https://</span>
-                <input class="form-control" data-bind="value: academia1" placeholder="institution"/>
+                <input class="form-control" data-bind="value: academiaInstitution" placeholder="institution"/>
                 <span class="input-group-addon">.academia.edu/</span>
-                <input class="form-control" data-bind="value: academia2" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: academiaProfileID" placeholder="profileID"/>
                 </div>
             </div>
 
