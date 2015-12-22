@@ -45,9 +45,9 @@ var AddProject = {
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
         };
-        self.chooseCategory = function(event){
-            self.newProjectCategory = $(this).val();
-        };
+        //self.chooseCategory = function(event){
+        //    self.newProjectCategory = $(this).val();
+        //};
         self.add = function _add () {
             self.viewState('processing');
             var url = $osf.apiV2Url('nodes/', { query : {}});
