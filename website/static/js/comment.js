@@ -134,37 +134,43 @@ BaseComment.prototype.setupToolTips = function(elm) {
 
 BaseComment.prototype.fetch = function() {
     var self = this;
-    var deferred = $.Deferred();
-    if (self._loaded) {
-        deferred.resolve(self.comments());
-    }
-    var hasPrivateLink = false;
     var urlParams = osfHelpers.urlParams();
     var query = 'embed=user';
     if (urlParams.view_only) {
-        hasPrivateLink = true;
         query = 'view_only=' + urlParams.view_only;
     }
     if (self.id() !== undefined) {
         query += '&filter[target]=' + self.id();
     }
     var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: query});
+    self.fetchNext(url);
+};
+
+/* Go through the paginated API response to fetch all comments for the specified target */
+BaseComment.prototype.fetchNext = function(url) {
+    var self = this;
+    var deferred = $.Deferred();
+    if (self._loaded) {
+        deferred.resolve(self.comments());
+    }
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
         {'isCors': true});
     request.done(function(response) {
-        self.comments(
-            ko.utils.arrayMap(response.data, function(comment) {
-                return new CommentModel(comment, self, self.$root);
-            })
-        );
-        if (!hasPrivateLink) {
-            self.setUnreadCommentCount();
+        for(var i=0; i < response.data.length; i++) {
+            self.comments.push(new CommentModel(response.data[i], self, self.$root));
         }
-        deferred.resolve(self.comments());
-        self.configureCommentsVisibility();
-        self._loaded = true;
+        if (response.links.next !== null) {
+            self.fetchNext(response.links.next);
+        } else {
+            if (!osfHelpers.urlParams().view_only) {
+                self.setUnreadCommentCount();
+            }
+            deferred.resolve(self.comments());
+            self.configureCommentsVisibility();
+            self._loaded = true;
+        }
     });
     return deferred.promise();
 };
@@ -299,7 +305,7 @@ var CommentModel = function(data, $parent, $root) {
         self.author = {
             'id': null,
             'url': '',
-            'name': 'A User',
+            'fullname': 'A User',
             'gravatarUrl': ''
         };
     } else {
