@@ -210,9 +210,16 @@ var FileBrowser = {
             } else {
                 var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
                 if(lastcrumb.type === 'collection'){
-                    self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'This collection has no projects. You can go to All My Projects collection and drop projects you want to add into the collection link'));
+                    self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
                 } else {
-                    self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'This project has no subcomponents. Add new.'));
+                    self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box.text-center', [
+                        'This project has no subcomponents.',
+                        m.component(AddProject, {
+                            buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new Subcomponent'),
+                            parentID : self.breadcrumbs()[self.breadcrumbs().length-1].data.id,
+                            modalID : 'addSubcomponent'
+                        })
+                    ]));
                 }
             }
             // if we have more pages keep loading the pages
