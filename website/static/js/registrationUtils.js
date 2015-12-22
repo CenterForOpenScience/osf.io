@@ -1149,12 +1149,13 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
         return self.drafts().length > 0;
     });
 
-    self.loading = ko.observable(true);
-    self.loading.subscribe(function(loading) {
+    self.loadingSchemas = ko.observable(true);
+    self.loadingSchemas.subscribe(function(loading) {
         if (!loading) {
             createButton.removeClass('disabled');
         }
     });
+    self.loadingDrafts = ko.observable(true);
 
     self.preview = ko.observable(false);
 
@@ -1179,7 +1180,7 @@ RegistrationManager.prototype.init = function() {
                 return new MetaSchema(schema);
             })
         );
-        self.loading(false);
+        self.loadingSchemas(false);
     });
 
     var getDraftRegistrations = self.getDraftRegistrations();
@@ -1191,6 +1192,7 @@ RegistrationManager.prototype.init = function() {
             return a.initiated.getTime() < b.initiated.getTime();
         });
         self.drafts(drafts);
+        self.loadingDrafts(false);
     });
 
     var urlParams = $osf.urlParams();
