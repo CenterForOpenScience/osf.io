@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
+from modularodm import Q
 from framework.auth.core import Auth
 
 from website.models import Node, NodeLog
@@ -15,7 +16,8 @@ from tests.factories import (
     FolderFactory,
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RetractedRegistrationFactory
 )
 
 
@@ -31,6 +33,10 @@ class TestNodeList(ApiTestCase):
         self.public = ProjectFactory(is_public=True, creator=self.user)
 
         self.url = '/{}nodes/'.format(API_BASE)
+
+    def tearDown(self):
+        super(TestNodeList, self).tearDown()
+        Node.remove()
 
     def test_only_returns_non_deleted_public_projects(self):
         res = self.app.get(self.url)
@@ -77,11 +83,44 @@ class TestNodeList(ApiTestCase):
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
-    def test_node_list_does_not_return_registrations(self):
+    def test_node_list_does_not_returns_registrations(self):
         registration = RegistrationFactory(project=self.public, creator=self.user)
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
         assert_not_in(registration._id, ids)
+
+    def test_omit_retracted_registration(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public)
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+
+    def test_node_list_has_root(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        projects_with_root = 0
+        for project in res.json['data']:
+            if project['relationships'].get('root', None):
+                projects_with_root += 1
+        assert_not_equal(projects_with_root, 0)
+        assert_true(
+            all([each['relationships'].get(
+                'root'
+            ) is not None for each in res.json['data']])
+        )
+
+
+    def test_node_list_has_proper_root(self):
+        project_one = ProjectFactory(title="Project One", is_public=True)
+        ProjectFactory(parent=project_one, is_public=True)
+
+        res = self.app.get(self.url+'?embed=root&embed=parent', auth=self.user.auth)
+
+        for project_json in res.json['data']:
+            project = Node.load(project_json['id'])
+            assert_equal(project_json['embeds']['root']['data']['id'], project.root._id)
+
 
 
 class TestNodeFiltering(ApiTestCase):
@@ -104,9 +143,55 @@ class TestNodeFiltering(ApiTestCase):
 
         self.url = "/{}nodes/".format(API_BASE)
 
+        self.tag1, self.tag2 = 'tag1', 'tag2'
+        self.project_one.add_tag(self.tag1, Auth(self.project_one.creator), save=False)
+        self.project_one.add_tag(self.tag2, Auth(self.project_one.creator), save=False)
+        self.project_one.save()
+
+        self.project_two.add_tag(self.tag1, Auth(self.project_two.creator), save=True)
+
     def tearDown(self):
         super(TestNodeFiltering, self).tearDown()
         Node.remove()
+
+    def test_filtering_by_id(self):
+        url = '/{}nodes/?filter[id]={}'.format(API_BASE, self.project_one._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_equal(len(ids), 1)
+
+    def test_filtering_by_multiple_ids(self):
+        url = '/{}nodes/?filter[id]={},{}'.format(API_BASE, self.project_one._id, self.project_two._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_equal(len(ids), 2)
+
+    def test_filtering_by_multiple_ids_one_private(self):
+        url = '/{}nodes/?filter[id]={},{}'.format(API_BASE, self.project_one._id, self.private_project_user_two._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_equal(len(ids), 1)
+
+    def test_filtering_by_multiple_ids_brackets_in_query_params(self):
+        url = '/{}nodes/?filter[id]=[{},   {}]'.format(API_BASE, self.project_one._id, self.project_two._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_equal(len(ids), 2)
 
     def test_filtering_by_category(self):
         project = ProjectFactory(creator=self.user_one, category='hypothesis')
@@ -151,15 +236,8 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(project._id, ids)
 
     def test_filtering_tags(self):
-        tag1, tag2 = 'tag1', 'tag2'
-        self.project_one.add_tag(tag1, Auth(self.project_one.creator), save=False)
-        self.project_one.add_tag(tag2, Auth(self.project_one.creator), save=False)
-        self.project_one.save()
-
-        self.project_two.add_tag(tag1, Auth(self.project_two.creator), save=True)
-
         # both project_one and project_two have tag1
-        url = '/{}nodes/?filter[tags]={}'.format(API_BASE, tag1)
+        url = '/{}nodes/?filter[tags]={}'.format(API_BASE, self.tag1)
 
         res = self.app.get(url, auth=self.project_one.creator.auth)
         node_json = res.json['data']
@@ -170,7 +248,7 @@ class TestNodeFiltering(ApiTestCase):
 
         # filtering two tags
         # project_one has both tags; project_two only has one
-        url = '/{}nodes/?filter[tags]={}&filter[tags]={}'.format(API_BASE, tag1, tag2)
+        url = '/{}nodes/?filter[tags]={}&filter[tags]={}'.format(API_BASE, self.tag1, self.tag2)
 
         res = self.app.get(url, auth=self.project_one.creator.auth)
         node_json = res.json['data']
@@ -332,6 +410,41 @@ class TestNodeFiltering(ApiTestCase):
         errors = res.json['errors']
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint.")
+
+    def test_filtering_on_root(self):
+        root = ProjectFactory(is_public=True)
+        child = ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=child, is_public=True)
+        # create some unrelated projects
+        ProjectFactory(title="Road Dogg Jesse James", is_public=True)
+        ProjectFactory(title="Badd *** Billy Gunn", is_public=True)
+
+        url = '/{}nodes/?filter[root]={}'.format(API_BASE, root._id)
+
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+
+        root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root', 'eq', root._id))
+        assert_equal(len(res.json['data']), root_nodes.count())
+
+    def test_filtering_on_null_parent(self):
+        # add some nodes TO be included
+        new_user = AuthUserFactory()
+        root = ProjectFactory(is_public=True)
+        ProjectFactory(is_public=True)
+        # Build up a some of nodes not to be included
+        child = ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=child, is_public=True)
+
+        url = '/{}nodes/?filter[parent]=null'.format(API_BASE)
+
+        res = self.app.get(url, auth=new_user.auth)
+        assert_equal(res.status_code, 200)
+
+        public_root_nodes = Node.find(Q('is_public', 'eq', True) & Q('parent_node', 'eq', None))
+        assert_equal(len(res.json['data']), public_root_nodes.count())
 
 
 class TestNodeCreate(ApiTestCase):

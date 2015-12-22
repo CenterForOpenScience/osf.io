@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
 
 from website import settings
+
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
@@ -91,3 +93,19 @@ class AddonTestCase(OsfTestCase):
 
         self.create_user_settings()
         self.create_node_settings()
+
+class OAuthAddonTestCaseMixin(object):
+
+    @property
+    def ExternalAccountFactory(self):
+        raise NotImplementedError()
+
+    def set_user_settings(self, settings):
+        self.external_account = self.ExternalAccountFactory()
+        self.external_account.save()
+        self.user.external_accounts.append(self.external_account)
+        self.user.save()
+        self.auth = Auth(self.user)
+
+    def set_node_settings(self, settings):
+        self.user_settings.grant_oauth_access(self.project, self.external_account)
