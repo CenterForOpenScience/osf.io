@@ -60,12 +60,6 @@ var xhrconfig = function (xhr) {
 
 };
 
-var xhrconfigBulk = function (xhr) {
-    xhr.withCredentials = true;
-    xhr.setRequestHeader("Content-Type", "application/vnd.api+json; ext=bulk");
-    xhr.setRequestHeader("Accept", "application/vnd.api+json; ext=bulk");
-};
-
 /**
  * Initialize File Browser. Prepeares an option object within FileBrowser
  * @constructor
@@ -94,7 +88,7 @@ var FileBrowser = {
         // Default system collections
         self.collections = [
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations'),
+            new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
         ];
 
         // Helper function to add properties for Treebeard to work properly
@@ -120,7 +114,7 @@ var FileBrowser = {
 
         // Initial Breadcrumb for All my projects
         self.breadcrumbs = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
         ]);
         // Calculate name filters
         self.nameFilters = [];
@@ -433,7 +427,7 @@ var FileBrowser = {
                         ctrl.showSidebar(false);
                     }
                 }, [
-                    m('span[aria-hidden="true"]','×'),
+                    m('span[aria-hidden="true"]','×')
                 ])),
                     m('p.p-sm.text-center.text-muted', [
                         'Select a list below to see the projects. or click ',
@@ -462,7 +456,7 @@ var FileBrowser = {
                 )
             ]),
             infoPanel,
-            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected, activityLogs : ctrl.activityLogs}),
+            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected, activityLogs : ctrl.activityLogs})
         ];
     }
 };
@@ -490,7 +484,7 @@ var Collections  = {
                     }
                 }
             };
-            var promise = m.request({method : 'POST', url : url, config : xhrconfig, data : data})
+            var promise = m.request({method : 'POST', url : url, config : xhrconfig, data : data});
             promise.then(function(result){
                 console.log(result);
                 var node = result.data;
@@ -525,11 +519,11 @@ var Collections  = {
                     'type': 'collections',
                     'id':  nodeId,
                     'attributes': {
-                        'title': title,
+                        'title': title
                     }
                 }
             };
-            var promise = m.request({method : 'PATCH', url : url, config : xhrconfig, data : data})
+            var promise = m.request({method : 'PATCH', url : url, config : xhrconfig, data : data});
             promise.then(function(result){
                 console.log(url, result);
                 args.collectionMenuObject().item.label = title;
@@ -542,7 +536,6 @@ var Collections  = {
     view : function (ctrl, args) {
         var selectedCSS;
         var submenuTemplate;
-        var mobile = window.innerWidth < 767; // true if mobile view
         var collectionListTemplate = [
             m('h5', [
                 'Collections ',
@@ -615,7 +608,7 @@ var Collections  = {
                         m('.modal-content', [
                             m('.modal-header', [
                                 m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                                    m('span[aria-hidden="true"]','×'),
+                                    m('span[aria-hidden="true"]','×')
                                 ]),
                                 m('h3.modal-title#addCollLabel', 'Add New Collection')
                             ]),
@@ -655,7 +648,7 @@ var Collections  = {
                         m('.modal-content', [
                             m('.modal-header', [
                                 m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                                    m('span[aria-hidden="true"]','×'),
+                                    m('span[aria-hidden="true"]','×')
                                 ]),
                                 m('h3.modal-title#renameCollLabel', 'Rename Collection')
                             ]),
@@ -673,7 +666,7 @@ var Collections  = {
                                             value: args.collectionMenuObject().item.renamedLabel})
 
                                     ])
-                                ]),
+                                ])
                             ]),
                             m('.modal-footer', [
                                 m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
@@ -689,7 +682,7 @@ var Collections  = {
                         m('.modal-content', [
                             m('.modal-header', [
                                 m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                                    m('span[aria-hidden="true"]','×'),
+                                    m('span[aria-hidden="true"]','×')
                                 ]),
                                 m('h3.modal-title#removeCollLabel', 'Delete Collection "' + args.collectionMenuObject().item.label + '"?')
                             ]),
