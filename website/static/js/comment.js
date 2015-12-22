@@ -137,15 +137,19 @@ BaseComment.prototype.fetch = function() {
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
+    var hasPrivateLink = false;
+
     var query = 'embed=user';
     var urlParams = osfHelpers.urlParams();
     if (urlParams.view_only) {
+        hasPrivateLink = true;
         query = 'view_only=' + urlParams.view_only;
     }
     var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: query});
     if (self.id() !== undefined) {
         url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {query: query});
     }
+
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
@@ -156,7 +160,9 @@ BaseComment.prototype.fetch = function() {
                 return new CommentModel(comment, self, self.$root);
             })
         );
-        self.setUnreadCommentCount();
+        if (!hasPrivateLink) {
+            self.setUnreadCommentCount();
+        }
         deferred.resolve(self.comments());
         self._loaded = true;
     });
@@ -165,14 +171,9 @@ BaseComment.prototype.fetch = function() {
 
 BaseComment.prototype.setUnreadCommentCount = function() {
     var self = this;
-    var query = 'related_counts=True';
-    var urlParams = osfHelpers.urlParams();
-    if (urlParams.view_only) {
-        query = query + '&view_only=' + urlParams.view_only;
-    }
     var request = osfHelpers.ajaxJSON(
         'GET',
-        osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/', {query: query}),
+        osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/', {query: 'related_counts=True'}),
         {'isCors': true});
     request.done(function(response) {
         self.unreadComments(response.data.relationships.comments.links.related.meta.unread);
