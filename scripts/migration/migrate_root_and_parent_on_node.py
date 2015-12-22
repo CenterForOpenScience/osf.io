@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 def do_migration(dry=True):
-    app = init_app(routes=True)
     all_nodes = models.Node.find(
         Q('is_deleted', 'eq', False) &
         (Q('root', 'eq', None) | Q('root', 'exists', False))
@@ -34,8 +33,7 @@ def do_migration(dry=True):
                 logger.info('Attempting to save node {}'.format(node._id))
                 if not dry:
                     try:
-                        with app.test_request_context():
-                            node.save()
+                        node.save()
                     except (KeyError, RuntimeError) as err:  # Workaround for nodes whose files were unmigrated in a previous migration
                         logger.error('Error occurred when trying to save node: {}'.format(node._id))
                         logger.exception(err)
@@ -67,8 +65,7 @@ def do_migration(dry=True):
 
                     if not dry:
                         try:
-                            with app.test_request_context():
-                                child.save()
+                            child.save()
                         except (KeyError, RuntimeError) as err:  # Workaround for nodes whose files were unmigrated in a previous migration
                             logger.error('Error occurred when trying to save child: {}'.format(node._id))
                             logger.exception(err)
@@ -83,8 +80,11 @@ def do_migration(dry=True):
                         logger.error('Child {} has a null parent node')
                         logger.error('This may be because its parent was deleted without the child being deleted')
 
-    logger.error('{} errored nodes:'.format(len(errored_nodes)))
-    logger.error('\n'.join([each._id for each in errored_nodes]))
+    if errored_nodes:
+        logger.error('{} errored nodes:'.format(len(errored_nodes)))
+        logger.error('\n'.join([each._id for each in errored_nodes]))
+    else:
+        logger.info('Finished with no errors.')
 
 
 def main(dry=True):
