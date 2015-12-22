@@ -23,6 +23,7 @@ from website.util import rubeus
 from website.exceptions import NodeStateError
 from website.project import new_node, new_private_link
 from website.project.decorators import (
+    must_be_contributor_or_public_but_not_anonymized,
     must_be_contributor_or_public,
     must_be_contributor,
     must_be_valid_project,
@@ -263,13 +264,13 @@ def node_fork_page(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_be_contributor_or_public_but_not_anonymized
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_be_contributor_or_public_but_not_anonymized
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
@@ -582,11 +583,10 @@ def update_node(auth, node, **kwargs):
     updated_fields_dict = {
         key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
         for key in updated_field_names
-        if key != 'logs'
+        if key != 'logs' and key != 'date_modified'
     }
-    return {
-        'updated_fields': updated_fields_dict
-    }
+    node.save()
+    return {'updated_fields': updated_fields_dict}
 
 
 @must_be_valid_project
@@ -747,7 +747,7 @@ def _view_project(node, auth, primary=False):
             'is_pending_embargo': node.is_pending_embargo,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
-            'root_id': node.root._id,
+            'root_id': node.root._id if node.root else None,
             'registered_meta': node.registered_meta,
             'registered_schemas': serialize_meta_schemas(node.registered_schema),
             'registration_count': len(node.node__registrations),
@@ -770,7 +770,8 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-            'has_draft_registrations': bool(node.draft_registrations_active)
+            'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
+            'has_draft_registrations': node.has_active_draft_registrations,
         },
         'parent_node': {
             'exists': parent is not None,
@@ -809,7 +810,7 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'node_categories': Node.CATEGORY_MAP,
+        'node_categories': Node.CATEGORY_MAP
     }
     return data
 
@@ -1419,6 +1420,7 @@ def abbrev_authors(node):
 
 def serialize_pointer(pointer, auth):
     node = get_pointer_parent(pointer)
+
     if node.can_view(auth):
         return {
             'id': node._id,

@@ -151,6 +151,18 @@ class FilterMixin(object):
                 'value': stop
             }]
 
+    def bulk_get_values(self, value, field):
+        """
+        Returns list of values from query_param for IN query
+
+        If url contained `/nodes/?filter[id]=12345, abcde`, the returned values would be:
+        [u'12345', u'abcde']
+        """
+        value = value.lstrip('[').rstrip(']')
+        separated_values = value.split(',')
+        values = [self.convert_value(val.strip(), field) for val in separated_values]
+        return values
+
     def parse_query_params(self, query_params):
         """Maps query params to a dict useable for filtering
         :param dict query_params:
@@ -179,6 +191,11 @@ class FilterMixin(object):
                 # Special case date(time)s to allow for ambiguous date matches
                 if isinstance(field, self.DATE_FIELDS):
                     query[field_name].extend(self._parse_date_param(field, field_name, op, value))
+                elif not isinstance(value, int) and field_name == '_id':
+                    query[field_name].append({
+                        'op': 'in',
+                        'value': self.bulk_get_values(value, field)
+                    })
                 else:
                     query[field_name].append({
                         'op': op,
@@ -191,7 +208,10 @@ class FilterMixin(object):
         :param basestring field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
-        return field.source or field_name
+        source = field.source
+        if source == '*':
+            source = getattr(field, 'filter_key', None)
+        return source or field_name
 
     def convert_value(self, value, field):
         """Used to convert incoming values from query params to the appropriate types for filter comparisons
@@ -218,6 +238,8 @@ class FilterMixin(object):
                 )
         elif isinstance(field, (self.LIST_FIELDS, self.RELATIONSHIP_FIELDS)) \
                 or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
+            if value == 'null':
+                value = None
             return value
         else:
             try:

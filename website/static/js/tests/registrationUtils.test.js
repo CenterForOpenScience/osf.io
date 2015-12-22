@@ -328,18 +328,19 @@ describe('Question', () => {
             assert.equal(q.value(), data.value);
         });
         it('maps object-type Question\'s properties property to sub-Questions', () => {
-            var props = {
-                foo: {
+            var props = [
+                {
+                    id: 'foo',
                     type: 'number'
                 }
-            };
+            ];
             var obj = new Question({
                 qid: 'foo',
                 type: 'object',
                 properties: props
             }, {});
-            assert.equal(obj.properties.foo.id, 'foo');
-            assert.isDefined(obj.properties.foo.value);
+            assert.equal(obj.properties[0].id, 'foo');
+            assert.isDefined(obj.properties[0].value);
         });
         it('maps comments into Comment instances', () => {
             var question = makeQuestion(null, {
@@ -388,16 +389,16 @@ describe('Question', () => {
             question.value(null);
             assert.isTrue(question.isComplete());
 
-            var p1 = makeQuestion({required: false})[1];
-            var p2 = makeQuestion({required: false})[1];
+            var p1 = makeQuestion({id: 'p1', required: false})[1];
+            var p2 = makeQuestion({id: 'p2', required: false})[1];
 
             question = makeQuestion({
                 required: false,
                 type: 'object',
-                properties: {
-                    p1: p1,
-                    p2: p2
-                }
+                properties: [
+                    p1,
+                    p2
+                ]
             })[0];
             assert.isTrue(question.isComplete());
         });
@@ -408,16 +409,16 @@ describe('Question', () => {
             question.value('not blank');
             assert.isTrue(question.isComplete());
 
-            var p1 = makeQuestion({required: true})[1];
-            var p2 = makeQuestion({required: false})[1];
+            var p1 = makeQuestion({id: 'p1', required: true})[1];
+            var p2 = makeQuestion({id: 'p2', required: false})[1];
 
             question = makeQuestion({
                 required: false,
                 type: 'object',
-                properties: {
-                    p1: p1,
-                    p2: p2
-                }
+                properties: [
+                    p1,
+                    p2
+                ]
             }, {
                 value: {
                     p1: {

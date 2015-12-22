@@ -511,7 +511,7 @@ MEETING_DATA = {
         'logo_url': 'http://s11.postimg.org/4g2451vcz/Psi_Chi_Logo.png',
         'admins': [
             'research.director@psichi.org',
-            ],
+        ],
         'field_names': {
             'submission1': 'measures',
             'submission2': 'materials',
@@ -552,6 +552,26 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
         'poster': True,
+        'talk': True,
+    },
+    'TESS': {
+        'name': 'Time-sharing Experiments for the Social Sciences',
+        'info_url': 'http://www.tessexperiments.org',
+        'logo_url': None,
+        'active': False,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': False,
+    },
+    'ASCERM2016': {
+        'name': 'ASCE Rocky Mountain Student Conference 2016',
+        'info_url': 'http://luninuxos.com/asce/',
+        'logo_url': 'http://s29.postimg.org/7sgmx7ryv/2016_ASCE_Rocky_Mtn_banner.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
         'talk': True,
     },
 }

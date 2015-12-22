@@ -161,7 +161,7 @@ var Question = function(questionSchema, data) {
     self.description = questionSchema.description || '';
     self.help = questionSchema.help;
     self.options = questionSchema.options || [];
-    self.properties = questionSchema.properties || {};
+    self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
     self.extra = ko.observable(self.data.extra || {});
@@ -193,18 +193,18 @@ var Question = function(questionSchema, data) {
         }
     }
     else if (self.type === 'object') {
-        $.each(self.properties, function(prop, field) {
-            field.qid = field.id || prop;
-            var subData = self.data.value ? self.data.value[prop] : {};
-            self.properties[prop] = new Question(field, subData);
+        $.each(self.properties, function(index, field) {
+            field.qid = field.id;
+            var subData = self.data.value ? self.data.value[field.id] : {};
+            self.properties[index] = new Question(field, subData);
         });
         self.value = ko.computed({
             read: function() {
                 var compositeValue = {};
                 $.each(
-                    $.map(self.properties, function(prop, name) {
+                    $.map(self.properties, function(prop) {
                         var ret = {};
-                        ret[name] = {
+                        ret[prop.id] = {
                             value: prop.value(),
                             comments: prop.comments(),
                             extra: prop.extra
