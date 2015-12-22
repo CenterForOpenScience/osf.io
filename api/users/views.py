@@ -1,6 +1,7 @@
+
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import NotAuthenticated, NotFound
 from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
@@ -8,13 +9,14 @@ from modularodm import Q
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import User, Node
+from website.models import User, Node, NodeLog
 
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
+from api.logs.serializers import NodeLogSerializer
 from api.registrations.serializers import RegistrationSerializer
 
 from .serializers import UserSerializer, UserDetailSerializer
@@ -403,3 +405,23 @@ class UserRegistrations(UserNodes):
             Q('is_deleted', 'ne', True) &
             Q('is_registration', 'eq', True)
         )
+
+class UserNodeLogs(UserNodes):
+
+    serializer_class = NodeLogSerializer
+    view_category = 'users'
+    view_name = 'node_logs'
+
+    def get_queryset(self):
+        current_user = self.request.user
+        if current_user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(current_user)
+        query = self.get_query_from_request()
+        raw_nodes = Node.find(self.get_default_odm_query() & query)
+        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
+        if not nodes:
+            raise NotFound
+        query = [Q('params.node', 'eq', node._id) for node in nodes]
+        return NodeLog.find(reduce(lambda x, y: x | y, query))
