@@ -312,7 +312,7 @@ class TestUser(OsfTestCase):
         project.save()
         self.user.merge_user(user2)
         self.user.save()
-
+        project.reload()
         assert_true('admin' in project.permissions[self.user._id])
         assert_true(self.user._id in project.visible_contributor_ids)
         assert_false(project.is_contributor(user2))
@@ -993,12 +993,14 @@ class TestMergingUsers(OsfTestCase):
         project.add_contributor(self.dupe)
         project.save()
         self._merge_dupe()
+        project.reload()
         assert_true(project.is_contributor(self.master))
         assert_false(project.is_contributor(self.dupe))
 
     def test_inherits_projects_created_by_dupe(self):
         project = ProjectFactory(creator=self.dupe)
         self._merge_dupe()
+        project.reload()
         assert_equal(project.creator, self.master)
 
     def test_adding_merged_user_as_contributor_adds_master(self):
@@ -1015,6 +1017,7 @@ class TestMergingUsers(OsfTestCase):
         project.add_contributor(contributor=self.dupe)
         project.save()
         self._merge_dupe()  # perform the merge
+        project.reload()
         assert_true(project.is_contributor(self.master))
         assert_false(project.is_contributor(self.dupe))
         assert_equal(len(project.contributors), 2) # creator and master
