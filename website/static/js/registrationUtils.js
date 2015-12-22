@@ -1153,6 +1153,7 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     self.loadingSchemas.subscribe(function(loading) {
         if (!loading) {
             createButton.removeClass('disabled');
+            createButton.text('New Registration');
         }
     });
     self.loadingDrafts = ko.observable(true);

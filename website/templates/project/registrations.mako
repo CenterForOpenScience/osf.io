@@ -45,8 +45,8 @@
       </div>
       % if 'admin' in user['permissions'] and not disk_saving_mode:
       <div class="col-md-3">
-        <a id="registerNode" class="btn btn-default" type="button">
-          New Registration
+        <a id="registerNode" class="btn btn-default disabled" type="button">
+          Loading ...
         </a>
       </div>
       % endif
