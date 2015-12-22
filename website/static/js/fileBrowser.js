@@ -8,6 +8,7 @@ var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
 var LogText = require('js/logTextParser');
+var AddProject = require('js/addProjectPlugin');
 
 var LinkObject = function (type, data, label, index) {
     if (type === undefined || data === undefined || label === undefined) {
