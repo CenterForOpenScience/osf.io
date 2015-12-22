@@ -3,4 +3,4 @@
 # Requirements that are used for the admin module only
 
 # Webpack loader
-django-webpack-loader==0.1.2.1
+django-webpack-loader==0.2.3
