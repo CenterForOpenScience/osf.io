@@ -583,11 +583,10 @@ def update_node(auth, node, **kwargs):
     updated_fields_dict = {
         key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
         for key in updated_field_names
-        if key != 'logs'
+        if key != 'logs' and key != 'date_modified'
     }
-    return {
-        'updated_fields': updated_fields_dict
-    }
+    node.save()
+    return {'updated_fields': updated_fields_dict}
 
 
 @must_be_valid_project
@@ -748,7 +747,7 @@ def _view_project(node, auth, primary=False):
             'is_pending_embargo': node.is_pending_embargo,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
-            'root_id': node.root._id,
+            'root_id': node.root._id if node.root else None,
             'registered_meta': node.registered_meta,
             'registered_schemas': serialize_meta_schemas(node.registered_schema),
             'registration_count': len(node.node__registrations),
@@ -772,7 +771,7 @@ def _view_project(node, auth, primary=False):
                 'ark': node.get_identifier_value('ark'),
             },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
-            'has_draft_registrations': bool(node.draft_registrations_active)
+            'has_draft_registrations': node.has_active_draft_registrations,
         },
         'parent_node': {
             'exists': parent is not None,

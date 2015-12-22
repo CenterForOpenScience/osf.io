@@ -495,6 +495,16 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         else:
             self.fail()
 
+    def test_check_draft_state_registered_but_deleted(self):
+        reg = RegistrationFactory()
+        self.draft.registered_node = reg
+        reg.is_deleted = True
+        self.draft.save()
+        try:
+            draft_views.check_draft_state(self.draft)
+        except Exception:
+            self.fail()
+
     def test_check_draft_state_pending_review(self):
         self.draft.submit_for_review(self.user, self.immediate_payload, save=True)
         try:
