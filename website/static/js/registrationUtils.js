@@ -1179,6 +1179,7 @@ RegistrationManager.prototype.init = function() {
                 return new MetaSchema(schema);
             })
         );
+        self.loading(false);
     });
 
     var getDraftRegistrations = self.getDraftRegistrations();
@@ -1190,10 +1191,6 @@ RegistrationManager.prototype.init = function() {
             return a.initiated.getTime() < b.initiated.getTime();
         });
         self.drafts(drafts);
-    });
-
-    var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
-        self.loading(false);
     });
 
     var urlParams = $osf.urlParams();
