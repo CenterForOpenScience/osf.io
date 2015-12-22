@@ -462,7 +462,7 @@ var FileBrowser = {
                 )
             ]),
             infoPanel,
-            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected}),
+            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected, activityLogs : ctrl.activityLogs}),
         ];
     }
 };
@@ -888,7 +888,7 @@ var Information = {
 var ActivityLogs = {
     view : function (ctrl, args) {
         return m('.fb-activity-list.m-t-md', [
-            args.activityLogs ? args.activityLogs().map(function(item){
+            args.activityLogs() ? args.activityLogs().map(function(item){
                 return m('.fb-activity-item', [
                     m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
                     m.component(LogText,item)
@@ -913,7 +913,7 @@ var Modals = {
                             m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
-                            m.component(Information, { selected : args.selected })
+                            m.component(Information, { selected : args.selected, activityLogs : args.activityLogs })
                         ]),
                     ])
                 )
