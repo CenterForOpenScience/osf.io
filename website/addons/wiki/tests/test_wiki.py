@@ -695,7 +695,7 @@ class TestWikiLinks(OsfTestCase):
             node=project,
         )
         assert_in(
-            project.web_url_for('project_wiki_view', wname='wiki2'),
+            '/{}/wiki/wiki2/'.format(project._id),
             wiki.html(project),
         )
 
