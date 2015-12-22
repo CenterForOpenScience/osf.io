@@ -244,41 +244,50 @@ class AuthorizedCharField(ser.CharField):
 class RelationshipField(ser.HyperlinkedIdentityField):
     """
     RelationshipField that permits the return of both self and related links, along with optional
-    meta information.
+    meta information. ::
 
-    Example:
-    children = RelationshipField(
-        related_view='nodes:node-children',
-        related_view_kwargs={'node_id': '<pk>'},
-        self_view='nodes:node-node-children-relationship',
-        self_view_kwargs={'node_id': '<pk>'},
-        related_meta={'count': 'get_node_count'}
-    )
+        children = RelationshipField(
+            related_view='nodes:node-children',
+            related_view_kwargs={'node_id': '<pk>'},
+            self_view='nodes:node-node-children-relationship',
+            self_view_kwargs={'node_id': '<pk>'},
+            related_meta={'count': 'get_node_count'}
+        )
 
     The lookup field must be surrounded in angular brackets to find the attribute on the target. Otherwise, the lookup
-    field will be returned verbatim.
+    field will be returned verbatim. ::
 
-    Example:
-     wiki_home = RelationshipField(
-        related_view='addon:addon-detail',
-        related_view_kwargs={'node_id': '<_id>', 'provider': 'wiki'},
-    )
+        wiki_home = RelationshipField(
+            related_view='addon:addon-detail',
+            related_view_kwargs={'node_id': '<_id>', 'provider': 'wiki'},
+        )
+
     '_id' is enclosed in angular brackets, but 'wiki' is not. 'id' will be looked up on the target, but 'wiki' will not.
      The serialized result would be '/nodes/abc12/addons/wiki'.
 
-    Field can handle nested attributes:
+    Field can handle nested attributes: ::
 
-    Example:
-    wiki_home = RelationshipField(
-        related_view='wiki:wiki-detail',
-        related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
-    )
+        wiki_home = RelationshipField(
+            related_view='wiki:wiki-detail',
+            related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
+        )
 
+    Field can handle a filter_key, which operates as the source field (but
+    is named differently to not interfere with HyperLinkedIdentifyField's source
+
+    The ``filter_key`` argument defines the Mongo key (or ODM field name) to filter on
+    when using the ``FilterMixin`` on a view. ::
+
+        parent = RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<parent_node._id>'},
+            filter_key='parent_node'
+        )
     """
     json_api_link = True  # serializes to a links object
 
     def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-                 self_meta=None, related_meta=None, always_embed=False, **kwargs):
+                 self_meta=None, related_meta=None, always_embed=False, filter_key=None, **kwargs):
         related_view = related_view
         self_view = self_view
         related_kwargs = related_view_kwargs
@@ -288,6 +297,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.related_meta = related_meta
         self.self_meta = self_meta
         self.always_embed = always_embed
+        self.filter_key = filter_key
 
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:

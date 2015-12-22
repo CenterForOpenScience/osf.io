@@ -1149,12 +1149,14 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
         return self.drafts().length > 0;
     });
 
-    self.loading = ko.observable(true);
-    self.loading.subscribe(function(loading) {
+    self.loadingSchemas = ko.observable(true);
+    self.loadingSchemas.subscribe(function(loading) {
         if (!loading) {
             createButton.removeClass('disabled');
+            createButton.text('New Registration');
         }
     });
+    self.loadingDrafts = ko.observable(true);
 
     self.preview = ko.observable(false);
 
@@ -1179,6 +1181,15 @@ RegistrationManager.prototype.init = function() {
                 return new MetaSchema(schema);
             })
         );
+        self.loadingSchemas(false);
+    });
+    getSchemas.fail(function(xhr, status, error) {
+        Raven.captureMessage('Could not load registration templates', {
+            url: self.urls.schemas,
+            textStatus: status,
+            error: error
+        });
+        $osf.growl('Error loading registration templates', language.loadMetaSchemaFail);
     });
 
     var getDraftRegistrations = self.getDraftRegistrations();
@@ -1190,10 +1201,15 @@ RegistrationManager.prototype.init = function() {
             return a.initiated.getTime() < b.initiated.getTime();
         });
         self.drafts(drafts);
+        self.loadingDrafts(false);
     });
-
-    var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
-        self.loading(false);
+    getDraftRegistrations.fail(function(xhr, status, error) {
+        Raven.captureMessage('Could not load draft registrations', {
+            url: self.urls.list,
+            textStatus: status,
+            error: error
+        });
+        $osf.growl('Error loading draft registrations', language.loadDraftsFail);
     });
 
     var urlParams = $osf.urlParams();
