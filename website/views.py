@@ -173,7 +173,6 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     )
     nodes = contributed.sort('-title')
 
-
     # Note(hrybacki): is_retracted and is_pending_embargo are property methods
     # and cannot be directly queried
     nodes = filter(lambda node: not node.is_retracted and not node.is_pending_embargo, nodes)

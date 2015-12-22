@@ -1259,7 +1259,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         # - projects where the user was a contributor
         with disconnected_from(signal=contributor_added, listener=notify_added_contributor):
-            for node in user.contributed:  ## TODO HERE
+            for node in user.contributed:
                 # Skip dashboard node
                 if node.is_dashboard:
                     continue
