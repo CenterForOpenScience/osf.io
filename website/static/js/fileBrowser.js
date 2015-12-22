@@ -254,10 +254,12 @@ var FileBrowser = {
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
                     if(self.users[u.id] === undefined) {
-                        self.users[u.id] = 1;
-                        self.nameFilters.push(new LinkObject('name', { id : u.id, query : { 'related_counts' : true }}, u.embeds.users.data.attributes.full_name));
+                        self.users[u.id] = {
+                            data : u,
+                            count: 1
+                        };
                     } else {
-                        self.users[u.id]++;
+                        self.users[u.id].count++;
                     }
                 }
 
@@ -266,13 +268,21 @@ var FileBrowser = {
                     var t = tags[j];
                     if(self.tags[t] === undefined) {
                         self.tags[t] = 1;
-                        self.tagFilters.push(new LinkObject('tag', { tag : t, query : { 'related_counts' : true }}, t));
                     } else {
                         self.tags[t]++;
                     }
                 }
-
             });
+
+            // Add to lists with numbers
+            for (var user in self.users){
+                var u2 = self.users[user];
+                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : true }}, u2.data.embeds.users.data.attributes.full_name));
+            }
+            for (var tag in self.tags){
+                var t2 = self.tags[tag];
+                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : true }}, tag));
+            }
             console.log(self.data().data, self.users, self.tags);
         };
 
@@ -770,7 +780,9 @@ var Filters = {
                     args.nameFilters.map(function(item, index){
                         selectedCSS = item.id === args.activeFilter() ? '.active' : '';
                         return m('li' + selectedCSS,
-                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item)}, item.label)
+                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
+                                item.label + ' (' + item.data.count + ')'
+                            )
                         );
                     })
                 ]),
@@ -779,7 +791,9 @@ var Filters = {
                     args.tagFilters.map(function(item){
                         selectedCSS = item.id === args.activeFilter() ? '.active' : '';
                         return m('li' + selectedCSS,
-                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item)}, item.label)
+                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
+                                item.label + ' (' + item.data.count + ')'
+                            )
                         );
                     })
                 ])
