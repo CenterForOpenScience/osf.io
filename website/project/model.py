@@ -760,6 +760,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked', index=True)
     registered_from = fields.ForeignField('node', backref='registrations', index=True)
+    root = fields.ForeignField('node', index=True)
+    parent_node = fields.ForeignField('node', index=True)
 
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
@@ -1380,6 +1382,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         else:
             suppress_log = False
 
+        self.root = self._root._id
+        self.parent_node = self._parent_node
+
+        # If you're saving a property, do it above this super call
         saved_fields = super(Node, self).save(*args, **kwargs)
 
         if first_save and is_original and not suppress_log:
@@ -2113,7 +2119,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             node.save()
 
         if parent:
-            registered.parent_node = parent
+            registered._parent_node = parent
 
         # After register callback
         for addon in original.get_addons():
@@ -2365,7 +2371,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ]
 
     @property
-    def parent_node(self):
+    def _parent_node(self):
         """The parent node, if it exists, otherwise ``None``. Note: this
         property is named `parent_node` rather than `parent` to avoid a
         conflict with the `parent` back-reference created by the `nodes`
@@ -2378,15 +2384,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             pass
         return None
 
-    @parent_node.setter
-    def parent_node(self, parent):
+    @_parent_node.setter
+    def _parent_node(self, parent):
         parent.nodes.append(self)
         parent.save()
 
     @property
-    def root(self):
-        if self.parent_node:
-            return self.parent_node.root
+    def _root(self):
+        if self._parent_node:
+            return self._parent_node._root
         else:
             return self
 

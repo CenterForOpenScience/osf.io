@@ -173,6 +173,8 @@ def make_url_map(app):
 
     process_rules(app, [
 
+        Rule('/home/', 'get', website_views.home, OsfWebRenderer('home.mako')),
+
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
@@ -1074,7 +1076,7 @@ def make_url_map(app):
 
         Rule('/mailchimp/hooks/', 'post', profile_views.sync_data_from_mailchimp, json_renderer),
 
-        # Create project, used by projectCreator.js
+        # Create project, used by [coming replacement]
         Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
 
         Rule([
