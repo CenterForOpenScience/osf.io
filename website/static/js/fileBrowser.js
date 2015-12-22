@@ -236,10 +236,12 @@ var FileBrowser = {
             self.refreshView(false);
         };
         self.updateListError = function(result){
-            self.nonLoadTemplate(m('.fb-error.text-danger', [
-                m('p','Projects couldn\'t load.'),
-                m('p', m('.btn.btn-link', { onclick : self.updateFilter.bind(null, self.collections[0])},' Reload \'All My Projects\''))
+            self.nonLoadTemplate(m('.fb-error.text-danger.m-t-lg', [
+                m('p', m('i.fa.fa-exclamation-circle')),
+                m('p','Projects for this selection couldn\'t load.'),
+                m('p', m('.btn.btn-default', { onclick : self.updateFilter.bind(null, self.collections[0])},' Reload \'All My Projects\''))
             ]));
+            self.data().data = [];
             console.error(result);
             self.refreshView(false);
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
