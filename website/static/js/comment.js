@@ -11,7 +11,6 @@ var koHelpers = require('./koHelpers');
 require('knockout.punches');
 require('jquery-autosize');
 ko.punches.enableAll();
-var Raven = require('raven-js');
 
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
@@ -138,22 +137,50 @@ BaseComment.prototype.fetch = function() {
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    $.getJSON(
-        nodeApiUrl + 'comments/',
-        {target: self.id()},
-        function(response) {
-            self.comments(
-                ko.utils.arrayMap(response.comments.reverse(), function(comment) {
-                    return new CommentModel(comment, self, self.$root);
-                })
-            );
-            self.unreadComments(response.nUnread);
-            deferred.resolve(self.comments());
-            self._loaded = true;
+    var hasPrivateLink = false;
+
+    var query = 'embed=user';
+    var urlParams = osfHelpers.urlParams();
+    if (urlParams.view_only) {
+        hasPrivateLink = true;
+        query = 'view_only=' + urlParams.view_only;
+    }
+    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: query});
+    if (self.id() !== undefined) {
+        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {query: query});
+    }
+
+    var request = osfHelpers.ajaxJSON(
+        'GET',
+        url,
+        {'isCors': true});
+    request.done(function(response) {
+        self.comments(
+            ko.utils.arrayMap(response.data, function(comment) {
+                return new CommentModel(comment, self, self.$root);
+            })
+        );
+        if (!hasPrivateLink) {
+            self.setUnreadCommentCount();
         }
-    );
-    return deferred;
+        deferred.resolve(self.comments());
+        self._loaded = true;
+    });
+    return deferred.promise();
 };
+
+BaseComment.prototype.setUnreadCommentCount = function() {
+    var self = this;
+    var request = osfHelpers.ajaxJSON(
+        'GET',
+        osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/', {query: 'related_counts=True'}),
+        {'isCors': true});
+    request.done(function(response) {
+        self.unreadComments(response.data.relationships.comments.links.related.meta.unread);
+    });
+    return request;
+};
+
 
 BaseComment.prototype.submitReply = function() {
     var self = this;
@@ -166,16 +193,33 @@ BaseComment.prototype.submitReply = function() {
         return;
     }
     self.submittingReply(true);
-    osfHelpers.postJSON(
-        nodeApiUrl + 'comment/',
+    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {});
+    var request = osfHelpers.ajaxJSON(
+        'POST',
+        url,
         {
-            target: self.id(),
-            content: self.replyContent(),
-        }
-    ).done(function(response) {
+            'isCors': true,
+            'data': {
+                'data': {
+                    'type': 'comments',
+                    'attributes': {
+                        'content': self.replyContent()
+                    },
+                    'relationships': {
+                        'target': {
+                            'data': {
+                                'type': self.id() === undefined ? 'nodes' : 'comments',
+                                'id': self.id() === undefined ? window.contextVars.node.id : self.id()
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    request.done(function(response) {
         self.cancelReply();
         self.replyContent(null);
-        self.comments.unshift(new CommentModel(response.comment, self, self.$root));
+        self.comments.unshift(new CommentModel(response.data, self, self.$root));
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
@@ -187,9 +231,15 @@ BaseComment.prototype.submitReply = function() {
             self.$root.commented(true);
         }
         self.onSubmitSuccess(response);
-    }).fail(function() {
+    });
+    request.fail(function(xhr, status, error) {
         self.cancelReply();
         self.errorMessage('Could not submit comment');
+        Raven.captureMessage('Error creating comment', {
+            url: url,
+            status: status,
+            error: error
+        });
     });
 };
 
@@ -202,13 +252,38 @@ var CommentModel = function(data, $parent, $root) {
     self.$parent = $parent;
     self.$root = $root;
 
-    // Note: assigns observables: canEdit, content, dateCreated, dateModified
-    //       hasChildren, id, isAbuse, isDeleted. Leaves out author.
-    $.extend(self, koHelpers.mapJStoKO(data, {exclude: ['author']}));
+    self.id = ko.observable(data.id);
+    self.content = ko.observable(data.attributes.content || '');
+    self.dateCreated = ko.observable(data.attributes.date_created);
+    self.dateModified = ko.observable(data.attributes.date_modified);
+    self.isDeleted = ko.observable(data.attributes.deleted);
+    self.modified = ko.observable(data.attributes.modified);
+    self.isAbuse = ko.observable(data.attributes.is_abuse);
+    self.canEdit = ko.observable(data.attributes.can_edit);
+    self.hasChildren = ko.observable(data.attributes.has_children);
+
+    if ('embeds' in data && 'user' in data.embeds) {
+        var userData = data.embeds.user.data;
+        self.author = {
+            'id': userData.id,
+            'url': userData.links.html,
+            'name': userData.attributes.full_name,
+            'gravatarUrl': userData.links.profile_image
+        };
+    } else if (osfHelpers.urlParams().view_only) {
+        self.author = {
+            'id': null,
+            'url': '',
+            'name': 'A User',
+            'gravatarUrl': ''
+        };
+    } else {
+        self.author = self.$root.author;
+    }
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
-    // Update contentDisplay with rednered markdown whenever content changes
+    // Update contentDisplay with rendered markdown whenever content changes
     self.content.subscribe(function(newContent) {
         self.contentDisplay(markdown.full.render(newContent));
     });
@@ -228,7 +303,7 @@ var CommentModel = function(data, $parent, $root) {
     self.undeleting = ko.observable(false);
 
     self.abuseCategory = ko.observable('spam');
-    self.abuseText = ko.observable();
+    self.abuseText = ko.observable('');
 
     self.editing = ko.observable(false);
 
@@ -289,22 +364,43 @@ CommentModel.prototype.submitEdit = function(data, event) {
         self.errorMessage('Please enter a comment');
         return;
     }
-    osfHelpers.putJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/',
-        {content: self.content()}
-    ).done(function(response) {
-        self.content(response.content);
-        self.dateModified(response.dateModified);
+    var url = osfHelpers.apiV2Url('comments/' + self.id() + '/', {});
+    var request = osfHelpers.ajaxJSON(
+        'PUT',
+        url,
+        {
+            'isCors': true,
+            'data': {
+                'data': {
+                    'id': self.id(),
+                    'type': 'comments',
+                    'attributes': {
+                        'content': self.content(),
+                        'deleted': false
+                    }
+                }
+            }
+        });
+    request.done(function(response) {
+        self.content(response.data.attributes.content);
+        self.dateModified(response.data.attributes.date_modified);
         self.editing(false);
         self.modified(true);
         self.editErrorMessage('');
         self.$root.editors -= 1;
         // Refresh tooltip on date modified, if present
         $tips.tooltip('destroy').tooltip();
-    }).fail(function() {
+    });
+    request.fail(function(xhr, status, error) {
         self.cancelEdit();
         self.errorMessage('Could not submit comment');
+        Raven.captureMessage('Error editing comment', {
+            url: url,
+            status: status,
+            error: error
+        });
     });
+    return request;
 };
 
 CommentModel.prototype.reportAbuse = function() {
@@ -319,17 +415,34 @@ CommentModel.prototype.cancelAbuse = function() {
 
 CommentModel.prototype.submitAbuse = function() {
     var self = this;
-    osfHelpers.postJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/report/',
+    var url = osfHelpers.apiV2Url('comments/' + self.id() + '/reports/', {});
+    var request = osfHelpers.ajaxJSON(
+        'POST',
+        url,
         {
-            category: self.abuseCategory(),
-            text: self.abuseText()
-        }
-    ).done(function() {
+            'isCors': true,
+            'data': {
+                'data': {
+                    'type': 'comment_reports',
+                    'attributes': {
+                        'category': self.abuseCategory(),
+                        'message': self.abuseText()
+                    }
+                }
+            }
+        });
+    request.done(function() {
         self.isAbuse(true);
-    }).fail(function() {
-        self.errorMessage('Could not report abuse.');
     });
+    request.fail(function(xhr, status, error) {
+        self.errorMessage('Could not report abuse.');
+        Raven.captureMessage('Error reporting abuse', {
+            url: url,
+            status: status,
+            error: error
+        });
+    });
+    return request;
 };
 
 CommentModel.prototype.startDelete = function() {
@@ -338,15 +451,35 @@ CommentModel.prototype.startDelete = function() {
 
 CommentModel.prototype.submitDelete = function() {
     var self = this;
-    $.ajax({
-        type: 'DELETE',
-        url: nodeApiUrl + 'comment/' + self.id() + '/',
-    }).done(function() {
+    var url = osfHelpers.apiV2Url('comments/' + self.id() + '/', {});
+    var request = osfHelpers.ajaxJSON(
+        'PATCH',
+        url,
+        {
+            'isCors': true,
+            'data': {
+                'data': {
+                    'id': self.id(),
+                    'type': 'comments',
+                    'attributes': {
+                        'deleted': true
+                    }
+                }
+            }
+        });
+    request.done(function() {
         self.isDeleted(true);
         self.deleting(false);
-    }).fail(function() {
-        self.deleting(false);
     });
+    request.fail(function(xhr, status, error) {
+        self.deleting(false);
+        Raven.captureMessage('Error deleting comment', {
+            url: url,
+            status: status,
+            error: error
+        });
+    });
+    return request;
 };
 
 CommentModel.prototype.cancelDelete = function() {
@@ -359,14 +492,35 @@ CommentModel.prototype.startUndelete = function() {
 
 CommentModel.prototype.submitUndelete = function() {
     var self = this;
-    osfHelpers.putJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/undelete/',
-        {}
-    ).done(function() {
+    var url = osfHelpers.apiV2Url('comments/' + self.id() + '/', {});
+    var request = osfHelpers.ajaxJSON(
+        'PATCH',
+        url,
+        {
+            'isCors': true,
+            'data': {
+                'data': {
+                    'id': self.id(),
+                    'type': 'comments',
+                    'attributes': {
+                        'deleted': false
+                    }
+                }
+            }
+        });
+    request.done(function() {
         self.isDeleted(false);
-    }).fail(function() {
-        self.undeleting(false);
     });
+    request.fail(function(xhr, status, error) {
+        self.undeleting(false);
+        Raven.captureMessage('Error undeleting comment', {
+            url: url,
+            status: status,
+            error: error
+        });
+
+    });
+    return request;
 };
 
 CommentModel.prototype.cancelUndelete = function() {
@@ -379,14 +533,25 @@ CommentModel.prototype.startUnreportAbuse = function() {
 
 CommentModel.prototype.submitUnreportAbuse = function() {
     var self = this;
-    osfHelpers.postJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/unreport/',
-        {}
-    ).done(function() {
+    var url = osfHelpers.apiV2Url('comments/' + self.id() + '/reports/' + window.contextVars.currentUser.id + '/', {});
+    var request = osfHelpers.ajaxJSON(
+        'DELETE',
+        url,
+        {'isCors': true}
+    );
+    request.done(function() {
         self.isAbuse(false);
-    }).fail(function() {
-        self.unreporting(false);
     });
+    request.fail(function(xhr, status, error) {
+        self.unreporting(false);
+        Raven.captureMessage('Error unreporting comment', {
+            url: url,
+            status: status,
+            error: error
+        });
+
+    });
+    return request;
 };
 
 CommentModel.prototype.cancelUnreportAbuse = function() {
@@ -406,7 +571,7 @@ CommentModel.prototype.onSubmitSuccess = function() {
 /*
     *
     */
-var CommentListModel = function(userName, canComment, hasChildren) {
+var CommentListModel = function(canComment, hasChildren, currentUser) {
 
     BaseComment.prototype.constructor.call(this);
 
@@ -417,11 +582,10 @@ var CommentListModel = function(userName, canComment, hasChildren) {
 
     self.editors = 0;
     self.commented = ko.observable(false);
-    self.userName = ko.observable(userName);
     self.canComment = ko.observable(canComment);
     self.hasChildren = ko.observable(hasChildren);
     self.discussion = ko.observableArray();
-
+    self.author = currentUser;
     self.fetch();
     self.fetchDiscussion();
 
@@ -463,9 +627,9 @@ var onOpen = function() {
     });
 };
 
-var init = function(selector, userName, canComment, hasChildren) {
+var init = function(selector, canComment, hasChildren, currentUser) {
     new CommentPane(selector, {onOpen: onOpen});
-    var viewModel = new CommentListModel(userName, canComment, hasChildren);
+    var viewModel = new CommentListModel(canComment, hasChildren, currentUser);
     var $elm = $(selector);
     if (!$elm.length) {
         throw('No results found for selector');

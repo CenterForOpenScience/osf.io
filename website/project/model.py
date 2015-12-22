@@ -180,12 +180,13 @@ class Comment(GuidStoredObject):
     modified = fields.BooleanField(default=False)
 
     is_deleted = fields.BooleanField(default=False)
-    content = fields.StringField()
+    content = fields.StringField(required=True,
+                                 validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
 
     # Dictionary field mapping user IDs to dictionaries of report details:
     # {
-    #   'icpnw': {'category': 'hate', 'message': 'offensive'},
-    #   'cdi38': {'category': 'spam', 'message': 'godwins law'},
+    #   'icpnw': {'category': 'hate', 'text': 'offensive'},
+    #   'cdi38': {'category': 'spam', 'text': 'godwins law'},
     # }
     reports = fields.DictionaryField(validate=validate_comment_reports)
 
@@ -205,10 +206,10 @@ class Comment(GuidStoredObject):
     def get_content(self, auth):
         """ Returns the comment content if the user is allowed to see it. Deleted comments
         can only be viewed by the user who created the comment."""
-        if (not auth or auth.user.is_anonymous()) and not self.node.is_public:
+        if not auth and not self.node.is_public:
             raise PermissionsError
 
-        if self.is_deleted and (((not auth or auth.user.is_anonymous()) and self.node.is_public)
+        if self.is_deleted and ((not auth or auth.user.is_anonymous())
                                 or (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
             return None
 
@@ -219,16 +220,22 @@ class Comment(GuidStoredObject):
         default_timestamp = datetime.datetime(1970, 1, 1, 12, 0, 0)
         n_unread = 0
         if node.is_contributor(user):
+            if user.comments_viewed_timestamp is None:
+                user.comments_viewed_timestamp = {}
+                user.save()
             view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
             n_unread = Comment.find(Q('node', 'eq', node) &
                                     Q('user', 'ne', user) &
-                                    Q('date_created', 'gt', view_timestamp) &
-                                    Q('date_modified', 'gt', view_timestamp)).count()
+                                    Q('is_deleted', 'ne', True) &
+                                    (Q('date_created', 'gt', view_timestamp) |
+                                    Q('date_modified', 'gt', view_timestamp))).count()
         return n_unread
 
     @classmethod
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)
+        if not comment.node.can_comment(auth):
+            raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
         comment.save()
 
         comment.node.add_log(
@@ -244,10 +251,13 @@ class Comment(GuidStoredObject):
         )
 
         comment.node.save()
+        project_signals.comment_added.send(comment, auth=auth)
 
         return comment
 
     def edit(self, content, auth, save=False):
+        if not self.node.can_comment(auth) or self.user._id != auth.user._id:
+            raise PermissionsError('{0!r} does not have permission to edit this comment'.format(auth.user))
         self.content = content
         self.modified = True
         self.node.add_log(
@@ -265,6 +275,8 @@ class Comment(GuidStoredObject):
             self.save()
 
     def delete(self, auth, save=False):
+        if not self.node.can_comment(auth) or self.user._id != auth.user._id:
+            raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
         self.is_deleted = True
         self.node.add_log(
             NodeLog.COMMENT_REMOVED,
@@ -281,6 +293,8 @@ class Comment(GuidStoredObject):
             self.save()
 
     def undelete(self, auth, save=False):
+        if not self.node.can_comment(auth) or self.user._id != auth.user._id:
+            raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
         self.is_deleted = False
         self.node.add_log(
             NodeLog.COMMENT_ADDED,
