@@ -1,14 +1,14 @@
 from __future__ import absolute_import
 import datetime as dt
 from nose.tools import *  # noqa PEP8 asserts
-from modularodm.exceptions import ValidationValueError, ValidationTypeError
+from modularodm.exceptions import ValidationValueError, ValidationTypeError, ValidationError
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.project.model import Comment, NodeLog
 from website.project.signals import comment_added
-
+from website import settings
 
 from tests.base import (
     OsfTestCase,
@@ -83,16 +83,17 @@ class TestCommentModel(OsfTestCase):
     def setUp(self):
         super(TestCommentModel, self).setUp()
         self.comment = CommentFactory()
-        self.consolidated_auth = Auth(user=self.comment.user)
+        self.auth = Auth(user=self.comment.user)
 
     def test_create(self):
         comment = Comment.create(
-            auth=self.consolidated_auth,
+            auth=self.auth,
             user=self.comment.user,
             node=self.comment.node,
             target=self.comment.target,
             page='node',
             is_public=True,
+            content='This is a comment.'
         )
         assert_equal(comment.user, self.comment.user)
         assert_equal(comment.node, self.comment.node)
@@ -100,20 +101,68 @@ class TestCommentModel(OsfTestCase):
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
-    def test_create_sends_comment_added_signal(self):
-        with capture_signals() as mock_signals:
+    def test_create_comment_content_cannot_exceed_max_length(self):
+        with assert_raises(ValidationValueError):
             comment = Comment.create(
-                auth=self.consolidated_auth,
+                auth=self.auth,
                 user=self.comment.user,
                 node=self.comment.node,
                 target=self.comment.target,
                 is_public=True,
+                content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH + 1)])
+            )
+
+    def test_create_comment_content_cannot_be_none(self):
+        with assert_raises(ValidationError) as error:
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+                content=None
+        )
+        assert_equal(error.exception.message, 'Value <content> is required.')
+
+    def test_create_comment_content_cannot_be_empty(self):
+        with assert_raises(ValidationValueError) as error:
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+                content=''
+        )
+        assert_equal(error.exception.message, 'Value must not be empty.')
+
+    def test_create_comment_content_cannot_be_whitespace(self):
+        with assert_raises(ValidationValueError) as error:
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+                content='    '
+        )
+        assert_equal(error.exception.message, 'Value must not be empty.')
+
+    def test_create_sends_comment_added_signal(self):
+        with capture_signals() as mock_signals:
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+                content='This is a comment.'
             )
         assert_equal(mock_signals.signals_sent(), set([comment_added]))
 
     def test_edit(self):
         self.comment.edit(
-            auth=self.consolidated_auth,
+            auth=self.auth,
             content='edited',
             save=True
         )
@@ -123,14 +172,14 @@ class TestCommentModel(OsfTestCase):
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
 
     def test_delete(self):
-        self.comment.delete(auth=self.consolidated_auth, save=True)
+        self.comment.delete(auth=self.auth, save=True)
         assert_equal(self.comment.is_deleted, True)
         assert_equal(len(self.comment.node.logs), 2)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
 
     def test_undelete(self):
-        self.comment.delete(auth=self.consolidated_auth, save=True)
-        self.comment.undelete(auth=self.consolidated_auth, save=True)
+        self.comment.delete(auth=self.auth, save=True)
+        self.comment.undelete(auth=self.auth, save=True)
         assert_equal(self.comment.is_deleted, False)
         assert_equal(len(self.comment.node.logs), 3)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_RESTORED)

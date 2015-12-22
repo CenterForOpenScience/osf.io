@@ -42,11 +42,11 @@
                 </div>
 
                 <div data-bind="if: isVisible">
-                    
+
                     <div class="comment-info">
                         <form class="form-inline">
                             <span data-bind="if: author.gravatarUrl">
-                                <img class="comment-gravatar" data-bind="attr: {src: author.gravatarUrl}"/>
+                                <img data-bind="css: {comment-gravatar: author.gravatarUrl}, attr: {src: author.gravatarUrl}"/>
                             </span>
                             <span data-bind="if: author.id">
                                 <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.url}"></a>
@@ -63,7 +63,7 @@
                             </span>
                         </form>
                     </div>
-                    
+
                     <div class="comment-content">
 
                         <div data-bind="ifnot: editing">

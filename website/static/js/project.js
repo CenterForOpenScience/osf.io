@@ -46,7 +46,9 @@ NodeActions.forkNode = function() {
             ctx.node.urls.api + 'fork/',
             {}
         ).done(function(response) {
+            $osf.growl('Success:', 'fork was succesfully created', 'success');
             window.location = response;
+
         }).fail(function(response) {
             $osf.unblock();
             if (response.status === 403) {
@@ -293,7 +295,7 @@ $(document).ready(function() {
     });
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
-        window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
+        window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
     });
 
 

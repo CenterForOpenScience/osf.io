@@ -138,11 +138,17 @@ BaseComment.prototype.fetch = function() {
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
+    var hasPrivateLink = false;
+    var urlParams = osfHelpers.urlParams();
     var query = 'embed=user';
+    if (urlParams.view_only) {
+        hasPrivateLink = true;
+        query = 'view_only=' + urlParams.view_only;
+    }
     if (self.id() !== undefined) {
         query += '&filter[target]=' + self.id();
     }
-    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query:  query});
+    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: query});
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
@@ -153,7 +159,9 @@ BaseComment.prototype.fetch = function() {
                 return new CommentModel(comment, self, self.$root);
             })
         );
-        self.setUnreadCommentCount();
+        if (!hasPrivateLink) {
+            self.setUnreadCommentCount();
+        }
         deferred.resolve(self.comments());
         self.configureCommentsVisibility();
         self._loaded = true;
@@ -286,6 +294,13 @@ var CommentModel = function(data, $parent, $root) {
             'url': userData.links.html,
             'fullname': userData.attributes.full_name,
             'gravatarUrl': userData.links.profile_image
+        };
+    } else if (osfHelpers.urlParams().view_only) {
+        self.author = {
+            'id': null,
+            'url': '',
+            'name': 'A User',
+            'gravatarUrl': ''
         };
     } else {
         self.author = self.$root.author;

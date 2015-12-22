@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 from modularodm import Q
 from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
 from website.files.models import StoredFileNode
 from website.project.model import Comment, Node
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -33,7 +34,7 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = AuthorizedCharField(source='get_content', max_length=osf_settings.COMMENT_MAXLENGTH)
+    content = AuthorizedCharField(source='get_content', required=True, max_length=osf_settings.COMMENT_MAXLENGTH)
     page = ser.CharField(read_only=True)
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
@@ -56,6 +57,11 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
+    def validate_content(self, value):
+        if value is None or not value.strip():
+            raise ValidationError('Comment cannot be empty.')
+        return value
+
     def get_is_abuse(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
@@ -77,14 +83,20 @@ class CommentSerializer(JSONAPISerializer):
         if validated_data:
             if 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
-                content = content.strip()
-                if not content:
-                    raise ValidationError('Comment cannot be empty.')
-                comment.edit(content, auth=auth, save=True)
+                try:
+                    comment.edit(content, auth=auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to edit this comment.')
             if validated_data.get('is_deleted', None) is True:
-                comment.delete(auth, save=True)
+                try:
+                    comment.delete(auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to delete this comment.')
             elif comment.is_deleted:
-                comment.undelete(auth, save=True)
+                try:
+                    comment.undelete(auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to undelete this comment.')
         return comment
 
     def get_target_type(self, obj):
@@ -109,7 +121,7 @@ class CommentCreateSerializer(CommentSerializer):
         target_type = self.context['request'].data.get('target_type')
         expected_target_type = self.get_target_type(target)
         if target_type != expected_target_type:
-            raise Conflict('Invalid target type. Expected \"{0}\", got \"{1}.\"'.format(expected_target_type, target_type))
+            raise Conflict('Invalid target type. Expected "{0}", got "{1}."'.format(expected_target_type, target_type))
         return target_type
 
     def get_target(self, node_id, target_id):
@@ -149,15 +161,11 @@ class CommentCreateSerializer(CommentSerializer):
                 detail='Invalid comment target \'{}\'.'.format(target_id)
             )
         validated_data['target'] = target
-        content = validated_data.pop('get_content')
-        validated_data['content'] = content.strip()
-        if not validated_data['content']:
-            raise ValidationError('Comment cannot be empty.')
-
-        if node and node.can_comment(auth):
+        validated_data['content'] = validated_data.pop('get_content')
+        try:
             comment = Comment.create(auth=auth, **validated_data)
-        else:
-            raise PermissionDenied("Not authorized to comment on this project.")
+        except PermissionsError:
+            raise PermissionDenied('Not authorized to comment on this project.')
         return comment
 
 

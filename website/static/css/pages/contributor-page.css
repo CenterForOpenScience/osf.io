@@ -51,12 +51,6 @@
 }
 
 .sortable-bars {
-    display: inline-block;
-    position: absolute;
-    top: 50%;
-    transform: translate(0, -50%);
-    -webkit-transform: translate(0, -50%);
-    -ms-transform: translate(0, -50%);
     color: #ccc;
     cursor: pointer;
 }
@@ -106,7 +100,6 @@ table.responsive-table thead th.min-width {
 table.responsive-table thead th, table.responsive-table tbody td {
     padding: .8rem;
     font-size: 1.4rem;
-    position: relative;
     background-color: white;
 }
 
@@ -176,6 +169,7 @@ table.responsive-table tbody tr td .card-header > span{
 
     table.responsive-table-xxs tbody tr td .card-header {
         display: inline-block;
+        width: 70%;
     }
 
     table.responsive-table-xxs tbody tr .table-only {
