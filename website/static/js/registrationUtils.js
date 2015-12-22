@@ -1183,6 +1183,14 @@ RegistrationManager.prototype.init = function() {
         );
         self.loadingSchemas(false);
     });
+    getSchemas.fail(function(xhr, status, error) {
+        Raven.captureMessage('Could not load registration templates', {
+            url: self.urls.schemas,
+            textStatus: status,
+            error: error
+        });
+        $osf.growl('Error loading registration templates', language.loadMetaSchemaFail);
+    });
 
     var getDraftRegistrations = self.getDraftRegistrations();
     getDraftRegistrations.done(function(response) {
@@ -1194,6 +1202,14 @@ RegistrationManager.prototype.init = function() {
         });
         self.drafts(drafts);
         self.loadingDrafts(false);
+    });
+    getDraftRegistrations.fail(function(xhr, status, error) {
+        Raven.captureMessage('Could not load draft registrations', {
+            url: self.urls.list,
+            textStatus: status,
+            error: error
+        });
+        $osf.growl('Error loading draft registrations', language.loadDraftsFail);
     });
 
     var urlParams = $osf.urlParams();
