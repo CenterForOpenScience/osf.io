@@ -425,4 +425,5 @@ class UserNodeLogs(UserNodes):
         if not nodes:
             raise NotFound
         query = [Q('params.node', 'eq', node._id) for node in nodes]
-        return NodeLog.find(reduce(lambda x, y: x | y, query))
+        sorted_logs = sorted(list(NodeLog.find(reduce(lambda x, y: x | y, query))), key=lambda x: x.date)
+        return sorted_logs
