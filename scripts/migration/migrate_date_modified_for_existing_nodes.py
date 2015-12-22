@@ -26,13 +26,24 @@ def main(dry=True):
     nodes = models.Node.find(Q('date_modified', 'eq', None))
     node_count = nodes.count()
     count = 0
+    errored_nodes = []
     for node in nodes:
         count += 1
         with TokuTransaction():
             node.date_modified = date_updated(node)
             if not dry:
-                node.save()
-        logger.info('{}/{} Node {} "date_modified" added'.format(count, node_count, node._id))
+                try:
+                    node.save()
+                except KeyError as error:  # Workaround for node whose files were not migrated long ago
+                    logger.error('Could not migrate node due to error')
+                    logger.exception(error)
+                    errored_nodes.append(node)
+                else:
+                    logger.info('{}/{} Node {} "date_modified" added'.format(count, node_count, node._id))
+
+    if errored_nodes:
+        logger.error('{} errored'.format(len(errored_nodes)))
+        logger.error('\n'.join([each._id for each in errored_nodes]))
 
 if __name__ == '__main__':
 
