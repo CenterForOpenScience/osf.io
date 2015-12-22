@@ -19,7 +19,8 @@ var AddProject = {
         var self = this;
         self.defaults = {
             buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Add new Project'),
-            parent : null
+            parentID : null,
+            modalID : 'addProjectModal'
         };
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
         self.options = $.extend(self.defaults, options);
@@ -49,9 +50,15 @@ var AddProject = {
         //    self.newProjectCategory = $(this).val();
         //};
         self.add = function _add () {
+            var url;
+            var data;
             self.viewState('processing');
-            var url = $osf.apiV2Url('nodes/', { query : {}});
-            var data = {
+            if(self.options.parentID) {
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {}});
+            } else {
+                url = $osf.apiV2Url('nodes/', { query : {}});
+            }
+            data = {
                     'data' : {
                         'type': 'nodes',
                         'attributes': {
@@ -177,7 +184,7 @@ var AddProject = {
 
         return  m('', [
             ctrl.options.buttonTemplate,
-            m('#addProjectModal.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addProject"][aria-hidden="true"]',
+            m('#' + ctrl.options.modalID + '.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addProject"][aria-hidden="true"]',
                 m('.modal-dialog',
                     templates[ctrl.viewState()]
                 )
