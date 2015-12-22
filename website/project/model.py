@@ -683,6 +683,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     _id = fields.StringField(primary=True)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow, index=True)
+    date_modified = fields.DateTimeField()
 
     # Privacy
     is_public = fields.BooleanField(default=False, index=True)
@@ -712,7 +713,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', backref='registered', list=True, default=list)
     # A set of <metaschema._id>: <schema> pairs, where <schema> is a
-    # flat set of <question_id>: <response> pairs-- these quesiton ids_above
+    # flat set of <question_id>: <response> pairs-- these question ids_above
     # map the the ids in the registrations MetaSchema (see registered_schema).
     # {
     #   <question_id>: {
@@ -1809,16 +1810,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
         return list(reversed(self.logs)[:n])
 
-    @property
-    def date_modified(self):
-        '''The most recent datetime when this node was modified, based on
-        the logs.
-        '''
-        try:
-            return self.logs[-1].date
-        except IndexError:
-            return self.date_created
-
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
 
@@ -2261,8 +2252,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             foreign_user=foreign_user,
             params=params,
         )
+
         if log_date:
             log.date = log_date
+
+        self.date_modified = log.date.replace(tzinfo=None)
+
         log.save()
         self.logs.append(log)
         if save:
@@ -2921,6 +2916,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.is_registration:
                 if self.is_pending_embargo:
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
+                elif self.is_pending_registration:
+                    raise NodeStateError("An unapproved registration cannot be made public.")
                 if self.embargo_end_date and not self.is_pending_embargo:
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()

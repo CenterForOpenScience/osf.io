@@ -1,7 +1,8 @@
 import csv
-import datetime
 import tabulate
 import sys
+from dateutil.parser import parse as parse_date
+
 from modularodm import Q
 
 from website.app import init_app
@@ -21,12 +22,14 @@ def get_active_users(extra=None):
     query = query & extra if extra else query
     return User.find(query)
 
+
 def find_user_by_email(email):
-    users = get_active_users(Q('username', 'eq', email))
+    users = get_active_users(Q('emails', 'eq', email))
     if users.count() == 1:
         return users[0]
     else:
         return None
+
 
 def find_user_by_fullname(fullname):
     users = get_active_users(Q('fullname', 'eq', fullname))
@@ -36,8 +39,8 @@ def find_user_by_fullname(fullname):
         return None
 
 
-def find_user_by_lastname(family_name):
-    users = get_active_users(Q('family_name', 'eq', family_name))
+def find_user_by_names(names):
+    users = get_active_users(Q('given_name', 'eq', names['given']) & Q('family_name', 'eq', names['family']))
     if users.count() == 1:
         return users[0]
     else:
@@ -59,7 +62,9 @@ def user_last_log(user, query=None):
         query = Q('user', 'eq', user._id)
 
     node_logs = NodeLog.find(query)
-    return node_logs[node_logs.count()-1].date
+    if node_logs.count():
+        return node_logs[node_logs.count()-1].date
+    return None
 
 
 def count_user_nodes(user, query=None):
@@ -75,14 +80,15 @@ def get_users_from_csv(filename):
     with open(filename, 'rU') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            username = row['Email Address']
-            full_name = row['Name']
-            family_name = impute_names(full_name)['family']
-            parsed_date = row['Workshop_Date'].split("/")
-            day, month, year = int(parsed_date[0]), int(parsed_date[1]), int('20'+parsed_date[2])
-            date = datetime.datetime(year, month, day)
+            email = row['Email Address']
+            full_name = row['Name'].decode('utf-8', 'ignore')
+            names = impute_names(full_name)
+            date = parse_date(row['Workshop_Date'])
 
-            found_user = find_user_by_email(username) or find_user_by_fullname(full_name) or find_user_by_lastname(family_name)
+            found_user = find_user_by_email(email)
+            if not found_user and full_name:
+                found_user = find_user_by_fullname(full_name) or find_user_by_names(names)
+
             if found_user:
                 log_count = count_user_logs(found_user, Q('date', 'gte', date))
                 node_count = count_user_nodes(found_user, Q('date_created', 'gte', date))
@@ -91,15 +97,15 @@ def get_users_from_csv(filename):
     return rows
 
 
-
 def main():
-    csvfile = sys.argv[0]
+    csvfile = sys.argv[1]
     rows = get_users_from_csv(csvfile)
     table = tabulate.tabulate(
         (sorted(rows, key=lambda row: row[0], reverse=True)),
         headers=['Date of Workshop', 'Fullname', 'Email', 'GUID', 'Logs Since Workshop', 'Nodes Since Workshop', 'Last Log Date'],
     )
     print(table.encode('utf8'))
+
 
 if __name__ == '__main__':
     init_app()

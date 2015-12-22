@@ -11,7 +11,6 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.utils import render_generations_from_node_structure_list
 from tests.factories import (
     DashboardFactory,
     FolderFactory,
