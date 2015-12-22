@@ -122,13 +122,10 @@ var FileBrowser = {
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
         ]);
         // Calculate name filters
-        self.nameFilters = [
-            new LinkObject('name', { id : '8q36f', query : { 'related_counts' : true }}, 'Caner Uguz'),
-        ];
+        self.nameFilters = [];
         // Calculate tag filters
-        self.tagFilters = [
-            new LinkObject('tag', { tag : 'something', query : { 'related_counts' : true }}, 'Something Else'),
-        ];
+        self.tagFilters = [];
+
         // Placeholder for node data
         self.data = m.prop([]);
 
@@ -231,6 +228,7 @@ var FileBrowser = {
             }
             if(self.loadingNodes) {
                 self.allProjects(self.data());
+                self.generateFiltersList();
                 self.loadingNodes = false;
                 self.allProjectsLoaded(true);
             }
@@ -248,6 +246,35 @@ var FileBrowser = {
         };
 
 
+        self.generateFiltersList = function _generateFilterList () {
+            self.users = {};
+            self.tags = {};
+            self.data().data.map(function(item){
+                var contributors = item.embeds.contributors.data;
+                for(var i = 0; i < contributors.length; i++) {
+                    var u = contributors[i];
+                    if(self.users[u.id] === undefined) {
+                        self.users[u.id] = 1;
+                        self.nameFilters.push(new LinkObject('name', { id : u.id, query : { 'related_counts' : true }}, u.embeds.users.data.attributes.full_name));
+                    } else {
+                        self.users[u.id]++;
+                    }
+                }
+
+                var tags = item.attributes.tags;
+                for(var j = 0; j < tags.length; j++) {
+                    var t = tags[j];
+                    if(self.tags[t] === undefined) {
+                        self.tags[t] = 1;
+                        self.tagFilters.push(new LinkObject('tag', { tag : t, query : { 'related_counts' : true }}, t));
+                    } else {
+                        self.tags[t]++;
+                    }
+                }
+
+            });
+            console.log(self.data().data, self.users, self.tags);
+        };
 
         // BREADCRUMBS
         self.updateBreadcrumbs = function(linkObject){
