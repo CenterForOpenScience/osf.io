@@ -1,5 +1,11 @@
 from framework import utils
 
+def serialize_initiator(initiator):
+    return {
+        'fullname': initiator.fullname,
+        'id': initiator._id
+    }
+
 def serialize_meta_schema(meta_schema):
     if not meta_schema:
         return None
@@ -26,7 +32,7 @@ def serialize_draft_registration(draft, auth=None):
     return {
         'pk': draft._id,
         'branched_from': serialize_node(node, auth),
-        'initiator': serialize_user(draft.initiator, full=True),
+        'initiator': serialize_initiator(draft.initiator),
         'registration_metadata': draft.registration_metadata,
         'registration_schema': serialize_meta_schema(draft.registration_schema),
         'initiated': utils.iso8601format(draft.datetime_initiated),
