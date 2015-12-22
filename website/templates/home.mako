@@ -7,7 +7,9 @@
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script type="text/javascript">
-      window.contextVars = $.extend(true, {}, window.contextVars, {})
+      window.contextVars = $.extend(true, {}, window.contextVars, {
+          userId: ${userId | sjson, n}
+      })
     </script>
     <script src="${"/static/public/js/home.js" | webpack_asset}"></script>
 </%def>
