@@ -83,6 +83,41 @@ projectOrganizer.myProjects = new Bloodhound({
     }
 });
 
+
+/**
+ * Organize flat list of nodes returned from server to a hierarchical list
+ * @param {Array} flatData flat list of nodes as returned from the server
+ * @returns {Array} root a hierarchical list of the nodes
+ */
+function _makeTree (flatData) {
+    var root = {id:0, children: [], data : {} };
+    var node_list = { 0 : root};
+    for (var i = 0; i < flatData.length; i++) {
+        var n = flatData[i];
+        var parentLink = n.relationships.parent.links.related.href; // Find where parent id string can be extracted
+        var parentID = parentLink.split('/')[5];
+
+        if(!node_list[n.id]){ // If this node is not in the object list, add it
+            node_list[n.id] = { id: n.id, data : n, children : [] };
+        } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
+            node_list[n.id].id = n.id;
+            node_list[n.id].data = n;
+        }
+
+        if(parentID && parentID !== n.id && !n.attributes.registration ) {
+            if(!node_list[parentID]){
+                node_list[parentID] = { children : [] };
+            }
+            node_list[parentID].children.push(node_list[n.id]);
+
+        } else {
+            node_list[0].children.push(node_list[n.id]);
+        }
+    }
+    console.log(root, node_list);
+    return root;
+}
+
 /**
  * Edits the template for the column titles.
  * Used here to make smart folder italicized
@@ -457,9 +492,8 @@ var tbOptions = {
     },
     lazyLoadPreprocess : function (value) {
         // For when we load root filtered nodes this is removing the parent from the returned list. requires the root to be in relationship object
+        var treeData = _makeTree(value.data);
         value.data.map(function(item, index){
-
-
             item.kind = 'folder';
             item.uid = item.id;
             item.name = item.attributes.title;
