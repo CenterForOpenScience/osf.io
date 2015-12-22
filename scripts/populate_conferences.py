@@ -558,7 +558,7 @@ MEETING_DATA = {
         'name': 'Time-sharing Experiments for the Social Sciences',
         'info_url': 'http://www.tessexperiments.org',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': False,
