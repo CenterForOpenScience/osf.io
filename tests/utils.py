@@ -12,7 +12,7 @@ from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
 from tests.base import get_default_metaschema
-DEFAULT_METASCHEMA = get_default_metaschema()
+DEFAULT_METASCHEMA = None
 
 def requires_module(module):
     def decorator(fn):
@@ -99,6 +99,9 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         assert_false(registration.archiving)
         assert_false(registration.is_pending_registration)
     """
+    global DEFAULT_METASCHEMA  # lazily load to avoid a config headache
+    DEFAULT_METASCHEMA = DEFAULT_METASCHEMA or get_default_metaschema()
+
     schema = schema or DEFAULT_METASCHEMA
     auth = auth or Auth(project.creator)
     data = data or ''

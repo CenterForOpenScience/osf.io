@@ -22,7 +22,6 @@ from pymongo.errors import OperationFailure
 from modularodm import storage
 
 
-from api.base.wsgi import application as django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
@@ -45,6 +44,9 @@ from website.project.signals import contributor_added
 from website.app import init_app
 from website.addons.base import AddonConfig
 from website.project.views.contributor import notify_added_contributor
+
+# Set so that imports from rest_framework in test files don't break.
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
@@ -188,6 +190,7 @@ class ApiAppTestCase(unittest.TestCase):
 
     def setUp(self):
         super(ApiAppTestCase, self).setUp()
+        from api.base.wsgi import application as django_app
         self.app = TestAppJSONAPI(django_app)
 
 
