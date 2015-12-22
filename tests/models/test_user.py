@@ -433,8 +433,8 @@ class TestUserMerging(base.OsfTestCase):
 
         self.user.merge_user(self.unregistered)
 
+        self.project_with_unreg_contrib.reload()
         assert_true(self.user.is_invited)
-
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
