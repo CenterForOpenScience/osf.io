@@ -47,13 +47,13 @@ describe('fileBrowser', function() {
                 assert.equal(collection.link, 'users/me/nodes/?related_counts=true');
             });
             it('should return correct tag link', function () {
-                assert.equal(tag.link, 'nodes/?filter%5Btags%5D=something&related_counts=true');
+                assert.equal(tag.link, 'nodes/?filter%5Btags%5D=something&related_counts=true&embed=contributors');
             });
             it('should return correct name link', function () {
-                assert.equal(name.link, 'users/8q36f/nodes/?related_counts=true');
+                assert.equal(name.link, 'users/8q36f/nodes/?related_counts=true&embed=contributors');
             });
             it('should return correct node link', function () {
-                assert.equal(node.link, 'nodes/qwerty/children/?related_counts=true');
+                assert.equal(node.link, 'nodes/qwerty/children/?related_counts=true&embed=contributors');
             });
         });
     });
@@ -68,11 +68,7 @@ describe('fileBrowser', function() {
                 assert.throws(function(){
                     FileBrowser.controller.updateList(234234);
                 }, Error);
-            });
-            it('should load data with url', function () {
-                var loadURL = 'users/me/nodes/?related_counts=true';
-                FileBrowser.controller.updateList(loadURL, done);
-            });
+            })
         });
     });
 });
