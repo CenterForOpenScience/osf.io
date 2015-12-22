@@ -699,7 +699,7 @@ class TestUser(OsfTestCase):
         assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
         projects = [
             node
-            for node in user.node__contributed
+            for node in user.contributed
             if node.category == 'project'
             and not node.is_registration
             and not node.is_deleted
@@ -779,13 +779,14 @@ class TestUser(OsfTestCase):
         project.add_contributor(contributor=user2, auth=self.auth)
         project.save()
 
-        project_keys = set(self.user.node__contributed._to_primary_keys())
-        projects = set(self.user.node__contributed)
+        project_keys = set([node._id for node in self.user.contributed])
+        projects = set(self.user.contributed)
+        user2_project_keys = set([node._id for node in user2.contributed])
 
         assert_equal(self.user.get_projects_in_common(user2, primary_keys=True),
-                     project_keys.intersection(user2.node__contributed._to_primary_keys()))
+                     project_keys.intersection(user2_project_keys))
         assert_equal(self.user.get_projects_in_common(user2, primary_keys=False),
-                     projects.intersection(user2.node__contributed))
+                     projects.intersection(user2.contributed))
 
     def test_n_projects_in_common(self):
         user2 = UserFactory()
@@ -953,7 +954,7 @@ class TestMergingUsers(OsfTestCase):
 
         self._merge_dupe()
 
-        assert_not_in(dashnode, self.master.node__contributed)
+        assert_not_in(dashnode, self.master. contributed)
 
     def test_dupe_is_merged(self):
         self._merge_dupe()
