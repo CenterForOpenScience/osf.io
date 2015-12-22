@@ -30,10 +30,10 @@ var LinkObject = function (type, data, label, index) {
             );
         }
         else if (self.type === 'tag') {
-            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : true}});
+            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : true, 'embed' : 'contributors'}});
         }
         else if (self.type === 'name') {
-            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : true}});
+            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : true, 'embed' : 'contributors' }});
         }
         else if (self.type === 'node') {
             return $osf.apiV2Url('nodes/' + self.data.uid + '/children/', { query : { 'related_counts' : true, 'embed' : 'contributors' }});
