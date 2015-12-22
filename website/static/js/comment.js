@@ -137,9 +137,14 @@ BaseComment.prototype.fetch = function() {
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: 'embed=user'});
+    var query = 'embed=user';
+    var urlParams = osfHelpers.urlParams();
+    if (urlParams.view_only) {
+        query = 'view_only=' + urlParams.view_only;
+    }
+    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: query});
     if (self.id() !== undefined) {
-        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {query: 'embed=user'});
+        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {query: query});
     }
     var request = osfHelpers.ajaxJSON(
         'GET',
@@ -160,9 +165,14 @@ BaseComment.prototype.fetch = function() {
 
 BaseComment.prototype.setUnreadCommentCount = function() {
     var self = this;
+    var query = 'related_counts=True';
+    var urlParams = osfHelpers.urlParams();
+    if (urlParams.view_only) {
+        query = query + '&view_only=' + urlParams.view_only;
+    }
     var request = osfHelpers.ajaxJSON(
         'GET',
-        osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/', {query: 'related_counts=True'}),
+        osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/', {query: query}),
         {'isCors': true});
     request.done(function(response) {
         self.unreadComments(response.data.relationships.comments.links.related.meta.unread);
@@ -258,6 +268,13 @@ var CommentModel = function(data, $parent, $root) {
             'url': userData.links.html,
             'name': userData.attributes.full_name,
             'gravatarUrl': userData.links.profile_image
+        };
+    } else if (osfHelpers.urlParams().view_only) {
+        self.author = {
+            'id': null,
+            'url': '',
+            'name': 'A User',
+            'gravatarUrl': ''
         };
     } else {
         self.author = self.$root.author;
