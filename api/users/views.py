@@ -406,6 +406,7 @@ class UserRegistrations(UserNodes):
             Q('is_registration', 'eq', True)
         )
 
+
 class UserNodeLogs(UserNodes):
 
     serializer_class = NodeLogSerializer
