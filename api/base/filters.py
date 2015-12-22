@@ -208,7 +208,10 @@ class FilterMixin(object):
         :param basestring field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
-        return field.source or field_name
+        source = field.source
+        if source == '*':
+            source = getattr(field, 'filter_key', None)
+        return source or field_name
 
     def convert_value(self, value, field):
         """Used to convert incoming values from query params to the appropriate types for filter comparisons
@@ -235,6 +238,8 @@ class FilterMixin(object):
                 )
         elif isinstance(field, (self.LIST_FIELDS, self.RELATIONSHIP_FIELDS)) \
                 or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
+            if value == 'null':
+                value = None
             return value
         else:
             try:
