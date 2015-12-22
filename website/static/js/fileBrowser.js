@@ -420,13 +420,19 @@ var FileBrowser = {
             ]),
             ctrl.showSidebar() ?
             m('.fb-sidebar', { config : ctrl.sidebarInit}, [
-                mobile ? m('.fb-dismiss', m('button.close[aria-label="Close"]', {
+                mobile ? [ m('.fb-dismiss', m('button.close[aria-label="Close"]', {
                     onclick : function () {
                         ctrl.showSidebar(false);
                     }
                 }, [
                     m('span[aria-hidden="true"]','×'),
-                ])) : '',
+                ])),
+                    m('p.p-sm.text-center.text-muted', [
+                        'Select a list below to see the projects. or click ',
+                        m('i.fa.fa-bars'),
+                        ' button above to toggle.'
+                    ])
+                ] : '',
                 m.component(Collections, ctrl),
                 m.component(Filters, {
                     activeFilter : ctrl.activeFilter,
@@ -449,7 +455,6 @@ var FileBrowser = {
             ]),
             infoPanel,
             m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected}),
-            mobile && ctrl.showSidebar() ? m('.fb-overlay') : ''
         ];
     }
 };
@@ -529,7 +534,8 @@ var Collections  = {
     view : function (ctrl, args) {
         var selectedCSS;
         var submenuTemplate;
-        return m('.fb-collections', [
+        var mobile = window.innerWidth < 767; // true if mobile view
+        var collectionListTemplate = [
             m('h5', [
                 'Collections ',
                 m('i.fa.fa-question-circle.text-muted', {
@@ -568,9 +574,9 @@ var Collections  = {
                     style : 'position:absolute;top: ' + args.collectionMenuObject().y + 'px;left: ' + args.collectionMenuObject().x + 'px;'
                 }, [
                     m('.menuClose', { onclick : function (e) {
-                            args.showCollectionMenu(false);
-                            args.resetCollectionMenu();
-                        }
+                        args.showCollectionMenu(false);
+                        args.resetCollectionMenu();
+                    }
                     }, m('.text-muted','×')),
                     m('ul', [
                         m('li[data-toggle="modal"][data-target="#renameColl"].pointer',{
@@ -591,7 +597,10 @@ var Collections  = {
                         ])
                     ])
                 ]) : ''
-            ]),
+            ])
+        ];
+        return m('.fb-collections', [
+            collectionListTemplate,
             m('.fb-collections-modals', [
                 m('#addColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addCollLabel"][aria-hidden="true"]',
                     m('.modal-dialog',
