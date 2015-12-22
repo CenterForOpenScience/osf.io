@@ -20,7 +20,12 @@
 </div>
 
 
-  <div id="fileBrowser" class="fileBrowser clearfix" ></div>
+  <div id="fileBrowser" class="fileBrowser clearfix" >
+    <div class="spinner-loading-wrapper">
+       <div class="logo-spin logo-lg"></div>
+       <p class="m-t-sm fg-load-message"> Loading projects...  </p>
+    </div>
+  </div>
 
 
 %if 'badges' in addons_enabled:
