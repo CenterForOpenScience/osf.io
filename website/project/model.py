@@ -2254,12 +2254,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             increment_user_activity_counters(user._primary_key, action, log.date)
         return log
 
-    def find_for_user(self, user, subquery=None):
-        combined_query = Q('contributor', 'contains', user._id)
+    @classmethod
+    def find_for_user(cls, user, subquery=None):
+        combined_query = Q('contributors', 'contains', user._id)
 
         if subquery is not None:
             combined_query = combined_query & subquery
-        return Node.find(combined_query)
+        return cls.find(combined_query)
 
     @property
     def url(self):
