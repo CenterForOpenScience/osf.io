@@ -68,7 +68,7 @@ describe('fileBrowser', function() {
                 assert.throws(function(){
                     FileBrowser.controller.updateList(234234);
                 }, Error);
-            })
+            });
         });
     });
 });
