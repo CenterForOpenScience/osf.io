@@ -21,27 +21,22 @@ def date_updated(node):
     except IndexError:
         return node.date_created
 
-def main():
+def main(dry=True):
     init_app(routes=False)
-
-    logger.warn('Date_modified field will be added to all nodes.')
-
-    for node in models.Node.find(Q('date_modified', 'eq', None)):
-        node.date_modified = date_updated(node)
-        node.save()
-        logger.info('Node {0} "date_modified" added'.format(node._id))
+    nodes = models.Node.find(Q('date_modified', 'eq', None))
+    node_count = nodes.count()
+    count = 0
+    for node in nodes:
+        count += 1
+        with TokuTransaction():
+            node.date_modified = date_updated(node)
+            if not dry:
+                node.save()
+        logger.info('{}/{} Node {} "date_modified" added'.format(count, node_count, node._id))
 
 if __name__ == '__main__':
 
     dry_run = 'dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-
-    with TokuTransaction():
-        main()
-        if dry_run:
-            raise RuntimeError('Dry run, rolling back transaction.')
-
-
-
-
+    main(dry=dry_run)
