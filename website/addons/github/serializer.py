@@ -34,7 +34,7 @@ class GitHubSerializer(StorageAddonSerializer):
                                 service_name='github'),
             'importAuth': node.api_url_for('github_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
-            'folders': node.api_url_for('github_folder_list'),
+            'folders': node.api_url_for('github_root_folder'),
             'config': node.api_url_for('github_set_config'),
             'deauthorize': node.api_url_for('github_deauthorize_node'),
             'accounts': node.api_url_for('github_account_list'),

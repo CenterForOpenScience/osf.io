@@ -79,7 +79,7 @@ var GithubConfigHelper = (function() {
                 {}
             ).done(function() {
                     if($osf.isIE()){
-                        window.location.hash = "#configureAddonsAnchor";
+                        window.location.hash = '#configureAddonsAnchor';
                     }
                     window.location.reload();
             }).fail(
@@ -88,7 +88,7 @@ var GithubConfigHelper = (function() {
         });
 
         $('#githubCreateToken').on('click', function() {
-            window.location.href = nodeApiUrl + 'github/oauth/';
+            window.location.href = nodeApiUrl + 'oauth/connect/github/';
         });
 
         $('#githubRemoveToken').on('click', function() {
