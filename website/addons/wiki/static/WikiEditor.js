@@ -46,7 +46,7 @@ function ViewModel(url, viewText) {
     self.activeUsers = ko.observableArray([]);
     self.status = ko.observable('connecting');
     self.throttledStatus = ko.observable(self.status());
-    self.autocom = ko.observable(true);
+    self.autocom = ko.observable(false);
 
     self.displayCollaborators = ko.computed(function() {
        return self.activeUsers().length > 1;
@@ -79,11 +79,6 @@ function ViewModel(url, viewText) {
                 return 'Unavailable: Live editing';
         }
     });
-
-    self.setAutocom = function(auto) {
-        self.autocom(auto);
-        return true;
-    };
 
     self.progressBar = ko.computed(function() {
         switch(self.throttledStatus()) {
@@ -173,7 +168,7 @@ function ViewModel(url, viewText) {
 
     $(document).ready(function() {
         $('#autocom').on('change', function() {
-            self.setAutocom($(this).is(':checked'));
+            self.autocom($(this).is(':checked'));
         });
     });
 
