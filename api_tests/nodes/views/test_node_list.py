@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
+from modularodm import Q
 from framework.auth.core import Auth
 
 from website.models import Node, NodeLog
@@ -95,6 +96,31 @@ class TestNodeList(ApiTestCase):
         retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
+
+    def test_node_list_has_root(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        projects_with_root = 0
+        for project in res.json['data']:
+            if project['relationships'].get('root', None):
+                projects_with_root += 1
+        assert_not_equal(projects_with_root, 0)
+        assert_true(
+            all([each['relationships'].get(
+                'root'
+            ) is not None for each in res.json['data']])
+        )
+
+
+    def test_node_list_has_proper_root(self):
+        project_one = ProjectFactory(title="Project One", is_public=True)
+        ProjectFactory(parent=project_one, is_public=True)
+
+        res = self.app.get(self.url+'?embed=root&embed=parent', auth=self.user.auth)
+
+        for project_json in res.json['data']:
+            project = Node.load(project_json['id'])
+            assert_equal(project_json['embeds']['root']['data']['id'], project.root._id)
+
 
 
 class TestNodeFiltering(ApiTestCase):
@@ -384,6 +410,69 @@ class TestNodeFiltering(ApiTestCase):
         errors = res.json['errors']
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint.")
+
+    def test_filtering_on_root(self):
+        root = ProjectFactory(is_public=True)
+        child = ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=child, is_public=True)
+        # create some unrelated projects
+        ProjectFactory(title="Road Dogg Jesse James", is_public=True)
+        ProjectFactory(title="Badd *** Billy Gunn", is_public=True)
+
+        url = '/{}nodes/?filter[root]={}'.format(API_BASE, root._id)
+
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+
+        root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root', 'eq', root._id))
+        assert_equal(len(res.json['data']), root_nodes.count())
+
+    def test_filtering_on_null_parent(self):
+        # add some nodes TO be included
+        new_user = AuthUserFactory()
+        root = ProjectFactory(is_public=True)
+        ProjectFactory(is_public=True)
+        # Build up a some of nodes not to be included
+        child = ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=child, is_public=True)
+
+        url = '/{}nodes/?filter[parent]=null'.format(API_BASE)
+
+        res = self.app.get(url, auth=new_user.auth)
+        assert_equal(res.status_code, 200)
+
+        public_root_nodes = Node.find(Q('is_public', 'eq', True) & Q('parent_node', 'eq', None))
+        assert_equal(len(res.json['data']), public_root_nodes.count())
+
+    def test_filtering_on_title_not_equal(self):
+        url = '/{}nodes/?filter[title][ne]=Project%20One'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(len(data), 3)
+
+        titles = [each['attributes']['title'] for each in data]
+
+        assert_not_in(self.project_one.title, titles)
+        assert_in(self.project_two.title, titles)
+        assert_in(self.project_three.title, titles)
+        assert_in(self.private_project_user_one.title, titles)
+
+    def test_filtering_on_description_not_equal(self):
+        url = '/{}nodes/?filter[description][ne]=One%20Three'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(len(data), 3)
+
+        descriptions = [each['attributes']['description'] for each in data]
+
+        assert_not_in(self.project_two.description, descriptions)
+        assert_in(self.project_one.description, descriptions)
+        assert_in(self.project_three.description, descriptions)
+        assert_in(self.private_project_user_one.description, descriptions)
 
 
 class TestNodeCreate(ApiTestCase):

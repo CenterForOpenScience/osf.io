@@ -133,6 +133,29 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.status_code, 404)
 
 
+class TestNodeLogFiltering(TestNodeLogList):
+
+    def test_filter_action_not_equal(self):
+        self.public_project.add_tag("Jeff Spies", auth=self.user_auth)
+        assert_equal("tag_added", self.public_project.logs[OSF_LATEST].action)
+        url = '/{}nodes/{}/logs/?filter[action][ne]=tag_added'.format(API_BASE, self.public_project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['attributes']['action'], 'project_created')
+
+    def test_filter_date_not_equal(self):
+        self.public_project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
+        assert_equal('pointer_created', self.public_project.logs[OSF_LATEST].action)
+        assert_equal(len(self.public_project.logs), 2)
+        date_pointer_added = str(self.public_project.logs[1].date).replace(' ', 'T')
+
+        url = '/{}nodes/{}/logs/?filter[date][ne]={}'.format(API_BASE, self.public_project._id, date_pointer_added)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['attributes']['action'], 'project_created')
+
+
 class TestNodeLogAddedContributors(ApiTestCase):
 
     def setUp(self):
@@ -166,4 +189,3 @@ class TestNodeLogAddedContributors(ApiTestCase):
 
         res = self.app.get(added_contributors_url)
         assert_equal(res.json['data'], [])
-
