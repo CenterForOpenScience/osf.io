@@ -57,12 +57,12 @@ class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
             raise ValidationError('Request must contain array of resource identifier objects.')
 
         response = super(BulkUpdateJSONAPIView, self).bulk_update(request, *args, **kwargs)
-        meta = {}
+        errors = {}
         if 'errors' in response.data[-1]:
-            meta = response.data.pop(-1)
+            errors = response.data.pop(-1)
         response.data = {'data': response.data}
-        if meta:
-            response.data.update({'meta': meta})
+        if errors:
+            response.data.update(errors)
         return response
 
 
@@ -138,7 +138,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
             allowed = skip_uneditable['allowed']
             if skipped:
                 self.perform_bulk_destroy(allowed)
-                return Response(status=status.HTTP_200_OK, data={'meta': {'errors': skipped}})
+                return Response(status=status.HTTP_200_OK, data={'errors': skipped})
 
         self.perform_bulk_destroy(resource_object_list)
         return Response(status=status.HTTP_204_NO_CONTENT)

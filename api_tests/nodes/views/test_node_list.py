@@ -1297,7 +1297,7 @@ class TestNodeBulkUpdateSkipUneditable(ApiTestCase):
         res = self.app.put_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 200)
         edited = res.json['data']
-        skipped = res.json['meta']['errors']
+        skipped = res.json['errors']
         assert_items_equal([edited[0]['id'], edited[1]['id']],
                            [self.public_project._id, self.public_project_two._id])
         assert_items_equal([skipped[0]['_id'], skipped[1]['_id']],
@@ -1345,7 +1345,7 @@ class TestNodeBulkUpdateSkipUneditable(ApiTestCase):
         res = self.app.patch_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 200)
         edited = res.json['data']
-        skipped = res.json['meta']['errors']
+        skipped = res.json['errors']
         assert_items_equal([edited[0]['id'], edited[1]['id']],
                            [self.public_project._id, self.public_project_two._id])
         assert_items_equal([skipped[0]['_id'], skipped[1]['_id']],
