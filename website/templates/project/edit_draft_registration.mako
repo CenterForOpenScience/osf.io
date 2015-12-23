@@ -63,7 +63,7 @@
                   </button>
                   <!-- ko if: onLastPage -->
                   <a data-bind="css: {disabled: !canSubmit()},
-                                click: $root.check"
+                                click: $root.toPreview"
                      type="button" class="pull-right btn btn-success">Preview for submission
                   </a>
                   <!-- /ko -->
