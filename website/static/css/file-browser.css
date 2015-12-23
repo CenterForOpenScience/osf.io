@@ -1,67 +1,240 @@
+
+/* Main Wrapper */
 .fileBrowser {
-    height: 500px;
     width: 100%;
+    font-family: "Open Sans", 'Helvetica Neue', sans-serif;
+    border-bottom: 1px solid #eee;
+    height: 584px;
 }
+
+/* Header with breadcrumbs and buttons */
 
 .fb-header {
-    background-color: #efefef;
-    padding: 10px;
+    background-color: #f8f8f8;
+    margin-right: 0px !important;
+    margin-left: 0px !important;
+    box-shadow: 0 3px 3px -3px #ccc;
+    position: relative;
 }
 .fb-breadcrumbs {
-    width: 60%;
     display : inline-block;
-}
-
-.fb-sidebar {
-    width: 25%;
-    display: block;
-    height: 500px;
-    float: left;
-    background-color: aliceblue;
-}
-
-.fb-main {
-    float: left;
-    padding: 0 0 1px 0;
-}
-
-.fb-infobar {
-    background-color: coral;
-    height: 500px;
-    padding: 10px;
-    float: left;
-    width: 20%;
-}
-
-.fb-buttonRow {
-    width: 40%;
-    text-align: right;
-    display: inline-block;
+    padding: 7px;
+    margin-left:-20px;
 }
 .fb-breadcrumbs ul, .fb-collections ul, .fb-filters ul {
     padding: 0;
     list-style: none;
+    margin: 0;
 }
-
 .fb-breadcrumbs ul li {
     display: inline;
     padding: 0 3px;
 }
-
-
 .fb-breadcrumbs>ul>li>.fa {
     margin-left: 5px;
     color: #999999;
 }
+.fb-buttonRow {
+    display: inline-block;
+    padding: 6px;
+}
+.filterReset {
+    font-size: 22px;
+    color: #BBB;
+    margin-right: 7px;
+    cursor: default;
+    font-weight: bold;
+    position: absolute;
+    right: 0;
+    top: 1px;
+}
+
+
+/* Sidebar with Collections and filters*/
+.fb-sidebar {
+    width: 25%;
+    display: block;
+    height: 535px;
+    float: left;
+    background-color: #fff;
+    padding: 0 10px;
+    overflow-y: auto;
+}
 
 .fb-collections ul li , .fb-filters ul li {
     padding: 3px 0;
+    border-left: 3px solid #FFFFFF;
+    position: relative;
 }
-
+.fb-collections h4 , .fb-filters h4 {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
 .fb-collections ul li.active, .fb-filters ul li.active {
-    background-color: #ccc;
+    background-color: #f8f8f8;
+    border-left: 3px solid #337AB7;
 }
 
-.fb-collections ul>li {
-    padding: 7px;
+.fb-collections ul>li, .fb-filters ul>li {
+    padding: 5px;
+}
+.collectionMenu {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 125px;
+    background: #fff;
+    z-index: 9;
+    box-shadow: 0 0 12px -2px #555;
+}
+
+.collectionMenu ul {
+    display: block;
+    float: left;
+}
+.collectionMenu ul>li {
+    border-left: none;
+    padding: 7px 15px;
+}
+.collectionMenu ul>li:hover {
+    background-color: #E0EBF3;
+}
+
+.collectionMenu .menuClose {
+    float: left;
+    width: 20px;
+    padding: 3px 7px;
+    display: block;
+    font-size:18px;
+    cursor: pointer;
+}
+.fb-sidebar h5>.fa {
+    color: #999;
+    margin-right: 5px;
+}
+/* Main column with Projects */
+
+.fb-main {
+    float: left;
+    padding: 0 0 1px 0;
+    /* width is set as inline style in file-browser.js because it changes based on information panel visibility */
+    border-left: 1px solid #eee;
+}
+
+/* Information Panel */
+.fb-infobar {
+    background-color: #fafafa;
+    height: 535px;
+    padding: 10px;
+    float: left;
+    width: 30%;
+    overflow-y: auto;
+    border-left: 1px solid #eee;
+}
+
+.fb-info-multi {
+    padding-top: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* TODO: Make responsive */
+#poFilter {
+    display: inline-block;
+    position: relative;
+}
+
+.fb-overlay {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: rgba(0, 0, 0, 0.46);
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.fb-dismiss {
+    height: 45px;
+    padding: 10px 2px;
+}
+
+.fb-error {
+    width: 100%;
+    text-align: center;
+}
+
+.fb-error .fa {
+    font-size: 34px;
+    color: #ccc;
+}
+/* Logs */
+
+.fb-activity-item {
+    font-size: 13px;
+    padding: 5px 10px;
+    background: #FFF;
+    margin-bottom: 3px;
+    border-bottom: 1px solid #eee;
+}
+
+#poFilter {
+    width : 300px;
+}
+
+/* Treebeard override */
+#projectOrganizer #tb-tbody {
+    border: none;
+}
+
+.spinner-div {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba(255, 255, 255, 0.87);
+    z-index: 9;
+    text-align: center;
+    font-size: 33px;
+    color: #ccc;
+    padding-top: 36%;
+}
+
+/* Responsive Style */
+@media only screen and (min-width : 1200px) {
+
+}
+
+@media only screen and (min-width : 992px) and (max-width : 1199px) {
+
+}
+
+@media only screen and (min-width : 767px) and (max-width : 991px) {
+
+}
+
+@media only screen and (min-width : 767px) {
+    .fb-buttonRow {
+        text-align:right;
+    }
+}
+
+
+@media only screen and (min-width : 321px) and (max-width : 767px) {
+    .fb-sidebar, .fb-infobar {
+        position: absolute;
+        width: 100%;
+    }
+    #poFilter {
+        width: 300px;
+    }
+    .collectionMenu .menuClose {
+        float: right;
+        margin-right: 5px;
+    }
+}
+@media only screen and (max-width : 320px) {
+    #poFilter {
+        width: 260px;
+    }
 }
