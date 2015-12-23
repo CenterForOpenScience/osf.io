@@ -5,6 +5,8 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 require('jquery-ui');
 require('knockout-sortable');
+var ContribAdder = require('js/contribAdder');
+var ContribRemover = require('js/contribRemover');
 
 var rt = require('js/responsiveTable');
 var $osf = require('./osfHelpers');
@@ -161,7 +163,7 @@ var MessageModel = function(text, level) {
 
 };
 
-var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, table, adminTable, contribShouter, changeShouter) {
+var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, table, adminTable, contribShouter, pageChangedShouter) {
 
     var self = this;
 
@@ -309,13 +311,13 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             if (item.visible) {
                 self.visibleCount(self.visibleCount() + 1);
             }
-            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, false, index, self.options);
+            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, false, index, self.options, contribShouter, changeShouter);
         }));
         self.adminContributors(adminContributors.map(function(contributor) {
           if (contributor.permission === 'admin') {
                 self.adminCount(self.adminCount() + 1);
             }
-          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true, index, self.options);
+          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true, index, self.options, contribShouter, changeShouter);
         }));
     };
 
@@ -476,12 +478,12 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
     //shouter allows communication between ContribManager and ContribRemover, in particular which contributor needs to
     // be removed is passed to ContribRemover
     var contribShouter = new ko.subscribable();
-    var changeShouter = new ko.subscribable();
+    var pageChangedShouter = new ko.subscribable();
     self.selector = selector;
     self.$element = $(selector);
     self.contributors = contributors;
     self.adminContributors = adminContributors;
-    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, table, adminTable, contribShouter, changeShouter);
+    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, table, adminTable, contribShouter, pageChangedShouter);
     $('body').on('nodeLoad', function(event, data) {
         // If user is a contributor, initialize the contributor modal
         // controller
@@ -500,7 +502,7 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
                 data.user.username,
                 data.user.id,
                 contribShouter,
-                changeShouter
+                pageChangedShouter
             );
         }
     });

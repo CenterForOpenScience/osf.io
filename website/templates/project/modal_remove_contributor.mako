@@ -7,7 +7,7 @@
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
             <div class="modal-body" >
-{{ko.toJSON($data)}}
+
                 <div data-bind="if: canRemoveNode() && !pageChanged()">
                     <!-- remove page -->
                     <div data-bind='if:page() === REMOVE'>
