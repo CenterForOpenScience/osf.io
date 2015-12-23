@@ -59,10 +59,12 @@ class GitHubUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific github information
     """
     oauth_provider = GithHubProvider
-    serializer = GitHubSerializer  # TODO
+    serializer = GitHubSerializer
 
 
 class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
+    oauth_provider = GithHubProvider
+    serializer = GitHubSerializer
 
     user = fields.StringField()
     repo = fields.StringField()
@@ -77,6 +79,14 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def folder_name(self):
+        return self.repo
+
+    @property
+    def folder_id(self):
+        return self.repo
+
+    @property
+    def folder_path(self):
         return self.repo
 
     @property
