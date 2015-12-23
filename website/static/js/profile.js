@@ -20,7 +20,13 @@ var socialRules = {
     twitter: /twitter\.com\/(\w+)/i,
     linkedIn: /.*\/?(in\/.*|profile\/.*|pub\/.*)/i,
     impactStory: /impactstory\.org\/([\w\.-]+)/i,
-    github: /github\.com\/(\w+)/i
+    github: /github\.com\/(\w+)/i,
+    url: '^(https?:\\/\\/)?'+ // protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+            '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+            '(\\#[-a-z\\d_]*)?$'
 };
 
 var cleanByRule = function(rule) {
@@ -336,7 +342,14 @@ BaseViewModel.prototype.cancel = function(data, event) {
 };
 
 BaseViewModel.prototype.submit = function() {
-    if (this.hasValidProperty() && this.isValid()) {
+    if (!this.hasValidWebsites()) {
+        this.changeMessage(
+            'Please update your website',
+            'text-danger',
+            5000
+        );
+    }
+    else if (this.hasValidProperty() && this.isValid()) {
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -494,8 +507,12 @@ var SocialViewModel = function(urls, modes) {
 
     self.addons = ko.observableArray();
 
+    self.profileWebsite = ko.observable('').extend({
+        ensureHttp: true,
+    });
+
     // Start with blank profileWebsite for new users without a profile.
-    self.profileWebsites = ko.observableArray(['']);
+    self.profileWebsites = ko.observableArray([self.profileWebsite]);
 
     self.hasProfileWebsites = ko.pureComputed(function() {
         //Check to see if any valid profileWebsites exist
@@ -506,6 +523,18 @@ var SocialViewModel = function(urls, modes) {
             }
         }
         return false;
+    });
+
+    self.hasValidWebsites = ko.pureComputed(function() {
+        //Check to see if there are bad profile websites
+        var profileWebsites = ko.toJS(self.profileWebsites());
+        var urlexp = new RegExp(socialRules.url,'i'); // fragment locator
+        for (var i=0; i<profileWebsites.length; i++) {
+            if (profileWebsites[i] && !urlexp.test(profileWebsites[i])) {
+                return false;
+            }
+        }
+        return true;
     });
 
     self.orcid = extendLink(
@@ -584,7 +613,7 @@ var SocialViewModel = function(urls, modes) {
             ensureHttp: true
         }));
     };
-    
+
     self.removeWebsite = function(profileWebsite) {
         var profileWebsites = ko.toJS(self.profileWebsites());
             bootbox.confirm({

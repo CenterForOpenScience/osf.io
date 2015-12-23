@@ -25,7 +25,7 @@
                     </div>
                 </div>
             </div>
-
+            <div data-bind="ifnot: hasValidWebsites" class="text-danger">Please enter a valid website</div>
             <div class="p-t-sm p-b-sm">
                 <a class="btn btn-default" data-bind="click: addWebsiteInput">
                     Add website
