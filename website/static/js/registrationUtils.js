@@ -1191,26 +1191,28 @@ RegistrationManager.prototype.init = function() {
         });
         $osf.growl('Error loading registration templates', language.loadMetaSchemaFail);
     });
-
-    var getDraftRegistrations = self.getDraftRegistrations();
-    getDraftRegistrations.done(function(response) {
-        var drafts = $.map(response.drafts, function(draft) {
-            return new Draft(draft);
+    
+    if ($osf.currentUser().isAdmin) {
+        var getDraftRegistrations = self.getDraftRegistrations();
+        getDraftRegistrations.done(function(response) {
+            var drafts = $.map(response.drafts, function(draft) {
+                return new Draft(draft);
+            });
+            drafts.sort(function(a, b) {
+                return a.initiated.getTime() < b.initiated.getTime();
+            });
+            self.drafts(drafts);
+            self.loadingDrafts(false);
         });
-        drafts.sort(function(a, b) {
-            return a.initiated.getTime() < b.initiated.getTime();
+        getDraftRegistrations.fail(function(xhr, status, error) {
+            Raven.captureMessage('Could not load draft registrations', {
+                url: self.urls.list,
+                textStatus: status,
+                error: error
+            });
+            $osf.growl('Error loading draft registrations', language.loadDraftsFail);
         });
-        self.drafts(drafts);
-        self.loadingDrafts(false);
-    });
-    getDraftRegistrations.fail(function(xhr, status, error) {
-        Raven.captureMessage('Could not load draft registrations', {
-            url: self.urls.list,
-            textStatus: status,
-            error: error
-        });
-        $osf.growl('Error loading draft registrations', language.loadDraftsFail);
-    });
+    }
 
     var urlParams = $osf.urlParams();
     if (urlParams.campaign && urlParams.campaign === 'prereg') {
