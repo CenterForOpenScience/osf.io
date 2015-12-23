@@ -91,7 +91,7 @@ def github_set_config(node_settings, folder, auth):
         raise HTTPError(http.BAD_REQUEST)
 
     # Verify that repo exists and that user can access
-    connection = GitHubClient.from_settings(user_settings)
+    connection = GitHubClient(external_account=node_settings.external_account)
     repo = connection.repo(github_user_name, github_repo_name)
     if repo is None:
         if user_settings:
@@ -152,7 +152,7 @@ def github_set_privacy(**kwargs):
     if private is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    connection = GitHubClient.from_settings(github.user_settings)
+    connection = GitHubClient(external_account=github.external_account)
     connection.set_privacy(github.user, github.repo, private)
 
 @must_be_contributor_or_public
@@ -162,7 +162,7 @@ def github_download_starball(node_addon, **kwargs):
     archive = kwargs.get('archive', 'tar')
     ref = request.args.get('sha', 'master')
 
-    connection = GitHubClient.from_settings(node_addon.user_settings)
+    connection = GitHubClient(external_account=node_addon.external_account)
     headers, data = connection.starball(
         node_addon.user, node_addon.repo, archive, ref
     )
@@ -197,7 +197,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
     if not node_settings.complete:
         return
 
-    connection = GitHubClient.from_settings(node_settings.user_settings)
+    connection = GitHubClient(external_account=node_settings.external_account)
 
     # Initialize repo here in the event that it is set in the privacy check
     # below. This potentially saves an API call in _check_permissions, below.
@@ -272,15 +272,15 @@ def github_hgrid_data(node_settings, auth, **kwargs):
 #########
 
 @must_be_logged_in
-@must_have_addon('github', 'user')
+@must_have_addon('github', 'node')
 def github_create_repo(**kwargs):
 
     repo_name = request.json.get('name')
     if not repo_name:
         raise HTTPError(http.BAD_REQUEST)
 
-    user_settings = kwargs['user_addon']
-    connection = GitHubClient.from_settings(user_settings)
+    node_settings = kwargs['node_addon']
+    connection = GitHubClient(external_account=node_settings.external_account)
 
     try:
         repo = connection.create_repo(repo_name, auto_init=True)

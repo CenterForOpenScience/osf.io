@@ -16,11 +16,11 @@ default_adapter = HTTPAdapter()
 
 class GitHubClient(object):
 
-    def __init__(self, access_token=None, token_type='bearer'):
+    def __init__(self, external_account=None, access_token=None):
 
-        self.access_token = access_token
-        if access_token and token_type:
-            self.gh3 = github3.login(token=access_token)
+        self.access_token = getattr(external_account, 'oauth_key', None) or access_token
+        if self.access_token:
+            self.gh3 = github3.login(token=self.access_token)
             self.gh3.set_client_id(
                 github_settings.CLIENT_ID, github_settings.CLIENT_SECRET
             )
@@ -31,15 +31,6 @@ class GitHubClient(object):
         if github_settings.CACHE:
             self.gh3._session.mount('https://api.github.com/user', default_adapter)
             self.gh3._session.mount('https://', https_cache)
-
-    @classmethod
-    def from_settings(cls, settings):
-        if settings:
-            return cls(
-                access_token=settings.oauth_access_token,
-                token_type=settings.oauth_token_type,
-            )
-        return cls()
 
     def user(self, user=None):
         """Fetch a user or the authenticated user.

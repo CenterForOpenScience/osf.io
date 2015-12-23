@@ -12,7 +12,7 @@ class GitHubSerializer(StorageAddonSerializer):
 
     def credentials_are_valid(self, user_settings, client):
         if user_settings:
-            client = client or GitHubClient.from_settings(user_settings)
+            client = client or GitHubClient(external_account=user_settings.external_accounts[0])
             try:
                 client.user()
             except (GitHubError, IndexError):

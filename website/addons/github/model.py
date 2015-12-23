@@ -42,8 +42,7 @@ class GithHubProvider(ExternalProvider):
         record to the user and saves the account info.
         """
         client = GitHubClient(
-            access_token=response['access_token'],
-            token_type=response['token_type']
+            access_token=response['access_token']
         )
 
         user_info = client.user()
@@ -145,7 +144,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def is_private(self):
-        connection = GitHubClient.from_settings(self.user_settings)
+        connection = GitHubClient(external_account=self.external_account)
         return connection.repo(user=self.user, repo=self.repo).private
 
     # TODO: Delete me and replace with serialize_settings / Knockout
@@ -160,7 +159,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             valid_credentials = False
             owner = self.user_settings.owner
             if user_settings and user_settings.owner == owner:
-                connection = GitHubClient.from_settings(user_settings)
+                connection = GitHubClient(external_account=self.external_account)
                 # TODO: Fetch repo list client-side
                 # Since /user/repos excludes organization repos to which the
                 # current user has push access, we have to make extra requests to
@@ -261,7 +260,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.user_settings is None:
             return messages
 
-        connect = GitHubClient.from_settings(self.user_settings)
+        connect = GitHubClient(external_account=self.external_account)
 
         try:
             repo = connect.repo(self.user, self.repo)
@@ -325,7 +324,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if not github_settings.SET_PRIVACY:
             return
 
-        connect = GitHubClient.from_settings(self.user_settings)
+        connect = GitHubClient(external_account=self.external_account)
 
         data = connect.set_privacy(
             self.user, self.repo, permissions == 'private'
@@ -379,7 +378,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def add_hook(self, save=True):
 
         if self.user_settings:
-            connect = GitHubClient.from_settings(self.user_settings)
+            connect = GitHubClient(external_account=self.external_account)
             secret = utils.make_hook_secret()
             hook = connect.add_hook(
                 self.user, self.repo,
@@ -407,7 +406,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         :return bool: Hook was deleted
         """
         if self.user_settings and self.hook_id:
-            connection = GitHubClient.from_settings(self.user_settings)
+            connection = GitHubClient(external_account=self.external_account)
             try:
                 response = connection.delete_hook(self.user, self.repo, self.hook_id)
             except (GitHubError, NotFoundError):
