@@ -75,9 +75,3 @@ def bower_install():
     bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
     run('{} prune'.format(bower_bin), echo=True)
     run('{} install'.format(bower_bin), echo=True)
-
-
-@task(aliases=['req'])
-def requirements():
-    req_file = os.path.join(HERE, '..', 'requirements', 'admin.txt')
-    run(pip_install(req_file), echo=True)

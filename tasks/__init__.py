@@ -522,7 +522,7 @@ def karma(single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(addons=False, release=False, dev=False, metrics=False, admin=False):
+def wheelhouse(addons=False, release=False, dev=False, metrics=False):
     """Install python dependencies.
 
     Examples:
@@ -546,8 +546,6 @@ def wheelhouse(addons=False, release=False, dev=False, metrics=False, admin=Fals
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
     elif metrics:
         req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
-    elif admin:
-        req_file = os.path.join(HERE, 'requirements', 'admin.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
