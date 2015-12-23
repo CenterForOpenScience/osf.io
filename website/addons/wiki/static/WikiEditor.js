@@ -48,6 +48,7 @@ function ViewModel(url, viewText) {
     self.activeUsers = ko.observableArray([]);
     self.status = ko.observable('connecting');
     self.throttledStatus = ko.observable(self.status());
+    self.autocom = ko.observable(false);
 
     self.displayCollaborators = ko.computed(function() {
        return self.activeUsers().length > 1;
@@ -165,6 +166,12 @@ function ViewModel(url, viewText) {
             return 'There are unsaved changes to your wiki. If you exit ' +
                 'the page now, those changes may be lost.';
         }
+    });
+
+    $(document).ready(function() {
+        $('#autocom').on('change', function() {
+            self.autocom($(this).is(':checked'));
+        });
     });
 
 }

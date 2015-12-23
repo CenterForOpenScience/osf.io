@@ -1,6 +1,7 @@
 import functools
 import httplib as http
 import datetime
+import itertools
 
 from dateutil.parser import parse as parse_date
 from flask import request, redirect
@@ -87,7 +88,7 @@ def validate_registration_choice(registration_choice):
         )
 
 def check_draft_state(draft):
-    if draft.registered_node:
+    if draft.registered_node and not draft.registered_node.is_deleted:
         raise HTTPError(http.FORBIDDEN, data={
             'message_short': 'This draft has already been registered',
             'message_long': 'This draft has already been registered and cannot be modified.'
@@ -211,7 +212,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
     :rtype: dict
     """
     count = request.args.get('count', 100)
-    drafts = node.draft_registrations_active[:count]
+    drafts = itertools.islice(node.draft_registrations_active, 0, count)
     return {
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
     }, http.OK
