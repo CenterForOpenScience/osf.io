@@ -57,8 +57,41 @@ var xhrconfig = function (xhr) {
     xhr.withCredentials = true;
     xhr.setRequestHeader('Content-Type', 'application/vnd.api+json');
     xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
-
 };
+
+function _makeTree (flatData) {
+    var root = {id:0, children: [], data : {} };
+    var node_list = { 0 : root};
+    var parentID;
+    for (var i = 0; i < flatData.length; i++) {
+        var n = flatData[i];
+
+
+        if (!node_list[n.id]) { // If this node is not in the object list, add it
+            node_list[n.id] = {id: n.id, data: n, children: []};
+        } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
+            node_list[n.id].id = n.id;
+            node_list[n.id].data = n;
+        }
+
+        if (n.relationships.parent){
+            parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
+        } else {
+            parentID = null;
+        }
+        if(parentID && !n.attributes.registration ) {
+            if(!node_list[parentID]){
+                node_list[parentID] = { children : [] };
+            }
+            node_list[parentID].children.push(node_list[n.id]);
+
+        } else {
+            node_list[0].children.push(node_list[n.id]);
+        }
+    }
+    console.log(root, node_list);
+    return root.children;
+}
 
 /**
  * Initialize File Browser. Prepeares an option object within FileBrowser
@@ -205,12 +238,14 @@ var FileBrowser = {
                 var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
-                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'You have notcreated any projects yet.'));
+                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
+                            'You have notcreated any projects yet.'));
                     } else if (lastcrumb.data.systemCollection === 'registrations'){
-                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'You have not made any registrations yet.'));
-
+                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
+                            'You have not made any registrations yet.'));
                     } else {
-                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
+                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
+                            'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
                     }
                 } else {
                     self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box.text-center', [
@@ -236,6 +271,7 @@ var FileBrowser = {
                 self.loadingPages = false;
             }
             if(self.loadingNodes) {
+                self.data().data = _makeTree(self.data().data);
                 self.allProjects(self.data());
                 self.generateFiltersList();
                 self.loadingNodes = false;
@@ -261,7 +297,7 @@ var FileBrowser = {
             self.users = {};
             self.tags = {};
             self.data().data.map(function(item){
-                var contributors = item.embeds.contributors.data;
+                var contributors = item.data.embeds.contributors.data;
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
                     if(self.users[u.id] === undefined) {
@@ -274,7 +310,7 @@ var FileBrowser = {
                     }
                 }
 
-                var tags = item.attributes.tags;
+                var tags = item.data.attributes.tags;
                 for(var j = 0; j < tags.length; j++) {
                     var t = tags[j];
                     if(self.tags[t] === undefined) {
@@ -417,7 +453,7 @@ var FileBrowser = {
                             ctrl.showSidebar(!ctrl.showSidebar());
                         }
                     }, m('.fa.fa-bars')) : '',
-                    m('span.m-r-md.hidden-xs', ctrl.data().links.meta.total + ' Projects'),
+                    m('span.m-r-md.hidden-xs', ctrl.data().data.length + ' Projects'),
                     m('#poFilter.m-r-xs'),
                     !mobile ? m('button.btn', {
                         'class' : infoButtonClass,
@@ -829,9 +865,9 @@ var Information = {
     view : function (ctrl, args) {
         var template = '';
         if (args.selected().length === 1) {
-            var item = args.selected()[0];
+            var item = args.selected()[0].data.data;
             template = m('', [
-                m('h3', m('a', { href : item.data.links.html}, item.data.attributes.title)),
+                m('h3', m('a', { href : item.links.html}, item.attributes.title)),
 
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
@@ -841,25 +877,25 @@ var Information = {
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.fb-info-meta.text-muted', [
-                                m('', 'Visibility : ' + (item.data.attributes.public ? 'Public' : 'Private')),
-                                m('', 'Category: ' + item.data.attributes.category),
-                                m('', 'Last Modified on: ' + item.data.date.local)
+                                m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
+                                m('', 'Category: ' + item.attributes.category),
+                                m('', 'Last Modified on: ' + item.date.local)
                             ]),
                             m('p', [
-                                m('span', item.data.attributes.description)
+                                m('span', item.attributes.description)
                             ]),
-                            item.data.attributes.tags.length > 0 ?
+                            item.attributes.tags.length > 0 ?
                             m('p.m-t-md', [
                                 m('h5', 'Tags'),
-                                item.data.attributes.tags.map(function(tag){
+                                item.attributes.tags.map(function(tag){
                                     return m('span.tag', tag);
                                 })
                             ]) : '',
                             m('p.m-t-md', [
                                 m('h5', 'Jump to Page'),
-                                m('a.p-xs', { href : item.data.links.html + 'wiki/home'}, 'Wiki'),
-                                m('a.p-xs', { href : item.data.links.html + 'files/'}, 'Files'),
-                                m('a.p-xs', { href : item.data.links.html + 'settings/'}, 'Settings'),
+                                m('a.p-xs', { href : item.links.html + 'wiki/home'}, 'Wiki'),
+                                m('a.p-xs', { href : item.links.html + 'files/'}, 'Files'),
+                                m('a.p-xs', { href : item.links.html + 'settings/'}, 'Settings'),
                             ])
                         ]),
                         m('[role="tabpanel"].tab-pane#tab-activity',[
@@ -872,10 +908,10 @@ var Information = {
         if (args.selected().length > 1) {
             template = m('', [ '', args.selected().map(function(item){
                     return m('.fb-info-multi', [
-                        m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
+                        m('h4', m('a', { href : item.links.html}, item.attributes.title)),
                         m('p.fb-info-meta.text-muted', [
-                            m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
-                            m('span', ', Last Modified on ' + item.data.date.local)
+                            m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.attributes.category),
+                            m('span', ', Last Modified on ' + item.date.local)
                         ]),
                     ]);
                 })]);

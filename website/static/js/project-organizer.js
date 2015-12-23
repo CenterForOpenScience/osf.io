@@ -92,19 +92,24 @@ projectOrganizer.myProjects = new Bloodhound({
 function _makeTree (flatData) {
     var root = {id:0, children: [], data : {} };
     var node_list = { 0 : root};
+    var parentID;
     for (var i = 0; i < flatData.length; i++) {
         var n = flatData[i];
-        var parentLink = n.relationships.parent.links.related.href; // Find where parent id string can be extracted
-        var parentID = parentLink.split('/')[5];
 
-        if(!node_list[n.id]){ // If this node is not in the object list, add it
-            node_list[n.id] = { id: n.id, data : n, children : [] };
+
+        if (!node_list[n.id]) { // If this node is not in the object list, add it
+            node_list[n.id] = {id: n.id, data: n, children: []};
         } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
             node_list[n.id].id = n.id;
             node_list[n.id].data = n;
         }
 
-        if(parentID && parentID !== n.id && !n.attributes.registration ) {
+        if (n.relationships.parent){
+            parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
+        } else {
+            parentID = null;
+        }
+        if(parentID && !n.attributes.registration ) {
             if(!node_list[parentID]){
                 node_list[parentID] = { children : [] };
             }
@@ -130,7 +135,7 @@ function _poTitleColumn(item) {
     var preventSelect = function(e){
         e.stopImmediatePropagation();
     };
-    var node = item.data; // Where actual data of the node is
+    var node = item.data.data; // Where actual data of the node is
     var css = ''; // Keep for future expandability -- Remove: item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
@@ -148,9 +153,8 @@ function _poTitleColumn(item) {
  * @returns {Object} A Mithril virtual DOM template object
  * @private
  */
-// TODO : May need refactor based on the api data
 function _poContributors(item) {
-    var contributorList = item.data.embeds.contributors.data;
+    var contributorList = item.data.data.embeds.contributors.data;
     if (contributorList.length === 0) {
         return '';
     }
@@ -180,7 +184,7 @@ function _poContributors(item) {
  */
 function _poModified(item) {
     var dateString = '';
-    var node = item.data;
+    var node = item.data.data;
     dateString = moment.utc(node.attributes.date_modified).fromNow();
     return m('span', dateString);
 }
@@ -284,7 +288,7 @@ function _poColumnTitles() {
 function _poResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus'),
         togglePlus = m('i.fa.fa-plus'),
-        childrenCount = item.data.relationships.children.links.related.meta.count;
+        childrenCount = item.data.data.relationships.children.links.related.meta.count;
     if (item.kind === 'folder' && childrenCount > 0) {
         if (item.open) {
             return toggleMinus;
@@ -302,7 +306,7 @@ function _poResolveToggle(item) {
  * @private
  */
 function _poResolveLazyLoad(item) {
-    var node = item.data;
+    var node = item.data.data;
     return $osf.apiV2Url('nodes/', {
         query : {
             'filter[root]' : node.id,
@@ -377,7 +381,7 @@ function filterRowsNotInParent(rows) {
 function _poIconView(item) {
     var componentIcons = iconmap.componentIcons;
     var projectIcons = iconmap.projectIcons;
-    var node = item.data;
+    var node = item.data.data;
     function returnView(type, category) {
         var iconType = projectIcons[type];
         if (type === 'component' || type === 'registeredComponent') {
@@ -460,7 +464,7 @@ var tbOptions = {
     },
     ondblclickrow : function(item, event){
         var tb = this;
-        var node = item.data;
+        var node = item.data.data;
         var linkObject = new LinkObject('node', node, node.attributes.title);
         // Get ancestors
         linkObject.ancestors = [];
@@ -478,7 +482,7 @@ var tbOptions = {
     filterTemplate : function() {
         var tb = this;
         return [
-            m('input.form-control[placeholder="' + tb.options.filterPlaceholder + '"][type="text"]', {
+            m('input.form-control[placeholder="Filter projects in this view"][type="text"]', {
                 style: 'display:inline;',
                 onkeyup: tb.filter,
                 onchange: m.withAttr('value', tb.filterText),
@@ -492,15 +496,14 @@ var tbOptions = {
     },
     lazyLoadPreprocess : function (value) {
         // For when we load root filtered nodes this is removing the parent from the returned list. requires the root to be in relationship object
-        var treeData = _makeTree(value.data);
         value.data.map(function(item, index){
             item.kind = 'folder';
             item.uid = item.id;
             item.name = item.attributes.title;
             item.date = new $osf.FormattableDate(item.attributes.date_modified);
         });
-
-        return value;
+        var treeData = _makeTree(value.data);
+        return treeData;
     }
 };
 
