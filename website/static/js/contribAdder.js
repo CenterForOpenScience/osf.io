@@ -158,7 +158,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     getContributors: function() {
         var self = this;
         self.notification(false);
-        var url = window.contextVars.apiV2Prefix + 'nodes/' + window.contextVars.node.id + '/contributors/';
+        var url = $osf.apiV2Url('nodes/' + window.contextVars.node.id + '/contributors/');
 
         return $.ajax({
             url: url,
