@@ -21,8 +21,11 @@ var AddonHelper = (function() {
     /**
      * Submit add-on settings.
      */
-    function onSubmitSettings() {
+    function onSubmitSettings(options) {
         var $this = $(this);
+        var successUpdateMsg = options.successUpdateMsg || 'Setting updated';
+        var failUpdateMsg = options.failUpdateMsg || 'Setting not updated';
+
         var addon = $this.attr('data-addon');
         var owner = $this.find('span[data-owner]').attr('data-owner');
         var msgElm = $this.find('.addon-settings-message');
@@ -33,7 +36,7 @@ var AddonHelper = (function() {
             url,
             formToObj($this)
         ).done(function() {
-            msgElm.text('Settings updated')
+            msgElm.text(successUpdateMsg)
                 .removeClass('text-danger').addClass('text-success')
                 .fadeOut(100).fadeIn();
         }).fail(function(response) {
@@ -42,7 +45,7 @@ var AddonHelper = (function() {
             if (response && response.message) {
                 message = response.message;
             } else {
-                message = 'Settings not updated.';
+                message = failUpdateMsg;
             }
             msgElm.text(message)
                 .removeClass('text-success').addClass('text-danger')

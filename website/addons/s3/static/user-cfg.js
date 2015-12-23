@@ -57,5 +57,13 @@ function deleteToken() {
 }
 
 $(document).ready(function() {
-    $(window.contextVars.addonSettingsSelector).on('submit', AddonHelper.onSubmitSettings);
+    $(window.contextVars.addonSettingsSelector).on('submit',
+        function(e){
+            e.preventDefault();
+            AddonHelper.onSubmitSettings.call(this, {
+                successUpdateMsg: 'Amazon S3 successfully authorized. To link this add on to an OSF project, ' +
+                                  'go to the settings page of the project, enable Amazon S3, and choose content to connect.',
+                failUpdateMsg: 'Amazon S3 add-on doesn\'t  authorized successfully. Please make sure your credential are correct and try again.',
+            });
+        });
 });
