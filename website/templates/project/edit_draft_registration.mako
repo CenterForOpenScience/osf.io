@@ -62,7 +62,8 @@
                   <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
                   </button>
                   <!-- ko if: onLastPage -->
-                  <a data-bind="css: {disabled: !canSubmit()}"
+                  <a data-bind="css: {disabled: !canSubmit()},
+                                click: $root.check"
                      type="button" class="pull-right btn btn-success">Preview for submission
                   </a>
                   <!-- /ko -->
