@@ -830,5 +830,6 @@ module.exports = window.$.osf = {
     isSafari:isSafari,
     indexOf: indexOf,
     currentUser: currentUser,
-    any: any
+    any: any,
+    dialog: dialog
 };

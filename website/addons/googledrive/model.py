@@ -4,7 +4,6 @@
 import os
 import urllib
 
-from datetime import datetime
 from modularodm import fields
 
 from framework.auth import Auth
@@ -29,6 +28,8 @@ class GoogleDriveProvider(ExternalProvider):
 
     auth_url_base = '{}{}'.format(drive_settings.OAUTH_BASE_URL, 'auth?access_type=offline&approval_prompt=force')
     callback_url = '{}{}'.format(drive_settings.API_BASE_URL, 'oauth2/v3/token')
+    auto_refresh_url = callback_url
+    refresh_time = drive_settings.REFRESH_TIME
 
     default_scopes = drive_settings.OAUTH_SCOPE
     _auth_client = GoogleAuthClient()
@@ -43,40 +44,9 @@ class GoogleDriveProvider(ExternalProvider):
             'profile_url': info.get('profile', None)
         }
 
-    def _refresh_token(self, access_token, refresh_token):
-        """ Handles the actual request to refresh tokens
-
-        :param str access_token: Access token (oauth key) associated with this account
-        :param str refresh_token: Refresh token used to request a new access token
-        :return dict token: New set of tokens
-        """
-        client = self._auth_client
-        if refresh_token:
-            token = client.refresh(access_token, refresh_token)
-            return token
-        else:
-            return False
-
     def fetch_access_token(self, force_refresh=False):
-        self.refresh_access_token(force=force_refresh)
+        self.refresh_oauth_key(force=force_refresh)
         return self.account.oauth_key
-
-    def refresh_access_token(self, force=False):
-        """ If the token has expired or will soon, handles refreshing and the storage of new tokens
-
-        :param bool force: Indicates whether or not to force the refreshing process, for the purpose of ensuring that authorization has not been unexpectedly removed.
-        """
-        if self._needs_refresh() or force:
-            token = self._refresh_token(self.account.oauth_key, self.account.refresh_token)
-            self.account.oauth_key = token['access_token']
-            self.account.refresh_token = token['refresh_token']
-            self.account.expires_at = datetime.utcfromtimestamp(token['expires_at'])
-            self.account.save()
-
-    def _needs_refresh(self):
-        if self.account.expires_at is None:
-            return False
-        return (self.account.expires_at - datetime.utcnow()).total_seconds() < drive_settings.REFRESH_TIME
 
 
 class GoogleDriveUserSettings(StorageAddonBase, AddonOAuthUserSettingsBase):

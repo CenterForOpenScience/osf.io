@@ -1,5 +1,7 @@
 require('css/registrations.css');
 
+require('bootstrap');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var Raven = require('raven-js');
@@ -274,16 +276,22 @@ var Question = function(questionSchema, data) {
  *
  * @param {function}: save: save function for the current registrationDraft
  **/
-Question.prototype.addComment = function(save) {
+Question.prototype.addComment = function(save, page, event) {
     var self = this;
 
     var comment = new Comment({
         value: self.nextComment()
     });
     comment.seenBy.push($osf.currentUser().id);
-    self.comments.push(comment);
-    self.nextComment('');
-    save();
+
+    var $comments = $(event.target).closest('.registration-editor-comments');
+    $osf.block('Saving...', $comments);
+    return save()
+        .always($osf.unblock.bind(null, $comments))
+        .done(function () {
+            self.comments.push(comment);
+            self.nextComment('');
+        });
 };
 /**
  * Shows/hides the Question example
@@ -647,8 +655,28 @@ Draft.prototype.submitForReview = function() {
             });
     }
     else {
-        self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
+        return self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
     }
+};
+Draft.prototype.approve = function() {
+    return $osf.dialog(
+        'Before you continue...',
+        'Are you sure you want to approve this submission? This action is irreversible.',
+        'Approve',
+        {
+            actionButtonClass: 'btn-warning'
+        }
+    );
+};
+Draft.prototype.reject = function() {
+    return $osf.dialog(
+        'Before you continue...',
+        'Are you sure you want to reject this submission? This action is irreversible.',
+        'Reject',
+        {
+            actionButtonClass: 'btn-danger'
+        }
+    );
 };
 
 /**
@@ -674,7 +702,6 @@ var RegistrationEditor = function(urls, editorId, preview) {
 
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
-
 
     self.pages = ko.computed(function () {
         // empty array if self.draft is not set.
@@ -709,6 +736,9 @@ var RegistrationEditor = function(urls, editorId, preview) {
             question.value.subscribe(function() {
                 self.dirtyCount(self.dirtyCount() + 1);
             });
+        });
+        page.comments.subscribe(function() {
+            self.dirtyCount(self.dirtyCount() + 1);
         });
         page.viewComments();
     });
@@ -760,7 +790,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
                 if (question.type === 'object') {
                     $elem.append(
                         $.map(question.properties, function(subQuestion) {
-                            subQuestion = self.context(subQuestion);
+                            subQuestion = self.context(subQuestion, self, true);
                             var value;
                             if (self.extensions[subQuestion.type] ) {
                                 value = subQuestion.preview();
@@ -858,14 +888,16 @@ RegistrationEditor.prototype.flatQuestions = function() {
  * @param {Object} data: data in current editor template scope
  * @returns {Object|ViewModel}
  **/
-RegistrationEditor.prototype.context = function(data, $root) {
+RegistrationEditor.prototype.context = function(data, $root, preview) {
+    preview = preview || false;
+
     $.extend(data, {
         save: this.save.bind(this),
         readonly: this.readonly
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data, $root);
+        return new this.extensions[data.type](data, $root, preview);
     }
     return data;
 };
@@ -1092,6 +1124,35 @@ RegistrationEditor.prototype.save = function() {
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
     return request;
+};
+
+RegistrationEditor.prototype.approveDraft = function() {
+    var self = this;
+
+    var draft = self.draft();
+    draft.approve().done(function() {
+        $osf.block();
+        $.post(self.urls.approve.replace('{draft_pk}', draft.pk))
+            .done(function() {
+                window.location.assign(self.urls.list);
+            }).fail(function() {
+                bootbox.alert('There was a problem approving this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
+            }).always($osf.unblock);
+    });
+};
+RegistrationEditor.prototype.rejectDraft = function() {
+    var self = this;
+
+    var draft = self.draft();
+    draft.reject().done(function() {
+        $osf.block();
+        $.post(self.urls.reject.replace('{draft_pk}', draft.pk))
+            .done(function() {
+                window.location.assign(self.urls.list);
+            }).fail(function() {
+                bootbox.alert('There was a problem rejecting this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
+            }).always($osf.unblock);
+    });
 };
 
 /**
