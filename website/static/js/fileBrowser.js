@@ -88,7 +88,7 @@ var FileBrowser = {
         // Default system collections
         self.collections = [
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
+            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
         ];
 
         // Helper function to add properties for Treebeard to work properly
@@ -204,7 +204,14 @@ var FileBrowser = {
             } else {
                 var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
                 if(lastcrumb.type === 'collection'){
-                    self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
+                    if(lastcrumb.data.systemCollection === 'nodes'){
+                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'You have notcreated any projects yet.'));
+                    } else if (lastcrumb.data.systemCollection === 'registrations'){
+                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'You have not made any registrations yet.'));
+
+                    } else {
+                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
+                    }
                 } else {
                     self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box.text-center', [
                         'This project has no subcomponents.',
