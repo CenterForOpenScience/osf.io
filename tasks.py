@@ -677,7 +677,7 @@ def setup():
     from website import settings
     # Build nodeCategories.json before building assets
     build_js_config_files(settings)
-    assets(dev=True, watch=False)
+    assets(dev=True, watch=False, build_js_config=True)
 
 
 @task
@@ -878,14 +878,15 @@ def build_js_config_files():
 
 
 @task()
-def assets(dev=False, watch=False):
+def assets(dev=False, watch=False, skipJsConfig=False):
     """Install and build static assets."""
     npm = 'npm install'
     if not dev:
         npm += ' --production'
     run(npm, echo=True)
     bower_install()
-    build_js_config_files()
+    if not skipJsConfig:
+        build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
     webpack(clean=False, watch=watch, dev=dev)
