@@ -5,8 +5,7 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 require('jquery-ui');
 require('knockout-sortable');
-var ContribAdder = require('js/contribAdder');
-var ContribRemover = require('js/contribRemover');
+
 var rt = require('js/responsiveTable');
 var $osf = require('./osfHelpers');
 require('js/filters');
@@ -33,7 +32,7 @@ ko.bindingHandlers.filters = {
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin, index, options) {
+var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin, index, options, contribShouter, changeShouter) {
 
     var self = this;
     self.options = options;
@@ -92,6 +91,11 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.deleteStaged = ko.observable(false);
 
     self.pageOwner = pageOwner;
+    self.contributorToRemove = ko.observable();
+
+    self.contributorToRemove.subscribe(function(newValue) {
+        contribShouter.notifySubscribers(newValue, 'contribMessageToPublish');
+    });
 
     self.serialize = function() {
         return JSON.parse(ko.toJSON(self));
@@ -102,9 +106,11 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     });
 
     self.remove = function() {
-        self.options.onVisibleChanged(null, self.visible());
-        self.options.onPermissionChanged(null, self.permission());
-        self.deleteStaged(true);
+        self.contributorToRemove({
+            fullname: self.fullname,
+            id:self.id});
+        //self.deleteStaged(true);
+        //debugger;
     };
 
     self.unremove = function() {
@@ -155,7 +161,7 @@ var MessageModel = function(text, level) {
 
 };
 
-var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, table, adminTable) {
+var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, table, adminTable, contribShouter, changeShouter) {
 
     var self = this;
 
@@ -171,6 +177,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     };
 
     self.permissionList = Object.keys(self.permissionMap);
+    self.contributorToRemove = ko.observable('');
 
     self.contributors = ko.observableArray();
 
@@ -243,7 +250,10 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.canSubmit = ko.computed(function() {
         return self.changed() && self.adminCount() && self.visibleCount();
     });
-
+    self.changed.subscribe(function(newValue) {
+        pageChangedShouter.notifySubscribers(newValue, "changedMessageToPublish");
+        self.messages([]);
+    });
     self.messages = ko.computed(function() {
         var messages = [];
         if(!self.adminCount()) {
@@ -471,7 +481,7 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
     self.$element = $(selector);
     self.contributors = contributors;
     self.adminContributors = adminContributors;
-    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, table, adminTable);
+    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, table, adminTable, contribShouter, changeShouter);
     $('body').on('nodeLoad', function(event, data) {
         // If user is a contributor, initialize the contributor modal
         // controller
@@ -492,8 +502,6 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
                 contribShouter,
                 changeShouter
             );
-
-
         }
     });
     self.init();

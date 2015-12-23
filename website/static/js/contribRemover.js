@@ -95,7 +95,6 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
          *   So we make new arrays with the contributor removed, and see if
          *   the results are > 0.
          */
-
         self.canRemoveNodes = ko.computed(function() {
             var canRemoveNodes = {};
             var nodesOriginalLocal = ko.toJS(self.nodesOriginal());

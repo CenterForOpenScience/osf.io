@@ -2,6 +2,7 @@
 var $ = require('jquery');
 
 var ContribManager = require('js/contribManager');
+
 var PrivateLinkManager = require('js/privateLinkManager');
 var PrivateLinkTable = require('js/privateLinkTable');
 var ko = require('knockout');

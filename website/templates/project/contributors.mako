@@ -347,7 +347,8 @@
                         contributor does not immediately un-remove her. -->
                         <a href="#removeContributor" class="btn btn-danger btn-sm m-l-md"
                            data-bind="click: remove,  tooltip: {title: 'Remove contributor'}"
-                           data-toggle="modal">Remove</a>                    <!-- /ko -->
+                           data-toggle="modal">Remove</a>
+                    <!-- /ko -->
                     <!-- ko if: deleteStaged -->
                         Save to Remove
                     <!-- /ko -->
@@ -357,7 +358,8 @@
                     <!-- ko if: canRemove -->
                     <a href="#removeContributor" class="btn btn-success btn-sm m-l-md"
                        data-bind="click: function() { $data.removeSelf($parent)},tooltip: {title: 'Remove contributor'}"
-                       data-toggle="modal">Remove</a>                    <!-- /ko -->
+                       data-toggle="modal">Remove</a>
+                <!-- /ko -->
                 <!-- /ko -->
             </div>
         </td>
