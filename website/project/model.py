@@ -4173,7 +4173,7 @@ class DraftRegistrationApproval(Sanction):
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
-        self._send_rejection_email(user, draft)
+        self._send_rejection_email(draft.initiator, draft)
 
 
 class DraftRegistration(StoredObject):
