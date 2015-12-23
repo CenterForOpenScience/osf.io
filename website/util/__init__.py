@@ -103,6 +103,13 @@ def api_v2_url(path_str,
         'http://localhost:8000/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob'
 
     This is NOT a full lookup function. It does not verify that a route actually exists to match the path_str given.
+
+    :param str path_str: The part of the API route that may vary, eg `users/`
+    :param dict params: Each key:value pair is appended as a URL parameter, ?key=value&key2=value2.
+    :param str base_route: The protocol, domain, and port of the url, eg http://localhost:8080
+    :param str base_prefix: The Django route prefix that is the same for all API calls, eg v2/
+    :param kwargs: Each additional kwarg entry will be appended as a URL parameter.
+    :return str: The concatenated URL
     """
     params = params or {}  # Optional params dict for special-character param names, eg filter[fullname]
 
