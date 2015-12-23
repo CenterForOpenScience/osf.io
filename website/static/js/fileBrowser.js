@@ -59,19 +59,33 @@ var xhrconfig = function (xhr) {
     xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
 };
 
+// Refactor the information needed for filtering rows
+function _formatDataforPO(item) {
+    item.uid = item.id;
+    item.name = item.attributes.title;
+    item.tags = item.attributes.tags.toString();
+    item.contributors = '';
+    item.embeds.contributors.data.forEach(function(c){
+        item.contributors += c.embeds.users.data.attributes.full_name;
+    });
+    item.date = new $osf.FormattableDate(item.attributes.date_modified);
+
+    return item;
+}
+
+
 function _makeTree (flatData) {
     var root = {id:0, children: [], data : {} };
     var node_list = { 0 : root};
     var parentID;
     for (var i = 0; i < flatData.length; i++) {
-        var n = flatData[i];
-
-
+        var n = _formatDataforPO(flatData[i]);
         if (!node_list[n.id]) { // If this node is not in the object list, add it
-            node_list[n.id] = {id: n.id, data: n, children: []};
+            node_list[n.id] = n;
+            node_list[n.id].children = [];
         } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
-            node_list[n.id].id = n.id;
-            node_list[n.id].data = n;
+            n.children = node_list[n.id].children;
+            node_list[n.id] = n;
         }
 
         if (n.relationships.parent){
@@ -297,7 +311,7 @@ var FileBrowser = {
             self.users = {};
             self.tags = {};
             self.data().data.map(function(item){
-                var contributors = item.data.embeds.contributors.data;
+                var contributors = item.embeds.contributors.data;
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
                     if(self.users[u.id] === undefined) {
@@ -310,7 +324,7 @@ var FileBrowser = {
                     }
                 }
 
-                var tags = item.data.attributes.tags;
+                var tags = item.attributes.tags;
                 for(var j = 0; j < tags.length; j++) {
                     var t = tags[j];
                     if(self.tags[t] === undefined) {
@@ -865,7 +879,7 @@ var Information = {
     view : function (ctrl, args) {
         var template = '';
         if (args.selected().length === 1) {
-            var item = args.selected()[0].data.data;
+            var item = args.selected()[0].data;
             template = m('', [
                 m('h3', m('a', { href : item.links.html}, item.attributes.title)),
 
@@ -907,14 +921,14 @@ var Information = {
         }
         if (args.selected().length > 1) {
             template = m('', [ '', args.selected().map(function(item){
-                    return m('.fb-info-multi', [
-                        m('h4', m('a', { href : item.links.html}, item.attributes.title)),
-                        m('p.fb-info-meta.text-muted', [
-                            m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.attributes.category),
-                            m('span', ', Last Modified on ' + item.date.local)
-                        ]),
-                    ]);
-                })]);
+                return m('.fb-info-multi', [
+                    m('h4', m('a', { href : item.links.html}, item.attributes.title)),
+                    m('p.fb-info-meta.text-muted', [
+                        m('span', item.attributes.public ? 'Public' : 'Private' + ' ' + item.attributes.category),
+                        m('span', ', Last Modified on ' + item.date.local)
+                    ]),
+                ]);
+            })]);
         }
         return m('.fb-information', template);
     }
