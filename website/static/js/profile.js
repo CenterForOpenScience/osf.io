@@ -205,6 +205,8 @@ TrackedMixin.prototype.restoreOriginal = function () {
 var BaseViewModel = function(urls, modes, preventUnsaved) {
     var self = this;
 
+    self.saving = ko.observable(false);
+    self.savingText = ko.observable('Save');
     self.urls = urls;
     self.modes = modes || ['view'];
     self.viewable = $.inArray('view', modes) >= 0;
@@ -217,6 +219,15 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
 
     // Must be set after isValid is defined in inherited view models
     self.hasValidProperty = ko.observable(false);
+
+    self.savingText = ko.computed(function() {
+        if(self.saving()){
+            return 'Saving';
+        } else {
+            return 'Save';
+        }
+    });
+
 
     // Warn on URL change if dirty
     if (preventUnsaved !== false) {
@@ -270,6 +281,8 @@ BaseViewModel.prototype.handleSuccess = function() {
             5000
         );
     }
+    this.saving(false);
+
 };
 
 BaseViewModel.prototype.handleError = function(response) {
@@ -280,6 +293,8 @@ BaseViewModel.prototype.handleError = function(response) {
         'text-danger',
         5000
     );
+    this.saving(false);
+
 };
 
 BaseViewModel.prototype.setOriginal = function() {};
@@ -335,8 +350,11 @@ BaseViewModel.prototype.cancel = function(data, event) {
 
 };
 
+
 BaseViewModel.prototype.submit = function() {
-    if (this.hasValidProperty() && this.isValid()) {
+
+    this.saving(true);
+   if (this.hasValidProperty() && this.isValid()) {
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
@@ -344,13 +362,14 @@ BaseViewModel.prototype.submit = function() {
             this.handleSuccess.bind(this)
         ).done(
             this.setOriginal.bind(this)
+        ).done(
+
         ).fail(
             this.handleError.bind(this)
         );
     } else {
         this.showMessages(true);
     }
-
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
@@ -745,6 +764,7 @@ var ListViewModel = function(ContentModel, urls, modes) {
             self.contents()[i].setOriginal();
             self.originalItems.push(self.contents()[i].originalValues());
         }
+
     };
 };
 ListViewModel.prototype = Object.create(BaseViewModel.prototype);

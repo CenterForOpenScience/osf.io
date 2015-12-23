@@ -72,9 +72,10 @@
                 >Discard changes</button>
 
             <button
-                    type="submit"
-                    class="btn btn-success"
-                >Save</button>
+                type="submit"
+                class="btn btn-success"
+                data-bind="text: savingText(), enable : !saving()">
+            </button>
 
         </div>
 
