@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 import copy
 
 import requests
-from datadiff import diff
 from django.conf import settings
 from requests.auth import HTTPBasicAuth
 
@@ -119,7 +118,7 @@ class TestVarnish(object):
                 embed_values.pop()
 
         # Uncomment these lines to write out files containing responses for comparison
-
+        # from datadiff import diff
         # for item_type, item in python_data.items():
         #     for embed_type, data in item.items():
         #         with open('./python_data_{}_{}.json'.format(item_type, embed_type),
@@ -174,8 +173,7 @@ class TestVarnish(object):
                 item__embed_keys = item['embeds'].keys()
                 item__embed_keys.sort()
                 embed_keys.sort()
-                assert item__embed_keys == embed_keys, 'Embed key mismatch: {}'.format(
-                    diff(item__embed_keys, embed_keys))
+                assert item__embed_keys == embed_keys, 'Embed key mismatch'
             if 'relationships' in item.keys():
                 for rel_key in item['relationships'].keys():
                     assert unicode(rel_key) not in embed_keys, 'Relationship mismatch: {}'.format(rel_key)
