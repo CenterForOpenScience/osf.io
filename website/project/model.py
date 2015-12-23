@@ -57,7 +57,6 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.project.metadata import authorizers
 from website.project.licenses import (
     NodeLicense,
     NodeLicenseRecord,
@@ -2916,6 +2915,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.is_registration:
                 if self.is_pending_embargo:
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
+                elif self.is_pending_registration:
+                    raise NodeStateError("An unapproved registration cannot be made public.")
                 if self.embargo_end_date and not self.is_pending_embargo:
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
@@ -4132,19 +4133,13 @@ class DraftRegistrationApproval(Sanction):
             )
 
     def approve(self, user):
-        draft = DraftRegistration.find_one(
-            Q('approval', 'eq', self)
-        )
-        if user._id not in draft.get_authorizers():
+        if settings.PREREG_ADMIN_TAG not in user.system_tags:
             raise PermissionsError("This user does not have permission to approve this draft.")
         self.state = Sanction.APPROVED
         self._on_complete(user)
 
     def reject(self, user):
-        draft = DraftRegistration.find_one(
-            Q('approval', 'eq', self)
-        )
-        if user._id not in draft.get_authorizers():
+        if settings.PREREG_ADMIN_TAG not in user.system_tags:
             raise PermissionsError("This user does not have permission to approve this draft.")
         self.state = Sanction.REJECTED
         self._on_reject(user)
@@ -4290,9 +4285,6 @@ class DraftRegistration(StoredObject):
         )
         draft.save()
         return draft
-
-    def get_authorizers(self):
-        return authorizers.members_for(self.registration_schema.name)
 
     def update_metadata(self, metadata):
         changes = []
