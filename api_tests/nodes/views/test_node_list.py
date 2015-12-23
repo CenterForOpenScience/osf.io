@@ -1564,7 +1564,7 @@ class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
     def test_skip_uneditable_bulk_delete(self):
         res = self.app.delete_json_api(self.url, self.payload, auth=self.user_one.auth, bulk=True)
         assert_equal(res.status_code, 200)
-        skipped = res.json['meta']['errors']
+        skipped = res.json['errors']
         assert_items_equal([skipped[0]['id'], skipped[1]['id']],
                            [self.project_three._id, self.project_four._id])
 
