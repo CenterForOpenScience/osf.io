@@ -747,7 +747,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     wiki_private_uuids = fields.DictionaryField()
     file_guid_to_share_uuids = fields.DictionaryField()
 
-    creator = fields.ForeignField('user')
+    creator = fields.ForeignField('user', index=True)
     contributors = fields.ForeignField('user', list=True, backref='contributed')
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
