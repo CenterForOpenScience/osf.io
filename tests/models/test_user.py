@@ -120,6 +120,10 @@ class TestUser(base.OsfTestCase):
         with assert_raises(exceptions.InvalidTokenError):
             self.user._get_unconfirmed_email_for_token(token1)
 
+    def test_contributed_property(self):
+        projects_contributed_to = project.model.Node.find(Q('contributors', 'contains', self.user._id))
+        assert_equal(list(self.user.contributed), list(projects_contributed_to))
+
 
 class TestUserMerging(base.OsfTestCase):
     ADDONS_UNDER_TEST = {
