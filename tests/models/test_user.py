@@ -12,7 +12,6 @@ from tests import base
 from tests.base import fake
 from tests import factories
 from framework.tasks import handlers
-from website.project.model import Node
 
 
 class TestUser(base.OsfTestCase):
@@ -124,7 +123,7 @@ class TestUser(base.OsfTestCase):
     def test_created_property(self):
         # make sure there's at least one project
         factories.ProjectFactory(creator=self.user)
-        projects_created_by_user = Node.find(Q('creator', 'eq', self.user._id))
+        projects_created_by_user = project.model.Node.find(Q('creator', 'eq', self.user._id))
         assert_equal(list(self.user.created), list(projects_created_by_user))
 
 
