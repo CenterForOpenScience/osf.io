@@ -12,6 +12,7 @@ from tests import base
 from tests.base import fake
 from tests import factories
 from framework.tasks import handlers
+from website.project.model import Node
 
 
 class TestUser(base.OsfTestCase):
@@ -119,6 +120,12 @@ class TestUser(base.OsfTestCase):
         assert_equal(email, self.user._get_unconfirmed_email_for_token(token2))
         with assert_raises(exceptions.InvalidTokenError):
             self.user._get_unconfirmed_email_for_token(token1)
+
+    def test_created_property(self):
+        # make sure there's at least one project
+        factories.ProjectFactory(creator=self.user)
+        projects_created_by_user = Node.find(Q('creator', 'eq', self.user._id))
+        assert_equal(list(self.user.created), list(projects_created_by_user))
 
 
 class TestUserMerging(base.OsfTestCase):
