@@ -15,10 +15,12 @@ from tests.factories import (
     DashboardFactory,
     FolderFactory,
     ProjectFactory,
+    NodeFactory,
     RegistrationFactory,
     AuthUserFactory,
     RetractedRegistrationFactory
 )
+from modularodm import Q
 
 
 class TestNodeList(ApiTestCase):
@@ -1295,6 +1297,55 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         res = self.app.patch_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+
+    def test_bulk_update_consistency(self):
+        big_node = ProjectFactory(is_public=True, creator=self.user)
+        child_nodes = []
+        big_payload = {'data': []}
+
+        # Make 10 children for PATCHING in a bulk request
+        for i in range(0,9):
+            child_nodes.append(NodeFactory(parent=big_node, creator=self.user, is_public=False))
+            big_payload['data'].append({
+                'id': child_nodes[i]._id,
+                'type': 'nodes',
+                'attributes': {
+                    'public': True
+                }
+            })
+        # Do PATCH
+        patch_url = '/{}nodes/'.format(API_BASE)
+        res_patch = self.app.patch_json_api(patch_url, big_payload, auth=self.user.auth, bulk=True)
+
+        # Immediately find via ModularODM
+        big_node_found = Node.find_one(Q('_id', 'eq', big_node._id))
+        children = big_node_found.nodes
+
+        # GET via the v2 API
+        get_url = '/{}nodes/{}/children/'.format(API_BASE, big_node._id)
+        res_get = self.app.get(get_url, auth=self.user.auth)
+
+        # Ensure patched return is correct (Most likely to work, so is run first)
+        assert_equal(res_patch.status_code, 200)
+        patch_json_data = res_patch.json['data']
+        assert_equal(len(patch_json_data), len(child_nodes))
+        for item in patch_json_data:
+            assert_equal(item['attributes']['public'], True)
+
+        # Ensure V2 GET return is correct (Fairly likely to work, so is run second)
+        assert_equal(res_get.status_code, 200)
+        get_json_data = res_get.json['data']
+        assert_equal(len(get_json_data), len(child_nodes))
+        for item in get_json_data:
+            assert_equal(item['attributes']['public'], True)
+
+        # Ensure ModularODM find is correct (Least likely to work, so is run third)
+        assert_equal(len(children), len(child_nodes))
+        run_count = 0
+        for node in children:
+            # A node.reload() here would make this pass
+            assert_equal(node.is_public, True, "Failed on node {}".format(run_count))
+            run_count += 1
 
 
 class TestNodeBulkUpdateSkipUneditable(ApiTestCase):
