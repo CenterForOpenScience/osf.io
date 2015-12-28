@@ -20,7 +20,8 @@ var AddProject = {
         self.defaults = {
             buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Add new Project'),
             parentID : null,
-            modalID : 'addProjectModal'
+            modalID : 'addProjectModal',
+            stayCallback :null // Function to call when user decides to stay after project creation
         };
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
         self.options = $.extend(self.defaults, options);
@@ -42,6 +43,7 @@ var AddProject = {
         ];
         self.newProjectCategory = m.prop(self.categoryList[0].value);
         self.goToProjectLink = m.prop('');
+        self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
@@ -72,6 +74,7 @@ var AddProject = {
                 self.viewState('success');
                 console.log('success', result);
                 self.goToProjectLink(result.data.links.html);
+                self.saveResult(result);
             };
             var error = function _error (result) {
                 self.viewState('error');
@@ -163,7 +166,12 @@ var AddProject = {
                         ]
                     ),
                     m('.modal-footer', [
-                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : ctrl.reset },  'Keep Working Here'),
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {
+                            onclick : function() {
+                                ctrl.reset();
+                                ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
+                            }
+                        },  'Keep Working Here'),
                         m('a.btn.btn-success', { href : ctrl.goToProjectLink() },'Go to New Project')
                     ])
                 )
