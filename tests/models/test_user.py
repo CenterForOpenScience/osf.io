@@ -124,6 +124,12 @@ class TestUser(base.OsfTestCase):
         projects_contributed_to = project.model.Node.find(Q('contributors', 'contains', self.user._id))
         assert_equal(list(self.user.contributed), list(projects_contributed_to))
 
+    def test_created_property(self):
+        # make sure there's at least one project
+        factories.ProjectFactory(creator=self.user)
+        projects_created_by_user = project.model.Node.find(Q('creator', 'eq', self.user._id))
+        assert_equal(list(self.user.created), list(projects_created_by_user))
+
 
 class TestUserMerging(base.OsfTestCase):
     ADDONS_UNDER_TEST = {
