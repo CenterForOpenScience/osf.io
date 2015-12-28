@@ -57,12 +57,12 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.project.metadata import authorizers
 from website.project.licenses import (
     NodeLicense,
     NodeLicenseRecord,
 )
 from website.project import signals as project_signals
+from website.prereg import utils as prereg_utils
 
 logger = logging.getLogger(__name__)
 
@@ -3690,12 +3690,19 @@ class PreregCallbackMixin(object):
 
     def _notify_initiator(self):
         registration = self._get_registration()
-        if registration.registered_schema.name == 'Prereg Challenge':
+        prereg_schema = prereg_utils.get_prereg_schema()
+
+        draft = DraftRegistration.find_one(
+            Q('registered_node', 'eq', registration)
+        )
+
+        if prereg_schema in registration.registered_schema:
             mails.send_mail(
-                self.initiator.username,
-                template=mails.PREREG_CHALLENGE_ACCEPTED,
-                user=self.initiator,
-                registration_url=registration.url
+                draft.initiator.username,
+                mails.PREREG_CHALLENGE_ACCEPTED,
+                user=draft.initiator,
+                registration_url=registration.absolute_url,
+                mimetype='html'
             )
 
 class Embargo(PreregCallbackMixin, EmailApprovableSanction):
@@ -4112,7 +4119,9 @@ class DraftRegistrationApproval(Sanction):
 
     def _send_rejection_email(self, user, draft):
         schema = draft.registration_schema
-        if schema.name == 'Prereg Challenge':
+        prereg_schema = prereg_utils.get_prereg_schema()
+
+        if schema._id == prereg_schema._id:
             mails.send_mail(
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
@@ -4125,19 +4134,13 @@ class DraftRegistrationApproval(Sanction):
             )
 
     def approve(self, user):
-        draft = DraftRegistration.find_one(
-            Q('approval', 'eq', self)
-        )
-        if user._id not in draft.get_authorizers():
+        if settings.PREREG_ADMIN_TAG not in user.system_tags:
             raise PermissionsError("This user does not have permission to approve this draft.")
         self.state = Sanction.APPROVED
         self._on_complete(user)
 
     def reject(self, user):
-        draft = DraftRegistration.find_one(
-            Q('approval', 'eq', self)
-        )
-        if user._id not in draft.get_authorizers():
+        if settings.PREREG_ADMIN_TAG not in user.system_tags:
             raise PermissionsError("This user does not have permission to approve this draft.")
         self.state = Sanction.REJECTED
         self._on_reject(user)
@@ -4173,14 +4176,14 @@ class DraftRegistrationApproval(Sanction):
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
         )
-        self._send_rejection_email(user, draft)
+        self._send_rejection_email(draft.initiator, draft)
 
 
 class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
-    URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/draft/{draft_id}'
+    URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
@@ -4283,9 +4286,6 @@ class DraftRegistration(StoredObject):
         )
         draft.save()
         return draft
-
-    def get_authorizers(self):
-        return authorizers.members_for(self.registration_schema.name)
 
     def update_metadata(self, metadata):
         changes = []
