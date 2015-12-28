@@ -649,6 +649,11 @@ class User(GuidStoredObject, AddonModelMixin):
             'given': self.csl_given_name,
         }
 
+    @property
+    def created(self):
+        from website.project.model import Node
+        return Node.find(Q('creator', 'eq', self._id))
+
     # TODO: This should not be on the User object.
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""
@@ -1292,7 +1297,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 node.save()
 
         # - projects where the user was the creator
-        for node in user.node__created:
+        for node in user.created:
             node.creator = self
             node.save()
 

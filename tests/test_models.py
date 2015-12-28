@@ -998,6 +998,7 @@ class TestMergingUsers(OsfTestCase):
     def test_inherits_projects_created_by_dupe(self):
         project = ProjectFactory(creator=self.dupe)
         self._merge_dupe()
+        project.reload()
         assert_equal(project.creator, self.master)
 
     def test_adding_merged_user_as_contributor_adds_master(self):
@@ -1069,14 +1070,6 @@ class TestApiOAuth2Application(OsfTestCase):
 
     def test_new_app_is_not_flagged_as_deleted(self):
         assert_true(self.api_app.is_active)
-
-    def test_user_backref_updates_when_app_created(self):
-        u = UserFactory()
-        api_app = ApiOAuth2ApplicationFactory(owner=u)
-        api_app.save()
-
-        backrefs = u.apioauth2application__created
-        assert_greater(len(backrefs), 0)
 
     def test_cant_edit_creation_date(self):
         with assert_raises(AttributeError):
