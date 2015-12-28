@@ -129,7 +129,6 @@ var FileBrowser = {
             self.collectionMenuObject({item : {label:null}, x : 0, y : 0});
         };
         self.refreshView = m.prop(true); // Internal loading indicator
-        self.currentPage = m.prop(1); // Used with pagination
         self.allProjectsLoaded = m.prop(false);
         self.allProjects = m.prop([]);
 
@@ -268,7 +267,10 @@ var FileBrowser = {
                         m.component(AddProject, {
                             buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new Subcomponent'),
                             parentID : self.breadcrumbs()[self.breadcrumbs().length-1].data.id,
-                            modalID : 'addSubcomponent'
+                            modalID : 'addSubcomponent',
+                            stayCallback : function () {
+                                self.updateList(self.breadcrumbs()[self.breadcrumbs().length-1]);
+                            }
                         })
                     ]));
                 }
