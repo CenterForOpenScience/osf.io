@@ -317,6 +317,9 @@ function _poResolveToggle(item) {
  */
 function _poResolveLazyLoad(item) {
     var node = item.data;
+    if(item.children.length > 0) {
+        return false;
+    }
     return $osf.apiV2Url('nodes/', {
         query : {
             'filter[root]' : node.id,
