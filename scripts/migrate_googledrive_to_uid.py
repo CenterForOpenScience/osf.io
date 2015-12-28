@@ -14,12 +14,11 @@ from website.addons.googledrive.model import GoogleDriveNodeSettings
 
 logger = logging.getLogger(__name__)
 
-regex = re.compile('[^/]+/?$')
+base_path_regex = re.compile('[^/]+/?$')
 FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
 
 def main():
     with TokuTransaction():
-
         current_node = None
         gdrive_filenodes = []
         for file in GoogleDriveFileNode.find().sort('node'):
@@ -30,10 +29,13 @@ def main():
 
             gdrive_filenodes.append(file)
 
-        update_node(current_node, gdrive_filenodes)
+        update_node(current_node, gdrive_filenodes)  # update final batch
 
 
 def _build_query(folder_id):
+    """Stolen from WaterButler's googledrive provider. Builds a query to get all files/folders that
+    are children of `folder_id`.
+    """
     queries = [
         "'{}' in parents".format(folder_id),
         'trashed = false',
@@ -43,18 +45,20 @@ def _build_query(folder_id):
 
 
 def _response_to_metadata(response, parent):
+    """Turn a raw GoogleDrive item representation into a WaterButler-style metadata structure.
+    Necessary so that `history` can be updated properly.  `parent` is the materialized path of
+    the item's parent folder.  It is needed to construct the item's `materialized_path` property,
+    since that is not part of the GoogleDrive representation.
+    """
     is_folder = response.get('mimeType') == FOLDER_MIME_TYPE
     name = response['title']
+    extra = { 'revisionId': response.get('version') }
 
-    if not is_folder and is_docs_file(response):
-        ext = get_extension(response)
-        name += ext
-
-    extra = {
-        'revisionId': response.get('version')
-    }
+    # munge google docs, spreadsheets, etc. so they look like their ooxml counterparts
     if not is_folder:
         if is_docs_file(response):
+            ext = get_extension(response)
+            name += ext
             extra['downloadExt'] = get_download_extension(response)
         extra['webView'] = response.get('alternateLink')
 
@@ -72,6 +76,14 @@ def _response_to_metadata(response, parent):
     }
 
 def update_node(current_node, gdrive_filenodes):
+    """Handle updates for all googledrive files belonging to `current_node` in one batch.  Each
+    node has its own oauth settings and base folder.  Entity lookup is done most efficiently by
+    querying by parent folder, so start by partitioning all files into lists by parent folder.
+
+    Next, for each list, query by the parent folder and update each item in the list from the
+    response.  When we encounter a folder, save its id to the dict of parent folders, so that we'll
+    be able to build a query for its children.
+    """
     if current_node is None:
         return
 
@@ -83,8 +95,10 @@ def update_node(current_node, gdrive_filenodes):
     logger.info(u'--Node: {}  (token:{})'.format(current_node, access_token))
 
     parent_folders = { '/': node_settings.folder_id }
-    merp = map(lambda x: [regex.sub('', x.path), x], gdrive_filenodes)
-    ordered = sorted(list(merp), key=lambda x: x[0])
+
+    # how does one do a schwartzian transform in python?
+    schwartz = map(lambda x: [base_path_regex.sub('', x.path), x], gdrive_filenodes)
+    ordered = sorted(list(schwartz), key=lambda x: x[0])
     for filenode_root, filenodes in groupby(ordered, lambda x: x[0]):
         logger.info(u'  --Root: {}'.format(filenode_root))
 
@@ -119,7 +133,7 @@ def update_node(current_node, gdrive_filenodes):
 
 
 
-### EVERYTHING BELOW THIS COPIED FROM WATERBUTLER's googledrive/utils.py
+### BEGIN STEALING FROM WATERBUTLER's waterbutler/providers/googledrive/utils.py
 
 DOCS_FORMATS = [
     {
@@ -180,7 +194,7 @@ def get_export_link(metadata):
     format = get_format(metadata)
     return metadata['exportLinks'][format['type']]
 
-### END of googledrive/utils.py
+### END OF THEFT
 
 
 if __name__ == '__main__':
