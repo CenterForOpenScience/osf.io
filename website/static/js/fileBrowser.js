@@ -210,7 +210,7 @@ var FileBrowser = {
         // USER FILTER
         self.activeFilter = m.prop(1);
         self.updateFilter = function(filter) {
-            self.activeFilter(filter.data.id);
+            self.activeFilter(filter.id);
             self.updateFilesData(filter);
         };
 
