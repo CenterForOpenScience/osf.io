@@ -6,7 +6,6 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 
 from framework.tasks import app as celery_app
-from framework.tasks.utils import logged
 
 logger = get_task_logger(__name__)
 
