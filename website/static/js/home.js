@@ -17,6 +17,7 @@ var LogWrap = {
         self.activityLogs = m.prop();
         self.eventFilter = false;
         self.dateEnd = new Date();
+        self.dateBegin = new Date();
         self.today = new Date();
         self.page = 1;
 
@@ -31,11 +32,8 @@ var LogWrap = {
             if (init) {
                 query['aggregate'] = 1;
             } else {
-                var save = Number(self.dateEnd);
                 query['filter[date][lte]'] = self.dateEnd.toISOString();
-                self.dateEnd.setMonth(self.dateEnd.getMonth() - 1);
-                query['filter[date][gte]'] = self.dateEnd.toISOString();
-                self.dateEnd = new Date(save);
+                query['filter[date][gte]'] = self.dateBegin.toISOString();
             }
             var url = $osf.apiV2Url('users/' + self.userId + '/node_logs/', { query : query});
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
@@ -49,6 +47,8 @@ var LogWrap = {
                     self.eventNumbers = result.links.meta.aggregates;
                     self.lastDay = new Date(result.data[0].attributes.date);
                     self.dateEnd = self.lastDay;
+                    self.lastDay.setMonth(self.lastDay.getMonth() - 1);
+                    self.dateBegin = self.lastDay;
                     self.firstDay = new Date(result.links.meta.last_log_date);
                 }
                 self.lastPage = (result.links.meta.total / result.links.meta.per_page | 0) + 1;
@@ -66,21 +66,21 @@ var LogWrap = {
         var otherEvents = 100 - (fileEvents + commentEvents + wikiEvents + nodeEvents);
         var addSlider = function(ele, isInitialized){
             if (!isInitialized) {
-                $
                 $("#recentActivitySlider").slider({
                     min: Number(ctrl.firstDay),
                     max: Number(ctrl.today),
-                    value: Number(ctrl.dateEnd),
+                    values: [Number(ctrl.dateBegin), Number(ctrl.dateEnd)],
                     range: true,
                     stop: function (event, ui) {
                         ctrl.page = 1;
-                        ctrl.dateEnd = new Date(ui.value);
+                        ctrl.dateBegin = new Date(ui.values[0]);
+                        ctrl.dateEnd = new Date(ui.values[1]);
                         ctrl.getLogs();
                     }
                 });
             }
             else {
-                $( "#recentActivitySlider" ).slider( "value", Number(ctrl.dateEnd), Number(ctrl.dateEnd) - 2.628e+9);
+                $( "#recentActivitySlider" ).slider( 'option', "values", [Number(ctrl.dateBegin),  Number(ctrl.dateEnd)]);
             }
         };
         return m('.panel.panel-default', [
