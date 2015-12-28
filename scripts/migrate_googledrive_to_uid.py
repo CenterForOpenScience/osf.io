@@ -1,7 +1,7 @@
 import re
 import logging
 import requests
-from itertools import groupby
+import itertools
 
 from framework.transactions.context import TokuTransaction
 from modularodm.query.querydialect import DefaultQueryDialect as Q
@@ -18,12 +18,21 @@ base_path_regex = re.compile('[^/]+/?$')
 FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
 
 def main():
+    """We have been identifying GoogleDrive files by path but we want to switch to the unique IDs
+    that GoogleDrive assigns to files and folders.  This will let us track file/folder provenance
+    across renames, moves, etc.  The WaterButler provider has been updated to do this (thanks,
+    @TomBaxter!), and now we need to migrate the existing stored metadata.
+
+    To do so will require using the owner's oauth access token and provider settings, which are
+    tracked per-node.  Basic plan is to get all GoogleDriveFileNodes, group them by parent node,
+    and batch update per parent node.
+    """
     with TokuTransaction():
         current_node = None
         gdrive_filenodes = []
         for file in GoogleDriveFileNode.find().sort('node'):
-            if current_node != file.node_id:
-                update_node(current_node, gdrive_filenodes)
+            if current_node != file.node_id:  # node changed, so update current list then reset
+                update_node_files(current_node, gdrive_filenodes)
                 gdrive_filenodes = []
                 current_node = file.node_id
 
@@ -48,7 +57,9 @@ def _response_to_metadata(response, parent):
     """Turn a raw GoogleDrive item representation into a WaterButler-style metadata structure.
     Necessary so that `history` can be updated properly.  `parent` is the materialized path of
     the item's parent folder.  It is needed to construct the item's `materialized_path` property,
-    since that is not part of the GoogleDrive representation.
+    since that is not available from the GoogleDrive representation.
+
+    This code is stolen^Winterpreted from WB's waterbutler/providers/googledrive/metadata.py
     """
     is_folder = response.get('mimeType') == FOLDER_MIME_TYPE
     name = response['title']
@@ -63,28 +74,47 @@ def _response_to_metadata(response, parent):
         extra['webView'] = response.get('alternateLink')
 
     return {
-        'kind': 'folder' if is_folder else 'file',
         'contentType': None if is_folder else response.get('mimeType'),
-        'name': name,
+        'etag': response.get('version'),
+        'extra': extra,
+        'kind': 'folder' if is_folder else 'file',
         'materialized': parent + name + ('/' if is_folder else ''),
         'modified': response.get('modifiedDate'),
-        'etag': response.get('version'),
-        'provider': 'googledrive',
+        'name': name,
         'path': '/{}'.format(response.get('id')) + ('/' if is_folder else ''),
+        'provider': 'googledrive',
         'size': response.get('fileSize'),
-        'extra': extra,
     }
 
-def update_node(current_node, gdrive_filenodes):
+def update_node_files(current_node, gdrive_filenodes):
     """Handle updates for all googledrive files belonging to `current_node` in one batch.  Each
     node has its own oauth settings and base folder.  Entity lookup is done most efficiently by
     querying by parent folder, so start by partitioning all files into lists by parent folder.
 
-    Next, for each list, query by the parent folder and update each item in the list from the
-    response.  When we encounter a folder, save its id to the dict of parent folders, so that we'll
-    be able to build a query for its children.
+    E.g. This:
+
+        /foo.txt
+        /bar.txt
+        /baz/
+        /baz/quux.txt
+
+    becomes:
+
+        # parent   children
+        [ '/',     [ '/foo.txt', '/bar.txt', '/baz/' ] ],
+        [ '/baz/', [ 'quux.txt' ] ],
+
+    Next, for each list query by the parent folder, and update each item in the list from the
+    response.  Tricky: when we begin, we only have access to the id of the root folder.  Fix: sort
+    folders by full path, parents will always come before children.  When we encounter a folder,
+    save its id to the dict of parent folders, so that we'll be able to build a query for its
+    children.
+
+    When we get back the children list, turn them from GDrive item representations to WB-style
+    metadata. For each file, find its corresponding metadata and update it with the new id.  If we
+    can't find it, trash it.
     """
-    if current_node is None:
+    if current_node is None:  # gag, first call is always this
         return
 
     node_settings = GoogleDriveNodeSettings.find_one(Q('owner', 'eq', current_node))
@@ -92,14 +122,14 @@ def update_node(current_node, gdrive_filenodes):
     headers = {'authorization': 'Bearer {}'.format(access_token)}
     base_url = 'https://www.googleapis.com/drive/v2/files'
 
-    logger.info(u'--Node: {}  (token:{})'.format(current_node, access_token))
+    logger.info(u'--Node: {}'.format(current_node))
 
     parent_folders = { '/': node_settings.folder_id }
 
     # how does one do a schwartzian transform in python?
     schwartz = map(lambda x: [base_path_regex.sub('', x.path), x], gdrive_filenodes)
     ordered = sorted(list(schwartz), key=lambda x: x[0])
-    for filenode_root, filenodes in groupby(ordered, lambda x: x[0]):
+    for filenode_root, filenodes in itertools.groupby(ordered, lambda x: x[0]):
         logger.info(u'  --Root: {}'.format(filenode_root))
 
         payload = {'alt': 'json', 'q':_build_query(parent_folders[filenode_root])}
@@ -108,9 +138,9 @@ def update_node(current_node, gdrive_filenodes):
 
         metadata = map(lambda x: _response_to_metadata(x, filenode_root), items)
 
-        lunch = sorted(list(filenodes), key=lambda x: x[1].path)
+        files_ordered = sorted(list(filenodes), key=lambda x: x[1].path)
 
-        for pair in lunch:
+        for pair in files_ordered:
             storedfilenode = pair[1]
             filenode = GoogleDriveFileNode(storedfilenode)
 
