@@ -31,12 +31,11 @@ var LogWrap = {
             if (init) {
                 query['aggregate'] = 1;
             } else {
-                query['date'] = {};
-                var save = self.dateEnd;
-                query['date']['lt'] = self.dateEnd.toISOString();
+                var save = Number(self.dateEnd);
+                query['filter[date][lte]'] = self.dateEnd.toISOString();
                 self.dateEnd.setMonth(self.dateEnd.getMonth() - 1);
-                query['date']['gt'] = self.dateEnd.toISOString();
-                self.dateEnd = save;
+                query['filter[date][gte]'] = self.dateEnd.toISOString();
+                self.dateEnd = new Date(save);
             }
             var url = $osf.apiV2Url('users/' + self.userId + '/node_logs/', { query : query});
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
@@ -65,11 +64,30 @@ var LogWrap = {
         var wikiEvents = (ctrl.eventNumbers.wiki/ctrl.totalEvents)*100 | 0;
         var nodeEvents = (ctrl.eventNumbers.nodes/ctrl.totalEvents)*100 | 0;
         var otherEvents = 100 - (fileEvents + commentEvents + wikiEvents + nodeEvents);
+        var addSlider = function(ele, isInitialized){
+            if (!isInitialized) {
+                $
+                $("#recentActivitySlider").slider({
+                    min: Number(ctrl.firstDay),
+                    max: Number(ctrl.today),
+                    value: Number(ctrl.dateEnd),
+                    range: true,
+                    stop: function (event, ui) {
+                        ctrl.page = 1;
+                        ctrl.dateEnd = new Date(ui.value);
+                        ctrl.getLogs();
+                    }
+                });
+            }
+            else {
+                $( "#recentActivitySlider" ).slider( "value", Number(ctrl.dateEnd), Number(ctrl.dateEnd) - 2.628e+9);
+            }
+        };
         return m('.panel.panel-default', [
             m('.panel-heading', 'Recent Activity'),
             m('.panel-body',
             m('.fb-activity-list.m-t-md', [
-                m('h4', [String(ctrl.firstDay), String(ctrl.lastDay), String(ctrl.today)]),
+                m('#recentActivitySlider', {style: {margin: '10px'}, config: addSlider}),
                 m('.progress', [
                     m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : ''), {style: {width: fileEvents+'%'}},
                         m('a', {onclick: function(){
@@ -102,13 +120,14 @@ var LogWrap = {
                     m('.progress-bar.progress-bar-success', {style: {width: otherEvents+'%'}}, 'Other')
                 ]),
                 ctrl.activityLogs() ? ctrl.activityLogs().map(function(item){
+
                     return m('.fb-activity-item', [
                         m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
                         m.component(LogText,item)
                     ]);
                 }) : '',
                 m('.btn-group', [
-                    ctrl.page > 1 ?m('button.btn.btn-info', {onclick: function(){
+                    ctrl.page > 1 ? m('button.btn.btn-info', {onclick: function(){
                         ctrl.page--;
                         ctrl.getLogs()
                     }}, 'Previous') : '',
