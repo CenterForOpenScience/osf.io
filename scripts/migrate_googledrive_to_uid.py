@@ -1,14 +1,16 @@
+import re
 import logging
+import requests
+from itertools import groupby
+
+from framework.transactions.context import TokuTransaction
+from modularodm.query.querydialect import DefaultQueryDialect as Q
+
 from website.app import init_app
+from scripts import utils as scripts_utils
 from website.files.models.base import FileNode
 from website.files.models.googledrive import GoogleDriveFileNode
 from website.addons.googledrive.model import GoogleDriveNodeSettings
-from scripts import utils as scripts_utils
-from framework.transactions.context import TokuTransaction
-from modularodm.query.querydialect import DefaultQueryDialect as Q
-from itertools import groupby
-import re
-import requests
 
 logger = logging.getLogger(__name__)
 
