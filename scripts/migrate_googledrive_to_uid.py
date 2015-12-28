@@ -1,4 +1,5 @@
 import re
+import hashlib
 import logging
 import requests
 import itertools
@@ -9,7 +10,7 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 from website.app import init_app
 from scripts import utils as scripts_utils
 from website.files.models.base import FileNode
-from website.files.models.googledrive import GoogleDriveFileNode
+from website.files.models.googledrive import GoogleDriveFileNode, GoogleDriveFile, GoogleDriveFolder
 from website.addons.googledrive.model import GoogleDriveNodeSettings
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ def main():
 
             gdrive_filenodes.append(file)
 
-        update_node(current_node, gdrive_filenodes)  # update final batch
+        update_node_files(current_node, gdrive_filenodes)  # update final batch
 
 
 def _build_query(folder_id):
@@ -75,7 +76,7 @@ def _response_to_metadata(response, parent):
 
     return {
         'contentType': None if is_folder else response.get('mimeType'),
-        'etag': response.get('version'),
+        'etag': hashlib.sha256('{}::{}'.format('googledrive', response.get('version')).encode('utf-8')).hexdigest(),
         'extra': extra,
         'kind': 'folder' if is_folder else 'file',
         'materialized': parent + name + ('/' if is_folder else ''),
@@ -127,8 +128,8 @@ def update_node_files(current_node, gdrive_filenodes):
     parent_folders = { '/': node_settings.folder_id }
 
     # how does one do a schwartzian transform in python?
-    schwartz = map(lambda x: [base_path_regex.sub('', x.path), x], gdrive_filenodes)
-    ordered = sorted(list(schwartz), key=lambda x: x[0])
+    schwartz = [ [base_path_regex.sub('', x.path), x] for x in gdrive_filenodes ]
+    ordered = sorted(schwartz, key=lambda x: x[0])
     for filenode_root, filenodes in itertools.groupby(ordered, lambda x: x[0]):
         logger.info(u'  --Root: {}'.format(filenode_root))
 
@@ -136,31 +137,30 @@ def update_node_files(current_node, gdrive_filenodes):
         resp = requests.get(base_url, params=payload, headers=headers)
         items = resp.json()['items']
 
-        metadata = map(lambda x: _response_to_metadata(x, filenode_root), items)
+        metadata = [ _response_to_metadata(item, filenode_root) for item in items ]
+        grouped_metadata = {'file': {}, 'folder': {}}
+        for metadatum in metadata:
+            grouped_metadata[ metadatum['kind'] ][ metadatum['name'] ] = metadatum
 
         files_ordered = sorted(list(filenodes), key=lambda x: x[1].path)
 
         for pair in files_ordered:
             storedfilenode = pair[1]
-            filenode = GoogleDriveFileNode(storedfilenode)
-
+            filenode = GoogleDriveFile(storedfilenode) if storedfilenode.is_file else GoogleDriveFolder(storedfilenode)
+            kind = 'file' if filenode.is_file else 'folder'
             logger.info(u'    --File: {}'.format(filenode.path))
-            found = None
-            for metadatum in metadata:
-                if metadatum['name'] == filenode.name and (metadatum['kind'] == 'file') == filenode.is_file:
-                    found = metadatum
-                    break
 
-            if found is None:
+            if filenode.name not in grouped_metadata[kind]:
                 filenode.delete()
                 continue
+
+            found = grouped_metadata[kind].pop(filenode.name)
 
             if not filenode.is_file:
                 parent_folders[filenode.path] = found['path'].strip('/')
 
             filenode.path = found['path']
             filenode.update(found['extra']['revisionId'], found)
-
 
 
 ### BEGIN STEALING FROM WATERBUTLER's waterbutler/providers/googledrive/utils.py
