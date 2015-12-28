@@ -10,40 +10,7 @@ var $osf = require('js/osfHelpers');
 var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
 
-var LinkObject = function (type, data, label, index) {
-    if (type === undefined || data === undefined || label === undefined) {
-        throw new Error('LinkObject expects type, data and label to be defined.');
-    }
-    if (index !== undefined && ( typeof index !== 'number' || index <= 0)){
-        throw new Error('Index needs to be a number starting from 0; instead "' + index + '" was given.');
-    }
-    var self = this;
-    self.id = getUID();
-    self.type = type;
-    self.data = data;
-    self.label = label;
-    self.index = index;  // For breadcrumbs to cut off when clicking parent level
-    self.generateLink = function () {
-        if (self.type === 'collection'){
-            return $osf.apiV2Url(self.data.path, {
-                    query : self.data.query
-                }
-            );
-        }
-        else if (self.type === 'tag') {
-            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : true, 'embed' : 'contributors'}});
-        }
-        else if (self.type === 'name') {
-            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : true, 'embed' : 'contributors' }});
-        }
-        else if (self.type === 'node') {
-            return $osf.apiV2Url('nodes/' + self.data.uid + '/children/', { query : { 'related_counts' : true, 'embed' : 'contributors' }});
-        }
-        // If nothing
-        throw new Error('Link could not be generated from linkObject data');
-    };
-    self.link = self.generateLink();
-};
+
 
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
@@ -69,9 +36,43 @@ function _formatDataforPO(item) {
         item.contributors += c.embeds.users.data.attributes.full_name;
     });
     item.date = new $osf.FormattableDate(item.attributes.date_modified);
-
     return item;
 }
+
+var LinkObject = function (type, data, label, index) {
+    if (type === undefined || data === undefined || label === undefined) {
+        throw new Error('LinkObject expects type, data and label to be defined.');
+    }
+    if (index !== undefined && ( typeof index !== 'number' || index <= 0)){
+        throw new Error('Index needs to be a number starting from 0; instead "' + index + '" was given.');
+    }
+    var self = this;
+    self.id = getUID();
+    self.type = type;
+    self.data = data;
+    self.label = label;
+    self.index = index;  // For breadcrumbs to cut off when clicking parent level
+    self.generateLink = function () {
+        if (self.type === 'collection'){
+                return $osf.apiV2Url(self.data.path, {
+                        query : self.data.query
+                    }
+                );
+        }
+        else if (self.type === 'tag') {
+            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : true, 'embed' : 'contributors'}});
+        }
+        else if (self.type === 'name') {
+            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : true, 'embed' : 'contributors' }});
+        }
+        else if (self.type === 'node') {
+            return $osf.apiV2Url('nodes/' + self.data.uid + '/children/', { query : { 'related_counts' : true, 'embed' : 'contributors' }});
+        }
+        // If nothing
+        throw new Error('Link could not be generated from linkObject data');
+    };
+    self.link = self.generateLink();
+};
 
 
 function _makeTree (flatData) {

@@ -85,11 +85,11 @@ projectOrganizer.myProjects = new Bloodhound({
 
 
 function _formatDataforPO(data) {
-    data.data.map(function(item, index){
-        item.uid = item.data.id;
-        item.name = item.data.attributes.title;
-        item.tags = item.data.attributes.tags.toString();
-        item.date = new $osf.FormattableDate(item.data.attributes.date_modified);
+    data.map(function(item, index){
+        item.uid = item.id;
+        item.name = item.attributes.title;
+        item.tags = item.attributes.tags.toString();
+        item.date = new $osf.FormattableDate(item.attributes.date_modified);
     });
     return data;
 }
