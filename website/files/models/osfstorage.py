@@ -107,8 +107,8 @@ class OsfStorageFileNode(FileNode):
             self.node.add_log(
                 action,
                 params={
-                    'project': self._id,
-                    'node': self._primary_key
+                    'project': self.node.parent_id,
+                    'node': self.node._id
                 },
                 auth=auth,
             )
