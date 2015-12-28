@@ -11,6 +11,7 @@ ALL_SIGNALS = [
     project.unreg_contributor_added,
     project.contributor_added,
     project.privacy_set_public,
+    project.file_checkout_toggle,
     auth.user_confirmed,
     auth.user_email_removed,
     auth.user_registered,

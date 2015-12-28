@@ -4,8 +4,11 @@ import os
 
 from modularodm import Q
 
+from framework.auth import Auth
 from website.files import exceptions
 from website.files.models.base import File, Folder, FileNode, FileVersion
+from website.project.model import NodeLog
+from website.project.signals import file_checkout_toggle
 
 
 __all__ = ('OsfStorageFile', 'OsfStorageFolder', 'OsfStorageFileNode')
@@ -81,10 +84,38 @@ class OsfStorageFileNode(FileNode):
             raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
-    def save(self):
+    def save(self):  # TODO write log
+        """
+        Uses OsfSFN save to save the node,
+            but we want to log specific activities (checkout, checkin)
+            check that via the if in the middle of the method and log the correct activity
+
+        :return:
+        """
         self.path = ''
         self.materialized_path = ''
-        return super(OsfStorageFileNode, self).save()
+        ret = super(OsfStorageFileNode, self).save()
+
+        if 'checkout' in ret and len(ret) == 1:
+            # Set parameters
+            auth = Auth(user=self.node.creator)
+
+            # is checkout vs is checkin
+            action = [lambda: NodeLog.CHECKED_IN, lambda: NodeLog.CHECKED_OUT][self.is_checked_out]()
+
+            # Log the action
+            self.node.add_log(
+                action,
+                params={
+                    'project': self._id,
+                    'node': self._primary_key
+                },
+                auth=auth,
+            )
+
+            file_checkout_toggle.send(self.node, user=self.node.creator)
+
+        return ret
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
