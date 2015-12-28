@@ -21,6 +21,7 @@ from api.registrations.serializers import RegistrationSerializer
 
 from .serializers import UserSerializer, UserDetailSerializer
 from .permissions import ReadOnlyOrCurrentUser
+from .pagination import UserNodeLogPagination
 
 
 class UserMixin(object):
@@ -407,23 +408,32 @@ class UserRegistrations(UserNodes):
         )
 
 
-class UserNodeLogs(UserNodes):
+class UserNodeLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, UserMixin):
 
     serializer_class = NodeLogSerializer
+    pagination_class = UserNodeLogPagination
     view_category = 'users'
     view_name = 'node_logs'
 
-    def get_queryset(self):
-        current_user = self.request.user
-        if current_user.is_anonymous():
+    ordering = ('-date', )
+
+    def get_default_odm_query(self):
+        user = self.get_user()
+        if user.is_anonymous():
             auth = Auth(None)
         else:
-            auth = Auth(current_user)
-        query = self.get_query_from_request()
-        raw_nodes = Node.find(self.get_default_odm_query() & query)
+            auth = Auth(user)
+        raw_nodes = Node.find(
+            Q('contributors', 'eq', user) &
+            Q('is_folder', 'ne', True) &
+            Q('is_deleted', 'ne', True)
+        )
         nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
         if not nodes:
             raise NotFound
         query = [Q('params.node', 'eq', node._id) for node in nodes]
-        sorted_logs = sorted(list(NodeLog.find(reduce(lambda x, y: x | y, query))), key=lambda x: x.date, reverse=True)
-        return sorted_logs
+        return reduce(lambda x, y: x | y, query)
+
+
+    def get_queryset(self):
+        return NodeLog.find(self.get_query_from_request())
