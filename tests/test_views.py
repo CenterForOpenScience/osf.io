@@ -1197,6 +1197,20 @@ class TestUserProfile(OsfTestCase):
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
 
+    # Regression test for help-desk ticket
+    def test_making_email_primary_is_not_case_sensitive(self):
+        user = AuthUserFactory(username='fred@queen.test')
+        # make confirmed email have different casing
+        user.emails[0] = user.emails[0].capitalize()
+        user.save()
+        url = api_url_for('update_user')
+        res = self.app.put_json(
+            url,
+            {'id': user._id, 'emails': [{'address': 'fred@queen.test', 'primary': True, 'confirmed': True}]},
+            auth=user.auth
+        )
+        assert_equal(res.status_code, 200)
+
     def test_unserialize_social_validation_failure(self):
         url = api_url_for('unserialize_social')
         # profileWebsites URL is invalid
@@ -1755,6 +1769,7 @@ class TestAddingContributorViews(OsfTestCase):
         super(TestAddingContributorViews, self).setUp()
         self.creator = AuthUserFactory()
         self.project = ProjectFactory(creator=self.creator)
+        self.auth = Auth(self.project.creator)
         # Authenticate all requests
         self.app.authenticate(*self.creator.auth)
         contributor_added.connect(notify_added_contributor)
@@ -2007,14 +2022,15 @@ class TestAddingContributorViews(OsfTestCase):
             'permissions': ['read', 'write']
         }]
         project = ProjectFactory()
-        project.add_contributors(contributors, auth=Auth(self.project.creator))
+        project.add_contributors(contributors, auth=self.auth)
         project.save()
         assert_true(send_mail.called)
         send_mail.assert_called_with(
             contributor.username,
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
-            node=project)
+            node=project,
+            referrer_name=self.auth.user.fullname)
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
     @mock.patch('website.mails.send_mail')
@@ -2053,11 +2069,12 @@ class TestAddingContributorViews(OsfTestCase):
     def test_notify_contributor_email_does_not_send_before_throttle_expires(self, send_mail):
         contributor = UserFactory()
         project = ProjectFactory()
-        notify_added_contributor(project, contributor)
+        auth = Auth(project.creator)
+        notify_added_contributor(project, contributor, auth)
         assert_true(send_mail.called)
 
         # 2nd call does not send email because throttle period has not expired
-        notify_added_contributor(project, contributor)
+        notify_added_contributor(project, contributor, auth)
         assert_equal(send_mail.call_count, 1)
 
     @mock.patch('website.mails.send_mail')
@@ -2066,11 +2083,12 @@ class TestAddingContributorViews(OsfTestCase):
 
         contributor = UserFactory()
         project = ProjectFactory()
-        notify_added_contributor(project, contributor, throttle=throttle)
+        auth = Auth(project.creator)
+        notify_added_contributor(project, contributor, auth, throttle=throttle)
         assert_true(send_mail.called)
 
         time.sleep(1)  # throttle period expires
-        notify_added_contributor(project, contributor, throttle=throttle)
+        notify_added_contributor(project, contributor, auth, throttle=throttle)
         assert_equal(send_mail.call_count, 2)
 
     def test_add_multiple_contributors_only_adds_one_log(self):
