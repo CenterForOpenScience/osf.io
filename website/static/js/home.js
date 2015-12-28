@@ -16,9 +16,11 @@ var LogWrap = {
         self.userId = args.userId;
         self.activityLogs = m.prop();
         self.eventFilter = false;
+        self.dateEnd = new Date();
+        self.today = new Date();
         self.page = 1;
 
-        self.getLogs = function () {
+        self.getLogs = function(init) {
             var query = {
                 'embed': ['nodes', 'user', 'linked_node', 'template_node'],
                 'page': self.page
@@ -26,20 +28,36 @@ var LogWrap = {
             if (self.eventFilter) {
                 query['filter[action]'] = self.eventFilter;
             }
+            if (init) {
+                query['aggregate'] = 1;
+            } else {
+                query['date'] = {};
+                var save = self.dateEnd;
+                query['date']['lt'] = self.dateEnd.toISOString();
+                self.dateEnd.setMonth(self.dateEnd.getMonth() - 1);
+                query['date']['gt'] = self.dateEnd.toISOString();
+                self.dateEnd = save;
+            }
             var url = $osf.apiV2Url('users/' + self.userId + '/node_logs/', { query : query});
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
                 });
-                self.activityLogs(result.data);
-                self.totalEvents = result.links.meta.total;
-                self.eventNumbers = result.links.meta.aggregates;
+                if (!init) {self.activityLogs(result.data)}
+                if (init) {
+                    self.totalEvents = result.links.meta.total;
+                    self.eventNumbers = result.links.meta.aggregates;
+                    self.lastDay = new Date(result.data[0].attributes.date);
+                    self.dateEnd = self.lastDay;
+                    self.firstDay = new Date(result.links.meta.last_log_date);
+                }
                 self.lastPage = (result.links.meta.total / result.links.meta.per_page | 0) + 1;
             });
             return promise;
         };
-        self.getLogs(self.userId);
+        self.getLogs(true);
+        self.getLogs();
     },
     view: function(ctrl, args){
         var fileEvents = (ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0;
@@ -51,36 +69,37 @@ var LogWrap = {
             m('.panel-heading', 'Recent Activity'),
             m('.panel-body',
             m('.fb-activity-list.m-t-md', [
+                m('h4', [String(ctrl.firstDay), String(ctrl.lastDay), String(ctrl.today)]),
                 m('.progress', [
-                    m('.progress-bar.progress-bar-striped.active', {style: {width: fileEvents+'%'}},
+                    m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : ''), {style: {width: fileEvents+'%'}},
                         m('a', {onclick: function(){
-                            ctrl.eventFilter = 'osf_storage_file_added,osf_storage_file_updated';
+                            ctrl.eventFilter = ctrl.eventFilter === 'file' ? false : 'file';
                             ctrl.page = 1;
                             ctrl.getLogs();
                         }}, 'Files')
                     ),
-                    m('.progress-bar.progress-bar-striped.active.progress-bar-warning', {style: {width: nodeEvents+'%'}},
+                    m('.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ? '.active.progress-bar-striped' : ''), {style: {width: nodeEvents+'%'}},
                         m('a', {onclick: function(){
-                            ctrl.eventFilter = 'node_created,project_created';
+                            ctrl.eventFilter = ctrl.eventFilter === 'project' ? false : 'project';
                             ctrl.page = 1;
                             ctrl.getLogs();
                         }}, 'Nodes')
                     ),
-                    m('.progress-bar.progress-bar-striped.active.progress-bar-info', {style: {width: commentEvents+'%'}},
+                    m('.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' ? '.active.progress-bar-striped' : ''), {style: {width: commentEvents+'%'}},
                         m('a', {onclick: function(){
-                            ctrl.eventFilter = 'comment_added';
+                            ctrl.eventFilter = ctrl.eventFilter === 'comment' ? false : 'comment';
                             ctrl.page = 1;
                             ctrl.getLogs();
                         }}, 'Comments')
                     ),
-                    m('.progress-bar.progress-bar-striped.active.progress-bar-danger', {style: {width: wikiEvents+'%'}},
+                    m('.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' ? '.active.progress-bar-striped' : ''), {style: {width: wikiEvents+'%'}},
                         m('a', {onclick: function(){
-                            ctrl.eventFilter = 'wiki_updated';
+                            ctrl.eventFilter = ctrl.eventFilter === 'wiki' ? false : 'wiki';
                             ctrl.page = 1;
                             ctrl.getLogs();
                         }}, 'Wiki')
                     ),
-                    m('.progress-bar.progress-bar-striped.active.progress-bar-success', {style: {width: otherEvents+'%'}}, 'Other')
+                    m('.progress-bar.progress-bar-success', {style: {width: otherEvents+'%'}}, 'Other')
                 ]),
                 ctrl.activityLogs() ? ctrl.activityLogs().map(function(item){
                     return m('.fb-activity-item', [
@@ -101,7 +120,7 @@ var LogWrap = {
             ]))
         ]);
     }
-}
+};
 
 
 $(document).ready(function() {

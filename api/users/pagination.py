@@ -19,25 +19,41 @@ class UserNodeLogPagination(JSONAPIPagination):
         if embedded:
             reversed_url = reverse(view_name, kwargs=kwargs)
         comments, nodes, wiki, files = self.get_count_of_action()
-        response_dict = OrderedDict([
-            ('data', data),
-            ('links', OrderedDict([
-                ('first', self.get_first_real_link(reversed_url)),
-                ('last', self.get_last_real_link(reversed_url)),
-                ('prev', self.get_previous_real_link(reversed_url)),
-                ('next', self.get_next_real_link(reversed_url)),
-                ('meta', OrderedDict([
-                    ('total', self.page.paginator.count),
-                    ('per_page', self.page.paginator.per_page),
-                    ('aggregates', OrderedDict([
-                        ('comments', comments),
-                        ('wiki', wiki),
-                        ('nodes', nodes),
-                        ('files', files),
+        if self.request.query_params.get('aggregate'):
+            response_dict = OrderedDict([
+                ('data', data),
+                ('links', OrderedDict([
+                    ('first', self.get_first_real_link(reversed_url)),
+                    ('last', self.get_last_real_link(reversed_url)),
+                    ('prev', self.get_previous_real_link(reversed_url)),
+                    ('next', self.get_next_real_link(reversed_url)),
+                    ('meta', OrderedDict([
+                        ('total', self.page.paginator.count),
+                        ('per_page', self.page.paginator.per_page),
+                        ('aggregates', OrderedDict([
+                            ('comments', comments),
+                            ('wiki', wiki),
+                            ('nodes', nodes),
+                            ('files', files),
+                        ])),
+                        ('last_log_date', list(self.page.paginator.object_list)[-1].date)
                     ]))
-                ]))
-            ])),
-        ])
+                ])),
+            ])
+        else:
+            response_dict = OrderedDict([
+                ('data', data),
+                ('links', OrderedDict([
+                    ('first', self.get_first_real_link(reversed_url)),
+                    ('last', self.get_last_real_link(reversed_url)),
+                    ('prev', self.get_previous_real_link(reversed_url)),
+                    ('next', self.get_next_real_link(reversed_url)),
+                    ('meta', OrderedDict([
+                        ('total', self.page.paginator.count),
+                        ('per_page', self.page.paginator.per_page)
+                    ]))
+                ])),
+            ])
         return Response(response_dict)
 
     def get_count_of_action(self):

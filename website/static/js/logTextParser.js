@@ -33,6 +33,7 @@ var paramIsReturned = function(param, logObject){
  */
 var returnTextParams = function (param, text, logObject) {
     var source = logObject.attributes.params[param];
+
     if(paramIsReturned(source, logObject)){
         if($.isArray(source)){
             return m('span', [
