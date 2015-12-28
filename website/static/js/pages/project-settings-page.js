@@ -253,9 +253,9 @@ $(document).ready(function() {
         }
     });
     $('.wiki-select').on('change', function() {
-        var that = this,
-            $that = $(that);
-        var wikiEnabled = $that.is(':checked');
+        var self = this;
+        var $self = $(self);
+        var wikiEnabled = $self.is(':checked');
         var wikiWarning = wikiEnabled ? 'Are you sure you want to enable the Wiki?' : 'Are you sure you want to disable the Wiki?';
         var wikiTitle = wikiEnabled ? 'Enable Wiki' : 'Disable Wiki';
         var wikiUpdateMessage = $('#selectWikiForm').find('.wiki-settings-message');
@@ -288,11 +288,11 @@ $(document).ready(function() {
             message: wikiWarning,
             callback: function(confirmed) {
                 if (confirmed) {
-                    $(that).attr('checked', wikiEnabled);
+                    $(self).attr('checked', wikiEnabled);
                     submit(wikiEnabled);
                 }
                 else {
-                    $(that).attr('checked', !wikiEnabled);
+                    $(self).attr('checked', !wikiEnabled);
                 }
             },
             buttons:{

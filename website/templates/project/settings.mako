@@ -133,10 +133,8 @@
                                 <%
                                     addons = []
                                     for addon in addons_available:
-                                        if category in addon.categories and addon.short_name != 'wiki':
+                                        if category in addon.categories:
                                             addons.append(addon)
-                                        elif addon.short_name == 'wiki':
-                                            wiki = addon
                                 %>
                                 % if addons:
                                     <h3>${category.capitalize()}</h3>
@@ -200,7 +198,6 @@
 
         % endif  ## End Select Addons
 
-
         % if not node['is_registration']:   ## Begin Wiki Config
             <div class="panel panel-default">
                 <span id="configureWikiAnchor" class="anchor"></span>
@@ -249,9 +246,8 @@
                                 <p id="configureWikiMessage"></p>
                             </div>
                         </form>
-                    % endif
-                    % if not include_wiki_settings:
-                        <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
+                    % else:
+                        <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public and enabled.</p>
                     %endif
                 </div>
             </div>
@@ -368,7 +364,6 @@
 
                             % endif
 
-
                         </div>
                     </div>
 
@@ -395,13 +390,11 @@
     <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
 % endfor
 
-
 <%def name="stylesheets()">
     ${parent.stylesheets()}
 
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
 </%def>
-
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
