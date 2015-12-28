@@ -55,33 +55,39 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
  * uses API v2 bulk requests
  */
 function patchNodesPrivacy(nodes) {
+    var promise;
+    var nodesPatch = [];
     var nodesV2Url = window.contextVars.apiV2Prefix + 'nodes/';
-    var nodesPatch = nodes.splice(0,10).map(function (node) {
-        return {
+    for (var i=0; i < nodes.length; i++) {
+        var node = {
             'type': 'nodes',
-            'id': node.id,
+            'id': nodes[i].id,
             'attributes': {
-                'public': node.public
+                'public': nodes[i].public
             }
         };
-    });
-    return $3.ajax({
-        url: nodesV2Url,
-        type: 'PATCH',
-        dataType: 'json',
-        contentType: 'application/vnd.api+json; ext=bulk',
-        crossOrigin: true,
-        xhrFields: {withCredentials: true},
-        processData: false,
-        data: JSON.stringify({
-            data: nodesPatch
-        })
-    }).done(function (response) {
-        if (nodes.length === 0) {
-            return;
+        nodesPatch.push(node);
+        //After 10 iterations or at the end of the list, create a promise request.
+        if ((i + 1) % 10 === 0 || (i + 1) === nodes.length) {
+            promise = $.when(promise,
+                $3.ajax({
+                    url: nodesV2Url,
+                    type: 'PATCH',
+                    dataType: 'json',
+                    contentType: 'application/vnd.api+json; ext=bulk',
+                    crossOrigin: true,
+                    xhrFields: {withCredentials: true},
+                    processData: false,
+                    data: JSON.stringify({
+                        data: nodesPatch
+                    })
+                })
+            );
+            nodesPatch = [];
         }
-        return patchNodesPrivacy(nodes);
-    });
+
+    }
+    return promise;
 }
 
 /**
@@ -195,20 +201,22 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
 
     self.confirmChanges =  function() {
         var nodesState = ko.toJS(self.nodesState());
-        //patchNodesPrivacy(nodesState);
         nodesState = Object.keys(nodesState).map(function(key) {
             return nodesState[key];
         });
         var nodesChanged = nodesState.filter(function(node) {
             return node.changed;
         });
-        patchNodesPrivacy(nodesChanged).then(function () {
+
+        var promise = patchNodesPrivacy(nodesChanged);
+        promise.then(function () {
+            self.nodesChangedPublic([]);
+            self.nodesChangedPrivate([]);
+            self.page(self.WARNING);
             window.location.reload();
-        }).fail(function(xhr, status, error) {
+        }).fail(function () {
             $osf.growl('Error', 'Unable to update project privacy');
-            Raven.captureMessage('Could not PATCH project settings.', {
-                url: window.contextVars.apiV2Prefix + 'nodes/', status: status, error: error
-            });
+            Raven.captureMessage('Could not PATCH project settings.');
             self.clear();
             window.location.reload();
         });
