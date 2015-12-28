@@ -558,7 +558,7 @@ MEETING_DATA = {
         'name': 'Time-sharing Experiments for the Social Sciences',
         'info_url': 'http://www.tessexperiments.org',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': False,
@@ -567,7 +567,7 @@ MEETING_DATA = {
     'ASCERM2016': {
         'name': 'ASCE Rocky Mountain Student Conference 2016',
         'info_url': 'http://luninuxos.com/asce/',
-        'logo_url': 'http://s29.postimg.org/7sgmx7ryv/2016_ASCE_Rocky_Mtn_banner.png',
+        'logo_url': 'http://s2.postimg.org/eaduh2ovt/2016_ASCE_Rocky_Mtn_banner.png',
         'active': True,
         'admins': [],
         'public_projects': True,
