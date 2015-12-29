@@ -176,6 +176,13 @@
     margin-bottom: 3px;
     border-bottom: 1px solid #eee;
 }
+.fb-log-avatar img {
+    width: 16px;
+    height: 16px;
+}
+.fb-log-avatar {
+    display: inline-block;
+}
 
 #poFilter {
     width : 300px;
