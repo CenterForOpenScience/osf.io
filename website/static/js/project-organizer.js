@@ -391,32 +391,7 @@ function filterRowsNotInParent(rows) {
 }
 
 function _poIconView(item) {
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
-    var node = item.data;
-    function returnView(type, category) {
-        var iconType = projectIcons[type];
-        if (type === 'component' || type === 'registeredComponent') {
-                iconType = componentIcons[category];
-        } else if (type === 'project' || type === 'registeredProject') {
-            iconType = projectIcons[category];
-        }
-        if (type === 'registeredComponent' || type === 'registeredProject') {
-            iconType += ' po-icon-registered';
-        } else {
-            iconType += ' po-icon';
-        }
-        var template = m('span', { 'class' : iconType});
-        return template;
-    }
-    if (node.attributes.category === 'project') {
-        if (node.attributes.registration) {
-            return returnView('registeredProject', node.attributes.category);
-        } else {
-            return returnView('project', node.attributes.category);
-        }
-    }
-    return null;
+    return false;
 }
 
 /**
