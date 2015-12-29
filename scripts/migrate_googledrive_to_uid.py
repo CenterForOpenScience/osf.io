@@ -1,6 +1,7 @@
 import re
 import hashlib
 import logging
+import argparse
 import requests
 import itertools
 
@@ -28,18 +29,27 @@ def main():
     tracked per-node.  Basic plan is to get all GoogleDriveFileNodes, group them by parent node,
     and batch update per parent node.
     """
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dry', action='store_true', help='Do a dry run. Check with gdrive, report on outcome, but do not make changes')
+    parser.add_argument('-v', '--verbose', action='count', help="verbosity")
+    args = parser.parse_args()
+
+    scripts_utils.add_file_logger(logger, __file__)
+    init_app(set_backends=True, routes=False)
+
     with TokuTransaction():
         current_node = None
         gdrive_filenodes = []
         for file in GoogleDriveFileNode.find().sort('node'):
             if current_node != file.node_id:  # node changed, so update current list then reset
-                update_node_files(current_node, gdrive_filenodes)
+                update_node_files(current_node, gdrive_filenodes, args.dry)
                 gdrive_filenodes = []
                 current_node = file.node_id
 
             gdrive_filenodes.append(file)
 
-        update_node_files(current_node, gdrive_filenodes)  # update final batch
+        update_node_files(current_node, gdrive_filenodes, args.dry)  # update final batch
 
 
 def _build_query(folder_id):
@@ -87,7 +97,7 @@ def _response_to_metadata(response, parent):
         'size': response.get('fileSize'),
     }
 
-def update_node_files(current_node, gdrive_filenodes):
+def update_node_files(current_node, gdrive_filenodes, dry=True):
     """Handle updates for all googledrive files belonging to `current_node` in one batch.  Each
     node has its own oauth settings and base folder.  Entity lookup is done most efficiently by
     querying by parent folder, so start by partitioning all files into lists by parent folder.
@@ -123,7 +133,7 @@ def update_node_files(current_node, gdrive_filenodes):
     headers = {'authorization': 'Bearer {}'.format(access_token)}
     base_url = 'https://www.googleapis.com/drive/v2/files'
 
-    logger.info(u'--Node: {}'.format(current_node))
+    logger.info(u'Node: {}'.format(current_node))
 
     parent_folders = { '/': node_settings.folder_id }
 
@@ -131,7 +141,7 @@ def update_node_files(current_node, gdrive_filenodes):
     schwartz = [ [base_path_regex.sub('', x.path), x] for x in gdrive_filenodes ]
     ordered = sorted(schwartz, key=lambda x: x[0])
     for filenode_root, filenodes in itertools.groupby(ordered, lambda x: x[0]):
-        logger.info(u'  --Root: {}'.format(filenode_root))
+        logger.info(u'  Root: {}'.format(filenode_root))
 
         payload = {'alt': 'json', 'q':_build_query(parent_folders[filenode_root])}
         resp = requests.get(base_url, params=payload, headers=headers)
@@ -148,10 +158,12 @@ def update_node_files(current_node, gdrive_filenodes):
             storedfilenode = pair[1]
             filenode = GoogleDriveFile(storedfilenode) if storedfilenode.is_file else GoogleDriveFolder(storedfilenode)
             kind = 'file' if filenode.is_file else 'folder'
-            logger.info(u'    --File: {}'.format(filenode.path))
+            logger.info(u'    File: {}'.format(filenode.path))
 
             if filenode.name not in grouped_metadata[kind]:
-                filenode.delete()
+                logger.info(u'      Action: file not found, deleted.')
+                if not dry:
+                    filenode.delete()
                 continue
 
             found = grouped_metadata[kind].pop(filenode.name)
@@ -159,8 +171,11 @@ def update_node_files(current_node, gdrive_filenodes):
             if not filenode.is_file:
                 parent_folders[filenode.path] = found['path'].strip('/')
 
-            filenode.path = found['path']
-            filenode.update(found['extra']['revisionId'], found)
+            logger.info(u'      Action: file found, path updated to: {}'.format(found['path']))
+            if not dry:
+                filenode.path = found['path']
+                filenode.update(found['extra']['revisionId'], found)
+
 
 
 ### BEGIN STEALING FROM WATERBUTLER's waterbutler/providers/googledrive/utils.py
@@ -228,7 +243,5 @@ def get_export_link(metadata):
 
 
 if __name__ == '__main__':
-    scripts_utils.add_file_logger(logger, __file__)
-    init_app(set_backends=True, routes=False)
     main()
 
