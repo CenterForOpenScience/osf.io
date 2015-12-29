@@ -567,6 +567,7 @@ class TestConferenceIntegration(ContextTestCase):
         assert_absolute(call_kwargs['profile_url'])
         assert_absolute(call_kwargs['file_url'])
         assert_absolute(call_kwargs['node_url'])
+        assert_in(username, users[0].emails)
 
     @mock.patch('website.conferences.views.send_mail')
     def test_integration_inactive(self, mock_send_mail):
@@ -607,3 +608,6 @@ class TestConferenceIntegration(ContextTestCase):
             call_kwargs['presentations_url'],
             web_url_for('conference_view', _absolute=True),
         )
+        user = User.find_one(Q('username', 'eq', username))
+        assert_in(username, user[0].emails)
+
