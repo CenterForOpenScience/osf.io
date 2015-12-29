@@ -407,16 +407,17 @@ var FileBrowser = {
                         dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
                     }
                     function saveNodetoCollection (index) {
+                        function doNext (){
+                            if(dataArray[index+1]){
+                                saveNodetoCollection(index+1);
+                            }
+                        }
                         m.request({
                             method : 'POST',
                             url : collection.data.node.relationships.node_links.links.related.href,
                             config : xhrconfig,
                             data : dataArray[index]
-                        }).then(function(result){
-                            if(dataArray[index+1]){
-                                saveNodetoCollection(index+1);
-                            }
-                        });
+                        }).then(doNext, doNext); // In case of success or error. It doesn't look like mithril has a general .done method
                     }
                     if(dataArray.length > 0){
                         saveNodetoCollection(0);
