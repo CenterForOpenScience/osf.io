@@ -748,7 +748,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     file_guid_to_share_uuids = fields.DictionaryField()
 
     creator = fields.ForeignField('user', index=True)
-    contributors = fields.ForeignField('user', list=True, backref='contributed')
+    contributors = fields.ForeignField('user', list=True)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
@@ -1369,7 +1369,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         first_save = not self._is_loaded
 
         if first_save and self.is_dashboard:
-            existing_dashboards = self.creator.node__contributed.find(
+            existing_dashboards = self.find_for_user(
+                self.creator,
                 Q('is_dashboard', 'eq', True)
             )
             if existing_dashboards.count() > 0:
@@ -2265,6 +2266,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if user:
             increment_user_activity_counters(user._primary_key, action, log.date)
         return log
+
+    @classmethod
+    def find_for_user(cls, user, subquery=None):
+        combined_query = Q('contributors', 'contains', user._id)
+
+        if subquery is not None:
+            combined_query = combined_query & subquery
+        return cls.find(combined_query)
 
     @property
     def url(self):

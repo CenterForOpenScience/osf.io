@@ -68,9 +68,12 @@ def new_dashboard(user):
     :return Node: Created node
 
     """
-    existing_dashboards = user.node__contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_dashboard', 'eq', True)
+    existing_dashboards = Node.find_for_user(
+        user,
+        subquery=(
+            Q('category', 'eq', 'project') &
+            Q('is_dashboard', 'eq', True)
+        )
     )
 
     if existing_dashboards.count() > 0:
