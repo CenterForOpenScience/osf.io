@@ -23,7 +23,8 @@ var MESSAGES = {
     confirmWarning: {
         nodesPublic: 'The following projects and components will be made <b>public</b>.',
         nodesPrivate: 'The following projects and components will be made <b>private</b>.',
-        nodesNotChangedWarning: 'No nodes were changed.'
+        nodesNotChangedWarning: 'No nodes were changed.',
+        tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.'
     }
 };
 
@@ -55,39 +56,29 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
  * uses API v2 bulk requests
  */
 function patchNodesPrivacy(nodes) {
-    var promise;
-    var nodesPatch = [];
     var nodesV2Url = window.contextVars.apiV2Prefix + 'nodes/';
-    for (var i=0; i < nodes.length; i++) {
-        var node = {
+    var nodesPatch = nodes.map(function (node) {
+        return {
             'type': 'nodes',
-            'id': nodes[i].id,
+            'id': node.id,
             'attributes': {
-                'public': nodes[i].public
+                'public': node.public
             }
         };
-        nodesPatch.push(node);
-        //After 10 iterations or at the end of the list, create a promise request.
-        if ((i + 1) % 10 === 0 || (i + 1) === nodes.length) {
-            promise = $.when(promise,
-                $3.ajax({
-                    url: nodesV2Url,
-                    type: 'PATCH',
-                    dataType: 'json',
-                    contentType: 'application/vnd.api+json; ext=bulk',
-                    crossOrigin: true,
-                    xhrFields: {withCredentials: true},
-                    processData: false,
-                    data: JSON.stringify({
-                        data: nodesPatch
-                    })
-                })
-            );
-            nodesPatch = [];
-        }
-
-    }
-    return promise;
+    });
+    //s3 is a very recent version of jQuery that fixes a known bug when used in internet explorer
+    return $3.ajax({
+        url: nodesV2Url,
+        type: 'PATCH',
+        dataType: 'json',
+        contentType: 'application/vnd.api+json; ext=bulk',
+        crossOrigin: true,
+        xhrFields: {withCredentials: true},
+        processData: false,
+        data: JSON.stringify({
+            data: nodesPatch
+        })
+    });
 }
 
 /**
@@ -200,7 +191,6 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
     };
 
     self.confirmChanges =  function() {
-        $osf.block('Updating Privacy');
         var nodesState = ko.toJS(self.nodesState());
         nodesState = Object.keys(nodesState).map(function(key) {
             return nodesState[key];
@@ -208,21 +198,23 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
         var nodesChanged = nodesState.filter(function(node) {
             return node.changed;
         });
-
-        var promise = patchNodesPrivacy(nodesChanged);
-        promise.then(function () {
-            self.nodesChangedPublic([]);
-            self.nodesChangedPrivate([]);
-            self.page(self.WARNING);
-            $osf.unblock();
-            window.location.reload();
-        }).fail(function () {
-            $osf.growl('Error', 'Unable to update project privacy');
-            Raven.captureMessage('Could not PATCH project settings.');
-            self.clear();
-            self.dirty(false);
-            window.location.reload();
-        });
+        //The API's bulk limit is 100 nodes.  We catch the exception in nodes_privacy.mako.
+        if (nodesChanged.length <= 100) {
+            $osf.block('Updating Privacy');
+            patchNodesPrivacy(nodesChanged).then(function () {
+                $osf.unblock();
+                self.nodesChangedPublic([]);
+                self.nodesChangedPrivate([]);
+                self.page(self.WARNING);
+                window.location.reload();
+            }).fail(function () {
+                $osf.unblock();
+                $osf.growl('Error', 'Unable to update project privacy');
+                Raven.captureMessage('Could not PATCH project settings.');
+                self.clear();
+                window.location.reload();
+            });
+        }
     };
 
     self.clear = function() {
