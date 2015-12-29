@@ -5,6 +5,9 @@ from api.base.pagination import JSONAPIPagination
 from rest_framework.response import Response
 
 class UserNodeLogPagination(JSONAPIPagination):
+
+    node_log_aggregates = None
+
     def get_paginated_response(self, data):
         """
         Formats paginated response in accordance with JSON API.
@@ -18,8 +21,8 @@ class UserNodeLogPagination(JSONAPIPagination):
         reversed_url = None
         if embedded:
             reversed_url = reverse(view_name, kwargs=kwargs)
-        comments, nodes, wiki, files = self.get_count_of_action()
         if self.request.query_params.get('aggregate'):
+            comments, nodes, wiki, files = self.node_log_aggregates()
             response_dict = OrderedDict([
                 ('data', data),
                 ('links', OrderedDict([
@@ -56,17 +59,3 @@ class UserNodeLogPagination(JSONAPIPagination):
             ])
         return Response(response_dict)
 
-    def get_count_of_action(self):
-        #  try and call query method from view
-        
-        logs_with_action = {}
-        for log in self.page.paginator.object_list:
-            if logs_with_action.get(log.action):
-                logs_with_action[log.action].append(log)
-            else:
-                logs_with_action[log.action] = [log]
-
-        return len(logs_with_action.get('comment_added') or []),\
-               len(logs_with_action.get('project_created') or []) + len(logs_with_action.get('node_created') or []),\
-               len(logs_with_action.get('wiki_updated') or []),\
-               len(logs_with_action.get('osf_storage_file_updated') or []) + len(logs_with_action.get('osf_storage_file_added') or [])

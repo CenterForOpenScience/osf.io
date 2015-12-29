@@ -436,4 +436,14 @@ class UserNodeLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, 
 
 
     def get_queryset(self):
+        self.paginator.node_log_aggregates = self.get_aggregates
         return NodeLog.find(self.get_query_from_request())
+
+    def get_aggregates(self):
+        query = self.get_query_from_request()
+        query_files = Q('action', 'eq', 'osf_storage_file_updated') | Q('action', 'eq', 'osf_storage_file_added')
+        query_wiki = Q('action', 'eq', 'wiki_updated')
+        query_comments = Q('action', 'eq', 'comment_added')
+        query_nodes = Q('action', 'eq', 'node_updated') | Q('action', 'eq', 'node_created')
+        return (NodeLog.find(query & query_comments)).count(), (NodeLog.find(query & query_nodes)).count(), \
+               (NodeLog.find(query & query_wiki)).count(), (NodeLog.find(query & query_files)).count()

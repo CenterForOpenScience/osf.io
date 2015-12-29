@@ -86,13 +86,14 @@ var LogWrap = {
                 });
             }
             else {
-                $( "#recentActivitySlider" ).slider( 'option', "values", [Number(ctrl.dateBegin),  Number(ctrl.dateEnd)]);
+                $("#recentActivitySlider").slider('option', "values", [Number(ctrl.dateBegin), Number(ctrl.dateEnd)]);
             }
         };
         return m('.panel.panel-default', [
             m('.panel-heading', 'Recent Activity'),
             m('.panel-body',
             m('.fb-activity-list.m-t-md', [
+                m('#rASliderLabel'),
                 m('#recentActivitySlider', {style: {margin: '10px'}, config: addSlider}),
                 m('.progress', [
                     m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : '.muted'), {style: {width: fileEvents+'%'}},
@@ -132,15 +133,15 @@ var LogWrap = {
                         m.component(LogText,item)
                     ]);
                 }) : m('p','No activity in this time range.'),
-                m('.btn-group', [
-                    ctrl.page > 1 ? m('button.btn.btn-info', {onclick: function(){
+                m('.btn-group', {textAlign: 'center'}, [
+                    m('button.btn.btn-primary' + (ctrl.page > 1 ? '' : '.disabled'), {onclick: function(){
                         ctrl.page--;
                         ctrl.getLogs()
-                    }}, 'Previous') : '',
-                    ctrl.lastPage > ctrl.page ? m('button.btn.btn-info', {onclick: function(){
+                    }}, 'Previous'),
+                    m('button.btn.btn-primary' + (ctrl.lastPage > ctrl.page ? '' : '.disabled'), {onclick: function(){
                         ctrl.page++;
                         ctrl.getLogs()
-                    }}, 'Next') : ''
+                    }}, 'Next')
                 ])
             ]))
         ]);

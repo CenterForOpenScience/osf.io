@@ -61,8 +61,8 @@ var logActions = {
     'osf_storage_file_updated' : '${user} updated file ${path} in OSF Storage in ${node}',
     'osf_storage_file_removed' : '${user} removed ${path} from OSF Storage in ${node}',
     'github_node_authorized' : '${user}: Github node authorized.',
-    'github_repo_linked' : '${user}: Github repo link',
-    'github_node_deauthorized': '',
+    'github_repo_linked' : '${user}: Github repo link.',
+    'github_node_deauthorized': '${user}: Github node deauthorized.',
 };
 
 module.exports = logActions;
