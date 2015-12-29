@@ -4,6 +4,7 @@ import logging
 import argparse
 import requests
 import itertools
+import collections
 
 from framework.transactions.context import TokuTransaction
 from modularodm.query.querydialect import DefaultQueryDialect as Q
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 base_path_regex = re.compile('[^/]+/?$')
 FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
-all_file_tally = { 'updated': 0, 'deleted': 0, 'created': 0}
+all_file_tally = collections.Counter()
 
 
 def main():
@@ -171,13 +172,13 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
 
     parent_folders = { '/': node_settings.folder_id }
 
-    node_file_tally = {'updated': 0, 'deleted': 0, 'created': 0}
+    node_file_tally = collections.Counter()
 
     # how does one do a schwartzian transform in python?
     schwartz = [ [base_path_regex.sub('', x.path), x] for x in gdrive_filenodes ]
     ordered = sorted(schwartz, key=lambda x: x[0])
     for filenode_root, filenodes in itertools.groupby(ordered, lambda x: x[0]):
-        logger.debug(u'  Root: {}'.format(filenode_root))
+        logger.debug(u'  Dir: {}'.format(filenode_root))
 
         payload = {'alt': 'json', 'q':_build_query(parent_folders[filenode_root])}
         resp = requests.get(base_url, params=payload, headers=headers)
@@ -227,20 +228,15 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
                 filenode.update(found['extra']['revisionId'], found)
 
         root_file_tally['created'] = len(grouped_metadata['file']) + len(grouped_metadata['folder'])
+        logger.debug("    Summary: Updated {} files/folders for dir".format(root_file_tally['updated']))
+        logger.debug("    Summary: Deleted {} files/folders for dir".format(root_file_tally['deleted']))
+        logger.debug("    Summary: Found {} unrecorded files/folders for dir".format(root_file_tally['created']))
+        node_file_tally.update(root_file_tally)
 
-        logger.debug("    Updated {} files/folders".format(root_file_tally['updated']))
-        node_file_tally['updated'] += root_file_tally['updated']
-        logger.debug("    Deleted {} files/folders".format(root_file_tally['deleted']))
-        node_file_tally['deleted'] += root_file_tally['deleted']
-        logger.debug("    Found {} unrecorded files/folders".format(root_file_tally['created']))
-        node_file_tally['created'] += root_file_tally['created']
-
-    logger.info("   Updated {} files/folders".format(node_file_tally['updated']))
-    all_file_tally['updated'] += node_file_tally['updated']
-    logger.info("   Deleted {} files/folders".format(node_file_tally['deleted']))
-    all_file_tally['deleted'] += node_file_tally['deleted']
-    logger.info("   Found {} unrecorded files/folders".format(node_file_tally['created']))
-    all_file_tally['created'] += node_file_tally['created']
+    logger.info("   Summary: Updated {} files/folders for node".format(node_file_tally['updated']))
+    logger.info("   Summary: Deleted {} files/folders for node".format(node_file_tally['deleted']))
+    logger.info("   Summary: Found {} unrecorded files/folders for node".format(node_file_tally['created']))
+    all_file_tally.update(node_file_tally)
 
 
 ### BEGIN STEALING FROM WATERBUTLER's waterbutler/providers/googledrive/utils.py
