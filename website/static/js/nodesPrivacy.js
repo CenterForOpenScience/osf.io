@@ -200,6 +200,7 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
     };
 
     self.confirmChanges =  function() {
+        $osf.block('Updating Privacy');
         var nodesState = ko.toJS(self.nodesState());
         nodesState = Object.keys(nodesState).map(function(key) {
             return nodesState[key];
@@ -213,11 +214,13 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
             self.nodesChangedPublic([]);
             self.nodesChangedPrivate([]);
             self.page(self.WARNING);
+            $osf.unblock();
             window.location.reload();
         }).fail(function () {
             $osf.growl('Error', 'Unable to update project privacy');
             Raven.captureMessage('Could not PATCH project settings.');
             self.clear();
+            self.dirty(false);
             window.location.reload();
         });
     };
