@@ -205,6 +205,13 @@ var FileBrowser = {
             });
             return promise;
         };
+        // separate concerns, wrap getlogs here to get logs for the selected item
+        self.getCurrentLogs = function _getCurrentLogs ( ){
+            if(self.selected().length === 1){
+                var id = self.selected()[0].data.id;
+                var promise = self.getLogs(id);
+            }
+        };
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
         self.updateFilesData = function(linkObject) {
@@ -220,11 +227,8 @@ var FileBrowser = {
         /* Defines the current selected item so appropriate information can be shown */
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
-            // If single project is selected, get activity
-            if(selectedList.length === 1){
-                self.getLogs(selectedList[0].data.id);
-            }
             self.selected(selectedList);
+            self.getCurrentLogs();
         };
 
         // USER FILTER
@@ -267,9 +271,7 @@ var FileBrowser = {
             } else {
                 self.data(value);
             }
-            if(value.data[0]){ // If we have projects to show get first project's logs
-                self.getLogs(value.data[0].id);
-            } else {
+            if(!value.data[0]){ // If we have projects
                 var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
@@ -465,7 +467,7 @@ var FileBrowser = {
         var infoButtonClass = 'btn-default';
         var sidebarButtonClass = 'btn-default';
         if (ctrl.showInfo() && !mobile){
-            infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected, activityLogs : ctrl.activityLogs  }));
+            infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected, activityLogs : ctrl.activityLogs, getCurrentLogs: ctrl.getCurrentLogs  }));
             infoButtonClass = 'btn-primary';
             poStyle = 'width : 45%';
         }
@@ -910,7 +912,7 @@ var Information = {
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
                         m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', 'Information')),
-                        m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', 'Activity')),
+                        m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', { onclick : args.getCurrentLogs},'Activity')),
                     ]),
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
