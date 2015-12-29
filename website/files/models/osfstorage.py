@@ -108,7 +108,11 @@ class OsfStorageFileNode(FileNode):
                 action,
                 params={
                     'project': self.node.parent_id,
-                    'node': self.node._id
+                    'node': self.node._id,
+                    'urls': {
+                        'download': "/project/" + self.node._id + "/files/osfstorage/" + self._id + "/?action=download",
+                        'view': "/project/" + self.node._id + "/files/osfstorage/" + self._id},
+                    'path': self.materialized_path
                 },
                 auth=auth,
             )
