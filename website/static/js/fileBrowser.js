@@ -945,10 +945,10 @@ var Information = {
         if (args.selected().length > 1) {
             template = m('', [ '', args.selected().map(function(item){
                 return m('.fb-info-multi', [
-                    m('h4', m('a', { href : item.links.html}, item.attributes.title)),
+                    m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
                     m('p.fb-info-meta.text-muted', [
-                        m('span', item.attributes.public ? 'Public' : 'Private' + ' ' + item.attributes.category),
-                        m('span', ', Last Modified on ' + item.date.local)
+                        m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
+                        m('span', ', Last Modified on ' + item.data.date.local)
                     ]),
                 ]);
             })]);
