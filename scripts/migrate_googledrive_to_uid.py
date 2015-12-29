@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 base_path_regex = re.compile('[^/]+/?$')
 FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
-file_tally = { 'updated': 0, 'deleted': 0, 'created': 0}
+all_file_tally = { 'updated': 0, 'deleted': 0, 'created': 0}
 
 
 def main():
@@ -30,6 +30,28 @@ def main():
     To do so will require using the owner's oauth access token and provider settings, which are
     tracked per-node.  Basic plan is to get all GoogleDriveFileNodes, group them by parent node,
     and batch update per parent node.
+
+    Failure modes:
+
+    If a stored file no longer appears in the list of its putative parent's children, assume it has
+    been deleted or moved and that we can no longer track it.  Remove its metadata from the OSF.
+
+    If we try to get the list of children of a parent folder, and Google hands us back a non-200
+    response, we'll throw an error and abort.  I'm not sure if there's a case where this is likely
+    to happen.  Two possibilities: a user deletes a child folder at the exact time the migration
+    is running, between when the child folder is identified and the child folder meta is retreived.
+    I suppose if a user has disabled their gdrive addon, it might cause an issue, but again,
+    doesn't seem likely.
+
+    What happens if the OAuth refresh fails?  This is low probability.  We refresh tokens regularly,
+    but it's possible a user could deauth the node during migration.  Kicking down the road for now.
+
+    Other consideration:
+
+    What to do when we find an entry on gdrive that's not in the osf?  We could go ahead and add it.
+    However, it'll get added correctly anyway the next time the user hits the NodeFilesList endpoint
+    either directly or indirectly (i.e. via fangorn).  I think for now we should report on what we
+    find, but not actually add it.
     """
 
     parser = argparse.ArgumentParser()
@@ -59,8 +81,8 @@ def main():
 
         update_node_files(current_node, gdrive_filenodes, args.dry)  # update final batch
         logger.warning('Found {} files across {} nodes'.format(file_count, node_count))
-        logger.warning('  {} were updated, {} were deleted, {} were added'.format(
-            file_tally['updated'], file_tally['deleted'], file_tally['created']))
+        logger.warning('  {} were updated, {} were deleted'.format(all_file_tally['updated'], all_file_tally['deleted']))
+        logger.warning('  {} files and folders would have been added, if we did that sort of thing.'.format(all_file_tally['created']))
 
 
 def _build_query(folder_id):
@@ -145,9 +167,11 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
     headers = {'authorization': 'Bearer {}'.format(access_token)}
     base_url = 'https://www.googleapis.com/drive/v2/files'
 
-    logger.info(u'Node: {}'.format(current_node))
+    logger.info(u' Node: {}'.format(current_node))
 
     parent_folders = { '/': node_settings.folder_id }
+
+    node_file_tally = {'updated': 0, 'deleted': 0, 'created': 0}
 
     # how does one do a schwartzian transform in python?
     schwartz = [ [base_path_regex.sub('', x.path), x] for x in gdrive_filenodes ]
@@ -177,6 +201,7 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
 
         files_ordered = sorted(list(filenodes), key=lambda x: x[1].path)
 
+        root_file_tally = {'updated': 0, 'deleted': 0, 'created': 0}
         for pair in files_ordered:
             storedfilenode = pair[1]
             filenode = GoogleDriveFile(storedfilenode) if storedfilenode.is_file else GoogleDriveFolder(storedfilenode)
@@ -185,7 +210,7 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
 
             if filenode.name not in grouped_metadata[kind]:
                 logger.debug(u'      Action: file not found, deleted.')
-                file_tally['deleted'] += 1
+                root_file_tally['deleted'] += 1
                 if not dry:
                     filenode.delete()
                 continue
@@ -196,11 +221,26 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
                 parent_folders[filenode.path] = found['path'].strip('/')
 
             logger.debug(u'      Action: file found, path updated to: {}'.format(found['path']))
-            file_tally['updated'] += 1
+            root_file_tally['updated'] += 1
             if not dry:
                 filenode.path = found['path']
                 filenode.update(found['extra']['revisionId'], found)
 
+        root_file_tally['created'] = len(grouped_metadata['file']) + len(grouped_metadata['folder'])
+
+        logger.debug("    Updated {} files/folders".format(root_file_tally['updated']))
+        node_file_tally['updated'] += root_file_tally['updated']
+        logger.debug("    Deleted {} files/folders".format(root_file_tally['deleted']))
+        node_file_tally['deleted'] += root_file_tally['deleted']
+        logger.debug("    Found {} unrecorded files/folders".format(root_file_tally['created']))
+        node_file_tally['created'] += root_file_tally['created']
+
+    logger.info("   Updated {} files/folders".format(node_file_tally['updated']))
+    all_file_tally['updated'] += node_file_tally['updated']
+    logger.info("   Deleted {} files/folders".format(node_file_tally['deleted']))
+    all_file_tally['deleted'] += node_file_tally['deleted']
+    logger.info("   Found {} unrecorded files/folders".format(node_file_tally['created']))
+    all_file_tally['created'] += node_file_tally['created']
 
 
 ### BEGIN STEALING FROM WATERBUTLER's waterbutler/providers/googledrive/utils.py
