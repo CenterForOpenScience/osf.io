@@ -964,8 +964,8 @@ var ActivityLogs = {
         return m('.fb-activity-list.m-t-md', [
             args.activityLogs() ? args.activityLogs().map(function(item){
                 return m('.fb-activity-item', [
-                    m('.row', [ m('.fb-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})), m.component(LogText,item)]),
-                    m('.row.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
+                    m('', [ m('.fb-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})), m.component(LogText,item)]),
+                    m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : ''
         ]);
