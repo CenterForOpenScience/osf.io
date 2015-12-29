@@ -336,6 +336,13 @@ class NodeLog(StoredObject):
     action = fields.StringField(index=True)
     params = fields.DictionaryField()
     should_hide = fields.BooleanField(default=False)
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('__backrefs.logged.node.logs.$', 1)
+            ],
+        }
+    ]
 
     was_connected_to = fields.ForeignField('node', list=True)
 
