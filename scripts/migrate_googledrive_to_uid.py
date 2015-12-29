@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 base_path_regex = re.compile('[^/]+/?$')
 FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
+file_tally = { 'updated': 0, 'deleted': 0, 'created': 0}
+
 
 def main():
     """We have been identifying GoogleDrive files by path but we want to switch to the unique IDs
@@ -35,14 +37,20 @@ def main():
     parser.add_argument('-v', '--verbose', action='count', help="verbosity")
     args = parser.parse_args()
 
+    logger.setLevel(logging.INFO if args.verbose == 1 else logging.DEBUG if args.verbose == 2 else logging.WARNING)
+
     scripts_utils.add_file_logger(logger, __file__)
     init_app(set_backends=True, routes=False)
 
     with TokuTransaction():
         current_node = None
         gdrive_filenodes = []
+        node_count = 0
+        file_count = 0
         for file in GoogleDriveFileNode.find().sort('node'):
+            file_count += 1
             if current_node != file.node_id:  # node changed, so update current list then reset
+                node_count += 1
                 update_node_files(current_node, gdrive_filenodes, args.dry)
                 gdrive_filenodes = []
                 current_node = file.node_id
@@ -50,6 +58,9 @@ def main():
             gdrive_filenodes.append(file)
 
         update_node_files(current_node, gdrive_filenodes, args.dry)  # update final batch
+        logger.warning('Found {} files across {} nodes'.format(file_count, node_count))
+        logger.warning('  {} were updated, {} were deleted, {} were added'.format(
+            file_tally['updated'], file_tally['deleted'], file_tally['created']))
 
 
 def _build_query(folder_id):
@@ -97,6 +108,7 @@ def _response_to_metadata(response, parent):
         'size': response.get('fileSize'),
     }
 
+
 def update_node_files(current_node, gdrive_filenodes, dry=True):
     """Handle updates for all googledrive files belonging to `current_node` in one batch.  Each
     node has its own oauth settings and base folder.  Entity lookup is done most efficiently by
@@ -141,7 +153,7 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
     schwartz = [ [base_path_regex.sub('', x.path), x] for x in gdrive_filenodes ]
     ordered = sorted(schwartz, key=lambda x: x[0])
     for filenode_root, filenodes in itertools.groupby(ordered, lambda x: x[0]):
-        logger.info(u'  Root: {}'.format(filenode_root))
+        logger.debug(u'  Root: {}'.format(filenode_root))
 
         payload = {'alt': 'json', 'q':_build_query(parent_folders[filenode_root])}
         resp = requests.get(base_url, params=payload, headers=headers)
@@ -158,10 +170,11 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
             storedfilenode = pair[1]
             filenode = GoogleDriveFile(storedfilenode) if storedfilenode.is_file else GoogleDriveFolder(storedfilenode)
             kind = 'file' if filenode.is_file else 'folder'
-            logger.info(u'    File: {}'.format(filenode.path))
+            logger.debug(u'    File: {}'.format(filenode.path))
 
             if filenode.name not in grouped_metadata[kind]:
-                logger.info(u'      Action: file not found, deleted.')
+                logger.debug(u'      Action: file not found, deleted.')
+                file_tally['deleted'] += 1
                 if not dry:
                     filenode.delete()
                 continue
@@ -171,7 +184,8 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
             if not filenode.is_file:
                 parent_folders[filenode.path] = found['path'].strip('/')
 
-            logger.info(u'      Action: file found, path updated to: {}'.format(found['path']))
+            logger.debug(u'      Action: file found, path updated to: {}'.format(found['path']))
+            file_tally['updated'] += 1
             if not dry:
                 filenode.path = found['path']
                 filenode.update(found['extra']['revisionId'], found)
