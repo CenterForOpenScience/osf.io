@@ -36,7 +36,7 @@ class UserNodeLogPagination(JSONAPIPagination):
                             ('nodes', nodes),
                             ('files', files),
                         ])),
-                        ('last_log_date', list(self.page.paginator.object_list)[-1].date)
+                        ('last_log_date', list(self.page.paginator.object_list)[-1].date if self.page.paginator.object_list else 0)
                     ]))
                 ])),
             ])

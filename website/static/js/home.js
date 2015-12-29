@@ -21,7 +21,7 @@ var LogWrap = {
         self.today = new Date();
         self.page = 1;
 
-        self.getLogs = function(init) {
+        self.getLogs = function(init, reset) {
             var query = {
                 'embed': ['nodes', 'user', 'linked_node', 'template_node'],
                 'page': self.page
@@ -29,9 +29,10 @@ var LogWrap = {
             if (self.eventFilter) {
                 query['filter[action]'] = self.eventFilter;
             }
-            if (init) {
+            if (init || reset) {
                 query['aggregate'] = 1;
-            } else {
+            }
+            if (!init) {
                 query['filter[date][lte]'] = self.dateEnd.toISOString();
                 query['filter[date][gte]'] = self.dateBegin.toISOString();
             }
@@ -41,21 +42,23 @@ var LogWrap = {
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
                 });
-                if (!init) {self.activityLogs(result.data)}
                 if (init) {
-                    self.totalEvents = result.links.meta.total;
-                    self.eventNumbers = result.links.meta.aggregates;
                     self.lastDay = new Date(result.data[0].attributes.date);
                     self.dateEnd = self.lastDay;
                     self.lastDay.setMonth(self.lastDay.getMonth() - 1);
                     self.dateBegin = self.lastDay;
                     self.firstDay = new Date(result.links.meta.last_log_date);
                 }
+                if (init || reset){
+                    self.totalEvents = result.links.meta.total;
+                    self.eventNumbers = result.links.meta.aggregates;
+                }
+                if (!init) {self.activityLogs(result.data)}
                 self.lastPage = (result.links.meta.total / result.links.meta.per_page | 0) + 1;
             });
             return promise;
         };
-        self.getLogs(true);
+        self.getLogs(true, false);
         self.getLogs();
     },
     view: function(ctrl, args){
@@ -75,7 +78,7 @@ var LogWrap = {
                         ctrl.page = 1;
                         ctrl.dateBegin = new Date(ui.values[0]);
                         ctrl.dateEnd = new Date(ui.values[1]);
-                        ctrl.getLogs();
+                        ctrl.getLogs(false, true);
                     }
                 });
             }
@@ -125,7 +128,7 @@ var LogWrap = {
                         m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
                         m.component(LogText,item)
                     ]);
-                }) : '',
+                }) : m('p','No activity in this time range.'),
                 m('.btn-group', [
                     ctrl.page > 1 ? m('button.btn.btn-info', {onclick: function(){
                         ctrl.page--;
