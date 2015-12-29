@@ -369,47 +369,51 @@ var FileBrowser = {
             self.breadcrumbs().push(linkObject);
         }.bind(self);
 
+        self.applyDroppable = function _applyDroppable ( ){
+            $('.fb-collections ul>li').droppable({
+                hoverClass: 'bg-color-hover',
+                drop: function( event, ui ) {
+                    console.log('dropped', event, ui, this);
+                    var collection = self.collections[$(this).attr('data-index')];
+                    var dataArray = [];
+                    self.selected().map(function(item){
+                        dataArray.push({
+                            'data' : {
+                                'type': 'node_links',
+                                'relationships': {
+                                    'nodes': {
+                                        'data': {
+                                            'type': 'nodes',
+                                            'id': item.data.id
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    });
+                    function saveLink (index) {
+                        m.request({
+                            method : 'POST',
+                            url : collection.data.node.relationships.node_links.links.related.href,
+                            config : xhrconfig,
+                            data : dataArray[index]
+                        }).then(function(result){
+                            if(dataArray[index+1]){
+                                saveLink(index+1);
+                            }
+                        });
+                    }
+                    if(dataArray.length > 0){
+                        saveLink(0);
+                    }
+                }
+            });
+        };
+
         self.sidebarInit = function (element, isInit) {
             if(!isInit){
                 $('[data-toggle="tooltip"]').tooltip();
-                $('.fb-collections ul>li').droppable({
-                    hoverClass: 'bg-color-hover',
-                    drop: function( event, ui ) {
-                       console.log('dropped', event, ui, this);
-                        var collection = self.collections[$(this).attr('data-index')];
-                        var dataArray = [];
-                        self.selected().map(function(item){
-                            dataArray.push({
-                                    'data' : {
-                                        'type': 'node_links',
-                                        'relationships': {
-                                            'nodes': {
-                                                'data': {
-                                                    'type': 'nodes',
-                                                    'id': item.data.id
-                                                }
-                                            }
-                                        }
-                                    }
-                                });
-                        });
-                        function saveLink (index) {
-                            m.request({
-                                method : 'POST',
-                                url : collection.data.node.relationships.node_links.links.related.href,
-                                config : xhrconfig,
-                                data : dataArray[index]
-                            }).then(function(result){
-                                if(dataArray[index+1]){
-                                    saveLink(index+1);
-                                }
-                            });
-                        }
-                        if(dataArray.length > 0){
-                            saveLink(0);
-                        }
-                    }
-                });
+                self.applyDroppable();
             }
         };
 
@@ -549,6 +553,7 @@ var Collections  = {
                 console.log(result);
                 var node = result.data;
                 args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
+                args.sidebarInit();
             });
             self.newCollectionName('');
             self.dismissModal();
@@ -606,7 +611,7 @@ var Collections  = {
                 }, ''),
                 m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
             ]),
-            m('ul', [
+            m('ul', { config: args.applyDroppable },[
                 args.collections.map(function(item, index){
                     if (item.id === args.activeFilter()) {
                         selectedCSS = 'active';
