@@ -233,7 +233,7 @@
                         <h3>Configure</h3>
                         <div style="padding-left: 15px">
                             %if  node['is_public']:
-                                <p class="text">Control who can edit <b>${node['title']}'s</b> wiki.</p>
+                                <p class="text">Control who can edit the wiki of <b>${node['title']}</b></p>
                             %else:
                                 <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
                             %endif
@@ -250,7 +250,7 @@
                             </div>
                         </form>
                     % else:
-                        <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public and enabled.</p>
+                        <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public and the wiki enabled.</p>
                     %endif
                 </div>
             </div>
