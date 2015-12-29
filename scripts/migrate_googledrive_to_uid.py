@@ -157,6 +157,17 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
 
         payload = {'alt': 'json', 'q':_build_query(parent_folders[filenode_root])}
         resp = requests.get(base_url, params=payload, headers=headers)
+
+        if resp.status_code != 200:
+            raise Exception(
+                "Not gonna lie, I wasn't expecting this. How did this happen? "
+                "I was trying to get a list of child entities of {} for node {}"
+                ", but when I asked Google about it, they handed me back a {}"
+                " response code.  What the hell, Google, I thought we were tight?!"
+                " Oh well, I guess I have no choice but to abort and investigate. "
+                "Thumbs down.".format(filenode_root, current_node, resp.status_code)
+            )
+
         items = resp.json()['items']
 
         metadata = [ _response_to_metadata(item, filenode_root) for item in items ]
