@@ -20,11 +20,17 @@ var LogWrap = {
         self.dateBegin = new Date();
         self.today = new Date();
         self.page = 1;
+        self.cache = [];
 
         self.getLogs = function(init, reset) {
+            if (!(init || reset)  && self.cache[self.page - 1]){
+                self.activityLogs(self.cache[self.page - 1]);
+                return
+            }
             var query = {
                 'embed': ['nodes', 'user', 'linked_node', 'template_node'],
                 'page': self.page,
+                'page[size]': 20
             };
             if (self.eventFilter) {
                 query['filter[action]'] = self.eventFilter;
@@ -52,8 +58,13 @@ var LogWrap = {
                 if (init || reset){
                     self.totalEvents = result.links.meta.total;
                     self.eventNumbers = result.links.meta.aggregates;
+                    self.cache = [];
                 }
-                if (!init) {self.activityLogs(result.data)}
+                if (!init) {
+                    self.cache.push(result.data.slice(0,9));
+                    self.cache.push(result.data.slice(10,19));
+                    self.activityLogs(result.data.slice(10,19));
+                }
                 self.lastPage = (result.links.meta.total / result.links.meta.per_page | 0) + 1;
             });
             return promise;
