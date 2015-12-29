@@ -107,7 +107,7 @@ var UserProfileClient = oop.defclass({
 
             } else {
                 $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
-                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                'again or contact <a href="mailto: support@osf.io">support@osf.io</a> ' +
                 'if the problem persists.', 'danger');
             }
 
@@ -300,7 +300,7 @@ var DeactivateAccountViewModel = oop.defclass({
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                'Deactivation request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
+                'Deactivation request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
                 'danger'
             );
             Raven.captureMessage('Error requesting account deactivation', {
@@ -348,7 +348,7 @@ var ExportAccountViewModel = oop.defclass({
         }.bind(this));
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                'Export request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
+                'Export request failed. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.',
                 'danger'
             );
             Raven.captureMessage('Error requesting account export', {

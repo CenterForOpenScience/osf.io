@@ -6,7 +6,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from website.project.model import Q
 from api.base.settings import BULK_SETTINGS
-from api.base.exceptions import Conflict, JSONAPIException
+from api.base.exceptions import Conflict, JSONAPIException, Gone
 from api.base.utils import is_bulk_request
 
 
@@ -57,7 +57,12 @@ class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
             raise ValidationError('Request must contain array of resource identifier objects.')
 
         response = super(BulkUpdateJSONAPIView, self).bulk_update(request, *args, **kwargs)
+        errors = {}
+        if 'errors' in response.data[-1]:
+            errors = response.data.pop(-1)
         response.data = {'data': response.data}
+        if errors:
+            response.data.update(errors)
         return response
 
 
@@ -74,6 +79,10 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         requested_ids = [data['id'] for data in request.data]
         resource_object_list = model_cls.find(Q('_id', 'in', requested_ids))
 
+        for resource in resource_object_list:
+            if getattr(resource, 'is_deleted', None):
+                raise Gone
+
         if len(resource_object_list) != len(request.data):
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
 
@@ -84,6 +93,14 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         Ensures user has permission to bulk delete resources in request body. Override if not deleting relationships.
         """
         return True
+
+    def bulk_destroy_skip_uneditable(self, resource_list, user, object_type):
+        """
+        Override on view if allowing bulk delete request to skip resources for which the user does not have permission
+        to delete.  Method should return a dict in this format: {'skipped': [array of resources which should be skipped],
+        'allowed': [array of resources which should be deleted]}
+        """
+        return None
 
     # Overrides BulkDestroyAPIView
     def bulk_destroy(self, request, *args, **kwargs):
@@ -115,6 +132,13 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         if not self.allow_bulk_destroy_resources(user, resource_object_list):
             raise PermissionDenied
 
-        self.perform_bulk_destroy(resource_object_list)
+        skip_uneditable = self.bulk_destroy_skip_uneditable(resource_object_list, user, object_type)
+        if skip_uneditable:
+            skipped = skip_uneditable['skipped']
+            allowed = skip_uneditable['allowed']
+            if skipped:
+                self.perform_bulk_destroy(allowed)
+                return Response(status=status.HTTP_200_OK, data={'errors': skipped})
 
+        self.perform_bulk_destroy(resource_object_list)
         return Response(status=status.HTTP_204_NO_CONTENT)

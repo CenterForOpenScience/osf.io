@@ -352,12 +352,12 @@ class TestProjectViews(OsfTestCase):
 
     def test_new_user_gets_dashboard_on_dashboard_path(self):
         my_user = AuthUserFactory()
-        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        dashboard = Node.find_for_user(my_user, subquery=Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 0)
         url = api_url_for('get_dashboard')
         self.app.get(url, auth=my_user.auth)
         my_user.reload()
-        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        dashboard = Node.find_for_user(my_user, subquery=Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 1)
 
     def test_add_contributor_post(self):
@@ -1196,6 +1196,20 @@ class TestUserProfile(OsfTestCase):
         for key, value in payload.iteritems():
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
+
+    # Regression test for help-desk ticket
+    def test_making_email_primary_is_not_case_sensitive(self):
+        user = AuthUserFactory(username='fred@queen.test')
+        # make confirmed email have different casing
+        user.emails[0] = user.emails[0].capitalize()
+        user.save()
+        url = api_url_for('update_user')
+        res = self.app.put_json(
+            url,
+            {'id': user._id, 'emails': [{'address': 'fred@queen.test', 'primary': True, 'confirmed': True}]},
+            auth=user.auth
+        )
+        assert_equal(res.status_code, 200)
 
     def test_unserialize_social_validation_failure(self):
         url = api_url_for('unserialize_social')

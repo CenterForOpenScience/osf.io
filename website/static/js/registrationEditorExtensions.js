@@ -235,12 +235,12 @@ var AuthorImport = function(data, $root) {
                 return self.serializeContributors(data);
             }).fail(function() {
                 $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
-                           'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                           'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                            'problem persists.');
             });
     };
     self.getContributors().done(function(data) {
-        self.value(data);
+        self.question.value(data);
     });
     self.preview = function() {
         return self.value();
@@ -248,14 +248,18 @@ var AuthorImport = function(data, $root) {
     var callback = function(data) {
         self.value(self.serializeContributors(data));
     };
-    var adder = new ContribAdder(
-        '#addContributors',
-        node.title,
-        node.id,
-        null,
-        null,
-        {async: true, callback: callback}
-    );
+
+    if ($('#addContributors').length > 0) {
+        ko.cleanNode($('#addContributors')[0]);
+        var adder = new ContribAdder(
+            '#addContributors',
+            node.title,
+            node.id,
+            null,
+            null,
+            {async: true, callback: callback}
+        );
+    }
 
     $.extend(self, data);
 };

@@ -74,7 +74,7 @@ var remoteFileHandler = function(html, url, cm, init, fixupInputArea) {
         var ext = getExtension(imgURL);
         isImg = !!ext ? validImgExtensions.indexOf(ext.toLowerCase()) > -1 : false;
     }
-    cm.doLinkOrImage(init, fixupInputArea, isImg, url);
+    cm.doLinkOrImage(init, fixupInputArea, isImg, imgURL);
 };
 
 /**
@@ -232,7 +232,7 @@ var imageFolder = 'Wiki Image Uploads';
 var notUploaded = function(multiple) {
     var files = multiple ? 'File(s)' : 'File';
     $osf.growl('Error', files + ' not uploaded. Please refresh the page and try ' +
-        'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+        'again or contact <a href="mailto: support@osf.io">support@osf.io</a> ' +
         'if the problem persists.', 'danger');
 };
 
