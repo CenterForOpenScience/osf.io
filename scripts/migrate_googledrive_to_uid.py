@@ -12,11 +12,10 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 from website.app import init_app
 from scripts import utils as scripts_utils
 from website.files.models.base import FileNode
-from website.files.models.googledrive import GoogleDriveFileNode, GoogleDriveFile, GoogleDriveFolder
 from website.addons.googledrive.model import GoogleDriveNodeSettings
+from website.files.models.googledrive import GoogleDriveFileNode, GoogleDriveFile, GoogleDriveFolder
 
 logger = logging.getLogger(__name__)
-
 base_path_regex = re.compile('[^/]+/?$')
 FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
 all_file_tally = collections.Counter()
@@ -41,7 +40,7 @@ def main():
     response, we'll throw an error and abort.  I'm not sure if there's a case where this is likely
     to happen.  Two possibilities: a user deletes a child folder at the exact time the migration
     is running, between when the child folder is identified and the child folder meta is retreived.
-    I suppose if a user has disabled their gdrive addon, it might cause an issue, but again,
+    I suppose if a user has disabled their gdrive addon it might cause an issue, but again,
     doesn't seem likely.
 
     What happens if the OAuth refresh fails?  This is low probability.  We refresh tokens regularly,
@@ -61,7 +60,6 @@ def main():
     args = parser.parse_args()
 
     logger.setLevel(logging.INFO if args.verbose == 1 else logging.DEBUG if args.verbose == 2 else logging.WARNING)
-
     scripts_utils.add_file_logger(logger, __file__)
     init_app(set_backends=True, routes=False)
 
@@ -174,7 +172,7 @@ def update_node_files(current_node, gdrive_filenodes, dry=True):
 
     node_file_tally = collections.Counter()
 
-    # how does one do a schwartzian transform in python?
+    # how does one do a schwartzian transform in python? each schwartz entry is [root, filenode]
     schwartz = [ [base_path_regex.sub('', x.path), x] for x in gdrive_filenodes ]
     ordered = sorted(schwartz, key=lambda x: x[0])
     for filenode_root, filenodes in itertools.groupby(ordered, lambda x: x[0]):
