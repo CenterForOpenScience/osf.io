@@ -24,7 +24,7 @@ var LogWrap = {
         self.getLogs = function(init, reset) {
             var query = {
                 'embed': ['nodes', 'user', 'linked_node', 'template_node'],
-                'page': self.page
+                'page': self.page,
             };
             if (self.eventFilter) {
                 query['filter[action]'] = self.eventFilter;
@@ -79,6 +79,9 @@ var LogWrap = {
                         ctrl.dateBegin = new Date(ui.values[0]);
                         ctrl.dateEnd = new Date(ui.values[1]);
                         ctrl.getLogs(false, true);
+                    },
+                    slide: function (event, ui) {
+
                     }
                 });
             }
@@ -92,35 +95,35 @@ var LogWrap = {
             m('.fb-activity-list.m-t-md', [
                 m('#recentActivitySlider', {style: {margin: '10px'}, config: addSlider}),
                 m('.progress', [
-                    m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : ''), {style: {width: fileEvents+'%'}},
+                    m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : '.muted'), {style: {width: fileEvents+'%'}},
                         m('a', {onclick: function(){
                             ctrl.eventFilter = ctrl.eventFilter === 'file' ? false : 'file';
                             ctrl.page = 1;
                             ctrl.getLogs();
                         }}, 'Files')
                     ),
-                    m('.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ? '.active.progress-bar-striped' : ''), {style: {width: nodeEvents+'%'}},
+                    m('.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ? '.active.progress-bar-striped' : '.muted'), {style: {width: nodeEvents+'%'}},
                         m('a', {onclick: function(){
                             ctrl.eventFilter = ctrl.eventFilter === 'project' ? false : 'project';
                             ctrl.page = 1;
                             ctrl.getLogs();
                         }}, 'Nodes')
                     ),
-                    m('.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' ? '.active.progress-bar-striped' : ''), {style: {width: commentEvents+'%'}},
+                    m('.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' ? '.active.progress-bar-striped' : '.muted'), {style: {width: commentEvents+'%'}},
                         m('a', {onclick: function(){
                             ctrl.eventFilter = ctrl.eventFilter === 'comment' ? false : 'comment';
                             ctrl.page = 1;
                             ctrl.getLogs();
                         }}, 'Comments')
                     ),
-                    m('.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' ? '.active.progress-bar-striped' : ''), {style: {width: wikiEvents+'%'}},
+                    m('.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' ? '.active.progress-bar-striped' : '.muted'), {style: {width: wikiEvents+'%'}},
                         m('a', {onclick: function(){
                             ctrl.eventFilter = ctrl.eventFilter === 'wiki' ? false : 'wiki';
                             ctrl.page = 1;
                             ctrl.getLogs();
                         }}, 'Wiki')
                     ),
-                    m('.progress-bar.progress-bar-success', {style: {width: otherEvents+'%'}}, 'Other')
+                    m('.progress-bar.progress-bar-success.muted', {style: {width: otherEvents+'%'}}, 'Other')
                 ]),
                 ctrl.activityLogs() ? ctrl.activityLogs().map(function(item){
 

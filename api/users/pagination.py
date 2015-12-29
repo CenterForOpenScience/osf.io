@@ -57,6 +57,8 @@ class UserNodeLogPagination(JSONAPIPagination):
         return Response(response_dict)
 
     def get_count_of_action(self):
+        #  try and call query method from view
+        
         logs_with_action = {}
         for log in self.page.paginator.object_list:
             if logs_with_action.get(log.action):

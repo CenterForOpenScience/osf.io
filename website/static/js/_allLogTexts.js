@@ -56,6 +56,8 @@ var logActions = {
   "osf_storage_folder_created": "${user} created folder ${path} in OSF Storage in ${node}",
   "osf_storage_file_updated": "${user} updated file ${path} in OSF Storage in ${node}",
   "osf_storage_file_removed": "${user} removed ${path} from OSF Storage in ${node}",
+  "github_node_authorized": "Github node authorized.",
+  "github_repo_linked": "Github repo link",
   "box_file_added": "${user} added a ${file} to Box in ${node}",
   "box_folder_created": "${user} created folder ${path} in Box in ${node}",
   "box_file_updated": "${user} updated file ${path} in Box in ${node}",
