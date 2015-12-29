@@ -109,6 +109,27 @@ function _makeTree (flatData) {
 }
 
 /**
+ * Returns the object to send to the API to end a node_link to collection
+ * @param id {String} unique id of the node like 'ez8f3'
+ * @returns {{data: {type: string, relationships: {nodes: {data: {type: string, id: *}}}}}}
+ */
+function buildCollectionNodeData (id) {
+    return {
+        'data' : {
+            'type': 'node_links',
+            'relationships': {
+                'nodes': {
+                    'data': {
+                        'type': 'nodes',
+                        'id': id
+                    }
+                }
+            }
+        }
+    };
+}
+
+/**
  * Initialize File Browser. Prepeares an option object within FileBrowser
  * @constructor
  */
@@ -376,22 +397,16 @@ var FileBrowser = {
                     console.log('dropped', event, ui, this);
                     var collection = self.collections[$(this).attr('data-index')];
                     var dataArray = [];
-                    self.selected().map(function(item){
-                        dataArray.push({
-                            'data' : {
-                                'type': 'node_links',
-                                'relationships': {
-                                    'nodes': {
-                                        'data': {
-                                            'type': 'nodes',
-                                            'id': item.data.id
-                                        }
-                                    }
-                                }
-                            }
+                    // If multiple items are dragged they have to be selected to make it work
+                    if (self.selected().length > 1) {
+                        self.selected().map(function(item){
+                            dataArray.push(buildCollectionNodeData(item.data.id));
                         });
-                    });
-                    function saveLink (index) {
+                    } else {
+                    // if single items are passed use the event information
+                        dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
+                    }
+                    function saveNodetoCollection (index) {
                         m.request({
                             method : 'POST',
                             url : collection.data.node.relationships.node_links.links.related.href,
@@ -399,12 +414,12 @@ var FileBrowser = {
                             data : dataArray[index]
                         }).then(function(result){
                             if(dataArray[index+1]){
-                                saveLink(index+1);
+                                saveNodetoCollection(index+1);
                             }
                         });
                     }
                     if(dataArray.length > 0){
-                        saveLink(0);
+                        saveNodetoCollection(0);
                     }
                 }
             });
