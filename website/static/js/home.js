@@ -29,7 +29,7 @@ var LogWrap = {
             }
             var query = {
                 'embed': ['nodes', 'user', 'linked_node', 'template_node'],
-                'page': self.page,
+                'page': ((self.page/2) | 0) + 1,
                 'page[size]': 20
             };
             if (self.eventFilter) {
@@ -63,7 +63,7 @@ var LogWrap = {
                 if (!init) {
                     self.cache.push(result.data.slice(0,9));
                     self.cache.push(result.data.slice(10,19));
-                    self.activityLogs(result.data.slice(10,19));
+                    self.activityLogs(self.cache[self.page - 1]);
                 }
                 self.lastPage = (result.links.meta.total / result.links.meta.per_page | 0) + 1;
             });
@@ -111,6 +111,7 @@ var LogWrap = {
                         m('a', {onclick: function(){
                             ctrl.eventFilter = ctrl.eventFilter === 'file' ? false : 'file';
                             ctrl.page = 1;
+                            ctrl.cache = [];
                             ctrl.getLogs();
                         }}, 'Files')
                     ),
@@ -118,6 +119,7 @@ var LogWrap = {
                         m('a', {onclick: function(){
                             ctrl.eventFilter = ctrl.eventFilter === 'project' ? false : 'project';
                             ctrl.page = 1;
+                            ctrl.cache = [];
                             ctrl.getLogs();
                         }}, 'Nodes')
                     ),
@@ -125,6 +127,7 @@ var LogWrap = {
                         m('a', {onclick: function(){
                             ctrl.eventFilter = ctrl.eventFilter === 'comment' ? false : 'comment';
                             ctrl.page = 1;
+                            ctrl.cache = [];
                             ctrl.getLogs();
                         }}, 'Comments')
                     ),
@@ -132,6 +135,7 @@ var LogWrap = {
                         m('a', {onclick: function(){
                             ctrl.eventFilter = ctrl.eventFilter === 'wiki' ? false : 'wiki';
                             ctrl.page = 1;
+                            ctrl.cache = [];
                             ctrl.getLogs();
                         }}, 'Wiki')
                     ),
