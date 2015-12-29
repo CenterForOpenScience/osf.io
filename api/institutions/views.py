@@ -31,7 +31,7 @@ class InstitutionMixin(object):
         return inst
 
 
-class InstitutionList(JSONAPIBaseView, generics.ListAPIView):
+class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """
     Paginated list of verified Institutions affiliated with COS
 
@@ -61,18 +61,16 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'institutions'
     view_name = 'institution-list'
 
+    def get_default_odm_query(self):
+        return Q('_id', 'ne', None)
+
     # overrides ListAPIView
     def get_queryset(self):
-        return Institution.find()
+        return Institution.find(self.get_query_from_request())
 
 
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
     """ Details about a given institution.
-
-    ###Permissions
-
-    All institutions are available to be read by everyone. However, no one has write
-    permissions for institutions.
 
     ##Attributes
 
