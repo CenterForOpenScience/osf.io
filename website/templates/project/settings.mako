@@ -130,12 +130,15 @@
                         <form id="selectAddonsForm">
 
                             % for category in addon_categories:
+
                                 <%
-                                    addons = []
-                                    for addon in addons_available:
-                                        if category in addon.categories:
-                                            addons.append(addon)
+                                    addons = [
+                                        addon
+                                        for addon in addons_available
+                                        if category in addon.categories
+                                    ]
                                 %>
+
                                 % if addons:
                                     <h3>${category.capitalize()}</h3>
 
