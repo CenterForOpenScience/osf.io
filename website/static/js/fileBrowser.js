@@ -194,14 +194,21 @@ var FileBrowser = {
 
         // Activity Logs
         self.activityLogs = m.prop();
-        self.getLogs = function _getLogs (nodeId) {
-            var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
+        self.showMoreActivityLogs = m.prop(null);
+        self.getLogs = function _getLogs (nodeId, link, addToExistingList) {
+            var url = link || $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
+                    if(addToExistingList){
+                        self.activityLogs().push(log);
+                    }
                 });
-                self.activityLogs(result.data);
+                if(!addToExistingList){
+                    self.activityLogs(result.data);  // Set activity log data
+                }
+                self.showMoreActivityLogs(result.links.next); // Set view for show more button
             });
             return promise;
         };
@@ -467,7 +474,7 @@ var FileBrowser = {
         var infoButtonClass = 'btn-default';
         var sidebarButtonClass = 'btn-default';
         if (ctrl.showInfo() && !mobile){
-            infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected, activityLogs : ctrl.activityLogs, getCurrentLogs: ctrl.getCurrentLogs  }));
+            infoPanel = m('.fb-infobar', m.component(Information, ctrl));
             infoButtonClass = 'btn-primary';
             poStyle = 'width : 45%';
         }
@@ -538,7 +545,7 @@ var FileBrowser = {
                 )
             ]),
             infoPanel,
-            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected, activityLogs : ctrl.activityLogs})
+            m.component(Modals, ctrl)
         ];
     }
 };
@@ -939,7 +946,7 @@ var Information = {
                             ])
                         ]),
                         m('[role="tabpanel"].tab-pane#tab-activity',[
-                            m.component(ActivityLogs, { activityLogs : args.activityLogs })
+                            m.component(ActivityLogs, args)
                         ])
                     ])
                 ])
@@ -969,7 +976,11 @@ var ActivityLogs = {
                     m('', [ m('.fb-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})), m.component(LogText,item)]),
                     m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
-            }) : ''
+            }) : '',
+            m('.fb-activity-nav.text-center', [
+                args.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){ args.getLogs(null, args.showMoreActivityLogs(), true); }}, [ 'Show more', m('i.fa.fa-caret-down.m-l-xs')]) : '',
+            ])
+
         ]);
     }
 };
@@ -989,8 +1000,8 @@ var Modals = {
                             m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
-                            m.component(Information, { selected : args.selected, activityLogs : args.activityLogs })
-                        ]),
+                            m.component(Information, args)
+]),
                     ])
                 )
             )
