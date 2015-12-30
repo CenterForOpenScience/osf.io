@@ -95,6 +95,13 @@ class HideIfRegistration(ser.Field):
             self.field.parent = self.field.root
         return self.field.to_representation(value)
 
+    def to_esi_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_esi_representation(value)
+
 
 class HideIfRetraction(HideIfRegistration):
     """
