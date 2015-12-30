@@ -10,6 +10,6 @@ var quickSearchProject = require('js/quickProjectSearchPlugin');
 var m = require('mithril');
 
 $(document).ready(function(){
-   m.mount(document.getElementById('addProjectWrap'), m.component(quickSearchProject, {}));
+   m.mount(document.getElementById('addQuickProjectSearchWrap'), m.component(quickSearchProject, {}));
 
 });
