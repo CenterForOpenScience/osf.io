@@ -731,7 +731,7 @@ class JSONAPISerializer(ser.Serializer):
         ])
 
         embeds = self.context.get('embed', {})
-        esi = self.context.get('esi', {})
+        enable_esi = self.context.get('enable_esi', False)
         is_anonymous = is_anonymized(self.context['request'])
         to_be_removed = []
         if is_anonymous and hasattr(self, 'non_anonymized_fields'):
@@ -761,7 +761,7 @@ class JSONAPISerializer(ser.Serializer):
                 if attribute is None:
                     continue
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
-                    if esi:
+                    if enable_esi:
                         try:
                             result = field.to_esi_representation(attribute)
                         except SkipField:

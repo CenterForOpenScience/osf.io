@@ -73,7 +73,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embed_field = fields_check.get(embed)
             embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
         context.update({
-            'esi': django_settings.ENABLE_ESI,
+            'enable_esi': django_settings.ENABLE_ESI,
             'embed': embeds_partials,
         })
         return context
