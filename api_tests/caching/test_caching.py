@@ -117,52 +117,6 @@ class TestVarnish(object):
 
                 embed_values.pop()
 
-        # Uncomment these lines to write out files containing responses for comparison
-        # from datadiff import diff
-        # for item_type, item in python_data.items():
-        #     for embed_type, data in item.items():
-        #         with open('./python_data_{}_{}.json'.format(item_type, embed_type),
-        #                   'w') as fp:
-        #             fp.write(json.dumps(python_data[item_type][embed_type], indent=4))
-        #             fp.close()
-        #
-        # for item_type, item in varnish_data.items():
-        #     for embed_type, data in item.items():
-        #         with open('./varnish_data_{}_{}.json'.format(item_type, embed_type),
-        #                   'w') as fp:
-        #             fp.write(json.dumps(varnish_data[item_type][embed_type], indent=4))
-        #             fp.close()
-        #
-        # for item_type, item in varnish_data.items():
-        #     for embed_type, data in item.items():
-        #         delta = diff(python_data[item_type][embed_type], varnish_data[item_type][embed_type])
-        #         with open('./data_diff_{}_{}.diff'.format(item_type, embed_type),
-        #                   'w') as fp:
-        #             fp.write(str(delta))
-        #             fp.close()
-        #
-        # for item_type, item in python_authed_data.items():
-        #     for embed_type, data in item.items():
-        #         with open('./python_authed_data_{}_{}.json'.format(item_type, embed_type),
-        #                   'w') as fp:
-        #             fp.write(json.dumps(python_data[item_type][embed_type], indent=4))
-        #             fp.close()
-        #
-        # for item_type, item in varnish_authed_data.items():
-        #     for embed_type, data in item.items():
-        #         with open('./varnish_authed_data_{}_{}.json'.format(item_type, embed_type),
-        #                   'w') as fp:
-        #             fp.write(json.dumps(varnish_data[item_type][embed_type], indent=4))
-        #             fp.close()
-        #
-        # for item_type, item in varnish_authed_data.items():
-        #     for embed_type, data in item.items():
-        #         delta = diff(python_authed_data[item_type][embed_type], varnish_authed_data[item_type][embed_type])
-        #         with open('./data_diff_authed_{}_{}.diff'.format(item_type, embed_type),
-        #                   'w') as fp:
-        #             fp.write(str(delta))
-        #             fp.close()
-
     def validate_keys(self, data, embed_keys=list()):
         """
         validate_keys confirms that the correct keys are in embeds and relationships.
