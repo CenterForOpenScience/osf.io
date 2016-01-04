@@ -29,6 +29,7 @@ def update_comments_viewed_timestamp():
             for node in user.comments_viewed_timestamp:
                 user.comments_viewed_timestamp[node] = {'node': user.comments_viewed_timestamp[node]}
             user.save()
+            logger.info('Migrated timestamp for user {0}'.format(user._id))
 
 
 def update_comments():
@@ -44,7 +45,7 @@ if __name__ == '__main__':
     if not dry:
         script_utils.add_file_logger(logger, __file__)
     init_app(routes=False, set_backends=True)
-    with TokuTransaction:
+    with TokuTransaction():
         main()
         if dry:
             raise Exception('Dry Run -- Aborting Transaction')
