@@ -24,6 +24,7 @@ class CollectionSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
+    bookmarks = ser.BooleanField(read_only=True, source='is_bookmark_collection')
 
     links = LinksField({})
 

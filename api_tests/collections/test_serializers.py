@@ -5,7 +5,7 @@ from nose.tools import *  # flake8: noqa
 
 from tests.base import DbTestCase
 from tests.utils import make_drf_request
-from tests.factories import UserFactory, FolderFactory
+from tests.factories import UserFactory, CollectionFactory
 
 from api.collections.serializers import CollectionSerializer
 
@@ -17,7 +17,7 @@ class TestNodeSerializer(DbTestCase):
         self.user = UserFactory()
 
     def test_collection_serialization(self):
-        collection = FolderFactory(creator=self.user)
+        collection = CollectionFactory(creator=self.user)
         req = make_drf_request()
         result = CollectionSerializer(collection, context={'request': req}).data
         data = result['data']

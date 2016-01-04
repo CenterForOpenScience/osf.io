@@ -7,7 +7,7 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 from tests.factories import (
-    FolderFactory,
+    CollectionFactory,
     NodeFactory,
     ProjectFactory,
     AuthUserFactory
@@ -25,8 +25,8 @@ class TestCollectionList(ApiTestCase):
         super(TestCollectionList, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.deleted_one = FolderFactory(creator=self.user_one, is_deleted=True)
-        self.collection_one = FolderFactory(creator=self.user_one)
+        self.deleted_one = CollectionFactory(creator=self.user_one, is_deleted=True)
+        self.collection_one = CollectionFactory(creator=self.user_one)
 
         self.url = '/{}collections/'.format(API_BASE)
 
@@ -175,9 +175,9 @@ class TestCollectionFiltering(ApiTestCase):
         super(TestCollectionFiltering, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.collection_one = FolderFactory(title="Collection One", creator=self.user_one)
-        self.collection_two = FolderFactory(title="Collection Two", creator=self.user_one)
-        self.collection_three = FolderFactory(title="Three", creator=self.user_one)
+        self.collection_one = CollectionFactory(title="Collection One", creator=self.user_one)
+        self.collection_two = CollectionFactory(title="Collection Two", creator=self.user_one)
+        self.collection_three = CollectionFactory(title="Three", creator=self.user_one)
 
         self.url = "/{}collections/".format(API_BASE)
 
@@ -267,7 +267,7 @@ class TestCollectionDetail(ApiTestCase):
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
 
-        self.collection = FolderFactory(title="Test collection", creator=self.user_one)
+        self.collection = CollectionFactory(title="Test collection", creator=self.user_one)
         self.url = '/{}collections/{}/'.format(API_BASE, self.collection._id)
 
     def test_do_not_return_collection_details_logged_out(self):
@@ -309,7 +309,7 @@ class CollectionCRUDTestCase(ApiTestCase):
         self.title = 'Cool Collection'
         self.new_title = 'Super Cool Collection'
 
-        self.collection = FolderFactory(title=self.title, creator=self.user)
+        self.collection = CollectionFactory(title=self.title, creator=self.user)
         self.url = '/{}collections/{}/'.format(API_BASE, self.collection._id)
         self.fake_url = '/{}collections/{}/'.format(API_BASE, '12345')
 
@@ -631,7 +631,7 @@ class TestCollectionNodeLinksList(ApiTestCase):
         super(TestCollectionNodeLinksList, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.collection = FolderFactory(creator=self.user_one)
+        self.collection = CollectionFactory(creator=self.user_one)
         self.project = ProjectFactory(is_public=False, creator=self.user_one)
         self.public_project = ProjectFactory(is_public=True, creator=self.user_two)
         self.private_project = ProjectFactory(is_public=False, creator=self.user_two)
@@ -680,8 +680,8 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
 
-        self.collection = FolderFactory(creator=self.user_one)
-        self.collection_two = FolderFactory(creator=self.user_one)
+        self.collection = CollectionFactory(creator=self.user_one)
+        self.collection_two = CollectionFactory(creator=self.user_one)
 
         self.project = ProjectFactory(is_public=False, creator=self.user_one)
         self.public_project = ProjectFactory(is_public=True, creator=self.user_one)
@@ -819,7 +819,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         super(TestCollectionNodeLinkDetail, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.collection = FolderFactory(creator=self.user_one)
+        self.collection = CollectionFactory(creator=self.user_one)
         self.project = ProjectFactory(creator=self.user_one, is_public=False)
         self.project_public = ProjectFactory(creator=self.user_one, is_public=False)
         self.node_link = self.collection.add_pointer(self.project, auth=Auth(self.user_one), save=True)
@@ -865,7 +865,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         assert_in(self.url, url)
 
     def test_delete_node_link_no_permissions_for_target_node(self):
-        pointer_project = FolderFactory(creator=self.user_two)
+        pointer_project = CollectionFactory(creator=self.user_two)
         pointer = self.collection.add_pointer(pointer_project, auth=Auth(self.user_one), save=True)
         assert_in(pointer, self.collection.nodes)
         url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, pointer._id)
@@ -927,7 +927,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-4322
     def test_delete_link_that_is_not_linked_to_correct_node(self):
-        collection = FolderFactory(creator=self.user_one)
+        collection = CollectionFactory(creator=self.user_one)
         # The node link belongs to a different project
         res = self.app.delete(
             '/{}nodes/{}/node_links/{}/'.format(API_BASE, collection._id, self.node_link._id),
@@ -947,8 +947,8 @@ class TestReturnDeletedCollection(ApiTestCase):
         self.user = AuthUserFactory()
         self.non_contrib = AuthUserFactory()
 
-        self.deleted = FolderFactory(is_deleted=True, creator=self.user, title='This collection has been deleted')
-        self.collection = FolderFactory(creator=self.user, title='A boring collection')
+        self.deleted = CollectionFactory(is_deleted=True, creator=self.user, title='This collection has been deleted')
+        self.collection = CollectionFactory(creator=self.user, title='A boring collection')
 
         self.new_title = 'This deleted node has been edited'
         self.deleted_url = '/{}collections/{}/'.format(API_BASE, self.deleted._id)
@@ -1104,11 +1104,11 @@ class TestCollectionBulkUpdate(ApiTestCase):
         self.title = 'Cool Project'
         self.new_title = 'Super Cool Project'
 
-        self.collection = FolderFactory(title=self.title,
-                                        creator=self.user)
+        self.collection = CollectionFactory(title=self.title,
+                                            creator=self.user)
 
-        self.collection_two = FolderFactory(title=self.title,
-                                             creator=self.user)
+        self.collection_two = CollectionFactory(title=self.title,
+                                                creator=self.user)
 
         self.collection_payload = {
             'data': [
@@ -1284,10 +1284,10 @@ class TestNodeBulkDelete(ApiTestCase):
         super(TestNodeBulkDelete, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.collection_one = FolderFactory(title="Collection One", creator=self.user_one)
-        self.collection_two = FolderFactory(title="Collection Two", creator=self.user_one)
-        self.collection_three = FolderFactory(title="Collection Three", creator=self.user_one)
-        self.collection_user_two = FolderFactory(title="Collection User Two", creator=self.user_two)
+        self.collection_one = CollectionFactory(title="Collection One", creator=self.user_one)
+        self.collection_two = CollectionFactory(title="Collection Two", creator=self.user_one)
+        self.collection_three = CollectionFactory(title="Collection Three", creator=self.user_one)
+        self.collection_user_two = CollectionFactory(title="Collection User Two", creator=self.user_two)
 
         self.url = "/{}collections/".format(API_BASE)
         self.project_one_url = '/{}collections/{}/'.format(API_BASE, self.collection_one._id)
@@ -1402,7 +1402,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         super(TestCollectionLinksBulkCreate, self).setUp()
         self.user = AuthUserFactory()
 
-        self.collection_one = FolderFactory(is_public=False, creator=self.user)
+        self.collection_one = CollectionFactory(is_public=False, creator=self.user)
         self.private_pointer_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_pointer_project_two = ProjectFactory(is_public=False, creator=self.user)
 
@@ -1439,7 +1439,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         self.public_pointer_project_two = ProjectFactory(is_public=True, creator=self.user)
 
         self.user_two = AuthUserFactory()
-        self.user_two_collection = FolderFactory(creator=self.user_two)
+        self.user_two_collection = CollectionFactory(creator=self.user_two)
         self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
         self.user_two_url = '/{}collections/{}/node_links/'.format(API_BASE, self.user_two_collection._id)
         self.user_two_payload = {'data': [{
@@ -1574,7 +1574,7 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
     def setUp(self):
         super(TestBulkDeleteCollectionNodeLinks, self).setUp()
         self.user = AuthUserFactory()
-        self.collection = FolderFactory(creator=self.user)
+        self.collection = CollectionFactory(creator=self.user)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
         self.pointer_project_two = ProjectFactory(creator=self.user, is_public=True)
 
@@ -1592,7 +1592,7 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
 
         self.user_two = AuthUserFactory()
 
-        self.collection_two = FolderFactory(creator=self.user)
+        self.collection_two = CollectionFactory(creator=self.user)
         self.collection_two_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.collection_two_pointer_project_two = ProjectFactory(is_public=True, creator=self.user)
 

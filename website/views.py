@@ -109,24 +109,24 @@ def index(auth):
     return {}
 
 
-def find_dashboard(user):
-    dashboard_folder = user.node__contributed.find(
+def find_bookmark_collection(user):
+    bookmark_collection = user.node__contributed.find(
         Q('is_bookmark_collection', 'eq', True)
     )
 
-    if dashboard_folder.count() == 0:
+    if bookmark_collection.count() == 0:
         new_bookmark_collection(user)
-        dashboard_folder = user.node__contributed.find(
+        bookmark_collection = user.node__contributed.find(
             Q('is_bookmark_collection', 'eq', True)
         )
-    return dashboard_folder[0]
+    return bookmark_collection[0]
 
 
 @must_be_logged_in
 def get_dashboard(auth, nid=None, **kwargs):
     user = auth.user
     if nid is None:
-        node = find_dashboard(user)
+        node = find_bookmark_collection(user)
         dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
         return_value = {'data': dashboard_projects}
     elif nid == ALL_MY_PROJECTS_ID:
@@ -229,7 +229,7 @@ def get_dashboard_nodes(auth):
 @must_be_logged_in
 def dashboard(auth):
     user = auth.user
-    dashboard_folder = find_dashboard(user)
+    dashboard_folder = find_bookmark_collection(user)
     dashboard_id = dashboard_folder._id
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': dashboard_id,

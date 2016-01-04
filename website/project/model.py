@@ -1299,7 +1299,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 continue
             # Title and description have special methods for logging purposes
             if key == 'title':
-                self.set_title(title=value, auth=auth, save=False)
+                if not self.is_bookmark_collection:
+                    self.set_title(title=value, auth=auth, save=False)
+                else:
+                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
@@ -1369,11 +1372,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         first_save = not self._is_loaded
 
         if first_save and self.is_bookmark_collection:
-            existing_dashboards = self.creator.node__contributed.find(
+            existing_bookmark_collections = self.creator.node__contributed.find(
                 Q('is_bookmark_collection', 'eq', True)
             )
-            if existing_dashboards.count() > 0:
+            if existing_bookmark_collections.count() > 0:
                 raise NodeStateError("Only one bookmark collection allowed per user.")
+
+        # Bookmark collections are always named 'Bookmarks'
+        if self.is_bookmark_collection and self.title != 'Bookmarks':
+            self.title = 'Bookmarks'
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
@@ -1562,8 +1569,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_registration:
             raise NodeStateError('Cannot add a pointer to a registration')
 
-        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
-        # Also, no pointers to the dashboard project, which could cause loops as well.
+        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the project organizer.
         already_pointed = node.pointed
         if node.is_collection and len(already_pointed) > 0:
             raise ValueError(
@@ -1571,7 +1577,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if node.is_bookmark_collection:
             raise ValueError(
-                'Pointer to dashboard ({0}) not allowed.'.format(node._id)
+                'Pointer to bookmark collection ({0}) not allowed.'.format(node._id)
             )
 
         # Append pointer
@@ -1916,7 +1922,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # TODO: rename "date" param - it's shadowing a global
 
         if self.is_bookmark_collection:
-            raise NodeStateError("Dashboards may not be deleted.")
+            raise NodeStateError("Bookmark collections may not be deleted.")
 
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))

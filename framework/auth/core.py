@@ -1255,7 +1255,7 @@ class User(GuidStoredObject, AddonModelMixin):
         # - projects where the user was a contributor
         with disconnected_from(signal=contributor_added, listener=notify_added_contributor):
             for node in user.node__contributed:
-                # Skip dashboard node
+                # Skip bookmark collection node
                 if node.is_bookmark_collection:
                     continue
                 # if both accounts are contributor of the same project

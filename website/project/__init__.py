@@ -62,7 +62,7 @@ def new_node(category, title, user, description=None, parent=None):
 
 
 def new_bookmark_collection(user):
-    """Create a new dashboard project.
+    """Create a new bookmark collection project.
 
     :param User user: User object
     :return Node: Created node

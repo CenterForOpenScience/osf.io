@@ -39,7 +39,7 @@ from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes, find_dashboard, validate_page_num
+from website.views import _render_nodes, find_bookmark_collection, validate_page_num
 from website.profile import utils
 from website.project import new_collection
 from website.project.licenses import serialize_node_license_record
@@ -699,12 +699,12 @@ def _view_project(node, auth, primary=False):
 
     parent = node.parent_node
     if user:
-        dashboard = find_dashboard(user)
-        dashboard_id = dashboard._id
-        in_dashboard = dashboard.pointing_at(node._primary_key) is not None
+        bookmark_collection = find_bookmark_collection(user)
+        bookmark_collection_id = bookmark_collection._id
+        in_bookmark_collection = bookmark_collection.pointing_at(node._primary_key) is not None
     else:
-        in_dashboard = False
-        dashboard_id = ''
+        in_bookmark_collection = False
+        bookmark_collection_id = ''
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     widgets, configs, js, css = _render_addon(node)
@@ -731,7 +731,7 @@ def _view_project(node, auth, primary=False):
             'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
             'update_url': node.api_url_for('update_node'),
-            'in_dashboard': in_dashboard,
+            'in_dashboard': in_bookmark_collection,
             'is_public': node.is_public,
             'is_archiving': node.archiving,
             'date_created': iso8601format(node.date_created),
@@ -801,7 +801,7 @@ def _view_project(node, auth, primary=False):
             'fullname': user.fullname if user else '',
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
-            'dashboard_id': dashboard_id,
+            'dashboard_id': bookmark_collection_id,
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts

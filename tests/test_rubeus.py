@@ -11,7 +11,7 @@ from webtest_plus import TestApp
 
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
-    AuthFactory, PointerFactory, DashboardFactory, FolderFactory, RegistrationFactory)
+                             AuthFactory, PointerFactory, BookmarkCollectionFactory, CollectionFactory, RegistrationFactory)
 from framework.auth import Auth
 from website.util import rubeus, api_url_for
 import website.app
@@ -390,7 +390,7 @@ class TestSerializingEmptyDashboard(OsfTestCase):
 
     def setUp(self):
         super(TestSerializingEmptyDashboard, self).setUp()
-        self.dash = DashboardFactory()
+        self.dash = BookmarkCollectionFactory()
         self.auth = AuthFactory(user=self.dash.creator)
         self.dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
 
@@ -427,21 +427,21 @@ class TestSerializingPopulatedDashboard(OsfTestCase):
 
     def setUp(self):
         super(TestSerializingPopulatedDashboard, self).setUp()
-        self.dash = DashboardFactory()
+        self.dash = BookmarkCollectionFactory()
         self.user = self.dash.creator
         self.auth = AuthFactory(user=self.user)
 
         self.init_dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
 
     def test_dashboard_adding_one_folder_increases_size_by_one(self):
-        folder = FolderFactory(creator=self.user)
+        folder = CollectionFactory(creator=self.user)
         self.dash.add_pointer(folder, self.auth)
 
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
         assert_equal(len(dash_hgrid), len(self.init_dash_hgrid) + 1)
 
     def test_dashboard_adding_one_folder_does_not_remove_smart_folders(self):
-        folder = FolderFactory(creator=self.user)
+        folder = CollectionFactory(creator=self.user)
         self.dash.add_pointer(folder, self.auth)
 
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
@@ -452,7 +452,7 @@ class TestSerializingPopulatedDashboard(OsfTestCase):
         )
 
     def test_dashboard_adding_one_folder_increases_size_by_one_in_hgrid_representation(self):
-        folder = FolderFactory(creator=self.user)
+        folder = CollectionFactory(creator=self.user)
         self.dash.add_pointer(folder, self.auth)
 
         project = ProjectFactory(creator=self.user)
@@ -470,18 +470,18 @@ class TestSerializingFolders(OsfTestCase):
         self.auth = AuthFactory(user=self.user)
 
     def test_serialized_folder_is_valid_folder(self):
-        folder = FolderFactory(creator=self.user)
+        folder = CollectionFactory(creator=self.user)
 
         folder_hgrid = rubeus.to_project_hgrid(folder, self.auth)
 
         assert_equal(folder_hgrid, [])
 
     def test_serialize_folder_containing_folder_increases_size_by_one(self):
-        outer_folder = FolderFactory(creator=self.user)
+        outer_folder = CollectionFactory(creator=self.user)
 
         folder_hgrid = rubeus.to_project_hgrid(outer_folder, self.auth)
 
-        inner_folder = FolderFactory(creator=self.user)
+        inner_folder = CollectionFactory(creator=self.user)
         outer_folder.add_pointer(inner_folder, self.auth)
 
         new_hgrid = rubeus.to_project_hgrid(outer_folder, self.auth)
@@ -493,7 +493,7 @@ class TestSmartFolderViews(OsfTestCase):
 
     def setUp(self):
         super(TestSmartFolderViews, self).setUp()
-        self.dash = DashboardFactory()
+        self.dash = BookmarkCollectionFactory()
         self.user = self.dash.creator
         self.auth = AuthFactory(user=self.user)
 

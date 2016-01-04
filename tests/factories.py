@@ -182,11 +182,11 @@ class ProjectFactory(AbstractNodeFactory):
     category = 'project'
 
 
-class FolderFactory(ProjectFactory):
+class CollectionFactory(ProjectFactory):
     is_collection = True
 
 
-class DashboardFactory(FolderFactory):
+class BookmarkCollectionFactory(CollectionFactory):
     is_bookmark_collection = True
 
 

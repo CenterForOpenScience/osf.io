@@ -60,7 +60,7 @@ from tests.base import (
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
+    RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, BookmarkCollectionFactory, CollectionFactory,
     ProjectWithAddonFactory, MockAddonNodeSettings, DraftRegistrationFactory
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
@@ -329,7 +329,7 @@ class TestProjectViews(OsfTestCase):
         # TODO: Test "parent" and "user" output
 
     def test_api_get_folder_pointers(self):
-        dashboard = DashboardFactory(creator=self.user1)
+        dashboard = BookmarkCollectionFactory(creator=self.user1)
         project_one = ProjectFactory(creator=self.user1)
         project_two = ProjectFactory(creator=self.user1)
         url = dashboard.api_url_for("get_folder_pointers")
@@ -2711,9 +2711,9 @@ class TestPointerViews(OsfTestCase):
         pointed_project = ProjectFactory(creator=self.user)  # project that other project points to
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
-        # Project is in a dashboard folder
-        folder = FolderFactory(creator=pointed_project.creator)
-        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+        # Project is in an organizer collection
+        collection = CollectionFactory(creator=pointed_project.creator)
+        collection.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
 
         url = pointed_project.api_url_for('get_pointed')
         res = self.app.get(url, auth=self.user.auth)
@@ -2721,7 +2721,7 @@ class TestPointerViews(OsfTestCase):
         # pointer_project's id is included in response, but folder's id is not
         pointer_ids = [each['id'] for each in res.json['pointed']]
         assert_in(pointer_project._id, pointer_ids)
-        assert_not_in(folder._id, pointer_ids)
+        assert_not_in(collection._id, pointer_ids)
 
     def test_add_pointers(self):
 
@@ -4107,8 +4107,8 @@ class TestODMTitleSearch(OsfTestCase):
         self.project_two = ProjectFactory(creator=self.user_two, title="bar")
         self.public_project = ProjectFactory(creator=self.user_two, is_public=True, title="baz")
         self.registration_project = RegistrationFactory(creator=self.user, title="qux")
-        self.folder = FolderFactory(creator=self.user, title="quux")
-        self.dashboard = DashboardFactory(creator=self.user, title="Dashboard")
+        self.folder = CollectionFactory(creator=self.user, title="quux")
+        self.dashboard = BookmarkCollectionFactory(creator=self.user, title="Dashboard")
         self.url = api_url_for('search_projects_by_title')
 
     def test_search_projects_by_title(self):
@@ -4253,7 +4253,7 @@ class TestDashboardViews(OsfTestCase):
         super(TestDashboardViews, self).setUp()
         self.creator = AuthUserFactory()
         self.contrib = AuthUserFactory()
-        self.dashboard = DashboardFactory(creator=self.creator)
+        self.dashboard = BookmarkCollectionFactory(creator=self.creator)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
     def test_components_with_are_accessible_from_dashboard(self):
@@ -4355,7 +4355,7 @@ class TestDashboardViews(OsfTestCase):
 
     def test_untouched_node_is_collapsed(self):
         found_item = False
-        folder = FolderFactory(creator=self.creator, public=True)
+        folder = CollectionFactory(creator=self.creator, public=True)
         self.dashboard.add_pointer(folder, auth=Auth(self.creator))
         url = api_url_for('get_dashboard', nid=self.dashboard._id)
         dashboard_data = self.app.get(url, auth=self.creator.auth)
@@ -4368,7 +4368,7 @@ class TestDashboardViews(OsfTestCase):
 
     def test_expand_node_sets_expand_to_true(self):
         found_item = False
-        folder = FolderFactory(creator=self.creator, public=True)
+        folder = CollectionFactory(creator=self.creator, public=True)
         self.dashboard.add_pointer(folder, auth=Auth(self.creator))
         url = api_url_for('expand', pid=folder._id)
         self.app.post(url, auth=self.creator.auth)
@@ -4383,7 +4383,7 @@ class TestDashboardViews(OsfTestCase):
 
     def test_collapse_node_sets_expand_to_true(self):
         found_item = False
-        folder = FolderFactory(creator=self.creator, public=True)
+        folder = CollectionFactory(creator=self.creator, public=True)
         self.dashboard.add_pointer(folder, auth=Auth(self.creator))
 
         # Expand the folder

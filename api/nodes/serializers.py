@@ -60,7 +60,6 @@ class NodeSerializer(JSONAPISerializer):
     registration = ser.BooleanField(read_only=True, source='is_registration')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = DevOnly(ser.BooleanField(read_only=True, source='is_collection'))
-    dashboard = ser.BooleanField(read_only=True, source='is_bookmark_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
 
     # Public is only write-able by admins--see update method
