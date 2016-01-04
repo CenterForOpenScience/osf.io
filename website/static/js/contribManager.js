@@ -253,7 +253,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         return self.changed() && self.adminCount() && self.visibleCount();
     });
     self.changed.subscribe(function(newValue) {
-        pageChangedShouter.notifySubscribers(newValue, "changedMessageToPublish");
+        pageChangedShouter.notifySubscribers(newValue, 'changedMessageToPublish');
         self.messages([]);
     });
     self.messages = ko.computed(function() {
