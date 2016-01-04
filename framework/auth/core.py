@@ -24,7 +24,7 @@ from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.mongo.validators import string_required
-from framework.sentry import log_exception
+from framework.sentry import log_exception, log_message
 from framework.sessions import session
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
@@ -858,6 +858,11 @@ class User(GuidStoredObject, AddonModelMixin):
         self.save()
 
         self.update_search_nodes()
+
+        # log to sentry if somehow the username isn't in the email list
+        # This is for data gathering purposes, so we can find when this is happening
+        if username.lower() not in self.emails:
+            log_message('Username not added to list of emails.')
 
         return True
 
