@@ -608,5 +608,3 @@ class TestConferenceIntegration(ContextTestCase):
             call_kwargs['presentations_url'],
             web_url_for('conference_view', _absolute=True),
         )
-        user = User.find_one(Q('username', 'eq', username))
-
