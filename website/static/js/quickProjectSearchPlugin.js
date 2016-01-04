@@ -17,7 +17,7 @@ var quickSearchProject = {
         var self = this;
         self.nodes = [];
         self.getMyNodes = function () {
-            var url = $osf.apiV2Url('users/me/nodes/', {});
+            var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
             var promise = m.request({method: 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
                 //console.log(result)
@@ -27,6 +27,23 @@ var quickSearchProject = {
             });
             return promise;
         };
+        self.getContributors = function (node) {
+            var numContributors = node.embeds.contributors.links.meta.total
+            if (numContributors === 1) {
+                return node.embeds.contributors.data[0].embeds.users.data.attributes.family_name
+            }
+            else if (numContributors == 2) {
+                return node.embeds.contributors.data[0].embeds.users.data.attributes.family_name + ' and ' +
+                        node.embeds.contributors.data[1].embeds.users.data.attributes.family_name
+            }
+            else {
+                return node.embeds.contributors.data[0].embeds.users.data.attributes.family_name + ', ' +
+                        node.embeds.contributors.data[1].embeds.users.data.attributes.family_name + ', ' +
+                        node.embeds.contributors.data[2].embeds.users.data.attributes.family_name + ' and ' +
+                    (numContributors - 3) + ' others'
+            }
+
+        };
         self.getMyNodes()
 
     },
@@ -34,8 +51,9 @@ var quickSearchProject = {
         console.log(ctrl.nodes);
         return [
             m("h1", 'My nodes'),
+            m('div', 'Name', 'Contributors', 'Modified'),
             m('p', ctrl.nodes.map(function(n){
-               return m('li', n.attributes.title)}))]
+               return m('div', n.attributes.title, ctrl.getContributors(n),  n.attributes.date_modified)}))]
     }
 };
 
