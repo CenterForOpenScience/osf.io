@@ -60,7 +60,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.userId = userId;
         self.contributorToRemove = ko.observable('');
         self.REMOVE = 'remove';
-        self.REMOVE_ALL = 'removeAll'
+        self.REMOVE_ALL = 'removeAll';
         self.REMOVE_NO_CHILDREN = 'removeNoChildren';
 
         //This shouter allows the ContributorsViewModel to share which contributor to remove
@@ -139,7 +139,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.canRemoveNodeAdmin = ko.computed(function() {
             self.canRemoveAdmin;
-        })
+        });
 
         self.hasChildrenToRemove = ko.computed(function() {
             //if there is more then one node to remove, then show a simplified page

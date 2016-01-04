@@ -7,6 +7,7 @@
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
             <div class="modal-body" >
+                        {{ko.toJSON($data)}}
 
                 <div data-bind="if: canRemoveNode() && !pageChanged()">
                     <!-- remove page -->
@@ -35,31 +36,36 @@
 
                     <!-- removeAll page -->
                     <div data-bind='if:page() === REMOVE_ALL'>
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <div class="form-group" data-bind="if:contributorToRemove">
-                                    <span><b>{{contributorToRemove()["fullname"]}} will be</b> removed from the following projects and/or components.</span>
-                                </div>
-                                <div class="col-md-8" align="left">
-                                    <ul data-bind="foreach: { data: titlesToRemove(), as: 'item' }">
-                                        <li>
-                                            <h4 class="f-w-lg" data-bind="text: item"></h4>
-                                        </li>
-                                    </ul>
+                        {{ko.toJSON($data)}}
+                        <div data-bind="visible:titlesToRemove().length">
+                            <div class="panel panel-default">
+                                <div class="panel-body">
+                                    <div class="form-group" data-bind="if:contributorToRemove">
+                                        <span><b>{{contributorToRemove()["fullname"]}} will be</b> removed from the following projects and/or components.</span>
+                                    </div>
+                                    <div class="col-md-8" align="left">
+                                        <ul data-bind="foreach: { data: titlesToRemove(), as: 'item' }">
+                                            <li>
+                                                <h4 class="f-w-lg" data-bind="text: item"></h4>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="panel panel-default">
-                            <div class="panel-body">
-                                <div class="form-group" data-bind="if:contributorToRemove">
-                                    <span><b>{{contributorToRemove()["fullname"]}} cannot</b> be removed from the following projects and/or components.</span>
-                                </div>
-                                <div class="col-md-8" align="left">
-                                    <ul data-bind="foreach: { data: titlesToRemove(), as: 'item' }">
-                                        <li>
-                                            <h4 class="f-w-lg" data-bind="text: item"></h4>
-                                        </li>
-                                    </ul>
+                        <div data-bind="visible:titlesToKeep().length">
+                            <div class="panel panel-default">
+                                <div class="panel-body">
+                                    <div class="form-group" data-bind="if:contributorToRemove">
+                                        <span><b>{{contributorToRemove()["fullname"]}} cannot</b> be removed from the following projects and/or components.</span>
+                                    </div>
+                                    <div class="col-md-8" align="left">
+                                        <ul data-bind="foreach: { data: titlesToKeep(), as: 'item' }">
+                                            <li>
+                                                <h4 class="f-w-lg" data-bind="text: item"></h4>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -311,13 +311,13 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             if (item.visible) {
                 self.visibleCount(self.visibleCount() + 1);
             }
-            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, false, index, self.options, contribShouter, changeShouter);
+            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, false, index, self.options, contribShouter, pageChangedShouter);
         }));
         self.adminContributors(adminContributors.map(function(contributor) {
           if (contributor.permission === 'admin') {
                 self.adminCount(self.adminCount() + 1);
             }
-          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true, index, self.options, contribShouter, changeShouter);
+          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true, index, self.options, contribShouter, pageChangedShouter);
         }));
     };
 
