@@ -181,7 +181,7 @@ class Comment(GuidStoredObject):
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
     target = fields.AbstractForeignField(required=True)
     # The file or project overview page that the comment is for
-    root_target = fields.AbstractForeignField(backref='comment_target')
+    root_target = fields.AbstractForeignField()
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
