@@ -609,5 +609,4 @@ class TestConferenceIntegration(ContextTestCase):
             web_url_for('conference_view', _absolute=True),
         )
         user = User.find_one(Q('username', 'eq', username))
-        assert_in(username, user[0].emails)
 
