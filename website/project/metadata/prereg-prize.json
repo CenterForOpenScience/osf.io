@@ -269,7 +269,7 @@
         "id": "page5",
         "title": "Analysis Plan",
         "type": "object",
-        "description": "For some studies, you may only want to preregister a single confirmatory analysis. For others, there may be multiple sets of confirmatory analyses you wish to register. If you wish to register more than one analysis set, you may do so. If subsequent analyses are very similar to previous ones, you may copy their content and then edit accordingly. Remember, all analyses specified in this section must be reported in the final article, and analyses not specified in this section that are reported in the paper must be clearly labeled as exploratory.",
+        "description": "You may describe one or more confirmatory analysis in this preregistration. Please remember that all analyses specified below must be reported in the final article, and any additional analyses must be noted as exploratory or hypothesis-generating.<br /><br />A confirmatory analysis plan must state up front which variables are predictors (independent) and which are the outcomes (dependent), otherwise it is an exploratory analysis. You are allowed to describe any exploratory work here, but a clear confirmatory analysis is required.",
         "questions": [{
             "qid": "q19",
             "nav": "Statistical models",
