@@ -208,26 +208,29 @@
                     <h3 class="panel-title">Wiki</h3>
                 </div>
 
-                <div class="panel-body">
-                    %if wiki:
-                        <form id="selectWikiForm">
-                            <div style="padding-left: 15px">
+            <div class="panel-body">
+                %if wiki:
+                    <form id="selectWikiForm">
+                        <div>
+                            <label>
+                                <input
+                                        type="checkbox"
+                                        name="${wiki.short_name}"
+                                        class="wiki-select"
+                                        data-bind="checked: enabled, click: onChange"
+                                />
+                                Enable the wiki in <b>${node['title']}</b>.
+                            </label>
+
+                            <div data-bind="visible: enabled()" class="text-success" style="padding-left: 15px">
+                                <p data-bind="text: wikiMessage"></p>
                             </div>
-                            <div>
-                                <label>
-                                    <input
-                                            type="checkbox"
-                                            name="${wiki.short_name}"
-                                            class="wiki-select"
-                                        ${'checked' if wiki.short_name in addons_enabled else ''}
-                                        ${'disabled' if (node['is_registration'] or bool(wiki.added_mandatory)) else ''}
-                                    />
-                                    Enable the wiki in <b>${node['title']}</b>.
-                                </label>
+                            <div data-bind="visible: !enabled()" class="text-danger" style="padding-left: 15px">
+                                <p data-bind="text: wikiMessage"></p>
                             </div>
-                            <div class="wiki-settings-message text-success" style="padding-top: 10px;"></div>
-                        </form>
-                    %endif
+                        </div>
+                    </form>
+                %endif
 
                     % if include_wiki_settings:
                         <h3>Configure</h3>
@@ -238,6 +241,7 @@
                                 <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
                             %endif
                         </div>
+
                         <form id="wikiSettings" class="osf-treebeard-minimal">
                             <div id="wgrid">
                                 <div class="spinner-loading-wrapper">
@@ -407,6 +411,8 @@
       window.contextVars.node.description = ${node['description'] | sjson, n };
       window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
+      window.contextVars.wiki = window.contextVars.wiki || {};
+      window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>

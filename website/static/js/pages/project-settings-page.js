@@ -252,34 +252,34 @@ $(document).ready(function() {
             }
         }
     });
-    $('.wiki-select').on('change', function() {
-        var self = this;
-        var $self = $(self);
-        var wikiEnabled = $self.is(':checked');
-        var wikiUpdateMessage = $('#selectWikiForm').find('.wiki-settings-message');
+});
 
-        $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: wikiEnabled}
+var WikiSettingsViewModel = {
+    enabled: ko.observable(ctx.wiki.isEnabled), // <- this would get set in the mako template, as usual
+    wikiMessage: ko.observable(''),
+    onChange: function() {
+        var self = this;
+        $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: self.enabled()}
         ).done(function(response) {
-            if (wikiEnabled) {
-                wikiUpdateMessage.text('Wiki Enabled');
+            if (self.enabled()) {
+                self.wikiMessage('Wiki Enabled');
             }
             else {
-                wikiUpdateMessage.text('Wiki Disabled');
+                self.wikiMessage('Wiki Disabled');
             }
-            if ($osf.isSafari()) {
-                //Safari can't update jquery style change before reloading. So delay is applied here
-                setTimeout(function(){window.location.reload();}, 100);
-            } else {
-                window.location.reload();
-            }
+            //Give user time to see message before reload.
+            setTimeout(function(){window.location.reload();}, 1500);
         }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to update wiki');
             Raven.captureMessage('Could not update wiki.', {
                 url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
             });
+            setTimeout(function(){window.location.reload();}, 1500);
         });
+        return true;
+    },
+};
 
-    });
-
-
-});
+var self = this;
+self.viewModel = WikiSettingsViewModel;
+$osf.applyBindings(self.viewModel, '#selectWikiForm');
