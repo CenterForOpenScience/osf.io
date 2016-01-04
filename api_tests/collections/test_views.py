@@ -1023,9 +1023,9 @@ class TestCollectionBulkCreate(ApiTestCase):
                            ["This field may not be blank.", "This field may not be blank."])
 
     def test_bulk_create_limits(self):
-        node_create_list = {'data': [self.collection] * 11}
+        node_create_list = {'data': [self.collection] * 101}
         res = self.app.post_json_api(self.url, node_create_list, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
         res = self.app.get(self.url, auth=self.user_one.auth)
@@ -1262,9 +1262,9 @@ class TestCollectionBulkUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
     def test_bulk_update_limits(self):
-        node_update_list = {'data': [self.collection_payload['data'][0]] * 11}
+        node_update_list = {'data': [self.collection_payload['data'][0]] * 101}
         res = self.app.put_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_update_no_title(self):
@@ -1375,11 +1375,11 @@ class TestNodeBulkDelete(ApiTestCase):
         assert_equal(res.status_code, 200)
 
     def test_bulk_delete_limits(self):
-        new_payload = {'data': [{'id': self.collection_three._id, 'type': 'nodes'}] * 11}
+        new_payload = {'data': [{'id': self.collection_three._id, 'type': 'nodes'}] * 101}
         res = self.app.delete_json_api(self.url, new_payload,
                                        auth=self.user_one.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_invalid_payload_one_not_found(self):
@@ -1460,10 +1460,10 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_bulk_creates_pointers_limits(self):
-        payload = {'data': [self.collection_payload['data'][0]] * 11}
+        payload = {'data': [self.collection_payload['data'][0]] * 101}
         res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
         res = self.app.get(self.collection_url, auth=self.user.auth)
@@ -1617,10 +1617,10 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_bulk_delete_pointer_limits(self):
-        res = self.app.delete_json_api(self.collection_two_url, {'data': [self.collection_two_payload['data'][0]] * 11},
+        res = self.app.delete_json_api(self.collection_two_url, {'data': [self.collection_two_payload['data'][0]] * 101},
                                        auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_dict_inside_data(self):
