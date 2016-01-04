@@ -119,6 +119,7 @@ class TestUser(base.OsfTestCase):
         assert_equal(email, self.user._get_unconfirmed_email_for_token(token2))
         with assert_raises(exceptions.InvalidTokenError):
             self.user._get_unconfirmed_email_for_token(token1)
+        assert_in(email, self.user.unconfirmed_emails)
 
 
 class TestUserMerging(base.OsfTestCase):
