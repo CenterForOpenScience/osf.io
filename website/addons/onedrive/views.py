@@ -185,7 +185,6 @@ def onedrive_folder_list(node_addon, **kwargs):
                 'folders': node.api_url_for('onedrive_folder_list', folderId=item['id']),
             }
         }
-        for item in items        
-#         if item['folder'] is not None # 'folder' #TODO ADD FOLDER FILTER
+        for item in items
         
     ]
