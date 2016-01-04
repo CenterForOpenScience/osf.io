@@ -42,8 +42,8 @@ class OneDriveSerializer(OAuthAddonSerializer):
         node = self.node_settings.owner
         
         return {
-            #'auth': api_url_for('oauth_connect',
-             #                   service_name='onedrive'),
+            'auth': api_url_for('oauth_connect',
+                               service_name='onedrive'),
             'importAuth': node.api_url_for('onedrive_add_user_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('onedrive_folder_list'),
