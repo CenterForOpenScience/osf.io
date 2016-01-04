@@ -25,6 +25,7 @@ var quickSearchProject = {
             result.data.forEach(function(node){
                 self.nodes.push(node);
             })
+            self.displayedNodes = self.nodes.splice(0, 10)
         });
 
         self.getFamilyName = function(i, node) {
@@ -76,12 +77,10 @@ var quickSearchProject = {
                     m('th', 'Contributors'),
                     m('th', 'Modified')
                 ]),
-                ctrl.loadUpToTen().map(function(n){
+
+                ctrl.displayedNodes.map(function(n){
                     return projectView(n)
                 }),
-                m('button', { onclick: function() {
-                    ctrl.loadUpToTen() }
-                }, 'Add more')
             ])
         ])
     }
