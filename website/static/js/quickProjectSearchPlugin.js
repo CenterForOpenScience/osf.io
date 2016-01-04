@@ -16,17 +16,17 @@ var quickSearchProject = {
     controller: function() {
         var self = this;
         self.nodes = [];
-        self.getMyNodes = function () {
-            var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
-            var promise = m.request({method: 'GET', url : url, config : xhrconfig});
-            promise.then(function(result){
-                //console.log(result)
-                result.data.forEach(function(node){
-                    self.nodes.push(node)
-                })
-            });
-            return promise;
-        };
+
+        // Load node list
+        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors', 'page[size]': 100}});
+        var promise = m.request({method: 'GET', url : url, config : xhrconfig});
+        promise.then(function(result){
+            console.log(result.links)
+            result.data.forEach(function(node){
+                self.nodes.push(node);
+            })
+        });
+
         self.getFamilyName = function(i, node) {
             return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
         };
@@ -47,11 +47,9 @@ var quickSearchProject = {
             }
 
         };
-        self.getMyNodes()
 
     },
     view : function(ctrl) {
-        console.log(ctrl.nodes);
         return m('table', [
             m('tr', [
                 m('th', 'Name'),
