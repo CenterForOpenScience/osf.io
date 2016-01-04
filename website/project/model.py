@@ -45,7 +45,7 @@ from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
 
 from website import language, mails, settings, tokens
-from website.util import web_url_for
+from website.util import web_url_for, api_v2_url
 from website.util import api_url_for
 from website.util import sanitize
 from website.exceptions import (
@@ -504,6 +504,13 @@ class NodeLog(StoredObject):
             'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
         }
+
+    @property
+    def absolute_api_v2_url(self):
+        return api_v2_url('/logs/{}/'.format(self._id))
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
 
 class Tag(StoredObject):
