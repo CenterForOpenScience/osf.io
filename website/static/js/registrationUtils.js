@@ -1214,6 +1214,10 @@ RegistrationManager.prototype.init = function() {
         });
     }
 
+    var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
+        self.loading(false);
+    });
+
     var urlParams = $osf.urlParams();
     if (urlParams.campaign && urlParams.campaign === 'prereg') {
         $osf.block();
