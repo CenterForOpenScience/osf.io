@@ -693,8 +693,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     visible_contributor_ids = fields.StringField(list=True)
 
     # Project Organization
-    is_dashboard = fields.BooleanField(default=False, index=True)
-    is_folder = fields.BooleanField(default=False, index=True)
+    is_bookmark_collection = fields.BooleanField(default=False, index=True)
+    is_collection = fields.BooleanField(default=False, index=True)
 
     # Expanded: Dictionary field mapping user IDs to expand state of this node:
     # {
@@ -1368,12 +1368,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         first_save = not self._is_loaded
 
-        if first_save and self.is_dashboard:
+        if first_save and self.is_bookmark_collection:
             existing_dashboards = self.creator.node__contributed.find(
-                Q('is_dashboard', 'eq', True)
+                Q('is_bookmark_collection', 'eq', True)
             )
             if existing_dashboards.count() > 0:
-                raise NodeStateError("Only one dashboard allowed per user.")
+                raise NodeStateError("Only one bookmark collection allowed per user.")
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
@@ -1421,7 +1421,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
-        if self.is_folder or self.archiving:
+        if self.is_collection or self.archiving:
             need_update = False
         if need_update:
             self.update_search()
@@ -1565,11 +1565,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
         # Also, no pointers to the dashboard project, which could cause loops as well.
         already_pointed = node.pointed
-        if node.is_folder and len(already_pointed) > 0:
+        if node.is_collection and len(already_pointed) > 0:
             raise ValueError(
                 'Pointer to folder {0} already exists. Only one pointer to any given folder allowed'.format(node._id)
             )
-        if node.is_dashboard:
+        if node.is_bookmark_collection:
             raise ValueError(
                 'Pointer to dashboard ({0}) not allowed.'.format(node._id)
             )
@@ -1734,7 +1734,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ret = []
         for each in self.pointed:
             pointer_node = get_pointer_parent(each)
-            if not folders and pointer_node.is_folder:
+            if not folders and pointer_node.is_collection:
                 continue
             if not deleted and pointer_node.is_deleted:
                 continue
@@ -1915,16 +1915,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
         # TODO: rename "date" param - it's shadowing a global
 
-        if self.is_dashboard:
+        if self.is_bookmark_collection:
             raise NodeStateError("Dashboards may not be deleted.")
 
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
-        #if this is a folder, remove all the folders that this is pointing at.
-        if self.is_folder:
+        #if this is a collection, remove all the collections that this is pointing at.
+        if self.is_collection:
             for pointed in self.nodes_pointer:
-                if pointed.node.is_folder:
+                if pointed.node.is_collection:
                     pointed.node.remove_node(auth=auth)
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
@@ -2077,7 +2077,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'User {} does not have permission '
                 'to register this node'.format(auth.user._id)
             )
-        if self.is_folder:
+        if self.is_collection:
             raise NodeStateError("Folders may not be registered")
 
         when = datetime.datetime.utcnow()
@@ -2297,7 +2297,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def absolute_api_v2_url(self):
         if self.is_registration:
             return absolute_reverse('registrations:registration-detail', kwargs={'node_id': self._id})
-        if self.is_folder:
+        if self.is_collection:
             return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
 

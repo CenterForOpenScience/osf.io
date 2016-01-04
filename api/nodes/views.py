@@ -64,7 +64,7 @@ class NodeMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder or node.is_registration:
+        if node.is_collection or node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -236,7 +236,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
+            Q('is_collection', 'ne', True) &
             Q('is_registration', 'ne', True)
         )
         user = self.request.user
@@ -873,7 +873,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     def get_default_odm_query(self):
         return (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
+            Q('is_collection', 'ne', True)
         )
 
     # overrides ListBulkCreateJSONAPIView

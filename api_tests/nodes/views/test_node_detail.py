@@ -140,7 +140,7 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['tags'], [])
 
     def test_requesting_folder_returns_error(self):
-        folder = NodeFactory(is_folder=True, creator=self.user)
+        folder = NodeFactory(is_collection=True, creator=self.user)
         res = self.app.get(
             '/{}nodes/{}/'.format(API_BASE, folder._id),
             auth=self.user.auth,

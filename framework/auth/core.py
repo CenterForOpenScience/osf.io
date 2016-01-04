@@ -1024,7 +1024,7 @@ class User(GuidStoredObject, AddonModelMixin):
             node for node in self.node__contributed
             if not (
                 node.is_deleted
-                or node.is_dashboard
+                or node.is_bookmark_collection
             )
         )
 
@@ -1256,7 +1256,7 @@ class User(GuidStoredObject, AddonModelMixin):
         with disconnected_from(signal=contributor_added, listener=notify_added_contributor):
             for node in user.node__contributed:
                 # Skip dashboard node
-                if node.is_dashboard:
+                if node.is_bookmark_collection:
                     continue
                 # if both accounts are contributor of the same project
                 if node.is_contributor(self) and node.is_contributor(user):

@@ -294,7 +294,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
         user = self.get_user()
         return (
             Q('contributors', 'eq', user) &
-            Q('is_folder', 'ne', True) &
+            Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True)
         )
 
@@ -399,7 +399,7 @@ class UserRegistrations(UserNodes):
         user = self.get_user()
         return (
             Q('contributors', 'eq', user) &
-            Q('is_folder', 'ne', True) &
+            Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True) &
             Q('is_registration', 'eq', True)
         )

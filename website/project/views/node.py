@@ -41,7 +41,7 @@ from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
-from website.project import new_folder
+from website.project import new_collection
 from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
@@ -136,7 +136,7 @@ def project_new_from_template(auth, node, **kwargs):
     return {'url': new_node.url}, http.CREATED, None
 
 ##############################################################################
-# New Folder
+# New Collection
 ##############################################################################
 @must_be_valid_project
 @must_be_logged_in
@@ -145,9 +145,9 @@ def folder_new_post(auth, node, **kwargs):
 
     title = request.json.get('title')
 
-    if not node.is_folder:
+    if not node.is_collection:
         raise HTTPError(http.BAD_REQUEST)
-    folder = new_folder(strip_html(title), user)
+    folder = new_collection(strip_html(title), user)
     folders = [folder]
     try:
         _add_pointers(node, folders, auth)
@@ -167,10 +167,10 @@ def add_folder(auth, **kwargs):
 
     user = auth.user
     title = strip_html(data.get('title'))
-    if not node.is_folder:
+    if not node.is_collection:
         raise HTTPError(http.BAD_REQUEST)
 
-    folder = new_folder(
+    folder = new_collection(
         title, user
     )
     folders = [folder]
@@ -627,13 +627,13 @@ def component_remove(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def delete_folder(auth, node, **kwargs):
-    """Remove folder node
+    """Remove collection node
 
     """
     if node is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    if not node.is_folder or node.is_dashboard:
+    if not node.is_collection:
         raise HTTPError(http.BAD_REQUEST)
 
     try:
@@ -1062,7 +1062,7 @@ def get_node_tree(auth, **kwargs):
 
 @must_be_contributor_or_public
 def get_folder_pointers(auth, node, **kwargs):
-    if not node.is_folder:
+    if not node.is_collection:
         return []
     nodes = [
         each.resolve()._id
@@ -1181,7 +1181,7 @@ def search_node(auth, **kwargs):
     title_query = Q('title', 'icontains', query)
     not_deleted_query = Q('is_deleted', 'eq', False)
     visibility_query = Q('contributors', 'eq', auth.user)
-    no_folders_query = Q('is_folder', 'eq', False)
+    no_folders_query = Q('is_collection', 'eq', False)
     if include_public:
         visibility_query = visibility_query | Q('is_public', 'eq', True)
     odm_query = title_query & not_deleted_query & visibility_query & no_folders_query
@@ -1442,5 +1442,5 @@ def get_pointed(auth, node, **kwargs):
     return {'pointed': [
         serialize_pointer(each, auth)
         for each in node.pointed
-        if not get_pointer_parent(each).is_folder
+        if not get_pointer_parent(each).is_collection
     ]}

@@ -949,7 +949,7 @@ class TestMergingUsers(OsfTestCase):
         self.master.save()
 
     def test_dashboard_nodes_arent_merged(self):
-        dashnode = ProjectFactory(creator=self.dupe, is_dashboard=True)
+        dashnode = ProjectFactory(creator=self.dupe, is_bookmark_collection=True)
 
         self._merge_dupe()
 
@@ -1777,10 +1777,10 @@ class TestNode(OsfTestCase):
         pass
 
     def test_not_a_folder(self):
-        assert_equal(self.node.is_folder, False)
+        assert_equal(self.node.is_collection, False)
 
     def test_not_a_dashboard(self):
-        assert_equal(self.node.is_dashboard, False)
+        assert_equal(self.node.is_bookmark_collection, False)
 
     def test_cannot_link_to_folder_more_than_once(self):
         folder = FolderFactory(creator=self.user)
@@ -2216,11 +2216,11 @@ class TestDashboard(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.project = DashboardFactory(creator=self.user)
 
-    def test_dashboard_is_dashboard(self):
-        assert_equal(self.project.is_dashboard, True)
+    def test_bookmark_collection_is_bookmark_collection(self):
+        assert_equal(self.project.is_bookmark_collection, True)
 
-    def test_dashboard_is_folder(self):
-        assert_equal(self.project.is_folder, True)
+    def test_bookmark_collection_is_collection(self):
+        assert_equal(self.project.is_collection, True)
 
     def test_cannot_remove_dashboard(self):
         with assert_raises(NodeStateError):
@@ -2237,15 +2237,15 @@ class TestDashboard(OsfTestCase):
 
     def test_can_remove_empty_folder(self):
         new_folder = FolderFactory(creator=self.user)
-        assert_equal(new_folder.is_folder, True)
+        assert_equal(new_folder.is_collection, True)
         new_folder.remove_node(auth=self.auth)
         assert_true(new_folder.is_deleted)
 
     def test_can_remove_folder_structure(self):
         outer_folder = FolderFactory(creator=self.user)
-        assert_equal(outer_folder.is_folder, True)
+        assert_equal(outer_folder.is_collection, True)
         inner_folder = FolderFactory(creator=self.user)
-        assert_equal(inner_folder.is_folder, True)
+        assert_equal(inner_folder.is_collection, True)
         outer_folder.add_pointer(inner_folder, self.auth)
         outer_folder.remove_node(auth=self.auth)
         assert_true(outer_folder.is_deleted)

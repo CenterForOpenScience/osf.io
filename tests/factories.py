@@ -183,11 +183,11 @@ class ProjectFactory(AbstractNodeFactory):
 
 
 class FolderFactory(ProjectFactory):
-    is_folder = True
+    is_collection = True
 
 
 class DashboardFactory(FolderFactory):
-    is_dashboard = True
+    is_bookmark_collection = True
 
 
 class NodeFactory(AbstractNodeFactory):

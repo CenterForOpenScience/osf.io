@@ -172,10 +172,10 @@ class NodeProjectCollector(object):
 
     def _collect_components(self, node, visited):
         rv = []
-        for child in reversed(node.nodes):  # (child.resolve()._id not in visited or node.is_folder) and
+        for child in reversed(node.nodes):  # (child.resolve()._id not in visited or node.is_collection) and
             if child is not None and not child.is_deleted and child.resolve().can_view(auth=self.auth) and node.can_view(self.auth):
                 # visited.append(child.resolve()._id)
-                rv.append(self._serialize_node(child, visited=None, parent_is_folder=node.is_folder))
+                rv.append(self._serialize_node(child, visited=None, parent_is_collection=node.is_collection))
         return rv
 
     def collect_all_projects_smart_folder(self):
@@ -184,7 +184,7 @@ class NodeProjectCollector(object):
             Q('category', 'eq', 'project') &
             Q('is_deleted', 'eq', False) &
             Q('is_registration', 'eq', False) &
-            Q('is_folder', 'eq', False) &
+            Q('is_collection', 'eq', False) &
             # parent is not in the nodes list
             Q('__backrefs.parent.node.nodes', 'eq', None)
         )
@@ -207,7 +207,7 @@ class NodeProjectCollector(object):
             Q('category', 'eq', 'project') &
             Q('is_deleted', 'eq', False) &
             Q('is_registration', 'eq', True) &
-            Q('is_folder', 'eq', False) &
+            Q('is_collection', 'eq', False) &
             # parent is not in the nodes list
             Q('__backrefs.parent.node.nodes', 'eq', None)
         )
@@ -257,7 +257,7 @@ class NodeProjectCollector(object):
         return return_value
 
     def get_root(self):
-        root = self._serialize_node(self.node, visited=None, parent_is_folder=False)
+        root = self._serialize_node(self.node, visited=None, parent_is_collection=False)
         return root
 
     def to_hgrid(self):
@@ -265,12 +265,12 @@ class NodeProjectCollector(object):
         """
         root = self._collect_components(self.node, visited=None)
         # This will be important when we mix files and projects together: self._collect_addons(self.node) +
-        if self.node.is_dashboard:
+        if self.node.is_bookmark_collection:
             root.insert(0, self.collect_all_projects_smart_folder())
             root.insert(0, self.collect_all_registrations_smart_folder())
         return root
 
-    def _serialize_node(self, node, visited=None, parent_is_folder=False):
+    def _serialize_node(self, node, visited=None, parent_is_collection=False):
         """Returns the rubeus representation of a node folder for the project organizer.
         """
         visited = visited or []
@@ -313,16 +313,16 @@ class NodeProjectCollector(object):
         type_ = 'project'
         if is_file:
             type_ = 'file'
-        if is_pointer and not parent_is_folder:
+        if is_pointer and not parent_is_collection:
             type_ = 'pointer'
-        if node.is_folder:
+        if node.is_collection:
             type_ = 'folder'
         if is_component:
             type_ = 'component'
 
-        if node.is_dashboard:
+        if node.is_bookmark_collection:
             to_expand = True
-        elif not is_pointer or parent_is_folder:
+        elif not is_pointer or parent_is_collection:
             to_expand = expanded
         else:
             to_expand = False
@@ -336,16 +336,16 @@ class NodeProjectCollector(object):
             'permissions': {
                 'edit': can_edit,
                 'view': can_view,
-                'copyable': not node.is_folder,
-                'movable': parent_is_folder,
-                'acceptsFolders': node.is_folder,
-                'acceptsMoves': node.is_folder,
-                'acceptsCopies': node.is_folder or is_project,
-                'acceptsComponents': node.is_folder,
+                'copyable': not node.is_collection,
+                'movable': parent_is_collection,
+                'acceptsFolders': node.is_collection,
+                'acceptsMoves': node.is_collection,
+                'acceptsCopies': node.is_collection or is_project,
+                'acceptsComponents': node.is_collection,
             },
             'urls': {
                 'upload': None,
-                'fetch': node.url if not node.is_folder else None,
+                'fetch': node.url if not node.is_collection else None,
             },
             'type': type_,
             'children': children,
@@ -354,13 +354,13 @@ class NodeProjectCollector(object):
             'isProject': is_project,
             'isPointer': is_pointer,
             'isComponent': is_component,
-            'isFolder': node.is_folder,
-            'isDashboard': node.is_dashboard,
+            'isFolder': node.is_collection,
+            'isDashboard': node.is_bookmark_collection,
             'isFile': is_file,
             'dateModified': date_modified,
             'modifiedDelta': max(1, modified_delta),
             'modifiedBy': modified_by,
-            'parentIsFolder': parent_is_folder,
+            'parentIsFolder': parent_is_collection,
             'contributors': contributors,
             'node_id': node.resolve()._id,
             'isSmartFolder': False,

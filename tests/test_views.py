@@ -352,12 +352,12 @@ class TestProjectViews(OsfTestCase):
 
     def test_new_user_gets_dashboard_on_dashboard_path(self):
         my_user = AuthUserFactory()
-        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        dashboard = my_user.node__contributed.find(Q('is_bookmark_collection', 'eq', True))
         assert_equal(dashboard.count(), 0)
         url = api_url_for('get_dashboard')
         self.app.get(url, auth=my_user.auth)
         my_user.reload()
-        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        dashboard = my_user.node__contributed.find(Q('is_bookmark_collection', 'eq', True))
         assert_equal(dashboard.count(), 1)
 
     def test_add_contributor_post(self):

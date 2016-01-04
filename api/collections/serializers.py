@@ -51,7 +51,7 @@ class CollectionSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = Node(**validated_data)
-        node.is_folder = True
+        node.is_collection = True
         node.category = ''
         try:
             node.save()

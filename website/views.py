@@ -29,7 +29,7 @@ from website.util import sanitize
 from website.project import model
 from website.util import web_url_for
 from website.util import permissions
-from website.project import new_dashboard
+from website.project import new_bookmark_collection
 from website.settings import ALL_MY_PROJECTS_ID
 from website.settings import ALL_MY_REGISTRATIONS_ID
 
@@ -111,13 +111,13 @@ def index(auth):
 
 def find_dashboard(user):
     dashboard_folder = user.node__contributed.find(
-        Q('is_dashboard', 'eq', True)
+        Q('is_bookmark_collection', 'eq', True)
     )
 
     if dashboard_folder.count() == 0:
-        new_dashboard(user)
+        new_bookmark_collection(user)
         dashboard_folder = user.node__contributed.find(
-            Q('is_dashboard', 'eq', True)
+            Q('is_bookmark_collection', 'eq', True)
         )
     return dashboard_folder[0]
 
@@ -153,7 +153,7 @@ def get_all_projects_smart_folder(auth, **kwargs):
     nodes = contributed.find(
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False)
+        Q('is_collection', 'eq', False)
     ).sort('-title')
 
     keys = nodes.get_keys()
@@ -169,7 +169,7 @@ def get_all_registrations_smart_folder(auth, **kwargs):
 
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', True) &
-        Q('is_folder', 'eq', False)
+        Q('is_collection', 'eq', False)
     ).sort('-title')
 
     # Note(hrybacki): is_retracted and is_pending_embargo are property methods
@@ -197,7 +197,7 @@ def get_dashboard_nodes(auth):
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False)
+        Q('is_collection', 'eq', False)
     )
 
     if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
