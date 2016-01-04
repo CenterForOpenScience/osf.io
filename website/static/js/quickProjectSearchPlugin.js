@@ -70,6 +70,14 @@ var quickSearchProject = {
             ])
         }
 
+        function buttonDisplay() {
+            if (ctrl.nodes.length !== 0){
+                return m('button', { onclick: function() {
+                    ctrl.loadUpToTen() }
+                }, 'Load more')
+            }
+        }
+
         return m('div', [
             m('table', [
                 m('tr', [
@@ -81,6 +89,8 @@ var quickSearchProject = {
                 ctrl.displayedNodes.map(function(n){
                     return projectView(n)
                 }),
+                buttonDisplay()
+
             ])
         ])
     }
