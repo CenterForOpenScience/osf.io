@@ -237,13 +237,12 @@ class Comment(GuidStoredObject):
 
     @classmethod
     def find_n_unread(cls, user, node, page=None, root_id=None, check=False):
-        n_unread = 0
         if node.is_contributor(user):
             if not page:
                 return cls.n_unread_node_comments(user, node) + cls.n_unread_file_comments(user, node)
-            elif page == 'node':
+            elif page == Comment.OVERVIEW:
                 return cls.n_unread_node_comments(user, node)
-            elif page == 'files':
+            elif page == Comment.FILES:
                 if root_id is None:
                     return cls.n_unread_file_comments(user, node)
                 else:
@@ -260,7 +259,7 @@ class Comment(GuidStoredObject):
                                             Q('date_modified', 'gt', view_timestamp)) &
                                             Q('root_target', 'eq', root_target)).count()
 
-        return n_unread
+        return 0
 
     @classmethod
     def n_unread_node_comments(cls, user, node):
@@ -281,7 +280,7 @@ class Comment(GuidStoredObject):
                 exists = file_obj and file_obj.touch(request.headers.get('Authorization'))
                 if not exists:
                     continue
-                n_unread += cls.find_n_unread(user, node, page='files', root_id=file_obj._id)
+                n_unread += cls.find_n_unread(user, node, page=Comment.FILES, root_id=file_obj._id)
         return n_unread
 
     @classmethod
@@ -301,10 +300,10 @@ class Comment(GuidStoredObject):
             comment.root_target = comment.target
 
         if isinstance(comment.root_target, Node):
-            comment.page = 'node'
+            comment.page = Comment.OVERVIEW
         elif isinstance(comment.root_target, StoredFileNode):
             log_dict['file'] = {'name': comment.root_target.name, 'url': comment.get_comment_page_url()}
-            comment.page = 'files'
+            comment.page = Comment.FILES
             file_key = comment.root_target._id
             comment.node.commented_files[file_key] = comment.node.commented_files.get(file_key, 0) + 1
         else:
