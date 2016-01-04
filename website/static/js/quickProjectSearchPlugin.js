@@ -16,12 +16,12 @@ var quickSearchProject = {
     controller: function() {
         var self = this;
         self.nodes = [];
+        self.displayedNodes = [];
 
         // Load node list
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors', 'page[size]': 100}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig});
         promise.then(function(result){
-            console.log(result.links)
             result.data.forEach(function(node){
                 self.nodes.push(node);
             })
@@ -47,23 +47,39 @@ var quickSearchProject = {
             }
 
         };
+        self.loadUpToTen = function () {
+            requested = self.nodes.splice(0, 10);
+            for (i = 0; i < requested.length; i++) {
+                self.displayedNodes.push(requested[i])
+            }
+            return self.displayedNodes
+        };
 
     },
     view : function(ctrl) {
-        return m('table', [
-            m('tr', [
-                m('th', 'Name'),
-                m('th', 'Contributors'),
-                m('th', 'Modified')
-            ]),
-            ctrl.nodes.map(function(n){
-                return m('tr', [
-                  m('td', n.attributes.title),
-                    m('td', ctrl.getContributors(n)),
-                    m('td', n.attributes.date_modified)
-                ])
-            })
-        ]);
+        function projectView(project) {
+            return m('tr', [
+                m('td', project.attributes.title),
+                m('td', ctrl.getContributors(project)),
+                m('td', project.attributes.date_modified)
+            ])
+        }
+
+        return m('div', [
+            m('table', [
+                m('tr', [
+                    m('th', 'Name'),
+                    m('th', 'Contributors'),
+                    m('th', 'Modified')
+                ]),
+                ctrl.loadUpToTen().map(function(n){
+                    return projectView(n)
+                }),
+                m('button', { onclick: function() {
+                    ctrl.loadUpToTen() }
+                }, 'Add more')
+            ])
+        ])
     }
 };
 
