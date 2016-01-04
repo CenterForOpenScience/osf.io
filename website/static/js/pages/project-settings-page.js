@@ -263,26 +263,26 @@ var self = this;
 self.viewModel = WikiSettingsViewModel;
 
 self.viewModel.enabled.subscribe(function(newValue) {
-        var self = this;
-        $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: newValue}
-        ).done(function(response) {
-            if (newValue) {
-                self.wikiMessage('Wiki Enabled');
-            }
-            else {
-                self.wikiMessage('Wiki Disabled');
-            }
-            //Give user time to see message before reload.
-            setTimeout(function(){window.location.reload();}, 1500);
-        }).fail(function(xhr, status, error) {
-            $osf.growl('Error', 'Unable to update wiki');
-            Raven.captureMessage('Could not update wiki.', {
-                url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
-            });
-            setTimeout(function(){window.location.reload();}, 1500);
+    var self = this;
+    $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: newValue}
+    ).done(function(response) {
+        if (newValue) {
+            self.wikiMessage('Wiki Enabled');
+        }
+        else {
+            self.wikiMessage('Wiki Disabled');
+        }
+        //Give user time to see message before reload.
+        setTimeout(function(){window.location.reload();}, 1500);
+    }).fail(function(xhr, status, error) {
+        $osf.growl('Error', 'Unable to update wiki');
+        Raven.captureMessage('Could not update wiki.', {
+            url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
         });
-        return true;
-    }, self.viewModel);
+        setTimeout(function(){window.location.reload();}, 1500);
+    });
+    return true;
+}, self.viewModel);
 
 
 $osf.applyBindings(self.viewModel, '#selectWikiForm');
