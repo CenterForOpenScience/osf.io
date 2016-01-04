@@ -844,6 +844,9 @@ class User(GuidStoredObject, AddonModelMixin):
         if email not in self.emails:
             self.emails.append(email)
 
+        if self.username not in self.emails:
+            self.emails.append(self.username.lower())
+
         # Complete registration if primary email
         if email.lower() == self.username.lower():
             self.register(self.username)
