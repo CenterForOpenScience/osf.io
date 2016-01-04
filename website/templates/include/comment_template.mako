@@ -8,11 +8,11 @@
 
             <div data-bind="ifnot: loading">
                 <div data-bind="if: isDeleted">
-                    <div>
+                    <div class="text-muted">
                         <span data-bind="if: hasChildren()">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
-                        Comment deleted.
+                        <em>Comment deleted.</em>
                     </div>
                     <div data-bind="if: canEdit">
                         <a data-bind="click: startUndelete">Restore</a>
