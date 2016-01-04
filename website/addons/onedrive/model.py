@@ -46,12 +46,8 @@ class OneDrive(ExternalProvider):
         """View called when the Oauth flow is completed. Adds a new OneDriveUserSettings
         record to the user and saves the user's access token and account info.
         """
-        
-        userInfoRequest = requests.get(("{}me?access_token={}").format(settings.MSLIVE_API_URL, response['access_token']))
-        
-        logger.debug("userInfoRequest:: %s", repr(userInfoRequest))
-        
-        userInfo = userInfoRequest.json()
+        userInfo = self._auth_client.user_info(response['access_token'])
+        #  userInfo = userInfoRequest.json()
         logger.debug("userInfo:: %s", repr(userInfo))
 
         return {
@@ -59,7 +55,7 @@ class OneDrive(ExternalProvider):
             'display_name': userInfo['name'],
             'profile_url': userInfo['link']
         }
-        
+
     def _refresh_token(self, access_token, refresh_token):
         """ Handles the actual request to refresh tokens
 

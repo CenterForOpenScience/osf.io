@@ -53,9 +53,6 @@ class OneDriveSerializer(OAuthAddonSerializer):
         OneDriveNodeSettings record. Provides the return value for the
         onedrive config endpoints.
         """
-        
-        logger.error('addon_serialized_settings-1')
-        #TODO: review onedrive serilaized settings to determine if we need to add more
         valid_credentials = True
         user_settings = node_settings.user_settings
         self.node_settings = node_settings
