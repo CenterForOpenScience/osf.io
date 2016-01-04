@@ -175,9 +175,9 @@ class Comment(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
 
-    user = fields.ForeignField('user', required=True, backref='commented')
+    user = fields.ForeignField('user', required=True)
     # the node that the comment belongs to
-    node = fields.ForeignField('node', required=True, backref='comment_owner')
+    node = fields.ForeignField('node', required=True)
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
     target = fields.AbstractForeignField(required=True)
     # The file or project overview page that the comment is for
