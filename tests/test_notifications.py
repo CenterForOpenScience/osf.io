@@ -5,7 +5,6 @@ import pytz
 from babel import dates, Locale
 from schema import Schema, And, Use, Or
 
-from framework.guid.signals import guid_stored_object_saved
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from nose.tools import *  # noqa PEP8 asserts
@@ -248,7 +247,7 @@ class TestRemoveContributor(OsfTestCase):
     def test_remove_contributor_signal_called_when_contributor_is_removed(self):
         with capture_signals() as mock_signals:
             self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator))
-        assert_equal(mock_signals.signals_sent(), set([contributor_removed, guid_stored_object_saved]))
+        assert_equal(mock_signals.signals_sent(), set([contributor_removed]))
 
 
 class TestRemoveNodeSignal(OsfTestCase):
@@ -268,7 +267,7 @@ class TestRemoveNodeSignal(OsfTestCase):
             with capture_signals() as mock_signals:
                 project.remove_node(auth=Auth(project.creator))
             assert_true(project.is_deleted)
-            assert_equal(mock_signals.signals_sent(), set([node_deleted, guid_stored_object_saved]))
+            assert_equal(mock_signals.signals_sent(), set([node_deleted]))
 
             s = getattr(project.creator, 'email_transactional', [])
             assert_equal(len(s), 0)

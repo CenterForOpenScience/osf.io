@@ -4,7 +4,6 @@ from framework.auth import signals as auth
 from website.project import signals as project
 from website.addons.base import signals as event
 from website.conferences import signals as conference
-from framework.guid import signals as guid
 
 ALL_SIGNALS = [
     auth.contributor_removed,
@@ -19,5 +18,4 @@ ALL_SIGNALS = [
     auth.unconfirmed_user_created,
     event.file_updated,
     conference.osf4m_user_created,
-    guid.guid_stored_object_saved,
 ]
