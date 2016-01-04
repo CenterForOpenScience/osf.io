@@ -3,5 +3,5 @@
 these settings.
 """
 # Get an app key and secret at https://account.live.com/developers/applications
-ONEDRIVE_KEY = '000000004416C3D3'
-ONEDRIVE_SECRET = 'JFvPrqEnHuepkaDjZXCcnChQuyTjnk0Z'
+ONEDRIVE_KEY = None
+ONEDRIVE_SECRET = None

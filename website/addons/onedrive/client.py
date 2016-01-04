@@ -15,8 +15,6 @@ from website.addons.onedrive import settings
 
 logger = logging.getLogger(__name__)
 
-logging.getLogger('onedrive1').setLevel(logging.WARNING)
-
 
 class OneDriveAuthClient(BaseClient):
 
