@@ -18,5 +18,3 @@ def log_object_saved(sender, instance, fields_changed, cached_data):
 
     if abs_url is not None:
         enqueue_task(ban_url.s(abs_url))
-    else:
-        logger.error('Cannot ban None url for {} with id {}'.format(instance._name, instance._id))
