@@ -574,6 +574,16 @@ MEETING_DATA = {
         'poster': False,
         'talk': True,
     },
+        'ARCA2016': {
+        'name': '5th Applied Research Conference in Africa',
+        'info_url': 'http://www.arcaconference.org/',
+        'logo_url': 'http://www.arcaconference.org/images/ARCA_LOGO_NEW.JPG',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+    },
 }
 
 
