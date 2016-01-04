@@ -83,6 +83,7 @@ class TestUser(base.OsfTestCase):
 
         assert_not_in('foo@bar.com', self.user.unconfirmed_emails)
         assert_in('foo@bar.com', self.user.emails)
+        assert_in(self.user.username, self.user.emails)
 
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = factories.UnconfirmedUserFactory.build(
