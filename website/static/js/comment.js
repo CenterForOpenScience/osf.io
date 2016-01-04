@@ -143,11 +143,11 @@ BaseComment.prototype.fetch = function() {
         query += '&filter[target]=' + self.id();
     }
     var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: query});
-    self.fetchNext(url);
+    self.fetchNext(url, []);
 };
 
 /* Go through the paginated API response to fetch all comments for the specified target */
-BaseComment.prototype.fetchNext = function(url) {
+BaseComment.prototype.fetchNext = function(url, comments) {
     var self = this;
     var deferred = $.Deferred();
     if (self._loaded) {
@@ -158,15 +158,18 @@ BaseComment.prototype.fetchNext = function(url) {
         url,
         {'isCors': true});
     request.done(function(response) {
-        for(var i=0; i < response.data.length; i++) {
-            self.comments.push(new CommentModel(response.data[i], self, self.$root));
-        }
+        comments = comments.concat(response.data);
         if (response.links.next !== null) {
-            self.fetchNext(response.links.next);
+            self.fetchNext(response.links.next, comments);
         } else {
             if (!osfHelpers.urlParams().view_only) {
                 self.setUnreadCommentCount();
             }
+            self.comments(
+                ko.utils.arrayMap(comments, function(comment) {
+                    return new CommentModel(comment, self, self.$root);
+                })
+            );
             deferred.resolve(self.comments());
             self.configureCommentsVisibility();
             self._loaded = true;
