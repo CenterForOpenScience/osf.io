@@ -36,8 +36,7 @@ $(document).ready(function() {
 
 $(window).scroll(function() {
     var scrollTop = $(this).scrollTop();
-    var offset = OFFSET;
-    scrollTop = (scrollTop <= offset ? scrollTop : offset);
+    scrollTop = (scrollTop <= OFFSET ? scrollTop : OFFSET);
     if ($('.comment-handle-icon').is(':hidden')) {
         $('.comment-pane').css({
             'transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
@@ -50,8 +49,7 @@ $(window).scroll(function() {
 $(window).resize(function() {
     var scrollTop = $(this).scrollTop();
     scrollTop = $('.comment-handle-icon').is(':hidden') ? scrollTop : 0;
-    var offset = OFFSET;
-    scrollTop = (scrollTop <= offset ? scrollTop : offset);
+    scrollTop = (scrollTop <= OFFSET ? scrollTop : OFFSET);
     $('.comment-pane').css({
         'transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
         '-webkit-transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)',
