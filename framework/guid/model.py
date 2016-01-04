@@ -94,6 +94,5 @@ class GuidStoredObject(StoredObject):
         self._ensure_guid()
         return super(GuidStoredObject, self).save(*args, **kwargs)
 
-
     def __str__(self):
         return str(self._id)

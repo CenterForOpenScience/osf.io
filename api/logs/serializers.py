@@ -5,7 +5,6 @@ from api.base.serializers import (
     RelationshipField,
     RestrictedDictSerializer,
     LinksField)
-from api.base.utils import absolute_reverse
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
