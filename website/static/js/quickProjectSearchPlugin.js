@@ -55,13 +55,17 @@ var quickSearchProject = {
             return self.displayedNodes
         };
 
+        self.formatDate = function (node) {
+            return new $osf.FormattableDate(node.attributes.date_modified).local
+        }
+
     },
     view : function(ctrl) {
         function projectView(project) {
             return m('tr', [
                 m('td', project.attributes.title),
                 m('td', ctrl.getContributors(project)),
-                m('td', project.attributes.date_modified)
+                m('td', ctrl.formatDate(project))
             ])
         }
 
