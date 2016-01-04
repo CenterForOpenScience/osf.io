@@ -741,10 +741,15 @@ function indexOf(array, searchFn) {
  * @param {Array[Any]} listOfBools
  * @returns {Boolean}
  **/
-var any = function(listOfBools) {
+var any = function(listOfBools, check) {
     var someTruthy = false;
     for(var i = 0; i < listOfBools.length; i++){
-        someTruthy = someTruthy || Boolean(listOfBools[i]);
+        if (check) {
+            someTruthy = someTruthy || Boolean(check(listOfBools[i]));
+        }
+        else {
+            someTruthy = someTruthy || Boolean(listOfBools[i]);
+        }
         if (someTruthy) {
             return someTruthy;
         }
