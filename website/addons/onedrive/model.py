@@ -107,6 +107,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         'onedriveusersettings', backref='authorized'
     )
     folder_id = fields.StringField(default=None)
+    onedrive_id = fields.StringField(default=None)
     folder_name = fields.StringField()
     folder_path = fields.StringField()
 
@@ -123,7 +124,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def display_name(self):
-        return '{0}: {1}'.format(self.config.full_name, self.folder_id)
+        return '{0}: {1}'.format(self.config.full_name, self.folder_name)
 
     @property
     def has_auth(self):
@@ -157,7 +158,8 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             self.save()
 
     def set_folder(self, folder, auth):
-        self.folder_id = folder['id']
+        self.folder_id = folder['name']
+        self.onedrive_id = folder['id']
         self.folder_name = folder['name']
         self.save()
 
@@ -170,7 +172,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             self.user_settings.save()
 
         # Add log to node
-        nodelogger = OneDriveNodeLogger(node=self.owner, auth=auth)
+        nodelogger = OneDriveNodeLogger(node=self.owner, auth=auth)  # AddonOAuthNodeSettingsBase.nodelogger(self)
         nodelogger.log(action="folder_selected", save=True)
 
     def set_user_auth(self, user_settings):
@@ -209,7 +211,7 @@ class OneDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         logger.debug('folder_id::{}'.format(self.folder_id))
         if self.folder_id is None:
             raise exceptions.AddonError('Folder is not configured')
-        return {'folder': self.folder_id}
+        return {'folder': self.onedrive_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
         self.owner.add_log(
