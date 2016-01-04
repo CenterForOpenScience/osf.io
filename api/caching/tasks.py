@@ -33,7 +33,7 @@ def ban_url(url):
                 Host=parsed_url.hostname
             ))
             if not response.ok:
-                logger.error('Banning {} failed with message {}'.format(
+                logger.error('Banning {} failed: {}'.format(
                     url,
                     response.text
                 ))
