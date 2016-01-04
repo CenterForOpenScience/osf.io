@@ -393,7 +393,7 @@ def project_remove_contributor(auth, **kwargs):
         or if no admin users would remain after changes were applied
 
     """
-    contributor_id = request.json.get('contributorID');
+    contributor_id = request.json.get('contributorID')
     node_ids = request.json.get('nodeIDs')
     contributor = User.load(contributor_id)
     for node_id in node_ids:
