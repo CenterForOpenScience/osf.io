@@ -11,7 +11,7 @@
 
     <div class="comments cp-sidebar">
         <div class="cp-sidebar-content">
-            <button type="button" class="close visible-xs text-smaller" data-bind="click: togglePane">
+            <button type="button" class="close text-smaller" data-bind="click: togglePane">
                 <i class="fa fa-times"></i>
             </button>
             <h4>
