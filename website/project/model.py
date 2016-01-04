@@ -507,9 +507,15 @@ class NodeLog(StoredObject):
 
     @property
     def absolute_api_v2_url(self):
-        return api_v2_url('/logs/{}/'.format(self._id))
+        from api.logs.views import NodeLogDetail
+
+        return absolute_reverse('{}:{}'.format(NodeLogDetail.view_category, NodeLogDetail.view_name), kwargs={'log_id': self._id})
 
     def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_url(self):
         return self.absolute_api_v2_url
 
 
