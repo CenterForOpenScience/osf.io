@@ -6,13 +6,14 @@ from website.util import api_url_for, web_url_for
 
 logger = logging.getLogger(__name__)
 
-logging.getLogger('onedrive1').setLevel(logging.WARNING)
-
 
 class OneDriveSerializer(OAuthAddonSerializer):
-
     def credentials_owner(self, user_settings=None):
         return user_settings.owner or self.user_settings.owner
+
+    @property
+    def addon_short_name(self):
+        return 'onedrive'
 
     @property
     def user_is_owner(self):
