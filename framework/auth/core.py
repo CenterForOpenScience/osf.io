@@ -861,7 +861,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         # log to sentry if somehow the username isn't in the email list
         # This is for data gathering purposes, so we can find when this is happening
-        if username.lower() not in self.emails:
+        if self.username.lower() not in self.emails:
             log_message('Username not added to list of emails.')
 
         return True
