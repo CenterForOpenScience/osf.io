@@ -45,7 +45,7 @@ from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
 
 from website import language, mails, settings, tokens
-from website.util import web_url_for, api_v2_url
+from website.util import web_url_for
 from website.util import api_url_for
 from website.util import sanitize
 from website.exceptions import (

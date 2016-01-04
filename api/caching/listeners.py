@@ -1,5 +1,4 @@
-from api.caching.tasks import ban_url, logger
-from framework.guid.model import Guid
+from api.caching.tasks import ban_url
 from framework.tasks.handlers import enqueue_task
 from modularodm import signals
 
