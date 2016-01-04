@@ -513,7 +513,8 @@ class InstitutionFactory(ModularOdmFactory):
     def _create(cls, target_class, _id, name):
         instance = target_class(
             _id=_id,
-            name=name
+            name=name,
+            logo_name='logo.img',
         )
         instance.save()
         return instance
