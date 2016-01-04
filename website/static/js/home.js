@@ -1,5 +1,6 @@
 var $ = require('jquery');
 var m = require('mithril');
+var moment = require('moment');
 var $osf = require('js/osfHelpers');
 var LogText = require('js/logTextParser');
 
@@ -16,9 +17,9 @@ var LogWrap = {
         self.userId = args.userId;
         self.activityLogs = m.prop();
         self.eventFilter = false;
-        self.dateEnd = new Date();
-        self.dateBegin = new Date();
-        self.today = new Date();
+        self.dateEnd = moment.utc();
+        self.dateBegin = moment.utc();
+        self.today = moment.utc();
         self.page = 1;
         self.cache = [];
 
@@ -49,11 +50,10 @@ var LogWrap = {
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
                 });
                 if (init) {
-                    self.lastDay = new Date(result.data[0].attributes.date);
+                    self.lastDay = moment.utc(result.data[0].attributes.date);
                     self.dateEnd = self.lastDay;
-                    self.lastDay.setMonth(self.lastDay.getMonth() - 1);
-                    self.dateBegin = self.lastDay;
-                    self.firstDay = new Date(result.links.meta.last_log_date);
+                    self.dateBegin = moment.utc(result.data[0].attributes.date).subtract(1, 'months');
+                    self.firstDay = moment.utc(result.links.meta.last_log_date);
                 }
                 if (init || reset){
                     self.totalEvents = result.links.meta.total;
@@ -69,8 +69,15 @@ var LogWrap = {
             });
             return promise;
         };
+
+        self.callLogs = function(filter) {
+            self.eventFilter = self.eventFilter === filter ? false : filter;
+            self.page = 1;
+            self.cache = [];
+            self.getLogs();
+        };
+
         self.getLogs(true, false);
-        self.getLogs();
     },
     view: function(ctrl, args){
         var fileEvents = (ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0;
@@ -81,23 +88,24 @@ var LogWrap = {
         var addSlider = function(ele, isInitialized){
             if (!isInitialized) {
                 $("#recentActivitySlider").slider({
-                    min: Number(ctrl.firstDay),
-                    max: Number(ctrl.today),
-                    values: [Number(ctrl.dateBegin), Number(ctrl.dateEnd)],
+                    min: Number(ctrl.firstDay.format('x')),
+                    max: Number(ctrl.today.format('x')),
+                    values: [Number(ctrl.dateBegin.format('x')), Number(ctrl.dateEnd.format('x'))],
                     range: true,
                     stop: function (event, ui) {
                         ctrl.page = 1;
-                        ctrl.dateBegin = new Date(ui.values[0]);
-                        ctrl.dateEnd = new Date(ui.values[1]);
+                        ctrl.dateBegin = moment.utc(ui.values[0]);
+                        ctrl.dateEnd = moment.utc(ui.values[1]);
                         ctrl.getLogs(false, true);
                     },
                     slide: function (event, ui) {
 
                     }
                 });
+                ctrl.getLogs();
             }
             else {
-                $("#recentActivitySlider").slider('option', "values", [Number(ctrl.dateBegin), Number(ctrl.dateEnd)]);
+                $("#recentActivitySlider").slider('option', "values", [Number(ctrl.dateBegin.format('x')), Number(ctrl.dateEnd.format('x'))]);
             }
         };
         return m('.panel.panel-default', [
@@ -109,39 +117,27 @@ var LogWrap = {
                 m('.progress', [
                     m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : '.muted'), {style: {width: fileEvents+'%'}},
                         m('a', {onclick: function(){
-                            ctrl.eventFilter = ctrl.eventFilter === 'file' ? false : 'file';
-                            ctrl.page = 1;
-                            ctrl.cache = [];
-                            ctrl.getLogs();
+                            ctrl.callLogs('file');
                         }}, 'Files')
                     ),
                     m('.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ? '.active.progress-bar-striped' : '.muted'), {style: {width: nodeEvents+'%'}},
                         m('a', {onclick: function(){
-                            ctrl.eventFilter = ctrl.eventFilter === 'project' ? false : 'project';
-                            ctrl.page = 1;
-                            ctrl.cache = [];
-                            ctrl.getLogs();
+                            ctrl.callLogs('project');
                         }}, 'Nodes')
                     ),
                     m('.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' ? '.active.progress-bar-striped' : '.muted'), {style: {width: commentEvents+'%'}},
                         m('a', {onclick: function(){
-                            ctrl.eventFilter = ctrl.eventFilter === 'comment' ? false : 'comment';
-                            ctrl.page = 1;
-                            ctrl.cache = [];
-                            ctrl.getLogs();
+                            ctrl.callLogs('comment');
                         }}, 'Comments')
                     ),
                     m('.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' ? '.active.progress-bar-striped' : '.muted'), {style: {width: wikiEvents+'%'}},
                         m('a', {onclick: function(){
-                            ctrl.eventFilter = ctrl.eventFilter === 'wiki' ? false : 'wiki';
-                            ctrl.page = 1;
-                            ctrl.cache = [];
-                            ctrl.getLogs();
+                            ctrl.callLogs('wiki');
                         }}, 'Wiki')
                     ),
                     m('.progress-bar.progress-bar-success.muted', {style: {width: otherEvents+'%'}}, 'Other')
                 ]),
-                ctrl.activityLogs() ? ctrl.activityLogs().map(function(item){
+                (ctrl.activityLogs() && (ctrl.activityLogs().length > 0))? ctrl.activityLogs().map(function(item){
 
                     return m('.fb-activity-item', [
                         m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
