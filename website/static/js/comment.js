@@ -596,8 +596,11 @@ CommentModel.prototype.cancelUnreportAbuse = function() {
 };
 
 
-CommentModel.prototype.toggle = function () {
-    this.fetch();
+CommentModel.prototype.toggle = function (data, event) {
+    // Fetch comments when toggling open
+    if (!this.showChildren()) {
+        this.fetch();
+    }
     this.showChildren(!this.showChildren());
 };
 
