@@ -42,15 +42,15 @@ class OneDriveAuthClient(BaseClient):
             )
         except InvalidGrantError:
             raise exceptions.ExpiredAuthError()
- 
-    def userinfo(self, access_token):
+        
+    def user_info(self, access_token):
         return self._make_request(
             'GET',
-            self._build_url(settings.MSLIVE_API_URL, 'oauth2', 'v3', 'userinfo'),
+            self._build_url(settings.MSLIVE_API_URL, 'me'),
             params={'access_token': access_token},
             expects=(200, ),
             throws=HTTPError(401)
-        ).json()
+        ).json()        
 
 
 class OneDriveClient(BaseClient):
