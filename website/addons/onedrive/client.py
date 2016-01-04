@@ -9,8 +9,7 @@ from oauthlib.oauth2 import InvalidGrantError
 from framework.exceptions import HTTPError
 
 from website.util.client import BaseClient
-#from website.addons.googledrive import settings
-from website.addons.googledrive import exceptions
+from website.addons.base import exceptions
 from website.addons.onedrive import settings
 
 logger = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ class OneDriveAuthClient(BaseClient):
                 **extra
             )
         except InvalidGrantError:
-            raise exceptions.ExpiredAuthError()
+            raise exceptions.InvalidAuthError()
         
     def user_info(self, access_token):
         return self._make_request(
