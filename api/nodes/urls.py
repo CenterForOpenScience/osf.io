@@ -25,4 +25,8 @@ if settings.DEV_MODE:
         url(r'^(?P<node_id>\w+)/node_links/$', views.NodeLinksList.as_view(), name=views.NodeLinksList.view_name),
         url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.NodeLinksDetail.as_view(), name=views.NodeLinksDetail.view_name),
         url(r'^(?P<node_id>\w+)/registrations/$', views.NodeRegistrationsList.as_view(), name=views.NodeRegistrationsList.view_name),
+
+        # Custom citations
+        url(r'^(?P<node_id>\w+)/citations/$', views.NodeAlternativeCitationsList.as_view(), name=views.NodeAlternativeCitationsList.view_name),
+        url(r'^(?P<node_id>\w+)/citations/(?P<citation_id>\w+)/$', views.NodeAlternativeCitationDetail.as_view(), name=views.NodeAlternativeCitationDetail.view_name),
     ])

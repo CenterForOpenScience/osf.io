@@ -13,8 +13,11 @@ from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens
-from website.models import RegistrationApproval, Sanction
-from website.project.model import PreregCallbackMixin
+from website.project.model import (
+    Sanction,
+    PreregCallbackMixin,
+    RegistrationApproval,
+)
 
 
 DUMMY_TOKEN = tokens.encode({

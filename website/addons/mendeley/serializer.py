@@ -2,6 +2,8 @@ from website.addons.base.serializer import CitationsAddonSerializer
 
 class MendeleySerializer(CitationsAddonSerializer):
 
+    addon_short_name = 'mendeley'
+
     def serialize_folder(self, folder):
         return {
             'data': folder,
