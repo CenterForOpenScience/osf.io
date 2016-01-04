@@ -27,19 +27,22 @@ var quickSearchProject = {
             });
             return promise;
         };
+        self.getFamilyName = function(i, node) {
+            return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
+        };
         self.getContributors = function (node) {
-            var numContributors = node.embeds.contributors.links.meta.total
+            var numContributors = node.embeds.contributors.links.meta.total;
             if (numContributors === 1) {
-                return node.embeds.contributors.data[0].embeds.users.data.attributes.family_name
+                return self.getFamilyName(0, node)
             }
             else if (numContributors == 2) {
-                return node.embeds.contributors.data[0].embeds.users.data.attributes.family_name + ' and ' +
-                        node.embeds.contributors.data[1].embeds.users.data.attributes.family_name
+                return self.getFamilyName(0, node) + ' and ' +
+                        self.getFamilyName(1, node)
             }
             else {
-                return node.embeds.contributors.data[0].embeds.users.data.attributes.family_name + ', ' +
-                        node.embeds.contributors.data[1].embeds.users.data.attributes.family_name + ', ' +
-                        node.embeds.contributors.data[2].embeds.users.data.attributes.family_name + ' and ' +
+                return self.getFamilyName(0, node) + ', ' +
+                        self.getFamilyName(1, node) + ', ' +
+                        self.getFamilyName(2, node) + ' and ' +
                     (numContributors - 3) + ' others'
             }
 
@@ -49,11 +52,20 @@ var quickSearchProject = {
     },
     view : function(ctrl) {
         console.log(ctrl.nodes);
-        return [
-            m("h1", 'My nodes'),
-            m('div', 'Name', 'Contributors', 'Modified'),
-            m('p', ctrl.nodes.map(function(n){
-               return m('div', n.attributes.title, ctrl.getContributors(n),  n.attributes.date_modified)}))]
+        return m('table', [
+            m('tr', [
+                m('th', 'Name'),
+                m('th', 'Contributors'),
+                m('th', 'Modified')
+            ]),
+            ctrl.nodes.map(function(n){
+                return m('tr', [
+                  m('td', n.attributes.title),
+                    m('td', ctrl.getContributors(n)),
+                    m('td', n.attributes.date_modified)
+                ])
+            })
+        ]);
     }
 };
 
