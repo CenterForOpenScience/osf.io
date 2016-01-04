@@ -4,6 +4,7 @@
 'use strict';
 
 var $ = require('jquery');
+var $3 = $;
 var ko = require('knockout');
 var Raven = require('raven-js');
 var $osf = require('./osfHelpers');
