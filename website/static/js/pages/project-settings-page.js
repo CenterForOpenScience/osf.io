@@ -256,12 +256,17 @@ $(document).ready(function() {
 
 var WikiSettingsViewModel = {
     enabled: ko.observable(ctx.wiki.isEnabled), // <- this would get set in the mako template, as usual
-    wikiMessage: ko.observable(''),
-    onChange: function() {
+    wikiMessage: ko.observable('')
+};
+
+var self = this;
+self.viewModel = WikiSettingsViewModel;
+
+self.viewModel.enabled.subscribe(function(newValue) {
         var self = this;
-        $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: self.enabled()}
+        $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: newValue}
         ).done(function(response) {
-            if (self.enabled()) {
+            if (newValue) {
                 self.wikiMessage('Wiki Enabled');
             }
             else {
@@ -277,9 +282,7 @@ var WikiSettingsViewModel = {
             setTimeout(function(){window.location.reload();}, 1500);
         });
         return true;
-    },
-};
+    }, self.viewModel);
 
-var self = this;
-self.viewModel = WikiSettingsViewModel;
+
 $osf.applyBindings(self.viewModel, '#selectWikiForm');

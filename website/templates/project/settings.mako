@@ -217,7 +217,7 @@
                                         type="checkbox"
                                         name="${wiki.short_name}"
                                         class="wiki-select"
-                                        data-bind="checked: enabled, click: onChange"
+                                        data-bind="checked: enabled"
                                 />
                                 Enable the wiki in <b>${node['title']}</b>.
                             </label>
