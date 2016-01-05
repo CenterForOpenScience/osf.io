@@ -2,8 +2,9 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+from api.base.settings import osf_settings
 from tests.base import ApiTestCase
-from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, RegistrationFactory
+from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, RegistrationFactory, PrivateLinkFactory
 
 
 class TestCommentDetailView(ApiTestCase):
@@ -67,6 +68,27 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
+    def test_private_node_user_with_private_link_can_see_comment(self):
+        self._set_up_private_project_with_comment()
+        private_link = PrivateLinkFactory(anonymous=False)
+        private_link.nodes.append(self.private_project)
+        private_link.save()
+        res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key}, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(self.comment._id, res.json['data']['id'])
+        assert_equal(self.comment.content, res.json['data']['attributes']['content'])
+
+    def test_private_node_user_with_anonymous_link_cannot_see_commenter_info(self):
+        self._set_up_private_project_with_comment()
+        private_link = PrivateLinkFactory(anonymous=True)
+        private_link.nodes.append(self.private_project)
+        private_link.save()
+        res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key}, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(self.comment._id, res.json['data']['id'])
+        assert_equal(self.comment.content, res.json['data']['attributes']['content'])
+        assert_not_in('user', res.json['data']['relationships'])
+
     def test_public_node_logged_in_contributor_can_view_comment(self):
         self._set_up_public_project_with_comment()
         res = self.app.get(self.public_url, auth=self.user.auth)
@@ -85,6 +107,15 @@ class TestCommentDetailView(ApiTestCase):
         self._set_up_public_project_with_comment()
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
+        assert_equal(self.public_comment._id, res.json['data']['id'])
+        assert_equal(self.public_comment.content, res.json['data']['attributes']['content'])
+
+    def test_public_node_user_with_private_link_can_view_comment(self):
+        self._set_up_public_project_with_comment()
+        private_link = PrivateLinkFactory(anonymous=False)
+        private_link.nodes.append(self.public_project)
+        private_link.save()
+        res = self.app.get('/{}comments/{}/'.format(API_BASE, self.public_comment._id), {'view_only': private_link.key}, expect_errors=True)
         assert_equal(self.public_comment._id, res.json['data']['id'])
         assert_equal(self.public_comment.content, res.json['data']['attributes']['content'])
 
@@ -192,6 +223,39 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(payload['data']['attributes']['content'], res.json['data']['attributes']['content'])
+
+    def test_update_comment_cannot_exceed_max_length(self):
+        self._set_up_private_project_with_comment()
+        payload = {
+            'data': {
+                'id': self.comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'content': ''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 1)]),
+                    'deleted': False
+                }
+            }
+        }
+        res = self.app.put_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'],
+                     'Ensure this field has no more than {} characters.'.format(str(osf_settings.COMMENT_MAXLENGTH)))
+
+    def test_update_comment_cannot_be_empty(self):
+        self._set_up_private_project_with_comment()
+        payload = {
+            'data': {
+                'id': self.comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'content': '',
+                    'deleted': False
+                }
+            }
+        }
+        res = self.app.put_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
 
     def test_private_node_only_logged_in_contributor_commenter_can_delete_comment(self):
         self._set_up_private_project_with_comment()
@@ -446,6 +510,32 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
+    def test_private_node_view_only_link_user_cannot_see_deleted_comment(self):
+        self._set_up_private_project_with_comment()
+        self.comment.is_deleted = True
+        self.comment.save()
+
+        private_link = PrivateLinkFactory(anonymous=False)
+        private_link.nodes.append(self.private_project)
+        private_link.save()
+
+        res= self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key}, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_is_none(res.json['data']['attributes']['content'])
+
+    def test_private_node_anonymous_view_only_link_user_cannot_see_deleted_comment(self):
+        self._set_up_private_project_with_comment()
+        self.comment.is_deleted = True
+        self.comment.save()
+
+        anonymous_link = PrivateLinkFactory(anonymous=True)
+        anonymous_link.nodes.append(self.private_project)
+        anonymous_link.save()
+
+        res= self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': anonymous_link.key}, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_is_none(res.json['data']['attributes']['content'])
+
     def test_public_node_only_logged_in_commenter_can_view_deleted_comment(self):
         public_project = ProjectFactory(is_public=True, creator=self.user)
         comment = CommentFactory(node=public_project, target=public_project, user=self.user)
@@ -483,5 +573,18 @@ class TestCommentDetailView(ApiTestCase):
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_is_none(res.json['data']['attributes']['content'])
+
+    def test_public_node_view_only_link_user_cannot_see_deleted_comment(self):
+        self._set_up_public_project_with_comment()
+        self.public_comment.is_deleted = True
+        self.public_comment.save()
+
+        private_link = PrivateLinkFactory(anonymous=False)
+        private_link.nodes.append(self.public_project)
+        private_link.save()
+
+        res = self.app.get('/{}comments/{}/'.format(API_BASE, self.public_comment._id), {'view_only': private_link.key}, expect_errors=True)
         assert_equal(res.status_code, 200)
         assert_is_none(res.json['data']['attributes']['content'])

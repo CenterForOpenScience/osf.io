@@ -46,6 +46,27 @@ class NodeSerializer(JSONAPISerializer):
         'parent'
     ])
 
+    non_anonymized_fields = [
+        'id',
+        'title',
+        'description',
+        'category',
+        'date_created',
+        'date_modified',
+        'registration',
+        'tags',
+        'public',
+        'links',
+        'children',
+        'comments',
+        'contributors',
+        'files',
+        'node_links',
+        'parent',
+        'root',
+        'logs',
+    ]
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
