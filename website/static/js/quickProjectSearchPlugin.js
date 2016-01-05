@@ -11,13 +11,13 @@ var xhrconfig = function(xhr) {
     xhr.withCredentials = true;
 };
 
-
 var quickSearchProject = {
     controller: function() {
         var self = this;
         self.nodes = [];
         self.displayedNodes = [];
         self.lastLogin = '';
+        self.commentsCount = {};
 
         // Load node list
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors', 'page[size]': 100}});
@@ -65,6 +65,27 @@ var quickSearchProject = {
             }
 
         };
+
+        self.getRecentComments = function (node) {
+            var url = $osf.apiV2Url('nodes/' + node.id + '/comments/?filter[date_modified][gte]=' + self.lastLogin, {});
+            var promise = m.request({method: 'GET', url : url, config: xhrconfig});
+            promise.then(function(result) {
+                console.log(result);
+                self.commentsCount[node.id] = result.links.meta.total
+            });
+            return promise
+        };
+
+        self.loadRecentCommentCount = function (node) {
+            if (node.id in self.commentsCount) {
+                return self.commentsCount[node.id]
+            }
+            else {
+                self.getRecentComments(node);
+                return self.commentsCount[node.id]
+            }
+        };
+
         self.loadUpToTen = function () {
             requested = self.nodes.splice(0, 10);
             for (i = 0; i < requested.length; i++) {
@@ -140,6 +161,7 @@ var quickSearchProject = {
                 m('td', project.attributes.title),
                 m('td', ctrl.getContributors(project)),
                 m('td', ctrl.formatDate(project))
+                m('td', ctrl.loadRecentCommentCount(project)),
             ])
         }
 
@@ -156,7 +178,8 @@ var quickSearchProject = {
                 m('tr', [
                     m('th', 'Name'),
                     m('th', 'Contributors'),
-                    m('th', 'Modified')
+                    m('th', 'Modified'),
+                    m('th', 'New comments'),
                 m('tr', [
                    m('td',
                        m('button', { onclick: function() {
