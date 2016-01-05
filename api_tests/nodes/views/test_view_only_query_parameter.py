@@ -161,6 +161,21 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_not_in(self.contributing_read_user._id, body)
         assert_not_in(self.creation_user._id, body)
 
+    def test_private_project_with_anonymous_link_does_not_expose_registrations_or_forks(self):
+        res = self.app.get(self.private_node_one_url, {
+            'view_only': self.private_node_one_anonymous_link.key,
+        })
+        assert_equal(res.status_code, 200)
+        relationships = res.json['data']['relationships']
+        if 'embeds' in res.json['data']:
+            embeds = res.json['data']['embeds']
+        else:
+            embeds = {}
+        assert_not_in('registrations', relationships)
+        assert_not_in('forks', relationships)
+        assert_not_in('registrations', embeds)
+        assert_not_in('forks', embeds)
+
     def test_bad_view_only_link_does_not_modify_permissions(self):
         res = self.app.get(self.private_node_one_url+'logs/', {
             'view_only': 'thisisnotarealprivatekey',
