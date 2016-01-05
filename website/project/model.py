@@ -170,6 +170,8 @@ def validate_comment_reports(value, *args, **kwargs):
 
 class Comment(GuidStoredObject):
 
+    __guid_min_length__ = 12
+
     OVERVIEW = "node"
     FILES = "files"
 
