@@ -194,7 +194,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.complete or not self.repo:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.oauth_access_token}
+        return {'token': self.external_account.oauth_key}
 
     def serialize_waterbutler_settings(self):
         if not self.complete:

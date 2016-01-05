@@ -31,7 +31,7 @@ api_routes = {
                 '/project/<pid>/github/settings/',
                 '/project/<pid>/node/<nid>/github/settings/',
             ],
-            'put',
+            'post',
             views.github_set_config,
             json_renderer,
         ),

@@ -79,9 +79,18 @@ github_root_folder = generic_views.root_folder(
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_permission('write')
-def github_set_config(node_settings, folder, auth):
-    node = node_settings.owner
-    user_settings = node_settings.user_settings
+def github_set_config(auth, **kwargs):
+    node_settings = kwargs.get('node_addon', None)
+    node = kwargs.get('node', None)
+    user_settings = kwargs.get('user_addon', None)
+
+    try:
+        if not node:
+            node = node_settings.owner
+        if not user_settings:
+            user_settings = node_settings.user_settings
+    except AttributeError:
+        raise HTTPError(http.BAD_REQUEST)
 
     # Parse request
     github_user_name = request.json.get('github_user', '')
