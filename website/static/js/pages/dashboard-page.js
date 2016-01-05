@@ -48,5 +48,7 @@ $(document).ready(function() {
             }
         }
     ));
+    // Add active class to navigation for my projects page
+    $('#osfNavMyProjects').addClass('active');
 });
 
