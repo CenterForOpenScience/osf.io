@@ -84,6 +84,16 @@ projectOrganizer.myProjects = new Bloodhound({
 });
 
 
+function _formatDataforPO(data) {
+    data.map(function(item, index){
+        item.uid = item.id;
+        item.name = item.attributes.title;
+        item.tags = item.attributes.tags.toString();
+        item.date = new $osf.FormattableDate(item.attributes.date_modified);
+    });
+    return data;
+}
+
 /**
  * Organize flat list of nodes returned from server to a hierarchical list
  * @param {Array} flatData flat list of nodes as returned from the server
@@ -92,19 +102,24 @@ projectOrganizer.myProjects = new Bloodhound({
 function _makeTree (flatData) {
     var root = {id:0, children: [], data : {} };
     var node_list = { 0 : root};
+    var parentID;
     for (var i = 0; i < flatData.length; i++) {
         var n = flatData[i];
-        var parentLink = n.relationships.parent.links.related.href; // Find where parent id string can be extracted
-        var parentID = parentLink.split('/')[5];
 
-        if(!node_list[n.id]){ // If this node is not in the object list, add it
-            node_list[n.id] = { id: n.id, data : n, children : [] };
+
+        if (!node_list[n.id]) { // If this node is not in the object list, add it
+            node_list[n.id] = {id: n.id, data: n, children: []};
         } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
             node_list[n.id].id = n.id;
             node_list[n.id].data = n;
         }
 
-        if(parentID && parentID !== n.id && !n.attributes.registration ) {
+        if (n.relationships.parent){
+            parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
+        } else {
+            parentID = null;
+        }
+        if(parentID && !n.attributes.registration ) {
             if(!node_list[parentID]){
                 node_list[parentID] = { children : [] };
             }
@@ -135,10 +150,9 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if(node.links.html){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title)
-        ];
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, onclick : preventSelect}, node.attributes.title) ];
     } else {
-        return  m('span', { 'class' : css}, node.attributes.title);
+        return  m('span', { 'class' : css, 'data-nodeID' : node.id }, node.attributes.title);
     }
 }
 
@@ -148,7 +162,6 @@ function _poTitleColumn(item) {
  * @returns {Object} A Mithril virtual DOM template object
  * @private
  */
-// TODO : May need refactor based on the api data
 function _poContributors(item) {
     var contributorList = item.data.embeds.contributors.data;
     if (contributorList.length === 0) {
@@ -214,7 +227,7 @@ function _poResolveRows(item) {
     if (!mobile) {
         default_columns.push({
             data : 'contributors',
-            filter : false,
+            filter : true,
             custom : _poContributors
         }, {
             data : 'dateModified',
@@ -285,7 +298,7 @@ function _poResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus'),
         togglePlus = m('i.fa.fa-plus'),
         childrenCount = item.data.relationships.children.links.related.meta.count;
-    if (item.kind === 'folder' && childrenCount > 0) {
+    if (childrenCount > 0) {
         if (item.open) {
             return toggleMinus;
         }
@@ -303,6 +316,9 @@ function _poResolveToggle(item) {
  */
 function _poResolveLazyLoad(item) {
     var node = item.data;
+    if(item.children.length > 0) {
+        return false;
+    }
     return $osf.apiV2Url('nodes/', {
         query : {
             'filter[root]' : node.id,
@@ -375,32 +391,7 @@ function filterRowsNotInParent(rows) {
 }
 
 function _poIconView(item) {
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
-    var node = item.data;
-    function returnView(type, category) {
-        var iconType = projectIcons[type];
-        if (type === 'component' || type === 'registeredComponent') {
-                iconType = componentIcons[category];
-        } else if (type === 'project' || type === 'registeredProject') {
-            iconType = projectIcons[category];
-        }
-        if (type === 'registeredComponent' || type === 'registeredProject') {
-            iconType += ' po-icon-registered';
-        } else {
-            iconType += ' po-icon';
-        }
-        var template = m('span', { 'class' : iconType});
-        return template;
-    }
-    if (node.attributes.category === 'project') {
-        if (node.attributes.registration) {
-            return returnView('registeredProject', node.attributes.category);
-        } else {
-            return returnView('project', node.attributes.category);
-        }
-    }
-    return null;
+    return false;
 }
 
 /**
@@ -427,6 +418,7 @@ var tbOptions = {
     },
     sortDepth : 0,
     onload : function () {
+
         var tb = this,
             rowDiv = tb.select('.tb-row');
         rowDiv.first().trigger('click');
@@ -478,7 +470,7 @@ var tbOptions = {
     filterTemplate : function() {
         var tb = this;
         return [
-            m('input.form-control[placeholder="' + tb.options.filterPlaceholder + '"][type="text"]', {
+            m('input.form-control[placeholder="Filter projects in this view"][type="text"]', {
                 style: 'display:inline;',
                 onkeyup: tb.filter,
                 onchange: m.withAttr('value', tb.filterText),
@@ -492,16 +484,11 @@ var tbOptions = {
     },
     lazyLoadPreprocess : function (value) {
         // For when we load root filtered nodes this is removing the parent from the returned list. requires the root to be in relationship object
-        var treeData = _makeTree(value.data);
-        value.data.map(function(item, index){
-            item.kind = 'folder';
-            item.uid = item.id;
-            item.name = item.attributes.title;
-            item.date = new $osf.FormattableDate(item.attributes.date_modified);
-        });
-
-        return value;
-    }
+        var data = _formatDataforPO(value.data);
+        var treeData = _makeTree(data);
+        return treeData;
+    },
+    hiddenFilterRows : ['tags']
 };
 
 var ProjectOrganizer = {

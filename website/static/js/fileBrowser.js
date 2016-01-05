@@ -10,6 +10,35 @@ var $osf = require('js/osfHelpers');
 var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
 
+
+
+if (!window.fileBrowserCounter) {
+    window.fileBrowserCounter = 0;
+}
+function getUID() {
+    window.fileBrowserCounter = window.fileBrowserCounter + 1;
+    return window.fileBrowserCounter;
+}
+
+var xhrconfig = function (xhr) {
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json');
+    xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
+};
+
+// Refactor the information needed for filtering rows
+function _formatDataforPO(item) {
+    item.uid = item.id;
+    item.name = item.attributes.title;
+    item.tags = item.attributes.tags.toString();
+    item.contributors = '';
+    item.embeds.contributors.data.forEach(function(c){
+        item.contributors += c.embeds.users.data.attributes.full_name;
+    });
+    item.date = new $osf.FormattableDate(item.attributes.date_modified);
+    return item;
+}
+
 var LinkObject = function (type, data, label, index) {
     if (type === undefined || data === undefined || label === undefined) {
         throw new Error('LinkObject expects type, data and label to be defined.');
@@ -25,10 +54,10 @@ var LinkObject = function (type, data, label, index) {
     self.index = index;  // For breadcrumbs to cut off when clicking parent level
     self.generateLink = function () {
         if (self.type === 'collection'){
-            return $osf.apiV2Url(self.data.path, {
-                    query : self.data.query
-                }
-            );
+                return $osf.apiV2Url(self.data.path, {
+                        query : self.data.query
+                    }
+                );
         }
         else if (self.type === 'tag') {
             return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : true, 'embed' : 'contributors'}});
@@ -45,20 +74,60 @@ var LinkObject = function (type, data, label, index) {
     self.link = self.generateLink();
 };
 
-if (!window.fileBrowserCounter) {
-    window.fileBrowserCounter = 0;
-}
-function getUID() {
-    window.fileBrowserCounter = window.fileBrowserCounter + 1;
-    return window.fileBrowserCounter;
+
+function _makeTree (flatData) {
+    var root = {id:0, children: [], data : {} };
+    var node_list = { 0 : root};
+    var parentID;
+    for (var i = 0; i < flatData.length; i++) {
+        var n = _formatDataforPO(flatData[i]);
+        if (!node_list[n.id]) { // If this node is not in the object list, add it
+            node_list[n.id] = n;
+            node_list[n.id].children = [];
+        } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
+            n.children = node_list[n.id].children;
+            node_list[n.id] = n;
+        }
+
+        if (n.relationships.parent){
+            parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
+        } else {
+            parentID = null;
+        }
+        if(parentID && !n.attributes.registration ) {
+            if(!node_list[parentID]){
+                node_list[parentID] = { children : [] };
+            }
+            node_list[parentID].children.push(node_list[n.id]);
+
+        } else {
+            node_list[0].children.push(node_list[n.id]);
+        }
+    }
+    console.log(root, node_list);
+    return root.children;
 }
 
-var xhrconfig = function (xhr) {
-    xhr.withCredentials = true;
-    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json');
-    xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
-
-};
+/**
+ * Returns the object to send to the API to end a node_link to collection
+ * @param id {String} unique id of the node like 'ez8f3'
+ * @returns {{data: {type: string, relationships: {nodes: {data: {type: string, id: *}}}}}}
+ */
+function buildCollectionNodeData (id) {
+    return {
+        'data' : {
+            'type': 'node_links',
+            'relationships': {
+                'nodes': {
+                    'data': {
+                        'type': 'nodes',
+                        'id': id
+                    }
+                }
+            }
+        }
+    };
+}
 
 /**
  * Initialize File Browser. Prepeares an option object within FileBrowser
@@ -81,7 +150,6 @@ var FileBrowser = {
             self.collectionMenuObject({item : {label:null}, x : 0, y : 0});
         };
         self.refreshView = m.prop(true); // Internal loading indicator
-        self.currentPage = m.prop(1); // Used with pagination
         self.allProjectsLoaded = m.prop(false);
         self.allProjects = m.prop([]);
 
@@ -103,10 +171,10 @@ var FileBrowser = {
         };
 
         // Load collection list
-        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'sort' : 'date_created'}});
+        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'sort' : 'date_created', 'embed' : 'node_links'}});
         var promise = m.request({method : 'GET', url : collectionsUrl, config : xhrconfig});
         promise.then(function(result){
-            console.log(result);
+            console.log('Collections' , result);
             result.data.forEach(function(node){
                self.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : false, node : node }, node.attributes.title));
             });
@@ -126,16 +194,30 @@ var FileBrowser = {
 
         // Activity Logs
         self.activityLogs = m.prop();
-        self.getLogs = function _getLogs (nodeId) {
-            var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
+        self.showMoreActivityLogs = m.prop(null);
+        self.getLogs = function _getLogs (nodeId, link, addToExistingList) {
+            var url = link || $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
+                    if(addToExistingList){
+                        self.activityLogs().push(log);
+                    }
                 });
-                self.activityLogs(result.data);
+                if(!addToExistingList){
+                    self.activityLogs(result.data);  // Set activity log data
+                }
+                self.showMoreActivityLogs(result.links.next); // Set view for show more button
             });
             return promise;
+        };
+        // separate concerns, wrap getlogs here to get logs for the selected item
+        self.getCurrentLogs = function _getCurrentLogs ( ){
+            if(self.selected().length === 1){
+                var id = self.selected()[0].data.id;
+                var promise = self.getLogs(id);
+            }
         };
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
@@ -152,20 +234,32 @@ var FileBrowser = {
         /* Defines the current selected item so appropriate information can be shown */
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
-            // If single project is selected, get activity
-            if(selectedList.length === 1){
-                self.getLogs(selectedList[0].data.id);
-            }
             self.selected(selectedList);
+            self.getCurrentLogs();
         };
 
         // USER FILTER
         self.activeFilter = m.prop(1);
         self.updateFilter = function(filter) {
-            self.activeFilter(filter.data.id);
+            self.activeFilter(filter);
             self.updateFilesData(filter);
         };
 
+        self.removeProjectFromCollections = function _removeProjectFromCollection () {
+            // Removes selected items from collect
+            var collection = self.activeFilter().data.node;
+            self.selected().map(function(item){
+                m.request({
+                    method : 'DELETE',
+                    url : collection.links.self + 'node_links/' + item.data.id + '/',
+                    config : xhrconfig
+                }).then(function(result){
+                    console.log(result);
+                }, function(result){
+                    console.log(result);
+                });
+            });
+        };
         // GETTING THE NODES
         self.updateList = function(linkObject, success, error){
             self.refreshView(true);
@@ -199,18 +293,18 @@ var FileBrowser = {
             } else {
                 self.data(value);
             }
-            if(value.data[0]){ // If we have projects to show get first project's logs
-                self.getLogs(value.data[0].id);
-            } else {
+            if(!value.data[0]){ // If we have projects
                 var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
-                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'You have notcreated any projects yet.'));
+                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
+                            'You have notcreated any projects yet.'));
                     } else if (lastcrumb.data.systemCollection === 'registrations'){
-                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'You have not made any registrations yet.'));
-
+                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
+                            'You have not made any registrations yet.'));
                     } else {
-                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box', 'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
+                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
+                            'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
                     }
                 } else {
                     self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box.text-center', [
@@ -218,7 +312,10 @@ var FileBrowser = {
                         m.component(AddProject, {
                             buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new Subcomponent'),
                             parentID : self.breadcrumbs()[self.breadcrumbs().length-1].data.id,
-                            modalID : 'addSubcomponent'
+                            modalID : 'addSubcomponent',
+                            stayCallback : function () {
+                                self.updateList(self.breadcrumbs()[self.breadcrumbs().length-1]);
+                            }
                         })
                     ]));
                 }
@@ -236,6 +333,7 @@ var FileBrowser = {
                 self.loadingPages = false;
             }
             if(self.loadingNodes) {
+                self.data().data = _makeTree(self.data().data);
                 self.allProjects(self.data());
                 self.generateFiltersList();
                 self.loadingNodes = false;
@@ -316,47 +414,46 @@ var FileBrowser = {
             self.breadcrumbs().push(linkObject);
         }.bind(self);
 
+        self.applyDroppable = function _applyDroppable ( ){
+            $('.fb-collections ul>li').droppable({
+                hoverClass: 'bg-color-hover',
+                drop: function( event, ui ) {
+                    console.log('dropped', event, ui, this);
+                    var collection = self.collections[$(this).attr('data-index')];
+                    var dataArray = [];
+                    // If multiple items are dragged they have to be selected to make it work
+                    if (self.selected().length > 1) {
+                        self.selected().map(function(item){
+                            dataArray.push(buildCollectionNodeData(item.data.id));
+                        });
+                    } else {
+                    // if single items are passed use the event information
+                        dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
+                    }
+                    function saveNodetoCollection (index) {
+                        function doNext (){
+                            if(dataArray[index+1]){
+                                saveNodetoCollection(index+1);
+                            }
+                        }
+                        m.request({
+                            method : 'POST',
+                            url : collection.data.node.relationships.node_links.links.related.href,
+                            config : xhrconfig,
+                            data : dataArray[index]
+                        }).then(doNext, doNext); // In case of success or error. It doesn't look like mithril has a general .done method
+                    }
+                    if(dataArray.length > 0){
+                        saveNodetoCollection(0);
+                    }
+                }
+            });
+        };
+
         self.sidebarInit = function (element, isInit) {
             if(!isInit){
                 $('[data-toggle="tooltip"]').tooltip();
-                $('.fb-collections ul>li').droppable({
-                    hoverClass: 'bg-color-hover',
-                    drop: function( event, ui ) {
-                       console.log('dropped', event, ui, this);
-                        var collection = self.collections[$(this).attr('data-index')];
-                        var dataArray = [];
-                        self.selected().map(function(item){
-                            dataArray.push({
-                                    'data' : {
-                                        'type': 'node_links',
-                                        'relationships': {
-                                            'nodes': {
-                                                'data': {
-                                                    'type': 'nodes',
-                                                    'id': item.data.id
-                                                }
-                                            }
-                                        }
-                                    }
-                                });
-                        });
-                        function saveLink (index) {
-                            m.request({
-                                method : 'POST',
-                                url : collection.data.node.relationships.node_links.links.related.href,
-                                config : xhrconfig,
-                                data : dataArray[index]
-                            }).then(function(result){
-                                if(dataArray[index+1]){
-                                    saveLink(index+1);
-                                }
-                            });
-                        }
-                        if(dataArray.length > 0){
-                            saveLink(0);
-                        }
-                    }
-                });
+                self.applyDroppable();
             }
         };
 
@@ -392,7 +489,7 @@ var FileBrowser = {
         var infoButtonClass = 'btn-default';
         var sidebarButtonClass = 'btn-default';
         if (ctrl.showInfo() && !mobile){
-            infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected, activityLogs : ctrl.activityLogs  }));
+            infoPanel = m('.fb-infobar', m.component(Information, ctrl));
             infoButtonClass = 'btn-primary';
             poStyle = 'width : 45%';
         }
@@ -417,7 +514,7 @@ var FileBrowser = {
                             ctrl.showSidebar(!ctrl.showSidebar());
                         }
                     }, m('.fa.fa-bars')) : '',
-                    m('span.m-r-md.hidden-xs', ctrl.data().links.meta.total + ' Projects'),
+                    m('span.m-r-md.hidden-xs', ctrl.data().data.length + ' Projects'),
                     m('#poFilter.m-r-xs'),
                     !mobile ? m('button.btn', {
                         'class' : infoButtonClass,
@@ -463,7 +560,7 @@ var FileBrowser = {
                 )
             ]),
             infoPanel,
-            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected, activityLogs : ctrl.activityLogs})
+            m.component(Modals, ctrl)
         ];
     }
 };
@@ -480,6 +577,8 @@ var Collections  = {
         self.dismissModal = function () {
             $('.modal').modal('hide');
         };
+        self.validation = m.prop(false);
+        self.validationError = m.prop('');
         self.addCollection = function () {
             console.log( self.newCollectionName());
             var url = $osf.apiV2Url('collections/', {});
@@ -495,7 +594,8 @@ var Collections  = {
             promise.then(function(result){
                 console.log(result);
                 var node = result.data;
-                args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
+                args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/node_links/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
+                args.sidebarInit();
             });
             self.newCollectionName('');
             self.dismissModal();
@@ -553,9 +653,9 @@ var Collections  = {
                 }, ''),
                 m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
             ]),
-            m('ul', [
+            m('ul', { config: args.applyDroppable },[
                 args.collections.map(function(item, index){
-                    if (item.id === args.activeFilter()) {
+                    if (item.id === args.activeFilter().id) {
                         selectedCSS = 'active';
                     } else if (item.id === args.collectionMenuObject().item.id) {
                         selectedCSS = 'bg-color-hover';
@@ -620,22 +720,38 @@ var Collections  = {
                                 m('h3.modal-title#addCollLabel', 'Add New Collection')
                             ]),
                             m('.modal-body', [
-                                m('p', 'Collections are groups of projects that help you organize your work. [Learn more] about how to use Collections to organize your workflow. '),
+                                m('p', 'Collections are groups of projects that help you organize your work. After you create your collection you can add projects by dragging and dropping projects to the collection. '),
                                 m('.form-inline', [
                                     m('.form-group', [
                                         m('label[for="addCollInput]', 'Collection Name'),
                                         m('input[type="text"].form-control.m-l-sm#addCollInput', {
                                             onkeyup: function (ev){
-                                                if(ev.which === 13){
-                                                    ctrl.addCollection();
+                                                var val = $(this).val();
+                                                if (val === 'Bookmarks') {
+                                                    ctrl.validation(false);
+                                                    ctrl.validationError('Your collection name can\'t be "Bookmarks", because bookmarks feature requires this name. Please select any other name. ');
+                                                } else {
+                                                    ctrl.validationError('');
+                                                    if(val.length > 0) {
+                                                        ctrl.validation(true);
+                                                    } else {
+                                                        ctrl.validation(false);
+                                                    }
                                                 }
-                                                ctrl.newCollectionName($(this).val());
+
+
+                                                if(ctrl.validation()){
+                                                    if(ev.which === 13){
+                                                        ctrl.addCollection();
+                                                    }
+                                                }
+                                                ctrl.newCollectionName(val);
                                             },
                                             value : ctrl.newCollectionName()
-                                        })
+                                        }),
+                                        m('span.help-block', ctrl.validationError())
                                     ])
                                 ]),
-                                m('p.m-t-sm', 'After you create your collection drag and drop projects to the collection. ')
                             ]),
                             m('.modal-footer', [
                                 m('button[type="button"].btn.btn-default[data-dismiss="modal"]',
@@ -645,7 +761,8 @@ var Collections  = {
                                             ctrl.newCollectionName('');
                                         }
                                     }, 'Cancel'),
-                                m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
+                                ctrl.validation() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
+                                    : m('button[type="button"].btn.btn-success[disabled]', { onclick : ctrl.addCollection },'Add')
                             ])
                         ])
                     )
@@ -797,7 +914,7 @@ var Filters = {
                 m('h5', 'Contributors'),
                 m('ul', [
                     args.nameFilters.map(function(item, index){
-                        selectedCSS = item.id === args.activeFilter() ? '.active' : '';
+                        selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                         return m('li' + selectedCSS,
                             m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
                                 item.label + ' (' + item.data.count + ')'
@@ -808,7 +925,7 @@ var Filters = {
                 m('h5', 'Tags'),
                 m('ul', [
                     args.tagFilters.map(function(item){
-                        selectedCSS = item.id === args.activeFilter() ? '.active' : '';
+                        selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                         return m('li' + selectedCSS,
                             m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
                                 item.label + ' (' + item.data.count + ')'
@@ -829,41 +946,42 @@ var Information = {
     view : function (ctrl, args) {
         var template = '';
         if (args.selected().length === 1) {
-            var item = args.selected()[0];
+            var item = args.selected()[0].data;
+            var filter = args.activeFilter();
             template = m('', [
-                m('h3', m('a', { href : item.data.links.html}, item.data.attributes.title)),
-
+                filter.type === 'collection' && !filter.data.systemCollection ? m('.fb-info-remove', { onclick : args.removeProjectFromCollections },'Remove from collection') : '',
+                m('h3', m('a', { href : item.links.html}, item.attributes.title)),
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
                         m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', 'Information')),
-                        m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', 'Activity')),
+                        m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', { onclick : args.getCurrentLogs},'Activity')),
                     ]),
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.fb-info-meta.text-muted', [
-                                m('', 'Visibility : ' + (item.data.attributes.public ? 'Public' : 'Private')),
-                                m('', 'Category: ' + item.data.attributes.category),
-                                m('', 'Last Modified on: ' + item.data.date.local)
+                                m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
+                                m('', 'Category: ' + item.attributes.category),
+                                m('', 'Last Modified on: ' + item.date.local)
                             ]),
                             m('p', [
-                                m('span', item.data.attributes.description)
+                                m('span', item.attributes.description)
                             ]),
-                            item.data.attributes.tags.length > 0 ?
+                            item.attributes.tags.length > 0 ?
                             m('p.m-t-md', [
                                 m('h5', 'Tags'),
-                                item.data.attributes.tags.map(function(tag){
+                                item.attributes.tags.map(function(tag){
                                     return m('span.tag', tag);
                                 })
                             ]) : '',
                             m('p.m-t-md', [
                                 m('h5', 'Jump to Page'),
-                                m('a.p-xs', { href : item.data.links.html + 'wiki/home'}, 'Wiki'),
-                                m('a.p-xs', { href : item.data.links.html + 'files/'}, 'Files'),
-                                m('a.p-xs', { href : item.data.links.html + 'settings/'}, 'Settings'),
+                                m('a.p-xs', { href : item.links.html + 'wiki/home'}, 'Wiki'),
+                                m('a.p-xs', { href : item.links.html + 'files/'}, 'Files'),
+                                m('a.p-xs', { href : item.links.html + 'settings/'}, 'Settings'),
                             ])
                         ]),
                         m('[role="tabpanel"].tab-pane#tab-activity',[
-                            m.component(ActivityLogs, { activityLogs : args.activityLogs })
+                            m.component(ActivityLogs, args)
                         ])
                     ])
                 ])
@@ -871,14 +989,15 @@ var Information = {
         }
         if (args.selected().length > 1) {
             template = m('', [ '', args.selected().map(function(item){
-                    return m('.fb-info-multi', [
-                        m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
-                        m('p.fb-info-meta.text-muted', [
-                            m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
-                            m('span', ', Last Modified on ' + item.data.date.local)
-                        ]),
-                    ]);
-                })]);
+                return m('.fb-info-multi', [
+                    filter.type === 'collection' && !filter.data.systemCollection ? m('.fb-info-remove', { onclick : args.removeProjectFromCollections },'Remove from collection') : '',
+                    m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
+                    m('p.fb-info-meta.text-muted', [
+                        m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
+                        m('span', ', Last Modified on ' + item.data.date.local)
+                    ]),
+                ]);
+            })]);
         }
         return m('.fb-information', template);
     }
@@ -890,10 +1009,14 @@ var ActivityLogs = {
         return m('.fb-activity-list.m-t-md', [
             args.activityLogs() ? args.activityLogs().map(function(item){
                 return m('.fb-activity-item', [
-                    m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
-                    m.component(LogText,item)
+                    m('', [ m('.fb-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})), m.component(LogText,item)]),
+                    m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
-            }) : ''
+            }) : '',
+            m('.fb-activity-nav.text-center', [
+                args.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){ args.getLogs(null, args.showMoreActivityLogs(), true); }}, [ 'Show more', m('i.fa.fa-caret-down.m-l-xs')]) : '',
+            ])
+
         ]);
     }
 };
@@ -913,8 +1036,8 @@ var Modals = {
                             m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
-                            m.component(Information, { selected : args.selected, activityLogs : args.activityLogs })
-                        ]),
+                            m.component(Information, args)
+]),
                     ])
                 )
             )

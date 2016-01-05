@@ -42,6 +42,13 @@ $(document).ready(function() {
     m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {wrapperSelector : '#fileBrowser'}));
     // TODO: new data does not have timezone information
     //ensureUserTimezone(result.timezone, result.locale, result.id);
-    m.mount(document.getElementById('addProjectWrap'), m.component(AddProject, {}));
+    m.mount(document.getElementById('addProjectWrap'), m.component(AddProject, {
+            stayCallback : function(){
+                document.location.reload();
+            }
+        }
+    ));
+    // Add active class to navigation for my projects page
+    $('#osfNavMyProjects').addClass('active');
 });
 
