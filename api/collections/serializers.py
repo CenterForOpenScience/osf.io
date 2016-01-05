@@ -100,25 +100,26 @@ class CollectionLinkedNodesRelationshipSerializer(JSONAPIRelationshipsSerializer
     id = ser.CharField(source='node._id', required=False, allow_null=True)
     type = TypeField(required=False, allow_null=True)
 
-    links = LinksField({
-        'self': 'get_self_link',
-        'related': 'get_related_link',
-    })
-
     class Meta:
         type_ = 'linked_nodes'
 
-    def get_self_link(self, obj):
-        node = self.context['view'].get_node()
-        return node.linked_nodes_self_url
-
-    def get_related_link(self, obj):
-        node = self.context['view'].get_node()
-        return node.linked_nodes_related_url
-
     def update(self, instance, validated_data):
-        import ipdb; ipdb.set_trace()
-        pass
+        auth = None
+        data = self.context['request'].data['data']
+        new_pointers = [val['id'] for val in data]
+        current_pointers = instance.nodes_pointers
+        pointers_to_delete = [pointer for pointer in current_pointers if pointer.node.id not in new_pointers]
+        for pointer in pointers_to_delete:
+            instance.rm_pointer(pointer, auth)
+        current_linked_nodes = [pointer.node._id for pointer in instance.nodes_pointers]
+        pointers_to_add = [pointer for pointer in new_pointers if pointer not in current_linked_nodes]
+        for pointer in pointers_to_add:
+            node = Node.load(pointer)
+            instance.add_pointer(node, auth)        
+        return instance
 
     def destroy(self, instance):
         pass
+
+    def create(self, *args, **kwargs):
+        import ipdb; ipdb.set_trace()

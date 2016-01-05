@@ -815,15 +815,12 @@ class JSONAPIRelationshipsSerializer(ser.Serializer):
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
 
-        data = collections.OrderedDict([
-            ('data', collections.OrderedDict()),
-            ('links', collections.OrderedDict()),
-        ])
         relation_id_field = self.fields['id']
 
+        attribute = relation_id_field.get_attribute(obj)
+        relationship = relation_id_field.to_representation(attribute)
 
-        data['data'] = [{'type': type_, 'id': relation_id_field.to_representation(relation_id_field.get_attribute(object))} for object in obj]
-        data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
+        data = {'type': type_, 'id': relationship} if relationship else None
 
         return data
 

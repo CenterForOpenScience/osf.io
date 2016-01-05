@@ -7,8 +7,10 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
+from api.base.pagination import JSONApiRelationShipPagination
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.collections.serializers import (
     CollectionSerializer,
@@ -535,18 +537,23 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
             raise ValidationError(err.message)
         node.save()
 
-class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.ListAPIView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     permission_classes = ()
 
     required_read_scopes = []
     required_write_scopes = []
     serializer_class = CollectionLinkedNodesRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    pagination_class = JSONApiRelationShipPagination
+
 
     view_category = 'collections'
     view_name = 'collection-node-pointer-relationship'
 
     def get_object(self):
-        #import ipdb; ipdb.set_trace()
+        return self.get_node()
+
+    def get_queryset(self):
         return [
             pointer for pointer in
             self.get_node().nodes_pointer

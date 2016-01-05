@@ -131,19 +131,19 @@ class JSONAPIRelationshipParser(JSONParser):
 
         if not isinstance(res, dict):
             raise ParseError('Request body must be dictionary')
-        data = res.get('data')
+        datas = res.get('data')
 
-        if data:
-            id_ = data.get('id')
-            type_ = data.get('type')
+        if datas:
+            for data in datas:
+                id_ = data.get('id')
+                type_ = data.get('type')
 
-            if id_ is None:
-                raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
+                if id_ is None:
+                    raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
-            if type_ is None:
-                raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
-
-            return data
+                if type_ is None:
+                    raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
+            return {'data': datas}
 
         return {'type': None, 'id': None}
 
