@@ -803,6 +803,32 @@ class JSONAPISerializer(ser.Serializer):
 
         return ret
 
+class JSONAPIRelationshipSerializer(ser.Serializer):
+    """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
+    Provides a simplified serialization of the relationship, allowing for simple update request
+    bodies. Also provides links to itself and to the endpoint providing information about the related
+    object.
+    """
+
+    def to_representation(self, obj):
+        meta = getattr(self, 'Meta', None)
+        type_ = getattr(meta, 'type_', None)
+        assert type_ is not None, 'Must define Meta.type_'
+
+        data = collections.OrderedDict([
+            ('data', collections.OrderedDict()),
+            ('links', collections.OrderedDict()),
+        ])
+        relation_id_field = self.fields['id']
+
+        attribute = relation_id_field.get_attribute(obj)
+        relationship = relation_id_field.to_representation(attribute)
+
+        data['data'] = {'type': type_, 'id': relationship} if relationship else None
+        data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
+
+        return data
+
 
 def DevOnly(field):
     """Make a field only active in ``DEV_MODE``. ::

@@ -14,6 +14,7 @@ from api.collections.serializers import (
     CollectionSerializer,
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
+    CollectionLinkedNodesRelationshipSerializer
 )
 from api.nodes.serializers import NodeSerializer
 
@@ -533,3 +534,21 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         except ValueError as err:  # pointer doesn't belong to node
             raise ValidationError(err.message)
         node.save()
+
+class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+    permission_classes = ()
+
+    required_read_scopes = []
+    required_write_scopes = []
+    serializer_class = CollectionLinkedNodesRelationshipSerializer
+
+    view_category = 'collections'
+    view_name = 'collection-node-pointer-relationship'
+
+    def get_object(self):
+        import ipdb; ipdb.set_trace()
+        return [
+            pointer for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_folder
+        ][0]

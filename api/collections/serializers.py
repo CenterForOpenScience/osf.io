@@ -5,7 +5,7 @@ from framework.exceptions import PermissionsError
 
 from website.models import Node
 from api.base.serializers import LinksField, RelationshipField, DevOnly
-from api.base.serializers import JSONAPISerializer, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, JSONAPIRelationshipSerializer, IDField, TypeField
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
@@ -94,3 +94,29 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
                 'node_link_id': obj._id
             }
         )
+
+class CollectionLinkedNodesRelationshipSerializer(JSONAPIRelationshipSerializer):
+
+    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    type = TypeField(required=False, allow_null=True)
+
+    links = LinksField({
+        'self': 'get_self_link',
+        'related': 'get_related_link',
+    })
+
+    class Meta:
+        type_ = 'linked_nodes'
+
+    def get_self_link(self, obj):
+        return 'link a'
+
+    def get_related_link(self, obj):
+        return 'link b'
+        #return obj.institution_url()
+
+    def update(self, instance, validated_data):
+        pass
+
+    def destroy(self, instance):
+        pass
