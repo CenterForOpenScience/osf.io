@@ -17,6 +17,7 @@ var quickSearchProject = {
         self.nodes = [];
         self.displayedNodes = [];
         self.lastLogin = '';
+        //self.lastLogin = '';
         self.commentsCount = {};
         self.logsCount = {};
 
@@ -175,7 +176,7 @@ var quickSearchProject = {
             return self.displayedNodes
         };
 
-        self.getLastLoginDate()
+        //self.getLastLoginDate()
 
     },
     view : function(ctrl) {
