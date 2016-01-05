@@ -816,7 +816,7 @@ class JSONAPIRelationshipsSerializer(ser.Serializer):
         assert type_ is not None, 'Must define Meta.type_'
 
         relation_id_field = self.fields['id']
-
+        import ipdb; ipdb.set_trace()
         attribute = relation_id_field.get_attribute(obj)
         relationship = relation_id_field.to_representation(attribute)
 

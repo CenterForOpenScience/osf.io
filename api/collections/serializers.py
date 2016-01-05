@@ -104,19 +104,19 @@ class CollectionLinkedNodesRelationshipSerializer(JSONAPIRelationshipsSerializer
         type_ = 'linked_nodes'
 
     def update(self, instance, validated_data):
-        auth = None
+        auth = get_user_auth(self.context['request'])
         data = self.context['request'].data['data']
         new_pointers = [val['id'] for val in data]
-        current_pointers = instance.nodes_pointers
-        pointers_to_delete = [pointer for pointer in current_pointers if pointer.node.id not in new_pointers]
+        current_pointers = instance.nodes_pointer
+        pointers_to_delete = [pointer for pointer in current_pointers if pointer.node._id not in new_pointers]
         for pointer in pointers_to_delete:
             instance.rm_pointer(pointer, auth)
-        current_linked_nodes = [pointer.node._id for pointer in instance.nodes_pointers]
+        current_linked_nodes = [pointer.node._id for pointer in instance.nodes_pointer]
         pointers_to_add = [pointer for pointer in new_pointers if pointer not in current_linked_nodes]
         for pointer in pointers_to_add:
             node = Node.load(pointer)
-            instance.add_pointer(node, auth)        
-        return instance
+            instance.add_pointer(node, auth)
+        return instance.nodes_pointer
 
     def destroy(self, instance):
         pass
