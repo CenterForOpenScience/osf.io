@@ -1212,24 +1212,20 @@ RegistrationManager.prototype.init = function() {
             });
             $osf.growl('Error loading draft registrations', language.loadDraftsFail);
         });
-    }
 
-    var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
-        self.loading(false);
-    });
-
-    var urlParams = $osf.urlParams();
-    if (urlParams.campaign && urlParams.campaign === 'prereg') {
-        $osf.block();
-        ready.done(function() {
-            var preregSchema = self.schemas().filter(function(schema) {
-                return schema.name === 'Prereg Challenge';
-            })[0];
-            preregSchema.askConsent(true).then(function() {
-                self.selectedSchema(preregSchema);
-                $('#newDraftRegistrationForm').submit();
-            });
-        }).always($osf.unblock);
+        var urlParams = $osf.urlParams();
+        if (urlParams.campaign && urlParams.campaign === 'prereg') {
+            $osf.block();
+            getSchemas.done(function() {
+                var preregSchema = self.schemas().filter(function(schema) {
+                    return schema.name === 'Prereg Challenge';
+                })[0];
+                preregSchema.askConsent(true).then(function() {
+                    self.selectedSchema(preregSchema);
+                    $('#newDraftRegistrationForm').submit();
+                });
+            }).always($osf.unblock);
+        }
     }
 };
 /**
