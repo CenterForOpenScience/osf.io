@@ -1296,6 +1296,183 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
+    def test_bulk_partial_update_privacy_has_no_effect_on_tags(self):
+        self.public_project.add_tag('tag1', Auth(self.public_project.creator), save=True)
+        payload = {'id': self.public_project._id, 'type': 'nodes', 'attributes': {'public': False}}
+        res = self.app.patch_json_api(self.url, {'data': [payload]}, auth=self.user.auth, bulk=True)
+        assert_equal(res.status_code, 200)
+        self.public_project.reload()
+        assert_equal(self.public_project.tags, ['tag1'])
+        assert_equal(self.public_project.is_public, False)
+
+
+class TestNodeBulkUpdateSkipUneditable(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkUpdateSkipUneditable, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+
+        self.title = 'Cool Project'
+        self.new_title = 'Super Cool Project'
+        self.description = 'A Properly Cool Project'
+        self.new_description = 'An even cooler project'
+        self.category = 'data'
+        self.new_category = 'project'
+
+        self.public_project = ProjectFactory(title=self.title,
+                                             description=self.description,
+                                             category=self.category,
+                                             is_public=True,
+                                             creator=self.user)
+
+        self.public_project_two = ProjectFactory(title=self.title,
+                                                description=self.description,
+                                                category=self.category,
+                                                is_public=True,
+                                                creator=self.user)
+
+        self.public_project_three = ProjectFactory(title=self.title,
+                                                description=self.description,
+                                                category=self.category,
+                                                is_public=True,
+                                                creator=self.user_two)
+
+        self.public_project_four = ProjectFactory(title=self.title,
+                                                description=self.description,
+                                                category=self.category,
+                                                is_public=True,
+                                                creator=self.user_two)
+
+        self.public_payload = {
+            'data': [
+                {
+                    'id': self.public_project._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                },
+                {
+                    'id': self.public_project_two._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                },
+                 {
+                    'id': self.public_project_three._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                },
+                 {
+                    'id': self.public_project_four._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                }
+            ]
+        }
+
+        self.url = '/{}nodes/?skip_uneditable=True'.format(API_BASE)
+
+    def test_skip_uneditable_bulk_update(self):
+        res = self.app.put_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 200)
+        edited = res.json['data']
+        skipped = res.json['errors']
+        assert_items_equal([edited[0]['id'], edited[1]['id']],
+                           [self.public_project._id, self.public_project_two._id])
+        assert_items_equal([skipped[0]['_id'], skipped[1]['_id']],
+                           [self.public_project_three._id, self.public_project_four._id])
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.new_title)
+        assert_equal(self.public_project_two.title, self.new_title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+
+    def test_skip_uneditable_bulk_update_query_param_required(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.put_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.title)
+        assert_equal(self.public_project_two.title, self.title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+    def test_skip_uneditable_equals_false_bulk_update(self):
+        url = '/{}nodes/?skip_uneditable=False'.format(API_BASE)
+        res = self.app.put_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.title)
+        assert_equal(self.public_project_two.title, self.title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+    def test_skip_uneditable_bulk_partial_update(self):
+        res = self.app.patch_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 200)
+        edited = res.json['data']
+        skipped = res.json['errors']
+        assert_items_equal([edited[0]['id'], edited[1]['id']],
+                           [self.public_project._id, self.public_project_two._id])
+        assert_items_equal([skipped[0]['_id'], skipped[1]['_id']],
+                           [self.public_project_three._id, self.public_project_four._id])
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.new_title)
+        assert_equal(self.public_project_two.title, self.new_title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+
+    def test_skip_uneditable_bulk_partial_update_query_param_required(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.patch_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.title)
+        assert_equal(self.public_project_two.title, self.title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
 
 class TestNodeBulkDelete(ApiTestCase):
 
@@ -1440,3 +1617,106 @@ class TestNodeBulkDelete(ApiTestCase):
     def test_bulk_delete_no_payload(self):
         res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
+
+
+class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkDeleteSkipUneditable, self).setUp()
+        self.user_one = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user_one)
+        self.project_two = ProjectFactory(title="Project Two",  is_public=True, creator=self.user_one)
+        self.project_three = ProjectFactory(title="Project Three", is_public=True, creator=self.user_two)
+        self.project_four = ProjectFactory(title="Project Four", is_public=True, creator=self.user_two)
+
+        self.payload = {
+            'data': [
+                {
+                    'id': self.project_one._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': self.project_two._id,
+                    'type': 'nodes',
+                },
+                 {
+                    'id': self.project_three._id,
+                    'type': 'nodes',
+                },
+                 {
+                    'id': self.project_four._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+
+
+        self.url = "/{}nodes/?skip_uneditable=True".format(API_BASE)
+
+    def tearDown(self):
+        super(TestNodeBulkDeleteSkipUneditable, self).tearDown()
+        Node.remove()
+
+    def test_skip_uneditable_bulk_delete(self):
+        res = self.app.delete_json_api(self.url, self.payload, auth=self.user_one.auth, bulk=True)
+        assert_equal(res.status_code, 200)
+        skipped = res.json['errors']
+        assert_items_equal([skipped[0]['id'], skipped[1]['id']],
+                           [self.project_three._id, self.project_four._id])
+
+        res = self.app.get('/{}nodes/'.format(API_BASE), auth=self.user_one.auth)
+        assert_items_equal([res.json['data'][0]['id'], res.json['data'][1]['id']],
+                           [self.project_three._id, self.project_four._id])
+
+    def test_skip_uneditable_bulk_delete_query_param_required(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.delete_json_api(url, self.payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get('/{}nodes/'.format(API_BASE), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 4)
+
+    def test_skip_uneditable_has_admin_permission_for_all_nodes(self):
+        payload = {
+            'data': [
+                {
+                    'id': self.project_one._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': self.project_two._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, bulk=True)
+        assert_equal(res.status_code, 204)
+        self.project_one.reload()
+        self.project_two.reload()
+
+        assert_equal(self.project_one.is_deleted, True)
+        assert_equal(self.project_two.is_deleted, True)
+
+    def test_skip_uneditable_does_not_have_admin_permission_for_any_nodes(self):
+        payload = {
+            'data': [
+                {
+                    'id': self.project_three._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': self.project_four._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+
+
+
