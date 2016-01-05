@@ -181,7 +181,7 @@
       <span class="input-group-btn">
         <button class="btn btn-primary"
                 data-bind="click: currentQuestion.addComment.bind(
-                             currentQuestion, 
+                             currentQuestion,
                              $root.save.bind($root)
                            ),
                            enable: currentQuestion.allowAddNext">Add</button>

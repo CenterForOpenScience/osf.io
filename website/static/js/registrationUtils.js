@@ -2,6 +2,8 @@
 
 require('css/registrations.css');
 
+require('bootstrap');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var Raven = require('raven-js');
@@ -708,6 +710,26 @@ Draft.prototype.submitForReview = function() {
         return self.beforeRegister(self.urls.submit.replace('{draft_pk}', self.pk));
     }
 };
+Draft.prototype.approve = function() {
+    return $osf.dialog(
+        'Before you continue...',
+        'Are you sure you want to approve this submission? This action is irreversible.',
+        'Approve',
+        {
+            actionButtonClass: 'btn-warning'
+        }
+    );
+};
+Draft.prototype.reject = function() {
+    return $osf.dialog(
+        'Before you continue...',
+        'Are you sure you want to reject this submission? This action is irreversible.',
+        'Reject',
+        {
+            actionButtonClass: 'btn-danger'
+        }
+    );
+};
 
 /**
  * @class RegistrationEditor
@@ -821,7 +843,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
                 if (question.type === 'object') {
                     $elem.append(
                         $.map(question.properties, function(subQuestion) {
-                            subQuestion = self.context(subQuestion);
+                            subQuestion = self.context(subQuestion, self, true);
                             var value;
                             if (self.extensions[subQuestion.type] ) {
                                 value = subQuestion.preview();
@@ -919,14 +941,16 @@ RegistrationEditor.prototype.flatQuestions = function() {
  * @param {Object} data: data in current editor template scope
  * @returns {Object|ViewModel}
  **/
-RegistrationEditor.prototype.context = function(data, $root) {
+RegistrationEditor.prototype.context = function(data, $root, preview) {
+    preview = preview || false;
+
     $.extend(data, {
         save: this.save.bind(this),
         readonly: this.readonly
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data, $root);
+        return new this.extensions[data.type](data, $root, preview);
     }
     return data;
 };
@@ -1123,6 +1147,35 @@ RegistrationEditor.prototype.save = function() {
     return request;
 };
 
+RegistrationEditor.prototype.approveDraft = function() {
+    var self = this;
+
+    var draft = self.draft();
+    draft.approve().done(function() {
+        $osf.block();
+        $.post(self.urls.approve.replace('{draft_pk}', draft.pk))
+            .done(function() {
+                window.location.assign(self.urls.list);
+            }).fail(function() {
+                bootbox.alert('There was a problem approving this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
+            }).always($osf.unblock);
+    });
+};
+RegistrationEditor.prototype.rejectDraft = function() {
+    var self = this;
+
+    var draft = self.draft();
+    draft.reject().done(function() {
+        $osf.block();
+        $.post(self.urls.reject.replace('{draft_pk}', draft.pk))
+            .done(function() {
+                window.location.assign(self.urls.list);
+            }).fail(function() {
+                bootbox.alert('There was a problem rejecting this draft.' + osfLanguage.REFRESH_OR_SUPPORT);
+            }).always($osf.unblock);
+    });
+};
+
 /**
  * @class RegistrationManager
  * Model for listing DraftRegistrations
@@ -1178,12 +1231,14 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
         return self.drafts().length > 0;
     });
 
-    self.loading = ko.observable(true);
-    self.loading.subscribe(function(loading) {
+    self.loadingSchemas = ko.observable(true);
+    self.loadingSchemas.subscribe(function(loading) {
         if (!loading) {
             createButton.removeClass('disabled');
+            createButton.text('New Registration');
         }
     });
+    self.loadingDrafts = ko.observable(true);
 
     self.preview = ko.observable(false);
 
@@ -1208,35 +1263,51 @@ RegistrationManager.prototype.init = function() {
                 return new MetaSchema(schema);
             })
         );
+        self.loadingSchemas(false);
     });
-
-    var getDraftRegistrations = self.getDraftRegistrations();
-    getDraftRegistrations.done(function(response) {
-        var drafts = $.map(response.drafts, function(draft) {
-            return new Draft(draft);
+    getSchemas.fail(function(xhr, status, error) {
+        Raven.captureMessage('Could not load registration templates', {
+            url: self.urls.schemas,
+            textStatus: status,
+            error: error
         });
-        drafts.sort(function(a, b) {
-            return a.initiated.getTime() < b.initiated.getTime();
-        });
-        self.drafts(drafts);
+        $osf.growl('Error loading registration templates', language.loadMetaSchemaFail);
     });
-
-    var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
-        self.loading(false);
-    });
-
-    var urlParams = $osf.urlParams();
-    if (urlParams.campaign && urlParams.campaign === 'prereg') {
-        $osf.block();
-        ready.done(function() {
-            var preregSchema = self.schemas().filter(function(schema) {
-                return schema.name === 'Prereg Challenge';
-            })[0];
-            preregSchema.askConsent(true).then(function() {
-                self.selectedSchema(preregSchema);
-                $('#newDraftRegistrationForm').submit();
+    
+    if ($osf.currentUser().isAdmin) {
+        var getDraftRegistrations = self.getDraftRegistrations();
+        getDraftRegistrations.done(function(response) {
+            var drafts = $.map(response.drafts, function(draft) {
+                return new Draft(draft);
             });
-        }).always($osf.unblock);
+            drafts.sort(function(a, b) {
+                return a.initiated.getTime() < b.initiated.getTime();
+            });
+            self.drafts(drafts);
+            self.loadingDrafts(false);
+        });
+        getDraftRegistrations.fail(function(xhr, status, error) {
+            Raven.captureMessage('Could not load draft registrations', {
+                url: self.urls.list,
+                textStatus: status,
+                error: error
+            });
+            $osf.growl('Error loading draft registrations', language.loadDraftsFail);
+        });
+
+        var urlParams = $osf.urlParams();
+        if (urlParams.campaign && urlParams.campaign === 'prereg') {
+            $osf.block();
+            getSchemas.done(function() {
+                var preregSchema = self.schemas().filter(function(schema) {
+                    return schema.name === 'Prereg Challenge';
+                })[0];
+                preregSchema.askConsent(true).then(function() {
+                    self.selectedSchema(preregSchema);
+                    $('#newDraftRegistrationForm').submit();
+                });
+            }).always($osf.unblock);
+        }
     }
 };
 /**
