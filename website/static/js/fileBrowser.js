@@ -577,6 +577,8 @@ var Collections  = {
         self.dismissModal = function () {
             $('.modal').modal('hide');
         };
+        self.validation = m.prop(false);
+        self.validationError = m.prop('');
         self.addCollection = function () {
             console.log( self.newCollectionName());
             var url = $osf.apiV2Url('collections/', {});
@@ -718,22 +720,38 @@ var Collections  = {
                                 m('h3.modal-title#addCollLabel', 'Add New Collection')
                             ]),
                             m('.modal-body', [
-                                m('p', 'Collections are groups of projects that help you organize your work. [Learn more] about how to use Collections to organize your workflow. '),
+                                m('p', 'Collections are groups of projects that help you organize your work. After you create your collection you can add projects by dragging and dropping projects to the collection. '),
                                 m('.form-inline', [
                                     m('.form-group', [
                                         m('label[for="addCollInput]', 'Collection Name'),
                                         m('input[type="text"].form-control.m-l-sm#addCollInput', {
                                             onkeyup: function (ev){
-                                                if(ev.which === 13){
-                                                    ctrl.addCollection();
+                                                var val = $(this).val();
+                                                if (val === 'Bookmarks') {
+                                                    ctrl.validation(false);
+                                                    ctrl.validationError('Your collection name can\'t be "Bookmarks", because bookmarks feature requires this name. Please select any other name. ');
+                                                } else {
+                                                    ctrl.validationError('');
+                                                    if(val.length > 0) {
+                                                        ctrl.validation(true);
+                                                    } else {
+                                                        ctrl.validation(false);
+                                                    }
                                                 }
-                                                ctrl.newCollectionName($(this).val());
+
+
+                                                if(ctrl.validation()){
+                                                    if(ev.which === 13){
+                                                        ctrl.addCollection();
+                                                    }
+                                                }
+                                                ctrl.newCollectionName(val);
                                             },
                                             value : ctrl.newCollectionName()
-                                        })
+                                        }),
+                                        m('span.help-block', ctrl.validationError())
                                     ])
                                 ]),
-                                m('p.m-t-sm', 'After you create your collection drag and drop projects to the collection. ')
                             ]),
                             m('.modal-footer', [
                                 m('button[type="button"].btn.btn-default[data-dismiss="modal"]',
@@ -743,7 +761,8 @@ var Collections  = {
                                             ctrl.newCollectionName('');
                                         }
                                     }, 'Cancel'),
-                                m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
+                                ctrl.validation() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
+                                    : m('button[type="button"].btn.btn-success[disabled]', { onclick : ctrl.addCollection },'Add')
                             ])
                         ])
                     )
