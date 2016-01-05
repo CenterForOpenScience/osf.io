@@ -7,8 +7,6 @@
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
             <div class="modal-body" >
-                        {{ko.toJSON($data)}}
-
                 <div data-bind="if: canRemoveNode() && !pageChanged()">
                     <!-- remove page -->
                     <div data-bind='if:page() === REMOVE'>
@@ -36,7 +34,6 @@
 
                     <!-- removeAll page -->
                     <div data-bind='if:page() === REMOVE_ALL'>
-                        {{ko.toJSON($data)}}
                         <div data-bind="visible:titlesToRemove().length">
                             <div class="panel panel-default">
                                 <div class="panel-body">
@@ -71,11 +68,11 @@
                         </div>
                     </div><!-- end removeAll page -->
                 </div>
-                <div data-bind="if: !canRemoveNode()">
+                <div data-bind="if: !canRemoveNode() && !pageChanged()">
                     <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.  You need at least one administrator, bibliographic contributor, and one registered user.</span>
                 </div>
                 <div data-bind="if: pageChanged()">
-                    <span>Please save your changes before removing a contributor.</span>
+                    <span>Please save or discard your existing changes before removing a contributor.</span>
                 </div>
             </div>
             <!-- end modal-body -->

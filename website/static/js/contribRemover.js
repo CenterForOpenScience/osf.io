@@ -88,6 +88,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.deleteAll = ko.observable(false);
         var nodesOriginal = {};
         self.nodesOriginal = ko.observableArray();
+        self.loadingSubmit = ko.observable(false);
 
         /*
          *   To remove, a contributor, you need one bibliographic contributor
@@ -222,68 +223,45 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                 url: self.nodeApiUrl, status: status, error: error
             });
         });
-        },
-        selectRemove: function() {
-            var self = this;
-        },
-        clear: function() {
-            var self = this;
-            self.deleteAll(false);
-        },
-        back: function() {
-            var self = this;
-            self.page(self.REMOVE);
-        },
-        submit: function() {
-            var self = this;
-            if (self.deleteAll()) {
-                $osf.postJSON(
-                    window.contextVars.node.urls.api + 'contributor/remove/', {
-                        contributorID: self.contributorToRemove().id,
-                        nodeIDs: self.nodeIDsToRemove()
-                    }
-                ).done(function(response) {
-                    // TODO: Don't reload the page here; instead use code below
-                    if (response.redirectUrl) {
-                        window.location.href = response.redirectUrl;
-                    } else {
-                        window.location.reload();
-                    }
-                    self.page(self.REMOVE);
-                }).fail(function (xhr, status, error) {
-                    $osf.growl('Error', 'Unable to delete Contributor');
-                    Raven.captureMessage('Could not DELETE Contributor.' + error, {
-                        API_BASE: url, status: status, error: error
-                    });
-                    self.page(self.REMOVE);
-                });
+    },
+    selectRemove: function() {
+        var self = this;
+    },
+    clear: function() {
+        var self = this;
+        self.deleteAll(false);
+    },
+    back: function() {
+        var self = this;
+        self.page(self.REMOVE);
+    },
+    submit: function() {
+        var self = this;
+        $osf.postJSON(
+            window.contextVars.node.urls.api + 'contributor/remove/', {
+                contributorID: self.contributorToRemove().id,
+                nodeIDs: self.nodeIDsToRemove()
             }
-            else {
-                //API V2
-                var url = API_BASE + self.nodeId + '/contributors/' + self.contributorToRemove().id + '/';
-                $.ajax({
-                    url: url,
-                    type: 'DELETE',
-                    crossOrigin: true,
-                    xhrFields: {
-                        withCredentials: true
-                    },
-                }).done(function (response) {
-                    window.location.reload();
-                    self.page(self.REMOVE);
-                }).fail(function (xhr, status, error) {
-                    $osf.growl('Error', 'Unable to delete Contributor');
-                    Raven.captureMessage('Could not DELETE Contributor.' + error, {
-                        API_BASE: url, status: status, error: error
-                    });
-                    self.page(self.REMOVE);
-                });
+        ).done(function(response) {
+            debugger;
+            // TODO: Don't reload the page here; instead use code below
+            if (response.redirectUrl) {
+                window.location.href = response.redirectUrl;
+            } else {
+                window.location.reload();
             }
-        },
-        deleteAllNodes: function() {
-            var self = this;
-            self.page(self.REMOVE_ALL);
-        }
+        }).fail(function (xhr, status, error) {
+            $osf.growl('Error', 'Unable to delete Contributor');
+            Raven.captureMessage('Could not DELETE Contributor.' + error, {
+                API_BASE: url, status: status, error: error
+            });
+        });
+
+    },
+    deleteAllNodes: function() {
+        var self = this;
+        self.page(self.REMOVE_ALL);
+    }
 });
 
 ////////////////

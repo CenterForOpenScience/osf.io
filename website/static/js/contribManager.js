@@ -252,10 +252,11 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.canSubmit = ko.computed(function() {
         return self.changed() && self.adminCount() && self.visibleCount();
     });
+
     self.changed.subscribe(function(newValue) {
         pageChangedShouter.notifySubscribers(newValue, 'changedMessageToPublish');
-        self.messages([]);
     });
+
     self.messages = ko.computed(function() {
         var messages = [];
         if(!self.adminCount()) {
