@@ -158,14 +158,14 @@ var quickSearchProject = {
     view : function(ctrl) {
         function projectView(project) {
             return m('tr', [
-                m('td', project.attributes.title),
+                m('td', m("a", {href: '/'+ project.id}, project.attributes.title)),
                 m('td', ctrl.getContributors(project)),
                 m('td', ctrl.formatDate(project))
                 m('td', ctrl.loadRecentCommentCount(project)),
             ])
         }
 
-        function buttonDisplay() {
+        function loadMoreButton() {
             if (ctrl.nodes.length !== 0){
                 return m('button', { onclick: function() {
                     ctrl.loadUpToTen() }
@@ -174,6 +174,7 @@ var quickSearchProject = {
         }
 
         return m('div', [
+            m('input[type=search]', 'Quick search projects'),
             m('table', [
                 m('tr', [
                     m('th', 'Name'),
