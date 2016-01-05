@@ -171,10 +171,10 @@ var FileBrowser = {
         };
 
         // Load collection list
-        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'sort' : 'date_created'}});
+        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'sort' : 'date_created', 'embed' : 'node_links'}});
         var promise = m.request({method : 'GET', url : collectionsUrl, config : xhrconfig});
         promise.then(function(result){
-            console.log(result);
+            console.log('Collections' , result);
             result.data.forEach(function(node){
                self.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : false, node : node }, node.attributes.title));
             });
@@ -241,10 +241,25 @@ var FileBrowser = {
         // USER FILTER
         self.activeFilter = m.prop(1);
         self.updateFilter = function(filter) {
-            self.activeFilter(filter.id);
+            self.activeFilter(filter);
             self.updateFilesData(filter);
         };
 
+        self.removeProjectFromCollections = function _removeProjectFromCollection () {
+            // Removes selected items from collect
+            var collection = self.activeFilter().data.node;
+            self.selected().map(function(item){
+                m.request({
+                    method : 'DELETE',
+                    url : collection.links.self + 'node_links/' + item.data.id + '/',
+                    config : xhrconfig
+                }).then(function(result){
+                    console.log(result);
+                }, function(result){
+                    console.log(result);
+                });
+            });
+        };
         // GETTING THE NODES
         self.updateList = function(linkObject, success, error){
             self.refreshView(true);
@@ -577,7 +592,7 @@ var Collections  = {
             promise.then(function(result){
                 console.log(result);
                 var node = result.data;
-                args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
+                args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/node_links/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
                 args.sidebarInit();
             });
             self.newCollectionName('');
@@ -638,7 +653,7 @@ var Collections  = {
             ]),
             m('ul', { config: args.applyDroppable },[
                 args.collections.map(function(item, index){
-                    if (item.id === args.activeFilter()) {
+                    if (item.id === args.activeFilter().id) {
                         selectedCSS = 'active';
                     } else if (item.id === args.collectionMenuObject().item.id) {
                         selectedCSS = 'bg-color-hover';
@@ -880,7 +895,7 @@ var Filters = {
                 m('h5', 'Contributors'),
                 m('ul', [
                     args.nameFilters.map(function(item, index){
-                        selectedCSS = item.id === args.activeFilter() ? '.active' : '';
+                        selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                         return m('li' + selectedCSS,
                             m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
                                 item.label + ' (' + item.data.count + ')'
@@ -891,7 +906,7 @@ var Filters = {
                 m('h5', 'Tags'),
                 m('ul', [
                     args.tagFilters.map(function(item){
-                        selectedCSS = item.id === args.activeFilter() ? '.active' : '';
+                        selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                         return m('li' + selectedCSS,
                             m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
                                 item.label + ' (' + item.data.count + ')'
@@ -913,9 +928,10 @@ var Information = {
         var template = '';
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
+            var filter = args.activeFilter();
             template = m('', [
+                filter.type === 'collection' && !filter.data.systemCollection ? m('.fb-info-remove', { onclick : args.removeProjectFromCollections },'Remove from collection') : '',
                 m('h3', m('a', { href : item.links.html}, item.attributes.title)),
-
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
                         m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', 'Information')),
@@ -955,6 +971,7 @@ var Information = {
         if (args.selected().length > 1) {
             template = m('', [ '', args.selected().map(function(item){
                 return m('.fb-info-multi', [
+                    filter.type === 'collection' && !filter.data.systemCollection ? m('.fb-info-remove', { onclick : args.removeProjectFromCollections },'Remove from collection') : '',
                     m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
                     m('p.fb-info-meta.text-muted', [
                         m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
