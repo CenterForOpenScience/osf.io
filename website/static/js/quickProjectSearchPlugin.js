@@ -18,6 +18,7 @@ var quickSearchProject = {
         self.displayedNodes = [];
         self.lastLogin = '';
         self.commentsCount = {};
+        self.logsCount = {};
 
         // Load node list
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors', 'page[size]': 100}});
@@ -70,7 +71,6 @@ var quickSearchProject = {
             var url = $osf.apiV2Url('nodes/' + node.id + '/comments/?filter[date_modified][gte]=' + self.lastLogin, {});
             var promise = m.request({method: 'GET', url : url, config: xhrconfig});
             promise.then(function(result) {
-                console.log(result);
                 self.commentsCount[node.id] = result.links.meta.total
             });
             return promise
@@ -84,6 +84,26 @@ var quickSearchProject = {
                 self.getRecentComments(node);
                 return self.commentsCount[node.id]
             }
+        };
+
+        self.getRecentLogs = function (node) {
+            var url = $osf.apiV2Url('nodes/' + node.id + '/logs/?filter[action][ne]=comment_added', {});
+            var promise = m.request({method: 'GET', url : url, config: xhrconfig});
+            promise.then(function(result){
+                console.log(result);
+                self.logsCount[node.id] = result.links.meta.total
+            });
+            return promise
+        };
+
+        self.loadRecentLogsCount = function(node) {
+            if (node.id in self.logsCount){
+                return self.logsCount[node.id]
+            }
+            else {
+                self.getRecentLogs(node);
+                return self.logsCount[node.id]
+          }
         };
 
         self.loadUpToTen = function () {
@@ -154,14 +174,16 @@ var quickSearchProject = {
         };
 
         self.getLastLoginDate()
+
     },
     view : function(ctrl) {
         function projectView(project) {
             return m('tr', [
                 m('td', m("a", {href: '/'+ project.id}, project.attributes.title)),
                 m('td', ctrl.getContributors(project)),
-                m('td', ctrl.formatDate(project))
+                m('td', ctrl.formatDate(project)),
                 m('td', ctrl.loadRecentCommentCount(project)),
+                m('td', ctrl.loadRecentLogsCount(project))
             ])
         }
 
@@ -181,6 +203,8 @@ var quickSearchProject = {
                     m('th', 'Contributors'),
                     m('th', 'Modified'),
                     m('th', 'New comments'),
+                    m('th', 'New logs')
+                ]),
                 m('tr', [
                    m('td',
                        m('button', { onclick: function() {
