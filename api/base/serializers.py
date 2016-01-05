@@ -21,7 +21,6 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 
-
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
     """
     Properly handles formatting of self and related links according to JSON API.
