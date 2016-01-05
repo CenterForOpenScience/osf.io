@@ -4,7 +4,9 @@ from api.base.serializers import (
     JSONAPISerializer,
     RelationshipField,
     RestrictedDictSerializer,
-    LinksField)
+    LinksField,
+    DoNotRelateWhenAnonymous,
+)
 from api.base.utils import absolute_reverse
 
 
@@ -50,9 +52,14 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     version = ser.CharField(read_only=True)
 
 
-class NodeLogSerializer(JSONAPISerializer):
+class NodeLogSerializer(JSONAPISerializer, DoNotRelateWhenAnonymous):
 
     filterable_fields = frozenset(['action', 'date'])
+    non_anonymized_fields = [
+        'id',
+        'date',
+        'action',
+    ]
 
     id = ser.CharField(read_only=True, source='_id')
     date = ser.DateTimeField(read_only=True)

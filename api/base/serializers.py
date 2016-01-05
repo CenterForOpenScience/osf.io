@@ -770,7 +770,7 @@ class JSONAPISerializer(ser.Serializer):
                 else:
                     try:
                         if not (is_anonymous and
-                                hasattr(field, 'view_name') and not
+                                hasattr(field, 'view_name') and
                                 isinstance(field.root, DoNotRelateWhenAnonymous)):
                             data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
@@ -795,6 +795,8 @@ class JSONAPISerializer(ser.Serializer):
 
         if envelope:
             ret[envelope] = data
+            if is_anonymous:
+                ret['meta'] = {'anonymous': True}
         else:
             ret = data
         return ret
