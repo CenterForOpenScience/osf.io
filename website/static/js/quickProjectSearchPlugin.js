@@ -61,14 +61,16 @@ var quickSearchProject = {
             else {
                 return self.getFamilyName(0, node) + ', ' +
                         self.getFamilyName(1, node) + ', ' +
-                        self.getFamilyName(2, node) + ' and ' +
+                        self.getFamilyName(2, node) + ' and' +
                     (numContributors - 3) + ' others'
             }
 
         };
 
         self.getRecentComments = function (node) {
-            var url = $osf.apiV2Url('nodes/' + node.id + '/comments/?filter[date_modified][gte]=' + self.lastLogin, {});
+            var url = $osf.apiV2Url('nodes/' + node.id + '/comments/',
+                { query : { 'filter[date_modified][gte]': self.lastLogin}}
+            );
             var promise = m.request({method: 'GET', url : url, config: xhrconfig});
             promise.then(function(result) {
                 self.commentsCount[node.id] = result.links.meta.total
@@ -87,10 +89,10 @@ var quickSearchProject = {
         };
 
         self.getRecentLogs = function (node) {
-            var url = $osf.apiV2Url('nodes/' + node.id + '/logs/?filter[action][ne]=comment_added', {});
+            var url = $osf.apiV2Url('nodes/' + node.id + '/logs/', { query : {'filter[action][ne]': 'comment_added',
+                'filter[date][gte]': self.lastLogin}});
             var promise = m.request({method: 'GET', url : url, config: xhrconfig});
             promise.then(function(result){
-                console.log(result);
                 self.logsCount[node.id] = result.links.meta.total
             });
             return promise
