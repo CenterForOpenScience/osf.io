@@ -17,6 +17,7 @@ var quickSearchProject = {
         var self = this;
         self.nodes = [];
         self.displayedNodes = [];
+        self.lastLogin = '';
 
         // Load node list
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors', 'page[size]': 100}});
@@ -32,6 +33,17 @@ var quickSearchProject = {
             });
             self.displayedNodes = self.nodes.splice(0, 10)
         });
+
+        // Load last login
+        self.getLastLoginDate = function () {
+            var url = $osf.apiV2Url('users/me/', {});
+            var promise = m.request({method: 'GET', url: url, config : xhrconfig});
+            promise.then(function(result) {
+                self.lastLogin = result.data.attributes.last_login
+            }
+            );
+            return promise
+        };
 
         self.getFamilyName = function(i, node) {
             return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
@@ -120,6 +132,7 @@ var quickSearchProject = {
             return self.displayedNodes
         };
 
+        self.getLastLoginDate()
     },
     view : function(ctrl) {
         function projectView(project) {
