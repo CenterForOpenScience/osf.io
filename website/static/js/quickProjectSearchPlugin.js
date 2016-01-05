@@ -6,6 +6,9 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
+// CSS
+require('css/quick-project-search-plugin.css');
+
 // XHR config for apiserver connection
 var xhrconfig = function(xhr) {
     xhr.withCredentials = true;
@@ -202,33 +205,22 @@ var quickSearchProject = {
             m('input[type=search]', 'Quick search projects'),
             m('table', [
                 m('tr', [
-                    m('th', 'Name'),
+                    m('th', 'Name',
+                        m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
+                           ctrl.sortAlphabeticalAscending()}}),
+                        m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
+                            ctrl.sortAlphabeticalDescending()
+                        }})),
                     m('th', 'Contributors'),
-                    m('th', 'Modified'),
+                    m('th', 'Modified',
+                        m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
+                           ctrl.sortDateAscending()}}),
+                        m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
+                           ctrl.sortDateDescending()
+                       }})
+                    ),
                     m('th', 'New comments'),
                     m('th', 'New logs')
-                ]),
-                m('tr', [
-                   m('td',
-                       m('button', { onclick: function() {
-                           ctrl.sortAlphabeticalAscending()
-                       }}, 'Sort alphabetical asc')),
-                    m('td', ''),
-                    m('td',  m('button', { onclick: function() {
-                           ctrl.sortDateAscending()
-                       }}, 'Sort date asc'))
-
-                ]),
-                m('tr', [
-                   m('td',
-                   m('button', { onclick: function() {
-                       ctrl.sortAlphabeticalDescending()
-                   }}, 'Sort alphabetical desc')),
-                    m('td', ''),
-                    m('td',  m('button', { onclick: function() {
-                           ctrl.sortDateDescending()
-                       }}, 'Sort date desc'))
-
                 ]),
 
                 ctrl.displayedNodes.map(function(n){
