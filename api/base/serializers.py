@@ -638,6 +638,10 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
+        # if PATCH request, the child serializer's partial attribute needs to be True
+        if self.context['request'].method == 'PATCH':
+            self.child.partial = True
+
         bulk_skip_uneditable = utils.is_truthy(self.context['request'].query_params.get('skip_uneditable', False))
         if not bulk_skip_uneditable:
             if len(instance) != len(validated_data):
