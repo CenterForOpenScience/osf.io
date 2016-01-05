@@ -5,7 +5,7 @@ from framework.exceptions import PermissionsError
 
 from website.models import Node
 from api.base.serializers import LinksField, RelationshipField, DevOnly
-from api.base.serializers import JSONAPISerializer, JSONAPIRelationshipSerializer, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, JSONAPIRelationshipsSerializer, IDField, TypeField
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
@@ -95,7 +95,7 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
             }
         )
 
-class CollectionLinkedNodesRelationshipSerializer(JSONAPIRelationshipSerializer):
+class CollectionLinkedNodesRelationshipSerializer(JSONAPIRelationshipsSerializer):
 
     id = ser.CharField(source='node._id', required=False, allow_null=True)
     type = TypeField(required=False, allow_null=True)
@@ -109,13 +109,15 @@ class CollectionLinkedNodesRelationshipSerializer(JSONAPIRelationshipSerializer)
         type_ = 'linked_nodes'
 
     def get_self_link(self, obj):
-        return 'link a'
+        node = self.context['view'].get_node()
+        return node.linked_nodes_self_url
 
     def get_related_link(self, obj):
-        return 'link b'
-        #return obj.institution_url()
+        node = self.context['view'].get_node()
+        return node.linked_nodes_related_url
 
     def update(self, instance, validated_data):
+        import ipdb; ipdb.set_trace()
         pass
 
     def destroy(self, instance):

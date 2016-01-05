@@ -546,9 +546,9 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
     view_name = 'collection-node-pointer-relationship'
 
     def get_object(self):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         return [
             pointer for pointer in
             self.get_node().nodes_pointer
             if not pointer.node.is_deleted and not pointer.node.is_folder
-        ][0]
+        ]

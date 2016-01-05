@@ -803,7 +803,7 @@ class JSONAPISerializer(ser.Serializer):
 
         return ret
 
-class JSONAPIRelationshipSerializer(ser.Serializer):
+class JSONAPIRelationshipsSerializer(ser.Serializer):
     """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
     Provides a simplified serialization of the relationship, allowing for simple update request
     bodies. Also provides links to itself and to the endpoint providing information about the related
@@ -821,10 +821,8 @@ class JSONAPIRelationshipSerializer(ser.Serializer):
         ])
         relation_id_field = self.fields['id']
 
-        attribute = relation_id_field.get_attribute(obj)
-        relationship = relation_id_field.to_representation(attribute)
 
-        data['data'] = {'type': type_, 'id': relationship} if relationship else None
+        data['data'] = [{'type': type_, 'id': relation_id_field.to_representation(relation_id_field.get_attribute(object))} for object in obj]
         data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
 
         return data
