@@ -318,6 +318,14 @@ $(document).ready(function() {
                 $(this).closest('li').addClass('active');
             }
         });
+
+        // If not viewing the project or file detail page, remove the Comments Link
+        var excluded = ['files', 'wiki', 'analytics', 'registrations', 'forks', 'contributors', 'settings'];
+        for (var i=0; i < excluded.length; i++) {
+            if (path.indexOf(excluded[i]) > -1) {
+                $('.project-nav #commentsLink').remove();
+            }
+        }
     });
 });
 
