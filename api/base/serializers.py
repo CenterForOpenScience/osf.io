@@ -21,14 +21,6 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 
-def hide_view_when_anonymous(view_name):
-    # TODO: add node_views.NodeForkList when it gets added to the node serializer (this is being tested now)
-    views_to_hide = [
-        'users:user-detail',
-        'nodes:node-registrations',
-    ]
-    return view_name in views_to_hide
-
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
     """
@@ -707,6 +699,13 @@ class JSONAPISerializer(ser.Serializer):
     Self/html links must be nested under "links".
     """
 
+    # Don't serialize relationships that use these views
+    # when viewing thru an anonymous VOL
+    views_to_hide_if_anonymous = [
+        'users:user-detail',
+        'nodes:node-registrations',
+    ]
+
     # overrides Serializer
     @classmethod
     def many_init(cls, *args, **kwargs):
@@ -781,7 +780,7 @@ class JSONAPISerializer(ser.Serializer):
                     try:
                         if not (is_anonymous and
                                 hasattr(field, 'view_name') and
-                                hide_view_when_anonymous(field.view_name)):
+                                field.view_name in self.views_to_hide_if_anonymous):
                             data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
                         continue
