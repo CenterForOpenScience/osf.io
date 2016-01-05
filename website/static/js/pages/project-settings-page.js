@@ -259,10 +259,7 @@ var WikiSettingsViewModel = {
     wikiMessage: ko.observable('')
 };
 
-var self = this;
-self.viewModel = WikiSettingsViewModel;
-
-self.viewModel.enabled.subscribe(function(newValue) {
+WikiSettingsViewModel.enabled.subscribe(function(newValue) {
     var self = this;
     $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: newValue}
     ).done(function(response) {
@@ -282,7 +279,6 @@ self.viewModel.enabled.subscribe(function(newValue) {
         setTimeout(function(){window.location.reload();}, 1500);
     });
     return true;
-}, self.viewModel);
+}, WikiSettingsViewModel);
 
-
-$osf.applyBindings(self.viewModel, '#selectWikiForm');
+$osf.applyBindings(WikiSettingsViewModel, '#selectWikiForm');
