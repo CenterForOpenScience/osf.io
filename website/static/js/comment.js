@@ -82,20 +82,6 @@ var BaseComment = function() {
     self.submittingReply = ko.observable(false);
 
     self.comments = ko.observableArray();
-    self.unreadComments = ko.observable(0);
-
-    self.displayCount = ko.pureComputed(function() {
-        if (self.unreadComments() !== 0) {
-            return self.unreadComments().toString();
-        } else {
-            return ' ';
-        }
-    });
-
-    /* Removes number of unread comments from tab when comments pane is opened  */
-    self.removeCount = function() {
-        self.unreadComments(0);
-    };
 
     self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
@@ -162,9 +148,6 @@ BaseComment.prototype.fetchNext = function(url, comments) {
         if (response.links.next !== null) {
             self.fetchNext(response.links.next, comments);
         } else {
-            if (!osfHelpers.urlParams().view_only) {
-                self.setUnreadCommentCount();
-            }
             self.comments(
                 ko.utils.arrayMap(comments, function(comment) {
                     return new CommentModel(comment, self, self.$root);
@@ -631,6 +614,24 @@ var CommentListModel = function(options) {
     self.author = options.currentUser;
 
     self.togglePane = options.togglePane;
+
+    self.unreadComments = ko.observable(0);
+    if (!osfHelpers.urlParams().view_only) {
+        self.setUnreadCommentCount();
+    }
+
+    self.displayCount = ko.pureComputed(function() {
+        if (self.unreadComments() !== 0) {
+            return self.unreadComments().toString();
+        } else {
+            return ' ';
+        }
+    });
+
+    /* Removes number of unread comments from tab when comments pane is opened  */
+    self.removeCount = function() {
+        self.unreadComments(0);
+    };
 
     self.fetch(options.nodeId);
 
