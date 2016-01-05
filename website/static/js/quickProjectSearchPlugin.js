@@ -20,7 +20,7 @@ var quickSearchProject = {
         self.nodes = [];
         self.displayedNodes = [];
         //self.lastLogin = '';
-        self.lastLogin = '2016-01-01T15:20:11.531000'
+        self.lastLogin = '2016-01-01T15:20:11.531000';
         self.commentsCount = {};
         self.logsCount = {};
 
@@ -65,8 +65,7 @@ var quickSearchProject = {
             else {
                 return self.getFamilyName(0, node) + ', ' +
                         self.getFamilyName(1, node) + ', ' +
-                        self.getFamilyName(2, node) + ' and' +
-                    (numContributors - 3) + ' others'
+                        self.getFamilyName(2, node) + ' + ' + (numContributors - 3)
             }
 
         };
