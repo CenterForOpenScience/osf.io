@@ -172,9 +172,9 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         else:
             embeds = {}
         assert_not_in('registrations', relationships)
-        assert_not_in('forks', relationships)
+        assert_not_in('forks', relationships, 'Add forks view to blacklist in hide_view_when_anonymous().')
         assert_not_in('registrations', embeds)
-        assert_not_in('forks', embeds)
+        assert_not_in('forks', embeds, 'Add forks view to blacklist in hide_view_when_anonymous().')
 
     def test_bad_view_only_link_does_not_modify_permissions(self):
         res = self.app.get(self.private_node_one_url+'logs/', {
