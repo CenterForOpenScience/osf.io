@@ -24,7 +24,12 @@ var quickSearchProject = {
         promise.then(function(result){
             result.data.forEach(function(node){
                 self.nodes.push(node);
-            })
+            });
+            self.nodes.sort(function(a,b){
+                var A = a.attributes.date_modified;
+                var B = b.attributes.date_modified;
+                return (A > B) ? -1 : (A < B) ? 1 : 0;
+            });
             self.displayedNodes = self.nodes.splice(0, 10)
         });
 
