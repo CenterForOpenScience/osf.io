@@ -16,8 +16,8 @@ var quickSearchProject = {
         var self = this;
         self.nodes = [];
         self.displayedNodes = [];
-        self.lastLogin = '';
         //self.lastLogin = '';
+        self.lastLogin = '2016-01-01T15:20:11.531000'
         self.commentsCount = {};
         self.logsCount = {};
 
