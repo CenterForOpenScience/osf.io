@@ -7,7 +7,8 @@ def main():
         'password': 'root',
         'host': '127.0.0.1',
         'port': '8889',
-        'database': 'piwik'
+        'database': 'piwik',
+        'use_unicode': 'False'
     }
 
     try:
@@ -21,11 +22,18 @@ def main():
             print(err)
     else:
 
-        cursor = cnx.cursor()
+        cursor = cnx.cursor(dictionary=True, buffered=True)
 
-        query = "SET sql_mode = 'ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_AUTO_VALUE_ON_ZERO,NO_ZERO_DATE,NO_ZERO_IN_DATE'; SELECT sub.* FROM (SELECT log_visit.* FROM piwik_log_visit AS log_visit WHERE log_visit.idsite in (1) AND log_visit.visit_last_action_time >= '2015-11-30 00:00:00' AND  log_visit.visit_last_action_time <= '2015-12-01 00:00:00' ORDER BY idsite, visit_last_action_time DESC LIMIT 100) AS sub GROUP BY sub.idvisit ORDER BY sub.visit_last_action_time DESC;"
-        cursor.execute(query, multi=True)
-        print cursor.with_rows
+        query = "SET NAMES 'utf8'"
+        cursor.execute(query)
+
+        query = "SET sql_mode = 'ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_AUTO_VALUE_ON_ZERO,NO_ZERO_DATE,NO_ZERO_IN_DATE';"
+        cursor.execute(query)
+
+        query = "SELECT sub.* FROM (SELECT log_visit.* FROM piwik_log_visit AS log_visit WHERE log_visit.idsite in (1) AND log_visit.visit_last_action_time >= '2016-01-05 00:00:00' ORDER BY idsite, visit_last_action_time DESC LIMIT 100) AS sub GROUP BY sub.idvisit ORDER BY sub.visit_last_action_time DESC;"
+        cursor.execute(query)
+        for row in cursor:
+            print row['config_id']
 
         query = ("USE piwik; "
                  "SELECT COALESCE(log_action_event_category.type, log_action.type, log_action_title.type) AS type, "
