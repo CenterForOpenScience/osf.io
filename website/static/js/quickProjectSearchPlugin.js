@@ -58,7 +58,62 @@ var quickSearchProject = {
 
         self.formatDate = function (node) {
             return new $osf.FormattableDate(node.attributes.date_modified).local
-        }
+        };
+
+        self.restoreFullNodeList = function () {
+            for (i = 0; i < self.displayedNodes.length ; i++) {
+                self.nodes.push(self.displayedNodes[i])
+            }
+        };
+
+        self.sortAlphabeticalAscending = function () {
+            numDisplayed = self.displayedNodes.length;
+            self.restoreFullNodeList();
+            self.nodes.sort(function(a,b){
+                var A = a.attributes.title.toUpperCase();
+                var B = b.attributes.title.toUpperCase();
+                return (A < B) ? -1 : (A > B) ? 1 : 0;
+            });
+            self.displayedNodes = self.nodes.splice(0, numDisplayed);
+            return self.displayedNodes
+        };
+
+        self.sortAlphabeticalDescending = function () {
+            numDisplayed = self.displayedNodes.length;
+            self.restoreFullNodeList();
+            self.nodes.sort(function(a,b){
+                var A = a.attributes.title.toUpperCase();
+                var B = b.attributes.title.toUpperCase();
+                return (A > B) ? -1 : (A < B) ? 1 : 0;
+            });
+            self.displayedNodes = self.nodes.splice(0, numDisplayed);
+            return self.displayedNodes
+
+        };
+
+        self.sortDateAscending = function () {
+            numDisplayed = self.displayedNodes.length;
+            self.restoreFullNodeList();
+            self.nodes.sort(function(a,b){
+                var A = a.attributes.date_modified;
+                var B = b.attributes.date_modified;
+                return (A > B) ? -1 : (A < B) ? 1 : 0;
+            });
+            self.displayedNodes = self.nodes.splice(0, numDisplayed);
+            return self.displayedNodes
+        };
+
+        self.sortDateDescending = function () {
+            numDisplayed = self.displayedNodes.length;
+            self.restoreFullNodeList();
+            self.nodes.sort(function(a,b){
+                var A = a.attributes.date_modified;
+                var B = b.attributes.date_modified;
+                return (A < B) ? -1 : (A > B) ? 1 : 0;
+            });
+            self.displayedNodes = self.nodes.splice(0, numDisplayed);
+            return self.displayedNodes
+        };
 
     },
     view : function(ctrl) {
@@ -84,12 +139,33 @@ var quickSearchProject = {
                     m('th', 'Name'),
                     m('th', 'Contributors'),
                     m('th', 'Modified')
+                m('tr', [
+                   m('td',
+                       m('button', { onclick: function() {
+                           ctrl.sortAlphabeticalAscending()
+                       }}, 'Sort alphabetical asc')),
+                    m('td', ''),
+                    m('td',  m('button', { onclick: function() {
+                           ctrl.sortDateAscending()
+                       }}, 'Sort date asc'))
+
+                ]),
+                m('tr', [
+                   m('td',
+                   m('button', { onclick: function() {
+                       ctrl.sortAlphabeticalDescending()
+                   }}, 'Sort alphabetical desc')),
+                    m('td', ''),
+                    m('td',  m('button', { onclick: function() {
+                           ctrl.sortDateDescending()
+                       }}, 'Sort date desc'))
+
                 ]),
 
                 ctrl.displayedNodes.map(function(n){
                     return projectView(n)
                 }),
-                buttonDisplay()
+                loadMoreButton()
 
             ])
         ])
