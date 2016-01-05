@@ -190,11 +190,12 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enquque):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
+        end_date = dt.datetime.utcnow() + dt.timedelta(days=3)
         res = self.app.post_json(
             url,
             {
                 'registrationChoice': 'embargo',
-                'embargoEndDate': "Fri, 01 Jan {year} 05:00:00 GMT".format(year=str(dt.date.today().year + 1))
+                'embargoEndDate': end_date.strftime('%c'),
             },
             auth=self.user.auth)
 

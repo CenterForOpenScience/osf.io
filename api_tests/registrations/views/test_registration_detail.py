@@ -102,7 +102,8 @@ class TestRegistrationDetail(ApiTestCase):
             'retracted': True,
             'pending_retraction': None,
             'pending_registration_approval': None,
-            "pending_embargo": None,
+            'pending_embargo_approval': None,
+            "embargo_end_date": None,
             "registered_meta": None,
             "registration_supplement": registration.registered_meta.keys()[0]
         })
