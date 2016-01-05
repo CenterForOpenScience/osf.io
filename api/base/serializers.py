@@ -620,25 +620,42 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
     def to_representation(self, data):
         # Don't envelope when serializing collection
-        return [
+        errors = {}
+        bulk_skip_uneditable = utils.is_truthy(self.context['request'].query_params.get('skip_uneditable', False))
+
+        if isinstance(data, collections.Mapping):
+            errors = data.get('errors', None)
+            data = data.get('data', None)
+
+        ret = [
             self.child.to_representation(item, envelope=None) for item in data
         ]
 
+        if errors and bulk_skip_uneditable:
+            ret.append({'errors': errors})
+
+        return ret
+
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
-        if len(instance) != len(validated_data):
-            raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
+        bulk_skip_uneditable = utils.is_truthy(self.context['request'].query_params.get('skip_uneditable', False))
+        if not bulk_skip_uneditable:
+            if len(instance) != len(validated_data):
+                raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
 
         id_lookup = self.child.fields['id'].source
         instance_mapping = {getattr(item, id_lookup): item for item in instance}
         data_mapping = {item.get(id_lookup): item for item in validated_data}
 
-        ret = []
+        ret = {'data': []}
 
-        for resource_id, data in data_mapping.items():
-            resource = instance_mapping.get(resource_id, None)
-            ret.append(self.child.update(resource, data))
+        for resource_id, resource in instance_mapping.items():
+            data = data_mapping.pop(resource_id, None)
+            ret['data'].append(self.child.update(resource, data))
 
+        # If skip_uneditable in request, add validated_data for nodes in which the user did not have edit permissions to errors
+        if data_mapping and bulk_skip_uneditable:
+            ret.update({'errors': data_mapping.values()})
         return ret
 
     # overrides ListSerializer
@@ -753,7 +770,7 @@ class JSONAPISerializer(ser.Serializer):
                 else:
                     try:
                         if not (is_anonymous and
-                                hasattr(field, 'view_name') and not
+                                hasattr(field, 'view_name') and
                                 isinstance(field.root, DoNotRelateWhenAnonymous)):
                             data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
@@ -778,6 +795,8 @@ class JSONAPISerializer(ser.Serializer):
 
         if envelope:
             ret[envelope] = data
+            if is_anonymous:
+                ret['meta'] = {'anonymous': True}
         else:
             ret = data
         return ret
