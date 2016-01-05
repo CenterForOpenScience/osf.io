@@ -128,7 +128,7 @@ BaseComment.prototype.fetch = function() {
     if (self.id() !== undefined) {
         query += '&filter[target]=' + self.id();
     }
-    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {query: query});
+    var url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/comments/', {query: query});
     self.fetchNext(url, []);
 };
 
@@ -167,7 +167,7 @@ BaseComment.prototype.setUnreadCommentCount = function() {
     if (self.page() === FILES) {
         url = osfHelpers.apiV2Url('files/' + self.$root.rootId() + '/', {query: 'related_counts=True'});
     } else {
-        url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/', {query: 'related_counts=True'});
+        url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/', {query: 'related_counts=True'});
     }
     var request = osfHelpers.ajaxJSON(
         'GET',
@@ -213,7 +213,7 @@ BaseComment.prototype.submitReply = function() {
         return;
     }
     self.submittingReply(true);
-    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {});
+    var url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/comments/', {});
     var request = osfHelpers.ajaxJSON(
         'POST',
         url,
@@ -606,6 +606,7 @@ var CommentListModel = function(options) {
     self.editors = 0;
     self.nodeId = ko.observable(options.nodeId);
     self.nodeApiUrl = options.nodeApiUrl;
+    self.nodeType = options.isRegistration ? 'registrations' : 'nodes';
     self.page(options.page);
     self.id = ko.observable(options.rootId);
     self.rootId = ko.observable(options.rootId);
@@ -673,6 +674,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
 /* options example: {
  *      nodeId: Node._id,
  *      nodeApiUrl: Node.api_url,
+ *      isRegistration: Node.is_registration,
  *      page: 'node',
  *      rootId: Node._id,
  *      canComment: User.canComment,

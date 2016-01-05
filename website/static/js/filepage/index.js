@@ -507,6 +507,7 @@ if ($comments.length) {
     var options = {
         nodeId: window.contextVars.node.id,
         nodeApiUrl: window.contextVars.node.urls.api,
+        isRegistration: window.contextVars.node.isRegistration,
         page: 'files',
         rootId: window.contextVars.file.id,
         canComment: window.contextVars.currentUser.canComment,

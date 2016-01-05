@@ -60,6 +60,7 @@ if ($comments.length) {
     var options = {
         nodeId : window.contextVars.node.id,
         nodeApiUrl: window.contextVars.node.urls.api,
+        isRegistration: window.contextVars.node.isRegistration,
         page: 'node',
         rootId: window.contextVars.node.id,
         canComment: window.contextVars.currentUser.canComment,

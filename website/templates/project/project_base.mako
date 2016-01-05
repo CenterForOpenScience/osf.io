@@ -93,6 +93,7 @@
                 update: ${ node['update_url'] | sjson, n }
             },
             isPublic: ${ node.get('is_public', False) | sjson, n },
+            isRegistration: ${ node.get('is_registration', False) | sjson, n },
             isRetracted: ${ node.get('is_retracted', False) | sjson, n },
             piwikSiteID: ${ node.get('piwik_site_id', None) | sjson, n },
             piwikHost: ${ piwik_host | sjson, n },
