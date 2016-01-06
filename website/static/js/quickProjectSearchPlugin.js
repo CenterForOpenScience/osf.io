@@ -32,7 +32,7 @@ var quickSearchProject = {
         self.countState = m.prop();
 
         // Load node list
-        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors', 'page[size]': 100}});
+        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors', 'page[size]': 10000}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig});
         promise.then(function(result){
             result.data.forEach(function(node){
