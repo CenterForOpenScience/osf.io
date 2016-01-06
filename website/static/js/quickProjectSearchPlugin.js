@@ -124,14 +124,14 @@ var quickSearchProject = {
             return new $osf.FormattableDate(node.attributes.date_modified).local
         };
 
-        self.restoreFullNodeList = function () {
-            for (i = 0; i < self.displayedNodes.length ; i++) {
-                self.nodes.push(self.displayedNodes[i])
+        self.restoreToNodeList = function (missingNodes) {
+            for (i = 0; i < missingNodes.length ; i++) {
+                self.nodes.push(missingNodes[i])
             }
         };
 
         self.sortAlphabeticalAscending = function () {
-            self.restoreFullNodeList();
+            self.restoreToNodeList(self.displayedNodes);
             self.nodes.sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
@@ -143,7 +143,7 @@ var quickSearchProject = {
         };
 
         self.sortAlphabeticalDescending = function () {
-            self.restoreFullNodeList();
+            self.restoreToNodeList(self.displayedNodes);
             self.nodes.sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
@@ -156,7 +156,7 @@ var quickSearchProject = {
         };
 
         self.sortDateDescending = function () {
-            self.restoreFullNodeList();
+            self.restoreToNodeList(self.displayedNodes);
             self.nodes.sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
@@ -168,7 +168,7 @@ var quickSearchProject = {
         };
 
         self.sortDateAscending = function () {
-            self.restoreFullNodeList();
+            self.restoreToNodeList(self.displayedNodes);
             self.nodes.sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
