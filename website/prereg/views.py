@@ -17,6 +17,7 @@ from website.prereg.utils import get_prereg_schema
 
 def drafts_for_user(user):
     from website import models  # noqa
+
     user_projects = models.Node.find(
         Q('is_deleted', 'eq', False) &
         Q('permissions.{0}'.format(user._id), 'in', [permissions.ADMIN])

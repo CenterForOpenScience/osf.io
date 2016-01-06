@@ -137,17 +137,21 @@ def update_user(auth):
 
         emails_list = [x['address'].strip().lower() for x in data['emails']]
 
-        if user.username not in emails_list:
+        if user.username.strip().lower() not in emails_list:
             raise HTTPError(httplib.FORBIDDEN)
 
+        available_emails = [
+            each.strip().lower() for each in
+            user.emails + user.unconfirmed_emails
+        ]
         # removals
         removed_emails = [
-            each
-            for each in user.emails + user.unconfirmed_emails
+            each.strip().lower()
+            for each in available_emails
             if each not in emails_list
         ]
 
-        if user.username in removed_emails:
+        if user.username.strip().lower() in removed_emails:
             raise HTTPError(httplib.FORBIDDEN)
 
         for address in removed_emails:
@@ -162,8 +166,7 @@ def update_user(auth):
         added_emails = [
             each['address'].strip().lower()
             for each in data['emails']
-            if each['address'].strip().lower() not in user.emails
-            and each['address'].strip().lower() not in user.unconfirmed_emails
+            if each['address'].strip().lower() not in available_emails
         ]
 
         for address in added_emails:
@@ -195,7 +198,7 @@ def update_user(auth):
 
         if primary_email:
             primary_email_address = primary_email['address'].strip().lower()
-            if primary_email_address not in user.emails:
+            if primary_email_address not in [each.strip().lower() for each in user.emails]:
                 raise HTTPError(httplib.FORBIDDEN)
             username = primary_email_address
 

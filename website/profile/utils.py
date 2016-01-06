@@ -79,13 +79,13 @@ def serialize_user(user, node=None, admin=False, full=False):
         ret['emails'] = [
             {
                 'address': each,
-                'primary': each == user.username,
+                'primary': each.strip().lower() == user.username.strip().lower(),
                 'confirmed': True,
             } for each in user.emails
         ] + [
             {
                 'address': each,
-                'primary': each == user.username,
+                'primary': each.strip().lower() == user.username.strip().lower(),
                 'confirmed': False
             }
             for each in user.unconfirmed_emails

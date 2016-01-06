@@ -1,9 +1,11 @@
 from rest_framework import serializers as ser
 from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
 from website.project.model import Comment, Node
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse
+from api.base.settings import osf_settings
 from api.base.serializers import (JSONAPISerializer,
                                   TargetField,
                                   RelationshipField,
@@ -29,7 +31,7 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = AuthorizedCharField(source='get_content')
+    content = AuthorizedCharField(source='get_content', required=True, max_length=osf_settings.COMMENT_MAXLENGTH)
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
@@ -41,6 +43,9 @@ class CommentSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
+    is_abuse = ser.SerializerMethodField(help_text='Whether the current user reported this comment.')
+    has_children = ser.SerializerMethodField(help_text='Whether this comment has any replies.')
+    can_edit = ser.SerializerMethodField(help_text='Whether the current user can edit this comment.')
 
     # LinksField.to_representation adds link to "self"
     links = LinksField({})
@@ -48,16 +53,46 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
+    def validate_content(self, value):
+        if value is None or not value.strip():
+            raise ValidationError('Comment cannot be empty.')
+        return value
+
+    def get_is_abuse(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return False
+        return user._id in obj.reports
+
+    def get_can_edit(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return False
+        return obj.user._id == user._id
+
+    def get_has_children(self, obj):
+        return bool(getattr(obj, 'commented', []))
+
     def update(self, comment, validated_data):
         assert isinstance(comment, Comment), 'comment must be a Comment'
         auth = Auth(self.context['request'].user)
         if validated_data:
             if 'get_content' in validated_data:
-                comment.edit(validated_data['get_content'], auth=auth, save=True)
+                content = validated_data.pop('get_content')
+                try:
+                    comment.edit(content, auth=auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to edit this comment.')
             if validated_data.get('is_deleted', None) is True:
-                comment.delete(auth, save=True)
+                try:
+                    comment.delete(auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to delete this comment.')
             elif comment.is_deleted:
-                comment.undelete(auth, save=True)
+                try:
+                    comment.undelete(auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to undelete this comment.')
         return comment
 
     def get_target_type(self, obj):
@@ -81,7 +116,7 @@ class CommentCreateSerializer(CommentSerializer):
         target_type = self.context['request'].data.get('target_type')
         expected_target_type = self.get_target_type(target)
         if target_type != expected_target_type:
-            raise Conflict('Invalid target type. Expected \"{0}\", got \"{1}.\"'.format(expected_target_type, target_type))
+            raise Conflict('Invalid target type. Expected "{0}", got "{1}."'.format(expected_target_type, target_type))
         return target_type
 
     def get_target(self, node_id, target_id):
@@ -112,10 +147,10 @@ class CommentCreateSerializer(CommentSerializer):
             )
         validated_data['target'] = target
         validated_data['content'] = validated_data.pop('get_content')
-        if node and node.can_comment(auth):
+        try:
             comment = Comment.create(auth=auth, **validated_data)
-        else:
-            raise PermissionDenied("Not authorized to comment on this project.")
+        except PermissionsError:
+            raise PermissionDenied('Not authorized to comment on this project.')
         return comment
 
 

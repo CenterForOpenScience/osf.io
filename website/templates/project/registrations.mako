@@ -45,8 +45,8 @@
       </div>
       % if 'admin' in user['permissions'] and not disk_saving_mode:
       <div class="col-md-3">
-        <a id="registerNode" class="btn btn-default" type="button">
-          New Registration
+        <a id="registerNode" class="btn btn-default disabled" type="button">
+          Loading ...
         </a>
       </div>
       % endif
@@ -54,7 +54,7 @@
   </div>
   <div role="tabpanel" class="tab-pane" id="drafts">
     <div id="draftRegistrationsScope" class="row scripted" style="min-height: 150px;padding-top:20px;">
-      <div data-bind="visible: loading" class="spinner-loading-wrapper">
+      <div data-bind="visible: loadingDrafts" class="spinner-loading-wrapper">
         <div class="logo-spin logo-lg"></div>
       </div>
       <form id="newDraftRegistrationForm" method="POST" style="display:none">

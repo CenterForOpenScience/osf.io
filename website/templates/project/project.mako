@@ -33,7 +33,7 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions'] and not node['is_pending_embargo']:
+                        % if 'admin' in user['permissions'] and not node['is_registration']:
                             <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                             ## TODO: Uncomment when APIv2 concurrency issues are fixed
                             ## <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
@@ -412,7 +412,6 @@ ${parent.javascript_bottom()}
     // Hack to allow mako variables to be accessed to JS modules
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
-            name: ${ user_full_name | sjson, n },
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n }
         },
