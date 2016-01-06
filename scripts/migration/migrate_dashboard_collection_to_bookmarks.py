@@ -60,7 +60,7 @@ def reverse_migration():
 if __name__ == '__main__':
     import sys
     init_app(set_backends=True, routes=False)
-    
+
     if 'reverse' in sys.argv:
         with TokuTransaction():
             reverse_migration()

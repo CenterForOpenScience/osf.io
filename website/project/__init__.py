@@ -68,10 +68,10 @@ def new_bookmark_collection(user):
     :return Node: Created node
 
     """
-    existing_bookmark_collection = user.node__contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_bookmark_collection', 'eq', True)
-    )
+    existing_bookmark_collection = Node.find(
+                    Q('is_bookmark_collection', 'eq', True) &
+                    Q('contributors', 'icontains', user._id)
+            )
 
     if existing_bookmark_collection.count() > 0:
         raise NodeStateError("Users may only have one bookmark collection")
