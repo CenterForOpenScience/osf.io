@@ -108,7 +108,8 @@ ViewModel.prototype.selectBucket = function() {
     self.loading(true);
 
     var ret = $.Deferred();
-    if (!isValidBucketName(self.selectedBucket(), false)) {
+    //true is to allow periods in bucket names
+    if (!isValidBucketName(self.selectedBucket(), true)) {
         self.loading(false);
         bootbox.alert({
             title: 'Invalid bucket name',
