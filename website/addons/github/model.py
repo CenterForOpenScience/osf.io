@@ -26,7 +26,7 @@ from website.oauth.models import ExternalProvider
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 
-class GithHubProvider(ExternalProvider):
+class GitHubProvider(ExternalProvider):
     name = 'GitHub'
     short_name = 'github'
 
@@ -57,36 +57,22 @@ class GithHubProvider(ExternalProvider):
 class GitHubUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific github information
     """
-    oauth_provider = GithHubProvider
+    oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
 
 class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
-    oauth_provider = GithHubProvider
+    oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
     user = fields.StringField()
     repo = fields.StringField()
     hook_id = fields.StringField()
     hook_secret = fields.StringField()
-
-    user_settings = fields.ForeignField(
-        'addongithubusersettings', backref='authorized'
-    )
-
     registration_data = fields.DictionaryField()
-
-    @property
-    def folder_name(self):
-        return self.repo
-
-    @property
-    def folder_id(self):
-        return self.repo
-
-    @property
-    def folder_path(self):
-        return self.repo
+    folder_id = fields.StringField(default=None)
+    folder_name = fields.StringField(default=None)
+    folder_path = fields.StringField(default=None)
 
     @property
     def has_auth(self):
@@ -109,9 +95,19 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if save:
             self.save()
 
-    def deauthorize(self, auth=None, log=True, save=False):
+    def clear_settings(self):
+        self.user = None
+        self.repo = None
+        self.hook_id = None
+        self.hook_secret = None
+        self.registration_data = None
+        self.folder_id = None
+        self.folder_name = None
+        self.folder_path = None
+
+    def deauthorize(self, auth=None, log=True):
         self.delete_hook(save=False)
-        self.user, self.repo, self.user_settings = None, None, None
+        self.clear_settings()
         if log:
             self.owner.add_log(
                 action='github_node_deauthorized',
@@ -121,12 +117,12 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 },
                 auth=auth,
             )
-        if save:
-            self.save()
+
+        self.clear_auth()
 
     def delete(self, save=False):
         super(GitHubNodeSettings, self).delete(save=False)
-        self.deauthorize(save=False, log=False)
+        self.deauthorize(log=False)
         if save:
             self.save()
 
@@ -304,14 +300,48 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         :return str: Alert message
 
         """
-        return (super(GitHubNodeSettings, self).before_remove_contributor_message(node, removed) +
+        try:
+            message = (super(GitHubNodeSettings, self).before_remove_contributor_message(node, removed) +
             'You can download the contents of this repository before removing '
             'this contributor <u><a href="{url}">here</a></u>.'.format(
                 url=node.api_url + 'github/tarball/'
-        ))
+            ))
+        except TypeError:
+            # super call returned None due to lack of user auth
+            return None
+        else:
+            return message
 
     # backwards compatibility -- TODO: is this necessary?
     before_remove_contributor = before_remove_contributor_message
+
+    def after_remove_contributor(self, node, removed, auth=None):
+        """
+        :param Node node:
+        :param User removed:
+        :return str: Alert message
+        """
+        if self.user_settings and self.user_settings.owner == removed:
+
+            # Delete OAuth tokens
+            self.user_settings = None
+            self.save()
+            message = (
+                u'Because the GitHub add-on for {category} "{title}" was authenticated '
+                u'by {user}, authentication information has been deleted.'
+            ).format(
+                category=node.category_display,
+                title=node.title,
+                user=removed.fullname
+            )
+
+            if not auth or auth.user != removed:
+                url = node.web_url_for('node_setting')
+                message += (
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
+                ).format(url=url)
+            #
+            return message
 
     def after_set_privacy(self, node, permissions):
         """
@@ -352,6 +382,41 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             )
         )
 
+    def after_fork(self, node, fork, user, save=True):
+        """
+        :param Node node: Original node
+        :param Node fork: Forked node
+        :param User user: User creating fork
+        :param bool save: Save settings after callback
+        :return tuple: Tuple of cloned settings and alert message
+        """
+        clone, _ = super(GitHubNodeSettings, self).after_fork(
+            node, fork, user, save=False
+        )
+
+        # Copy authentication if authenticated by forking user
+        if self.user_settings and self.user_settings.owner == user:
+            clone.user_settings = self.user_settings
+            message = (
+                'GitHub authorization copied to forked {cat}.'
+            ).format(
+                cat=fork.project_or_component,
+            )
+        else:
+            message = (
+                'GitHub authorization not copied to forked {cat}. You may '
+                'authorize this fork on the <u><a href={url}>Settings</a></u> '
+                'page.'
+            ).format(
+                cat=fork.project_or_component,
+                url=fork.url + 'settings/'
+            )
+
+        if save:
+            clone.save()
+
+        return clone, message
+
     def before_make_public(self, node):
         try:
             is_private = self.is_private
@@ -367,7 +432,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             )
 
     def after_delete(self, node, user):
-        self.deauthorize(Auth(user=user), log=True, save=True)
+        self.deauthorize(Auth(user=user), log=True)
 
     #########
     # Hooks #
