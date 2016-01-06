@@ -5,7 +5,6 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Range = ace.require('ace/range').Range;
-var addDragNDrop = require('../dragNDrop');
 
 (function () {
 
@@ -202,8 +201,6 @@ var addDragNDrop = require('../dragNDrop');
             var commandManager = new CommandManager(hooks, getString);
             var previewManager = function(){};
             var uiManager;
-
-            addDragNDrop(aceEditor, panels, commandManager, TextareaState);
 
             var useragent = ace.require('ace/lib/useragent');
             var getKey = function (identifier) {
