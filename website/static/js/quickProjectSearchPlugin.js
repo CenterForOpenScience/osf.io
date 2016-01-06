@@ -64,19 +64,19 @@ var quickSearchProject = {
             }
             else if (numContributors == 2) {
                 return self.getFamilyName(0, node) + ' and ' +
-                        self.getFamilyName(1, node)
+                    self.getFamilyName(1, node)
             }
             else {
                 return self.getFamilyName(0, node) + ', ' +
-                        self.getFamilyName(1, node) + ', ' +
-                        self.getFamilyName(2, node) + ' + ' + (numContributors - 3)
+                    self.getFamilyName(1, node) + ', ' +
+                    self.getFamilyName(2, node) + ' + ' + (numContributors - 3)
             }
 
         };
 
         self.getRecentComments = function (node) {
             var url = $osf.apiV2Url('nodes/' + node.id + '/comments/',
-                { query : { 'filter[date_modified][gte]': self.lastLogin}}
+                { query : { 'filter[date_modified][gte]': self.lastLogin }}
             );
             var promise = m.request({method: 'GET', url : url, config: xhrconfig});
             promise.then(function(result) {
@@ -216,7 +216,6 @@ var quickSearchProject = {
 
                 }
                 self.nodes.splice(0, numDisplay);
-                console.log(self.displayedNodes);
                 return self.displayedNodes
             }
 
