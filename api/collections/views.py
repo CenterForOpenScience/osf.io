@@ -538,6 +538,9 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         node.save()
 
 class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, CollectionMixin):
+    """
+    This is a docstring
+    """
     permission_classes = (
         ContributorOrPublicForRelationshipPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
