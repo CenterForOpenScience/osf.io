@@ -179,11 +179,43 @@ var quickSearchProject = {
             return self.displayedNodes
         };
 
+        self.quickSearch = function () {
+            var query = document.getElementById('searchQuery').value;
+            self.restoreToNodeList(self.nonMatchingNodes);
+            self.restoreToNodeList(self.displayedNodes);
+            self.displayedNodes = [];
+            self.nonMatchingNodes = [];
+            // if backspace completely, previous nodes with prior sorting/count will be displayed
+            if (query === '') {
+                self.sortByPreviousField();
+                return self.displayedNodes
+
+            }
+            else {
+                for (var n = self.nodes.length - 1; n >= 0; n--) {
+                    if (self.nodes[n].attributes.title.toUpperCase().indexOf(query.toUpperCase()) === -1) {
+                        self.nonMatchingNodes.push(self.nodes[n]);
+                        self.nodes.splice(n, 1)
+                    }
+                }
+                console.log(self.nodes)
+                var numDisplay = Math.min(self.nodes.length, self.countState);
+                for (var i = 0; i < numDisplay; i++) {
+                    self.displayedNodes.push(self.nodes[i])
+
+                }
+                self.nodes.splice(0, numDisplay);
+                console.log(self.displayedNodes);
+                return self.displayedNodes
+            }
+
+        };
         //self.getLastLoginDate()
 
     },
     view : function(ctrl) {
         function projectView(project) {
+            console.log(ctrl.nodes.length, ctrl.displayedNodes.length, ctrl.nonMatchingNodes.length, ctrl.sortState, ctrl.countState)
             return m('tr', [
                 m('td', m("a", {href: '/'+ project.id}, project.attributes.title)),
                 m('td', ctrl.getContributors(project)),
@@ -202,7 +234,7 @@ var quickSearchProject = {
         }
 
         return m('div', [
-            m('input[type=search]', 'Quick search projects'),
+            m('input[type=search]', {id: 'searchQuery', onkeyup: function() {ctrl.quickSearch()}}, 'Quick search projects'),
             m('div', {'class': 'container-fluid'},
                 m('table', [
                     m('tr', [
