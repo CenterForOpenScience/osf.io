@@ -3718,6 +3718,16 @@ class PreregCallbackMixin(object):
                 mimetype='html'
             )
 
+    def _email_template_context(self, user, is_authorizer=False, urls=None):
+        registration = self._get_registration()
+        prereg_schema = prereg_utils.get_prereg_schema()
+        if prereg_schema in registration.registered_schema:
+            return {
+                'custom_message': ' as part of the Preregistration Challenge (https://cos.io/prereg)'
+            }
+        else:
+            return {}
+
 class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
@@ -3795,6 +3805,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
             }
 
     def _email_template_context(self, user, is_authorizer=False, urls=None):
+        context = super(Embargo, self)._email_template_context(user, is_authorizer, urls)
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id))
         if is_authorizer:
@@ -3804,7 +3815,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
 
             registration = self._get_registration()
 
-            return {
+            context.update({
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'approval_link': approval_link,
@@ -3813,13 +3824,14 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
                 'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
                 'approval_time_span': approval_time_span,
-            }
+            })
         else:
-            return {
+            context.update({
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
-            }
+            })
+        return context
 
     def _validate_authorizer(self, user):
         registration = self._get_registration()
@@ -4033,6 +4045,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
             }
 
     def _email_template_context(self, user, is_authorizer=False, urls=None):
+        context = super(RegistrationApproval, self)._email_template_context(user, is_authorizer, urls)
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id))
         if is_authorizer:
@@ -4043,7 +4056,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
             registration = self._get_registration()
 
-            return {
+            context.update({
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
@@ -4051,12 +4064,13 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
                 'disapproval_link': disapproval_link,
                 'approval_time_span': approval_time_span,
                 'project_name': registration.title,
-            }
+            })
         else:
-            return {
+            context.update({
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
-            }
+            })
+        return context
 
     def _add_success_logs(self, node, user):
         src = node.registered_from
