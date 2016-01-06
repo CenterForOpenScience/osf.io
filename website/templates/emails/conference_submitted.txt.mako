@@ -22,5 +22,4 @@ Get more from the OSF by enhancing your project with the following:
 To learn more about the OSF, visit: http://osf.io/getting-started
 
 Sincerely yours,
-
 The OSF Robot
