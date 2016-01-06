@@ -1,6 +1,8 @@
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
+from rest_framework.exceptions import NotFound
+
 from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings
 from api_tests import utils as test_utils
@@ -1063,3 +1065,11 @@ class TestFileCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_is_none(res.json['data']['attributes']['content'])
 
+    def test_comment_detail_for_deleted_file_is_not_returned(self):
+        self._set_up_private_project_with_file_comment()
+        # Delete commented file
+        osfstorage = self.private_project.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        root_node.delete(self.file)
+        res = self.app.get(self.private_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)

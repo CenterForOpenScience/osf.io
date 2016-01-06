@@ -41,8 +41,8 @@ from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.files.models import FileNode
-from website.files.models import OsfStorageFileNode
+from website.files.models import OsfStorageFileNode, StoredFileNode, FileNode
+from website.files.models.dropbox import DropboxFile
 from website.models import Node, Pointer, Comment, NodeLog
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
@@ -1846,9 +1846,47 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('node', 'eq', self.get_node()) & (Q('root_target', 'ne', None))
+        return Q('node', 'eq', self.get_node()) & Q('root_target', 'ne', None)
 
     def get_queryset(self):
+        commented_files = []
+        comments = Comment.find(self.get_query_from_request())
+        for comment in comments:
+            # Deleted root targets still appear as tuples in the database,
+            # but need to be None in order for the query to be correct.
+            if comment.root_target is None:
+                comment.root_target = None
+                comment.save()
+
+            if isinstance(comment.root_target, StoredFileNode) and comment.root_target not in commented_files:
+                commented_files.append(comment.root_target)
+
+        for root_target in commented_files:
+            if root_target.provider == 'dropbox':
+                root_target = DropboxFile.load(root_target._id)
+
+            if root_target.provider == 'osfstorage':
+                try:
+                    obj = get_object_or_error(
+                        StoredFileNode,
+                        Q('node', 'eq', self.get_node()._id) &
+                        Q('_id', 'eq', root_target._id) &
+                        Q('is_file', 'eq', True)
+                    )
+                except NotFound:
+                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
+                    del root_target.node.commented_files[root_target._id]
+
+            else:
+                url = waterbutler_api_url_for(self.get_node()._id, root_target.provider, root_target.path, meta=True)
+                waterbutler_request = requests.get(
+                    url,
+                    cookies=self.request.COOKIES,
+                    headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
+                )
+                if waterbutler_request.status_code == 404:
+                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
+
         return Comment.find(self.get_query_from_request())
 
     def get_serializer_class(self):

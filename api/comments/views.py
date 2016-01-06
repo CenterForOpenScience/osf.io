@@ -1,11 +1,15 @@
+import requests
+
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
+from rest_framework.status import is_server_error
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from api.base.exceptions import Gone
+from api.base.exceptions import Gone, ServiceUnavailableError
 from api.base import permissions as base_permissions
+from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
     CommentDetailPermissions,
@@ -20,6 +24,9 @@ from api.comments.serializers import (
 )
 from framework.auth.oauth_scopes import CoreScopes
 from website.project.model import Comment
+from website.files.models import StoredFileNode
+from website.files.models.dropbox import DropboxFile
+from website.util import waterbutler_api_url_for
 
 
 class CommentMixin(object):
@@ -36,6 +43,51 @@ class CommentMixin(object):
             comment = Comment.find_one(Q('_id', 'eq', pk) & Q('root_target', 'ne', None))
         except NoResultsFound:
             raise NotFound
+
+        # Deleted root targets still appear as tuples in the database and are included in
+        # the above query, requiring an additional check
+        if comment.root_target is None:
+            raise NotFound
+
+        if isinstance(comment.root_target, StoredFileNode):
+            root_target = comment.root_target
+            if root_target.provider == 'dropbox':
+                root_target = DropboxFile.load(comment.root_target._id)
+
+            if root_target.provider == 'osfstorage':
+                try:
+                    obj = get_object_or_error(
+                        StoredFileNode,
+                        Q('node', 'eq', comment.node._id) &
+                        Q('_id', 'eq', root_target._id) &
+                        Q('is_file', 'eq', True)
+                    )
+                except NotFound:
+                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
+                    del comment.node.commented_files[root_target._id]
+
+            else:
+                url = waterbutler_api_url_for(comment.node._id, root_target.provider, root_target.path, meta=True)
+                waterbutler_request = requests.get(
+                    url,
+                    cookies=self.request.COOKIES,
+                    headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
+                )
+
+                if waterbutler_request.status_code == 401:
+                    raise PermissionDenied
+
+                if waterbutler_request.status_code == 404:
+                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
+                    raise NotFound
+
+                if is_server_error(waterbutler_request.status_code):
+                    raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
+
+                try:
+                    return waterbutler_request.json()['data']
+                except KeyError:
+                    raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
         if check_permissions:
             # May raise a permission denied
