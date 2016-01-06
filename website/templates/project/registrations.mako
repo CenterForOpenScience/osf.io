@@ -33,7 +33,7 @@
         <p>
           There have been no completed registrations of this project. For a list of the most viewed and most recent public registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
           % if 'admin' in user['permissions']:
-          You can start a new registration by clicking the “New Registration” button, and you have the option of saving as a draft registration before submission.
+          You can start a new registration by clicking the “New registration” button, and you have the option of saving as a draft registration before submission.
           % endif
         </p>
         % endif
