@@ -114,7 +114,7 @@ var quickSearchProject = {
 
         self.loadUpToTen = function () {
             requested = self.nodes.splice(0, 10);
-            for (i = 0; i < requested.length; i++) {
+            for (var i = 0; i < requested.length; i++) {
                 self.displayedNodes.push(requested[i])
             }
             self.countState = self.displayedNodes.length;
@@ -126,65 +126,48 @@ var quickSearchProject = {
         };
 
         self.restoreToNodeList = function (missingNodes) {
-            for (i = 0; i < missingNodes.length ; i++) {
+            for (var i = 0; i < missingNodes.length ; i++) {
                 self.nodes.push(missingNodes[i])
             }
         };
 
         self.sortAlphabeticalAscending = function () {
-            self.restoreToNodeList(self.displayedNodes);
             self.nodes.sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
             });
-            self.displayedNodes = self.nodes.splice(0, self.countState);
             self.sortState = 'alphaAsc';
-            return self.displayedNodes
         };
 
         self.sortAlphabeticalDescending = function () {
-            self.restoreToNodeList(self.displayedNodes);
             self.nodes.sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
                 return (A > B) ? -1 : (A < B) ? 1 : 0;
             });
-            self.displayedNodes = self.nodes.splice(0, self.countState);
             self.sortState = 'alphaDesc';
-            return self.displayedNodes
-
         };
 
         self.sortDateDescending = function () {
-            self.restoreToNodeList(self.displayedNodes);
             self.nodes.sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
                 return (A > B) ? -1 : (A < B) ? 1 : 0;
             });
-            self.displayedNodes = self.nodes.splice(0, self.countState);
             self.sortState = 'dateDesc';
-            return self.displayedNodes
         };
 
         self.sortDateAscending = function () {
-            self.restoreToNodeList(self.displayedNodes);
             self.nodes.sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
             });
-            self.displayedNodes = self.nodes.splice(0, self.countState);
-            self.sortState = 'dateAsc';
-            return self.displayedNodes
+            self.sortState = 'dateAsc'
         };
 
-        self.selectSameNumberOfNodes = function () {
-            self.displayedNodes = self.nodes.splice(0, self.countState)
-        }
-
-        self.sortByPreviousField = function () {
+        self.sortBySortState = function () {
             if (self.sortState === 'alphaAsc') {
                 self.sortAlphabeticalAscending()
             }
@@ -199,6 +182,11 @@ var quickSearchProject = {
             }
         };
 
+        self.sortNodesAndModifyDisplay = function () {
+            self.restoreToNodeList(self.displayedNodes);
+            self.sortBySortState();
+            self.displayedNodes = self.nodes.splice(0, self.countState)
+        };
 
         self.quickSearch = function () {
             var query = document.getElementById('searchQuery').value;
@@ -208,9 +196,8 @@ var quickSearchProject = {
             self.nonMatchingNodes = [];
             // if backspace completely, previous nodes with prior sorting/count will be displayed
             if (query === '') {
-                self.sortByPreviousField();
+                self.sortNodesAndModifyDisplay();
                 return self.displayedNodes
-
             }
             else {
                 for (var n = self.nodes.length - 1; n >= 0; n--) {
@@ -219,7 +206,7 @@ var quickSearchProject = {
                         self.nodes.splice(n, 1)
                     }
                 }
-                console.log(self.nodes)
+                self.sortBySortState();
                 var numDisplay = Math.min(self.nodes.length, self.countState);
                 for (var i = 0; i < numDisplay; i++) {
                     self.displayedNodes.push(self.nodes[i])
@@ -236,7 +223,7 @@ var quickSearchProject = {
     },
     view : function(ctrl) {
         function projectView(project) {
-            console.log(ctrl.nodes.length, ctrl.displayedNodes.length, ctrl.nonMatchingNodes.length, ctrl.sortState, ctrl.countState)
+            console.log('pending: ' + ctrl.nodes.length, ', displayed: ' + ctrl.displayedNodes.length, ', non-matching: ' + ctrl.nonMatchingNodes.length, ctrl.sortState);
             return m('tr', [
                 m('td', m("a", {href: '/'+ project.id}, project.attributes.title)),
                 m('td', ctrl.getContributors(project)),
@@ -261,16 +248,21 @@ var quickSearchProject = {
                     m('tr', [
                         m('th', {class: 'col-md-5'}, 'Name',
                             m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
-                               ctrl.sortAlphabeticalAscending()}}),
+                                ctrl.sortState = 'alphaAsc';
+                                ctrl.sortNodesAndModifyDisplay();
+                            }}),
                             m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
-                                ctrl.sortAlphabeticalDescending()
+                                ctrl.sortState = 'alphaDesc';
+                                ctrl.sortNodesAndModifyDisplay();
                             }})),
                         m('th', {class: 'col-md-3'}, 'Contributors'),
                         m('th', {class: 'col-md-2'}, 'Modified',
                             m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
-                               ctrl.sortDateAscending()}}),
+                                ctrl.sortState = 'dateAsc';
+                                ctrl.sortNodesAndModifyDisplay()}}),
                             m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
-                               ctrl.sortDateDescending()
+                                ctrl.sortState = 'dateDesc';
+                                ctrl.sortNodesAndModifyDisplay();
                            }})
                         ),
                         m('th', {class: 'col-md-1'}, 'New comments'),
