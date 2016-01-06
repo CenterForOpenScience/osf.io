@@ -168,6 +168,63 @@ class TestCollectionCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
 
+    def test_create_bookmark_collection(self):
+        collection = {
+            'data': {
+                'type': 'collections',
+                'attributes': {
+                    'title': 'Bookmarks',
+                    'bookmarks': True,
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['title'], 'Bookmarks')
+        assert_true(res.json['data']['attributes']['bookmarks'])
+
+    def test_cannot_create_multiple_bookmark_collection(self):
+        collection = {
+            'data': {
+                'type': 'collections',
+                'attributes': {
+                    'title': 'Bookmarks',
+                    'bookmarks': True,
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Each user cannot have more than one Bookmark collection.')
+
+    def test_create_bookmark_collection_with_wrong_title(self):
+        collection = {
+            'data': {
+                'type': 'collections',
+                'attributes': {
+                    'title': 'Not Bookmarks',
+                    'bookmarks': True,
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['title'], 'Bookmarks')
+        assert_true(res.json['data']['attributes']['bookmarks'])
+
+    def test_create_bookmark_collection_with_no_title(self):
+        collection = {
+            'data': {
+                'type': 'collections',
+                'attributes': {
+                    'bookmarks': True,
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, collection, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
 class TestCollectionFiltering(ApiTestCase):
 

@@ -29,6 +29,7 @@ class TestNodeSerializer(DbTestCase):
         assert_equal(attributes['title'], collection.title)
         assert_equal(attributes['date_created'], collection.date_created.isoformat())
         assert_equal(attributes['date_modified'], collection.date_modified.isoformat())
+        assert_equal(attributes['bookmarks'], collection.is_bookmark_collection)
 
         # Relationships
         relationships = data['relationships']
