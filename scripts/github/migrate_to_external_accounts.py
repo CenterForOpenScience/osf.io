@@ -64,7 +64,6 @@ def migrate_to_external_account(user_settings_document, oauth_settings_document)
             display_name=oauth_settings_document['github_user_name'],
         )
         external_account.save()
-        print(oauth_settings_document['github_user_name'])
 
     user.external_accounts.append(external_account)
     user.save()
