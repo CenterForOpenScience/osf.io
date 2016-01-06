@@ -537,25 +537,25 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
             raise ValidationError(err.message)
         node.save()
 
-class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.ListAPIView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     permission_classes = ()
 
     required_read_scopes = []
     required_write_scopes = []
     serializer_class = CollectionLinkedNodesRelationshipSerializer
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
-    pagination_class = JSONApiRelationShipPagination
-
 
     view_category = 'collections'
     view_name = 'collection-node-pointer-relationship'
 
-    def get_object(self):
-        return self.get_node()
 
-    def get_queryset(self):
-        return [
+    def get_object(self):
+        collection = self.get_node()
+        return {'data': [
             pointer for pointer in
-            self.get_node().nodes_pointer
+            collection.nodes_pointer
             if not pointer.node.is_deleted and not pointer.node.is_folder
-        ]
+        ], 'self': collection}
+
+    def perform_destroy(self):
+        return 'poo'

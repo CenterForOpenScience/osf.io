@@ -95,31 +95,52 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
             }
         )
 
-class CollectionLinkedNodesRelationshipSerializer(JSONAPIRelationshipsSerializer):
 
+class SingleLinkedNode(JSONAPIRelationshipsSerializer):
     id = ser.CharField(source='node._id', required=False, allow_null=True)
     type = TypeField(required=False, allow_null=True)
 
     class Meta:
         type_ = 'linked_nodes'
 
+class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
+
+    data = ser.ListField(child=SingleLinkedNode())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return obj['self'].linked_nodes_self_url
+
+    def get_related_url(self, obj):
+        return obj['self'].linked_nodes_related_url
+
+    class Meta:
+        type_ = 'linked_nodes'
+
     def update(self, instance, validated_data):
+        collection = instance['self']
         auth = get_user_auth(self.context['request'])
-        data = self.context['request'].data['data']
-        new_pointers = [val['id'] for val in data]
-        current_pointers = instance.nodes_pointer
-        pointers_to_delete = [pointer for pointer in current_pointers if pointer.node._id not in new_pointers]
+
+        new_pointer_ids = [val['node']['_id'] for val in validated_data['data']]
+        pointers_to_delete = [pointer for pointer in instance['data'] if pointer.node._id not in new_pointer_ids]
+        pointers_to_add = [node_id for node_id in new_pointer_ids if node_id not in [pointer.node._id for pointer in instance['data']]]
+
         for pointer in pointers_to_delete:
-            instance.rm_pointer(pointer, auth)
-        current_linked_nodes = [pointer.node._id for pointer in instance.nodes_pointer]
-        pointers_to_add = [pointer for pointer in new_pointers if pointer not in current_linked_nodes]
-        for pointer in pointers_to_add:
-            node = Node.load(pointer)
-            instance.add_pointer(node, auth)
-        return instance.nodes_pointer
+            collection.rm_pointer(pointer, auth)
+        for node_id in pointers_to_add:
+            node = Node.load(node_id)
+            collection.add_pointer(node, auth)
+
+        return {'data': [
+            pointer for pointer in
+            collection.nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_folder
+        ], 'self': collection}
+
 
     def destroy(self, instance):
-        pass
+        import ipdb; ipdb.set_trace()
 
     def create(self, *args, **kwargs):
         import ipdb; ipdb.set_trace()
