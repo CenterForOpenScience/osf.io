@@ -37,7 +37,6 @@ Migrations
 0.61.0 (unreleased)
 ===================
 
-- Drag and drop images onto wiki pages.
 - APIv2: Support filtering against multiple ids, e.g. ?filter[id]=abc12,def34
 - APIv2: Support authentication with view-only link keys.
 - Wiki: Disable snippet autocomplete by default.
