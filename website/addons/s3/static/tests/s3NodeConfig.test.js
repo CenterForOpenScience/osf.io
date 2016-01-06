@@ -80,16 +80,41 @@ var s3ViewModelSettings = {
 
 describe('s3NodeConfigViewModel', () => {
     describe('isValidBucketName', () => {
-        assert.isTrue(isValidBucketName('valid'));
-        assert.isFalse(isValidBucketName('not.valid', false));
-        assert.isFalse(isValidBucketName('no'));
-        assert.isFalse(isValidBucketName(''));
         var chars = [];
-        for (var i = 0, len = 64; i < len; i++) {
-            chars.push('a');
+        for (var i = 0; i < 63; i++) {
+        chars.push('a');
         }
-        var tooLong = chars.join('');
-        assert.isFalse(isValidBucketName(tooLong));
+        var longName = chars.join('');
+
+        it('allows these names in strict mode', (done) => {
+            assert.isTrue(isValidBucketName('valid'), 'basic label');
+            assert.isTrue(isValidBucketName('also.valid'), 'two labels');
+            assert.isTrue(isValidBucketName('pork.beef.chicken'), 'three labels');
+            assert.isTrue(isValidBucketName('a-o.valid'), 'label w/ hyphen');
+            assert.isTrue(isValidBucketName('11.12.m'), 'numbers as labels');
+            assert.isTrue(isValidBucketName('aa.22.cc'), 'mixed label types');
+            assert.isTrue(isValidBucketName('a------a'), 'multiple hypens');
+            assert.isTrue(isValidBucketName(longName), 'name up to 63 characters');
+            done();
+        });
+        it('DOES NOT allow these names in strict mode', (done) => {
+            assert.isFalse(isValidBucketName(''), 'empty');
+            assert.isFalse(isValidBucketName('no'), 'too short');
+            assert.isFalse(isValidBucketName(longName + 'a'), 'too long');
+            assert.isFalse(isValidBucketName(' aaa'), 'leading space');
+            assert.isFalse(isValidBucketName('aaa '), 'trailing space');
+            assert.isFalse(isValidBucketName('aaa.'), 'trailing period');
+            assert.isFalse(isValidBucketName('.aaa'), 'leading period');
+            assert.isFalse(isValidBucketName('aaa-'), 'trailing hyphen');
+            assert.isFalse(isValidBucketName('-aaa'), 'leading hyphen');
+            assert.isFalse(isValidBucketName('aAa'), 'mixed case');
+            assert.isFalse(isValidBucketName('a..b'), 'empty label');
+            assert.isFalse(isValidBucketName('a-.b'), 'label cannot end with hyphen');
+            assert.isFalse(isValidBucketName('a.-b'), 'label cannot begin with hyphen');
+            assert.isFalse(isValidBucketName('8.8.8.8'), 'label cannot look like IP addr');
+            assert.isFalse(isValidBucketName('600.9000.0.28'), '  ..not even a fake IP addr');
+            done();
+        });
     });
 
     describe('ViewModel', () => {
