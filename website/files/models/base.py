@@ -89,8 +89,6 @@ class StoredFileNode(StoredObject):
     A FileNode wraps a StoredFileNode to provider usable abstraction layer
     """
 
-    __guid_min_length__ = 5
-
     __indices__ = [{
         'unique': False,
         'key_or_list': [
@@ -176,7 +174,7 @@ class StoredFileNode(StoredObject):
         except IndexError:
             if not create:
                 return None
-        return Guid.generate(self, min_length=self.__guid_min_length__)
+        return Guid.generate(self)
 
 
 class FileNodeMeta(type):

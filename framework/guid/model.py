@@ -27,7 +27,7 @@ class Guid(StoredObject):
     referent = fields.AbstractForeignField()
 
     @classmethod
-    def generate(self, min_length, referent=None):
+    def generate(self, referent=None, min_length=5):
         while True:
             # Create GUID
             guid_id = ''.join(random.sample(ALPHABET, min_length))
