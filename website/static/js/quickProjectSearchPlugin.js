@@ -202,32 +202,33 @@ var quickSearchProject = {
 
         return m('div', [
             m('input[type=search]', 'Quick search projects'),
-            m('table', [
-                m('tr', [
-                    m('th', 'Name',
-                        m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
-                           ctrl.sortAlphabeticalAscending()}}),
-                        m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
-                            ctrl.sortAlphabeticalDescending()
-                        }})),
-                    m('th', 'Contributors'),
-                    m('th', 'Modified',
-                        m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
-                           ctrl.sortDateAscending()}}),
-                        m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
-                           ctrl.sortDateDescending()
-                       }})
-                    ),
-                    m('th', 'New comments'),
-                    m('th', 'New logs')
-                ]),
+            m('div', {'class': 'container-fluid'},
+                m('table', [
+                    m('tr', [
+                        m('th', {class: 'col-md-5'}, 'Name',
+                            m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
+                               ctrl.sortAlphabeticalAscending()}}),
+                            m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
+                                ctrl.sortAlphabeticalDescending()
+                            }})),
+                        m('th', {class: 'col-md-3'}, 'Contributors'),
+                        m('th', {class: 'col-md-2'}, 'Modified',
+                            m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
+                               ctrl.sortDateAscending()}}),
+                            m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
+                               ctrl.sortDateDescending()
+                           }})
+                        ),
+                        m('th', {class: 'col-md-1'}, 'New comments'),
+                        m('th', {class: 'col-md-1'}, 'New logs')
+                    ]),
 
-                ctrl.displayedNodes.map(function(n){
-                    return projectView(n)
-                }),
-                loadMoreButton()
-
+                    ctrl.displayedNodes.map(function(n){
+                        return projectView(n)
+                    }),
+                    loadMoreButton()
             ])
+            )
         ])
     }
 };
