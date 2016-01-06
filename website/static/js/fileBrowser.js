@@ -594,7 +594,7 @@ var Collections  = {
             promise.then(function(result){
                 console.log(result);
                 var node = result.data;
-                args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/node_links/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
+                args.collections.push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
                 args.sidebarInit();
             });
             self.newCollectionName('');
@@ -655,6 +655,7 @@ var Collections  = {
             ]),
             m('ul', { config: args.applyDroppable },[
                 args.collections.map(function(item, index){
+                    var count = item.data.node ? ' (' +item.data.node.relationships.linked_nodes.links.related.meta.count + ')' : '';
                     if (item.id === args.activeFilter().id) {
                         selectedCSS = 'active';
                     } else if (item.id === args.collectionMenuObject().item.id) {
@@ -673,7 +674,7 @@ var Collections  = {
                     }
                     return m('li', { className : selectedCSS, 'data-index' : index },
                         [
-                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label),
+                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label + count ),
                             submenuTemplate
                         ]
                     );
