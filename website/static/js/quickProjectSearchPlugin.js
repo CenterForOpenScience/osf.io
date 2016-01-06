@@ -191,6 +191,31 @@ var quickSearchProject = {
             self.displayedNodes = self.nodes.splice(0, self.countState)
         };
 
+        self.noTitleMatch = function (node, query) {
+            return (node.attributes.title.toUpperCase().indexOf(query.toUpperCase()) === -1);
+        };
+
+        self.noContributorMatch = function (node, query) {
+             var contributors =  node.embeds.contributors.data;
+             for (var c = 0; c < contributors.length; c++ ) {
+                 if (contributors[c].embeds.users.data.attributes.full_name.toUpperCase().indexOf(query.toUpperCase()) !== -1){
+                     return false
+                 }
+             }
+             return true
+        };
+
+
+        self.filterNodes = function (query){
+            for (var n = self.nodes.length - 1; n >= 0; n--) {
+                var node = self.nodes[n];
+                if (self.noTitleMatch(node, query) && self.noContributorMatch(node, query)) {
+                    self.nonMatchingNodes.push(node);
+                    self.nodes.splice(n, 1)
+                }
+            }
+        };
+
         self.quickSearch = function () {
             var query = document.getElementById('searchQuery').value;
             self.restoreToNodeList(self.nonMatchingNodes);
@@ -203,12 +228,7 @@ var quickSearchProject = {
                 return self.displayedNodes
             }
             else {
-                for (var n = self.nodes.length - 1; n >= 0; n--) {
-                    if (self.nodes[n].attributes.title.toUpperCase().indexOf(query.toUpperCase()) === -1) {
-                        self.nonMatchingNodes.push(self.nodes[n]);
-                        self.nodes.splice(n, 1)
-                    }
-                }
+                self.filterNodes(query);
                 self.sortBySortState();
                 var numDisplay = Math.min(self.nodes.length, self.countState);
                 for (var i = 0; i < numDisplay; i++) {
