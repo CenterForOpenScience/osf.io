@@ -54,6 +54,15 @@ var quickSearchProject = {
             return promise
         };
 
+        self.loadUpToTen = function () {
+            requested = self.nodes.splice(0, 10);
+            for (var i = 0; i < requested.length; i++) {
+                self.displayedNodes.push(requested[i])
+            }
+            self.countState = self.displayedNodes.length;
+            return self.displayedNodes
+        };
+
         self.getFamilyName = function(i, node) {
             return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
         };
@@ -115,15 +124,6 @@ var quickSearchProject = {
           }
         };
 
-        self.loadUpToTen = function () {
-            requested = self.nodes.splice(0, 10);
-            for (var i = 0; i < requested.length; i++) {
-                self.displayedNodes.push(requested[i])
-            }
-            self.countState = self.displayedNodes.length;
-            return self.displayedNodes
-        };
-
         self.formatDate = function (node) {
             return new $osf.FormattableDate(node.attributes.date_modified).local
         };
@@ -152,15 +152,6 @@ var quickSearchProject = {
             self.sortState = 'alphaDesc';
         };
 
-        self.sortDateDescending = function () {
-            self.nodes.sort(function(a,b){
-                var A = a.attributes.date_modified;
-                var B = b.attributes.date_modified;
-                return (A > B) ? -1 : (A < B) ? 1 : 0;
-            });
-            self.sortState = 'dateDesc';
-        };
-
         self.sortDateAscending = function () {
             self.nodes.sort(function(a,b){
                 var A = a.attributes.date_modified;
@@ -168,6 +159,15 @@ var quickSearchProject = {
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
             });
             self.sortState = 'dateAsc'
+        };
+
+        self.sortDateDescending = function () {
+            self.nodes.sort(function(a,b){
+                var A = a.attributes.date_modified;
+                var B = b.attributes.date_modified;
+                return (A > B) ? -1 : (A < B) ? 1 : 0;
+            });
+            self.sortState = 'dateDesc';
         };
 
         self.sortBySortState = function () {
