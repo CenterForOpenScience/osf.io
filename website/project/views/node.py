@@ -260,6 +260,10 @@ def node_fork_page(auth, node, **kwargs):
             http.FORBIDDEN,
             redirect_url=node.url
         )
+    message = '{} has been successfully forked.'.format(
+        node.project_or_component.capitalize()
+    )
+    status.push_status_message(message, kind='success', trust=False)
     return fork.url
 
 
@@ -614,7 +618,7 @@ def component_remove(auth, node, **kwargs):
         )
     node.save()
 
-    message = '{} deleted'.format(
+    message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
     status.push_status_message(message, kind='success', trust=False)
