@@ -17,8 +17,11 @@ var xhrconfig = function(xhr) {
 var quickSearchProject = {
     controller: function() {
         var self = this;
+        // Pending nodes waiting to be displayed
         self.nodes = [];
+        // Nodes that are rendered
         self.displayedNodes = [];
+        //Nodes that don't match search query
         self.nonMatchingNodes = [];
         //self.lastLogin = '';
         // NEED TO FIGURE OUT WHAT TO DO ABOUT LASTLOGIN.
