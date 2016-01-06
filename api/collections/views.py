@@ -23,6 +23,7 @@ from api.nodes.permissions import (
     ContributorOrPublic,
     ReadOnlyIfRegistration,
     ContributorOrPublicForPointers,
+    ContributorOrPublicForRelationshipPointers,
 )
 
 from website.exceptions import NodeStateError
@@ -538,7 +539,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
 
 class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, CollectionMixin):
     permission_classes = (
-        ContributorOrPublicForPointers,
+        ContributorOrPublicForRelationshipPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ReadOnlyIfRegistration,

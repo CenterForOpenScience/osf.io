@@ -74,6 +74,21 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
             has_auth = parent_node.can_edit(auth)
             return has_auth
 
+class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            import ipdb; ipdb.set_trace()
+            has_parent_auth = parent_node.can_edit(auth) if isinstance(obj, Node) else parent_node['self'].can_edit(auth)
+            return obj.can_view(auth)
+        else:
+            import ipdb; ipdb.set_trace()
+            parent_node = obj
+            pointer_nodes = [Node.load(pointer['id']) for pointer in request.data.get('data', [])]
+            has_parent_auth = parent_node.can_edit(auth) if isinstance(obj, Node) else parent_node['self'].can_edit(auth)
+            has_pointer_auth = reduce(lambda x, y: x.can_view(auth) and y.can_view(auth), pointer_nodes, True)
+            return has_parent_auth and has_pointer_auth
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
