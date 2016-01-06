@@ -87,7 +87,7 @@ def make_new_node_settings(node, node_settings_document, external_account=None, 
     database['node'].find_and_modify(
         {'_id': node._id},
         {
-            '$set': {
+            '$unset': {
                 '__backrefs.addons.addongithubnodesettings': ''
             }
         }
