@@ -19,6 +19,7 @@ var quickSearchProject = {
         var self = this;
         self.nodes = [];
         self.displayedNodes = [];
+        self.nonMatchingNodes = [];
         //self.lastLogin = '';
         // NEED TO FIGURE OUT WHAT TO DO ABOUT LASTLOGIN.
         self.lastLogin = '2016-01-01T15:20:11.531000';
@@ -178,6 +179,26 @@ var quickSearchProject = {
             self.sortState = 'dateAsc';
             return self.displayedNodes
         };
+
+        self.selectSameNumberOfNodes = function () {
+            self.displayedNodes = self.nodes.splice(0, self.countState)
+        }
+
+        self.sortByPreviousField = function () {
+            if (self.sortState === 'alphaAsc') {
+                self.sortAlphabeticalAscending()
+            }
+            else if (self.sortState === 'alphaDesc') {
+                self.sortAlphabeticalDescending()
+            }
+            else if (self.sortState === 'dateAsc') {
+                self.sortDateAscending()
+            }
+            else {
+                self.sortDateDescending()
+            }
+        };
+
 
         self.quickSearch = function () {
             var query = document.getElementById('searchQuery').value;
