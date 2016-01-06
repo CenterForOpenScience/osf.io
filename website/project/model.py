@@ -1373,7 +1373,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
-                    Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'icontains', self.creator._id)
+                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'icontains', self.creator._id)
             )
             if existing_bookmark_collections.count() > 0:
                 raise NodeStateError("Only one bookmark collection allowed per user.")

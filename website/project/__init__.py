@@ -69,8 +69,7 @@ def new_bookmark_collection(user):
 
     """
     existing_bookmark_collection = Node.find(
-            Q('is_bookmark_collection', 'eq', True) &
-            Q('contributors', 'icontains', user._id)
+        Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'icontains', user._id)
     )
 
     if existing_bookmark_collection.count() > 0:
