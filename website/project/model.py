@@ -183,7 +183,7 @@ class Comment(GuidStoredObject):
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
     target = fields.AbstractForeignField(required=True)
     # The file or project overview page that the comment is for
-    root_target = fields.AbstractForeignField(backref='comment_target')
+    root_target = fields.AbstractForeignField()
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
@@ -281,6 +281,7 @@ class Comment(GuidStoredObject):
             if node.get_addon(file_obj.provider):
                 exists = file_obj and file_obj.touch(request.headers.get('Authorization'))
                 if not exists:
+                    Comment.update(Q('root_target', 'eq', file_obj), data={'root_target': None})
                     continue
                 n_unread += cls.find_n_unread(user, node, page=Comment.FILES, root_id=file_obj._id)
         return n_unread
