@@ -83,7 +83,7 @@ class TestCommentDetailView(ApiTestCase):
         private_link = PrivateLinkFactory(anonymous=True)
         private_link.nodes.append(self.private_project)
         private_link.save()
-        res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key}, expect_errors=True)
+        res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key})
         assert_equal(res.status_code, 200)
         assert_equal(self.comment._id, res.json['data']['id'])
         assert_equal(self.comment.content, res.json['data']['attributes']['content'])
