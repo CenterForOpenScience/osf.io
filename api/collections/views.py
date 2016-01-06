@@ -537,11 +537,17 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
             raise ValidationError(err.message)
         node.save()
 
-class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
-    permission_classes = ()
+class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, CollectionMixin):
+    permission_classes = (
+        ContributorOrPublicForPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
+    )
 
-    required_read_scopes = []
-    required_write_scopes = []
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+
     serializer_class = CollectionLinkedNodesRelationshipSerializer
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
@@ -557,5 +563,12 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
             if not pointer.node.is_deleted and not pointer.node.is_folder
         ], 'self': collection}
 
-    def perform_destroy(self):
-        return 'poo'
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        auth = Auth(user)
+        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        collection = instance['self']
+        for val in data:
+            if val['id'] in current_pointers.keys():
+                collection.rm_pointer(current_pointers[val['id']], auth)

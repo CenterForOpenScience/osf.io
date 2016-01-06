@@ -138,9 +138,19 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
             if not pointer.node.is_deleted and not pointer.node.is_folder
         ], 'self': collection}
 
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        auth = get_user_auth(self.context['request'])
+        collection = instance['self']
 
-    def destroy(self, instance):
-        import ipdb; ipdb.set_trace()
+        pointers_to_add = [val['node']['_id'] for val in validated_data['data'] if val['node']['_id'] not in [pointer.node._id for pointer in instance['data']]]
 
-    def create(self, *args, **kwargs):
-        import ipdb; ipdb.set_trace()
+        for node_id in pointers_to_add:
+            node = Node.load(node_id)
+            collection.add_pointer(node, auth)
+
+        return {'data': [
+            pointer for pointer in
+            collection.nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_folder
+        ], 'self': collection}
