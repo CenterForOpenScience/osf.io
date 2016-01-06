@@ -1714,3 +1714,24 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
         errors = res.json['errors']
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], 'Node link does not belong to the requested node.')
+
+class TestCollectionRelationshipNodeLinks(ApiTestCase):
+
+    def setUp(self):
+        super(TestCollectionRelationshipNodeLinks, self).setUp()
+        self.user = AuthUserFactory()
+        self.user2 = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.collection = FolderFactory(creator=self.user)
+        self.admin_node = NodeFactory(creator=self.user)
+        self.contributor_node = NodeFactory(creator=self.user2)
+        self.contributor_node.add_contributor(user=self.user, auth=Auth(self.user2))
+        self.contributor_node.save()
+        self.other_node = NodeFactory()
+        self.linked_node = NodeFactory()
+        self.collection.add_pointer(self.linked_node, auth=self.auth)
+        self.collection.save()
+        self.url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.collection._id)
+        
+    def test_get_relationship_linked_nodes(self):
+        pass

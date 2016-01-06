@@ -145,7 +145,7 @@ class JSONAPIRelationshipParser(JSONParser):
                     raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
             return {'data': datas}
 
-        return {'type': None, 'id': None}
+        return {'data': []}
 
 class JSONAPIRelationshipParserForRegularJSON(JSONAPIRelationshipParser):
     """
