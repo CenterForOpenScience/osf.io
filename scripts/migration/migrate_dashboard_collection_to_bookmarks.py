@@ -12,56 +12,55 @@ def migrate():
     logger.info('migrating folders to collections and dashboards to bookmarks')
 
     logger.info('is_folder -> is_collection')
-    bulk.find({
+    database.node.update({
         'is_folder': {'$ne': None}
-    }).update({
+    }, {
         '$rename': {'is_folder': 'is_collection'}
-    })
+    }, multi=True)
 
     logger.info('is_dashboard -> is_bookmark_collection')
-    bulk.find({
+    database.node.update({
         'is_dashboard': {'$ne': None}
-    }).update({
+    }, {
         '$rename': {'is_dashboard': 'is_bookmark_collection'}
-    })
+    }, multi=True)
 
     logger.info('Title: `Dashboard` -> `Bookmarks`')
-    bulk.find({
+    database.node.update({
         'is_bookmark_collection': True
-    }).update({
+    }, {
         '$set': {'title': 'Bookmarks'}
-    })
+    }, multi=True)
 
 
 def reverse_migration():
     logger.info('migrating collections to folders and bookmarks to dashboards')
 
     logger.info('is_collection -> is_folder')
-    bulk.find({
+    database.node.update({
         'is_collection': {'$ne': None}
-    }).update({
+    }, {
         '$rename': {'is_collection': 'is_folder'}
-    })
+    }, multi=True)
 
     logger.info('is_bookmark_collection -> is_dashboard')
-    bulk.find({
+    database.node.update({
         'is_bookmark_collection': {'$ne': None}
-    }).update({
+    }, {
         '$rename': {'is_bookmark_collection': 'is_dashboard'}
-    })
+    }, multi=True)
 
     logger.info('Title: `Bookmarks` -> `Dashboard`')
-    bulk.find({
+    database.node.update({
         'is_dashboard': True
-    }).update({
+    }, {
         '$set': {'title': 'Dashboard'}
-    })
+    }, multi=True)
 
 if __name__ == '__main__':
     import sys
     init_app(set_backends=True, routes=False)
-    bulk = database.node.initialize_ordered_bulk_op()
-
+    
     if 'reverse' in sys.argv:
         with TokuTransaction():
             reverse_migration()
