@@ -20,9 +20,12 @@ var quickSearchProject = {
         self.nodes = [];
         self.displayedNodes = [];
         //self.lastLogin = '';
+        // NEED TO FIGURE OUT WHAT TO DO ABOUT LASTLOGIN.
         self.lastLogin = '2016-01-01T15:20:11.531000';
         self.commentsCount = {};
         self.logsCount = {};
+        self.sortState = m.prop();
+        self.countState = m.prop();
 
         // Load node list
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors', 'page[size]': 100}});
@@ -31,11 +34,8 @@ var quickSearchProject = {
             result.data.forEach(function(node){
                 self.nodes.push(node);
             });
-            self.nodes.sort(function(a,b){
-                var A = a.attributes.date_modified;
-                var B = b.attributes.date_modified;
-                return (A > B) ? -1 : (A < B) ? 1 : 0;
-            });
+            self.sortDateDescending();
+            self.countState = 10;
             self.displayedNodes = self.nodes.splice(0, 10)
         });
 
@@ -116,6 +116,7 @@ var quickSearchProject = {
             for (i = 0; i < requested.length; i++) {
                 self.displayedNodes.push(requested[i])
             }
+            self.countState = self.displayedNodes.length;
             return self.displayedNodes
         };
 
@@ -130,51 +131,51 @@ var quickSearchProject = {
         };
 
         self.sortAlphabeticalAscending = function () {
-            numDisplayed = self.displayedNodes.length;
             self.restoreFullNodeList();
             self.nodes.sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
             });
-            self.displayedNodes = self.nodes.splice(0, numDisplayed);
+            self.displayedNodes = self.nodes.splice(0, self.countState);
+            self.sortState = 'alphaAsc';
             return self.displayedNodes
         };
 
         self.sortAlphabeticalDescending = function () {
-            numDisplayed = self.displayedNodes.length;
             self.restoreFullNodeList();
             self.nodes.sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
                 return (A > B) ? -1 : (A < B) ? 1 : 0;
             });
-            self.displayedNodes = self.nodes.splice(0, numDisplayed);
+            self.displayedNodes = self.nodes.splice(0, self.countState);
+            self.sortState = 'alphaDesc';
             return self.displayedNodes
 
         };
 
-        self.sortDateAscending = function () {
-            numDisplayed = self.displayedNodes.length;
+        self.sortDateDescending = function () {
             self.restoreFullNodeList();
             self.nodes.sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
                 return (A > B) ? -1 : (A < B) ? 1 : 0;
             });
-            self.displayedNodes = self.nodes.splice(0, numDisplayed);
+            self.displayedNodes = self.nodes.splice(0, self.countState);
+            self.sortState = 'dateDesc';
             return self.displayedNodes
         };
 
-        self.sortDateDescending = function () {
-            numDisplayed = self.displayedNodes.length;
+        self.sortDateAscending = function () {
             self.restoreFullNodeList();
             self.nodes.sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
             });
-            self.displayedNodes = self.nodes.splice(0, numDisplayed);
+            self.displayedNodes = self.nodes.splice(0, self.countState);
+            self.sortState = 'dateAsc';
             return self.displayedNodes
         };
 
