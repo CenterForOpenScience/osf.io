@@ -567,7 +567,17 @@ MEETING_DATA = {
     'ASCERM2016': {
         'name': 'ASCE Rocky Mountain Student Conference 2016',
         'info_url': 'http://luninuxos.com/asce/',
-        'logo_url': 'http://s29.postimg.org/7sgmx7ryv/2016_ASCE_Rocky_Mtn_banner.png',
+        'logo_url': 'http://s2.postimg.org/eaduh2ovt/2016_ASCE_Rocky_Mtn_banner.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+    },
+        'ARCA2016': {
+        'name': '5th Applied Research Conference in Africa',
+        'info_url': 'http://www.arcaconference.org/',
+        'logo_url': 'http://www.arcaconference.org/images/ARCA_LOGO_NEW.JPG',
         'active': True,
         'admins': [],
         'public_projects': True,
