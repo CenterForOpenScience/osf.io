@@ -77,15 +77,16 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
 class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, dict)
         auth = get_user_auth(request)
-        parent_node = obj if isinstance(obj, Node) else obj['self']
+        parent_node = obj['self']
 
         if request.method in permissions.SAFE_METHODS:
             return parent_node.can_view(auth)
         else:
             pointer_nodes = [Node.load(pointer['id']) for pointer in request.data.get('data', [])]
             has_parent_auth = parent_node.can_edit(auth)
-            has_pointer_auth = reduce(lambda x, y: x.can_view(auth) and y.can_view(auth), pointer_nodes, True)
+            has_pointer_auth = reduce(lambda x, y: x.can_view(auth) and y.can_view(auth), pointer_nodes) if pointer_nodes else True
             return has_parent_auth and has_pointer_auth
 
 class ReadOnlyIfRegistration(permissions.BasePermission):

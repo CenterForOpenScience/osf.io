@@ -559,12 +559,14 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
 
 
     def get_object(self):
-        collection = self.get_node()
-        return {'data': [
+        collection = self.get_node(check_object_permissions=False)
+        obj = {'data': [
             pointer for pointer in
             collection.nodes_pointer
             if not pointer.node.is_deleted and not pointer.node.is_folder
         ], 'self': collection}
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     def perform_destroy(self, instance):
         data = self.request.data['data']
