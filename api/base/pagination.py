@@ -113,24 +113,3 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
         else:
             return super(JSONAPIPagination, self).paginate_queryset(queryset, request, view=None)
-
-class JSONApiRelationShipPagination(pagination.PageNumberPagination):
-    def paginate_queryset(self, queryset, request, view=None):
-        return queryset
-
-    def get_paginated_response(self, data):
-        """
-        Formats paginated response in accordance with JSON API.
-
-        Creates pagination links from the view_name if embedded resource,
-        rather than the location used in the request.
-        """
-
-        response_dict = OrderedDict([
-            ('data', data),
-            ('links', OrderedDict([
-                ('first', 'link2'),
-                ('last', 'link1'),
-            ])),
-        ])
-        return Response(response_dict)
