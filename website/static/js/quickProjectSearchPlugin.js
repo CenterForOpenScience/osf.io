@@ -71,9 +71,14 @@ var quickSearchProject = {
             if (numContributors === 1) {
                 return self.getFamilyName(0, node)
             }
-            else if (numContributors == 2) {
+            else if (numContributors === 2) {
                 return self.getFamilyName(0, node) + ' and ' +
                     self.getFamilyName(1, node)
+            }
+            else if (numContributors === 3) {
+                return self.getFamilyName(0, node) + ', ' +
+                    self.getFamilyName(1, node) + ', and ' +
+                    self.getFamilyName(2, node)
             }
             else {
                 return self.getFamilyName(0, node) + ', ' +
