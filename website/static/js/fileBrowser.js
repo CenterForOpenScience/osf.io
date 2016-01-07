@@ -708,7 +708,7 @@ var Collections  = {
             m('ul', { config: ctrl.applyDroppable },[
                 collectionList(),
                 ctrl.showCollectionMenu() ? m('.collectionMenu',{
-                    style : 'position:absolute;top: ' + args.collectionMenuObject().y + 'px;left: ' + ctrl.collectionMenuObject().x + 'px;'
+                    style : 'position:absolute;top: ' + ctrl.collectionMenuObject().y + 'px;left: ' + ctrl.collectionMenuObject().x + 'px;'
                 }, [
                     m('.menuClose', { onclick : function (e) {
                         ctrl.showCollectionMenu(false);
