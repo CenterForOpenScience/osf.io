@@ -60,6 +60,18 @@ class GitHubUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
+    # Required for importing username from social profile configuration page
+    # Assumes oldest connected account is primary.
+    @property
+    def public_id(self):
+        gh_accounts = [
+            a for a in self.owner.external_accounts
+            if a.provider == self.oauth_provider.short_name
+        ]
+        if gh_accounts:
+            return gh_accounts[0].display_name
+        return None
+
 
 class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = GitHubProvider
