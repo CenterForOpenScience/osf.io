@@ -56,13 +56,12 @@ class CommentMixin(object):
 
             if root_target.provider == 'osfstorage':
                 try:
-                    get_object_or_error(
-                        StoredFileNode,
+                    StoredFileNode.find(
                         Q('node', 'eq', comment.node._id) &
                         Q('_id', 'eq', root_target._id) &
                         Q('is_file', 'eq', True)
                     )
-                except NotFound:
+                except NoResultsFound:
                     Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
                     del comment.node.commented_files[root_target._id]
 

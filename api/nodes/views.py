@@ -1,6 +1,7 @@
 import requests
 
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.status import is_server_error
@@ -1867,13 +1868,12 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
             if root_target.provider == 'osfstorage':
                 try:
-                    get_object_or_error(
-                        StoredFileNode,
+                    StoredFileNode.find(
                         Q('node', 'eq', self.get_node()._id) &
                         Q('_id', 'eq', root_target._id) &
                         Q('is_file', 'eq', True)
                     )
-                except NotFound:
+                except NoResultsFound:
                     Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
                     del root_target.node.commented_files[root_target._id]
 
