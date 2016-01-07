@@ -224,7 +224,7 @@ var FileBrowser = {
         };
 
         // USER FILTER
-        self.activeFilter = m.prop(1);
+        self.activeFilter = m.prop({});
         self.updateFilter = function(filter) {
             self.activeFilter(filter);
             self.updateFilesData(filter);
@@ -513,7 +513,7 @@ var Collections  = {
             } else {
                 self.totalPages(Math.ceil((self.collections().length)/self.pageSize()));
             }
-        }
+        };
         self.pageSize = m.prop(5);
         self.validation = m.prop(false);
         self.validationError = m.prop('');
@@ -558,6 +558,7 @@ var Collections  = {
         };
         var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
         loadCollections(collectionsUrl);
+        args.activeFilter(self.collections()[0]);
 
         self.addCollection = function () {
             console.log( self.newCollectionName());
@@ -626,11 +627,11 @@ var Collections  = {
                 hoverClass: 'bg-color-hover',
                 drop: function( event, ui ) {
                     console.log('dropped', event, ui, this);
-                    var collection = self.collections[$(this).attr('data-index')];
+                    var collection = self.collections()[$(this).attr('data-index')];
                     var dataArray = [];
                     // If multiple items are dragged they have to be selected to make it work
-                    if (self.selected().length > 1) {
-                        self.selected().map(function(item){
+                    if (args.selected().length > 1) {
+                        args.selected().map(function(item){
                             dataArray.push(buildCollectionNodeData(item.data.id));
                         });
                     } else {
@@ -645,7 +646,7 @@ var Collections  = {
                         }
                         m.request({
                             method : 'POST',
-                            url : collection.data.node.relationships.node_links.links.related.href,
+                            url : collection.data.node.relationships.linked_nodes.links.related.href,
                             config : xhrconfig,
                             data : dataArray[index]
                         }).then(doNext, doNext); // In case of success or error. It doesn't look like mithril has a general .done method
@@ -1042,9 +1043,9 @@ var Filters = {
 var Information = {
     view : function (ctrl, args) {
         var template = '';
+        var filter = args.activeFilter();
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            var filter = args.activeFilter();
             template = m('', [
                 filter.type === 'collection' && !filter.data.systemCollection ? m('.fb-info-remove', { onclick : args.removeProjectFromCollections },'Remove from collection') : '',
                 m('h3', m('a', { href : item.links.html}, item.attributes.title)),
