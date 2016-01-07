@@ -103,6 +103,7 @@ class SingleLinkedNode(JSONAPIRelationshipsSerializer):
     class Meta:
         type_ = 'linked_nodes'
 
+
 class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
 
     data = ser.ListField(child=SingleLinkedNode())
