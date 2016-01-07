@@ -4094,16 +4094,17 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
 
     def _add_success_logs(self, node, user):
         src = node.registered_from
+        submitted_time = ''
 
-        draft = DraftRegistration.find_one(Q("registered_node", "eq", node))
-
-        # lazy log choosing [value if false, value if true][<test - truthy value]()
-        log_type = [lambda: NodeLog.PROJECT_REGISTERED, lambda: NodeLog.PREREG_CHALLENGE][
-            "Prereg" in draft.registration_schema.name]()
-
-        # Format time for Prereg log
-        submitted_time = iso8601format(draft.approval.initiation_date)
-        submitted_time = submitted_time.replace('T', ' ').replace('Z', ' UTC')
+        try:
+            draft = DraftRegistration.find_one(Q("registered_node", "eq", node))
+            # lazy log choosing [value if false, value if true][<test - truthy value]()
+            log_type = [NodeLog.PROJECT_REGISTERED, NodeLog.PREREG_CHALLENGE][
+                "Prereg" in draft.registration_schema.name]
+            submitted_time = iso8601format(draft.approval.initiation_date)
+        except:
+            log_type = NodeLog.PROJECT_REGISTERED
+            pass
 
         src.add_log(
             action=log_type,
