@@ -14,13 +14,3 @@ def checkin_files_by_user(node, user):
     for file in files:
         file.checkout = None
         file.save()
-
-@project_signals.file_checkout_toggle.connect
-def file_checkout_toggle(node, user):
-    '''
-
-    :param node:
-    :param user:
-    :return:
-    '''
-    return
