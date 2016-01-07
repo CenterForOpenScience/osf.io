@@ -251,7 +251,8 @@ class Comment(GuidStoredObject):
                     view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
                     root_target = File.load(root_id)
                     if check:
-                        if not (root_target and root_target.touch(request.headers.get('Authorization'))):
+                        if not (root_target and root_target.touch(request.headers.get('Authorization'),
+                                                                  cookie=request.cookies.get(settings.COOKIE_NAME))):
                             return 0
                     else:
                         return Comment.find(Q('node', 'eq', node) &
@@ -279,7 +280,8 @@ class Comment(GuidStoredObject):
         commented_files = File.find(Q('_id', 'in', node.commented_files.keys()))
         for file_obj in commented_files:
             if node.get_addon(file_obj.provider):
-                exists = file_obj and file_obj.touch(request.headers.get('Authorization'))
+                exists = file_obj and file_obj.touch(request.headers.get('Authorization'),
+                                                     cookie=request.cookies.get(settings.COOKIE_NAME))
                 if not exists:
                     Comment.update(Q('root_target', 'eq', file_obj), data={'root_target': None})
                     continue
