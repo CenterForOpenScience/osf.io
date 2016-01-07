@@ -48,6 +48,7 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
 
     return ret
 
+
 def is_anonymized(request):
     is_anonymous = False
     private_key = request.query_params.get('view_only', None)
@@ -59,10 +60,6 @@ def is_anonymized(request):
         if link is not None:
             is_anonymous = link.anonymous
     return is_anonymous
-
-
-class DoNotRelateWhenAnonymous(object):
-    pass
 
 
 class HideIfRegistration(ser.Field):
@@ -723,6 +720,13 @@ class JSONAPISerializer(ser.Serializer):
     Self/html links must be nested under "links".
     """
 
+    # Don't serialize relationships that use these views
+    # when viewing thru an anonymous VOL
+    views_to_hide_if_anonymous = [
+        'users:user-detail',
+        'nodes:node-registrations',
+    ]
+
     # overrides Serializer
     @classmethod
     def many_init(cls, *args, **kwargs):
@@ -803,7 +807,7 @@ class JSONAPISerializer(ser.Serializer):
                     try:
                         if not (is_anonymous and
                                 hasattr(field, 'view_name') and
-                                isinstance(field.root, DoNotRelateWhenAnonymous)):
+                                field.view_name in self.views_to_hide_if_anonymous):
                             data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
                         continue

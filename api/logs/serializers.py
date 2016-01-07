@@ -5,7 +5,6 @@ from api.base.serializers import (
     RelationshipField,
     RestrictedDictSerializer,
     LinksField,
-    DoNotRelateWhenAnonymous,
 )
 
 
@@ -51,7 +50,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     version = ser.CharField(read_only=True)
 
 
-class NodeLogSerializer(JSONAPISerializer, DoNotRelateWhenAnonymous):
+class NodeLogSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset(['action', 'date'])
     non_anonymized_fields = [
