@@ -1867,7 +1867,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
             if root_target.provider == 'osfstorage':
                 try:
-                    obj = get_object_or_error(
+                    get_object_or_error(
                         StoredFileNode,
                         Q('node', 'eq', self.get_node()._id) &
                         Q('_id', 'eq', root_target._id) &
