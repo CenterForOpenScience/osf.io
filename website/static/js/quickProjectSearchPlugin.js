@@ -55,10 +55,36 @@ var quickSearchProject = {
         };
 
         self.loadUpToTen = function () {
-            requested = self.nodes.splice(0, 10);
+            var requested = self.nodes.splice(0, 10);
             for (var i = 0; i < requested.length; i++) {
                 self.displayedNodes.push(requested[i])
             }
+            self.countState = self.displayedNodes.length;
+            return self.displayedNodes
+        };
+
+        self.removeUpToTen = function() {
+            var remove = 0;
+            if (self.countState - 10 >= 10) {
+                if (self.countState % 10 === 0) {
+                    remove = 10
+                }
+                else {
+                    remove = self.countState % 10
+                }
+
+            }
+            else if (self.countState - 10 >= 0) {
+                remove = self.countState - 10
+            }
+            else {
+                return
+            }
+            var removedNodes = self.displayedNodes.splice(self.displayedNodes.length - remove);
+            for (var i = 0; i < removedNodes.length; i++) {
+                self.nodes.push(removedNodes[i])
+            }
+            self.sortBySortState();
             self.countState = self.displayedNodes.length;
             return self.displayedNodes
         };
@@ -264,7 +290,15 @@ var quickSearchProject = {
             if (ctrl.nodes.length !== 0){
                 return m('button', { onclick: function() {
                     ctrl.loadUpToTen() }
-                }, 'Load more')
+                }, 'Show more')
+            }
+        }
+
+         function loadLessButton() {
+            if (ctrl.displayedNodes.length > 10){
+                return m('button', { onclick: function() {
+                    ctrl.removeUpToTen() }
+                }, 'Show less')
             }
         }
 
@@ -299,7 +333,8 @@ var quickSearchProject = {
                     ctrl.displayedNodes.map(function(n){
                         return projectView(n)
                     }),
-                    loadMoreButton()
+                    loadMoreButton(),
+                    loadLessButton()
             ])
             )
         ])
