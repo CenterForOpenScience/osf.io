@@ -13,7 +13,7 @@ from framework.auth.core import Auth
 
 from website.models import NodeLog, Node
 from website.util import permissions as osf_permissions
-from website.project import new_dashboard
+from website.project import new_bookmark_collection
 
 from api.base.settings.defaults import API_BASE
 

@@ -20,8 +20,8 @@ def main():
         record['date_created']
         for record in node_collection.find(
             {
-                'is_folder': True,
-                'is_dashboard': {'$ne': True},
+                'is_collection': True,
+                'is_bookmark_collection': {'$ne': True},
             },
             {'date_created': True},
         )
