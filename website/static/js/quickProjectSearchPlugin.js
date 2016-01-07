@@ -17,12 +17,9 @@ var xhrconfig = function(xhr) {
 var quickSearchProject = {
     controller: function() {
         var self = this;
-        // Pending nodes waiting to be displayed
-        self.nodes = m.prop([]);
-        // Nodes that are rendered
-        self.displayedNodes = [];
-        //Nodes that don't match search query
-        self.nonMatchingNodes = [];
+        self.nodes = m.prop([]); // Pending nodes waiting to be displayed
+        self.displayedNodes = m.prop([]); // Nodes that are rendered
+        self.nonMatchingNodes = m.prop([]); //Nodes that don't match search query
         //self.lastLogin = '';
         // NEED TO FIGURE OUT WHAT TO DO ABOUT LASTLOGIN.
         self.lastLogin = '2016-01-01T15:20:11.531000';
@@ -40,8 +37,8 @@ var quickSearchProject = {
                 m.redraw(true)
             });
             self.sortDateDescending();
-            self.countState = 10;
-            self.displayedNodes = self.nodes().splice(0, 10)
+            self.countState(10);
+            self.displayedNodes(self.nodes().splice(0, 10))
         });
 
         // Load last login
@@ -58,36 +55,36 @@ var quickSearchProject = {
         self.loadUpToTen = function () {
             var requested = self.nodes().splice(0, 10);
             for (var i = 0; i < requested.length; i++) {
-                self.displayedNodes.push(requested[i])
+                self.displayedNodes().push(requested[i])
             }
-            self.countState = self.displayedNodes.length;
-            return self.displayedNodes
+            self.countState(self.displayedNodes().length);
+            return self.displayedNodes()
         };
 
         self.removeUpToTen = function() {
             var remove = 0;
-            if (self.countState - 10 >= 10) {
-                if (self.countState % 10 === 0) {
+            if (self.countState() - 10 >= 10) {
+                if (self.countState() % 10 === 0) {
                     remove = 10
                 }
                 else {
-                    remove = self.countState % 10
+                    remove = self.countState() % 10
                 }
 
             }
-            else if (self.countState - 10 >= 0) {
-                remove = self.countState - 10
+            else if (self.countState() - 10 >= 0) {
+                remove = self.countState() - 10
             }
             else {
                 return
             }
-            var removedNodes = self.displayedNodes.splice(self.displayedNodes.length - remove);
+            var removedNodes = self.displayedNodes().splice(self.displayedNodes().length - remove);
             for (var i = 0; i < removedNodes.length; i++) {
                 self.nodes().push(removedNodes[i])
             }
             self.sortBySortState();
-            self.countState = self.displayedNodes.length;
-            return self.displayedNodes
+            self.countState(self.displayedNodes().length);
+            return self.displayedNodes()
         };
 
         self.getFamilyName = function(i, node) {
@@ -172,7 +169,7 @@ var quickSearchProject = {
                 var B = b.attributes.title.toUpperCase();
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
             });
-            self.sortState = 'alphaAsc';
+            self.sortState('alphaAsc');
         };
 
         self.sortAlphabeticalDescending = function () {
@@ -181,7 +178,7 @@ var quickSearchProject = {
                 var B = b.attributes.title.toUpperCase();
                 return (A > B) ? -1 : (A < B) ? 1 : 0;
             });
-            self.sortState = 'alphaDesc';
+            self.sortState('alphaDesc');
         };
 
         self.sortDateAscending = function () {
@@ -190,7 +187,7 @@ var quickSearchProject = {
                 var B = b.attributes.date_modified;
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
             });
-            self.sortState = 'dateAsc'
+            self.sortState('dateAsc')
         };
 
         self.sortDateDescending = function () {
@@ -199,17 +196,17 @@ var quickSearchProject = {
                 var B = b.attributes.date_modified;
                 return (A > B) ? -1 : (A < B) ? 1 : 0;
             });
-            self.sortState = 'dateDesc';
+            self.sortState('dateDesc');
         };
 
         self.sortBySortState = function () {
-            if (self.sortState === 'alphaAsc') {
+            if (self.sortState() === 'alphaAsc') {
                 self.sortAlphabeticalAscending()
             }
-            else if (self.sortState === 'alphaDesc') {
+            else if (self.sortState() === 'alphaDesc') {
                 self.sortAlphabeticalDescending()
             }
-            else if (self.sortState === 'dateAsc') {
+            else if (self.sortState() === 'dateAsc') {
                 self.sortDateAscending()
             }
             else {
@@ -218,9 +215,9 @@ var quickSearchProject = {
         };
 
         self.sortNodesAndModifyDisplay = function () {
-            self.restoreToNodeList(self.displayedNodes);
+            self.restoreToNodeList(self.displayedNodes());
             self.sortBySortState();
-            self.displayedNodes = self.nodes().splice(0, self.countState)
+            self.displayedNodes(self.nodes().splice(0, self.countState()))
         };
 
         self.noTitleMatch = function (node, query) {
@@ -242,7 +239,7 @@ var quickSearchProject = {
             for (var n = self.nodes().length - 1; n >= 0; n--) {
                 var node = self.nodes()[n];
                 if (self.noTitleMatch(node, query) && self.noContributorMatch(node, query)) {
-                    self.nonMatchingNodes.push(node);
+                    self.nonMatchingNodes().push(node);
                     self.nodes().splice(n, 1)
                 }
             }
@@ -250,25 +247,25 @@ var quickSearchProject = {
 
         self.quickSearch = function () {
             var query = document.getElementById('searchQuery').value;
-            self.restoreToNodeList(self.nonMatchingNodes);
-            self.restoreToNodeList(self.displayedNodes);
-            self.displayedNodes = [];
-            self.nonMatchingNodes = [];
+            self.restoreToNodeList(self.nonMatchingNodes());
+            self.restoreToNodeList(self.displayedNodes());
+            self.displayedNodes([]);
+            self.nonMatchingNodes([]);
             // if backspace completely, previous nodes with prior sorting/count will be displayed
             if (query === '') {
                 self.sortNodesAndModifyDisplay();
-                return self.displayedNodes
+                return self.displayedNodes()
             }
             else {
                 self.filterNodes(query);
                 self.sortBySortState();
-                var numDisplay = Math.min(self.nodes().length, self.countState);
+                var numDisplay = Math.min(self.nodes().length, self.countState());
                 for (var i = 0; i < numDisplay; i++) {
-                    self.displayedNodes.push(self.nodes()[i])
+                    self.displayedNodes().push(self.nodes()[i])
 
                 }
                 self.nodes().splice(0, numDisplay);
-                return self.displayedNodes
+                return self.displayedNodes()
             }
 
         };
@@ -277,7 +274,7 @@ var quickSearchProject = {
     },
     view : function(ctrl) {
         function projectView(project) {
-            console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes.length, ', non-matching: ' + ctrl.nonMatchingNodes.length, ctrl.sortState);
+            console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
             return m('tr', [
                 m('td', m("a", {href: '/'+ project.id}, project.attributes.title)),
                 m('td', ctrl.getContributors(project)),
@@ -296,7 +293,7 @@ var quickSearchProject = {
         }
 
          function loadLessButton() {
-            if (ctrl.displayedNodes.length > 10){
+            if (ctrl.displayedNodes().length > 10){
                 return m('button', { onclick: function() {
                     ctrl.removeUpToTen() }
                 }, 'Show less')
@@ -310,20 +307,20 @@ var quickSearchProject = {
                     m('tr', [
                         m('th', {class: 'col-md-5'}, 'Name',
                             m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
-                                ctrl.sortState = 'alphaAsc';
+                                ctrl.sortState('alphaAsc');
                                 ctrl.sortNodesAndModifyDisplay();
                             }}),
                             m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
-                                ctrl.sortState = 'alphaDesc';
+                                ctrl.sortState('alphaDesc');
                                 ctrl.sortNodesAndModifyDisplay();
                             }})),
                         m('th', {class: 'col-md-3'}, 'Contributors'),
                         m('th', {class: 'col-md-2'}, 'Modified',
                             m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
-                                ctrl.sortState = 'dateAsc';
+                                ctrl.sortState('dateAsc');
                                 ctrl.sortNodesAndModifyDisplay()}}),
                             m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
-                                ctrl.sortState = 'dateDesc';
+                                ctrl.sortState('dateDesc');
                                 ctrl.sortNodesAndModifyDisplay();
                            }})
                         ),
@@ -331,7 +328,7 @@ var quickSearchProject = {
                         m('th', {class: 'col-md-1'}, 'New logs')
                     ]),
 
-                    ctrl.displayedNodes.map(function(n){
+                    ctrl.displayedNodes().map(function(n){
                         return projectView(n)
                     }),
                     loadMoreButton(),
