@@ -1789,18 +1789,6 @@ class TestNode(OsfTestCase):
         with assert_raises(ValueError):
             node_two.add_pointer(folder, auth=self.auth)
 
-    def test_is_expanded_default_false_with_user(self):
-        assert_equal(self.node.is_expanded(user=self.user), False)
-
-    def test_expand_sets_true_with_user(self):
-        self.node.expand(user=self.user)
-        assert_equal(self.node.is_expanded(user=self.user), True)
-
-    def test_collapse_sets_false_with_user(self):
-        self.node.expand(user=self.user)
-        self.node.collapse(user=self.user)
-        assert_equal(self.node.is_expanded(user=self.user), False)
-
     def test_cannot_register_deleted_node(self):
         self.node.is_deleted = True
         self.node.save()

@@ -1080,15 +1080,6 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
-        Rule([
-            '/project/<pid>/expand/',
-            '/project/<pid>/node/<nid>/expand/',
-        ], 'post', project_views.node.expand, json_renderer),
-        Rule([
-            '/project/<pid>/collapse/',
-            '/project/<pid>/node/<nid>/collapse/',
-        ], 'post', project_views.node.collapse, json_renderer),
-
         Rule(
             [
                 '/project/<pid>/pointer/',

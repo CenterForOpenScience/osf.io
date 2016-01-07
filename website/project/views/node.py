@@ -341,22 +341,6 @@ def view_project(auth, node, **kwargs):
     ret.update(rubeus.collect_addon_assets(node))
     return ret
 
-
-# Expand/Collapse
-@must_be_valid_project
-@must_be_contributor_or_public
-def expand(auth, node, **kwargs):
-    node.expand(user=auth.user)
-    return {}, 200, None
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def collapse(auth, node, **kwargs):
-    node.collapse(user=auth.user)
-    return {}, 200, None
-
-
 # Reorder components
 @must_be_valid_project
 @must_not_be_registration
