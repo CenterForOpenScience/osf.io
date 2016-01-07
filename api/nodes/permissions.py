@@ -83,11 +83,14 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
 
         if request.method in permissions.SAFE_METHODS:
             return parent_node.can_view(auth)
+        elif request.method == 'DELETE':
+            return parent_node.can_edit(auth)
         else:
             pointer_nodes = [Node.load(pointer['id']) for pointer in request.data.get('data', [])]
             has_parent_auth = parent_node.can_edit(auth)
-            has_pointer_auth = reduce(lambda x, y: x.can_view(auth) and y.can_view(auth), pointer_nodes) if pointer_nodes else True
+            has_pointer_auth = reduce(lambda x, y: x and y.can_view(auth), pointer_nodes, True) if pointer_nodes else True
             return has_parent_auth and has_pointer_auth
+
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
