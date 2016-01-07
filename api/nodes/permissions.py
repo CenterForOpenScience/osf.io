@@ -94,7 +94,11 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
                     raise exceptions.NotFound
                 pointer_nodes.append(node)
             has_parent_auth = parent_node.can_edit(auth)
-            has_pointer_auth = reduce(lambda x, y: x and y.can_view(auth), pointer_nodes, True) if pointer_nodes else True
+            has_pointer_auth = True
+            for pointer in pointer_nodes:
+                if not pointer.can_view(auth):
+                    has_pointer_auth = False
+                    break
             return has_parent_auth and has_pointer_auth
 
 

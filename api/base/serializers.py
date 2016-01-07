@@ -849,3 +849,24 @@ class RestrictedDictSerializer(ser.Serializer):
             else:
                 data[field.field_name] = field.to_representation(attribute)
         return data
+
+
+class RelationshipResourceIdObjectSerializer(JSONAPIRelationshipsSerializer):
+    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    type = TypeField(required=False, allow_null=True)
+
+def relationship_diff(current_items, new_items):
+    """
+    To be used in POST and PUT/PATCH relationship requests, as, by JSON API specs,
+    in update requests, the 'remove' items' relationships would be deleted, and the
+    'add' would be added, while for create requests, only the 'add' would be added.
+
+    :param current_items: The current items in the relationship
+    :param new_items: The items passed in the request
+    :return:
+    """
+
+    return {
+        'add': {k: new_items[k] for k in (set(new_items.keys()) - set(current_items.keys()))},
+        'remove': {k: current_items[k] for k in (set(current_items.keys()) - set(new_items.keys()))}
+    }
