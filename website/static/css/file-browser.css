@@ -136,6 +136,11 @@
     padding-top: 10px;
     border-bottom: 1px solid #eee;
 }
+.fb-info-remove {
+    background: #FFF;
+    text-align: right;
+    font-size: 13px;
+}
 
 /* TODO: Make responsive */
 #poFilter {

@@ -1047,7 +1047,7 @@ var Information = {
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
             template = m('', [
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.fb-info-remove', { onclick : args.removeProjectFromCollections },'Remove from collection') : '',
+                filter.type === 'collection' && !filter.data.systemCollection ? m('.fb-info-remove.p-xs.text-danger', { onclick : args.removeProjectFromCollections }, 'Remove from collection') : '',
                 m('h3', m('a', { href : item.links.html}, item.attributes.title)),
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
@@ -1088,7 +1088,6 @@ var Information = {
         if (args.selected().length > 1) {
             template = m('', [ '', args.selected().map(function(item){
                 return m('.fb-info-multi', [
-                    filter.type === 'collection' && !filter.data.systemCollection ? m('.fb-info-remove', { onclick : args.removeProjectFromCollections },'Remove from collection') : '',
                     m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
                     m('p.fb-info-meta.text-muted', [
                         m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
