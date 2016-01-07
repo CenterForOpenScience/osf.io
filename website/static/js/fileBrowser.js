@@ -507,6 +507,13 @@ var Collections  = {
         };
         self.currentPage = m.prop(1);
         self.totalPages = m.prop(1);
+        self.calculateTotalPages = function(result){
+            if(result){ // If this calculation comes after GET call to collections
+                self.totalPages(Math.ceil((result.links.meta.total + args.systemCollections.length)/self.pageSize()));
+            } else {
+                self.totalPages(Math.ceil((self.collections().length)/self.pageSize()));
+            }
+        }
         self.pageSize = m.prop(5);
         self.validation = m.prop(false);
         self.validationError = m.prop('');
@@ -547,9 +554,7 @@ var Collections  = {
                     loadCollections(result.links.next);
                 }
             });
-            promise.then(function(result){
-                self.totalPages(Math.ceil((result.links.meta.total + args.systemCollections.length)/self.pageSize()));
-            });
+            promise.then(self.calculateTotalPages());
         };
         var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
         loadCollections(collectionsUrl);
@@ -574,6 +579,7 @@ var Collections  = {
             });
             self.newCollectionName('');
             self.dismissModal();
+            self.calculateTotalPages();
             return promise;
         };
         self.deleteCollection = function(){
@@ -589,6 +595,7 @@ var Collections  = {
                 }
             });
             self.dismissModal();
+            self.calculateTotalPages();
             return promise;
         };
         self.renameCollection = function () {
@@ -675,8 +682,11 @@ var Collections  = {
                 }
                 if (!item.data.systemCollection) {
                     submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
+                        'data-index' : i,
                         onclick : function (e) {
-                            ctrl.updateCollectionMenu(item, e);
+                            var index = $(this).attr('data-index');
+                            var selectedItem = ctrl.collections()[index];
+                            ctrl.updateCollectionMenu(selectedItem, e);
                         }
                     });
                 } else {
