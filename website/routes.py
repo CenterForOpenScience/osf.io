@@ -303,10 +303,7 @@ def make_url_map(app):
             json_renderer,
         )
     ], prefix='/api/v1')
-
-
     ### Metadata ###
-
     process_rules(app, [
 
         Rule(
@@ -1140,7 +1137,7 @@ def make_url_map(app):
             '/project/<pid>/get_children/',
             '/project/<pid>/node/<nid>/get_children/',
         ], 'get', project_views.node.get_children, json_renderer),
-         Rule([
+        Rule([
             '/project/<pid>/get_forks/',
             '/project/<pid>/node/<nid>/get_forks/',
         ], 'get', project_views.node.get_forks, json_renderer),

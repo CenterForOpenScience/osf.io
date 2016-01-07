@@ -14,7 +14,6 @@ from framework.mongo import StoredObject
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import get_or_http_error
 
 from website import language
 
@@ -41,7 +40,6 @@ from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes, find_bookmark_collection, validate_page_num
 from website.profile import utils
-from website.project import new_collection
 from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply

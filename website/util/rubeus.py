@@ -6,17 +6,13 @@ import logging
 import datetime
 
 import hurry.filesize
-from modularodm import Q
 
 from framework import sentry
 from framework.auth.decorators import Auth
 
 from website.util import paths
 from website.util import sanitize
-from website.settings import (
-    ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
-    ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
-)
+from website.settings import DISK_SAVING_MODE
 
 
 logger = logging.getLogger(__name__)
@@ -52,8 +48,6 @@ def to_hgrid(node, auth, **data):
 
     """
     return NodeFileCollector(node, auth, **data).to_hgrid()
-
-
 
 
 def build_addon_root(node_settings, name, permissions=None,
@@ -140,12 +134,12 @@ def build_addon_button(text, action, title=""):
         button['attributes'] = 'title="{title}" data-toggle="tooltip" data-placement="right" '.format(title=title)
     return button
 
+
 def sort_by_name(hgrid_data):
     return_value = hgrid_data
     if hgrid_data is not None:
         return_value = sorted(hgrid_data, key=lambda item: item['name'].lower())
     return return_value
-
 
 
 class NodeFileCollector(object):
