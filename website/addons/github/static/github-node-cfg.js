@@ -1,5 +1,6 @@
 'use strict';
 
+var ko = require('knockout');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
@@ -7,6 +8,20 @@ var $osf = require('js/osfHelpers');
 var nodeApiUrl = window.contextVars.node.urls.api;
 
 var GithubConfigHelper = (function() {
+
+    var connectExistingAccount = function(accountId) {
+        $osf.putJSON(
+                nodeApiUrl + 'github/user_auth/',
+                {'external_account_id': accountId}
+            ).done(function() {
+                    if($osf.isIE()){
+                        window.location.hash = '#configureAddonsAnchor';
+                    }
+                    window.location.reload();
+            }).fail(
+                $osf.handleJSONError
+            );
+    };
 
     var updateHidden = function(val) {
         var repoParts = val.split('/');
@@ -74,17 +89,56 @@ var GithubConfigHelper = (function() {
         });
 
         $('#githubImportToken').on('click', function() {
-            $osf.putJSON(
-                nodeApiUrl + 'github/user_auth/',
-                {}
-            ).done(function() {
-                    if($osf.isIE()){
-                        window.location.hash = '#configureAddonsAnchor';
-                    }
-                    window.location.reload();
-            }).fail(
-                $osf.handleJSONError
-            );
+            $.get('/api/v1/settings/github/accounts/'
+            ).done(function(data){
+                var accounts = data.accounts.map(function(account) {
+                    return {
+                        name: account.display_name,
+                        id: account.id
+                    };
+                });
+                if (accounts.length > 1) {
+                    bootbox.prompt({
+                        title: 'Choose GitHub Account to Import',
+                        inputType: 'select',
+                        inputOptions: ko.utils.arrayMap(
+                            accounts,
+                            function(item) {
+                                return {
+                                    text: item.name,
+                                    value: item.id
+                                };
+                            }
+                        ),
+                        value: accounts[0].id,
+                        callback: function(accountId) {
+                            connectExistingAccount(accountId);
+                        },
+                        buttons: {
+                            confirm:{
+                                label:'Import',
+                            }
+                        }
+                    });
+                } else {
+                    bootbox.confirm({
+                        title: 'Import GitHub Account?',
+                        message: 'Are you sure you want to link your GitHub account with this project?',
+                        callback: function(confirmed) {
+                            if (confirmed) {
+                                connectExistingAccount(accounts[0].id);
+                            }
+                        },
+                        buttons: {
+                            confirm: {
+                                label:'Import',
+                            }
+                        }
+                    });
+                }
+            }).fail(function(xhr, textStatus, error) {
+                displayError('Could not GET GitHub accounts for user.');
+            });
         });
 
         $('#githubCreateToken').on('click', function() {
@@ -99,7 +153,7 @@ var GithubConfigHelper = (function() {
                     if(confirm) {
                         $.ajax({
                         type: 'DELETE',
-                        url: nodeApiUrl + 'github/oauth/'
+                        url: nodeApiUrl + 'github/user_auth/'
                     }).done(function() {
                         window.location.reload();
                     }).fail(
