@@ -1750,30 +1750,63 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
     def test_post_contributing_node(self):
         res = self.app.post_json_api(
-            self.url, self.payload(self.contributor_node._id),
+            self.url, self.payload([self.contributor_node._id]),
             auth=self.user.auth
         )
 
-        asser_equal(res.status_code, 200)
+        assert_equal(res.status_code, 200)
         assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.contributor_node._id})
         assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.linked_node._id})
 
     def test_post_public_node(self):
-        pass
-
-    def test_post_private_node(self):
-        pass
-
-    def test_post_mixed_nodes(self):
-        pass
-
-    def test_put_contributing_node(self):
+        public_node = ProjectFactory(is_public=True)
         res = self.app.post_json_api(
-            self.url, self.payload(self.contributor_node._id),
+            self.url, self.payload([public_node._id]),
             auth=self.user.auth
         )
 
-        asser_equal(res.status_code, 200)
+        assert_equal(res.status_code, 200)
+        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': public_node._id})
+        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.linked_node._id})
+
+    def test_post_private_node(self):
+        res = self.app.post_json_api(
+            self.url, self.payload([self.other_node._id]),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+        assert_not_in(res.json['data'], {'type': 'linked_nodes', 'id': self.other_node._id})
+        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.linked_node._id})
+
+    def test_post_mixed_nodes(self):
+        res = self.app.post_json_api(
+            self.url, self.payload([self.other_node._id, self.contributor_node]),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+        assert_not_in(res.json['data'], {'type': 'linked_nodes', 'id': self.other_node._id})
+        assert_not_in(res.json['data'], {'type': 'linked_nodes', 'id': self.contributor_node._id})
+        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.linked_node._id})
+
+    def test_put_contributing_node(self):
+        res = self.app.post_json_api(
+            self.url, self.payload([self.contributor_node._id]),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
         assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.contributor_node._id})
         assert_not_in(res.json['data'], {'type': 'linked_nodes', 'id': self.linked_node._id})
 
