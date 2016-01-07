@@ -135,50 +135,6 @@ def project_new_from_template(auth, node, **kwargs):
     )
     return {'url': new_node.url}, http.CREATED, None
 
-##############################################################################
-# New Collection
-##############################################################################
-@must_be_valid_project
-@must_be_logged_in
-def folder_new_post(auth, node, **kwargs):
-    user = auth.user
-
-    title = request.json.get('title')
-
-    if not node.is_collection:
-        raise HTTPError(http.BAD_REQUEST)
-    folder = new_collection(strip_html(title), user)
-    folders = [folder]
-    try:
-        _add_pointers(node, folders, auth)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    return {
-        'projectUrl': '/dashboard/',
-    }, http.CREATED
-
-
-@collect_auth
-def add_folder(auth, **kwargs):
-    data = request.get_json()
-    node_id = data.get('node_id')
-    node = get_or_http_error(Node, node_id)
-
-    user = auth.user
-    title = strip_html(data.get('title'))
-    if not node.is_collection:
-        raise HTTPError(http.BAD_REQUEST)
-
-    folder = new_collection(
-        title, user
-    )
-    folders = [folder]
-    try:
-        _add_pointers(node, folders, auth)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
-    return {}, 201, None
 
 ##############################################################################
 # New Node
@@ -624,32 +580,6 @@ def component_remove(auth, node, **kwargs):
     }
 
 
-@must_have_permission(ADMIN)
-@must_not_be_registration
-def delete_folder(auth, node, **kwargs):
-    """Remove collection node
-
-    """
-    if node is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    if not node.is_collection:
-        raise HTTPError(http.BAD_REQUEST)
-
-    try:
-        node.remove_node(auth)
-    except NodeStateError as e:
-        raise HTTPError(
-            http.BAD_REQUEST,
-            data={
-                'message_short': 'Error',
-                'message_long': 'Could not delete component: ' + e.message
-            },
-        )
-
-    return {}
-
-
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def remove_private_link(*args, **kwargs):
@@ -1059,19 +989,6 @@ def get_node_tree(auth, **kwargs):
     tree = node_child_tree(auth.user, [node._id])
     return tree
 
-
-@must_be_contributor_or_public
-def get_folder_pointers(auth, node, **kwargs):
-    if not node.is_collection:
-        return []
-    nodes = [
-        each.resolve()._id
-        for each in node.nodes
-        if each is not None and not each.is_deleted and not each.primary
-    ]
-    return nodes
-
-
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
     fork_list = sorted(node.forks, key=lambda fork: fork.forked_date, reverse=True)
@@ -1358,34 +1275,6 @@ def remove_pointer_from_folder(auth, node, pointer_id, **kwargs):
         node.rm_pointer(pointer, auth=auth)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
-
-    node.save()
-
-
-@must_be_valid_project  # injects project
-@must_have_permission(WRITE)
-@must_not_be_registration
-def remove_pointers_from_folder(auth, node, **kwargs):
-    """Remove multiple pointers from a node, raising a 400 if the pointer is not
-    in `node.nodes`.
-    """
-    pointer_ids = request.json.get('pointerIds')
-
-    if pointer_ids is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    for pointer_id in pointer_ids:
-        pointer_id = node.pointing_at(pointer_id)
-
-        pointer = Pointer.load(pointer_id)
-
-        if pointer is None:
-            raise HTTPError(http.BAD_REQUEST)
-
-        try:
-            node.rm_pointer(pointer, auth=auth)
-        except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
 
     node.save()
 

@@ -24,14 +24,11 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
 from website.models import Node
-from website.util import rubeus
 from website.util import sanitize
 from website.project import model
 from website.util import web_url_for
 from website.util import permissions
 from website.project import new_bookmark_collection
-from website.settings import ALL_MY_PROJECTS_ID
-from website.settings import ALL_MY_REGISTRATIONS_ID
 
 logger = logging.getLogger(__name__)
 
@@ -118,110 +115,6 @@ def find_bookmark_collection(user):
             Q('is_bookmark_collection', 'eq', True)
         )
     return bookmark_collection[0]
-
-
-@must_be_logged_in
-def get_dashboard(auth, nid=None, **kwargs):
-    user = auth.user
-    if nid is None:
-        node = find_bookmark_collection(user)
-        dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
-        return_value = {'data': dashboard_projects}
-    elif nid == ALL_MY_PROJECTS_ID:
-        return_value = {'data': get_all_projects_smart_folder(**kwargs)}
-    elif nid == ALL_MY_REGISTRATIONS_ID:
-        return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
-    else:
-        node = Node.load(nid)
-        dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
-        return_value = {'data': dashboard_projects}
-
-    return_value['timezone'] = user.timezone
-    return_value['locale'] = user.locale
-    return_value['id'] = user._id
-    return return_value
-
-
-@must_be_logged_in
-def get_all_projects_smart_folder(auth, **kwargs):
-    # TODO: Unit tests
-    user = auth.user
-
-    contributed = user.node__contributed
-    nodes = contributed.find(
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_collection', 'eq', False)
-    ).sort('-title')
-
-    keys = nodes.get_keys()
-    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.parent_id not in keys]
-
-@must_be_logged_in
-def get_all_registrations_smart_folder(auth, **kwargs):
-    # TODO: Unit tests
-    user = auth.user
-    contributed = user.node__contributed
-
-    nodes = contributed.find(
-
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', True) &
-        Q('is_collection', 'eq', False)
-    ).sort('-title')
-
-    # Note(hrybacki): is_retracted and is_pending_embargo are property methods
-    # and cannot be directly queried
-    nodes = filter(lambda node: not node.is_retracted and not node.is_pending_embargo, nodes)
-    keys = [node._id for node in nodes]
-    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
-
-@must_be_logged_in
-def get_dashboard_nodes(auth):
-    """Get summary information about the current user's dashboard nodes.
-
-    :param-query no_components: Exclude components from response.
-        NOTE: By default, components will only be shown if the current user
-        is contributor on a comonent but not its parent project. This query
-        parameter forces ALL components to be excluded from the request.
-    :param-query permissions: Filter upon projects for which the current user
-        has the specified permissions. Examples: 'write', 'admin'
-    """
-    user = auth.user
-
-    contributed = user.node__contributed  # nodes user contributed to
-
-    nodes = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_collection', 'eq', False)
-    )
-
-    if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
-        comps = contributed.find(
-            # components only
-            Q('category', 'ne', 'project') &
-            # exclude deleted nodes
-            Q('is_deleted', 'eq', False) &
-            # exclude registrations
-            Q('is_registration', 'eq', False)
-        )
-    else:
-        comps = []
-
-    nodes = list(nodes) + list(comps)
-    if request.args.get('permissions'):
-        perm = request.args['permissions'].strip().lower()
-        if perm not in permissions.PERMISSIONS:
-            raise HTTPError(http.BAD_REQUEST, dict(
-                message_short='Invalid query parameter',
-                message_long='{0} is not in {1}'.format(perm, permissions.PERMISSIONS)
-            ))
-        response_nodes = [node for node in nodes if node.has_permission(user, permission=perm)]
-    else:
-        response_nodes = nodes
-    return _render_nodes(response_nodes, auth)
 
 
 @must_be_logged_in
