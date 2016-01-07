@@ -158,15 +158,22 @@ var AddContributorViewModel = oop.extend(Paginator, {
     getContributors: function() {
         var self = this;
         self.notification(false);
-        return $.getJSON(
-            self.nodeApiUrl + 'get_contributors/', {},
-            function(result) {
-                var contributors = result.contributors.map(function(userData) {
-                    return userData.id;
-                });
-                self.contributors(contributors);
-            }
-        );
+        var url = $osf.apiV2Url('nodes/' + window.contextVars.node.id + '/contributors/');
+
+        return $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json',
+            contentType: 'application/vnd.api+json;',
+            crossOrigin: true,
+            xhrFields: {withCredentials: true},
+            processData: false
+        }).done(function(response) {
+            var contributors = response.data.map(function(user) {
+                return user.id;
+            });
+            self.contributors(contributors);
+        });
     },
     getEditableChildren: function() {
         var self = this;
@@ -315,6 +322,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         ).done(function(response) {
             if (self.async) {
+                self.contributors($.map(response.contributors, function(contrib) {
+                    return contrib.id;
+                }));
                 self.hide();
                 $osf.unblock();
                 if (self.callback) {

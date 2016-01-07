@@ -1,11 +1,11 @@
-﻿// OSF Note: This file has been changed for UI reasons and to prevent
-// automatic rendering. This is only here for the toolbar
+﻿// OSF Note: This file has been changed for UI reasons, to prevent
+// automatic rendering, and to add a checkbox for toggling snippet
+// autocompletion. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Range = ace.require('ace/range').Range;
-var addDragNDrop = require('../dragNDrop');
 
 (function () {
 
@@ -202,8 +202,6 @@ var addDragNDrop = require('../dragNDrop');
             var commandManager = new CommandManager(hooks, getString);
             var previewManager = function(){};
             var uiManager;
-
-            addDragNDrop(aceEditor, panels, commandManager, TextareaState);
 
             var useragent = ace.require('ace/lib/useragent');
             var getKey = function (identifier) {
@@ -1651,13 +1649,34 @@ var addDragNDrop = require('../dragNDrop');
                 buttonRow.appendChild(button);
                 return button;
             };
+            var makeCheckBox = function (div_id, cb_id, XShift, text) {
+                var li = document.createElement("li");
+                li.id = div_id;
+                li.style.left = xPosition + "px";
+                xPosition += 25;
+                li.XShift = XShift;
+                var label = document.createElement("label");
+                label.style.fontWeight = "normal"; 
+                label.style.position =  "relative"; 
+                label.style.top = "-5px";
+                var cb = document.createElement("input");
+                cb.id = cb_id;
+                cb.type = "checkbox";
+                cb.checked = "";
+                var sp = document.createElement("small");
+                sp.innerHTML = " " + text.trim();
+                label.appendChild(cb);
+                label.appendChild(sp);
+                li.appendChild(label);
+                buttonRow.appendChild(li);
+            };
             var makeSpacer = function (num) {
                 var spacer = document.createElement("li");
                 spacer.className = "wmd-spacer wmd-spacer" + num;
                 spacer.id = "wmd-spacer" + num + postfix;
                 buttonRow.appendChild(spacer);
                 xPosition += 25;
-            }
+            };
 
             buttons.bold = makeButton("wmd-bold-button", getStringAndKey("bold"), "0px", bindCommand("doBold"));
             buttons.italic = makeButton("wmd-italic-button", getStringAndKey("italic"), "-20px", bindCommand("doItalic"));
@@ -1685,6 +1704,8 @@ var addDragNDrop = require('../dragNDrop');
 
             buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
+            makeSpacer(4);
+            makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");

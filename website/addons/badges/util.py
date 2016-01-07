@@ -60,7 +60,7 @@ def get_sorted_node_badges(node):
 
 #Lol list comprehensions
 def get_user_badges(user):
-    return [badge for node in user.node__contributed for badge in get_node_badges(node)]
+    return [badge for node in user.contributed for badge in get_node_badges(node)]
 
 
 def get_sorted_user_badges(user):

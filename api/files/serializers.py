@@ -1,4 +1,5 @@
 import furl
+import pytz
 from modularodm import Q
 
 from rest_framework import serializers as ser
@@ -82,6 +83,7 @@ class FileSerializer(JSONAPISerializer):
         'node',
         'kind',
         'path',
+        'materialized_path',
         'size',
         'provider',
         'last_touched',
@@ -94,8 +96,11 @@ class FileSerializer(JSONAPISerializer):
     path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
     size = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
+    materialized_path = ser.CharField(
+        read_only=True, help_text='The Unix-style path of this object relative to the provider root')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
-    date_modified = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
+    date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
+    date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
 
     files = NodeFileHyperLinkField(
@@ -126,22 +131,41 @@ class FileSerializer(JSONAPISerializer):
         return None
 
     def get_date_modified(self, obj):
-        if obj.versions:
-            if obj.provider == 'osfstorage':
-                # Odd case osfstorage's date created is when the version was create
-                # (when the file was modified) its date modified is referencing whatever backend it is on
-                return obj.versions[-1].date_created
-            return obj.versions[-1].date_modified
-        return None
+        mod_dt = None
+        if obj.provider == 'osfstorage' and obj.versions:
+            # Each time an osfstorage file is added or uploaded, a new version object is created with its
+            # date_created equal to the time of the update.  The date_modified is the modified date
+            # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
+            # so prefer to use the date_created of the latest version.
+            mod_dt = obj.versions[-1].date_created
+        elif obj.provider != 'osfstorage' and obj.history:
+            mod_dt = obj.history[-1].get('modified', None)
+
+        return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
+
+    def get_date_created(self, obj):
+        creat_dt = None
+        if obj.provider == 'osfstorage' and obj.versions:
+            creat_dt = obj.versions[0].date_created
+        elif obj.provider != 'osfstorage' and obj.history:
+            # Non-osfstorage files don't store a created date, so instead get the modified date of the
+            # earliest entry in the file history.
+            creat_dt = obj.history[0].get('modified', None)
+
+        return creat_dt and creat_dt.replace(tzinfo=pytz.utc)
 
     def get_extra(self, obj):
-        extras = {}
-        if obj.versions:
+        metadata = {}
+        if obj.provider == 'osfstorage' and obj.versions:
             metadata = obj.versions[-1].metadata
-            extras['hashes'] = {  # mimic waterbutler response
-                'md5': metadata.get('md5', None),
-                'sha256': metadata.get('sha256', None),
-            }
+        elif obj.provider != 'osfstorage' and obj.history:
+            metadata = obj.history[-1].get('extra', {})
+
+        extras = {}
+        extras['hashes'] = {  # mimic waterbutler response
+            'md5': metadata.get('md5', None),
+            'sha256': metadata.get('sha256', None),
+        }
         return extras
 
     def user_id(self, obj):

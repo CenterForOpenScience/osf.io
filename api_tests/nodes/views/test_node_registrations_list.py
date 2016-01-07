@@ -70,5 +70,5 @@ class TestNodeRegistrationList(ApiTestCase):
         registration.save()
         url = '/{}nodes/{}/registrations/'.format(API_BASE, registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
