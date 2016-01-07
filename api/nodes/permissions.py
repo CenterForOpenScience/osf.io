@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from rest_framework import permissions
+from rest_framework import exceptions
 
 from website.models import Node, Pointer, User
 from website.util import permissions as osf_permissions
@@ -86,7 +87,12 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
         elif request.method == 'DELETE':
             return parent_node.can_edit(auth)
         else:
-            pointer_nodes = [Node.load(pointer['id']) for pointer in request.data.get('data', [])]
+            pointer_nodes = []
+            for pointer in request.data.get('data', []):
+                node = Node.load(pointer['id'])
+                if not node:
+                    raise exceptions.NotFound
+                pointer_nodes.append(node)
             has_parent_auth = parent_node.can_edit(auth)
             has_pointer_auth = reduce(lambda x, y: x and y.can_view(auth), pointer_nodes, True) if pointer_nodes else True
             return has_parent_auth and has_pointer_auth

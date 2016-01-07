@@ -1910,7 +1910,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 404)
 
     def test_type_mistyped(self):
         res = self.app.post_json_api(

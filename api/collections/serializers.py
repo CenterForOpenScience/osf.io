@@ -126,10 +126,16 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
         pointers_to_delete = [pointer for pointer in instance['data'] if pointer.node._id not in new_pointer_ids]
         pointers_to_add = [node_id for node_id in new_pointer_ids if node_id not in [pointer.node._id for pointer in instance['data']]]
 
-        for pointer in pointers_to_delete:
-            collection.rm_pointer(pointer, auth)
+        nodes_to_add = []
         for node_id in pointers_to_add:
             node = Node.load(node_id)
+            if not node:
+                raise exceptions.NotFound
+            nodes_to_add.append(node)
+
+        for pointer in pointers_to_delete:
+            collection.rm_pointer(pointer, auth)
+        for node in nodes_to_add:
             collection.add_pointer(node, auth)
 
         return {'data': [
@@ -145,8 +151,14 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
 
         pointers_to_add = [val['node']['_id'] for val in validated_data['data'] if val['node']['_id'] not in [pointer.node._id for pointer in instance['data']]]
 
+        nodes_to_add = []
         for node_id in pointers_to_add:
             node = Node.load(node_id)
+            if not node:
+                raise exceptions.NotFound
+            nodes_to_add.append(node)
+
+        for node in nodes_to_add:
             collection.add_pointer(node, auth)
 
         return {'data': [
