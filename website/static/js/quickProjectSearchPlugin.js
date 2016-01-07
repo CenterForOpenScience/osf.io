@@ -18,7 +18,7 @@ var quickSearchProject = {
     controller: function() {
         var self = this;
         // Pending nodes waiting to be displayed
-        self.nodes = [];
+        self.nodes = m.prop([]);
         // Nodes that are rendered
         self.displayedNodes = [];
         //Nodes that don't match search query
@@ -36,11 +36,12 @@ var quickSearchProject = {
         var promise = m.request({method: 'GET', url : url, config : xhrconfig});
         promise.then(function(result){
             result.data.forEach(function(node){
-                self.nodes.push(node);
+                self.nodes().push(node);
+                m.redraw(true)
             });
             self.sortDateDescending();
             self.countState = 10;
-            self.displayedNodes = self.nodes.splice(0, 10)
+            self.displayedNodes = self.nodes().splice(0, 10)
         });
 
         // Load last login
@@ -55,7 +56,7 @@ var quickSearchProject = {
         };
 
         self.loadUpToTen = function () {
-            var requested = self.nodes.splice(0, 10);
+            var requested = self.nodes().splice(0, 10);
             for (var i = 0; i < requested.length; i++) {
                 self.displayedNodes.push(requested[i])
             }
@@ -82,7 +83,7 @@ var quickSearchProject = {
             }
             var removedNodes = self.displayedNodes.splice(self.displayedNodes.length - remove);
             for (var i = 0; i < removedNodes.length; i++) {
-                self.nodes.push(removedNodes[i])
+                self.nodes().push(removedNodes[i])
             }
             self.sortBySortState();
             self.countState = self.displayedNodes.length;
@@ -161,12 +162,12 @@ var quickSearchProject = {
 
         self.restoreToNodeList = function (missingNodes) {
             for (var i = 0; i < missingNodes.length ; i++) {
-                self.nodes.push(missingNodes[i])
+                self.nodes().push(missingNodes[i])
             }
         };
 
         self.sortAlphabeticalAscending = function () {
-            self.nodes.sort(function(a,b){
+            self.nodes().sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
@@ -175,7 +176,7 @@ var quickSearchProject = {
         };
 
         self.sortAlphabeticalDescending = function () {
-            self.nodes.sort(function(a,b){
+            self.nodes().sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
                 return (A > B) ? -1 : (A < B) ? 1 : 0;
@@ -184,7 +185,7 @@ var quickSearchProject = {
         };
 
         self.sortDateAscending = function () {
-            self.nodes.sort(function(a,b){
+            self.nodes().sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
@@ -193,7 +194,7 @@ var quickSearchProject = {
         };
 
         self.sortDateDescending = function () {
-            self.nodes.sort(function(a,b){
+            self.nodes().sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
                 return (A > B) ? -1 : (A < B) ? 1 : 0;
@@ -219,7 +220,7 @@ var quickSearchProject = {
         self.sortNodesAndModifyDisplay = function () {
             self.restoreToNodeList(self.displayedNodes);
             self.sortBySortState();
-            self.displayedNodes = self.nodes.splice(0, self.countState)
+            self.displayedNodes = self.nodes().splice(0, self.countState)
         };
 
         self.noTitleMatch = function (node, query) {
@@ -238,11 +239,11 @@ var quickSearchProject = {
 
 
         self.filterNodes = function (query){
-            for (var n = self.nodes.length - 1; n >= 0; n--) {
-                var node = self.nodes[n];
+            for (var n = self.nodes().length - 1; n >= 0; n--) {
+                var node = self.nodes()[n];
                 if (self.noTitleMatch(node, query) && self.noContributorMatch(node, query)) {
                     self.nonMatchingNodes.push(node);
-                    self.nodes.splice(n, 1)
+                    self.nodes().splice(n, 1)
                 }
             }
         };
@@ -261,12 +262,12 @@ var quickSearchProject = {
             else {
                 self.filterNodes(query);
                 self.sortBySortState();
-                var numDisplay = Math.min(self.nodes.length, self.countState);
+                var numDisplay = Math.min(self.nodes().length, self.countState);
                 for (var i = 0; i < numDisplay; i++) {
-                    self.displayedNodes.push(self.nodes[i])
+                    self.displayedNodes.push(self.nodes()[i])
 
                 }
-                self.nodes.splice(0, numDisplay);
+                self.nodes().splice(0, numDisplay);
                 return self.displayedNodes
             }
 
@@ -276,7 +277,7 @@ var quickSearchProject = {
     },
     view : function(ctrl) {
         function projectView(project) {
-            console.log('pending: ' + ctrl.nodes.length, ', displayed: ' + ctrl.displayedNodes.length, ', non-matching: ' + ctrl.nonMatchingNodes.length, ctrl.sortState);
+            console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes.length, ', non-matching: ' + ctrl.nonMatchingNodes.length, ctrl.sortState);
             return m('tr', [
                 m('td', m("a", {href: '/'+ project.id}, project.attributes.title)),
                 m('td', ctrl.getContributors(project)),
@@ -287,7 +288,7 @@ var quickSearchProject = {
         }
 
         function loadMoreButton() {
-            if (ctrl.nodes.length !== 0){
+            if (ctrl.nodes().length !== 0){
                 return m('button', { onclick: function() {
                     ctrl.loadUpToTen() }
                 }, 'Show more')
