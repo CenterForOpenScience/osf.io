@@ -1744,8 +1744,9 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         )
 
         assert_equal(res.status_code, 200)
+
         assert_in(self.collection.linked_nodes_self_url, res.json['links']['self'])
-        assert_in(self.collection.linked_nodes_related_url, res.json['links']['related'])
+        assert_in(self.collection.linked_nodes_related_url, res.json['links']['html'])
         assert_equal(res.json['data'][0]['id'], self.linked_node._id)
 
     def test_post_contributing_node(self):
@@ -1754,9 +1755,11 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 200)
-        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.contributor_node._id})
-        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.linked_node._id})
+        assert_equal(res.status_code, 201)
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_in(self.contributor_node._id, ids)
+        assert_in(self.linked_node._id, ids)
 
     def test_post_public_node(self):
         public_node = ProjectFactory(is_public=True)
@@ -1765,9 +1768,11 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 200)
-        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': public_node._id})
-        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.linked_node._id})
+        assert_equal(res.status_code, 201)
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_in(public_node._id, ids)
+        assert_in(self.linked_node._id, ids)
 
     def test_post_private_node(self):
         res = self.app.post_json_api(
@@ -1781,12 +1786,14 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         res = self.app.get(
             self.url, auth=self.user.auth
         )
-        assert_not_in(res.json['data'], {'type': 'linked_nodes', 'id': self.other_node._id})
-        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.linked_node._id})
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_not_in(self.other_node._id, ids)
+        assert_in(self.linked_node._id, ids)
 
     def test_post_mixed_nodes(self):
         res = self.app.post_json_api(
-            self.url, self.payload([self.other_node._id, self.contributor_node]),
+            self.url, self.payload([self.other_node._id, self.contributor_node._id]),
             auth=self.user.auth,
             expect_errors=True
         )
@@ -1796,25 +1803,58 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         res = self.app.get(
             self.url, auth=self.user.auth
         )
-        assert_not_in(res.json['data'], {'type': 'linked_nodes', 'id': self.other_node._id})
-        assert_not_in(res.json['data'], {'type': 'linked_nodes', 'id': self.contributor_node._id})
-        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.linked_node._id})
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_not_in(self.other_node._id, ids)
+        assert_not_in(self.contributor_node._id, ids)
+        assert_in(self.linked_node._id, ids)
 
     def test_put_contributing_node(self):
-        res = self.app.post_json_api(
+        res = self.app.put_json_api(
             self.url, self.payload([self.contributor_node._id]),
             auth=self.user.auth
         )
 
         assert_equal(res.status_code, 200)
-        assert_in(res.json['data'], {'type': 'linked_nodes', 'id': self.contributor_node._id})
-        assert_not_in(res.json['data'], {'type': 'linked_nodes', 'id': self.linked_node._id})
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_in(self.contributor_node._id, ids)
+        assert_not_in(self.linked_node._id, ids)
 
     def test_put_private_node(self):
-        pass
+        res = self.app.put_json_api(
+            self.url, self.payload([self.other_node._id]),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_not_in(self.other_node._id, ids)
+        assert_in(self.linked_node._id, ids)
 
     def test_put_mixed_nodes(self):
-        pass
+        res = self.app.put_json_api(
+            self.url, self.payload([self.other_node._id, self.contributor_node._id]),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_not_in(self.other_node._id, ids)
+        assert_not_in(self.contributor_node._id, ids)
+        assert_in(self.linked_node._id, ids)
 
     def test_delete_with_put_empty_array(self):
         self.collection.add_pointer(self.admin_node, auth=self.auth)
@@ -1836,8 +1876,10 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         assert_equal(res.status_code, 204)
 
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_in({'type': 'linked_nodes', 'id': self.admin_node._id}, res.json['data'])
-        assert_not_in({'type': 'linked_nodes', 'id': self.linked_node._id}, res.json['data'])
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_in(self.admin_node._id, ids)
+        assert_not_in(self.linked_node._id, ids)
 
     def test_delete_multiple(self):
         self.collection.add_pointer(self.admin_node, auth=self.auth)
@@ -1852,4 +1894,32 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
 
     def test_access_other_collection(self):
-        pass
+        other_collection = FolderFactory(creator=self.user2)
+        url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, other_collection._id)
+        res = self.app.get(
+            url, auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+    def test_node_doesnt_exist(self):
+        res = self.app.post_json_api(
+            self.url, self.payload(['aquarela']),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 400)
+
+    def test_type_mistyped(self):
+        res = self.app.post_json_api(
+            self.url,
+            {
+                'data': [{'type': 'not_linked_nodes', 'id': self.contributor_node._id}]
+            },
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 409)
