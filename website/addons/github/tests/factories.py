@@ -10,6 +10,7 @@ class GitHubAccountFactory(ExternalAccountFactory):
     provider = 'github'
     provider_id = Sequence(lambda n: 'id-{0}'.format(n))
     oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
+    display_name = 'abc'
 
 class GitHubUserSettingsFactory(ModularOdmFactory):
     FACTORY_FOR = GitHubUserSettings
