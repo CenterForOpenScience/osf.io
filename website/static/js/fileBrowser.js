@@ -507,6 +507,7 @@ var Collections  = {
         };
         self.currentPage = m.prop(1);
         self.totalPages = m.prop(1);
+        self.pageSize = m.prop(5);
         self.validation = m.prop(false);
         self.validationError = m.prop('');
         self.showCollectionMenu = m.prop(false); // Show hide ellipsis menu for collections
@@ -547,10 +548,10 @@ var Collections  = {
                 }
             });
             promise.then(function(result){
-                self.totalPages(Math.ceil(result.links.meta.total/result.links.meta.per_page));
+                self.totalPages(Math.ceil((result.links.meta.total + args.systemCollections.length)/self.pageSize()));
             });
         };
-        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'page[size]' : 5, 'sort' : 'date_created', 'embed' : 'node_links'}});
+        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
         loadCollections(collectionsUrl);
 
         self.addCollection = function () {
@@ -652,6 +653,44 @@ var Collections  = {
     view : function (ctrl, args) {
         var selectedCSS;
         var submenuTemplate;
+        var collectionList = function () {
+            var item;
+            var index;
+            var list = [];
+            var begin = ((ctrl.currentPage()-1)*ctrl.pageSize()); // remember indexes start from 0
+            var end = ((ctrl.currentPage()) *ctrl.pageSize()); // 1 more than the last item
+            if (ctrl.collections().length < end) {
+                end = ctrl.collections().length;
+            }
+            for (var i = begin; i < end; i++) {
+                item = ctrl.collections()[i];
+                index = i;
+                var count = item.data.node ? ' (' + item.data.node.relationships.linked_nodes.links.related.meta.count + ')' : '';
+                if (item.id === args.activeFilter().id) {
+                    selectedCSS = 'active';
+                } else if (item.id === ctrl.collectionMenuObject().item.id) {
+                    selectedCSS = 'bg-color-hover';
+                } else {
+                    selectedCSS = '';
+                }
+                if (!item.data.systemCollection) {
+                    submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
+                        onclick : function (e) {
+                            ctrl.updateCollectionMenu(item, e);
+                        }
+                    });
+                } else {
+                    submenuTemplate = '';
+                }
+                list.push(m('li', { className : selectedCSS, 'data-index' : index },
+                    [
+                        m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label + count ),
+                        submenuTemplate
+                    ]
+                ));
+            }
+            return list;
+        };
         var collectionListTemplate = [
             m('h5', [
                 'Collections ',
@@ -660,35 +699,14 @@ var Collections  = {
                     'title':  'Collections are groups of projects. You can create new collections and add any project you are a collaborator on or a public project.',
                     'data-placement' : 'bottom'
                 }, ''),
-                m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages }),
-                m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
+                m('.pull-right', [
+                    m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')),
+                    m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages })
+                    ]
+                )
             ]),
             m('ul', { config: ctrl.applyDroppable },[
-                ctrl.collections().map(function(item, index){
-                    var count = item.data.node ? ' (' +item.data.node.relationships.linked_nodes.links.related.meta.count + ')' : '';
-                    if (item.id === args.activeFilter().id) {
-                        selectedCSS = 'active';
-                    } else if (item.id === ctrl.collectionMenuObject().item.id) {
-                        selectedCSS = 'bg-color-hover';
-                    } else {
-                        selectedCSS = '';
-                    }
-                    if (!item.data.systemCollection) {
-                        submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
-                            onclick : function (e) {
-                                ctrl.updateCollectionMenu(item, e);
-                            }
-                        });
-                    } else {
-                        submenuTemplate = '';
-                    }
-                    return m('li', { className : selectedCSS, 'data-index' : index },
-                        [
-                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label + count ),
-                            submenuTemplate
-                        ]
-                    );
-                }),
+                collectionList(),
                 ctrl.showCollectionMenu() ? m('.collectionMenu',{
                     style : 'position:absolute;top: ' + args.collectionMenuObject().y + 'px;left: ' + ctrl.collectionMenuObject().x + 'px;'
                 }, [
@@ -838,13 +856,25 @@ var Collections  = {
         ]);
     }
 };
-
+/**
+ * Small view component for compact pagination
+ * Requires currentPage and totalPages to be m.prop
+ * @type {{view: MicroPagination.view}}
+ */
 var MicroPagination = {
     view : function(ctrl, args) {
-        return m('span', [
-            m('i.fa.fa-chevron-left.text-muted'),
+        return m('span.m-l-xs', [
+            m('span.btn.btn-xs.btn-default.m-r-xs', { onclick : function(){
+                if(args.currentPage() > 1){
+                    args.currentPage(args.currentPage() - 1);
+                }
+            }}, m('i.fa.fa-angle-left.text-muted')),
             m('span', args.currentPage() + '/' + args.totalPages()),
-            m('i.fa.fa-chevron-right.text-muted')
+            m('span.btn.btn-xs.btn-default.m-l-xs', { onclick : function(){
+                if(args.currentPage() < args.totalPages()) {
+                    args.currentPage(args.currentPage() + 1);
+                }
+            }}, m('i.fa.fa-angle-right.text-muted'))
         ]);
     }
 };
@@ -928,31 +958,67 @@ var Breadcrumbs = {
  * @constructor
  */
 var Filters = {
+    controller : function (args) {
+        var self = this;
+        self.nameCurrentPage = m.prop(1);
+        self.namePageSize = m.prop(4);
+        self.nameTotalPages = m.prop(Math.ceil(args.nameFilters.length/self.namePageSize()));
+        self.tagCurrentPage = m.prop(1);
+        self.tagPageSize = m.prop(4);
+        self.tagTotalPages = m.prop(Math.ceil(args.tagFilters.length/self.tagPageSize()));
+    },
     view : function (ctrl, args) {
         var selectedCSS;
+        var returnNameFilters = function (){
+            var list = [];
+            var begin = ((ctrl.nameCurrentPage()-1) * ctrl.namePageSize()); // remember indexes start from 0
+            var end = ((ctrl.nameCurrentPage()) * ctrl.namePageSize()); // 1 more than the last item
+            if (args.nameFilters.length < end) {
+                end = args.nameFilters.length;
+            }
+            for (var i = begin; i < end; i++) {
+                var item = args.nameFilters[i];
+                selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
+                list.push(m('li' + selectedCSS,
+                    m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
+                        item.label + ' (' + item.data.count + ')'
+                    )
+                ));
+            }
+            return list;
+        };
+        var returnTagFilters = function(){
+            var list = [];
+            var begin = ((ctrl.tagCurrentPage()-1) * ctrl.tagPageSize()); // remember indexes start from 0
+            var end = ((ctrl.tagCurrentPage()) * ctrl.tagPageSize()); // 1 more than the last item
+            if (args.tagFilters.length < end) {
+                end = args.tagFilters.length;
+            }
+            for (var i = begin; i < end; i++) {
+                var item = args.tagFilters[i];
+                selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
+                list.push(m('li' + selectedCSS,
+                    m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
+                        item.label + ' (' + item.data.count + ')'
+                    )
+                ));
+            }
+            return list;
+        };
         return m('.fb-filters.m-t-lg',
             [
-                m('h5', 'Contributors'),
-                m('ul', [
-                    args.nameFilters.map(function(item, index){
-                        selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
-                        return m('li' + selectedCSS,
-                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
-                                item.label + ' (' + item.data.count + ')'
-                            )
-                        );
-                    })
+                m('h5', [
+                    'Contributors',
+                    m('.pull-right', m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages }))
                 ]),
-                m('h5', 'Tags'),
                 m('ul', [
-                    args.tagFilters.map(function(item){
-                        selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
-                        return m('li' + selectedCSS,
-                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
-                                item.label + ' (' + item.data.count + ')'
-                            )
-                        );
-                    })
+                    returnNameFilters()
+                ]),
+                m('h5', [
+                    'Tags',
+                    m('.pull-right',m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages }))
+                ]), m('ul', [
+                    returnTagFilters()
                 ])
             ]
         );
