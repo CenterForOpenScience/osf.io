@@ -120,16 +120,18 @@ BaseComment.prototype.setupToolTips = function(elm) {
 
 BaseComment.prototype.fetch = function() {
     var self = this;
-    var urlParams = osfHelpers.urlParams();
-    var query = 'embed=user';
-    if (urlParams.view_only) {
-        query = 'view_only=' + urlParams.view_only;
+    if (self.comments().length === 0) {
+        var urlParams = osfHelpers.urlParams();
+        var query = 'embed=user';
+        if (urlParams.view_only) {
+            query = 'view_only=' + urlParams.view_only;
+        }
+        if (self.id() !== undefined) {
+            query += '&filter[target]=' + self.id();
+        }
+        var url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/comments/', {query: query});
+        self.fetchNext(url, []);
     }
-    if (self.id() !== undefined) {
-        query += '&filter[target]=' + self.id();
-    }
-    var url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/comments/', {query: query});
-    self.fetchNext(url, []);
 };
 
 /* Go through the paginated API response to fetch all comments for the specified target */
