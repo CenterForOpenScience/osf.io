@@ -7,7 +7,7 @@ We are happy to let you know that your research plan has been verified for compl
 What happens now?
 <br />
 <br />
-<strong>Conduct your study:</strong> It's time to start your study and its analysis exactly as specified in your preregistration. 
+<strong>Conduct your study:</strong> It's time to start your study and its analysis exactly as specified in your preregistration.
 <br />
 <strong>Publish your study:</strong> In order to remain eligible for the Preregistration Challenge, any deviations from your preregistration (e.g. sample size, timing, analysis) must be documented and appear in the final publication. Any additional analyses must be noted separately from the registered, confirmatory, hypothesis testing analyses. Such new analyses must be described as hypothesis generating or exploratory tests. You must also refer to your preregistration in the publication by using its URL: <a href="${registration_url}">${registration_url}</a>. Publication must occur in an <a href="https://cos.io/preregjournals">eligible journal</a>.
 <br />

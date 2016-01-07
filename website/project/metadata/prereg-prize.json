@@ -74,11 +74,26 @@
             "type": "choose",
             "format": "singleselect",
             "options": [
-                "Registration prior to creation of data: As of the date of submission of this research plan for preregistration, the data have not yet been collected, created, or realized.",
-                "Registration prior to any human observation of the data: As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study. Examples include museum specimens that have not been measured and data that have been collected by non-human collectors and are inaccessible.",
-                "Registration prior to accessing the data: As of the date of submission, the data exist, but have not been accessed by you or your collaborators. Commonly, this includes data that has been collected by another researcher or institution.",
-                "Registration prior to analysis of the data: As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). A common situation for this scenario when a large dataset exists that is used for many different studies over time, or when a data set is randomly split into a sample for exploratory analyses, and the other section of data is reserved for later confirmatory data analysis.",
-                "Registration following analysis of the data: As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Prereg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
+                {
+                    "text": "Registration prior to creation of data",
+                    "tooltip": "As of the date of submission of this research plan for preregistration, the data have not yet been collected, created, or realized."
+                },
+                {
+                    "text": "Registration prior to any human observation of the data",
+                    "tooltip": "As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study. Examples include museum specimens that have not been measured and data that have been collected by non-human collectors and are inaccessible."
+                },
+                {
+                    "text": "Registration prior to accessing the data",
+                    "tooltip": "As of the date of submission, the data exist, but have not been accessed by you or your collaborators. Commonly, this includes data that has been collected by another researcher or institution."
+                },
+                {
+                    "text": "Registration prior to analysis of the data",
+                    "tooltip": "As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). A common situation for this scenario when a large dataset exists that is used for many different studies over time, or when a data set is randomly split into a sample for exploratory analyses, and the other section of data is reserved for later confirmatory data analysis."
+                },
+                {
+                   "text": "Registration following analysis of the data",
+                    "tooltip": "As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Prereg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
+                }
             ],
             "required": true
         }, {
@@ -337,8 +352,8 @@
             "format": "textarea"
         }, {
             "qid": "q25",
-            "nav": "Assumptions (Optional)",
-            "title": "Assumptions (Optional)",
+            "nav": "Assumptions",
+            "title": "Assumptions",
             "description": "If you are planning on testing the assumptions of the statistical tests included in your analysis plan, which assumptions will you test, how will you test them, what criteria will you use to make decisions based on that test, and what alternative statistical tests will you use? This may be an item where a decision tree could be helpful to plan and communicate the possibilities.",
             "help": "We will test the assumption of the ANOVA on equal group variance using the Bartlett test and use a Kruskal-Wallis as an alternative to the ANOVA if p<.05.<br /><br /> How responses will be evaluated: Again, any reasonable answer here is acceptable, meaning that you are free to follow or ignore the assumptions of the test as they see fit.",
             "type": "string",
@@ -352,7 +367,7 @@
         "questions": [{
             "qid": "q26",
             "nav": "Script",
-            "title": "(Optional) Upload an analysis script with clear comments",
+            "title": "Upload an analysis script with clear comments",
             "type": "osf-upload",
             "format": "osf-upload-open",
             "description": "This optional step is helpful in order to create a process that is completely transparent and increase the likelihood that your analysis can be replicated. We recommend that you run the code on a simulated dataset in order to check that it will run without errors."

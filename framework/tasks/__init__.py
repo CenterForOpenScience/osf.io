@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Asynchronous task queue module."""
+import threading
 
 from celery import Celery
 from celery.utils.log import get_task_logger
@@ -35,3 +36,9 @@ def error_handler(task_id, task_name):
     logger.error('#####FAILURE LOG BEGIN#####\n'
                 'Task {0} raised exception: {0}\n\{0}\n'
                 '#####FAILURE LOG STOP#####'.format(task_name, excep, result.traceback))
+
+
+# A common thread local for OSF, API, and Admin to push celery tasks into
+_task_queue = threading.local()
+_task_queue.queue = []
+queue = _task_queue.queue

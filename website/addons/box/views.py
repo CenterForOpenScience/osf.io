@@ -7,10 +7,9 @@ from box.client import BoxClient, BoxClientException
 from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError
-
+from website.addons.box.model import Box
 from website.addons.base import generic_views
 from website.addons.box.serializer import BoxSerializer
-from website.addons.box.utils import refresh_oauth_key
 
 SHORT_NAME = 'box'
 FULL_NAME = 'Box'
@@ -40,7 +39,7 @@ def _get_folders(node_addon, folder_id):
         }]
 
     try:
-        refresh_oauth_key(node_addon.external_account)
+        Box(node_addon.external_account).refresh_oauth_key()
         client = BoxClient(node_addon.external_account.oauth_key)
     except BoxClientException:
         raise HTTPError(http.FORBIDDEN)

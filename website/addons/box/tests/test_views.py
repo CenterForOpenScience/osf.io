@@ -26,6 +26,9 @@ mock_client = MockBox()
 class TestAuthViews(BoxAddonTestCase, testing.views.OAuthAddonAuthViewsTestCaseMixin):
 
     def setUp(self):
+        self.mock_refresh = mock.patch("website.addons.box.model.Box.refresh_oauth_key")
+        self.mock_refresh.return_value = True
+        self.mock_refresh.start()
         self.mock_update_data = mock.patch.object(
             BoxNodeSettings,
             '_update_folder_data'
@@ -35,6 +38,7 @@ class TestAuthViews(BoxAddonTestCase, testing.views.OAuthAddonAuthViewsTestCaseM
 
     def tearDown(self):
         self.mock_update_data.stop()
+        self.mock_refresh.stop()
         super(TestAuthViews, self).tearDown()
 
 
@@ -78,7 +82,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
         self.patcher_fetch = mock.patch('website.addons.box.model.BoxNodeSettings.fetch_folder_name')
         self.patcher_fetch.return_value = 'Camera Uploads'
         self.patcher_fetch.start()
-        self.patcher_refresh = mock.patch('website.addons.box.views.refresh_oauth_key')
+        self.patcher_refresh = mock.patch('website.addons.box.views.Box.refresh_oauth_key')
         self.patcher_refresh.return_value = True
         self.patcher_refresh.start()
 

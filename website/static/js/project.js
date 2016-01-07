@@ -293,7 +293,7 @@ $(document).ready(function() {
     });
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
-        window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
+        window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
     });
 
 

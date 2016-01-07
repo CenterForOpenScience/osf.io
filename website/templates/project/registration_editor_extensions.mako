@@ -30,9 +30,10 @@
   <a data-bind="click: toggleUploader">Attach File</a>
   <span data-bind="visible: showUploader">
     <div data-bind="attr.id: $data.uid, osfUploader">
-      <div class="spinner-loading-wrapper">
-	<div class="logo-spin logo-lg"></div>
-	<p class="m-t-sm fg-load-message"> Loading files...  </p>
+      <div class="container">
+	<p class="m-t-sm fg-load-message">
+          <span class="logo-spin logo-sm"></span>  Loading files...
+        </p>
       </div>
     </div>
   </span>
