@@ -289,25 +289,21 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     view_category = 'users'
     view_name = 'user-nodes'
 
+    ordering = ('-date_modified')
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
         return (
-            Q('contributors', 'eq', user) &
+            Q('contributors', 'contains', user._id) &
             Q('is_folder', 'ne', True) &
             Q('is_deleted', 'ne', True)
         )
 
     # overrides ListAPIView
     def get_queryset(self):
-        current_user = self.request.user
-        if current_user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(current_user)
         query = self.get_query_from_request()
-        raw_nodes = Node.find(self.get_default_odm_query() & query)
-        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
+        nodes = Node.find(self.get_default_odm_query() & query)
         return nodes
 
 
