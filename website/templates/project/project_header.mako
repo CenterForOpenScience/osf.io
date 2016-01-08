@@ -29,10 +29,23 @@
                         % endif
 
                     % endif
-                        <li><a href="${node['url']}"  class="project-title"> ${ node['title'] }  </a></li>
-
+                        <li>
+                            <a href="${node['url']}"  class="project-title"> 
+                                ${ node['title'] }
+                                % if user['unread_comments']['node'] > 0:
+                                    <span class="badge">${user['unread_comments']['node']}</span>
+                                % endif
+                            </a>
+                        </li>
                     % if not node['is_retracted']:
-                        <li id="projectNavFiles"><a href="${node['url']}files/">Files</a></li>
+                        <li id="projectNavFiles">
+                            <a href="${node['url']}files/">
+                                Files
+                                % if user['unread_comments']['files'] > 0:
+                                    <span class="badge">${user['unread_comments']['files']}</span>
+                                % endif
+                            </a>
+                        </li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
 
@@ -68,8 +81,18 @@
                         % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
-
                     % endif
+                    % if user['can_comment'] or node['has_comments']:
+                       <li>
+                           <a id="commentsLink" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                                Comments
+                                <span data-bind="if: unreadComments() !== 0">
+                                    <span data-bind="text: displayCount" class="badge"></span>
+                                </span>
+                           </a>
+                       </li>
+                    % endif
+
 
                     </ul>
                 </div>

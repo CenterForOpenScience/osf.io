@@ -4,6 +4,7 @@ import collections
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from django.core.urlresolvers import resolve, reverse
+from django.http.request import QueryDict
 from rest_framework.fields import SkipField
 
 from framework.auth import core as auth_core
@@ -274,11 +275,19 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
     )
 
+    Field can include optional filters:
+
+    Example:
+    replies = RelationshipField(
+        self_view='nodes:node-comments',
+        self_view_kwargs={'node_id': '<node._id>'},
+        filter={'target': '<pk>'})
+    )
     """
     json_api_link = True  # serializes to a links object
 
     def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-                 self_meta=None, related_meta=None, always_embed=False, **kwargs):
+                 self_meta=None, related_meta=None, always_embed=False, filter=None, **kwargs):
         related_view = related_view
         self_view = self_view
         related_kwargs = related_view_kwargs
@@ -288,6 +297,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.related_meta = related_meta
         self.self_meta = self_meta
         self.always_embed = always_embed
+        self.filter = filter
 
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
@@ -324,7 +334,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         """
         meta = {}
         for key in meta_data or {}:
-            if key == 'count':
+            if key == 'count' or key == 'unread':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
                 if utils.is_truthy(show_related_counts):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
@@ -385,11 +395,20 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 if kwargs is None:
                     urls[view_name] = {}
                 else:
-                    urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
-
+                    url = self.reverse(view, kwargs=kwargs, request=request, format=format)
+                    if self.filter:
+                        url = '{}?filter{}'.format(url, self.format_filter(obj))
+                    urls[view_name] = url
         if not urls['self'] and not urls['related']:
             urls = None
         return urls
+
+    def format_filter(self, obj):
+        qd = QueryDict(mutable=True)
+        filter_fields = self.filter.keys()
+        for field_name in filter_fields:
+            qd.update({'[{}]'.format(field_name): self.lookup_attribute(obj, self.filter[field_name])})
+        return qd.urlencode(safe=['[', ']'])
 
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
@@ -404,6 +423,14 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
             ret = format_relationship_links(related_url, self_url, related_meta, self_meta)
         return ret
+
+
+class FileCommentRelationshipField(RelationshipField):
+
+    def get_url(self, obj, view_name, request, format):
+        if obj.kind == 'folder':
+            raise SkipField
+        return super(FileCommentRelationshipField, self).get_url(obj, view_name, request, format)
 
 
 class TargetField(ser.Field):

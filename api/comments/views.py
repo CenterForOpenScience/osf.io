@@ -1,15 +1,16 @@
+import requests
+
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
+from rest_framework.status import is_server_error
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from api.base.exceptions import Gone
-from api.base.filters import ODMFilterMixin
+from api.base.exceptions import Gone, ServiceUnavailableError
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
-    CanCommentOrPublic,
     CommentDetailPermissions,
     CommentReportsPermissions
 )
@@ -22,6 +23,9 @@ from api.comments.serializers import (
 )
 from framework.auth.oauth_scopes import CoreScopes
 from website.project.model import Comment
+from website.files.models import StoredFileNode
+from website.files.models.dropbox import DropboxFile
+from website.util import waterbutler_api_url_for
 
 
 class CommentMixin(object):
@@ -35,91 +39,58 @@ class CommentMixin(object):
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
         try:
-            comment = Comment.find_one(Q('_id', 'eq', pk))
+            comment = Comment.find_one(Q('_id', 'eq', pk) & Q('root_target', 'ne', None))
         except NoResultsFound:
             raise NotFound
+
+        # Deleted root targets still appear as tuples in the database and are included in
+        # the above query, requiring an additional check
+        if comment.root_target is None:
+            raise NotFound
+
+        if isinstance(comment.root_target, StoredFileNode):
+            root_target = comment.root_target
+            if root_target.provider == 'dropbox':
+                root_target = DropboxFile.load(comment.root_target._id)
+
+            if root_target.provider == 'osfstorage':
+                try:
+                    StoredFileNode.find(
+                        Q('node', 'eq', comment.node._id) &
+                        Q('_id', 'eq', root_target._id) &
+                        Q('is_file', 'eq', True)
+                    )
+                except NoResultsFound:
+                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
+                    del comment.node.commented_files[root_target._id]
+
+            else:
+                url = waterbutler_api_url_for(comment.node._id, root_target.provider, root_target.path, meta=True)
+                waterbutler_request = requests.get(
+                    url,
+                    cookies=self.request.COOKIES,
+                    headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
+                )
+
+                if waterbutler_request.status_code == 401:
+                    raise PermissionDenied
+
+                if waterbutler_request.status_code == 404:
+                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
+                    raise NotFound
+
+                if is_server_error(waterbutler_request.status_code):
+                    raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
+
+                try:
+                    return waterbutler_request.json()['data']
+                except KeyError:
+                    raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, comment)
         return comment
-
-
-class CommentRepliesList(JSONAPIBaseView, generics.ListAPIView, CommentMixin, ODMFilterMixin):
-    """List of replies to a comment. *Read-only*.
-
-    Paginated list of comment replies ordered by their `date_created`. Each resource contains the full representation
-    of the comment, meaning additional requests to an individual comment's detail view are not necessary.
-    Comment replies can be created via the NodeCommentsList endpoint `/v2/nodes/node_id/comments`.
-
-    ###Permissions
-
-    Comments on public nodes are given read-only access to everyone. If the node comment-level is "private,"
-    only contributors have permission to comment. If the comment-level is "public" any logged-in OSF user can comment.
-    Comments on private nodes are only visible to contributors and administrators on the parent node.
-
-    ##Attributes
-
-    OSF comment reply entities have the "comments" `type`.
-
-        name           type               description
-        ---------------------------------------------------------------------------------
-        content        string             content of the comment
-        date_created   iso8601 timestamp  timestamp that the comment was created
-        date_modified  iso8601 timestamp  timestamp when the comment was last updated
-        modified       boolean            has this comment been edited?
-        deleted        boolean            is this comment deleted?
-        is_abuse       boolean            has this comment been reported by the current user?
-        has_children   boolean            does this comment have replies?
-        can_edit       boolean            can the current user edit this comment?
-
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Query Params
-
-    + `filter[deleted]=True|False` -- filter comment replies based on whether or not they are deleted.
-
-    The list of comment replies includes deleted comments by default. The `deleted` field is a boolean and can be
-    filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
-    the query will cause the match to fail regardless.
-
-    + `filter[date_created][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter comment replies based on date created.
-
-    Comment replies can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
-    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
-    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
-
-    + `filter[target]=target_id` -- filter comments based on their target id.
-
-    The list of comments can be filtered by target id. For example, to get all comments with target = comment,
-    the target_id would be the comment_id.
-
-    #This Request/Response
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        CanCommentOrPublic,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
-    required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
-
-    view_category = 'comments'
-    view_name = 'comment-replies'
-    serializer_class = CommentSerializer
-
-    ordering = ('-date_created', )  # default ordering
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        return Q('target', 'eq', self.get_comment())
-
-    def get_queryset(self):
-        return Comment.find(self.get_query_from_request())
 
 
 class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixin):

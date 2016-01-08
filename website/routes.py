@@ -318,16 +318,6 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/comments/discussion/',
-                '/project/<pid>/node/<nid>/comments/discussion/',
-            ],
-            'get',
-            project_views.comment.comment_discussion,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/comments/timestamps/',
                 '/project/<pid>/node/<nid>/comments/timestamps/',
             ],

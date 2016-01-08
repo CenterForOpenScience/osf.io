@@ -12,6 +12,7 @@ from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
 
+from api.base.utils import absolute_reverse
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
@@ -147,6 +148,14 @@ class StoredFileNode(StoredObject):
     @property
     def deep_url(self):
         return self.wrapped().deep_url
+
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
     def wrapped(self):
         """Wrap self in a FileNode subclass
@@ -378,6 +387,9 @@ class FileNode(object):
         """
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
+        if self._id in self.node.commented_files:
+            del self.node.commented_files[self._id]
+        self.node.save()
         StoredFileNode.remove_one(self.stored_object)
         return trashed
 
