@@ -21,23 +21,25 @@ var quickSearchProject = {
         self.displayedNodes = m.prop([]); // Nodes that are rendered
         self.nonMatchingNodes = m.prop([]); //Nodes that don't match search query
         self.sortState = m.prop('dateDesc');
-        self.countState = m.prop();
+        self.countDisplayed = m.prop();
         self.next = m.prop();
-        self.allLoaded = m.prop(false);
+        self.loadingComplete = m.prop(false);
         self.contributorMapping = {};
         self.filter = m.prop();
+        self.totalLoaded = m.prop();
 
         // Load first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig});
         promise.then(function(result) {
-            self.countState(result.data.length);
+            self.countDisplayed(result.data.length);
             result.data.forEach(function (node) {
                 self.nodes().push(node);
                 self.retrieveContributors(node)
             });
             self.next(result.links.next);
             self.displayedNodes(self.nodes().splice(0, 10));
+            self.totalLoaded(self.displayedNodes().length)
         });
         promise.then(
             function(){
@@ -45,7 +47,7 @@ var quickSearchProject = {
                     self.recursiveNodes(self.next())
                 }
                 else {
-                    self.allLoaded(true);
+                    self.loadingComplete(true);
                     m.redraw()
                 }
             }
@@ -53,6 +55,9 @@ var quickSearchProject = {
 
         // Recursively calls remaining user's nodes
         self.recursiveNodes = function (url) {
+            if (self.nodes().length > 0) {
+                m.redraw()
+            }
              var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
                 nextPromise.then(function(result){
                     result.data.forEach(function(node){
@@ -65,7 +70,7 @@ var quickSearchProject = {
                         self.recursiveNodes(self.next())
                     }
                     else {
-                        self.allLoaded(true);
+                        self.loadingComplete(true);
                         m.redraw()
                     }
         })};
@@ -103,23 +108,23 @@ var quickSearchProject = {
             for (var i = 0; i < requested.length; i++) {
                 self.displayedNodes().push(requested[i])
             }
-            self.countState(self.displayedNodes().length);
+            self.countDisplayed(self.displayedNodes().length);
             return self.displayedNodes()
         };
 
         self.removeUpToTen = function() {
             var remove = 0;
-            if (self.countState() - 10 >= 10) {
-                if (self.countState() % 10 === 0) {
+            if (self.countDisplayed() - 10 >= 10) {
+                if (self.countDisplayed() % 10 === 0) {
                     remove = 10
                 }
                 else {
-                    remove = self.countState() % 10
+                    remove = self.countDisplayed() % 10
                 }
 
             }
-            else if (self.countState() - 10 >= 0) {
-                remove = self.countState() - 10
+            else if (self.countDisplayed() - 10 >= 0) {
+                remove = self.countDisplayed() - 10
             }
             else {
                 return
@@ -129,7 +134,7 @@ var quickSearchProject = {
                 self.nodes().push(removedNodes[i])
             }
             self.sortBySortState();
-            self.countState(self.displayedNodes().length);
+            self.countDisplayed(self.displayedNodes().length);
             return self.displayedNodes()
         };
 
@@ -223,7 +228,7 @@ var quickSearchProject = {
         self.sortNodesAndModifyDisplay = function () {
             self.restoreToNodeList(self.displayedNodes());
             self.sortBySortState();
-            self.displayedNodes(self.nodes().splice(0, self.countState()))
+            self.displayedNodes(self.nodes().splice(0, self.countDisplayed()))
         };
 
         self.noTitleMatch = function (node) {
@@ -265,7 +270,7 @@ var quickSearchProject = {
             else {
                 self.filterNodes();
                 self.sortBySortState();
-                var numDisplay = Math.min(self.nodes().length, self.countState());
+                var numDisplay = Math.min(self.nodes().length, self.countDisplayed());
                 for (var i = 0; i < numDisplay; i++) {
                     self.displayedNodes().push(self.nodes()[i])
                 }
@@ -295,7 +300,7 @@ var quickSearchProject = {
         }
 
          function loadLessButton() {
-            if (ctrl.displayedNodes().length > 10){
+            if (ctrl.displayedNodes().length > 10 && ctrl.loadingComplete()){
                 return m('button', { onclick: function() {
                     ctrl.removeUpToTen() }
                 }, 'Show less')
@@ -303,7 +308,7 @@ var quickSearchProject = {
         }
 
         function sortAlphaAsc() {
-            if (ctrl.allLoaded()) {
+            if (ctrl.loadingComplete()) {
                 return m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
                     ctrl.sortState('alphaAsc');
                     ctrl.sortNodesAndModifyDisplay();
@@ -313,7 +318,7 @@ var quickSearchProject = {
         }
 
         function sortAlphaDesc(){
-            if (ctrl.allLoaded()){
+            if (ctrl.loadingComplete()){
                 return m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
                     ctrl.sortState('alphaDesc');
                     ctrl.sortNodesAndModifyDisplay();
@@ -322,14 +327,14 @@ var quickSearchProject = {
         }
 
         function sortDateAsc(){
-            if (ctrl.allLoaded()){
+            if (ctrl.loadingComplete()){
                  return m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
                      ctrl.sortState('dateAsc');
                      ctrl.sortNodesAndModifyDisplay()}})
             }
         }
         function sortDateDesc(){
-            if (ctrl.allLoaded()){
+            if (ctrl.loadingComplete()){
                 return m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
                     ctrl.sortState('dateDesc');
                     ctrl.sortNodesAndModifyDisplay();
@@ -338,7 +343,7 @@ var quickSearchProject = {
         }
 
         function searchBar() {
-            if (ctrl.allLoaded()){
+            if (ctrl.loadingComplete()){
                 return  m('input[type=search]', {id: 'searchQuery', onkeyup: function() {ctrl.quickSearch()}}, 'Quick search projects')
             }
         }
@@ -356,7 +361,7 @@ var quickSearchProject = {
 
         function resultsFound(){
             return m('div', [
-                ctrl.allLoaded() ? '' : m('.spinner-div', m('i.fa.fa-refresh.fa-spin'), ' Loading projects...'),
+                ctrl.loadingComplete() ? '' : m('.spinner-div', m('i.fa.fa-refresh.fa-spin'), ' Loading projects...'),
                 searchBar(),
                 m('div', {'class': 'container-fluid'},
                     m('table', [
