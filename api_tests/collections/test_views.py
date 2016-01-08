@@ -1728,10 +1728,13 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         self.contributor_node.add_contributor(self.user, auth=Auth(self.user2))
         self.contributor_node.save()
         self.other_node = NodeFactory()
-        self.linked_node = NodeFactory()
+        self.linked_node = NodeFactory(creator=self.user)
         self.collection.add_pointer(self.linked_node, auth=self.auth)
-        self.collection.save()
+        self.public_collection = FolderFactory(is_public=True, creator=self.user2)
+        self.public_collection.add_pointer(self.linked_node, auth=Auth(self.user2))
+        self.public_node = NodeFactory(is_public=True)
         self.url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.collection._id)
+        self.public_url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.public_collection._id)
 
     def payload(self, node_ids=None):
         node_ids = node_ids or [self.admin_node._id]
@@ -1749,6 +1752,17 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         assert_in(self.collection.linked_nodes_related_url, res.json['links']['html'])
         assert_equal(res.json['data'][0]['id'], self.linked_node._id)
 
+    def test_get_public_relationship_linked_nodes_logged_out(self):
+        res = self.app.get(self.public_url)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['id'], self.linked_node._id)
+
+    def test_get_private_relationship_linked_nodes_logged_out(self):
+        res = self.app.get(self.url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
     def test_post_contributing_node(self):
         res = self.app.post_json_api(
             self.url, self.payload([self.contributor_node._id]),
@@ -1762,16 +1776,15 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         assert_in(self.linked_node._id, ids)
 
     def test_post_public_node(self):
-        public_node = ProjectFactory(is_public=True)
         res = self.app.post_json_api(
-            self.url, self.payload([public_node._id]),
+            self.url, self.payload([self.public_node._id]),
             auth=self.user.auth
         )
 
         assert_equal(res.status_code, 201)
 
         ids = [data['id'] for data in res.json['data']]
-        assert_in(public_node._id, ids)
+        assert_in(self.public_node._id, ids)
         assert_in(self.linked_node._id, ids)
 
     def test_post_private_node(self):
@@ -1923,3 +1936,74 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         )
 
         assert_equal(res.status_code, 409)
+
+    def test_creates_public_linked_node_relationship_logged_out(self):
+        res = self.app.post_json_api(
+                self.public_url, self.payload([self.public_node._id]),
+                expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+
+    def test_creates_public_linked_node_relationship_logged_in(self):
+        res = self.app.post_json_api(
+                self.public_url, self.payload([self.public_node._id]),
+                auth=self.user.auth, expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+    def test_creates_private_linked_node_relationship_logged_out(self):
+        res = self.app.post_json_api(
+                self.url, self.payload([self.other_node._id]),
+                expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+
+    def test_put_public_nodes_relationships_logged_out(self):
+        res = self.app.put_json_api(
+                self.public_url, self.payload([self.public_node._id]),
+                expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+
+    def test_put_public_nodes_relationships_logged_in(self):
+        res = self.app.put_json_api(
+                self.public_url, self.payload([self.linked_node._id]),
+                auth=self.user.auth, expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+    def test_delete_public_nodes_relationships_logged_out(self):
+        res = self.app.delete_json_api(
+            self.public_url, self.payload([self.public_node._id]),
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+
+    def test_delete_public_nodes_relationships_logged_in(self):
+        res = self.app.delete_json_api(
+                self.public_url, self.payload([self.linked_node._id]),
+                auth=self.user.auth, expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+    def test_node_links_and_relationship_represent_same_nodes(self):
+        self.collection.add_pointer(self.admin_node, auth=self.auth)
+        self.collection.add_pointer(self.contributor_node, auth=self.auth)
+        res_relationship = self.app.get(
+            self.url, auth=self.user.auth
+        )
+        res_node_links = self.app.get(
+            '/{}collections/{}/node_links/'.format(API_BASE, self.collection._id),
+            auth=self.user.auth
+        )
+        node_links_id = [data['embeds']['target_node']['data']['id'] for data in res_node_links.json['data']]
+        relationship_id = [data['id'] for data in res_relationship.json['data']]
+
+        assert_equal(set(node_links_id), set(relationship_id))

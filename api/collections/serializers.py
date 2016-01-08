@@ -1,10 +1,9 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 from framework.exceptions import PermissionsError
 
-from website.models import Node, Pointer
+from website.models import Node
 from api.base.serializers import LinksField, RelationshipField, DevOnly, RelationshipResourceIdObjectSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, relationship_diff
 from api.base.exceptions import InvalidModelValueError
@@ -144,10 +143,7 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
         collection = instance['self']
         auth = get_user_auth(self.context['request'])
 
-        add, remove = self.get_pointers_to_add_remove(
-                pointers=instance['data'],
-                new_pointers=validated_data['data']
-        )
+        add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
 
         for pointer in remove:
             collection.rm_pointer(pointer, auth)
@@ -161,10 +157,7 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
         auth = get_user_auth(self.context['request'])
         collection = instance['self']
 
-        add, remove = self.get_pointers_to_add_remove(
-                pointers=instance['data'],
-                new_pointers=validated_data['data']
-        )
+        add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
 
         for node in add:
             collection.add_pointer(node, auth)

@@ -599,7 +599,6 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
 
     This requires admin permission on the node. This will delete any node_links that have a
     corresponding node_id in the request.
-
     """
     permission_classes = (
         ContributorOrPublicForRelationshipPointers,
