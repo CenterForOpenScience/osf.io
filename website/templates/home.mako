@@ -7,6 +7,8 @@
 
 <%def name="stylesheets()">
   <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <link rel="stylesheet" href="/static/vendor/bower_components/jQuery-ui-Slider-Pips/dist/jquery-ui-slider-pips.css">
+  <link rel="stylesheet" href="/static/css/recent-activity-widget.css">
 </%def>
 
 <%def name="javascript_bottom()">

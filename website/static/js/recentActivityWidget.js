@@ -3,6 +3,7 @@ var m = require('mithril');
 var moment = require('moment');
 var $osf = require('js/osfHelpers');
 var LogText = require('js/logTextParser');
+var pips = require('sliderPips');
 
 var xhrconfig = function (xhr) {
     xhr.withCredentials = true;
@@ -80,32 +81,46 @@ var LogWrap = {
         self.getLogs(true, false);
     },
     view: function(ctrl, args){
-        var fileEvents = (ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0;
-        var commentEvents = (ctrl.eventNumbers.comments/ctrl.totalEvents)*100 | 0;
-        var wikiEvents = (ctrl.eventNumbers.wiki/ctrl.totalEvents)*100 | 0;
-        var nodeEvents = (ctrl.eventNumbers.nodes/ctrl.totalEvents)*100 | 0;
+        var fileEvents = ((ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0);
+        var commentEvents = ((ctrl.eventNumbers.comments/ctrl.totalEvents)*100 | 0);
+        var wikiEvents = ((ctrl.eventNumbers.wiki/ctrl.totalEvents)*100 | 0);
+        var nodeEvents = ((ctrl.eventNumbers.nodes/ctrl.totalEvents)*100 | 0);
         var otherEvents = 100 - (fileEvents + commentEvents + wikiEvents + nodeEvents);
+        var div = 8.64e+7;
+        var begin = (Number(ctrl.firstDay.format('x'))/div | 0);
+        var end = (Number(ctrl.today.format('x'))/div | 0);
+        var values = [(Number(ctrl.dateBegin.format('x'))/div | 0), (Number(ctrl.dateEnd.format('x'))/div | 0)];
         var addSlider = function(ele, isInitialized){
             if (!isInitialized) {
                 $("#recentActivitySlider").slider({
-                    min: Number(ctrl.firstDay.format('x')),
-                    max: Number(ctrl.today.format('x')),
-                    values: [Number(ctrl.dateBegin.format('x')), Number(ctrl.dateEnd.format('x'))],
+                    min: begin,
+                    max: end,
                     range: true,
+                    values: values,
                     stop: function (event, ui) {
                         ctrl.page = 1;
-                        ctrl.dateBegin = moment.utc(ui.values[0]);
-                        ctrl.dateEnd = moment.utc(ui.values[1]);
+                        ctrl.dateBegin = moment.utc(ui.values[0]*div);
+                        ctrl.dateEnd = moment.utc(ui.values[1]*div);
                         ctrl.getLogs(false, true);
-                    },
-                    slide: function (event, ui) {
-
+                    }
+                });
+                $("#recentActivitySlider").slider('pips', {
+                    first: false,
+                    last: false,
+                    rest: 'label',
+                    step: 30,
+                    formatLabel: function(value){
+                        return String(moment.utc(value*div).format("MMM D YY"))
+                    }
+                }).slider('float', {
+                    formatLabel: function(value){
+                        return String(moment.utc(value*div).format("MMM D YY"))
                     }
                 });
                 ctrl.getLogs();
             }
             else {
-                $("#recentActivitySlider").slider('option', "values", [Number(ctrl.dateBegin.format('x')), Number(ctrl.dateEnd.format('x'))]);
+                $("#recentActivitySlider").slider('option', "values", values);
             }
         };
         return m('.panel.panel-default', [
@@ -114,6 +129,7 @@ var LogWrap = {
             m('.fb-activity-list.m-t-md', [
                 m('#rASliderLabel'),
                 m('#recentActivitySlider', {style: {margin: '10px'}, config: addSlider}),
+                m('br'), m('br'),
                 m('.progress', {style: {borderRadius: '25px'}}, [
                     m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : '.muted'), {style: {width: fileEvents+'%'}},
                         m('a', {onclick: function(){

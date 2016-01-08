@@ -1,0 +1,14 @@
+.ui-slider-pips .ui-slider-label {
+  margin-left: -2em;
+  width: 5em;
+}
+
+#styling-after-slider {
+    margin-top: 3em;
+}
+#styling-after-slider .ui-slider-pip {
+    top: -12px;
+}
+#styling-after-slider .ui-slider-pip .ui-slider-label {
+    top: -18px;
+}
