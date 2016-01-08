@@ -1,11 +1,11 @@
 <%inherit file="project/addon/widget.mako"/>
 <div id="evernoteWidget">
-  <div>Notebook: ${folder_name}</div>
+  <div class="evernote-test">Notebook: ${folder_name}</div>
   <div class="col-md-12">
     <div class="row">
       <button class="btn btn-success" data-bind="click: openAddDialog"></button>
     </div>
-
+    
     <div class="row">
         <div data-bind="foreach: notes">
           <p>
