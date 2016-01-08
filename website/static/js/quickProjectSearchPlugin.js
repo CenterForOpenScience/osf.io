@@ -43,7 +43,13 @@ var quickSearchProject = {
         });
         promise.then(
             function(){
-                self.recursiveNodes(self.next())
+                if (self.next()) {
+                    self.recursiveNodes(self.next())
+                }
+                else {
+                    self.allLoaded(true);
+                    m.redraw()
+                }
             }
         );
 
@@ -114,6 +120,7 @@ var quickSearchProject = {
         self.getFamilyName = function(i, node) {
             return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
         };
+
         self.getContributors = function (node) {
             var numContributors = node.embeds.contributors.links.meta.total;
             if (numContributors === 1) {
