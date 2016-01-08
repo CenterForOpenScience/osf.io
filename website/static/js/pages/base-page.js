@@ -121,8 +121,8 @@ $(function() {
         $maintenance.show();
     }
     // Localize mainteance period datetimes
-    var startMaintenanceUTC = moment.utc({year: 2016, month: 0, hour: 0, day: 10, hour: 0});
-    var endMaintenanceUTC = moment.utc({year: 2016, month: 0, hour: 0, day: 10, hour: 2});
+    var startMaintenanceUTC = moment.utc({year: 2016, month: 0, day: 10, hour: 0});
+    var endMaintenanceUTC = moment.utc({year: 2016, month: 0, day: 10, hour: 2});
     var startMaintenance = moment(startMaintenanceUTC.toDate());
     var endMaintenance = moment(endMaintenanceUTC.toDate());
     $('#maintenanceTime').html(
