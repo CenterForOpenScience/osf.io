@@ -1,24 +1,35 @@
 from __future__ import unicode_literals
+
 import copy
+import unittest
 
 import requests
 from django.conf import settings
 from requests.auth import HTTPBasicAuth
 
+from framework.auth import User
+import uuid
 
-class TestVarnish(object):
+from tests.base import DbTestCase
+
+
+class TestVarnish(DbTestCase):
 
     local_varnish_base_url = 'http://localhost:8193/v2/'
     local_python_base_url = 'http://localhost:8000/v2/'
 
     def setUp(self):
-        if not settings.ENABLE_VARNISH:
-            return
-        self.authorization = HTTPBasicAuth('mocha@osf.io', 'password')
+        settings.ENABLE_ESI = True
+        username = uuid.uuid4()
+        self.user = User.create(username='{}@example.com'.format(str(username)), password='password', fullname='Mocha Test User')
+        self.user.save()
+        self.authorization = HTTPBasicAuth(self.user.username, 'password')
 
+    def tearDown(self):
+        settings.ENABLE_ESI = False
+
+    @unittest.skipIf(not settings.ENABLE_VARNISH, 'Varnish is disabled')
     def test_compare_python_responses_to_varnish_responses(self):
-        if not settings.ENABLE_VARNISH:
-            return
         querystrings = dict(
             nodes=[
                 'comments',
@@ -122,7 +133,6 @@ class TestVarnish(object):
         validate_keys confirms that the correct keys are in embeds and relationships.
         """
         for item in data['data']:  # all these should be lists.
-
             if 'embeds' in item.keys():
                 item__embed_keys = item['embeds'].keys()
                 item__embed_keys.sort()
@@ -132,9 +142,8 @@ class TestVarnish(object):
                 for rel_key in item['relationships'].keys():
                     assert unicode(rel_key) not in embed_keys, 'Relationship mismatch: {}'.format(rel_key)
 
+    @unittest.skipIf(not settings.ENABLE_VARNISH, 'Varnish is disabled')
     def test_cache_invalidation(self):
-        if not settings.ENABLE_VARNISH:
-            return
         payload = dict(
             data=dict(
                 type='nodes',
