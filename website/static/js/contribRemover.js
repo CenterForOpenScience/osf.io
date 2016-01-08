@@ -237,7 +237,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
     },
     submit: function() {
         var self = this;
-        var url = window.contextVars.node.urls.api + 'contributor/remove/'
+        var url = window.contextVars.node.urls.api + 'contributor/remove/';
         $osf.postJSON(
             url, {
                 contributorID: self.contributorToRemove().id,
