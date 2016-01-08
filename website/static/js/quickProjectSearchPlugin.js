@@ -30,6 +30,7 @@ var quickSearchProject = {
         self.next = m.prop();
         self.allLoaded = m.prop(false);
         self.contributorMapping = {};
+        self.filter = m.prop();
 
         // Load first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
@@ -282,25 +283,25 @@ var quickSearchProject = {
             self.displayedNodes(self.nodes().splice(0, self.countState()))
         };
 
-        self.noTitleMatch = function (node, query) {
-            return (node.attributes.title.toUpperCase().indexOf(query.toUpperCase()) === -1);
+        self.noTitleMatch = function (node) {
+            return (node.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) === -1);
         };
 
-        self.noContributorMatch = function (node, query) {
+        self.noContributorMatch = function (node) {
             var contributors = self.contributorMapping[node.id];
 
             for (var c = 0; c < contributors.length; c++) {
-                if (contributors[c].toUpperCase().indexOf(query.toUpperCase()) !== -1){
+                if (contributors[c].toUpperCase().indexOf(self.filter().toUpperCase()) !== -1){
                     return false
                 }
             }
             return true
         };
 
-        self.filterNodes = function (query){
+        self.filterNodes = function (){
             for (var n = self.nodes().length - 1; n >= 0; n--) {
                 var node = self.nodes()[n];
-                if (self.noTitleMatch(node, query) && self.noContributorMatch(node, query)) {
+                if (self.noTitleMatch(node) && self.noContributorMatch(node)) {
                     self.nonMatchingNodes().push(node);
                     self.nodes().splice(n, 1)
                 }
@@ -308,18 +309,18 @@ var quickSearchProject = {
         };
 
         self.quickSearch = function () {
-            var query = document.getElementById('searchQuery').value;
+            self.filter(document.getElementById('searchQuery').value);
             self.restoreToNodeList(self.nonMatchingNodes());
             self.restoreToNodeList(self.displayedNodes());
             self.displayedNodes([]);
             self.nonMatchingNodes([]);
             // if backspace completely, previous nodes with prior sorting/count will be displayed
-            if (query === '') {
+            if (self.filter() === '') {
                 self.sortNodesAndModifyDisplay();
                 return self.displayedNodes()
             }
             else {
-                self.filterNodes(query);
+                self.filterNodes();
                 self.sortBySortState();
                 var numDisplay = Math.min(self.nodes().length, self.countState());
                 for (var i = 0; i < numDisplay; i++) {
@@ -402,26 +403,32 @@ var quickSearchProject = {
             }
         }
 
-        return m('div', [
-            searchBar(),
-            m('div', {'class': 'container-fluid'},
-                m('table', [
-                    m('tr', [
-                        m('th', {class: 'col-md-5'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
-                        m('th', {class: 'col-md-3'}, 'Contributors'),
-                        m('th', {class: 'col-md-2'}, 'Modified', sortDateAsc(), sortDateDesc()),
-                        m('th', {class: 'col-md-1'}, 'New comments'),
-                        m('th', {class: 'col-md-1'}, 'New logs')
-                    ]),
+        if (ctrl.displayedNodes().length == 0 && ctrl.filter() == null) {
+            return m('h2', 'No nodes found!')
+        }
+        else {
+            return m('div', [
+                searchBar(),
+                m('div', {'class': 'container-fluid'},
+                    m('table', [
+                        m('tr', [
+                            m('th', {class: 'col-md-5'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
+                            m('th', {class: 'col-md-3'}, 'Contributors'),
+                            m('th', {class: 'col-md-2'}, 'Modified', sortDateAsc(), sortDateDesc()),
+                            m('th', {class: 'col-md-1'}, 'New comments'),
+                            m('th', {class: 'col-md-1'}, 'New logs')
+                        ]),
 
-                    ctrl.displayedNodes().map(function(n){
-                        return projectView(n)
-                    }),
-                    loadMoreButton(),
-                    loadLessButton()
+                        ctrl.displayedNodes().map(function(n){
+                            return projectView(n)
+                        }),
+                        loadMoreButton(),
+                        loadLessButton()
+                ])
+                )
             ])
-            )
-        ])
+
+        }
     }
 };
 
