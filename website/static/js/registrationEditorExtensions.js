@@ -214,12 +214,34 @@ var Uploader = function(question) {
     $.extend(self, question);
 };
 
-var AuthorImport = function(data, $root) {
+var AuthorImport = function(data, $root, preview) {
     var self = this;
     self.question = data;
 
-    self.serializeContributors = function(data) {
-        return $.map(data.contributors, function(c) {
+    /**
+     * Makes ajax request for a project's contributors
+     */
+    self.makeContributorsRequest = function() {
+        var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
+        return $.getJSON(contributorsUrl);
+    };
+    /**
+     * Returns the `user_fullname` of each contributor attached to a node.
+     **/
+    self.getContributors = function() {
+        return self.makeContributorsRequest()
+            .fail(function(xhr, status, error) {
+                Raven.captureMessage('Could not GET contributors', {
+                    url: window.contextVars.node.urls.api + 'get_contributors/',
+                    textStatus: status,
+                    error: error
+                });
+                $osf.growl('Could not retrieve contributors.', osfLanguage.REFRESH_OR_SUPPORT);
+            });
+    };
+
+    self.serializeContributors = function(contributors) {
+        return $.map(contributors, function(c) {
             return c.fullname;
         }).join(', ');
     };
@@ -228,25 +250,19 @@ var AuthorImport = function(data, $root) {
         var contributorsUrl = window.contextVars.node.urls.api + 'get_contributors/';
         return $.getJSON(contributorsUrl);
     };
-    self.getContributors = function() {
-        var self = this;
-        return self.makeContributorsRequest()
-            .then(function(data) {
-                return self.serializeContributors(data);
-            }).fail(function() {
-                $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
-                           'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                           'problem persists.');
-            });
-    };
-    self.getContributors().done(function(data) {
-        self.question.value(data);
-    });
+
+    self.contributors = ko.observable([]);
+    if (!preview) {
+        self.getContributors().done(function(data) {
+            self.question.value(self.serializeContributors(data.contributors));
+        });
+    }
+
     self.preview = function() {
         return self.value();
     };
     var callback = function(data) {
-        self.value(self.serializeContributors(data));
+        self.question.value(self.serializeContributors(data.contributors));
     };
 
     if ($('#addContributors').length > 0) {

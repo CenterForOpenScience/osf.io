@@ -11,9 +11,9 @@
         "requiresConsent": true,
         "messages": {
             "beforeSkipReview": "You are about to register your project without having its content reviewed. This preregistration will NOT BE ELIGIBLE for the Preregistration Challenge. You may click “Continue” to register your project or “Cancel” to return to the form and then “Submit for review” to enter the Preregistration Challenge.",
-            "preConsentHeader": "<div class='text-center m-t-lg'><h3>Preregistration Challenge </h3><hr><h2> Notice </h2></div><div class='row m-t-xl'><div class='col-lg-10 col-lg-offset-1'><p>We designed this process to encourage preregistration. Below are 7 terms for users who choose to enter the Preregistration Challenge. If you do not agree to the terms you may still continue, use the form, and register your research study without entering the Challenge. <strong>Only Preregistrations that enter the challenge and undergo review are eligible for a $1,000 prize. </strong>We welcome questions and comments (learn more <a target='_blank' href='https://cos.io/preregprivate'>here</a> or email us at <a href='mailto:prereg@cos.io'>prereg@cos.io</a>).</p>",
+            "preConsentHeader": "<div class='text-center m-t-lg'><h3>Preregistration Challenge </h3><hr><h2> Notice </h2></div><div class='row m-t-xl'><div class='col-lg-10 col-lg-offset-1'><p>We designed this process to encourage preregistration. Below are some important items for those who choose to enter the Preregistration Challenge. If you do not agree to the terms you may still continue, use the form, and register your research study without entering the Challenge. <strong>Only Preregistrations that enter the challenge and undergo review are eligible for a $1,000 prize. </strong>We welcome questions and comments (learn more <a target='_blank' href='https://cos.io/preregprivate'>here</a> or email us at <a href='mailto:prereg@cos.io'>prereg@cos.io</a>).</p>",
             "postConsentHeader": "<div class='text-center m-t-lg'><h3>Preregistration Challenge </h3><hr><h2> Notice of Consent </h2></div><div class='row m-t-xl'><div class='col-lg-10 col-lg-offset-1'><p>Please read and agree to the terms before submitting your research plan to the Preregistration Challenge.</p>",
-            "consentBody": "<ol id='consentList'> <li>Research plans that you submit through for the Challenge will be reviewed by us and designated external reviewers.</li><li>The published article must also be reviewed before receiving the prize.</li><li>Prizes will be awarded at pre-determined dates to eligible entrants. If more eligible entrants exist than available prizes, entrants will be ranked based on the date of registration.</li><li>Articles must be published in an <a target='_blank' href='https://cos.io/preregjournals'> eligible journal.</a></li><li>The use of pre-existing data may make your registration ineligible for the Preregistration Challenge.</li><li>Residents of countries on the U.S. State Department's <a target='_blank' href='http://www.pmddtc.state.gov/embargoed_countries/'>list of embargoed countries</a> may not participate in the Preregistration Challenge.</li><li>Entering the Preregistration Challenge requires that you agree to <a target='_blank' href='https://osf.io/4uxbj/'>all of its terms.</a></li></ol></div></div>"
+            "consentBody": "<ol id='consentList'> <li>After submitting your research plan for review, it is not yet registered. Your research plan will become a static, time stamped preregistration after it passes review. <strong>Please do not begin your study until it is registered.</strong> You will hear back from the review team within 10 business days</li><li>The published article must also be reviewed before receiving the prize.</li><li>Prizes will be awarded at pre-determined dates to eligible entrants. If more eligible entrants exist than available prizes, entrants will be ranked based on the date of registration.</li><li>Articles must be published in an <a target='_blank' href='https://cos.io/preregjournals'> eligible journal.</a></li><li>The use of pre-existing data may make your registration ineligible for the Preregistration Challenge.</li><li>Residents of countries on the U.S. State Department's <a target='_blank' href='http://www.pmddtc.state.gov/embargoed_countries/'>list of embargoed countries</a> may not participate in the Preregistration Challenge.</li><li>Entering the Preregistration Challenge requires that you agree to <a target='_blank' href='https://osf.io/4uxbj/'>all of its terms.</a></li></ol></div></div>"
         },
         "fulfills": [{
             "name": "Prereg Challenge",
@@ -74,11 +74,26 @@
             "type": "choose",
             "format": "singleselect",
             "options": [
-                "Registration prior to creation of data: As of the date of submission of this research plan for preregistration, the data have not yet been collected, created, or realized.",
-                "Registration prior to any human observation of the data: As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study. Examples include museum specimens that have not been measured and data that have been collected by non-human collectors and are inaccessible.",
-                "Registration prior to accessing the data: As of the date of submission, the data exist, but have not been accessed by you or your collaborators. Commonly, this includes data that has been collected by another researcher or institution.",
-                "Registration prior to analysis of the data: As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). A common situation for this scenario when a large dataset exists that is used for many different studies over time, or when a data set is randomly split into a sample for exploratory analyses, and the other section of data is reserved for later confirmatory data analysis.",
-                "Registration following analysis of the data: As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Prereg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
+                {
+                    "text": "Registration prior to creation of data",
+                    "tooltip": "As of the date of submission of this research plan for preregistration, the data have not yet been collected, created, or realized."
+                },
+                {
+                    "text": "Registration prior to any human observation of the data",
+                    "tooltip": "As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study. Examples include museum specimens that have not been measured and data that have been collected by non-human collectors and are inaccessible."
+                },
+                {
+                    "text": "Registration prior to accessing the data",
+                    "tooltip": "As of the date of submission, the data exist, but have not been accessed by you or your collaborators. Commonly, this includes data that has been collected by another researcher or institution."
+                },
+                {
+                    "text": "Registration prior to analysis of the data",
+                    "tooltip": "As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). A common situation for this scenario when a large dataset exists that is used for many different studies over time, or when a data set is randomly split into a sample for exploratory analyses, and the other section of data is reserved for later confirmatory data analysis."
+                },
+                {
+                   "text": "Registration following analysis of the data",
+                    "tooltip": "As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Prereg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
+                }
             ],
             "required": true
         }, {
@@ -269,7 +284,7 @@
         "id": "page5",
         "title": "Analysis Plan",
         "type": "object",
-        "description": "For some studies, you may only want to preregister a single confirmatory analysis. For others, there may be multiple sets of confirmatory analyses you wish to register. If you wish to register more than one analysis set, you may do so. If subsequent analyses are very similar to previous ones, you may copy their content and then edit accordingly. Remember, all analyses specified in this section must be reported in the final article, and analyses not specified in this section that are reported in the paper must be clearly labeled as exploratory.",
+        "description": "You may describe one or more confirmatory analysis in this preregistration. Please remember that all analyses specified below must be reported in the final article, and any additional analyses must be noted as exploratory or hypothesis-generating.<br /><br />A confirmatory analysis plan must state up front which variables are predictors (independent) and which are the outcomes (dependent), otherwise it is an exploratory analysis. You are allowed to describe any exploratory work here, but a clear confirmatory analysis is required.",
         "questions": [{
             "qid": "q19",
             "nav": "Statistical models",

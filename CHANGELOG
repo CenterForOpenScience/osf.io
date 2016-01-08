@@ -2,24 +2,46 @@
 Changelog
 *********
 
-0.62.0 (unreleased)
+0.63.0 (unreleased)
 ===================
 
 - Added date_modified field to Node (no longer a property).
-- APIv2: Nodes are now sorted by date modified by default.
+- Add Researchgate links to user profiles.
+- Add Academia.edu links to user profiles.
+- Components may be categorized as "Software".
+- Reorganize wiki configuration on project settings page.
+- APIv2: Support filtering nodes by `root` and `parent.`
+- APIv2: Nodes are sorted by date modified by default.
+- APIv2: Add materialized_path, date_created, date_modified, and extras.hashes fields to file responses.
+- APIv2: Support 'ne' as a comparison operator.
+- APIv2: When doing bulk updates, objects for which the client doesn't have access can be skipped using `?skip_uneditable=true` (experimental).
+- Dev: Remove node__contributed and node__created backrefs to improve performance and prevent locking errors.
+- UI fixes.
 
 Migrations
 ----------
 
 - python -m scripts.migration.migrate_date_modified_for_existing_nodes
+- python -m scripts.migration.migrate_root_and_parent_on_node
 
-0.61.0 (unreleased)
+0.62.0 (unreleased)
 ===================
 
 - File commenting.
-- Drag and drop images into wiki pages.
-- APIv2: Support view-only link keys.
+
+Migrations
+----------
+
+- python -m scripts.update_comments
+
+0.61.0 (2016-01-06)
+===================
+
 - APIv2: Support filtering against multiple ids, e.g. ?filter[id]=abc12,def34
+- APIv2: Support authentication with view-only link keys.
+- Wiki: Disable snippet autocomplete by default.
+- Merge Admin app into codebase.
+- Many UI fixes.
 
 0.60.0 (2015-12-17)
 ===================

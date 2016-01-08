@@ -41,8 +41,31 @@ class NodeSerializer(JSONAPISerializer):
         'category',
         'date_created',
         'date_modified',
-        'registration'
+        'registration',
+        'root',
+        'parent'
     ])
+
+    non_anonymized_fields = [
+        'id',
+        'title',
+        'description',
+        'category',
+        'date_created',
+        'date_modified',
+        'registration',
+        'tags',
+        'public',
+        'links',
+        'children',
+        'comments',
+        'contributors',
+        'files',
+        'node_links',
+        'parent',
+        'root',
+        'logs',
+    ]
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
@@ -107,7 +130,8 @@ class NodeSerializer(JSONAPISerializer):
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<parent_id>'}
+        related_view_kwargs={'node_id': '<parent_node._id>'},
+        filter_key='parent_node'
     )
 
     registrations = DevOnly(HideIfRegistration(RelationshipField(
@@ -115,6 +139,11 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_registration_count'}
     )))
+
+    root = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<root._id>'}
+    )
 
     logs = RelationshipField(
         related_view='nodes:node-logs',

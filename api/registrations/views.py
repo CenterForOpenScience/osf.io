@@ -43,7 +43,7 @@ class RegistrationMixin(NodeMixin):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder:
+        if node.is_folder or not node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
