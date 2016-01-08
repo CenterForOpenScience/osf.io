@@ -15,7 +15,7 @@ from tests.base import DbTestCase
 
 class TestVarnish(DbTestCase):
 
-    local_varnish_base_url = 'http://localhost:8193/v2/'
+    local_varnish_base_url = '{}/v2/'.format(settings.VARNISH_SERVERS[0])
     local_python_base_url = 'http://localhost:8000/v2/'
 
     def setUp(self):
@@ -161,8 +161,8 @@ class TestVarnish(DbTestCase):
         new_title = "{} -- But Changed!".format(create_response.json()['data']['attributes']['title'])
 
         response = requests.get(
-            'http://localhost:8193/v2/nodes/{}/?format=jsonapi&embed=comments&embed=children&embed=files&embed=registrations&embed=contributors&embed=node_links&embed=parent'.format(
-                node_id),
+            '{}/v2/nodes/{}/?format=jsonapi&embed=comments&embed=children&embed=files&embed=registrations&embed=contributors&embed=node_links&embed=parent'.format(
+                settings.VARNISH_SERVERS[0], node_id),
             timeout=120,
             auth=self.authorization
         )
@@ -173,25 +173,25 @@ class TestVarnish(DbTestCase):
         new_data_object['data']['type'] = 'nodes'
         new_data_object['data']['attributes'] = dict(title=new_title, category='')
 
-        individual_response_before_update = requests.get('http://localhost:8193/v2/nodes/{}/'.format(node_id),
+        individual_response_before_update = requests.get('{}/v2/nodes/{}/'.format(settings.VARNISH_SERVERS[0], node_id),
                                                          auth=self.authorization)
 
         assert individual_response_before_update.ok, 'Individual request failed.'
 
-        individual_response_before_update = requests.get('http://localhost:8193/v2/nodes/{}/'.format(node_id),
+        individual_response_before_update = requests.get('{}/v2/nodes/{}/'.format(settings.VARNISH_SERVERS[0], node_id),
                                                          auth=self.authorization)
 
         assert individual_response_before_update.ok, 'Individual request failed.'
 
         assert individual_response_before_update.headers['x-cache'] == 'HIT', 'Request never made it to cache'
 
-        update_response = requests.put('http://localhost:8193/v2/nodes/{}/'.format(node_id), json=new_data_object,
+        update_response = requests.put('{}/v2/nodes/{}/'.format(settings.VARNISH_SERVERS[0], node_id), json=new_data_object,
                                        auth=self.authorization)
 
 
         assert update_response.ok, 'Your update request failed. {}'.format(update_response.text)
 
-        individual_response = requests.get('http://localhost:8193/v2/nodes/{}/'.format(node_id), auth=self.authorization)
+        individual_response = requests.get('{}/v2/nodes/{}/'.format(settings.VARNISH_SERVERS[0], node_id), auth=self.authorization)
 
 
         assert individual_response.ok, 'Your individual node request failed. {}'.format(individual_response.json())
