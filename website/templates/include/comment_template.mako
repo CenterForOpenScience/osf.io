@@ -8,11 +8,13 @@
 
             <div data-bind="ifnot: loading">
                 <div data-bind="if: isDeleted">
-                    <div class="text-muted">
-                        <span data-bind="if: hasChildren()">
+                    <div>
+                        <span class="text-muted">
+                            <em>Comment deleted.</em>
+                        </span>
+                        <span data-bind="if: hasChildren()" class="comment-actions pull-right">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
-                        <em>Comment deleted.</em>
                     </div>
                     <div data-bind="if: canEdit">
                         <a data-bind="click: startUndelete">Restore</a>
@@ -99,18 +101,18 @@
 
                         <!-- Action bar -->
                         <div style="display: inline">
-                            <div data-bind="ifnot: editing, event: {mouseover: setupToolTips('i')}" class="comment-actions pull-right">
+                            <div data-bind="ifnot: editing" class="comment-actions pull-right">
                                 <span data-bind="if: canEdit, click: edit">
-                                    <i data-toggle="tooltip" data-placement="bottom" title="Edit" class="fa fa-pencil"></i>
+                                    <i class="fa fa-pencil"></i>
                                 </span>
                                 <span data-bind="if: $root.canComment, click: showReply">
-                                    <i data-toggle="tooltip" data-placement="bottom" title="Reply" class="fa fa-reply"></i>
+                                    <i class="fa fa-reply"></i>
                                 </span>
                                 <span data-bind="if: canReport, click: reportAbuse">
-                                    <i data-toggle="tooltip" data-placement="bottom" title="Report" class="fa fa-warning"></i>
+                                    <i class="fa fa-warning"></i>
                                 </span>
                                 <span data-bind="if: canEdit, click: startDelete">
-                                    <i data-toggle="tooltip" data-placement="bottom" title="Delete" class="fa fa-trash-o"></i>
+                                    <i class="fa fa-trash-o"></i>
                                 </span>
                             </div>
                         </div>

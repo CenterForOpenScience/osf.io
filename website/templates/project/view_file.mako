@@ -7,13 +7,7 @@
 <%def name="title()">${file_name | h}</%def>
 
 % if (user['can_comment'] or node['has_comments']):
-    % if allow_comment:
-        <%include file="include/comment_pane_template.mako"/>
-    % else:
-        <div class="alert alert-warning" role="alert">
-            Comments for this addon are not yet supported.
-        </div>
-    % endif
+    <%include file="include/comment_pane_template.mako"/>
 % endif
 
 <div class="row">
