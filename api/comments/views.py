@@ -9,7 +9,6 @@ from modularodm.exceptions import NoResultsFound
 
 from api.base.exceptions import Gone, ServiceUnavailableError
 from api.base import permissions as base_permissions
-from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
     CommentDetailPermissions,
