@@ -55,8 +55,9 @@ var returnTextParams = function (param, text, logObject) {
 var LogText = {
     view : function(ctrl, logObject) {
         var text = logActions[logObject.attributes.action];
-        var list = text.split(/(\${.*?})/);
-        return m('span.osf-log-item',[
+        if(text){
+            var list = text.split(/(\${.*?})/);
+            return m('span.osf-log-item',[
                 list.map(function(piece){
                     if(piece === '') { return; }
                     var startsWith = piece.substring(0,2);
@@ -68,6 +69,10 @@ var LogText = {
                     return piece;
                 })
             ]);
+        } else {
+            var message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
+            Raven.captureMessage(message, {logObject: logObject});
+        }
     }
 };
 
