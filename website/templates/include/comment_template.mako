@@ -8,11 +8,13 @@
 
             <div data-bind="ifnot: loading">
                 <div data-bind="if: isDeleted">
-                    <div class="text-muted">
-                        <span data-bind="if: hasChildren()">
+                    <div>
+                        <span class="text-muted">
+                            <em>Comment deleted.</em>
+                        </span>
+                        <span data-bind="if: hasChildren()" class="comment-actions pull-right">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
-                        <em>Comment deleted.</em>
                     </div>
                     <div data-bind="if: canEdit">
                         <a data-bind="click: startUndelete">Restore</a>
