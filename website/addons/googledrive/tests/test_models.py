@@ -31,26 +31,6 @@ class TestGoogleDriveProvider(OsfTestCase):
         assert_equal(res['display_name'], 'fakename')
         assert_equal(res['profile_url'], 'fakeUrl')
 
-
-    @mock.patch.object(GoogleAuthClient, 'refresh')
-    def test_refresh_token(self, mock_refresh):
-        fake_access_token = 'abc123'
-        fake_refresh_token = 'xyz456'
-        mock_refresh.return_value = 'faketoken'
-
-        res = self.provider._refresh_token(fake_access_token, fake_refresh_token)
-        assert_equal(res, 'faketoken')
-
-
-    @mock.patch.object(GoogleAuthClient, 'refresh')
-    def test_refresh_token_without_refresh_token(self, mock_refresh):
-        fake_access_token = 'abc123'
-        fake_refresh_token = None
-        mock_refresh.return_value = 'faketoken'
-
-        res = self.provider._refresh_token(fake_access_token, fake_refresh_token)
-        assert_false(res)
-
 class TestGoogleDriveUserSettings(OsfTestCase):
     def setUp(self):
         super(TestGoogleDriveUserSettings, self).setUp()
@@ -333,7 +313,9 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             'fake-folder-name'
         )
 
-    def test_serialize_credentials(self):
+    @mock.patch('website.addons.googledrive.model.GoogleDriveProvider.refresh_oauth_key')
+    def test_serialize_credentials(self, mock_refresh):
+        mock_refresh.return_value = True
         external_account = GoogleDriveAccountFactory()
         self.user.external_accounts.append(external_account)
         self.node_settings.set_auth(external_account, self.user)
@@ -341,7 +323,9 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         expected = {'token': self.node_settings.fetch_access_token()}
         assert_equal(credentials, expected)
 
-    def test_serialize_credentials_not_authorized(self):
+    @mock.patch('website.addons.googledrive.model.GoogleDriveProvider.refresh_oauth_key')
+    def test_serialize_credentials_not_authorized(self, mock_refresh):
+        mock_refresh.return_value = True
         external_account = GoogleDriveAccountFactory()
         self.node_settings.external_account = external_account
         with assert_raises(exceptions.AddonError):
@@ -379,25 +363,3 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         external_account.save()
         self.node_settings.set_auth(external_account, self.user)
         assert_equal(self.node_settings.fetch_access_token(), 'fake-token')
-
-    @mock.patch.object(GoogleAuthClient, 'refresh')
-    def test_fetch_access_token_with_token_expired(self, mock_refresh):
-        external_account = GoogleDriveAccountFactory()
-        self.user.external_accounts.append(external_account)
-        external_account.expires_at = datetime.utcnow() + relativedelta.relativedelta(minutes=4)
-        external_account.oauth_key = 'fake-token'
-        external_account.refresh_token = 'refresh-fake-token'
-        external_account.save()
-
-        fake_token = {
-            'access_token': 'new-access-token',
-            'refresh_token': 'new-refresh-token',
-            'expires_at': 1234.5
-        }
-        mock_refresh.return_value = fake_token
-        self.node_settings.set_auth(external_account, self.user)
-        self.node_settings.fetch_access_token()
-        mock_refresh.assert_called_once()
-        assert_equal(external_account.oauth_key, 'new-access-token')
-        assert_equal(external_account.refresh_token, 'new-refresh-token')
-        assert_equal(external_account.expires_at, datetime.utcfromtimestamp(1234.5))
