@@ -403,10 +403,18 @@ var quickSearchProject = {
             }
         }
 
-        if (ctrl.displayedNodes().length == 0 && ctrl.filter() == null) {
-            return m('h2', 'No nodes found!')
+        function displayNodes() {
+            if (ctrl.displayedNodes().length == 0 && ctrl.filter() != null) {
+                return 'No results found!'
+            }
+            else {
+                return ctrl.displayedNodes().map(function(n){
+                    return projectView(n)
+                })
+            }
         }
-        else {
+
+        function resultsFound(){
             return m('div', [
                 searchBar(),
                 m('div', {'class': 'container-fluid'},
@@ -418,16 +426,19 @@ var quickSearchProject = {
                             m('th', {class: 'col-md-1'}, 'New comments'),
                             m('th', {class: 'col-md-1'}, 'New logs')
                         ]),
-
-                        ctrl.displayedNodes().map(function(n){
-                            return projectView(n)
-                        }),
+                        displayNodes(),
                         loadMoreButton(),
                         loadLessButton()
-                ])
+                    ])
                 )
             ])
+        }
 
+        if (ctrl.displayedNodes().length == 0 && ctrl.filter() == null) {
+            return m('h2', 'No nodes found! Create some!')
+        }
+        else {
+            return resultsFound()
         }
     }
 };
