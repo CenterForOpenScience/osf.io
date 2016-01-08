@@ -29,6 +29,7 @@ var quickSearchProject = {
         self.countState = m.prop();
         self.next = m.prop();
         self.allLoaded = m.prop(false);
+        self.contributorMapping = {};
 
         // Load first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
@@ -36,6 +37,7 @@ var quickSearchProject = {
         promise.then(function(result) {
             result.data.forEach(function (node) {
                 self.nodes().push(node);
+                self.retrieveContributors(node)
             });
             self.next(result.links.next);
             self.countState(10);
@@ -58,7 +60,8 @@ var quickSearchProject = {
              var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
                 nextPromise.then(function(result){
                     result.data.forEach(function(node){
-                        self.nodes().push(node)
+                        self.nodes().push(node);
+                        self.retrieveContributors(node)
                     });
                     self.next(result.links.next);
                     console.log(self.next());
@@ -66,10 +69,38 @@ var quickSearchProject = {
                         self.recursiveNodes(self.next())
                     }
                     else {
-                        self.allLoaded(true)
+                        self.allLoaded(true);
                         m.redraw()
                     }
         })};
+
+        self.retrieveContributors = function(node) {
+            if (node.embeds.contributors.links.meta.total > 10) {
+                self.pullOverTenContributorNames(node)
+            }
+            else {
+                var contributors = node.embeds.contributors;
+                self.mapNodeToContributors(node, contributors)
+                }
+        };
+
+        self.pullOverTenContributorNames = function (node) {
+            var url = $osf.apiV2Url('nodes/' + node.id + '/contributors/', { query : { 'page[size]': 1000 }});
+            var promise = m.request({method: 'GET', url : url, config: xhrconfig, background : true});
+            promise.then(function(result){
+                self.mapNodeToContributors(node, result)
+            })
+        };
+
+        self.mapNodeToContributors = function (node, contributors){
+            var contributorList = [];
+            contributors.data.forEach(function(contrib){
+                fullName = contrib.embeds.users.data.attributes.full_name;
+                contributorList.push(fullName)
+
+            });
+            self.contributorMapping[node.id] = contributorList
+        };
 
         // Load last login
         self.getLastLoginDate = function () {
@@ -256,15 +287,15 @@ var quickSearchProject = {
         };
 
         self.noContributorMatch = function (node, query) {
-             var contributors =  node.embeds.contributors.data;
-             for (var c = 0; c < contributors.length; c++ ) {
-                 if (contributors[c].embeds.users.data.attributes.full_name.toUpperCase().indexOf(query.toUpperCase()) !== -1){
-                     return false
-                 }
-             }
-             return true
-        };
+            var contributors = self.contributorMapping[node.id];
 
+            for (var c = 0; c < contributors.length; c++) {
+                if (contributors[c].toUpperCase().indexOf(query.toUpperCase()) !== -1){
+                    return false
+                }
+            }
+            return true
+        };
 
         self.filterNodes = function (query){
             for (var n = self.nodes().length - 1; n >= 0; n--) {
@@ -293,7 +324,6 @@ var quickSearchProject = {
                 var numDisplay = Math.min(self.nodes().length, self.countState());
                 for (var i = 0; i < numDisplay; i++) {
                     self.displayedNodes().push(self.nodes()[i])
-
                 }
                 self.nodes().splice(0, numDisplay);
                 return self.displayedNodes()
