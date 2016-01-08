@@ -27,19 +27,42 @@ var quickSearchProject = {
         self.logsCount = {};
         self.sortState = m.prop();
         self.countState = m.prop();
+        self.next = m.prop();
+        self.allLoaded = m.prop(false);
 
-        // Load node list
-        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors', 'page[size]': 10000}});
+        // Load first ten nodes
+        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig});
-        promise.then(function(result){
-            result.data.forEach(function(node){
+        promise.then(function(result) {
+            result.data.forEach(function (node) {
                 self.nodes().push(node);
-                m.redraw(true)
             });
-            self.sortDateDescending();
+            self.next(result.links.next);
             self.countState(10);
-            self.displayedNodes(self.nodes().splice(0, 10))
+            self.displayedNodes(self.nodes().splice(0, 10));
         });
+        promise.then(
+            function(){
+                self.recursiveNodes(self.next())
+            }
+        );
+
+        // Recursively calls remaining user's nodes
+        self.recursiveNodes = function (url) {
+             var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
+                nextPromise.then(function(result){
+                    result.data.forEach(function(node){
+                        self.nodes().push(node)
+                    });
+                    self.next(result.links.next);
+                    console.log(self.next());
+                    if (self.next()) {
+                        self.recursiveNodes(self.next())
+                    }
+                    else {
+                        self.allLoaded(true)
+                    }
+        })};
 
         // Load last login
         self.getLastLoginDate = function () {
