@@ -3,12 +3,7 @@
   width: 5em;
 }
 
-#styling-after-slider {
-    margin-top: 3em;
-}
-#styling-after-slider .ui-slider-pip {
-    top: -12px;
-}
-#styling-after-slider .ui-slider-pip .ui-slider-label {
-    top: -18px;
+.ui-slider-float .ui-slider-tip {
+  width: 80px;
+  margin-left: -40px;
 }

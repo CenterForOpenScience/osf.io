@@ -105,7 +105,6 @@ var LogWrap = {
                     }
                 });
                 $("#recentActivitySlider").slider('pips', {
-                    first: false,
                     last: false,
                     rest: 'label',
                     step: 30,
@@ -123,13 +122,30 @@ var LogWrap = {
                 $("#recentActivitySlider").slider('option', "values", values);
             }
         };
+        var categoryColor = function(category){
+            if (category.indexOf('wiki') + 1){
+                return '#d9534f'
+            }
+            if (category.indexOf('comment') + 1){
+                return '#5bc0de'
+            }
+            if (category.indexOf('file') + 1){
+                return '#337ab7'
+            }
+            if (category.indexOf('project') + 1){
+                return '#f0ad4e'
+            }
+            else{
+                return '#5cb85c'
+            }
+        };
         return m('.panel.panel-default', [
             m('.panel-heading', 'Recent Activity'),
             m('.panel-body',
             m('.fb-activity-list.m-t-md', [
-                m('#rASliderLabel'),
-                m('#recentActivitySlider', {style: {margin: '10px'}, config: addSlider}),
-                m('br'), m('br'),
+                m('', {style: {paddingBottom: '25px'}},
+                    m('#recentActivitySlider', {style: {margin: '10px'}, config: addSlider})
+                ),
                 m('.progress', {style: {borderRadius: '25px'}}, [
                     m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : '.muted'), {style: {width: fileEvents+'%'}},
                         m('a', {onclick: function(){
@@ -155,14 +171,16 @@ var LogWrap = {
                         m('.progress-bar.progress-bar-success.muted', {style: {width: otherEvents+'%'}}, m('i.fa.fa-plus')) :
                         m('.progress-bar', {style: {width: '100%', 'background-image': 'none', 'background-color': 'grey'}}, 'None')
                 ]),
+                m('',
                 (ctrl.activityLogs() && (ctrl.activityLogs().length > 0))? ctrl.activityLogs().map(function(item){
-
-                    return m('.fb-activity-item', [
+                    return m('', [m('.fb-activity-item',
+                        {style: {padding: '10px', paddingLeft: '5px', backgroundColor: '#f5f5f5', borderLeft: 'solid 5px ' + categoryColor(item.attributes.action)}}, [
                         m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
                         m.component(LogText,item)
-                    ]);
-                }) : m('p','No activity in this time range.'),
-                m('.text-center', {style: {paddingTop: '15px'}},
+                    ]), m('', {style: {padding: '5px'}})]);
+                }) : m('p','No activity in this time range.')
+                ),
+                m('.text-center',
                 m('.btn-group', [
                     m('button.btn.btn-primary' + (ctrl.page > 1 ? '' : '.disabled'), {onclick: function(){
                         ctrl.page--;
