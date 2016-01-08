@@ -459,6 +459,11 @@ def test_api():
     test_module(module="api_tests/")
 
 @task
+def test_varnish():
+    """Run the Varnish test suite."""
+    test_module(module="api_tests/caching/test_caching.py")
+
+@task
 def test_addons():
     """Run all the tests in the addons directory.
     """
