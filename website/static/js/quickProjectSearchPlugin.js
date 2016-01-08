@@ -360,11 +360,9 @@ var quickSearchProject = {
                 m('div', {'class': 'container-fluid'},
                     m('table', [
                         m('tr', [
-                            m('th', {class: 'col-md-5'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
-                            m('th', {class: 'col-md-3'}, 'Contributors'),
-                            m('th', {class: 'col-md-2'}, 'Modified', sortDateAsc(), sortDateDesc()),
-                            m('th', {class: 'col-md-1'}, 'New comments'),
-                            m('th', {class: 'col-md-1'}, 'New logs')
+                            m('th', 'Name', sortAlphaAsc(), sortAlphaDesc()),
+                            m('th', 'Contributors'),
+                            m('th', 'Modified', sortDateAsc(), sortDateDesc())
                         ]),
                         displayNodes(),
                         loadMoreButton(),
