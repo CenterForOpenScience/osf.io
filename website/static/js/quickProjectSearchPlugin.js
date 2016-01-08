@@ -31,12 +31,12 @@ var quickSearchProject = {
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig});
         promise.then(function(result) {
+            self.countState(result.data.length);
             result.data.forEach(function (node) {
                 self.nodes().push(node);
                 self.retrieveContributors(node)
             });
             self.next(result.links.next);
-            self.countState(10);
             self.displayedNodes(self.nodes().splice(0, 10));
         });
         promise.then(
@@ -373,7 +373,7 @@ var quickSearchProject = {
         }
 
         if (ctrl.displayedNodes().length == 0 && ctrl.filter() == null) {
-            return m('h2', 'No nodes found! Create some!')
+            return m('h2', 'You have no projects. Go here to create one.')
         }
         else {
             return resultsFound()
