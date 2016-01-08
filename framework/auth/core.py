@@ -151,7 +151,6 @@ class Auth(object):
         self.user = user
         self.api_node = api_node
         self.private_key = private_key
-        self.private_link = private_link
 
     def __repr__(self):
         return ('<Auth(user="{self.user}", '
@@ -161,22 +160,32 @@ class Auth(object):
     def logged_in(self):
         return self.user is not None
 
-    @classmethod
-    def from_kwargs(cls, request_args, kwargs):
-        user = request_args.get('user') or kwargs.get('user') or _get_current_user()
-        private_key = request_args.get('view_only')
+    @property
+    def private_link(self):
+        if not self.private_key:
+            return None
         try:
             # Avoid circular import
             from website.project.model import PrivateLink
             private_link = PrivateLink.find_one(
-                Q('key', 'eq', private_key)
+                Q('key', 'eq', self.private_key)
             )
+
+            if private_link.is_deleted:
+                return None
+
         except QueryException:
-            private_link = None
+            return None
+
+        return private_link
+
+    @classmethod
+    def from_kwargs(cls, request_args, kwargs):
+        user = request_args.get('user') or kwargs.get('user') or _get_current_user()
+        private_key = request_args.get('view_only')
         return cls(
             user=user,
             private_key=private_key,
-            private_link=private_link,
         )
 
 
