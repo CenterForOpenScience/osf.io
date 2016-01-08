@@ -20,11 +20,6 @@ var quickSearchProject = {
         self.nodes = m.prop([]); // Pending nodes waiting to be displayed
         self.displayedNodes = m.prop([]); // Nodes that are rendered
         self.nonMatchingNodes = m.prop([]); //Nodes that don't match search query
-        //self.lastLogin = '';
-        // NEED TO FIGURE OUT WHAT TO DO ABOUT LASTLOGIN.
-        self.lastLogin = '2016-01-01T15:20:11.531000';
-        self.commentsCount = {};
-        self.logsCount = {};
         self.sortState = m.prop('dateDesc');
         self.countState = m.prop();
         self.next = m.prop();
@@ -103,17 +98,6 @@ var quickSearchProject = {
             self.contributorMapping[node.id] = contributorList
         };
 
-        // Load last login
-        self.getLastLoginDate = function () {
-            var url = $osf.apiV2Url('users/me/', {});
-            var promise = m.request({method: 'GET', url: url, config : xhrconfig});
-            promise.then(function(result) {
-                self.lastLogin = result.data.attributes.last_login
-            }
-            );
-            return promise
-        };
-
         self.loadUpToTen = function () {
             var requested = self.nodes().splice(0, 10);
             for (var i = 0; i < requested.length; i++) {
@@ -173,47 +157,6 @@ var quickSearchProject = {
                     self.getFamilyName(2, node) + ' + ' + (numContributors - 3)
             }
 
-        };
-
-        self.getRecentComments = function (node) {
-            var url = $osf.apiV2Url('nodes/' + node.id + '/comments/',
-                { query : { 'filter[date_modified][gte]': self.lastLogin }}
-            );
-            var promise = m.request({method: 'GET', url : url, config: xhrconfig});
-            promise.then(function(result) {
-                self.commentsCount[node.id] = result.links.meta.total
-            });
-            return promise
-        };
-
-        self.loadRecentCommentCount = function (node) {
-            if (node.id in self.commentsCount) {
-                return self.commentsCount[node.id]
-            }
-            else {
-                self.getRecentComments(node);
-                return self.commentsCount[node.id]
-            }
-        };
-
-        self.getRecentLogs = function (node) {
-            var url = $osf.apiV2Url('nodes/' + node.id + '/logs/', { query : {'filter[action][ne]': 'comment_added',
-                'filter[date][gte]': self.lastLogin}});
-            var promise = m.request({method: 'GET', url : url, config: xhrconfig});
-            promise.then(function(result){
-                self.logsCount[node.id] = result.links.meta.total
-            });
-            return promise
-        };
-
-        self.loadRecentLogsCount = function(node) {
-            if (node.id in self.logsCount){
-                return self.logsCount[node.id]
-            }
-            else {
-                self.getRecentLogs(node);
-                return self.logsCount[node.id]
-          }
         };
 
         self.formatDate = function (node) {
@@ -331,7 +274,6 @@ var quickSearchProject = {
             }
 
         };
-        //self.getLastLoginDate()
 
     },
     view : function(ctrl) {
@@ -340,9 +282,7 @@ var quickSearchProject = {
             return m('tr', [
                 m('td', m("a", {href: '/'+ project.id}, project.attributes.title)),
                 m('td', ctrl.getContributors(project)),
-                m('td', ctrl.formatDate(project)),
-                m('td', ctrl.loadRecentCommentCount(project)),
-                m('td', ctrl.loadRecentLogsCount(project))
+                m('td', ctrl.formatDate(project))
             ])
         }
 
