@@ -547,7 +547,8 @@ var Collections  = {
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
                 result.data.forEach(function(node){
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : false, node : node }, node.attributes.title));
+                    var count = node.relationships.linked_nodes.links.related.meta.count;
+                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 });
                 if(result.links.next){
                     loadCollections(result.links.next);
@@ -574,7 +575,8 @@ var Collections  = {
             promise.then(function(result){
                 console.log(result);
                 var node = result.data;
-                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node }, node.attributes.title));
+                var count = node.relationships.linked_nodes.links.related.meta.count
+                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 args.sidebarInit();
             });
             self.newCollectionName('');
@@ -642,10 +644,11 @@ var Collections  = {
                             if(dataArray[index+1]){
                                 saveNodetoCollection(index+1);
                             }
+                            collection.data.count(collection.data.count()+1);
                         }
                         m.request({
                             method : 'POST',
-                            url : collection.data.node.relationships.linked_nodes.links.related.href,
+                            url : collection.data.node.links.self + 'node_links/', //collection.data.node.relationships.linked_nodes.links.related.href,
                             config : xhrconfig,
                             data : dataArray[index]
                         }).then(doNext, doNext); // In case of success or error. It doesn't look like mithril has a general .done method
@@ -664,6 +667,7 @@ var Collections  = {
             var item;
             var index;
             var list = [];
+            var childCount;
             var begin = ((ctrl.currentPage()-1)*ctrl.pageSize()); // remember indexes start from 0
             var end = ((ctrl.currentPage()) *ctrl.pageSize()); // 1 more than the last item
             if (ctrl.collections().length < end) {
@@ -672,7 +676,7 @@ var Collections  = {
             for (var i = begin; i < end; i++) {
                 item = ctrl.collections()[i];
                 index = i;
-                var count = item.data.node ? ' (' + item.data.node.relationships.linked_nodes.links.related.meta.count + ')' : '';
+                childCount = item.data.count ? ' (' + item.data.count() + ')' : '';
                 if (item.id === args.activeFilter().id) {
                     selectedCSS = 'active';
                 } else if (item.id === ctrl.collectionMenuObject().item.id) {
@@ -694,7 +698,7 @@ var Collections  = {
                 }
                 list.push(m('li', { className : selectedCSS, 'data-index' : index },
                     [
-                        m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label + count ),
+                        m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label + childCount ),
                         submenuTemplate
                     ]
                 ));
