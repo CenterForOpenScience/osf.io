@@ -28,13 +28,7 @@
                         </span>
                         Comment reported.
                     </div>
-                    <a data-bind="click: startUnreportAbuse">Not abuse</a>
-                    <div class="clearfix" data-bind="if: unreporting">
-                        <div class="pull-right">
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelUnreportAbuse">Cancel</a>
-                        <a class="btn btn-success btn-sm" data-bind="click: submitUnreportAbuse">Save</a>
-                        </div>
-                    </div>
+                    <a data-bind="click: submitUnreportAbuse">Not abuse</a>
                 </div>
 
                 <div data-bind="if: isVisible">

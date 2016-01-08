@@ -319,7 +319,6 @@ var CommentModel = function(data, $parent, $root) {
 
     self.reporting = ko.observable(false);
     self.deleting = ko.observable(false);
-    self.unreporting = ko.observable(false);
 
     self.abuseCategory = ko.observable('spam');
     self.abuseText = ko.observable('');
@@ -327,8 +326,7 @@ var CommentModel = function(data, $parent, $root) {
     self.editing = ko.observable(false);
 
     exclusifyGroup(
-        self.editing, self.replying, self.reporting, self.deleting,
-        self.unreporting
+        self.editing, self.replying, self.reporting, self.deleting
     );
 
     self.isVisible = ko.pureComputed(function() {
@@ -539,9 +537,6 @@ CommentModel.prototype.submitUndelete = function() {
     return request;
 };
 
-CommentModel.prototype.startUnreportAbuse = function() {
-    this.unreporting(true);
-};
 
 CommentModel.prototype.submitUnreportAbuse = function() {
     var self = this;
@@ -555,7 +550,6 @@ CommentModel.prototype.submitUnreportAbuse = function() {
         self.isAbuse(false);
     });
     request.fail(function(xhr, status, error) {
-        self.unreporting(false);
         Raven.captureMessage('Error unreporting comment', {
             url: url,
             status: status,
@@ -564,10 +558,6 @@ CommentModel.prototype.submitUnreportAbuse = function() {
 
     });
     return request;
-};
-
-CommentModel.prototype.cancelUnreportAbuse = function() {
-    this.unreporting(false);
 };
 
 
