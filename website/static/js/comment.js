@@ -320,7 +320,6 @@ var CommentModel = function(data, $parent, $root) {
     self.reporting = ko.observable(false);
     self.deleting = ko.observable(false);
     self.unreporting = ko.observable(false);
-    self.undeleting = ko.observable(false);
 
     self.abuseCategory = ko.observable('spam');
     self.abuseText = ko.observable('');
@@ -329,7 +328,7 @@ var CommentModel = function(data, $parent, $root) {
 
     exclusifyGroup(
         self.editing, self.replying, self.reporting, self.deleting,
-        self.unreporting, self.undeleting
+        self.unreporting
     );
 
     self.isVisible = ko.pureComputed(function() {
@@ -508,10 +507,6 @@ CommentModel.prototype.cancelDelete = function() {
     this.deleting(false);
 };
 
-CommentModel.prototype.startUndelete = function() {
-    this.undeleting(true);
-};
-
 CommentModel.prototype.submitUndelete = function() {
     var self = this;
     var url = osfHelpers.apiV2Url('comments/' + self.id() + '/', {});
@@ -534,7 +529,6 @@ CommentModel.prototype.submitUndelete = function() {
         self.isDeleted(false);
     });
     request.fail(function(xhr, status, error) {
-        self.undeleting(false);
         Raven.captureMessage('Error undeleting comment', {
             url: url,
             status: status,
@@ -543,10 +537,6 @@ CommentModel.prototype.submitUndelete = function() {
 
     });
     return request;
-};
-
-CommentModel.prototype.cancelUndelete = function() {
-    this.undeleting(false);
 };
 
 CommentModel.prototype.startUnreportAbuse = function() {
