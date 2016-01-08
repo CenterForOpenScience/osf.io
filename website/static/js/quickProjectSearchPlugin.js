@@ -61,6 +61,7 @@ var quickSearchProject = {
                     }
                     else {
                         self.allLoaded(true)
+                        m.redraw()
                     }
         })};
 
@@ -323,30 +324,55 @@ var quickSearchProject = {
             }
         }
 
+        function sortAlphaAsc() {
+            if (ctrl.allLoaded()) {
+                return m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
+                    ctrl.sortState('alphaAsc');
+                    ctrl.sortNodesAndModifyDisplay();
+                }})
+            }
+
+        }
+
+        function sortAlphaDesc(){
+            if (ctrl.allLoaded()){
+                return m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
+                    ctrl.sortState('alphaDesc');
+                    ctrl.sortNodesAndModifyDisplay();
+                }})
+            }
+        }
+
+        function sortDateAsc(){
+            if (ctrl.allLoaded()){
+                 return m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
+                     ctrl.sortState('dateAsc');
+                     ctrl.sortNodesAndModifyDisplay()}})
+            }
+        }
+        function sortDateDesc(){
+            if (ctrl.allLoaded()){
+                return m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
+                    ctrl.sortState('dateDesc');
+                    ctrl.sortNodesAndModifyDisplay();
+               }})
+            }
+        }
+
+        function searchBar() {
+            if (ctrl.allLoaded()){
+                return  m('input[type=search]', {id: 'searchQuery', onkeyup: function() {ctrl.quickSearch()}}, 'Quick search projects')
+            }
+        }
+
         return m('div', [
-            m('input[type=search]', {id: 'searchQuery', onkeyup: function() {ctrl.quickSearch()}}, 'Quick search projects'),
+            searchBar(),
             m('div', {'class': 'container-fluid'},
                 m('table', [
                     m('tr', [
-                        m('th', {class: 'col-md-5'}, 'Name',
-                            m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
-                                ctrl.sortState('alphaAsc');
-                                ctrl.sortNodesAndModifyDisplay();
-                            }}),
-                            m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
-                                ctrl.sortState('alphaDesc');
-                                ctrl.sortNodesAndModifyDisplay();
-                            }})),
+                        m('th', {class: 'col-md-5'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
                         m('th', {class: 'col-md-3'}, 'Contributors'),
-                        m('th', {class: 'col-md-2'}, 'Modified',
-                            m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
-                                ctrl.sortState('dateAsc');
-                                ctrl.sortNodesAndModifyDisplay()}}),
-                            m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
-                                ctrl.sortState('dateDesc');
-                                ctrl.sortNodesAndModifyDisplay();
-                           }})
-                        ),
+                        m('th', {class: 'col-md-2'}, 'Modified', sortDateAsc(), sortDateDesc()),
                         m('th', {class: 'col-md-1'}, 'New comments'),
                         m('th', {class: 'col-md-1'}, 'New logs')
                     ]),
