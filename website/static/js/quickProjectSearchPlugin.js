@@ -356,6 +356,7 @@ var quickSearchProject = {
 
         function resultsFound(){
             return m('div', [
+                ctrl.allLoaded() ? '' : m('.spinner-div', m('i.fa.fa-refresh.fa-spin'), ' Loading projects...'),
                 searchBar(),
                 m('div', {'class': 'container-fluid'},
                     m('table', [
