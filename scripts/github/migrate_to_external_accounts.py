@@ -1,5 +1,7 @@
 import logging
-import sys 
+import os
+import sys
+import urlparse
 
 from nose.tools import *  # noqa
 from modularodm import Q
@@ -10,6 +12,9 @@ from framework.transactions.context import TokuTransaction
 from website.app import init_app
 from website.models import User, Node
 from website.oauth.models import ExternalAccount
+from website.addons.github.api import GitHubClient
+from website.addons.github.settings import HOOK_CONTENT_TYPE
+from website.addons.github.utils import make_hook_secret
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
@@ -34,17 +39,50 @@ def verify_user_and_oauth_settings_documents(user_document, oauth_document):
     else:
         return True
 
-def verify_node_settings_document(document):
+def verify_node_settings_document(document, account):
     assert_in('_id', document)
     assert_in('deleted', document)
     assert_in('hook_id', document)
-    assert_in('hook_secret', document)
     assert_in('repo', document)
     assert_in('user', document)
     assert_in('registration_data', document)
     assert_in('owner', document)
     assert_is_not_none(document['owner'])
     assert_in('user_settings', document)
+    try:
+        assert_in('hook_secret', document)
+    except AssertionError:
+        try:
+            add_hook_to_old_node_settings(document, account)
+        except Exception:
+            return False
+    finally:
+        return True
+
+def add_hook_to_old_node_settings(document, account):
+    connect = GitHubClient(external_account=account)
+    secret = make_hook_secret()
+    hook = connect.add_hook(
+        document.user, document.repo,
+        'web',
+        {
+            'url': urlparse.urljoin(
+                hook_domain,
+                os.path.join(
+                    Node.load(document['owner']).api_url, 'github', 'hook/'
+                )
+            ),
+            'content_type': HOOK_CONTENT_TYPE,
+            'secret': secret,
+        }
+    )
+
+    if hook:
+        document['hook_id'] = hook.id
+        document['hook_secret'] = secret
+
+
+
 
 def migrate_to_external_account(user_settings_document, oauth_settings_document):
     if not oauth_settings_document.get('oauth_access_token'):
@@ -128,15 +166,18 @@ def migrate(dry_run=True):
     migrated_node_settings = 0
 
     for user_settings_document in user_settings_list:
-        oauth_settings_document = old_oauth_settings_collection.find_one({'github_user_id': user_settings_document['oauth_settings']})
-        if user_settings_document['deleted']:
-            logger.info(
-                "Found addongithubusersettings document (id:{0}) that is marked as deleted.".format(user_settings_document['_id'])
-            )
-            continue
+        try:
+            oauth_settings_document = old_oauth_settings_collection.find_one({'github_user_id': user_settings_document['oauth_settings']})
+        except KeyError:
+            pass
         if not oauth_settings_document:
             logger.info(
                 "Found addongithubusersettings document (id:{0}) with no associated oauth_settings. It will not be migrated.".format(user_settings_document['_id'])
+            )
+            continue
+        if user_settings_document['deleted']:
+            logger.info(
+                "Found addongithubusersettings document (id:{0}) that is marked as deleted.".format(user_settings_document['_id'])
             )
             continue
         if not verify_user_and_oauth_settings_documents(user_settings_document, oauth_settings_document):
@@ -170,7 +211,13 @@ def migrate(dry_run=True):
             else:
                 user_settings_instance = make_new_user_settings(user)
                 for node_settings_document in linked_node_settings_documents:
-                    verify_node_settings_document(node_settings_document)
+                    if not verify_node_settings_document(node_settings_document, external_account):
+                        logger.info(
+                            "Found addongithubnodesettings document (id:{0}) that could not be verified. It will not be migrated.".format(
+                                node_settings_document['_id'],
+                            )
+                        )
+                        continue
                     if node_settings_document['deleted']:
                         logger.info(
                             "Found addongithubnodesettings document (id:{0}) that is marked as deleted.".format(
@@ -185,6 +232,7 @@ def migrate(dry_run=True):
                         ))
                         continue
                     else:
+                        node_settings_document = database['addongithubnodesettings'].find_one({'_id': node_settings_document['_id']})
                         make_new_node_settings(
                             node,
                             node_settings_document,
