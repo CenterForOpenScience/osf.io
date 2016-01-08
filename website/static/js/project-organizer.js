@@ -19,7 +19,7 @@ var iconmap = require('js/iconmap');
 
 
 var LinkObject;
-
+var allProjectsCache;
 /**
  * Edits the template for the column titles.
  * Used here to make smart folder italicized
@@ -352,7 +352,12 @@ var tbOptions = {
         return [
             m('input.form-control[placeholder="Search all my projects"][type="text"]', {
                 style: 'display:inline;',
-                onkeyup: tb.filter,
+                onkeyup: function(event){
+                    if ($(this).val().length === 1){
+                        tb.updateFolder(allProjectsCache().data, tb.treeData);
+                    }
+                    tb.filter(event);
+                },
                 onchange: m.withAttr('value', tb.filterText),
                 value: tb.filterText()
             }),
@@ -385,6 +390,7 @@ var ProjectOrganizer = {
             m.redraw.strategy('all');
             return tb;
         };
+        allProjectsCache = args.allProjects;
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {

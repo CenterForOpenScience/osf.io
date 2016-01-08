@@ -338,8 +338,6 @@ var FileBrowser = {
             self.refreshView(false);
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
         };
-
-
         self.generateFiltersList = function _generateFilterList () {
             self.users = {};
             self.tags = {};
@@ -483,7 +481,8 @@ var FileBrowser = {
                         updateFilesData : ctrl.updateFilesData,
                         LinkObject : LinkObject,
                         reload : ctrl.reload,
-                        dragContainment : args.wrapperSelector
+                        dragContainment : args.wrapperSelector,
+                        allProjects : ctrl.allProjects
                     })
                 )
             ]),
