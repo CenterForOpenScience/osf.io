@@ -237,13 +237,13 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
     },
     submit: function() {
         var self = this;
+        var url = window.contextVars.node.urls.api + 'contributor/remove/'
         $osf.postJSON(
-            window.contextVars.node.urls.api + 'contributor/remove/', {
+            url, {
                 contributorID: self.contributorToRemove().id,
                 nodeIDs: self.nodeIDsToRemove()
             }
         ).done(function(response) {
-            debugger;
             // TODO: Don't reload the page here; instead use code below
             if (response.redirectUrl) {
                 window.location.href = response.redirectUrl;
