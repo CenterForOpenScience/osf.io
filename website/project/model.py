@@ -1220,7 +1220,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return self.is_contributor(auth.user)
 
-    def set_node_license(self, license_id, year, copyright_holders, auth, save=True):
+    def set_node_license(self, license_id, year, copyright_holders, auth, save=False):
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError("Only admins can change a project's license.")
         try:
@@ -1251,8 +1251,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 auth=auth,
                 save=False,
             )
-            if save:
+            if node._id != self._id:
                 node.save()
+
+        if save:
+            self.save()
 
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
