@@ -415,7 +415,8 @@
       window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
       window.contextVars.wiki = window.contextVars.wiki || {};
-      window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
+      ##window.contextVars.wiki.isEnabled = ${wiki and wiki.short_name in addons_enabled | sjson, n };
+      window.contextVars.wiki.isEnabled = "n";
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
