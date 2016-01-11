@@ -53,7 +53,7 @@ var quickSearchProject = {
             }
         );
 
-        // Recursively calls remaining user's nodes
+        // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
             if (self.nodes().length > 0) {
                 m.redraw()
