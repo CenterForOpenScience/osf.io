@@ -1,3 +1,3 @@
 VARNISH_SERVERS = ['http://localhost:8080']
-ENABLE_VARNISH = False
+ENABLE_VARNISH = True
 ENABLE_ESI = False
