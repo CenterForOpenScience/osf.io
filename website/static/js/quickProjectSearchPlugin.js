@@ -283,16 +283,6 @@ var quickSearchProject = {
 
     },
     view : function(ctrl) {
-        function projectView(project) {
-            console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
-            return [m('div', {class: 'row node-outline'}, [
-                m('div', {class: 'col-xs-4 m-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
-                m('div', {class: 'col-xs-4 m-v-xs text-muted'}, ctrl.getContributors(project)),
-                m('div', {class: 'col-xs-4 m-v-xs'}, ctrl.formatDate(project))
-            ]),
-            m('div', {class: 'row'}, m('div', {class: 'col-xs-12 m-v-xs'}))];
-        }
-
         function loadMoreButton() {
             if (ctrl.nodes().length !== 0){
                 return m('button', {class: 'col-xs-12 text-muted', onclick: function() {
@@ -368,6 +358,16 @@ var quickSearchProject = {
                     return projectView(n)
                 })
             }
+        }
+
+        function projectView(project) {
+            console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
+            return [m('div', {class: 'row node-outline'}, [
+                m('div', {class: 'col-xs-4 m-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
+                m('div', {class: 'col-xs-4 m-v-xs text-muted'}, ctrl.getContributors(project)),
+                m('div', {class: 'col-xs-4 m-v-xs'}, ctrl.formatDate(project))
+            ]),
+            m('div', {class: 'row'}, m('div', {class: 'col-xs-12 m-v-xs'}))];
         }
 
         function resultsFound(){
