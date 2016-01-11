@@ -43,6 +43,8 @@ INSTALLED_APPS = (
     # 3rd party
     'raven.contrib.django.raven_compat',
     'webpack_loader',
+    'crispy_forms',
+    'floppyforms',
 )
 
 # Custom user model (extends AbstractBaseUser)

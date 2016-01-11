@@ -1,8 +1,19 @@
 from django.shortcuts import render, render_to_response
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
+from django.core.mail import send_mail
+from django.views.generic import FormView
 
 from .serializers import serialize_comments, retrieve_comment
+from .forms import EmailForm
+
+
+class EmailFormView(FormView):
+
+    form_class = EmailForm
+    template_name = ""  # TODO: <-
+    success_url = ''  # TODO <-
 
 
 @login_required

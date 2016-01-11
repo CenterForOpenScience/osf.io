@@ -4,3 +4,6 @@
 
 # Webpack loader
 django-webpack-loader==0.1.2.1
+
+django-crispy-forms
+django-floppyforms
