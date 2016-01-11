@@ -48,6 +48,16 @@ var AddProject = {
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
         };
+        // Validation
+        self.isValid = m.prop(false);
+        self.checkValid = function () {
+            var projectNameNotEmpty = self.newProjectName().trim().length > 0 ? true : false;
+            if(projectNameNotEmpty){
+                self.isValid(true);
+            } else {
+                self.isValid(false);
+            }
+        };
         //self.chooseCategory = function(event){
         //    self.newProjectCategory = $(this).val();
         //};
@@ -108,11 +118,12 @@ var AddProject = {
                         m('.form-group.m-v-sm', [
                             m('label[for="projectName].f-w-lg.text-bigger', 'Project Name'),
                             m('input[type="text"].form-control', {
-                                onchange: function(ev){
+                                onkeyup: function(ev){
                                     if (ev.which === 13) {
                                          ctrl.add();
                                     }
                                     ctrl.newProjectName($(this).val());
+                                    ctrl.checkValid();
                                 },
                                 value : ctrl.newProjectName()
                             })
@@ -140,7 +151,7 @@ var AddProject = {
                 ]),
                 m('.modal-footer', [
                     m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : ctrl.reset},  'Cancel'),
-                    m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Add')
+                    ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Add') : m('button[type="button"].btn.btn-success[disabled]','Add')
                 ])
             ]),
             processing : m('.modal-content',
