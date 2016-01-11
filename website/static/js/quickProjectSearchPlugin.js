@@ -294,17 +294,19 @@ var quickSearchProject = {
 
         function loadMoreButton() {
             if (ctrl.nodes().length !== 0){
-                return m('button', { onclick: function() {
-                    ctrl.loadUpToTen() }
-                }, 'Show more')
+                return m('button', {class: 'col-xs-12 text-muted', onclick: function() {
+                        ctrl.loadUpToTen()}
+                },
+                m('i', {class: 'fa fa-caret-down'}))
             }
         }
 
-         function loadLessButton() {
+        function loadLessButton() {
             if (ctrl.displayedNodes().length > 10 && ctrl.loadingComplete()){
-                return m('button', { onclick: function() {
-                    ctrl.removeUpToTen() }
-                }, 'Show less')
+                return m('button', {class: 'col-xs-12 text-muted', onclick: function() {
+                        ctrl.removeUpToTen()}
+                    },
+                m('i', {class: 'fa fa-caret-up'}))
             }
         }
 
