@@ -284,11 +284,12 @@ var quickSearchProject = {
     view : function(ctrl) {
         function projectView(project) {
             console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
-            return m('tr', [
-                m('td', m("a", {href: '/'+ project.id}, project.attributes.title)),
-                m('td', ctrl.getContributors(project)),
-                m('td', ctrl.formatDate(project))
-            ])
+            return [m('div', {class: 'row node-outline'}, [
+                m('div', {class: 'col-xs-4 m-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
+                m('div', {class: 'col-xs-4 m-v-xs text-muted'}, ctrl.getContributors(project)),
+                m('div', {class: 'col-xs-4 m-v-xs'}, ctrl.formatDate(project))
+            ]),
+            m('div', {class: 'row'}, m('div', {class: 'col-xs-12 m-v-xs'}))];
         }
 
         function loadMoreButton() {
