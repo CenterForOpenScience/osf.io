@@ -14,6 +14,7 @@ var xhrconfig = function(xhr) {
     xhr.withCredentials = true;
 };
 
+
 var quickSearchProject = {
     controller: function() {
         var self = this;
@@ -351,7 +352,7 @@ var quickSearchProject = {
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div', {class : 'input-group'}, [
+                return m('div', {class : 'input-group m-v-md'}, [
                     m('span', {class: 'input-group-addon'}, m('i', {class: 'fa fa-search'})),
                     m('input[type=search]', {class: 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {ctrl.quickSearch()}})
                 ])
@@ -401,6 +402,6 @@ var quickSearchProject = {
         }
     }
 };
-
 module.exports = quickSearchProject;
+
 
