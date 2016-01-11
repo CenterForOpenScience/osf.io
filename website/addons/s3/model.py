@@ -5,53 +5,24 @@ from modularodm import fields
 from framework.auth.core import Auth
 
 from website.addons.base import exceptions
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
-from website.addons.s3 import utils
+from website.addons.s3.provider import S3Provider
+from website.addons.s3.serializer import S3Serializer
 from website.addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT
 
 
-class AddonS3UserSettings(AddonUserSettingsBase):
+class S3UserSettings(AddonOAuthUserSettingsBase):
 
-    access_key = fields.StringField()
-    secret_key = fields.StringField()
-
-    def to_json(self, user):
-        ret = super(AddonS3UserSettings, self).to_json(user)
-        ret['has_auth'] = self.has_auth
-        if self.owner:
-            ret['name'] = self.owner.display_full_name()
-            ret['profile_url'] = self.owner.profile_url
-        return ret
-
-    @property
-    def has_auth(self):
-        return bool(self.access_key and self.secret_key)
-
-    @property
-    def is_valid(self):
-        return utils.can_list(self.access_key, self.secret_key)
-
-    def revoke_auth(self, auth=None, save=False):
-        for node_settings in self.addons3nodesettings__authorized:
-            node_settings.deauthorize(auth=auth, save=True)
-
-        self.s3_osf_user, self.access_key, self.secret_key = None, None, None
-
-        if save:
-            self.save()
-
-        return True
+    oauth_provider = S3Provider
+    serializer = S3Serializer
 
 
-class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
+class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     bucket = fields.StringField()
     encrypt_uploads = fields.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
-    user_settings = fields.ForeignField(
-        'addons3usersettings', backref='authorized'
-    )
 
     @property
     def folder_name(self):
@@ -147,7 +118,7 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             'node_has_auth': self.has_auth,
             'owner': None,
             'bucket_list': None,
-            'valid_credentials': user_settings and user_settings.is_valid,
+            'valid_credentials': user_settings and self.serializer(node_settings=self, user_settings=user_settings).credentials_are_valid,
         })
 
         if self.has_auth:
