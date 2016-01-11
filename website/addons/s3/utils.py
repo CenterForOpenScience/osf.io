@@ -83,6 +83,19 @@ def can_list(access_key, secret_key):
         return False
     return True
 
+def get_user_id(access_key, secret_key):
+    """Returns a user's canonical user get_user_id
+    according to S3, or None
+    """
+    if not (access_key and secret_key):
+        return None
+
+    try:
+        return connect_s3(access_key, secret_key).get_canonical_user_id()
+    except exception.S3ResponseError:
+        return None
+    return None
+
 def serialize_urls(node_addon, user):
     node = node_addon.owner
     user_settings = node_addon.user_settings
