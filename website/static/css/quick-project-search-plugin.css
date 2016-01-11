@@ -2,6 +2,14 @@
 .node-outline {
     border: 2px solid #333333;
 }
+
+button {
+    -webkit-appearance: none;
+    outline: none;
+    border: 0;
+    background: transparent;
+}
+
 .load-nodes {
     font-size: 2em;
 }
