@@ -1,5 +1,5 @@
 /**
- * Controller for the Add Contributor modal.
+ * Controller for the Remove Contributor modal.
  */
 'use strict';
 
@@ -12,7 +12,7 @@ var oop = require('./oop');
 var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
 
-var API_BASE = 'http://localhost:8000/v2/nodes/';
+var API_BASE = window.contextVars.apiV2Prefix;
 
 function getNodesOriginal(nodeTree, nodesOriginal) {
     /**
@@ -237,9 +237,9 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
     },
     submit: function() {
         var self = this;
-        var url = window.contextVars.node.urls.api + 'contributor/remove/';
+        var removeUrl = window.contextVars.node.urls.api + 'contributor/remove/';
         $osf.postJSON(
-            url, {
+            removeUrl, {
                 contributorID: self.contributorToRemove().id,
                 nodeIDs: self.nodeIDsToRemove()
             }
@@ -253,7 +253,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to delete Contributor');
             Raven.captureMessage('Could not DELETE Contributor.' + error, {
-                API_BASE: url, status: status, error: error
+                url: removeUrl, status: status, error: error
             });
         });
 

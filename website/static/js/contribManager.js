@@ -111,8 +111,6 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         self.contributorToRemove({
             fullname: self.fullname,
             id:self.id});
-        //self.deleteStaged(true);
-        //debugger;
     };
 
     self.unremove = function() {
