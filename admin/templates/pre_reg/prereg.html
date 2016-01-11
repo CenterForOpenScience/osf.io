@@ -33,8 +33,8 @@
       <a href="mailto:{{ draft.initiator.username }}">{{ draft.initiator.username }} </a>
       <br />
       <span>Embargo release:
-          {% if draft.embargo == 'Immediate' %}
-              <strong>{{ draft.embargo }}</strong>
+          {% if draft.embargo == IMMEDIATE %}
+              <strong>{{ draft.embargo| capfirst }}</strong>
           {% else %}
               <strong>{{ draft.embargo | date:"N dS Y" }}</strong> at <strong>{{draft.embargo | date:"g:i a" }}</strong>
           {%  endif %}
