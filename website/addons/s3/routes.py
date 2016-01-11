@@ -17,7 +17,7 @@ settings_routes = {
         Rule(
             '/settings/s3/',
             'post',
-            views.config.s3_post_user_settings,
+            views.config.s3_add_user_account,
             json_renderer
         ),
         Rule(
