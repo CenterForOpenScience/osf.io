@@ -7,7 +7,7 @@
 {% endblock title %}
 {% block content %}
     <h2>List of Spam</h2>
-    {% include "util/pagination.html" with items=comments %}
+    {% include "util/pagination.html" with items=page %}
     <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
@@ -21,7 +21,7 @@
         </tr>
     </thead>
     <tbody>
-    {% for comment in comments %}
+    {% for comment in spam %}
     <tr>
         <td>
             <label for="{{ comment.id }}"></label>
