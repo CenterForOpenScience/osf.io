@@ -371,6 +371,7 @@ var quickSearchProject = {
 
         function resultsFound(){
             return m('div', {class: 'container'}, [
+                m('div', {class: 'row'}, m('h3', 'My Projects')),
                 m('div', {class: 'row'},
                     m('div', {class: 'col-xs-2'}),
                     m('div', {class: 'col-xs-8 text-center'}, [
@@ -379,13 +380,16 @@ var quickSearchProject = {
                     ]),
                     m('div', {class: 'col-xs-2'})),
                 m('div', {class: 'row'}, [
-                    m('div', {class: 'col-xs-4 m-v-md'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
-                    m('div', {class: 'col-xs-4 m-v-md'}, 'Contributors'),
-                    m('div', {class: 'col-xs-4 m-v-md'}, 'Date Modified', sortDateAsc(), sortDateDesc())
+                    m('div', {class: 'col-xs-4 m-v-md f-w-xl'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
+                    m('div', {class: 'col-xs-4 m-v-md f-w-xl'}, 'Contributors'),
+                    m('div', {class: 'col-xs-4 m-v-md f-w-xl'}, 'Date Modified', sortDateAsc(), sortDateDesc())
                 ]),
                 displayNodes(),
-                loadMoreButton(),
-                loadLessButton()
+                m('div', {class: 'row'}, [
+                    m('div', {class: 'col-xs-5'}),
+                    m('div', {class: 'col-xs-2'}, loadLessButton(), loadMoreButton()),
+                    m('div', {class: 'col-xs-5'})
+                ])
             ]);
         }
 
