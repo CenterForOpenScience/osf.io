@@ -23,6 +23,7 @@ from website.project.model import MetaSchema, DraftRegistration
 
 get_draft_or_error = functools.partial(get_or_http_error, DraftRegistration)
 
+
 def get_prereg_drafts(user=None, filters=tuple()):
     prereg_schema = MetaSchema.find_one(
         Q('name', 'eq', 'Prereg Challenge') &
@@ -43,12 +44,14 @@ def get_prereg_drafts(user=None, filters=tuple()):
         key=operator.attrgetter('approval.initiation_date')
     )
 
+
 def is_in_prereg_group(user):
     """Determines whether a user is in the prereg_group
     :param user: User wanting access to prereg material
     :return: True if prereg False if not
     """
     return user.is_in_group('prereg_group')
+
 
 @login_required
 @user_passes_test(is_in_prereg_group)
@@ -80,6 +83,7 @@ def prereg(request):
     }
     return render(request, 'pre_reg/prereg.html', context)
 
+
 @login_required
 @user_passes_test(is_in_prereg_group)
 def view_draft(request, draft_pk):
@@ -93,6 +97,7 @@ def view_draft(request, draft_pk):
     }
     return render(request, 'pre_reg/edit_draft_registration.html', context)
 
+
 @login_required
 @user_passes_test(is_in_prereg_group)
 def view_file(request, node_id, provider, file_id):
@@ -100,12 +105,13 @@ def view_file(request, node_id, provider, file_id):
     wb_url = file.generate_waterbutler_url()
     return redirect(wb_url)
 
+
 @csrf_exempt
 @login_required
 @user_passes_test(is_in_prereg_group)
 def approve_draft(request, draft_pk):
     """Approves current draft
-    :param user: Current logged in user
+    :param request: mostly for user
     :param draft_pk: Unique id for current draft
     :return: DraftRegistrationApproval obj
     """
@@ -115,12 +121,13 @@ def approve_draft(request, draft_pk):
     draft.approve(user)
     return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
+
 @csrf_exempt
 @login_required
 @user_passes_test(is_in_prereg_group)
 def reject_draft(request, draft_pk):
     """Rejects current draft
-    :param user: Current logged in user
+    :param request: mostly for user
     :param draft_pk: Unique id for current draft
     :return: DraftRegistrationApproval obj
     """
@@ -129,6 +136,7 @@ def reject_draft(request, draft_pk):
     user = request.user.osf_user
     draft.reject(user)
     return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
+
 
 @csrf_exempt
 @login_required
