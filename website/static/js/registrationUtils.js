@@ -1235,7 +1235,7 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     self.loadingSchemas.subscribe(function(loading) {
         if (!loading) {
             createButton.removeClass('disabled');
-            createButton.text('New Registration');
+            createButton.text('New registration');
         }
     });
     self.loadingDrafts = ko.observable(true);
@@ -1273,7 +1273,7 @@ RegistrationManager.prototype.init = function() {
         });
         $osf.growl('Error loading registration templates', language.loadMetaSchemaFail);
     });
-    
+
     if ($osf.currentUser().isAdmin) {
         var getDraftRegistrations = self.getDraftRegistrations();
         getDraftRegistrations.done(function(response) {
