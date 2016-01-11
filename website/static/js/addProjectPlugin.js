@@ -104,7 +104,7 @@ var AddProject = {
                     m('h3.modal-title', 'Add New Project')
                 ]),
                 m('.modal-body', [
-                    m('', [
+                    m('.text-left', [
                         m('.form-group.m-v-sm', [
                             m('label[for="projectName].f-w-lg.text-bigger', 'Project Name'),
                             m('input[type="text"].form-control', {
@@ -150,7 +150,7 @@ var AddProject = {
                             m('span[aria-hidden="true"]','×'),
                         ]),
                     ]),
-                    m('.modal-body', [
+                    m('.modal-body.text-left', [
                             m('.add-project-processing', 'Saving your project...')
                         ]
                     )
@@ -158,7 +158,7 @@ var AddProject = {
             ),
             success : m('.modal-content', [
                 m('.modal-content',
-                    m('.modal-body', [
+                    m('.modal-body.text-left', [
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
@@ -178,7 +178,7 @@ var AddProject = {
             ]),
             error : m('.modal-content', [
                 m('.modal-content',
-                    m('.modal-body', [
+                    m('.modal-body.text-left', [
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
@@ -190,7 +190,7 @@ var AddProject = {
             ])
         };
 
-        return  m('', [
+        return  m('span', [
             ctrl.options.buttonTemplate,
             m('#' + ctrl.options.modalID + '.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addProject"][aria-hidden="true"]',
                 m('.modal-dialog',
