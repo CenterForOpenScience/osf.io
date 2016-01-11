@@ -297,7 +297,7 @@ var quickSearchProject = {
                 return m('button', {class: 'col-xs-12 text-muted', onclick: function() {
                         ctrl.loadUpToTen()}
                 },
-                m('i', {class: 'fa fa-caret-down'}))
+                m('i', {class: 'fa fa-caret-down load-nodes'}))
             }
         }
 
@@ -306,7 +306,7 @@ var quickSearchProject = {
                 return m('button', {class: 'col-xs-12 text-muted', onclick: function() {
                         ctrl.removeUpToTen()}
                     },
-                m('i', {class: 'fa fa-caret-up'}))
+                m('i', {class: 'fa fa-caret-up load-nodes'}))
             }
         }
 
