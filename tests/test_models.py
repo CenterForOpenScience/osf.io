@@ -53,7 +53,7 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
     AuthUserFactory, DashboardFactory, FolderFactory,
-    NodeLicenseRecordFactory, DraftRegistrationFactory
+    NodeLicenseRecordFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive

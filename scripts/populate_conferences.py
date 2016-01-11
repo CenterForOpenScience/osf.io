@@ -594,6 +594,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+        'CATALISE2016': {
+        'name': 'Criteria and Terminology Applied to Language Impairments: Synthesising the Evidence (CATALISE) 2016',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
