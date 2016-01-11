@@ -16,6 +16,7 @@ from website.oauth.models import ExternalAccount
 from website.addons.github.api import GitHubClient
 from website.addons.github import settings as github_settings
 from website.addons.github.utils import make_hook_secret
+from website.addons.github.exceptions import GitHubError
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
@@ -56,28 +57,30 @@ def verify_node_settings_document(document, account):
     except AssertionError:
         try:
             add_hook_to_old_node_settings(document, account)
-        except Exception:
+        except GitHubError:
             return False
-    finally:
-        return True
+    return True
 
 def add_hook_to_old_node_settings(document, account):
     connect = GitHubClient(external_account=account)
     secret = make_hook_secret()
-    hook = connect.add_hook(
-        document['user'], document['repo'],
-        'web',
-        {
-            'url': urlparse.urljoin(
-                HOOK_DOMAIN,
-                os.path.join(
-                    Node.load(document['owner']).api_url, 'github', 'hook/'
-                )
-            ),
-            'content_type': github_settings.HOOK_CONTENT_TYPE,
-            'secret': secret,
-        }
-    )
+    try:
+        hook = connect.add_hook(
+            document['user'], document['repo'],
+            'web',
+            {
+                'url': urlparse.urljoin(
+                    HOOK_DOMAIN,
+                    os.path.join(
+                        Node.load(document['owner']).api_url, 'github', 'hook/'
+                    )
+                ),
+                'content_type': github_settings.HOOK_CONTENT_TYPE,
+                'secret': secret,
+            }
+        )
+    except GitHubError:
+        raise
 
     if hook:
         database['addongithubnodesettings'].find_and_modify(
@@ -90,7 +93,7 @@ def add_hook_to_old_node_settings(document, account):
             }
         )
     else:
-        raise Exception
+        raise GitHubError
 
 def migrate_to_external_account(user_settings_document, oauth_settings_document):
     if not oauth_settings_document.get('oauth_access_token'):
