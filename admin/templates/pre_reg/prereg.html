@@ -36,7 +36,7 @@
           {% if draft.embargo == 'immediate' %}
               <strong>{{ draft.embargo }}</strong>
           {% else %}
-              <strong>{{ draft.embargo | date:"N dS" }}</strong> at <strong>{{draft.embargo | date:"g:i a" }}</strong>
+              <strong>{{ draft.embargo | date:"N dS Y" }}</strong> at <strong>{{draft.embargo | date:"g:i a" }}</strong>
           {%  endif %}
       </span>
     </div>
