@@ -360,26 +360,27 @@ var quickSearchProject = {
         }
 
         function resultsFound(){
-            return m('div', [
-                ctrl.loadingComplete() ? '' : m('.spinner-div', m('i.fa.fa-refresh.fa-spin'), ' Loading projects...'),
-                searchBar(),
-                m('div', {'class': 'container-fluid'},
-                    m('table', [
-                        m('tr', [
-                            m('th', 'Name', sortAlphaAsc(), sortAlphaDesc()),
-                            m('th', 'Contributors'),
-                            m('th', 'Modified', sortDateAsc(), sortDateDesc())
-                        ]),
-                        displayNodes(),
-                        loadMoreButton(),
-                        loadLessButton()
-                    ])
-                )
-            ])
+            return m('div', {class: 'container'}, [
+                m('div', {class: 'row'},
+                    m('div', {class: 'col-xs-2'}),
+                    m('div', {class: 'col-xs-8 text-center'}, [
+                        searchBar(),
+                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('i.fa.fa-refresh.fa-spin'), ' Loading projects...')
+                    ]),
+                    m('div', {class: 'col-xs-2'})),
+                m('div', {class: 'row'}, [
+                    m('div', {class: 'col-xs-4 m-v-md'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
+                    m('div', {class: 'col-xs-4 m-v-md'}, 'Contributors'),
+                    m('div', {class: 'col-xs-4 m-v-md'}, 'Date Modified', sortDateAsc(), sortDateDesc())
+                ]),
+                displayNodes(),
+                loadMoreButton(),
+                loadLessButton()
+            ]);
         }
 
         if (ctrl.displayedNodes().length == 0 && ctrl.filter() == null) {
-            return m('h2', 'You have no projects. Go here to create one.')
+            return m('div', {class: 'row'}, m('h2', 'You have no projects. Go here to create one.'))
         }
         else {
             return resultsFound()
