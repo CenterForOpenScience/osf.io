@@ -16,7 +16,7 @@ from website.oauth.models import ExternalAccount
 from website.addons.github.api import GitHubClient
 from website.addons.github import settings as github_settings
 from website.addons.github.utils import make_hook_secret
-from website.addons.github.exceptions import GitHubError
+from website.addons.github.exceptions import GitHubError, ApiError
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ def verify_node_settings_document(document, account):
     except AssertionError:
         try:
             add_hook_to_old_node_settings(document, account)
-        except GitHubError:
+        except (GitHubError, ApiError):
             return False
     return True
 
@@ -79,7 +79,7 @@ def add_hook_to_old_node_settings(document, account):
                 'secret': secret,
             }
         )
-    except GitHubError:
+    except (GitHubError, ApiError):
         raise
 
     if hook:
