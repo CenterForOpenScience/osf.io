@@ -25,9 +25,7 @@ var AddProject = {
         };
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
         self.options = $.extend(self.defaults, options);
-        self.init = function _init () {
-
-        };
+        self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
         self.categoryList = [
@@ -128,25 +126,33 @@ var AddProject = {
                                 value : ctrl.newProjectName()
                             })
                         ]),
-                        m('.form-group.m-v-sm', [
-                            m('label[for="projectDesc].f-w-lg.text-bigger', 'Project Description'),
-                            m('textarea.form-control', {
-                                onchange: m.withAttr('value', ctrl.newProjectDesc),
-                                value : ctrl.newProjectDesc()
-                            })
+                        m('.text-muted', { onclick : function(){
+                            ctrl.showMore(!ctrl.showMore());
+                        }},[
+                            ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
+                            ' More (description, type)'
                         ]),
-                        m('.f-w-lg.text-bigger','Category'),
-                        m('.category-radio.p-h-md', [
-                            ctrl.categoryList.map(function(cat){
-                                return m('.radio', m('label', [  m('input', {
-                                    type: 'radio',
-                                    name: 'projectCategory',
-                                    value: cat.value,
-                                    checked: ctrl.newProjectCategory() === cat.value,
-                                    onchange : m.withAttr('value', ctrl.newProjectCategory)
-                                }), cat.label ]));
-                            })
-                        ])
+                        ctrl.showMore() ? [
+                            m('.form-group.m-v-sm', [
+                                m('label[for="projectDesc].f-w-lg.text-bigger', 'Project Description'),
+                                m('textarea.form-control.noresize', {
+                                    onchange: m.withAttr('value', ctrl.newProjectDesc),
+                                    value : ctrl.newProjectDesc()
+                                })
+                            ]),
+                            m('.f-w-lg.text-bigger','Category'),
+                            m('.category-radio.p-h-md', [
+                                ctrl.categoryList.map(function(cat){
+                                    return m('.radio', m('label', [  m('input', {
+                                        type: 'radio',
+                                        name: 'projectCategory',
+                                        value: cat.value,
+                                        checked: ctrl.newProjectCategory() === cat.value,
+                                        onchange : m.withAttr('value', ctrl.newProjectCategory)
+                                    }), cat.label ]));
+                                })
+                            ])
+                        ] : ''
                     ])
                 ]),
                 m('.modal-footer', [
