@@ -412,13 +412,11 @@ var FileBrowser = {
     view : function (ctrl, args) {
         var mobile = window.innerWidth < 767; // true if mobile view
         var infoPanel = '';
-        var poStyle = 'width : 75%';
-        var infoButtonClass = 'btn-default';
+        var poStyle = 'width : 72%'; // Other percentages are set in CSS in file-browser.css These are here because they change
         var sidebarButtonClass = 'btn-default';
         if (ctrl.showInfo() && !mobile){
             infoPanel = m('.fb-infobar', m.component(Information, ctrl));
-            infoButtonClass = 'btn-primary';
-            poStyle = 'width : 45%';
+            poStyle = 'width : 47%';
         }
         if(ctrl.showSidebar()){
             sidebarButtonClass = 'btn-primary';
@@ -439,13 +437,7 @@ var FileBrowser = {
                         }
                     }, m('.fa.fa-bars')) : '',
                     m('span.m-r-md.hidden-xs', ctrl.data().data.length + ' Projects'),
-                    m('#poFilter.m-r-xs'),
-                    !mobile ? m('button.btn', {
-                        'class' : infoButtonClass,
-                        onclick : function () {
-                            ctrl.showInfo(!ctrl.showInfo());
-                        }
-                    }, m('.fa.fa-info')) : ''
+                    m('#poFilter.m-r-xs')
                 ])
             ]),
             ctrl.showSidebar() ?
@@ -484,6 +476,13 @@ var FileBrowser = {
                     })
                 )
             ]),
+            mobile ? '' : m('.fb-info-toggle',{
+                    onclick : function(){
+                        ctrl.showInfo(!ctrl.showInfo());
+                    }
+                },
+                ctrl.showInfo() ? m('i.fa.fa-chevron-right') :  m('i.fa.fa-chevron-left')
+            ),
             infoPanel,
             m.component(Modals, ctrl)
         ];
@@ -1063,7 +1062,7 @@ var Information = {
         var filter = args.activeFilter();
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            template = m('', [
+            template = m('.p-sm', [
                 filter.type === 'collection' && !filter.data.systemCollection ? m('.fb-info-remove.p-xs.text-danger', { onclick : args.removeProjectFromCollections }, 'Remove from collection') : '',
                 m('h3', m('a', { href : item.links.html}, item.attributes.title)),
                 m('[role="tabpanel"]', [
