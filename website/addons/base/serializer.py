@@ -74,7 +74,7 @@ class OAuthAddonSerializer(AddonSerializer):
             (
                 self.node_settings.has_auth and
                 (self.node_settings.external_account in user_accounts)
-            ) or len(user_accounts)
+            )
         )
 
     @property
