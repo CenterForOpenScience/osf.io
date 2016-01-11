@@ -9,11 +9,12 @@ from modularodm import Q
 from framework.mongo import database
 from framework.transactions.context import TokuTransaction
 
+from website import settings
 from website.app import init_app
 from website.models import User, Node
 from website.oauth.models import ExternalAccount
 from website.addons.github.api import GitHubClient
-from website.addons.github.settings import HOOK_CONTENT_TYPE
+from website.addons.github import settings as github_settings
 from website.addons.github.utils import make_hook_secret
 from scripts import utils as script_utils
 
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 PROVIDER = 'github'
 PROVIDER_NAME = 'GitHub'
+HOOK_DOMAIN = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
 def verify_user_and_oauth_settings_documents(user_document, oauth_document):
     try:
@@ -63,26 +65,32 @@ def add_hook_to_old_node_settings(document, account):
     connect = GitHubClient(external_account=account)
     secret = make_hook_secret()
     hook = connect.add_hook(
-        document.user, document.repo,
+        document['user'], document['repo'],
         'web',
         {
             'url': urlparse.urljoin(
-                hook_domain,
+                HOOK_DOMAIN,
                 os.path.join(
                     Node.load(document['owner']).api_url, 'github', 'hook/'
                 )
             ),
-            'content_type': HOOK_CONTENT_TYPE,
+            'content_type': github_settings.HOOK_CONTENT_TYPE,
             'secret': secret,
         }
     )
 
     if hook:
-        document['hook_id'] = hook.id
-        document['hook_secret'] = secret
-
-
-
+        database['addongithubnodesettings'].find_and_modify(
+            {'_id': document['_id']},
+            {
+                '$set': {
+                    'hook_id': hook.id,
+                    'hook_secret': secret
+                }
+            }
+        )
+    else:
+        raise Exception
 
 def migrate_to_external_account(user_settings_document, oauth_settings_document):
     if not oauth_settings_document.get('oauth_access_token'):
