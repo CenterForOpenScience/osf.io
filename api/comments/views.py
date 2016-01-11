@@ -21,7 +21,9 @@ from api.comments.serializers import (
     CommentReportDetailSerializer,
     CommentReport
 )
+from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
+from framework.exceptions import PermissionsError
 from website.project.model import Comment
 from website.files.models import StoredFileNode
 from website.files.models.dropbox import DropboxFile
@@ -93,7 +95,7 @@ class CommentMixin(object):
         return comment
 
 
-class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixin):
+class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     """Details about a specific comment. *Writeable*.
 
     ###Permissions
@@ -195,6 +197,16 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixi
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_comment()
+
+    def perform_destroy(self, instance):
+        auth = Auth(self.request.user)
+        if instance.is_deleted:
+            raise ValidationError('Comment already deleted.')
+        else:
+            try:
+                instance.delete(auth, save=True)
+            except PermissionsError:
+                raise PermissionDenied('Not authorized to delete this comment.')
 
 
 class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin):

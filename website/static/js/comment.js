@@ -474,20 +474,10 @@ CommentModel.prototype.submitDelete = function() {
     var self = this;
     var url = osfHelpers.apiV2Url('comments/' + self.id() + '/', {});
     var request = osfHelpers.ajaxJSON(
-        'PATCH',
+        'DELETE',
         url,
-        {
-            'isCors': true,
-            'data': {
-                'data': {
-                    'id': self.id(),
-                    'type': 'comments',
-                    'attributes': {
-                        'deleted': true
-                    }
-                }
-            }
-        });
+        {'isCors': true}
+    );
     request.done(function() {
         self.isDeleted(true);
         self.deleting(false);
