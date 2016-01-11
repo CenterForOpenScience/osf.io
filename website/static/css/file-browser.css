@@ -226,6 +226,32 @@
     padding-top: 36%;
 }
 
+.osf-micro-pagination {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 2px 0;
+}
+.osf-micro-pagination .arrow {
+    font-weight: bold;
+    padding: 2px 6px;
+    color: #ccc;
+}
+.osf-micro-pagination .arrow.live {
+    color: #333;
+}
+
+.osf-micro-pagination .arrow.left {
+     border-bottom-left-radius: 5px;
+     border-top-left-radius: 5px;
+ }
+.osf-micro-pagination .arrow.right {
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+.osf-micro-pagination .arrow.live:hover {
+    background: #E0EBF3;
+    cursor: pointer;
+}
 /* Responsive Style */
 @media only screen and (min-width : 1200px) {
 
