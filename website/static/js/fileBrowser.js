@@ -1102,7 +1102,7 @@ var Information = {
             ]);
         }
         if (args.selected().length > 1) {
-            template = m('', [ '', args.selected().map(function(item){
+            template = m('.p-sm', [ '', args.selected().map(function(item){
                 return m('.fb-info-multi', [
                     m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
                     m('p.fb-info-meta.text-muted', [
