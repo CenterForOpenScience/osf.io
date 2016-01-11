@@ -312,36 +312,40 @@ var quickSearchProject = {
 
         function sortAlphaAsc() {
             if (ctrl.loadingComplete()) {
-                return m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
+                return m('button', {onclick: function() {
                     ctrl.sortState('alphaAsc');
                     ctrl.sortNodesAndModifyDisplay();
-                }})
+                }},
+                    m('i', {class: 'fa fa-chevron-up'})
+)
             }
-
         }
 
         function sortAlphaDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
+                return m('button', {onclick: function() {
                     ctrl.sortState('alphaDesc');
                     ctrl.sortNodesAndModifyDisplay();
-                }})
+                }},
+                m('i', {class: 'fa fa-chevron-down'}))
             }
         }
 
         function sortDateAsc(){
             if (ctrl.loadingComplete()){
-                 return m('button', {class: 'glyphicon glyphicon-chevron-up', onclick: function() {
+                 return m('button', {onclick: function() {
                      ctrl.sortState('dateAsc');
-                     ctrl.sortNodesAndModifyDisplay()}})
+                     ctrl.sortNodesAndModifyDisplay()}},
+                 m('i', {class: 'fa fa-chevron-up'}))
             }
         }
         function sortDateDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {class: 'glyphicon glyphicon-chevron-down', onclick: function() {
+                return m('button', {onclick: function() {
                     ctrl.sortState('dateDesc');
                     ctrl.sortNodesAndModifyDisplay();
-               }})
+               }},
+                m('i', {class: 'fa fa-chevron-down'}))
             }
         }
 
