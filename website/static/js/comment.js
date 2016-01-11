@@ -511,7 +511,7 @@ CommentModel.prototype.submitUndelete = function() {
     var self = this;
     var url = osfHelpers.apiV2Url('comments/' + self.id() + '/', {});
     var request = osfHelpers.ajaxJSON(
-        'PATCH',
+        'PUT',
         url,
         {
             'isCors': true,
@@ -520,6 +520,7 @@ CommentModel.prototype.submitUndelete = function() {
                     'id': self.id(),
                     'type': 'comments',
                     'attributes': {
+                        'content': self.content(),
                         'deleted': false
                     }
                 }
