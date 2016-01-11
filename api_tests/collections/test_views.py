@@ -2007,3 +2007,12 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         relationship_id = [data['id'] for data in res_relationship.json['data']]
 
         assert_equal(set(node_links_id), set(relationship_id))
+
+    def test_attempt_to_add_collection_to_collection(self):
+        other_collection = NodeFactory(creator=self.user, is_folder=True)
+        res = self.app.post_json_api(
+            self.url, self.payload([other_collection._id]),
+            auth=self.user.auth, expect_errors=True
+        )
+
+        assert_equal(res.status_code, 404)
