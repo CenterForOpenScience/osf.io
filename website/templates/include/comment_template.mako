@@ -17,13 +17,7 @@
                         </span>
                     </div>
                     <div data-bind="if: canEdit">
-                        <a data-bind="click: startUndelete">Restore</a>
-                        <div class="clearfix" data-bind="if: undeleting">
-                            <div class="pull-right">
-                                <a class="btn btn-default btn-sm" data-bind="click: cancelUndelete">Cancel</a>
-                                <a class="btn btn-success btn-sm" data-bind="click: submitUndelete">Save</a>
-                            </div>
-                        </div>
+                        <a data-bind="click: submitUndelete">Restore</a>
                     </div>
                 </div>
 
@@ -34,13 +28,7 @@
                         </span>
                         Comment reported.
                     </div>
-                    <a data-bind="click: startUnreportAbuse">Not abuse</a>
-                    <div class="clearfix" data-bind="if: unreporting">
-                        <div class="pull-right">
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelUnreportAbuse">Cancel</a>
-                        <a class="btn btn-success btn-sm" data-bind="click: submitUnreportAbuse">Save</a>
-                        </div>
-                    </div>
+                    <a data-bind="click: submitUnreportAbuse">Not abuse</a>
                 </div>
 
                 <div data-bind="if: isVisible">
