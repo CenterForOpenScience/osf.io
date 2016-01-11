@@ -2291,7 +2291,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @classmethod
     def find_for_user(cls, user, subquery=None):
-        combined_query = Q('contributors', 'contains', user._id)
+        combined_query = Q('contributors', 'eq', user._id)
 
         if subquery is not None:
             combined_query = combined_query & subquery
