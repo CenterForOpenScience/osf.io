@@ -530,3 +530,16 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             draft_views.check_draft_state(self.draft)
         except Exception:
             self.fail()
+
+    def test_check_draft_state_registered_and_deleted_and_approved(self):
+        reg = RegistrationFactory()
+        self.draft.registered_node = reg
+        self.draft.save()
+        reg.is_deleted = True
+        reg.save()
+
+        with mock.patch('website.project.model.DraftRegistration.is_approved', mock.PropertyMock(return_value=True)):
+            try:
+                draft_views.check_draft_state(self.draft)
+            except HTTPError:
+                self.fail()

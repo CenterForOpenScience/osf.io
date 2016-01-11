@@ -88,17 +88,18 @@ def validate_registration_choice(registration_choice):
         )
 
 def check_draft_state(draft):
-    if draft.registered_node and not draft.registered_node.is_deleted:
+    registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
+    if draft.registered_node and not registered_and_deleted:
         raise HTTPError(http.FORBIDDEN, data={
             'message_short': 'This draft has already been registered',
             'message_long': 'This draft has already been registered and cannot be modified.'
         })
-    elif draft.is_pending_review:
+    if draft.is_pending_review:
         raise HTTPError(http.FORBIDDEN, data={
             'message_short': 'This draft is pending review',
             'message_long': 'This draft is pending review and cannot be modified.'
         })
-    elif draft.requires_approval and draft.is_approved:
+    if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
         raise HTTPError(http.FORBIDDEN, data={
             'message_short': 'This draft has already been approved',
             'message_long': 'This draft has already been approved and cannot be modified.'
