@@ -604,6 +604,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'Emergy2016': {
+        'name': '9th Biennial Emergy Research Conference',
+        'info_url': 'http://www.cep.ees.ufl.edu/emergy/conferences/ERC09_2016/index.shtml',
+        'logo_url': 'http://s12.postimg.org/uf9ioqmct/emergy.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
