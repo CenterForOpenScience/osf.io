@@ -111,7 +111,11 @@ install:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - "invoke test_travis_$TEST_BUILD"
+    - |
+      if [ "$TEST_BUILD" = "varnish" ]; then
+        invoke apiserver > /dev/null &
+      fi
+      invoke test_travis_$TEST_BUILD
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
