@@ -898,7 +898,7 @@ var MicroPagination = {
 var Breadcrumbs = {
     view : function (ctrl, args) {
         var mobile = window.innerWidth < 767; // true if mobile view
-        var items = args.data();
+        var items = args.breadcrumbs();
         if (mobile && items.length > 1) {
             return m('.fb-breadcrumbs', [
                 m('ul', [
@@ -947,7 +947,7 @@ var Breadcrumbs = {
             ]);
         }
         return m('.fb-breadcrumbs', m('ul', [
-            args.breadcrumbs().map(function(item, index, array){
+            items.map(function(item, index, array){
                 if(index === array.length-1){
                     var addProjectTemplate = m.component(AddProject, {
                         buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), ' Add Component']),
@@ -1084,7 +1084,7 @@ var Information = {
                             m('p.m-t-md', [
                                 m('h5', 'Tags'),
                                 item.attributes.tags.map(function(tag){
-                                    return m('span.tag', tag);
+                                    return m('a.tag', { href : '/search/?q=(tags:' + tag + ')'}, tag);
                                 })
                             ]) : '',
                             m('p.m-t-md', [

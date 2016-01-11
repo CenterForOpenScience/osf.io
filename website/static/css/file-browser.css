@@ -82,7 +82,7 @@
     position: absolute;
     top: 0;
     right: 0;
-    width: 125px;
+    width: 120px;
     background: #fff;
     z-index: 9;
     box-shadow: 0 0 12px -2px #555;
@@ -150,6 +150,10 @@
     text-align: center;
     padding-top: 15px;
     color: #666;
+}
+
+.fb-information .tag:hover {
+    text-decoration: none;
 }
 
 /* TODO: Make responsive */
@@ -249,6 +253,9 @@
     }
     #poFilter {
         width: 300px;
+    }
+    .collectionMenu {
+        width: 125px;
     }
     .collectionMenu .menuClose {
         float: right;

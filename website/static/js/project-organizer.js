@@ -127,7 +127,7 @@ function _poResolveRows(item) {
             filter : false,
             custom : function (row){
                 return m('.btn.btn-default.btn-sm[data-toggle="modal"][data-target="#infoModal"]', {
-                }, m('i.fa.fa-info-circle.text-muted'));
+                }, m('i.fa.fa-ellipsis-h'));
             }
         });
     }
