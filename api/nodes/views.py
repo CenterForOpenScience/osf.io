@@ -185,11 +185,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                          "data": {
                            "type": "nodes", # required
                            "attributes": {
-                             "title":       {title},          # required
-                             "category":    {category},       # required
-                             "description": {description},    # optional
-                             "tags":        [{tag1}, {tag2}], # optional
-                             "public":      true|false        # optional
+                             "title":         {title},          # required
+                             "category":      {category},       # required
+                             "description":   {description},    # optional
+                             "tags":          [{tag1}, {tag2}], # optional
+                             "public":        true|false        # optional
+                             "template_from": {node_id}         # optional
                            }
                          }
                        }

@@ -83,7 +83,13 @@ class NodeSerializer(JSONAPISerializer):
     collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
-    template_from = ser.CharField(required=False, allow_blank=False, allow_null=False)
+    template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
+                                  help_text='Specify a node id for a node you would like to use as a template for the '
+                                            'new node. Templating is like forking, except that you do not copy the '
+                                            'files, only the project structure. Some information is changed on the top '
+                                            'level project by submitting the appropriate fields in the request body, '
+                                            'and some information will not change. By default, the description will '
+                                            'be cleared and the project will be made private.')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
