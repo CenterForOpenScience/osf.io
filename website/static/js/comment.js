@@ -248,6 +248,7 @@ BaseComment.prototype.submitReply = function() {
             self.hasChildren(true);
         }
         self.replyErrorMessage('');
+        self.errorMessage('');
         self.onSubmitSuccess(response);
     });
     request.fail(function(xhr, status, error) {
@@ -380,7 +381,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
         .closest('.comment-container')
         .find('[data-toggle="tooltip"]');
     if (!self.content()) {
-        self.errorMessage('Please enter a comment');
+        self.editErrorMessage('Please enter a comment');
         return;
     }
     var url = osfHelpers.apiV2Url('comments/' + self.id() + '/', {});
@@ -406,6 +407,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
         self.editing(false);
         self.modified(true);
         self.editErrorMessage('');
+        self.errorMessage('');
         self.$root.editors -= 1;
         // Refresh tooltip on date modified, if present
         $tips.tooltip('destroy').tooltip();
