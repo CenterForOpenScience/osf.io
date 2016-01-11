@@ -21,7 +21,9 @@ from api.comments.serializers import (
     CommentReportDetailSerializer,
     CommentReport
 )
+from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
+from framework.exceptions import PermissionsError
 from website.project.model import Comment
 from website.files.models import StoredFileNode
 from website.files.models.dropbox import DropboxFile
@@ -93,7 +95,7 @@ class CommentMixin(object):
         return comment
 
 
-class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixin):
+class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     """Details about a specific comment. *Writeable*.
 
     ###Permissions
@@ -168,9 +170,17 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixi
     and `deleted` fields are mandatory if you PUT and optional if you PATCH. Non-string values will be accepted and
     stringified, but we make no promises about the stringification output.  So don't do that.
 
-    To delete a comment, issue a PATCH request against the `/links/self` URL, with `deleted: True`:
+    To restore a deleted comment, issue a PATCH request against the `/links/self` URL, with `deleted: False`.
 
-    To undelete a comment, issue a PATCH request against the `/links/self` URL, with `deleted: False`.
+    ###Delete
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Success:       204 No Content
+
+    To delete a comment send a DELETE request to the `/links/self` URL.  Nothing will be returned in the response
+    body. Attempting to delete an already deleted comment will result in a 400 Bad Request response.
 
     ##Query Params
 
@@ -195,6 +205,16 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixi
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_comment()
+
+    def perform_destroy(self, instance):
+        auth = Auth(self.request.user)
+        if instance.is_deleted:
+            raise ValidationError('Comment already deleted.')
+        else:
+            try:
+                instance.delete(auth, save=True)
+            except PermissionsError:
+                raise PermissionDenied('Not authorized to delete this comment.')
 
 
 class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin):

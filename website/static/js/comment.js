@@ -474,20 +474,10 @@ CommentModel.prototype.submitDelete = function() {
     var self = this;
     var url = osfHelpers.apiV2Url('comments/' + self.id() + '/', {});
     var request = osfHelpers.ajaxJSON(
-        'PATCH',
+        'DELETE',
         url,
-        {
-            'isCors': true,
-            'data': {
-                'data': {
-                    'id': self.id(),
-                    'type': 'comments',
-                    'attributes': {
-                        'deleted': true
-                    }
-                }
-            }
-        });
+        {'isCors': true}
+    );
     request.done(function() {
         self.isDeleted(true);
         self.deleting(false);
@@ -511,7 +501,7 @@ CommentModel.prototype.submitUndelete = function() {
     var self = this;
     var url = osfHelpers.apiV2Url('comments/' + self.id() + '/', {});
     var request = osfHelpers.ajaxJSON(
-        'PATCH',
+        'PUT',
         url,
         {
             'isCors': true,
@@ -520,6 +510,7 @@ CommentModel.prototype.submitUndelete = function() {
                     'id': self.id(),
                     'type': 'comments',
                     'attributes': {
+                        'content': self.content(),
                         'deleted': false
                     }
                 }
