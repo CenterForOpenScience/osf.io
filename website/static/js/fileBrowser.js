@@ -681,7 +681,7 @@ var Collections  = {
                 } else {
                     selectedCSS = '';
                 }
-                if (!item.data.systemCollection) {
+                if (!item.data.systemCollection && !item.data.node.attributes.bookmarks) {
                     submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
                         'data-index' : i,
                         onclick : function (e) {
