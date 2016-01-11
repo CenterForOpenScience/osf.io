@@ -299,6 +299,7 @@ var FileBrowser = {
                             parentID : self.breadcrumbs()[self.breadcrumbs().length-1].data.id,
                             modalID : 'addSubcomponent',
                             stayCallback : function () {
+                                self.allProjectsLoaded(false);
                                 self.updateList(self.breadcrumbs()[self.breadcrumbs().length-1]);
                             }
                         })
@@ -429,10 +430,7 @@ var FileBrowser = {
         }
         return [
             m('.fb-header.row', [
-                m('.col-xs-12.col-sm-6', m.component(Breadcrumbs, {
-                    data : ctrl.breadcrumbs,
-                    updateFilesData : ctrl.updateFilesData
-                })),
+                m('.col-xs-12.col-sm-6', m.component(Breadcrumbs,ctrl)),
                 m('.fb-buttonRow.col-xs-12.col-sm-6', [
                     mobile ? m('button.btn.btn-sm.m-r-sm', {
                         'class' : sidebarButtonClass,
@@ -909,7 +907,7 @@ var Breadcrumbs = {
                         m('.btn.btn-link[data-toggle="modal"][data-target="#parentsModal"]', '...'),
                         m('i.fa.fa-angle-right')
                     ]),
-                    m('li', m('span.btn', items[items.length-1].label))
+                    m('li', m('span.btn', items[items.length-1].label)),
                 ]),
                 m('#parentsModal.modal.fade[tabindex=-1][role="dialog"][aria-hidden="true"]',
                     m('.modal-dialog',
@@ -919,7 +917,7 @@ var Breadcrumbs = {
                                     m('span[aria-hidden="true"]','×'),
                                 ]),
                                 m('h4', 'Parent Projects'),
-                                args.data().map(function(item, index, array){
+                                args.breadcrumbs().map(function(item, index, array){
                                     if(index === array.length-1){
                                         return m('.fb-parent-row.btn', {
                                             style : 'margin-left:' + (index*20) + 'px;',
@@ -950,9 +948,24 @@ var Breadcrumbs = {
             ]);
         }
         return m('.fb-breadcrumbs', m('ul', [
-            args.data().map(function(item, index, array){
+            args.breadcrumbs().map(function(item, index, array){
                 if(index === array.length-1){
-                    return m('li',  m('span.btn', item.label));
+                    var addProjectTemplate = m.component(AddProject, {
+                        buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), ' Add Component']),
+                        parentID : args.breadcrumbs()[args.breadcrumbs().length-1].data.id,
+                        modalID : 'addProject',
+                        stayCallback : function () {
+                            args.allProjectsLoaded(false);
+                            args.updateList(args.breadcrumbs()[args.breadcrumbs().length-1]);
+                        }
+                    });
+                    return [
+                        m('li',  [
+                            m('span.btn', item.label),
+                            m('i.fa.fa-angle-right')
+                        ]),
+                        item.type === 'node' ? addProjectTemplate : ''
+                    ];
                 }
                 item.index = index; // Add index to update breadcrumbs
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
@@ -960,7 +973,8 @@ var Breadcrumbs = {
                     m('span.btn.btn-link', { onclick : args.updateFilesData.bind(null, item)},  item.label),
                     m('i.fa.fa-angle-right')
                 );
-            })
+            }),
+
 
         ]));
     }
