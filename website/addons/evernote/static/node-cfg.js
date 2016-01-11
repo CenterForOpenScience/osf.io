@@ -1,6 +1,5 @@
 'use strict';
 
-require('./evernote.css');
 var OauthAddonNodeConfig = require('js/oauthAddonNodeConfig').OauthAddonNodeConfig;
 
 var url = window.contextVars.node.urls.api + 'evernote/settings/';

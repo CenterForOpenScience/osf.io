@@ -134,7 +134,7 @@ def evernote_note(node_addon, noteid, **kwargs):
 
     return {'noteid': noteid,
             'content': note.content,
-            'html':html}
+            'html': html}
 
 @must_have_addon('evernote', 'node')
 @must_be_addon_authorizer('evernote')

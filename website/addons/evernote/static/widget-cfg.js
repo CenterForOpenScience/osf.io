@@ -1,8 +1,11 @@
 'use strict';
 
+require('./evernote.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('js/osfHelpers');
+
 
 var EvernoteWidget = function(urls) {
 
