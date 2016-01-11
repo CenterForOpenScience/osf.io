@@ -9,6 +9,7 @@ var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
 var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
+var mC = require('js/mithrilComponents');
 
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
@@ -750,119 +751,108 @@ var Collections  = {
         return m('.fb-collections', [
             collectionListTemplate,
             m('.fb-collections-modals', [
-                m('#addColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addCollLabel"][aria-hidden="true"]',
-                    m('.modal-dialog',
-                        m('.modal-content', [
-                            m('.modal-header', [
-                                m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                                    m('span[aria-hidden="true"]','×')
-                                ]),
-                                m('h3.modal-title#addCollLabel', 'Add New Collection')
-                            ]),
-                            m('.modal-body', [
-                                m('p', 'Collections are groups of projects that help you organize your work. After you create your collection you can add projects by dragging and dropping projects to the collection. '),
-                                m('.form-inline', [
-                                    m('.form-group', [
-                                        m('label[for="addCollInput]', 'Collection Name'),
-                                        m('input[type="text"].form-control.m-l-sm#addCollInput', {
-                                            onkeyup: function (ev){
-                                                var val = $(this).val();
-                                                if (val === 'Bookmarks') {
-                                                    ctrl.validation(false);
-                                                    ctrl.validationError('Your collection name can\'t be "Bookmarks", because bookmarks feature requires this name. Please select any other name. ');
-                                                } else {
-                                                    ctrl.validationError('');
-                                                    if(val.length > 0) {
-                                                        ctrl.validation(true);
-                                                    } else {
-                                                        ctrl.validation(false);
-                                                    }
-                                                }
-
-
-                                                if(ctrl.validation()){
-                                                    if(ev.which === 13){
-                                                        ctrl.addCollection();
-                                                    }
-                                                }
-                                                ctrl.newCollectionName(val);
-                                            },
-                                            value : ctrl.newCollectionName()
-                                        }),
-                                        m('span.help-block', ctrl.validationError())
-                                    ])
-                                ]),
-                            ]),
-                            m('.modal-footer', [
-                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]',
-                                    {
-                                        onclick : function(){
-                                            ctrl.dismissModal();
-                                            ctrl.newCollectionName('');
+                m.component(mC.modal, {
+                    id: 'addColl',
+                    header : m('.modal-header', [
+                        m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                            m('span[aria-hidden="true"]','×')
+                        ]),
+                        m('h3.modal-title#addCollLabel', 'Add New Collection')
+                    ]),
+                    body : m('.modal-body', [
+                        m('p', 'Collections are groups of projects that help you organize your work. After you create your collection you can add projects by dragging and dropping projects to the collection. '),
+                        m('.form-inline', [
+                            m('.form-group', [
+                                m('label[for="addCollInput]', 'Collection Name'),
+                                m('input[type="text"].form-control.m-l-sm#addCollInput', {
+                                    onkeyup: function (ev){
+                                        var val = $(this).val();
+                                        if (val === 'Bookmarks') {
+                                            ctrl.validation(false);
+                                            ctrl.validationError('Your collection name can\'t be "Bookmarks", because bookmarks feature requires this name. Please select any other name. ');
+                                        } else {
+                                            ctrl.validationError('');
+                                            if(val.length > 0) {
+                                                ctrl.validation(true);
+                                            } else {
+                                                ctrl.validation(false);
+                                            }
                                         }
-                                    }, 'Cancel'),
-                                ctrl.validation() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
-                                    : m('button[type="button"].btn.btn-success[disabled]', { onclick : ctrl.addCollection },'Add')
+                                        if(ctrl.validation()){
+                                            if(ev.which === 13){
+                                                ctrl.addCollection();
+                                            }
+                                        }
+                                        ctrl.newCollectionName(val);
+                                    },
+                                    value : ctrl.newCollectionName()
+                                }),
+                                m('span.help-block', ctrl.validationError())
                             ])
-                        ])
-                    )
-                ),
-                m('#renameColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="renameCollLabel"][aria-hidden="true"]',
-                    m('.modal-dialog',
-                        m('.modal-content', [
-                            m('.modal-header', [
-                                m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                                    m('span[aria-hidden="true"]','×')
-                                ]),
-                                m('h3.modal-title#renameCollLabel', 'Rename Collection')
-                            ]),
-                            m('.modal-body', [
-                                m('.form-inline', [
-                                    m('.form-group', [
-                                        m('label[for="addCollInput]', 'Rename to: '),
-                                        m('input[type="text"].form-control.m-l-sm#renameCollInput',{
-                                            onkeyup: function(ev){
-                                                if (ev.which === 13) { // if enter is pressed
-                                                    ctrl.renameCollection();
-                                                }
-                                                ctrl.collectionMenuObject().item.renamedLabel = $(this).val();
-                                            },
-                                            value: ctrl.collectionMenuObject().item.renamedLabel})
+                        ]),
+                    ]),
+                    footer: m('.modal-footer', [
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]',
+                            {
+                                onclick : function(){
+                                    ctrl.dismissModal();
+                                    ctrl.newCollectionName('');
+                                }
+                            }, 'Cancel'),
+                        ctrl.validation() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
+                            : m('button[type="button"].btn.btn-success[disabled]', { onclick : ctrl.addCollection },'Add')
+                    ])
+                }),
+                m.component(mC.modal, {
+                    id : 'renameColl',
+                    header: m('.modal-header', [
+                        m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                            m('span[aria-hidden="true"]','×')
+                        ]),
+                        m('h3.modal-title#renameCollLabel', 'Rename Collection')
+                    ]),
+                    body: m('.modal-body', [
+                        m('.form-inline', [
+                            m('.form-group', [
+                                m('label[for="addCollInput]', 'Rename to: '),
+                                m('input[type="text"].form-control.m-l-sm#renameCollInput',{
+                                    onkeyup: function(ev){
+                                        if (ev.which === 13) { // if enter is pressed
+                                            ctrl.renameCollection();
+                                        }
+                                        ctrl.collectionMenuObject().item.renamedLabel = $(this).val();
+                                    },
+                                    value: ctrl.collectionMenuObject().item.renamedLabel})
 
-                                    ])
-                                ])
-                            ]),
-                            m('.modal-footer', [
-                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
-                                m('button[type="button"].btn.btn-success', {
-                                    onclick : ctrl.renameCollection
-                                },'Rename')
                             ])
                         ])
-                    )
-                ),
-                m('#removeColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="removeCollLabel"][aria-hidden="true"]',
-                    m('.modal-dialog',
-                        m('.modal-content', [
-                            m('.modal-header', [
-                                m('button.close[data-dismiss="modal"][aria-label="Close"]', [
-                                    m('span[aria-hidden="true"]','×')
-                                ]),
-                                m('h3.modal-title#removeCollLabel', 'Delete Collection "' + ctrl.collectionMenuObject().item.label + '"?')
-                            ]),
-                            m('.modal-body', [
-                                m('p', 'This will delete your collection but your projects will not be deleted.'),
+                    ]),
+                    footer : m('.modal-footer', [
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
+                        m('button[type="button"].btn.btn-success', {
+                            onclick : ctrl.renameCollection
+                        },'Rename')
+                    ])
+                }),
+                m.component(mC.modal, {
+                    id: 'removeColl',
+                    header: m('.modal-header', [
+                        m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                            m('span[aria-hidden="true"]','×')
+                        ]),
+                        m('h3.modal-title#removeCollLabel', 'Delete Collection "' + ctrl.collectionMenuObject().item.label + '"?')
+                    ]),
+                    body: m('.modal-body', [
+                        m('p', 'This will delete your collection but your projects will not be deleted.'),
 
-                            ]),
-                            m('.modal-footer', [
-                                m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
-                                m('button[type="button"].btn.btn-danger', {
-                                    onclick : ctrl.deleteCollection
-                                },'Delete')
-                            ])
-                        ])
-                    )
-                )
+                    ]),
+                    footer : m('.modal-footer', [
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
+                        m('button[type="button"].btn.btn-danger', {
+                            onclick : ctrl.deleteCollection
+                        },'Delete')
+                    ])
+                })
             ])
         ]);
     }
@@ -1146,7 +1136,7 @@ var Modals = {
                                 m('span[aria-hidden="true"]','×'),
                             ]),
                             m.component(Information, args)
-]),
+                        ]),
                     ])
                 )
             )
