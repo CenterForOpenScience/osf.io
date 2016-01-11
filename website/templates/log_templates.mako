@@ -149,6 +149,20 @@ from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="file_tag_added">
+tagged <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect"> {{ stripSlash(params.path) }}</a>
+in <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+as <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+in OSF Storage
+</script>
+
+<script type="text/html" id="file_tag_removed">
+removed tag <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+from <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect"> {{ stripSlash(params.path) }}</a>
+in <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+in OSF Storage
+</script>
+
 <script type="text/html" id="edit_title">
 changed the title from <span class="overflow" data-bind="text: params.title_original"></span>
 to
