@@ -201,63 +201,65 @@
 
         % endif  ## End Select Addons
 
-        % if not node['is_registration']:   ## Begin Wiki Config
-            <div class="panel panel-default">
-                <span id="configureWikiAnchor" class="anchor"></span>
-                <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Wiki</h3>
-                </div>
+        % if 'write' in user['permissions']:  ## Begin Wiki Config
+            % if not node['is_registration']:
+                <div class="panel panel-default">
+                    <span id="configureWikiAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Wiki</h3>
+                    </div>
 
-            <div class="panel-body">
-                %if wiki:
-                    <form id="selectWikiForm">
-                        <div>
-                            <label>
-                                <input
-                                        type="checkbox"
-                                        name="${wiki.short_name}"
-                                        class="wiki-select"
-                                        data-bind="checked: enabled"
-                                />
-                                Enable the wiki in <b>${node['title']}</b>.
-                            </label>
+                <div class="panel-body">
+                    %if wiki:
+                        <form id="selectWikiForm">
+                            <div>
+                                <label>
+                                    <input
+                                            type="checkbox"
+                                            name="${wiki.short_name}"
+                                            class="wiki-select"
+                                            data-bind="checked: enabled"
+                                    />
+                                    Enable the wiki in <b>${node['title']}</b>.
+                                </label>
 
-                            <div data-bind="visible: enabled()" class="text-success" style="padding-left: 15px">
-                                <p data-bind="text: wikiMessage"></p>
-                            </div>
-                            <div data-bind="visible: !enabled()" class="text-danger" style="padding-left: 15px">
-                                <p data-bind="text: wikiMessage"></p>
-                            </div>
-                        </div>
-                    </form>
-                %endif
-
-                    % if include_wiki_settings:
-                        <h3>Configure</h3>
-                        <div style="padding-left: 15px">
-                            %if  node['is_public']:
-                                <p class="text">Control who can edit the wiki of <b>${node['title']}</b></p>
-                            %else:
-                                <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
-                            %endif
-                        </div>
-
-                        <form id="wikiSettings" class="osf-treebeard-minimal">
-                            <div id="wgrid">
-                                <div class="spinner-loading-wrapper">
-                                    <div class="logo-spin logo-lg"></div>
-                                    <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
+                                <div data-bind="visible: enabled()" class="text-success" style="padding-left: 15px">
+                                    <p data-bind="text: wikiMessage"></p>
+                                </div>
+                                <div data-bind="visible: !enabled()" class="text-danger" style="padding-left: 15px">
+                                    <p data-bind="text: wikiMessage"></p>
                                 </div>
                             </div>
-                            <div class="help-block" style="padding-left: 15px">
-                                <p id="configureWikiMessage"></p>
-                            </div>
                         </form>
-                    % else:
-                        <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public and the wiki enabled.</p>
                     %endif
+
+                        % if include_wiki_settings:
+                            <h3>Configure</h3>
+                            <div style="padding-left: 15px">
+                                %if  node['is_public']:
+                                    <p class="text">Control who can edit the wiki of <b>${node['title']}</b></p>
+                                %else:
+                                    <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
+                                %endif
+                            </div>
+
+                            <form id="wikiSettings" class="osf-treebeard-minimal">
+                                <div id="wgrid">
+                                    <div class="spinner-loading-wrapper">
+                                        <div class="logo-spin logo-lg"></div>
+                                        <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
+                                    </div>
+                                </div>
+                                <div class="help-block" style="padding-left: 15px">
+                                    <p id="configureWikiMessage"></p>
+                                </div>
+                            </form>
+                        % else:
+                            <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public and the wiki enabled.</p>
+                        %endif
+                    </div>
                 </div>
-            </div>
+            %endif
         %endif ## End Wiki Config
 
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting

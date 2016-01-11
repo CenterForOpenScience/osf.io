@@ -584,6 +584,26 @@ MEETING_DATA = {
         'poster': False,
         'talk': True,
     },
+        'CURCONF2016': {
+        'name': 'CUR Biennial Conference 2016',
+        'info_url': 'http://www.cur.org/conferences_and_events/biennial2016/',
+        'logo_url': 'http://s11.postimg.org/itsmubimq/Conference_logo_eps.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+        'CATALISE2016': {
+        'name': 'Criteria and Terminology Applied to Language Impairments: Synthesising the Evidence (CATALISE) 2016',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
