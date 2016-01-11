@@ -58,7 +58,7 @@
               <!-- User Account Menu -->
               <li class="dropdown user user-menu">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                  <span class="hidden-xs">Logged in as {{ user.get_username }}</span>
+                  <span class="hidden-xs">Logged in as {{ request.user.get_username }}</span>
                 </a>
               </li>
               <li>
@@ -79,7 +79,9 @@
           <ul class="sidebar-menu">
             <li class="header">Menu</li>
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
-            <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Pre-reg Prize</span></a></li>
+            {% if 'prereg_group' in request.user.group_names %}
+            <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
+            {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>
         <!-- /.sidebar -->
@@ -103,7 +105,7 @@
       <!-- Main Footer -->
       <footer class="main-footer">
         <!-- Default to the left -->
-        <strong>Copyright &copy; 2015 <a href="http://www.osf.io">osf.io</a>.</strong> All rights reserved.
+        <strong>Copyright &copy; 2015-2016 <a href="http://www.osf.io">osf.io</a>.</strong> All rights reserved.
       </footer>
 
     </div><!-- ./wrapper -->

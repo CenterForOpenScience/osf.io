@@ -6,12 +6,14 @@ from framework import auth
 
 from website import settings
 from website.filters import gravatar
+from website.project.model import Node
 from website.util.permissions import reduce_permissions
 
 
 def get_projects(user):
     """Return a list of user's projects, excluding registrations and folders."""
-    return list(user.node__contributed.find(
+    return list(Node.find_for_user(
+        user,
         (
             Q('category', 'eq', 'project') &
             Q('is_registration', 'eq', False) &
@@ -79,13 +81,13 @@ def serialize_user(user, node=None, admin=False, full=False):
         ret['emails'] = [
             {
                 'address': each,
-                'primary': each == user.username,
+                'primary': each.strip().lower() == user.username.strip().lower(),
                 'confirmed': True,
             } for each in user.emails
         ] + [
             {
                 'address': each,
-                'primary': each == user.username,
+                'primary': each.strip().lower() == user.username.strip().lower(),
                 'confirmed': False
             }
             for each in user.unconfirmed_emails

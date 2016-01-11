@@ -8,7 +8,7 @@ from website.util import rubeus
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_addon_authorizer
 
-from website.addons.googledrive import exceptions
+from website.addons.base.exceptions import InvalidAuthError
 from website.addons.googledrive.utils import to_hgrid
 from website.addons.googledrive.client import GoogleDriveClient
 
@@ -25,7 +25,7 @@ def googledrive_folders(node_addon, **kwargs):
 
     try:
         access_token = node_addon.fetch_access_token()
-    except exceptions.ExpiredAuthError:
+    except InvalidAuthError:
         raise HTTPError(403)
 
     client = GoogleDriveClient(access_token)

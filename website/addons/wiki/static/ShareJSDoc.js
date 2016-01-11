@@ -28,8 +28,17 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     self.editor.setReadOnly(true); // Read only until initialized
     self.editor.setOptions({
         enableBasicAutocompletion: [LanguageTools.snippetCompleter],
-        enableSnippets: true,
+        enableSnippets: wikiEditor.viewModel.autocom(),
         enableLiveAutocompletion: true
+    });
+
+    wikiEditor.viewModel.autocom.subscribe(function(autocom) {
+        self.editor.setOptions({
+            enableBasicAutocompletion: autocom ? [LanguageTools.snippetCompleter]: [],
+            enableSnippets: autocom,
+            enableLiveAutocompletion: autocom
+        });
+        self.editor.focus();
     });
 
     if (!collaborative) {

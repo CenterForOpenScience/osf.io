@@ -14,7 +14,7 @@
 <div class="tab-content registrations-view">
   <div role="tabpanel" class="tab-pane active" id="registrations">
     <div class="row" style="min-height: 150px; padding-top:20px;">
-      <div class="col-md-9">
+      <div class="col-xs-9 col-sm-8">
         % if node["registration_count"]:
         <div mod-meta='{
             "tpl": "util/render_nodes.mako",
@@ -31,7 +31,10 @@
     ##      %endif
         % else:
         <p>
-          There have been no completed registrations of this project. You can start a new registration by clicking the “New Registration” button, and you have the option of saving as a draft registration before submission. For a list of the most viewed and most recent public registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
+          There have been no completed registrations of this project. For a list of the most viewed and most recent public registrations on the Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
+          % if 'admin' in user['permissions']:
+          You can start a new registration by clicking the “New registration” button, and you have the option of saving as a draft registration before submission.
+          % endif
         </p>
         % endif
         %if parent_node['exists'] and user['is_admin_parent']:
@@ -41,9 +44,9 @@
         %endif
       </div>
       % if 'admin' in user['permissions'] and not disk_saving_mode:
-      <div class="col-md-3">
-        <a id="registerNode" class="btn btn-default" type="button">
-          New Registration
+      <div class="col-xs-3 col-sm-4">
+        <a id="registerNode" class="btn btn-success disabled" type="button">
+          Loading ...
         </a>
       </div>
       % endif
@@ -51,7 +54,7 @@
   </div>
   <div role="tabpanel" class="tab-pane" id="drafts">
     <div id="draftRegistrationsScope" class="row scripted" style="min-height: 150px;padding-top:20px;">
-      <div data-bind="visible: loading" class="spinner-loading-wrapper">
+      <div data-bind="visible: loadingDrafts" class="spinner-loading-wrapper">
         <div class="logo-spin logo-lg"></div>
       </div>
       <form id="newDraftRegistrationForm" method="POST" style="display:none">

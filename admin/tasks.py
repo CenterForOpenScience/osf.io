@@ -1,9 +1,26 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import os
+
 from invoke import task, run
 
 from website import settings
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
+
+
+@task()
+def manage(cmd_str):
+    """Take command string and target (-t) for manage commands
+
+    :param args: ex. runserver, migrate
+    """
+    manage_cmd = os.path.join(HERE, '..', 'manage.py')
+    env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
+    cmd = '{} python {} {}'.format(env, manage_cmd, cmd_str)
+    run(cmd, echo=True, pty=True)
+
 
 @task()
 def assets(dev=False, watch=False):

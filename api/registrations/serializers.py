@@ -4,25 +4,29 @@ from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
 from api.nodes.serializers import NodeSerializer
+from api.nodes.serializers import NodeLinksSerializer
+from api.nodes.serializers import NodeContributorsSerializer
 from api.base.serializers import IDField, RelationshipField, LinksField, HideIfRetraction, DevOnly
 
 
 class RegistrationSerializer(NodeSerializer):
 
-    retracted = ser.BooleanField(source='is_retracted', read_only=True,
-                                 help_text='Whether this registration has been retracted.')
-    date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    retraction_justification = ser.CharField(source='retraction.justification', read_only=True)
+    pending_embargo_approval = HideIfRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
+        help_text='The associated Embargo is awaiting approval by project admins.'))
+    pending_registration_approval = HideIfRetraction(ser.BooleanField(source='is_pending_registration', read_only=True,
+        help_text='The associated RegistrationApproval is awaiting approval by project admins.'))
     pending_retraction = HideIfRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
-        help_text='Is this registration pending retraction?'))
-    pending_registration_approval = HideIfRetraction(ser.BooleanField(source='sanction.pending_approval', read_only=True,
-        help_text='Does this registration have a sanction pending approval?'))
-    pending_embargo = HideIfRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
-        help_text='Is this registration pending embargo?'))
-    registered_meta = HideIfRetraction(ser.SerializerMethodField(
-        help_text='A dictionary with embargo end date, whether registration choice was immediate or embargoed,'
-                  ' and answers to supplemental registration questions'))
+        help_text='The registration is awaiting retraction approval by project admins.'))
+    retracted = ser.BooleanField(source='is_retracted', read_only=True,
+                                 help_text='The registration has been retracted.')
+
+    date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
+    embargo_end_date = HideIfRetraction(ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'))
+
+    retraction_justification = ser.CharField(source='retraction.justification', read_only=True)
     registration_supplement = ser.SerializerMethodField()
+    registered_meta = HideIfRetraction(ser.SerializerMethodField(
+        help_text='A dictionary with supplemental registration questions and responses.'))
 
     registered_by = HideIfRetraction(RelationshipField(
         related_view='users:user-detail',
@@ -72,6 +76,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<parent_id>'}
     ))
 
+    logs = HideIfRetraction(RelationshipField(
+        related_view='nodes:node-logs',
+        related_view_kwargs={'node_id': '<pk>'},
+    ))
+
     # TODO: Finish me
 
     # TODO: Override create?
@@ -79,7 +88,7 @@ class RegistrationSerializer(NodeSerializer):
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_url'})
 
     def get_registration_url(self, obj):
-        return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': obj._id})
+        return absolute_reverse('registrations:registration-detail', kwargs={'node_id': obj._id})
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
@@ -93,6 +102,11 @@ class RegistrationSerializer(NodeSerializer):
                 return meta_values
             except ValueError:
                 return meta_values
+        return None
+
+    def get_embargo_end_date(self, obj):
+        if obj.embargo_end_date:
+            return obj.embargo_end_date
         return None
 
     def get_registration_supplement(self, obj):
@@ -115,3 +129,27 @@ class RegistrationDetailSerializer(RegistrationSerializer):
     Overrides NodeSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class RegistrationNodeLinksSerializer(NodeLinksSerializer):
+    def get_absolute_url(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'registrations:registration-pointer-detail',
+            kwargs={
+                'node_id': node_id,
+                'node_link_id': obj._id
+            }
+        )
+
+
+class RegistrationContributorsSerializer(NodeContributorsSerializer):
+    def get_absolute_url(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'registrations:node-contributor-detail',
+            kwargs={
+                'node_id': node_id,
+                'user_id': obj._id
+            }
+        )

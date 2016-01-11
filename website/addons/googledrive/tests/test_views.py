@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import httplib as http
+
 import mock
 
 from nose.tools import *  # noqa
@@ -37,7 +39,7 @@ class TestGoogleDriveConfigViews(OsfTestCase):
 
     def test_list_googledrive_accounts_returns_accounts_multiple(self):
         external_account = GoogleDriveAccountFactory()
-        self.user.external_accounts.append(external_account) # self.account is already present
+        self.user.external_accounts.append(external_account)  # self.account is already present
         self.user.save()
         url = api_url_for('list_googledrive_user_accounts')
         res = self.app.get(url)
@@ -47,15 +49,16 @@ class TestGoogleDriveConfigViews(OsfTestCase):
     def test_googledrive_config_get_return_correct_urls(self):
         url = self.project.api_url_for('googledrive_config_get')
         res = self.app.get(url)
+        assert_equal(res.status_code, http.OK)
         result = res.json['result']
-        assert_equal(result['urls']['accounts'],  self.project.api_url_for('list_googledrive_user_accounts'))
+        assert_equal(result['urls']['accounts'], self.project.api_url_for('list_googledrive_user_accounts'))
         assert_equal(result['urls']['auth'], api_url_for('oauth_connect', service_name='googledrive'))
-        assert_equal(result['urls']['config'],  self.project.api_url_for('googledrive_config_put'))
-        assert_equal(result['urls']['deauthorize'],  self.project.api_url_for('googledrive_remove_user_auth'))
-        assert_equal(result['urls']['files'],  self.project.web_url_for('collect_file_trees'))
-        assert_equal(result['urls']['folders'],  self.project.api_url_for('googledrive_folders'))
-        assert_equal(result['urls']['importAuth'],  self.project.api_url_for('googledrive_import_user_auth'))
-        assert_equal(result['urls']['settings'],  web_url_for('user_addons'))
+        assert_equal(result['urls']['config'], self.project.api_url_for('googledrive_config_put'))
+        assert_equal(result['urls']['deauthorize'], self.project.api_url_for('googledrive_remove_user_auth'))
+        assert_equal(result['urls']['files'], self.project.web_url_for('collect_file_trees'))
+        assert_equal(result['urls']['folders'], self.project.api_url_for('googledrive_folders'))
+        assert_equal(result['urls']['importAuth'], self.project.api_url_for('googledrive_import_user_auth'))
+        assert_equal(result['urls']['settings'], web_url_for('user_addons'))
 
     def test_googledrive_config_get_has_auth(self):
         self.node_settings.set_auth(external_account=self.account, user=self.user)

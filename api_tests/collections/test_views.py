@@ -965,3 +965,752 @@ class TestReturnDeletedCollection(ApiTestCase):
         res = self.app.delete(self.deleted_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
 
+
+class TestCollectionBulkCreate(ApiTestCase):
+
+    def setUp(self):
+        super(TestCollectionBulkCreate, self).setUp()
+        self.user_one = AuthUserFactory()
+        self.url = '/{}collections/'.format(API_BASE)
+
+        self.title = 'Cool Collection'
+        self.title_two = 'Cool Collection, Too'
+
+        self.user_two = AuthUserFactory()
+
+        self.collection = {
+                'type': 'collections',
+                'attributes': {
+                    'title': self.title,
+                }
+        }
+        
+        self.collection_two = {
+                'type': 'collections',
+                'attributes': {
+                    'title': self.title_two,
+                }
+        }
+
+        self.empty_collection = {'type': 'collections', 'attributes': {'title': "",}}
+
+    def test_bulk_create_collections_blank_request(self):
+        res = self.app.post_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+
+    def test_bulk_create_all_or_nothing(self):
+        res = self.app.post_json_api(self.url, {'data': [self.collection, self.empty_collection]}, bulk=True, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 0)
+
+    def test_bulk_create_logged_out(self):
+        res = self.app.post_json_api(self.url, {'data': [self.collection, self.collection_two]}, bulk=True, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 0)
+
+    def test_bulk_create_error_formatting(self):
+        res = self.app.post_json_api(self.url, {'data': [self.empty_collection, self.empty_collection]}, bulk=True, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 2)
+        errors = res.json['errors']
+        assert_items_equal([errors[0]['source'], errors[1]['source']],
+                           [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
+        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
+                           ["This field may not be blank.", "This field may not be blank."])
+
+    def test_bulk_create_limits(self):
+        node_create_list = {'data': [self.collection] * 11}
+        res = self.app.post_json_api(self.url, node_create_list, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 0)
+
+    def test_bulk_create_no_type(self):
+        payload = {'data': [{"attributes": {'title': self.title}}]}
+        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 0)
+
+    def test_bulk_create_incorrect_type(self):
+        payload = {'data': [self.collection, {'type': 'Incorrect type.', 'attributes': {'title': self.title}}]}
+        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 409)
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 0)
+
+    def test_bulk_create_no_attributes(self):
+        payload = {'data': [self.collection, {'type': 'collections', }]}
+        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 0)
+
+    def test_bulk_create_no_title(self):
+        payload = {'data': [self.collection, {'type': 'collections', "attributes": {}}]}
+        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/attributes/title')
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 0)
+
+    def test_ugly_payload(self):
+        payload = 'sdf;jlasfd'
+        res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 0)
+
+    def test_bulk_create_logged_in(self):
+        res = self.app.post_json_api(self.url, {'data': [self.collection, self.collection_two]}, auth=self.user_one.auth, bulk=True)
+        assert_equal(res.status_code, 201)
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['data'][0]['attributes']['title'], self.collection['attributes']['title'])
+        assert_equal(res.json['data'][1]['attributes']['title'], self.collection_two['attributes']['title'])
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 2)
+        id_one = res.json['data'][0]['id']
+        id_two = res.json['data'][1]['id']
+
+        res = self.app.delete_json_api(self.url, {'data': [{'id': id_one, 'type': 'collections'},
+                                                           {'id': id_two, 'type': 'collections'}]},
+                                       auth=self.user_one.auth, bulk=True)
+        assert_equal(res.status_code, 204)
+
+
+class TestCollectionBulkUpdate(ApiTestCase):
+
+    def setUp(self):
+        super(TestCollectionBulkUpdate, self).setUp()
+        self.user = AuthUserFactory()
+
+        self.title = 'Cool Project'
+        self.new_title = 'Super Cool Project'
+
+        self.collection = FolderFactory(title=self.title,
+                                        creator=self.user)
+
+        self.collection_two = FolderFactory(title=self.title,
+                                             creator=self.user)
+
+        self.collection_payload = {
+            'data': [
+                {
+                    'id': self.collection._id,
+                    'type': 'collections',
+                    'attributes': {
+                        'title': self.new_title,
+                    }
+                },
+                {
+                    'id': self.collection_two._id,
+                    'type': 'collections',
+                    'attributes': {
+                        'title': self.new_title,
+                    }
+                }
+            ]
+        }
+
+        self.url = '/{}collections/'.format(API_BASE)
+        self.detail_url_base = '/{}collections/{}/'
+
+        self.empty_payload = {'data': [
+            {'id': self.collection._id, 'type': 'collections', 'attributes': {'title': "",}},
+            {'id': self.collection_two._id, 'type': 'collections', 'attributes': {'title': "",}}
+        ]}
+
+    def test_bulk_update_nodes_blank_request(self):
+        res = self.app.put_json_api(self.url, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+
+    def test_bulk_update_blank_but_not_empty_title(self):
+        payload = {
+            "data": [
+                {
+                  "id": self.collection._id,
+                  "type": "collections",
+                  "attributes": {
+                    "title": "This shouldn't update."
+                  }
+                },
+                {
+                  "id": self.collection_two._id,
+                  "type": "collections",
+                  "attributes": {
+                    "title": " "
+                  }
+                }
+              ]
+            }
+        url = self.detail_url_base.format(API_BASE, self.collection._id)
+        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+    def test_bulk_update_collections_one_not_found(self):
+        empty_payload = {'data': [
+            {
+                'id': 12345,
+                'type': 'collections',
+                'attributes': {
+                    'title': self.new_title
+                }
+            }, self.collection_payload['data'][0]
+        ]}
+
+        res = self.app.put_json_api(self.url, empty_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
+
+        url = self.detail_url_base.format(API_BASE, self.collection._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+    def test_bulk_update_collections_logged_out(self):
+        res = self.app.put_json_api(self.url, self.collection_payload, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
+
+        url = self.detail_url_base.format(API_BASE, self.collection._id)
+        url_two = self.detail_url_base.format(API_BASE, self.collection_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+        res = self.app.get(url_two, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+    def test_bulk_update_collections_logged_in(self):
+        res = self.app.put_json_api(self.url, self.collection_payload, auth=self.user.auth, bulk=True)
+        assert_equal(res.status_code, 200)
+        assert_equal({self.collection._id, self.collection_two._id},
+                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
+        assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
+        assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
+
+    def test_bulk_update_collections_send_dictionary_not_list(self):
+        res = self.app.put_json_api(self.url, {'data': {'id': self.collection._id, 'type': 'nodes',
+                                                        'attributes': {'title': self.new_title}}},
+                                    auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
+    def test_bulk_update_error_formatting(self):
+        res = self.app.put_json_api(self.url, self.empty_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 2)
+        errors = res.json['errors']
+        assert_items_equal([errors[0]['source'], errors[1]['source']],
+                           [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
+        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
+                           ['This field may not be blank.'] * 2)
+
+    def test_bulk_update_id_not_supplied(self):
+        res = self.app.put_json_api(self.url, {'data': [self.collection_payload['data'][1], {'type': 'collections', 'attributes':
+            {'title': self.new_title}}]}, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 1)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/id')
+        assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
+
+        url = self.detail_url_base.format(API_BASE, self.collection_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+    def test_bulk_update_type_not_supplied(self):
+        res = self.app.put_json_api(self.url, {'data': [self.collection_payload['data'][1], {'id': self.collection._id, 'attributes':
+            {'title': self.new_title}}]}, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 1)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/type')
+        assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
+
+        url = self.detail_url_base.format(API_BASE, self.collection_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+    def test_bulk_update_incorrect_type(self):
+        res = self.app.put_json_api(self.url, {'data': [self.collection_payload['data'][1], {'id': self.collection._id, 'type': 'Incorrect', 'attributes':
+            {'title': self.new_title}}]}, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 409)
+
+        url = self.detail_url_base.format(API_BASE, self.collection_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+    def test_bulk_update_limits(self):
+        node_update_list = {'data': [self.collection_payload['data'][0]] * 11}
+        res = self.app.put_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+
+    def test_bulk_update_no_title(self):
+        new_payload = {'id': self.collection._id, 'type': 'collections', 'attributes': {}}
+        res = self.app.put_json_api(self.url, {'data': [self.collection_payload['data'][1], new_payload]}, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+
+        url = self.detail_url_base.format(API_BASE, self.collection_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+
+class TestNodeBulkDelete(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkDelete, self).setUp()
+        self.user_one = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.collection_one = FolderFactory(title="Collection One", creator=self.user_one)
+        self.collection_two = FolderFactory(title="Collection Two", creator=self.user_one)
+        self.collection_three = FolderFactory(title="Collection Three", creator=self.user_one)
+        self.collection_user_two = FolderFactory(title="Collection User Two", creator=self.user_two)
+
+        self.url = "/{}collections/".format(API_BASE)
+        self.project_one_url = '/{}collections/{}/'.format(API_BASE, self.collection_one._id)
+        self.project_two_url = '/{}collections/{}/'.format(API_BASE, self.collection_two._id)
+        self.private_project_url = "/{}collections/{}/".format(API_BASE, self.collection_three._id)
+
+        self.payload_one = {'data': [{'id': self.collection_one._id, 'type': 'collections'},
+                                     {'id': self.collection_two._id, 'type': 'collections'}]}
+        self.payload_two = {'data': [{'id': self.collection_three._id, 'type': 'collections'}]}
+
+    def test_bulk_delete_nodes_blank_request(self):
+        res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+
+    def test_bulk_delete_no_type(self):
+        payload = {'data': [
+            {'id': self.collection_one._id},
+            {'id': self.collection_two._id}
+        ]}
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /type.')
+
+    def test_bulk_delete_no_id(self):
+        payload = {'data': [
+            {'type': 'collections'}
+        ]}
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/id.')
+
+    def test_bulk_delete_dict_inside_data(self):
+        res = self.app.delete_json_api(self.url, {'data': {'id': self.collection_one._id, 'type': 'collections'}},
+                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
+    def test_bulk_delete_invalid_type(self):
+        res = self.app.delete_json_api(self.url, {'data': [{'type': 'Wrong type', 'id': self.collection_one._id}]},
+                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 409)
+
+    def test_bulk_delete_collections_logged_in(self):
+        res = self.app.delete_json_api(self.url, self.payload_one, auth=self.user_one.auth, bulk=True)
+        assert_equal(res.status_code, 204)
+
+        res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 410)
+        self.collection_one.reload()
+        self.collection_two.reload()
+
+    def test_bulk_delete_collections_logged_out(self):
+        res = self.app.delete_json_api(self.url, self.payload_one, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+        res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+        res = self.app.get(self.project_two_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    def test_bulk_delete_collections_logged_in_non_contributor(self):
+        res = self.app.delete_json_api(self.url, self.payload_two,
+                                       auth=self.user_two.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+        res = self.app.get(self.private_project_url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_bulk_delete_all_or_nothing(self):
+        new_payload = {'data': [{'id': self.collection_three._id, 'type': 'collections'}, {'id': self.collection_user_two
+            ._id, 'type': 'collections'}]}
+        res = self.app.delete_json_api(self.url, new_payload,
+                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+        res = self.app.get(self.private_project_url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+
+        url = "/{}collections/{}/".format(API_BASE, self.collection_user_two._id)
+        res = self.app.get(url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_bulk_delete_limits(self):
+        new_payload = {'data': [{'id': self.collection_three._id, 'type': 'nodes'}] * 11}
+        res = self.app.delete_json_api(self.url, new_payload,
+                                       auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+
+    def test_bulk_delete_invalid_payload_one_not_found(self):
+        new_payload = {'data': [self.payload_one['data'][0], {'id': '12345', 'type': 'collections'}]}
+        res = self.app.delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to delete.')
+
+        res = self.app.get(self.project_one_url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_bulk_delete_no_payload(self):
+        res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+
+
+class TestCollectionLinksBulkCreate(ApiTestCase):
+
+    def setUp(self):
+        super(TestCollectionLinksBulkCreate, self).setUp()
+        self.user = AuthUserFactory()
+
+        self.collection_one = FolderFactory(is_public=False, creator=self.user)
+        self.private_pointer_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_pointer_project_two = ProjectFactory(is_public=False, creator=self.user)
+
+        self.collection_url = '/{}collections/{}/node_links/'.format(API_BASE, self.collection_one._id)
+
+        self.collection_payload = {
+            'data': [{
+                "type": "node_links",
+                "relationships": {
+                    'nodes': {
+                        'data': {
+                            "id": self.private_pointer_project._id,
+                            "type": 'nodes'
+                        }
+                    }
+
+                }
+            },
+            {
+                "type": "node_links",
+                "relationships": {
+                    'nodes': {
+                        'data': {
+                            "id": self.private_pointer_project_two._id,
+                            "type": 'nodes'
+                        }
+                    }
+
+                }
+            }]
+        }
+
+        self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_pointer_project_two = ProjectFactory(is_public=True, creator=self.user)
+
+        self.user_two = AuthUserFactory()
+        self.user_two_collection = FolderFactory(creator=self.user_two)
+        self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
+        self.user_two_url = '/{}collections/{}/node_links/'.format(API_BASE, self.user_two_collection._id)
+        self.user_two_payload = {'data': [{
+            'type': 'node_links',
+            'relationships': {
+                'nodes': {
+                     'data': {
+                         'id': self.user_two_project._id,
+                         'type': 'nodes'
+                     }
+                }
+            }
+        }
+    ]}
+
+    def test_bulk_create_node_links_blank_request(self):
+        res = self.app.post_json_api(self.collection_url, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+
+    def test_bulk_creates_pointers_limits(self):
+        payload = {'data': [self.collection_payload['data'][0]] * 11}
+        res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+
+        res = self.app.get(self.collection_url, auth=self.user.auth)
+        assert_equal(res.json['data'], [])
+
+    def test_bulk_creates_project_target_not_nested(self):
+        payload = {'data': [{'type': 'node_links', 'target_node_id': self.private_pointer_project._id}]}
+        res = self.app.post_json_api(self.collection_url, payload, auth=self.user_two.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/relationships.')
+
+    def test_bulk_creates_collection_node_pointers_logged_out(self):
+        res = self.app.post_json_api(self.collection_url, self.collection_payload, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 401)
+        assert_in('detail', res.json['errors'][0])
+
+        res = self.app.get(self.collection_url, auth=self.user.auth)
+        assert_equal(res.json['data'], [])
+
+    def test_bulk_creates_collection_node_pointer_logged_in_non_contrib(self):
+        res = self.app.post_json_api(self.collection_url, self.collection_payload,
+                                     auth=self.user_two.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+
+    def test_bulk_creates_collection_node_pointer_logged_in_contrib(self):
+        res = self.app.post_json_api(self.collection_url, self.collection_payload, auth=self.user.auth, bulk=True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        res_json = res.json['data']
+        embedded = res_json[0]['embeds']['target_node']['data']['id']
+        assert_equal(embedded, self.private_pointer_project._id)
+
+        embedded = res_json[1]['embeds']['target_node']['data']['id']
+        assert_equal(embedded, self.private_pointer_project_two._id)
+
+    def test_bulk_creates_node_pointers_collection_to_non_contributing_node(self):
+        res = self.app.post_json_api(self.collection_url, self.user_two_payload, auth=self.user.auth, bulk=True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        res_json = res.json['data']
+        embedded = res_json[0]['embeds']['target_node']['data']['id']
+        assert_equal(embedded, self.user_two_project._id)
+
+        res = self.app.get(self.collection_url, auth=self.user.auth)
+        res_json = res.json['data']
+        embedded = res_json[0]['embeds']['target_node']['data']['id']
+        assert_equal(embedded, self.user_two_project._id)
+
+    def test_bulk_creates_pointers_non_contributing_node_to_fake_node(self):
+        fake_payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'id': 'fdxlq', 'type': 'nodes'}}}}]}
+
+        res = self.app.post_json_api(self.collection_url, fake_payload,
+                                     auth=self.user_two.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_bulk_creates_pointers_contributing_node_to_fake_node(self):
+        fake_payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'id': 'fdxlq', 'type': 'nodes'}}}}]}
+
+        res = self.app.post_json_api(self.collection_url, fake_payload,
+                                     auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_bulk_creates_fake_nodes_pointing_to_contributing_node(self):
+        fake_url = '/{}collections/{}/node_links/'.format(API_BASE, 'fdxlq')
+
+        res = self.app.post_json_api(fake_url, self.collection_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 404)
+        assert_in('detail', res.json['errors'][0])
+
+        res = self.app.post_json_api(fake_url, self.collection_payload, auth=self.user_two.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 404)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_bulk_creates_node_pointer_already_connected(self):
+        res = self.app.post_json_api(self.collection_url, self.collection_payload, auth=self.user.auth, bulk=True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        res_json = res.json['data']
+        embedded = res_json[0]['embeds']['target_node']['data']['id']
+        assert_equal(embedded, self.private_pointer_project._id)
+
+        embedded_two = res_json[1]['embeds']['target_node']['data']['id']
+        assert_equal(embedded_two, self.private_pointer_project_two._id)
+
+        res = self.app.post_json_api(self.collection_url, self.collection_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_in("Target Node '{}' already pointed to by '{}'.".format(self.private_pointer_project._id, self.collection_one._id), res.json['errors'][0]['detail'])
+
+    def test_bulk_creates_node_pointer_no_type(self):
+        payload = {'data': [{'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.user_two_collection._id}}}}]}
+        res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
+
+    def test_bulk_creates_node_pointer_incorrect_type(self):
+        payload = {'data': [{'type': 'Wrong type.', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.user_two_collection._id}}}}]}
+        res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+
+
+class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
+
+    def setUp(self):
+        super(TestBulkDeleteCollectionNodeLinks, self).setUp()
+        self.user = AuthUserFactory()
+        self.collection = FolderFactory(creator=self.user)
+        self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
+        self.pointer_project_two = ProjectFactory(creator=self.user, is_public=True)
+
+        self.pointer = self.collection.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
+        self.pointer_two = self.collection.add_pointer(self.pointer_project_two, auth=Auth(self.user), save=True)
+
+        self.collection_payload = {
+              "data": [
+                {"type": "node_links", "id": self.pointer._id},
+                {"type": "node_links", "id": self.pointer_two._id}
+              ]
+            }
+
+        self.collection_url = '/{}collections/{}/node_links/'.format(API_BASE, self.collection._id)
+
+        self.user_two = AuthUserFactory()
+
+        self.collection_two = FolderFactory(creator=self.user)
+        self.collection_two_pointer_project = ProjectFactory(is_public=True, creator=self.user)
+        self.collection_two_pointer_project_two = ProjectFactory(is_public=True, creator=self.user)
+
+        self.collection_two_pointer = self.collection_two.add_pointer(self.collection_two_pointer_project,
+                                                              auth=Auth(self.user),
+                                                              save=True)
+        self.collection_two_pointer_two = self.collection_two.add_pointer(self.collection_two_pointer_project_two,
+                                                              auth=Auth(self.user),
+                                                              save=True)
+
+        self.collection_two_payload = {
+              'data': [
+                {'type': 'node_links', 'id': self.collection_two_pointer._id},
+                {'type': 'node_links', 'id': self.collection_two_pointer_two._id}
+              ]
+            }
+
+        self.collection_two_url = '/{}collections/{}/node_links/'.format(API_BASE, self.collection_two._id)
+
+    def test_bulk_delete_node_links_blank_request(self):
+        res = self.app.delete_json_api(self.collection_two_url, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+
+    def test_bulk_delete_pointer_limits(self):
+        res = self.app.delete_json_api(self.collection_two_url, {'data': [self.collection_two_payload['data'][0]] * 11},
+                                       auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+
+    def test_bulk_delete_dict_inside_data(self):
+        res = self.app.delete_json_api(self.collection_two_url,
+                                       {'data': {'id': self.collection_two._id, 'type': 'node_links'}},
+                                       auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
+    def test_bulk_delete_pointers_no_type(self):
+        payload = {'data': [
+            {'id': self.collection_two_pointer._id},
+            {'id': self.collection_two_pointer_two._id}
+        ]}
+        res = self.app.delete_json_api(self.collection_two_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], "/data/type")
+
+    def test_bulk_delete_pointers_incorrect_type(self):
+        payload = {'data': [
+            {'id': self.collection_two_pointer._id, 'type': 'Incorrect type.'},
+            {'id': self.collection_two_pointer_two._id, 'type': 'Incorrect type.'}
+        ]}
+        res = self.app.delete_json_api(self.collection_two_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 409)
+
+    def test_bulk_delete_pointers_no_id(self):
+        payload = {'data': [
+            {'type': 'node_links'},
+            {'type': 'node_links'}
+        ]}
+        res = self.app.delete_json_api(self.collection_two_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], "/data/id")
+
+    def test_bulk_delete_pointers_no_data(self):
+        res = self.app.delete_json_api(self.collection_two_url, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must contain array of resource identifier objects.')
+
+    def test_bulk_delete_pointers_payload_is_empty_dict(self):
+        res = self.app.delete_json_api(self.collection_two_url, {}, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
+
+    def test_bulk_deletes_collection_node_pointers_logged_out(self):
+        res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 401)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_bulk_deletes_collection_node_pointers_fails_if_bad_auth(self):
+        node_count_before = len(self.collection_two.nodes_pointer)
+        res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload,
+                                       auth=self.user_two.auth, expect_errors=True, bulk=True)
+        # This is could arguably be a 405, but we don't need to go crazy with status codes
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+        self.collection_two.reload()
+        assert_equal(node_count_before, len(self.collection_two.nodes_pointer))
+
+    def test_bulk_deletes_collection_node_pointers_succeeds_as_owner(self):
+        node_count_before = len(self.collection_two.nodes_pointer)
+        res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload, auth=self.user.auth, bulk=True)
+        self.collection_two.reload()
+        assert_equal(res.status_code, 204)
+        assert_equal(node_count_before - 2, len(self.collection_two.nodes_pointer))
+        self.collection_two.reload()
+
+    def test_return_bulk_deleted_collection_node_pointer(self):
+        res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload, auth=self.user.auth, bulk=True)
+        self.collection_two.reload()  # Update the model to reflect changes made by post request
+        assert_equal(res.status_code, 204)
+
+        pointer_url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection_two._id, self.collection_two_pointer._id)
+
+        #check that deleted pointer can not be returned
+        res = self.app.get(pointer_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4322
+    def test_bulk_delete_link_that_is_not_linked_to_correct_node(self):
+        project = ProjectFactory(creator=self.user)
+        # The node link belongs to a different project
+        res = self.app.delete_json_api(
+            self.collection_url, self.collection_two_payload,
+            auth=self.user.auth,
+            expect_errors=True,
+            bulk=True
+        )
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], 'Node link does not belong to the requested node.')
