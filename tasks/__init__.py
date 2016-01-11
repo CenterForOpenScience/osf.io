@@ -509,6 +509,10 @@ def test_travis_else():
     karma(single=True, browsers='PhantomJS')
 
 @task
+def test_travis_varnish():
+    test_varnish()
+
+@task
 def karma(single=False, sauce=False, browsers=None):
     """Run JS tests with Karma. Requires Chrome to be installed."""
     karma_bin = os.path.join(
