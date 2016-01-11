@@ -200,7 +200,7 @@ class NodeSerializer(JSONAPISerializer):
             template_node = Node.load(key=template_from)
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
-            node=template_node.use_as_template(auth=self.get_user_auth(self.context['request']), changes=changed_data)
+            node = template_node.use_as_template(auth=self.get_user_auth(self.context['request']), changes=changed_data)
         else:
             node = Node(**validated_data)
         try:
