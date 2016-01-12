@@ -86,6 +86,7 @@
             ## TODO: Abstract me
             id: nodeId,
             title: ${ node['title'] | sjson, n },
+            display_title: ${ node['display_title'] | sjson, n },
             license: ${ node['license'] | sjson, n},
             urls: {
                 api: nodeApiUrl,
