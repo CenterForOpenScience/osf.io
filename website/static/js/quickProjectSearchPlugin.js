@@ -342,7 +342,7 @@ var quickSearchProject = {
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div', {class : 'input-group m-v-md'}, [
+                return m('div', {class : 'input-group m-b-sm'}, [
                     m('span', {class: 'input-group-addon'}, m('i', {class: 'fa fa-search'})),
                     m('input[type=search]', {class: 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {ctrl.quickSearch()}})
                 ])
@@ -362,28 +362,36 @@ var quickSearchProject = {
 
         function projectView(project) {
             console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
-            return [m('div', {class: 'row node-outline'}, [
-                m('div', {class: 'col-xs-4 m-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
-                m('div', {class: 'col-xs-4 m-v-xs text-muted'}, ctrl.getContributors(project)),
-                m('div', {class: 'col-xs-4 m-v-xs'}, ctrl.formatDate(project))
-            ]),
-            m('div', {class: 'row'}, m('div', {class: 'col-xs-12 m-v-xs'}))];
+            return [m('div', {class: 'row m-v-sm'}, [
+                m('div', {class: 'col-xs-1 p-v-sm'}),
+                m('div', {class: 'col-xs-4 outline-row left-col-outline p-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
+                m('div', {class: 'col-xs-4 outline-row text-muted p-v-xs'}, ctrl.getContributors(project)),
+                m('div', {class: 'col-xs-2 outline-row right-col-outline p-v-xs'}, ctrl.formatDate(project)),
+                m('div', {class: 'col-xs-1 p-v-xs' })
+
+            ])];
         }
 
         function resultsFound(){
             return m('div', {class: 'container'}, [
-                m('div', {class: 'row'}, m('h3', 'My Projects')),
+                m('div', {class: 'row'}, [
+                    m('div', {'class': 'col-xs-1'}),
+                    m('div', {'class': 'col-xs-11'}, m('h3', 'My Projects'))
+                ]),
                 m('div', {class: 'row'},
-                    m('div', {class: 'col-xs-2'}),
-                    m('div', {class: 'col-xs-8 text-center'}, [
+                    m('div', {class: 'col-xs-3'}),
+                    m('div', {class: 'col-xs-6 text-center'}, [
                         searchBar(),
                         ctrl.loadingComplete() ? '' : m('.spinner-div', m('i.fa.fa-refresh.fa-spin'), ' Loading projects...')
                     ]),
-                    m('div', {class: 'col-xs-2'})),
-                m('div', {class: 'row'}, [
-                    m('div', {class: 'col-xs-4 m-v-md f-w-xl'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
-                    m('div', {class: 'col-xs-4 m-v-md f-w-xl'}, 'Contributors'),
-                    m('div', {class: 'col-xs-4 m-v-md f-w-xl'}, 'Date Modified', sortDateAsc(), sortDateDesc())
+                    m('div', {class: 'col-xs-3'})),
+
+                m('div', {class: 'row m-v-sm'}, [
+                    m('div', {class: 'col-xs-1'}),
+                    m('div', {class: 'col-xs-4 f-w-xl'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
+                    m('div', {class: 'col-xs-4 f-w-xl'}, 'Contributors'),
+                    m('div', {class: 'col-xs-2 f-w-xl'}, 'Date Modified', sortDateAsc(), sortDateDesc()),
+                    m('div', {class: 'col-xs-1'})
                 ]),
                 displayNodes(),
                 m('div', {class: 'row'}, [
