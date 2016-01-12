@@ -52,9 +52,6 @@ class CommentMixin(object):
 
         if isinstance(comment.root_target, StoredFileNode):
             root_target = comment.root_target
-            if root_target.provider == 'dropbox':
-                root_target = DropboxFile.load(comment.root_target._id)
-
             if root_target.provider == 'osfstorage':
                 try:
                     StoredFileNode.find(
@@ -65,8 +62,10 @@ class CommentMixin(object):
                 except NoResultsFound:
                     Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
                     del comment.node.commented_files[root_target._id]
-
+                    raise NotFound
             else:
+                if root_target.provider == 'dropbox':
+                    root_target = DropboxFile.load(comment.root_target._id)
                 url = waterbutler_api_url_for(comment.node._id, root_target.provider, root_target.path, meta=True)
                 waterbutler_request = requests.get(
                     url,
@@ -85,7 +84,7 @@ class CommentMixin(object):
                     raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
                 try:
-                    return waterbutler_request.json()['data']
+                    waterbutler_request.json()['data']
                 except KeyError:
                     raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
