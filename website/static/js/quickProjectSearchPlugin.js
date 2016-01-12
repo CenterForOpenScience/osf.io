@@ -434,11 +434,16 @@ var quickSearchProject = {
         }
 
         if (ctrl.displayedNodes().length == 0 && ctrl.filter() == null) {
-            return m('div', {class: 'row m-v-xl'},
-                m('div', {class: 'col-sm-1'}),
-                m('div', {class: 'col-sm-11'}, m('h2', 'You have no projects. Go here to create one.'))
-            )
-        }
+            return m('div', {class: 'container'}, [
+                m('div', {class: 'row'}, [
+                    m('div', {'class': 'col-sm-1'}),
+                    m('div', {'class': 'col-sm-11'}, m('h3', 'My Projects'))
+                ]),
+                m('div', {class: 'row m-v-md'},
+                    m('div', {class: 'col-sm-1'}),
+                    m('div', {class: 'col-sm-11'}, m('h4', 'You have no projects. Go here to create one.'))
+            )]
+        )}
         else {
             return resultsFound()
         }
