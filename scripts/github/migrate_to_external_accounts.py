@@ -25,6 +25,10 @@ PROVIDER = 'github'
 PROVIDER_NAME = 'GitHub'
 HOOK_DOMAIN = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
+# set of {ExternalAccount._id: (user_settings, oauth_settings)} mappings
+# with invalid credentials, for logging purposes
+invalid_oauth_creds = {}
+
 def verify_user_and_oauth_settings_documents(user_document, oauth_document):
     try:
         assert_in('_id', user_document)
@@ -98,21 +102,37 @@ def add_hook_to_old_node_settings(document, account):
 def migrate_to_external_account(user_settings_document, oauth_settings_document):
     if not oauth_settings_document.get('oauth_access_token'):
         return (None, None, None)
+    try:
+        user_info = GitHubClient(access_token=oauth_settings_document['oauth_access_token']).user()
+    except (GitHubError, ApiError):
+        user_id = oauth_settings_document['github_user_id']
+        profile_url = None
+        display_name = oauth_settings_document['github_user_name']
+    else:
+        user_id = user_info.id
+        profile_url = user_info.html_url
+        display_name = user_info.login
     new = False
     user = User.load(user_settings_document['owner'])
     try:
-        external_account = ExternalAccount.find(Q('provider_id', 'eq', oauth_settings_document['github_user_id']))[0]
-        logger.info('Duplicate account use found: User {0} with github_user_id {1}'.format(user.username, oauth_settings_document['github_user_id']))
+        external_account = ExternalAccount.find(Q('provider_id', 'eq', user_id))[0]
+        logger.info('Duplicate account use found: User {0} with github_user_id {1}'.format(user.username, user_id))
     except IndexError:
         new = True
         external_account = ExternalAccount(
             provider=PROVIDER,
             provider_name=PROVIDER_NAME,
-            provider_id=oauth_settings_document['github_user_id'],
+            provider_id=user_id,
+            profile_url=profile_url,
             oauth_key=oauth_settings_document['oauth_access_token'],
-            display_name=oauth_settings_document['github_user_name'],
+            display_name=display_name,
         )
         external_account.save()
+        if not profile_url:
+            invalid_oauth_creds[external_account._id] = (user_settings_document['_id'], oauth_settings_document['_id'])
+            logger.info("Created ExternalAccount<_id:{0}> with invalid oauth credentials.".format(
+                external_account._id
+            ))
 
     user.external_accounts.append(external_account)
     user.save()
@@ -162,19 +182,24 @@ def migrate(dry_run=True):
 
     # get in-memory versions of collections and collection sizes
     old_user_settings_collection = database['addongithubusersettings']
-    old_user_settings = list(old_user_settings_collection.find())
     old_user_settings_count = old_user_settings_collection.count()
     old_node_settings_collection = database['addongithubnodesettings']
-    old_node_settings = list(old_node_settings_collection.find())
     old_node_settings_count = old_node_settings_collection.count()
     old_oauth_settings_collection = database['addongithuboauthsettings']
-    old_oauth_settings = list(old_oauth_settings_collection.find())
     old_oauth_settings_count = old_oauth_settings_collection.count()
 
-
-    external_accounts_created = 0 
-    migrated_user_settings = 0
-    migrated_node_settings = 0
+    # Lists of IDs for logging purposes
+    external_accounts_created = []
+    migrated_user_settings = []
+    migrated_node_settings = []
+    user_no_oauth_settings = []
+    deleted_user_settings = []
+    broken_user_or_oauth_settings = []
+    no_oauth_creds = []
+    inactive_user_or_no_owner = []
+    unverifiable_node_settings = []
+    deleted_node_settings = []
+    nodeless_node_settings = []
 
     for user_settings_document in user_settings_list:
         try:
@@ -185,25 +210,30 @@ def migrate(dry_run=True):
             logger.info(
                 "Found addongithubusersettings document (id:{0}) with no associated oauth_settings. It will not be migrated.".format(user_settings_document['_id'])
             )
+            user_no_oauth_settings.append(user_settings_document['_id'])
             continue
         if user_settings_document['deleted']:
             logger.info(
                 "Found addongithubusersettings document (id:{0}) that is marked as deleted.".format(user_settings_document['_id'])
             )
+            deleted_user_settings.append(user_settings_document['_id'])
             continue
         if not verify_user_and_oauth_settings_documents(user_settings_document, oauth_settings_document):
             logger.info(
                 "Found broken addongithubusersettings document (id:{0}) that could not be fixed.".format(user_settings_document['_id'])
             )
+            broken_user_or_oauth_settings.append((user_settings_document['_id'], oauth_settings_document['_id']))
             continue
         external_account, user, new = migrate_to_external_account(user_settings_document, oauth_settings_document)
         if not external_account:
             logger.info("AddonGitHubUserSettings<_id:{0}> has no oauth credentials and will not be migrated.".format(
                 user_settings_document['_id']
             ))
+            no_oauth_creds.append(user_settings_document['_id'])
+            continue
         else:
             if new:
-                external_accounts_created += 1
+                external_accounts_created.append(external_account._id)
             linked_node_settings_documents = old_node_settings_collection.find({
                 'user_settings': user_settings_document['_id']
             })
@@ -218,6 +248,7 @@ def migrate(dry_run=True):
                     logger.info("AddonGitHubUserSettings<_id:{0}> either has no owner or the owner's account is not active, and will not be migrated.".format(
                         user_settings_document['_id']
                     ))
+                    inactive_user_or_no_owner.append(user_settings_document['_id'])
                     continue
             else:
                 user_settings_instance = make_new_user_settings(user)
@@ -228,6 +259,7 @@ def migrate(dry_run=True):
                                 node_settings_document['_id'],
                             )
                         )
+                        unverifiable_node_settings.append(node_settings_document['_id'])
                         continue
                     if node_settings_document['deleted']:
                         logger.info(
@@ -235,12 +267,14 @@ def migrate(dry_run=True):
                                 node_settings_document['_id'],
                             )
                         )
+                        deleted_node_settings.append(node_settings_document['_id'])
                         continue
                     node = Node.load(node_settings_document['owner'])
                     if not node:
                         logger.info("AddonGitHubNodeSettings<_id:{0}> has no associated Node, and will not be migrated.".format(
                             node_settings_document['_id']
                         ))
+                        nodeless_node_settings.append(node_settings_document['_id'])
                         continue
                     else:
                         node_settings_document = database['addongithubnodesettings'].find_one({'_id': node_settings_document['_id']})
@@ -250,13 +284,79 @@ def migrate(dry_run=True):
                             external_account,
                             user_settings_instance
                         )
-                        migrated_node_settings += 1
-        migrated_user_settings += 1
+                        migrated_node_settings.append(node_settings_document['_id'])
+        migrated_user_settings.append(user_settings_document['_id'])
+
     logger.info(
-        "Created {0} new external accounts, migrated {1} githubusersettings, and migrated {2} githubnodesettings.".format(
-            external_accounts_created, migrated_user_settings, migrated_node_settings
+        "Created {0} new external accounts from {1} old oauth settings documents:\n{2}".format(
+            len(external_accounts_created), old_oauth_settings_count, [e for e in external_accounts_created]
         )
     )
+    logger.info(
+        "Successfully migrated {0} user settings from {1} old user settings documents:\n{2}".format(
+            len(migrated_user_settings), old_user_settings_count, [e for e in migrated_user_settings]
+        )
+    )
+    logger.info(
+        "Successfully migrated {0} node settings from {1} old node settings documents:\n{2}".format(
+            len(migrated_node_settings), old_node_settings_count, [e for e in migrated_node_settings]
+        )
+    )
+
+    if user_no_oauth_settings:
+        logger.info(
+            "Failed to migrate {0} user settings due to a lack of associated oauth settings:\n{1}".format(
+                len(user_no_oauth_settings), [e for e in user_no_oauth_settings]
+            )
+        )
+    if deleted_user_settings:
+        logger.info(
+            "Failed to migrate {0} deleted user settings: {1}".format(
+                len(deleted_user_settings), [e for e in deleted_user_settings]
+            )
+        )
+    if broken_user_or_oauth_settings:
+        logger.info(
+            "Failed to migrate {0} (user, oauth) settings tuples because they could not be verified:\n{1}".format(
+                len(broken_user_or_oauth_settings), ['({}, {})'.format(e, f) for e, f in user_no_oauth_settings]
+            )
+        )
+    if invalid_oauth_creds:
+        logger.info(
+            "Created {0} invalid ExternalAccounts from (user, oauth) settings tuples due to invalid oauth credentials:\n{1}".format(
+                len(invalid_oauth_creds), ['{}: ({}, {})'.format(e, invalid_oauth_creds[e][0], invalid_oauth_creds[e][1]) for e in invalid_oauth_creds.keys()]
+            )
+        )
+    if inactive_user_or_no_owner:
+        logger.info(
+            "Failed to migrate {0} user settings due to an inactive or null owner:\n{1}".format(
+                len(inactive_user_or_no_owner), [e for e in inactive_user_or_no_owner]
+            )
+        )
+    if no_oauth_creds:
+        logger.info(
+            "Failed to migrate {0} user settings due a lack of oauth credentials:\n{1}".format(
+                len(inactive_user_or_no_owner), [e for e in inactive_user_or_no_owner]
+            )
+        )
+    if unverifiable_node_settings:
+        logger.info(
+            "Failed to migrate {0} node settings because they could not be verified:\n{1}".format(
+                len(unverifiable_node_settings), [e for e in unverifiable_node_settings]
+            )
+        )
+    if deleted_node_settings:
+        logger.info(
+            "Failed to migrate {0} deleted node settings:\n{1}".format(
+                len(deleted_node_settings), [e for e in deleted_node_settings]
+            )
+        )
+    if nodeless_node_settings:
+        logger.info(
+            "Failed to migrate {0} node settings without an associated node:\n{1}".format(
+                len(nodeless_node_settings), [e for e in nodeless_node_settings]
+            )
+        )
 
     if dry_run:
         raise RuntimeError('Dry run, transaction rolled back.')
