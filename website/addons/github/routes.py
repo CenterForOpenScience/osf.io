@@ -90,7 +90,11 @@ api_routes = {
         ),
 
         Rule(
-            '/github/repo/create/',
+            [
+                '/project/<pid>/github/repo/create/',
+                '/project/<pid>/node/<nid>/github/repo/create/',
+
+            ],
             'post',
             views.github_create_repo,
             json_renderer,

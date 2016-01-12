@@ -56,7 +56,7 @@ var GithubConfigHelper = (function() {
                 }
 
                 $osf.postJSON(
-                    '/api/v1/github/repo/create/',
+                    nodeApiUrl + 'github/repo/create/',
                     {name: repoName}
                 ).done(function (response) {
                         var repoName = response.user + ' / ' + response.repo;

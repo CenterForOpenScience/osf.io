@@ -6,7 +6,6 @@ import logging
 
 from flask import request, make_response
 
-from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
 from website.addons.base import generic_views
@@ -151,19 +150,6 @@ def github_set_config(auth, **kwargs):
 
     return {}
 
-@must_have_permission('write')
-@must_have_addon('github', 'node')
-def github_set_privacy(**kwargs):
-
-    github = kwargs['node_addon']
-    private = request.form.get('private')
-
-    if private is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    connection = GitHubClient(external_account=github.external_account)
-    connection.set_privacy(github.user, github.repo, private)
-
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
 def github_download_starball(node_addon, **kwargs):
@@ -280,10 +266,11 @@ def github_hgrid_data(node_settings, auth, **kwargs):
 # Repos #
 #########
 
-@must_be_logged_in
-@must_have_addon('github', 'node')
+@must_have_addon(SHORT_NAME, 'user')
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_addon_authorizer(SHORT_NAME)
+@must_have_permission('write')
 def github_create_repo(**kwargs):
-
     repo_name = request.json.get('name')
     if not repo_name:
         raise HTTPError(http.BAD_REQUEST)
