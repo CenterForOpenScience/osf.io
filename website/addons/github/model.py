@@ -48,7 +48,7 @@ class GitHubProvider(ExternalProvider):
         user_info = client.user()
 
         return {
-            'provider_id': user_info.id,
+            'provider_id': str(user_info.id),
             'profile_url': user_info.html_url,
             'display_name': user_info.login
         }
