@@ -271,6 +271,14 @@ var quickSearchProject = {
             }
         };
 
+        self.mouseOver = function (node) {
+            node.style.backgroundColor='#E0EBF3'
+        };
+
+        self.mouseOut = function (node) {
+            node.style.backgroundColor='#fcfcfc'
+        }
+
         self.quickSearch = function () {
             self.filter(document.getElementById('searchQuery').value);
             self.restoreToNodeList(self.nonMatchingNodes());
@@ -382,7 +390,7 @@ var quickSearchProject = {
         function projectView(project) {
             console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
             return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
-                m('div', {class: 'row node-styling'}, [
+                m('div', {class: 'row node-styling',  onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}}, [
                     m('div', {class: 'col-sm-1 p-v-xs'}),
                     m('div', {class: 'col-sm-4 p-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
                     m('div', {class: 'col-sm-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
