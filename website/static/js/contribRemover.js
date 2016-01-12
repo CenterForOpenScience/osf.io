@@ -12,8 +12,6 @@ var oop = require('./oop');
 var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
 
-var API_BASE = window.contextVars.apiV2Prefix;
-
 function getNodesOriginal(nodeTree, nodesOriginal) {
     /**
      * take treebeard tree structure of nodes and get a dictionary of parent node and all its
@@ -62,6 +60,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.REMOVE = 'remove';
         self.REMOVE_ALL = 'removeAll';
         self.REMOVE_NO_CHILDREN = 'removeNoChildren';
+        self.REMOVE_SELF = 'removeSelf';
 
         //This shouter allows the ContributorsViewModel to share which contributor to remove
         // with the RemoveContributorViewModel
@@ -103,8 +102,14 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                 var contributor_id = self.contributorToRemove().id;
                 for (var key in nodesOriginalLocal) {
                     var node = nodesOriginalLocal[key];
+                    var contributorOnNode = false;
                     //User cannot modify the node without admin permissions.
-                    if (node.isAdmin) {
+                    if (node.isAdmin || self.removeSelf) {
+                        for (var i = 0; i < node.contributors.length; i++) {
+                            if (node.contributors[i].id === self.contributorToRemove().id) {
+                                contributorOnNode = true;
+                            }
+                        }
                         var registeredContributors = node.registeredContributors;
                         var adminContributors = node.adminContributors;
                         var visibleContributors = node.visibleContributors;
@@ -124,7 +129,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                         self.canRemoveAdmin = adminContributors.length > 0;
                         self.canRemoveVisible = visibleContributors.length > 0;
                         self.canRemoveRegistered = registeredContributors.length > 0 ;
-                        canRemoveNodes[key] = (registeredContributors.length > 0 && adminContributors.length > 0 && visibleContributors.length > 0);
+                        canRemoveNodes[key] = (registeredContributors.length > 0 && adminContributors.length > 0 && visibleContributors.length > 0 && contributorOnNode);
                     }
                     else {
                         canRemoveNodes[key] = false;
@@ -134,17 +139,33 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             return canRemoveNodes;
         });
 
+        self.removeSelf = ko.computed(function() {
+            var currentUser = window.contextVars.currentUser.id;
+            if (self.contributorToRemove().id === currentUser) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        })
+
         self.canRemoveNode = ko.computed(function() {
             return self.canRemoveNodes()[self.nodeId];
         });
 
-        self.canRemoveNodeAdmin = ko.computed(function() {
-            self.canRemoveAdmin;
+        self.canRemoveNodesLength = ko.computed(function() {
+            var canRemoveNodeLengthLocal = 0;
+            for (var key in self.canRemoveNodes()) {
+                if (self.canRemoveNodes()[key]) {
+                    canRemoveNodeLengthLocal++;
+                }
+            }
+            return canRemoveNodeLengthLocal;
         });
 
         self.hasChildrenToRemove = ko.computed(function() {
             //if there is more then one node to remove, then show a simplified page
-            if (Object.keys(self.canRemoveNodes()).length > 1) {
+            if (self.canRemoveNodesLength() > 1) {
                 self.page(self.REMOVE);
                 return true;
             }

@@ -7,19 +7,35 @@
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
             <div class="modal-body" >
+
                 <div data-bind="if: canRemoveNode() && !pageChanged()">
                     <!-- remove page -->
                     <div data-bind='if:page() === REMOVE'>
                         <div class="form-group">
-                            <span>Do you want to remove <b>{{contributorToRemove()["fullname"]}}</b> from <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it.</span>
+                            <span data-bind="visible:removeSelf()">Do you want to remove yourself from <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it.</span>
+                            <span data-bind="visible:!removeSelf()">Do you want to remove <b>{{contributorToRemove()["fullname"]}}</b> from <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it.</span>
                         </div>
-                        <div id="remove-page-radio-buttons" class="col-md-8" align="left">
+                        <div data-bind="visible:removeSelf()" id="remove-page-radio-buttons" class="col-md-8" align="left">
                             <div class="radio">
-                                <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>Remove  <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from  <span class="f-w-lg" data-bind="text: title"></span></label>
+                                <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>
+                                    Remove yourself from  <span class="f-w-lg" data-bind="text: title"></span></label>
                             </div>
 
                             <div class="radio">
-                                <label><input  type="radio" name="radioBoxGroup" data-bind="checked: deleteAll, checkedValue: true" >Remove <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</label>
+                                <label><input  type="radio" name="radioBoxGroup" data-bind="checked: deleteAll, checkedValue: true" >
+                                    Remove yourself from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</label>
+                            </div>
+                        </div>
+
+                        <div data-bind="visible:!removeSelf()" id="remove-page-radio-buttons" class="col-md-8" align="left">
+                            <div class="radio">
+                                <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>
+                                    Remove <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from  <span class="f-w-lg" data-bind="text: title"></span></label>
+                            </div>
+
+                            <div class="radio">
+                                <label><input  type="radio" name="radioBoxGroup" data-bind="checked: deleteAll, checkedValue: true" >
+                                    Remove <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</label>
                             </div>
                         </div>
 
@@ -27,7 +43,8 @@
                     <!-- removeNoChildren page -->
                     <div data-bind='if:page() === REMOVE_NO_CHILDREN'>
                         <div class="form-group" data-bind="if:contributorToRemove">
-                            <span>Remove <b>{{contributorToRemove()["fullname"]}}</b> from {{title}}"?</span>
+                            <span data-bind="visible:removeSelf()">Remove yourself from {{title}}?</span>
+                            <span data-bind="visible:!removeSelf()">Remove <b>{{contributorToRemove()["fullname"]}}</b> from {{title}}?</span>
                         </div>
 
                     </div><!-- end removeNoChildren page -->
@@ -38,7 +55,8 @@
                             <div class="panel panel-default">
                                 <div class="panel-body">
                                     <div class="form-group" data-bind="if:contributorToRemove">
-                                        <span><b>{{contributorToRemove()["fullname"]}} will be</b> removed from the following projects and/or components.</span>
+                                        <span data-bind="visible:removeSelf()">You removed from the following projects and/or components.</span>
+                                        <span data-bind="visible:!removeSelf()"><b>{{contributorToRemove()["fullname"]}} will be</b> removed from the following projects and/or components.</span>
                                     </div>
                                     <div class="col-md-8" align="left">
                                         <ul data-bind="foreach: { data: titlesToRemove(), as: 'item' }">
@@ -54,7 +72,8 @@
                             <div class="panel panel-default">
                                 <div class="panel-body">
                                     <div class="form-group" data-bind="if:contributorToRemove">
-                                        <span><b>{{contributorToRemove()["fullname"]}} cannot</b> be removed from the following projects and/or components.</span>
+                                        <span data-bind="visible:removeSelf()"><b>You cannot</b> be removed from the following projects and/or components.</span>
+                                        <span data-bind="visible:!removeSelf()"><b>{{contributorToRemove()["fullname"]}} cannot</b> be removed from the following projects and/or components.</span>
                                     </div>
                                     <div class="col-md-8" align="left">
                                         <ul data-bind="foreach: { data: titlesToKeep(), as: 'item' }">

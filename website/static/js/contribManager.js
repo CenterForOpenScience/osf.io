@@ -494,6 +494,8 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
                 data.parent_node.id,
                 data.parent_node.title
             );
+        }
+        if (data.user.can_edit || data.user.is_contributor) {
             new ContribRemover(
                 '#removeContributor',
                 data.node.title,
