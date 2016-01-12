@@ -62,6 +62,7 @@ class CommentMixin(object):
                 except NoResultsFound:
                     Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
                     del comment.node.commented_files[root_target._id]
+                    raise NotFound
             else:
                 if root_target.provider == 'dropbox':
                     root_target = DropboxFile.load(comment.root_target._id)
