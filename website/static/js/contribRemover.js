@@ -147,7 +147,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             else {
                 return false;
             }
-        })
+        });
 
         self.canRemoveNode = ko.computed(function() {
             return self.canRemoveNodes()[self.nodeId];
@@ -244,9 +244,6 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                 url: self.nodeApiUrl, status: status, error: error
             });
         });
-    },
-    selectRemove: function() {
-        var self = this;
     },
     clear: function() {
         var self = this;

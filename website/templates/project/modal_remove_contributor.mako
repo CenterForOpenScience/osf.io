@@ -88,7 +88,7 @@
                     </div><!-- end removeAll page -->
                 </div>
                 <div data-bind="if: !canRemoveNode() && !pageChanged()">
-                    <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.  You need at least one administrator, bibliographic contributor, and one registered user.</span>
+                    <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.  You need at least one administrator, bibliographic contributor, and registered user.</span>
                 </div>
                 <div data-bind="if: pageChanged()">
                     <span>Please save or discard your existing changes before removing a contributor.</span>
