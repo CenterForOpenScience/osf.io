@@ -351,7 +351,10 @@ var quickSearchProject = {
 
         function displayNodes() {
             if (ctrl.displayedNodes().length == 0 && ctrl.filter() != null) {
-                return 'No results found!'
+                return m('div', {class: 'row'},
+                    m('div', {class: 'col-xs-1'}),
+                    m('div', {class: 'col-xs-11'}, [m('p', {class :'fa fa-exclamation-triangle'}, '  No results found!')])
+            )
             }
             else {
                 return ctrl.displayedNodes().map(function(n){
