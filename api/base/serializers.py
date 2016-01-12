@@ -805,7 +805,7 @@ class JSONAPISerializer(ser.Serializer):
         return ret
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
-    def is_valid(self, clean_html=True, **kwargs):
+    def is_valid(self, clean_html=True, excluded_fields=None, **kwargs):
         """
         After validation, scrub HTML from validated_data prior to saving (for create and update views)
 
@@ -815,7 +815,15 @@ class JSONAPISerializer(ser.Serializer):
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
+            # Remove fields from _validated_data to exclude from sanitization
+            excluded = {}
+            for field in excluded_fields:
+                excluded[field] = self._validated_data.pop(field, None)
+
             self._validated_data = website_utils.rapply(self.validated_data, strip_html)
+
+            for field in excluded:
+                self._validated_data[field] = excluded[field]
 
         self._validated_data.pop('type', None)
         self._validated_data.pop('target_type', None)

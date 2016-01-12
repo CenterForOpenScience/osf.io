@@ -14,7 +14,6 @@ from tests.factories import (
     CommentFactory,
     RetractedRegistrationFactory
 )
-from website.util.sanitize import strip_html
 
 
 class TestNodeCommentsList(ApiTestCase):
@@ -527,7 +526,7 @@ class TestNodeCommentCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Comment cannot be empty.')
 
-    def test_create_comment_sanitizes_input(self):
+    def test_create_comment_with_allowed_html_tags(self):
         self._set_up_private_project()
         payload = {
             'data': {
@@ -547,7 +546,7 @@ class TestNodeCommentCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], strip_html(payload['data']['attributes']['content']))
+        assert_equal(res.json['data']['attributes']['content'], payload['data']['attributes']['content'])
 
     def test_create_comment_exceeds_max_length(self):
         self._set_up_private_project()
