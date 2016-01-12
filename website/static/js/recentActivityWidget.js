@@ -48,7 +48,7 @@ var LogWrap = {
             var url = $osf.apiV2Url('users/' + self.userId + '/node_logs/', { query : query});
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
-                self.laoding = false;
+                self.loading = false;
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
                 });
@@ -137,6 +137,7 @@ var LogWrap = {
                     },
                     start: function (event, ui){
                         ctrl.loading = true;
+                        m.redraw();
                         $("#fillerBar").replaceWith(
                             '<div id="fillerBar" class="progress" style="height: 11px">' +
                                 '<div class="progress-bar progress-bar-success progress-bar-striped active" style="width:100%;"></div>' +
@@ -209,7 +210,7 @@ var LogWrap = {
                     m('.col-xs-1'),
                     m('.col-xs-10',
                         m('#rAProgressBar.progress.category-bar',
-                            ([
+                            ctrl.loading ? m('.progress-bar.progress-bar-success.active.progress-bar-striped', {style: {width: '100%'}}, m('b', {style:{color: 'white'}}, 'Loading')) : ([
                                 m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : '.muted'), {style: {width: fileEvents+'%'}},
                                     m('a', {onclick: function(){
                                         ctrl.callLogs('file');
