@@ -226,9 +226,23 @@ var quickSearchProject = {
             }
         };
 
+        self.colorSortButtons = function () {
+            var sortButtons = ['dateAsc', 'dateDesc', 'alphaAsc', 'alphaDesc']
+            console.log(document.getElementById(self.sortState()));
+            var button = document.getElementById(self.sortState()).className = 'selected';
+            sortButtons.forEach(function(button) {
+                console.log(button);
+                if (self.sortState() !== button) {
+                    console.log(document.getElementById(button));
+                    document.getElementById(button).className = 'not-selected'
+                }
+            })
+        };
+
         self.sortNodesAndModifyDisplay = function () {
             self.restoreToNodeList(self.displayedNodes());
             self.sortBySortState();
+            self.colorSortButtons()
             self.displayedNodes(self.nodes().splice(0, self.countDisplayed()))
         };
 
@@ -303,7 +317,7 @@ var quickSearchProject = {
 
         function sortAlphaAsc() {
             if (ctrl.loadingComplete()) {
-                return m('button', {onclick: function() {
+                return m('button', {id: 'alphaAsc', class: 'not-selected', onclick: function() {
                     ctrl.sortState('alphaAsc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
@@ -314,7 +328,7 @@ var quickSearchProject = {
 
         function sortAlphaDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {onclick: function() {
+                return m('button', {id: 'alphaDesc', class: 'not-selected', onclick: function() {
                     ctrl.sortState('alphaDesc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
@@ -324,7 +338,7 @@ var quickSearchProject = {
 
         function sortDateAsc(){
             if (ctrl.loadingComplete()){
-                 return m('button', {onclick: function() {
+                 return m('button', {id: 'dateAsc', class: 'not-selected', onclick: function() {
                      ctrl.sortState('dateAsc');
                      ctrl.sortNodesAndModifyDisplay()}},
                  m('i', {class: 'fa fa-angle-up'}))
@@ -332,7 +346,7 @@ var quickSearchProject = {
         }
         function sortDateDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {onclick: function() {
+                return m('button', {id: 'dateDesc', class: 'selected', onclick: function() {
                     ctrl.sortState('dateDesc');
                     ctrl.sortNodesAndModifyDisplay();
                }},

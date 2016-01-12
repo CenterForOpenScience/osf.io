@@ -15,3 +15,11 @@ button {
     font-size: 2em;
 }
 
+.selected {
+    color: #000000
+}
+
+.not-selected {
+    color: #347BB7;
+}
+
