@@ -14,11 +14,11 @@
         </div>
         <div class="row">
             <div class="btn-group col-sm-12">
-                <a href="javascript:window.history.go(-2);"
+                <a href="{% url 'spam:spam' %}?page={{ page_number }}"
                    class="btn btn-primary">
                     Back to list
                 </a>
-                <a href="javascript:window.history.back();"
+                <a href="{% url 'spam:detail' comment.id %}?page={{ page_number }}"
                    class="btn btn-default">
                     Back to detail
                 </a>

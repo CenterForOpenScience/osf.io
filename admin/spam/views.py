@@ -1,10 +1,15 @@
+import operator
+
 from django.shortcuts import render, render_to_response
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.views.generic import FormView
 
-from .serializers import serialize_comments, retrieve_comment
+from modularodm import Q
+from website.project.model import Comment
+
+from .serializers import serialize_comment
 from .forms import EmailForm
 
 
@@ -28,38 +33,48 @@ class EmailFormView(FormView):
         return super(EmailFormView, self).form_valid(form)
 
 
+def get_spam_list():
+    query = (
+        Q('reports', 'ne', {}) &
+        Q('reports', 'ne', None)
+    )
+    return sorted(
+        Comment.find(query),
+        key=operator.attrgetter('date_created')
+    )
+
+
 @login_required
 def spam_list(request):
-    comment_list = serialize_comments()
-    paginator = Paginator(comment_list, 10)
+    paginator = Paginator(get_spam_list(), 10)
 
-    page = request.GET.get('page', 1)
+    page_number = request.GET.get('page', 1)
     try:
-        comments = paginator.page(page)
+        page = paginator.page(page_number)
     except PageNotAnInteger:
-        comments = paginator.page(1)
+        page = paginator.page(1)
     except EmptyPage:
-        comments = paginator.page(paginator.num_pages)
-    return render_to_response('spam/spam.html', {'comments': comments})
+        page = paginator.page(paginator.num_pages)
+    context = {
+        'spam': map(serialize_comment, page),
+        'page': page,
+        'page_number': page_number,
+    }
+    return render_to_response('spam/spam.html', context)
 
 
 @login_required
 def spam_detail(request, spam_id):
-    comment = retrieve_comment(spam_id)
-    context = {'comment': comment}
+    context = {
+        'comment': serialize_comment(Comment.load(spam_id)),
+        'page_number': request.GET.get('page', 1),
+    }
     return render(request, 'spam/comment.html', context)
 
 
-@login_required
-def spam_sub_list(request, spam_ids):
-    comments = None
-    context = {'comments': comments}
-    # should test for impossibilities such as many users. Return error page.
-    return render(request, 'spam/sub_list.html', context)
-
-
-@login_required
 def email(request, spam_id):
-    comment = retrieve_comment(spam_id, full_user=True)
-    context = {'comment': comment}
+    context = {
+        'comment': serialize_comment(Comment.load(spam_id)),
+        'page_number': request.GET.get('page', 1),
+    }
     return render(request, 'spam/email.html', context)

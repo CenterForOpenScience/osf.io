@@ -6,7 +6,7 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <a href="javascript:window.history.back();"
+            <a href="{% url 'spam:spam' %}?page={{ page_number }}"
                class="btn btn-primary">
                 Back to list
             </a>
@@ -23,7 +23,7 @@
                 </button>
                 <ul class="dropdown-menu">
                     <li>
-                        <a href="{% url 'spam:email' comment.id %}">
+                        <a href="{% url 'spam:email' comment.id %}?page={{ page_number }}">
                             Email
                         </a>
                     </li>
