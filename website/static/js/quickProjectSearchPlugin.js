@@ -353,7 +353,7 @@ var quickSearchProject = {
             if (ctrl.displayedNodes().length == 0 && ctrl.filter() != null) {
                 return m('div', {class: 'row'},
                     m('div', {class: 'col-xs-1'}),
-                    m('div', {class: 'col-xs-11'}, [m('p', {class :'fa fa-exclamation-triangle'}, '  No results found!')])
+                    m('div', {class: 'col-xs-11'}, [m('p', {class :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
             )
             }
             else {
@@ -406,7 +406,10 @@ var quickSearchProject = {
         }
 
         if (ctrl.displayedNodes().length == 0 && ctrl.filter() == null) {
-            return m('div', {class: 'row'}, m('h2', 'You have no projects. Go here to create one.'))
+            return m('div', {class: 'row'},
+                m('div', {class: 'col-xs-1'}),
+                m('div', {class: 'col-xs-11'}, m('h2', 'You have no projects. Go here to create one.'))
+            )
         }
         else {
             return resultsFound()
