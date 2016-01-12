@@ -285,7 +285,7 @@ var quickSearchProject = {
     view : function(ctrl) {
         function loadMoreButton() {
             if (ctrl.nodes().length !== 0){
-                return m('button', {class: 'col-xs-12 text-muted', onclick: function() {
+                return m('button', {class: 'col-sm-12 text-muted', onclick: function() {
                         ctrl.loadUpToTen()}
                 },
                 m('i', {class: 'fa fa-caret-down load-nodes'}))
@@ -294,7 +294,7 @@ var quickSearchProject = {
 
         function loadLessButton() {
             if (ctrl.displayedNodes().length > 10 && ctrl.loadingComplete()){
-                return m('button', {class: 'col-xs-12 text-muted', onclick: function() {
+                return m('button', {class: 'col-sm-12 text-muted', onclick: function() {
                         ctrl.removeUpToTen()}
                     },
                 m('i', {class: 'fa fa-caret-up load-nodes'}))
@@ -351,10 +351,12 @@ var quickSearchProject = {
 
         function displayNodes() {
             if (ctrl.displayedNodes().length == 0 && ctrl.filter() != null) {
-                return m('div', {class: 'row'},
-                    m('div', {class: 'col-xs-1'}),
-                    m('div', {class: 'col-xs-11'}, [m('p', {class :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
-            )
+                return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
+                    m('div', {class: 'row node-styling'}, [
+                        m('div', {class: 'col-sm-1'}),
+                        m('div', {class: 'col-sm-11'},[m('p', {class :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
+                    ])
+                ))
             }
             else {
                 return ctrl.displayedNodes().map(function(n){
@@ -365,13 +367,13 @@ var quickSearchProject = {
 
         function projectView(project) {
             console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
-            return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-md-10 col-md-offset-1'},
+            return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
                 m('div', {class: 'row node-styling'}, [
-                    m('div', {class: 'col-md-1 p-v-xs'}),
-                    m('div', {class: 'col-md-4 p-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
-                    m('div', {class: 'col-md-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
-                    m('div', {class: 'col-md-2 p-v-xs'}, ctrl.formatDate(project)),
-                    m('div', {class: 'col-md-1 p-v-xs'})
+                    m('div', {class: 'col-sm-1 p-v-xs'}),
+                    m('div', {class: 'col-sm-4 p-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
+                    m('div', {class: 'col-sm-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
+                    m('div', {class: 'col-sm-2 p-v-xs'}, ctrl.formatDate(project)),
+                    m('div', {class: 'col-sm-1 p-v-xs'})
                 ])
             ))
         }
@@ -379,40 +381,40 @@ var quickSearchProject = {
         function resultsFound(){
             return m('div', {class: 'container'}, [
                 m('div', {class: 'row'}, [
-                    m('div', {'class': 'col-xs-1'}),
-                    m('div', {'class': 'col-xs-11'}, m('h3', 'My Projects'))
+                    m('div', {'class': 'col-sm-1'}),
+                    m('div', {'class': 'col-sm-11'}, m('h3', 'My Projects'))
                 ]),
                 m('div', {class: 'row'},
-                    m('div', {class: 'col-xs-3'}),
-                    m('div', {class: 'col-xs-6 text-center'}, [
+                    m('div', {class: 'col-sm-3'}),
+                    m('div', {class: 'col-sm-6 text-center'}, [
                         searchBar(),
                         ctrl.loadingComplete() ? '' : m('.spinner-div', m('i.fa.fa-refresh.fa-spin'), ' Loading projects...')
                     ]),
-                    m('div', {class: 'col-xs-3'})),
+                    m('div', {class: 'col-sm-3'})),
 
-                m('div', {class: 'row'}, m('div', {class: 'col-md-10 col-md-offset-1'},
+                m('div', {class: 'row'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
                 m('div', {class: 'row'}, [
-                    m('div', {class: 'col-md-1 p-v-xs'}),
-                    m('div', {class: 'col-md-4 p-v-xs, f-w-xl'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
-                    m('div', {class: 'col-md-4 f-w-xl p-v-xs'}, 'Contributors'),
-                    m('div', {class: 'col-md-2 f-w-xl p-v-xs'}, 'Date Modified', sortDateAsc(), sortDateDesc()),
-                    m('div', {class: 'col-md-1 p-v-xs'})
+                    m('div', {class: 'col-sm-1 p-v-xs'}),
+                    m('div', {class: 'col-sm-4 p-v-xs, f-w-xl'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
+                    m('div', {class: 'col-sm-4 f-w-xl p-v-xs'}, 'Contributors'),
+                    m('div', {class: 'col-sm-2 f-w-xl p-v-xs'}, 'Date Modified', sortDateAsc(), sortDateDesc()),
+                    m('div', {class: 'col-sm-1 p-v-xs'})
                 ])
                 )),
 
                 displayNodes(),
                 m('div', {class: 'row'}, [
-                    m('div', {class: 'col-xs-5'}),
-                    m('div', {class: 'col-xs-2'}, loadLessButton(), loadMoreButton()),
-                    m('div', {class: 'col-xs-5'})
+                    m('div', {class: 'col-sm-5'}),
+                    m('div', {class: 'col-sm-2'}, loadLessButton(), loadMoreButton()),
+                    m('div', {class: 'col-sm-5'})
                 ])
             ]);
         }
 
         if (ctrl.displayedNodes().length == 0 && ctrl.filter() == null) {
-            return m('div', {class: 'row'},
-                m('div', {class: 'col-xs-1'}),
-                m('div', {class: 'col-xs-11'}, m('h2', 'You have no projects. Go here to create one.'))
+            return m('div', {class: 'row m-v-xl'},
+                m('div', {class: 'col-sm-1'}),
+                m('div', {class: 'col-sm-11'}, m('h2', 'You have no projects. Go here to create one.'))
             )
         }
         else {
