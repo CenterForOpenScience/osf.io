@@ -573,7 +573,7 @@ var Collections  = {
             promise.then(function(result){
                 console.log(result);
                 var node = result.data;
-                var count = node.relationships.linked_nodes.links.related.meta.count
+                var count = node.relationships.linked_nodes.links.related.meta.count;
                 self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 args.sidebarInit();
             });
@@ -671,6 +671,11 @@ var Collections  = {
             if (ctrl.collections().length < end) {
                 end = ctrl.collections().length;
             }
+            var openCollectionMenu = function _openCollectionMenu(e) {
+                var index = $(this).attr('data-index');
+                var selectedItem = ctrl.collections()[index];
+                ctrl.updateCollectionMenu(selectedItem, e);
+            };
             for (var i = begin; i < end; i++) {
                 item = ctrl.collections()[i];
                 index = i;
@@ -685,11 +690,7 @@ var Collections  = {
                 if (!item.data.systemCollection && !item.data.node.attributes.bookmarks) {
                     submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
                         'data-index' : i,
-                        onclick : function (e) {
-                            var index = $(this).attr('data-index');
-                            var selectedItem = ctrl.collections()[index];
-                            ctrl.updateCollectionMenu(selectedItem, e);
-                        }
+                        onclick : openCollectionMenu
                     });
                 } else {
                     submenuTemplate = '';

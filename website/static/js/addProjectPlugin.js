@@ -28,7 +28,7 @@ var AddProject = {
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
-        self.newProjectCategory = m.prop('');
+        self.newProjectCategory = m.prop('project');
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
@@ -45,11 +45,6 @@ var AddProject = {
                         if(a.value < b.value) return -1;
                         if(a.value > b.value) return 1;
                         return 0;
-                    });
-                    self.categoryList.forEach(function(cat){
-                        if(cat.value === 'project'){
-                            self.newProjectCategory(cat.value);
-                        }
                     });
                 }
             }, function _error(results){
@@ -105,7 +100,7 @@ var AddProject = {
             self.newProjectName('');
             self.viewState('form');
             self.newProjectDesc('');
-            self.newProjectCategory(self.categoryList[0].value);
+            self.newProjectCategory('project');
             $('.modal').modal('hide');
         };
     },
