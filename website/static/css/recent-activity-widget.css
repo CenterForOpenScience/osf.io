@@ -1,6 +1,11 @@
+.ui-slider-pip.ui-slider-pip-label {
+  margin-top: -2em;
+}
+
 .ui-slider-pips .ui-slider-label {
   margin-left: -2em;
   width: 5em;
+  margin-top: -2em;
 }
 
 .ui-slider-float .ui-slider-tip {
