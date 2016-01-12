@@ -364,7 +364,7 @@ var quickSearchProject = {
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div', {class : 'input-group m-b-sm'}, [
+                return m('div', {class : 'input-group'}, [
                     m('span', {class: 'input-group-addon'}, m('i', {class: 'fa fa-search'})),
                     m('input[type=search]', {class: 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {ctrl.quickSearch()}})
                 ])
@@ -374,7 +374,7 @@ var quickSearchProject = {
         function displayNodes() {
             if (ctrl.displayedNodes().length == 0 && ctrl.filter() != null) {
                 return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
-                    m('div', {class: 'row node-styling'}, [
+                    m('div', {class: 'row'}, [
                         m('div', {class: 'col-sm-1'}),
                         m('div', {class: 'col-sm-11'},[m('p', {class :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
                     ])
@@ -408,9 +408,9 @@ var quickSearchProject = {
                 ]),
                 m('div', {class: 'row'},
                     m('div', {class: 'col-sm-3'}),
-                    m('div', {class: 'col-sm-6 text-center'}, [
+                    m('div', {class: 'col-sm-6 m-b-md text-center'}, [
                         searchBar(),
-                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('i.fa.fa-refresh.fa-spin'), ' Loading projects...')
+                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('div', {class:'logo-spin logo-sm m-r-lg'}), 'Loading projects...')
                     ]),
                     m('div', {class: 'col-sm-3'})),
 
