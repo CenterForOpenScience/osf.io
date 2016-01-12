@@ -107,8 +107,6 @@ class TestVarnish(DbTestCase):
                 try:
                     python_data[key]['_'.join(embed_values)] = python_resp.json()
                     self.validate_keys(python_resp.json(), original_embed_values)
-                except AssertionError as ex:
-                    print 'Validation failed python_url unauthed: {} - {}\n\n\n'.format(python_url, ex.message)
                 except Exception as ex:
                     python_data[key]['_'.join(embed_values)] = dict(error=ex.message)
                     print 'Failed to get python_url unauthed: {} - {}\n\n\n'.format(python_url, ex.message)
@@ -116,8 +114,6 @@ class TestVarnish(DbTestCase):
                 try:
                     python_authed_data[key]['_'.join(embed_values)] = python_authed_resp.json()
                     self.validate_keys(python_authed_resp.json(), original_embed_values)
-                except AssertionError as ex:
-                    print 'Validation failed python_url authed: {} - {}\n\n\n'.format(python_url, ex.message)
                 except Exception as ex:
                     python_authed_data[key]['_'.join(embed_values)] = dict(error=ex.message)
                     print 'Failed to get python_url authed: {} - {}\n\n\n'.format(python_url, ex.message)
@@ -125,8 +121,6 @@ class TestVarnish(DbTestCase):
                 try:
                     varnish_data[key]['_'.join(embed_values)] = varnish_resp.json()
                     self.validate_keys(varnish_resp.json(), original_embed_values)
-                except AssertionError as ex:
-                    print 'Validation failed varnish_url unauthed: {} - {}\n\n\n'.format(varnish_url, ex.message)
                 except Exception as ex:
                     varnish_data[key]['_'.join(embed_values)] = dict(error=ex.message)
                     print 'Failed to get and validate varnish_url unauthed: {} - {}\n\n\n'.format(varnish_url,
@@ -135,8 +129,6 @@ class TestVarnish(DbTestCase):
                 try:
                     varnish_authed_data[key]['_'.join(embed_values)] = varnish_authed_resp.json()
                     self.validate_keys(varnish_authed_resp.json(), original_embed_values)
-                except AssertionError as ex:
-                    print 'Validation failed varnish_url authed: {} - {}\n\n\n'.format(varnish_url, ex.message)
                 except Exception as ex:
                     varnish_authed_data[key]['_'.join(embed_values)] = dict(error=ex.message)
                     print 'Failed to get and validate varnish_url authed: {} - {}\n\n\n'.format(varnish_url, ex.message)
