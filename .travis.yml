@@ -89,7 +89,7 @@ before_install:
       dpkg -x $VARNISH_DEB /tmp/varnish
     - |
       export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
-      /tmp/varnish/usr/sbin/varnishd -n /tmp -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null &
+      /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null &
 
 install:
     - cd $PROJECT_DIR
