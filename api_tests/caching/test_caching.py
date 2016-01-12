@@ -4,7 +4,6 @@ import copy
 import unittest
 import random
 
-import datetime
 import requests
 from django.conf import settings as django_settings
 
