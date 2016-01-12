@@ -9,6 +9,7 @@ import code
 import platform
 import subprocess
 import logging
+from time import sleep
 
 import invoke
 from invoke import run, Collection
@@ -66,11 +67,15 @@ def server(host=None, port=5000, debug=True, live=False):
 
 
 @task
-def apiserver(port=8000):
+def apiserver(port=8000, wait=True):
     """Run the API server."""
-    env = 'DJANGO_SETTINGS_MODULE="api.base.settings"'
-    cmd = '{} python manage.py runserver {} --nothreading'.format(env, port)
-    run(cmd, echo=True, pty=True)
+    env = {"DJANGO_SETTINGS_MODULE": "api.base.settings"}
+    cmd = 'exec {} manage.py runserver {} --nothreading'.format(sys.executable, port)
+    if wait:
+        return run(cmd, echo=True, pty=True)
+    from subprocess import Popen
+
+    return Popen(cmd, shell=True, env=env) #, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 
 @task
@@ -461,7 +466,12 @@ def test_api():
 @task
 def test_varnish():
     """Run the Varnish test suite."""
+    """Run the OSF test suite."""
+    proc = apiserver(wait=False)
+    sleep(500)
     test_module(module="api_tests/caching/test_caching.py")
+    proc.kill()
+
 
 @task
 def test_addons():
