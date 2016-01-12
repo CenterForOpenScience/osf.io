@@ -38,8 +38,7 @@ var AddProject = {
         // Load Category list from API
         self.categoryList = [];
         self.loadCategories = function () {
-            m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig}).then(function _success(results){
-                console.log(results);
+            var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig}).then(function _success(results){
                 if(results.actions.POST.category){
                     self.categoryList = results.actions.POST.category.choices;
                     self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
@@ -56,6 +55,7 @@ var AddProject = {
             }, function _error(results){
                 console.error('Error loading category names:', results);
             });
+            return promise;
         };
         self.loadCategories();
         // Validation
