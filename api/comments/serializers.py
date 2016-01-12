@@ -1,3 +1,5 @@
+import bleach
+
 from rest_framework import serializers as ser
 from modularodm import Q
 from framework.auth.core import Auth
@@ -106,6 +108,14 @@ class CommentSerializer(JSONAPISerializer):
                 source={'pointer': '/data/relationships/target/links/related/meta/type'},
                 detail='Invalid comment target type.'
             )
+
+    def sanitize_data(self):
+        ret = super(CommentSerializer, self).sanitize_data()
+        content = self.validated_data.get('get_content', None)
+        if content:
+            ret['get_content'] = bleach.clean(content)
+        return ret
+
 
 class CommentCreateSerializer(CommentSerializer):
 

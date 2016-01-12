@@ -815,7 +815,7 @@ class JSONAPISerializer(ser.Serializer):
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
-            self._validated_data = website_utils.rapply(self.validated_data, strip_html)
+            self._validated_data = self.sanitize_data()
 
         self._validated_data.pop('type', None)
         self._validated_data.pop('target_type', None)
@@ -825,6 +825,8 @@ class JSONAPISerializer(ser.Serializer):
 
         return ret
 
+    def sanitize_data(self):
+        return website_utils.rapply(self.validated_data, strip_html)
 
 def DevOnly(field):
     """Make a field only active in ``DEV_MODE``. ::
