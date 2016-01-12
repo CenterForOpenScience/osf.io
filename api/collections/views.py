@@ -1,14 +1,15 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
+from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.utils import get_object_or_error
+from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.collections.serializers import (
     CollectionSerializer,
     CollectionDetailSerializer,
@@ -24,6 +25,7 @@ from api.nodes.permissions import (
 
 from website.exceptions import NodeStateError
 from website.models import Node, Pointer
+from website.util.permissions import ADMIN
 
 
 class CollectionMixin(object):
@@ -50,7 +52,7 @@ class CollectionMixin(object):
         return node
 
 
-class CollectionList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
+class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
     """Organizer Collections organize projects and components. *Writeable*.
 
     Paginated list of Project Organizer Collections ordered by their `date_modified`.
@@ -122,6 +124,7 @@ class CollectionList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin
     serializer_class = CollectionSerializer
     view_category = 'collections'
     view_name = 'collection-list'
+    model_class = Node
 
     ordering = ('-date_modified', )  # default ordering
 
@@ -139,12 +142,33 @@ class CollectionList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin
         query = base_query & permission_query
         return query
 
-    # overrides ListCreateAPIView
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return Node.find(query)
+        # For bulk requests, queryset is formed from request body.
+        if is_bulk_request(self.request):
+            query = Q('_id', 'in', [node['id'] for node in self.request.data])
 
-    # overrides ListCreateAPIView
+            auth = get_user_auth(self.request)
+            nodes = Node.find(query)
+            for node in nodes:
+                if not node.can_edit(auth):
+                    raise PermissionDenied
+            return nodes
+        else:
+            query = self.get_query_from_request()
+            return Node.find(query)
+
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
+    def get_serializer_class(self):
+        """
+        Use CollectionDetailSerializer which requires 'id'
+        """
+        if self.request.method in ('PUT', 'PATCH', 'DELETE'):
+            return CollectionDetailSerializer
+        else:
+            return CollectionSerializer
+
+    # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         """Create a node.
 
@@ -153,6 +177,23 @@ class CollectionList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin
         # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
+
+    # overrides BulkDestroyJSONAPIView
+    def allow_bulk_destroy_resources(self, user, resource_list):
+        """User must have admin permissions to delete nodes."""
+        for node in resource_list:
+            if not node.has_permission(user, ADMIN):
+                return False
+        return True
+
+    # Overrides BulkDestroyJSONAPIView
+    def perform_destroy(self, instance):
+        auth = get_user_auth(self.request)
+        try:
+            instance.remove_node(auth=auth)
+        except NodeStateError as err:
+            raise ValidationError(err.message)
+        instance.save()
 
 
 class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
@@ -317,6 +358,8 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-nodes'
 
+    model_class = Pointer
+
     def get_queryset(self):
         return [
             pointer.node for pointer in
@@ -334,7 +377,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
         return res
 
 
-class NodeLinksList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin):
+class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, CollectionMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -389,6 +432,7 @@ class NodeLinksList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin
     serializer_class = CollectionNodeLinkSerializer
     view_category = 'collections'
     view_name = 'node-pointers'
+    model_class = Pointer
 
     def get_queryset(self):
         return [
@@ -396,6 +440,16 @@ class NodeLinksList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin
             self.get_node().nodes_pointer
             if not pointer.node.is_deleted and not pointer.node.is_folder
         ]
+
+    # Overrides BulkDestroyJSONAPIView
+    def perform_destroy(self, instance):
+        auth = get_user_auth(self.request)
+        node = self.get_node()
+        try:
+            node.rm_pointer(instance, auth=auth)
+        except ValueError as err:  # pointer doesn't belong to node
+            raise ValidationError(err.message)
+        node.save()
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):

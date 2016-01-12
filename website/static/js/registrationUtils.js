@@ -1,3 +1,5 @@
+'use strict';
+
 require('css/registrations.css');
 
 require('bootstrap');
@@ -25,6 +27,18 @@ var DRAFT_REGISTRATION_MIN_EMBARGO_DAYS = 10;
 var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
         DRAFT_REGISTRATION_MIN_EMBARGO_DAYS * 24 * 60 * 60 * 1000
 );
+
+var VALIDATORS = {
+    required: {
+        validator: ko.validation.rules.required.validator,
+        message: 'This question is required and unanswered.',
+        messagePlural: 'Some required questions are unanswered.'
+    }
+};
+var VALIDATOR_LOOKUP = {};
+$.each(VALIDATORS, function(key, value) {
+    VALIDATOR_LOOKUP[value.message] = value;
+});
 
 /**
  * @class Comment
@@ -163,7 +177,7 @@ var Question = function(questionSchema, data) {
     self.description = questionSchema.description || '';
     self.help = questionSchema.help;
     self.options = questionSchema.options || [];
-    self.properties = questionSchema.properties || {};
+    self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
     self.extra = ko.observable(self.data.extra || {});
@@ -195,18 +209,18 @@ var Question = function(questionSchema, data) {
         }
     }
     else if (self.type === 'object') {
-        $.each(self.properties, function(prop, field) {
-            field.qid = field.id || prop;
-            var subData = self.data.value ? self.data.value[prop] : {};
-            self.properties[prop] = new Question(field, subData);
+        $.each(self.properties, function(index, field) {
+            field.qid = field.id;
+            var subData = self.data.value ? self.data.value[field.id] : {};
+            self.properties[index] = new Question(field, subData);
         });
         self.value = ko.computed({
             read: function() {
                 var compositeValue = {};
                 $.each(
-                    $.map(self.properties, function(prop, name) {
+                    $.map(self.properties, function(prop) {
                         var ret = {};
-                        ret[name] = {
+                        ret[prop.id] = {
                             value: prop.value(),
                             comments: prop.comments(),
                             extra: prop.extra
@@ -232,7 +246,9 @@ var Question = function(questionSchema, data) {
 
     if (self.required) {
         self.value.extend({
-            required: true
+            validation: [
+                VALIDATORS.required
+            ]
         });
     } else {
         self.value.extend({
@@ -271,27 +287,38 @@ var Question = function(questionSchema, data) {
         deferEvaluation: true
     });
 };
+
 /**
  * Creates a new comment from the current value of Question.nextComment and clears nextComment
  *
  * @param {function}: save: save function for the current registrationDraft
  **/
-Question.prototype.addComment = function(save) {
+Question.prototype.addComment = function(save, page, event) {
     var self = this;
 
     var comment = new Comment({
         value: self.nextComment()
     });
     comment.seenBy.push($osf.currentUser().id);
-    self.comments.push(comment);
-    self.nextComment('');
-    save();
+
+    var $comments = $(event.target).closest('.registration-editor-comments');
+    $osf.block('Saving...', $comments);
+    return save()
+        .always($osf.unblock.bind(null, $comments))
+        .done(function () {
+            self.comments.push(comment);
+            self.nextComment('');
+        });
 };
 /**
  * Shows/hides the Question example
  **/
 Question.prototype.toggleExample = function() {
     this.showExample(!this.showExample());
+};
+
+Question.prototype.validationInfo = function() {
+    return ko.validation.group(this, {deep: true})();
 };
 
 /**
@@ -333,6 +360,35 @@ var Page = function(schemaPage, schemaData) {
         });
         return comments;
     });
+
+    self.validationInfo = ko.computed(function() {
+        var errors = $.map(self.questions, function(question) {
+            return question.validationInfo();
+        }).filter(function(errors) {
+            return Boolean(errors);
+        });
+
+        var errorSet = ko.utils.arrayGetDistinctValues(errors);
+        var finalErrorSet = [];
+        $.each(errorSet, function(_, error) {
+            if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
+                finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
+            }
+            else {
+                finalErrorSet.push(error);
+            }
+        });
+        return finalErrorSet;
+    }, {deferEvaluation: true});
+
+    self.hasValidationInfo = ko.computed(function() {
+        return $osf.any(
+            self.questions,
+            function(question) {
+                return question.validationInfo().length > 0;
+            }
+        );
+    }, {deferEvaluation: true});
 
     // TODO: track currentQuestion based on browser focus
     self.currentQuestion = self.questions[0];
@@ -525,6 +581,8 @@ var Draft = function(params, metaSchema) {
     });
 };
 Draft.prototype.getUnseenComments = function() {
+    var self = this;
+
     var unseen = [];
     $.each(self.pages(), function(_, page) {
         unseen = unseen.concat(page.getUnseenComments());
@@ -576,6 +634,7 @@ Draft.prototype.beforeRegister = function(url) {
 
     var request = $.getJSON(self.urls.before_register);
     request.done(function(response) {
+        $osf.unblock();
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(
                 response,
@@ -592,7 +651,7 @@ Draft.prototype.beforeRegister = function(url) {
                 self.register.bind(self, url)
             );
         }
-    }).always($osf.unblock);
+    }).fail($osf.unblock);
     return request;
 };
 Draft.prototype.registerWithoutReview = function() {
@@ -709,9 +768,16 @@ var RegistrationEditor = function(urls, editorId, preview) {
         History.replaceState({page: self.pages().indexOf(currentPage)});
     });
 
-    self.onLastPage = ko.pureComputed(function() {
-        return self.currentPage() === self.pages()[self.pages().length - 1];
-    });
+    self.onLastPage = ko.computed(function() {
+        if(!self.currentPage()) {
+            return false;
+        }
+        var onLastPage = self.currentPage().id === self.pages()[self.pages().length - 1].id;
+        if (onLastPage) {
+            self.showValidation(true);
+        }
+        return onLastPage;
+    }, {deferEvaluation: true});
 
     // An incrementing dirty flag. The 0 state represents not-dirty.
     // States greater than 0 imply dirty, and incrementing the number
@@ -725,28 +791,25 @@ var RegistrationEditor = function(urls, editorId, preview) {
     });
     self.currentPage.subscribe(function(page) {
         // lazily apply subscriptions to question values
+        // TODO: dispose subscriptions to last page? Probably unncessary.
         $.each(page.questions, function(_, question) {
             question.value.subscribe(function() {
                 self.dirtyCount(self.dirtyCount() + 1);
             });
         });
+        page.comments.subscribe(function() {
+            self.dirtyCount(self.dirtyCount() + 1);
+        });
         page.viewComments();
     });
 
-    self.validationErrors = ko.computed(function() {
-        if (self.onLastPage()) {
-            var errors = [];
-            var questions = self.flatQuestions() || [];
-            if (questions.length && questions.filter(function(question) {
-                return question.required && !question.isComplete();
-            }).length) {
-                return 'Some required questions are unanswered.';
+    self.hasValidationInfo = ko.computed(function() {
+        return $osf.any(
+            self.pages(),
+            function(page) {
+                return page.validationInfo().length > 0;
             }
-            else {
-                return '';
-            }
-        }
-        return '';
+        );
     });
 
     self.canSubmit = ko.computed(function() {
@@ -763,6 +826,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
     });
 
     self.iterObject = $osf.iterObject;
+
     // TODO: better extensions system?
     self.extensions = {
         'osf-upload': editorExtensions.Uploader,
@@ -811,10 +875,9 @@ RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
     self.draft(draft);
-    var metaSchema = draft.metaSchema;
+    var metaSchema = draft ? draft.metaSchema: null;
 
     self.saveManager = null;
-    var schemaData = {};
     if (draft) {
         self.saveManager = new SaveManager(
             self.urls.update.replace('{draft_pk}', draft.pk),
@@ -822,7 +885,6 @@ RegistrationEditor.prototype.init = function(draft) {
                 dirty: self.dirtyCount
             }
         );
-        schemaData = draft.schemaData || {};
     }
 
     self.lastSaveTime = ko.computed(function() {
@@ -857,7 +919,6 @@ RegistrationEditor.prototype.init = function(draft) {
             }.bind(self, self.dirtyCount()));
         }
     });
-
 
     self.currentQuestion(self.flatQuestions().shift());
 };
@@ -901,38 +962,6 @@ RegistrationEditor.prototype.toPreview = function () {
         self.dirtyCount(0);
         window.location.assign(self.draft().urls.register_page);
     }).always($osf.unblock);
-};
-/**
- * Check that the Draft is valid before registering
- */
-RegistrationEditor.prototype.check = function() {
-    var self = this;
-
-    var valid = true;
-    ko.utils.arrayMap(self.draft().pages(), function(page) {
-        ko.utils.arrayMap(page.questions, function(question) {
-            if (question.required && !question.value.isValid()) {
-                valid = false;
-                // Validation for a question failed
-                bootbox.dialog({
-                    title: 'Registration Not Complete',
-                    message: 'There are errors in your registration. Please double check it and submit again.',
-                    buttons: {
-                        success: {
-                            label: 'Return',
-                            className: 'btn-primary',
-                            callback: function() {
-                                self.showValidation(true);
-                            }
-                        }
-                    }
-                });
-            }
-        });
-    });
-    if (valid) {
-        self.toPreview();
-    }
 };
 
 RegistrationEditor.prototype.viewComments = function() {
@@ -1202,12 +1231,14 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
         return self.drafts().length > 0;
     });
 
-    self.loading = ko.observable(true);
-    self.loading.subscribe(function(loading) {
+    self.loadingSchemas = ko.observable(true);
+    self.loadingSchemas.subscribe(function(loading) {
         if (!loading) {
             createButton.removeClass('disabled');
+            createButton.text('New registration');
         }
     });
+    self.loadingDrafts = ko.observable(true);
 
     self.preview = ko.observable(false);
 
@@ -1232,35 +1263,51 @@ RegistrationManager.prototype.init = function() {
                 return new MetaSchema(schema);
             })
         );
+        self.loadingSchemas(false);
     });
-
-    var getDraftRegistrations = self.getDraftRegistrations();
-    getDraftRegistrations.done(function(response) {
-        var drafts = $.map(response.drafts, function(draft) {
-            return new Draft(draft);
+    getSchemas.fail(function(xhr, status, error) {
+        Raven.captureMessage('Could not load registration templates', {
+            url: self.urls.schemas,
+            textStatus: status,
+            error: error
         });
-        drafts.sort(function(a, b) {
-            return a.initiated.getTime() < b.initiated.getTime();
-        });
-        self.drafts(drafts);
+        $osf.growl('Error loading registration templates', language.loadMetaSchemaFail);
     });
 
-    var ready = $.when(getSchemas, getDraftRegistrations).done(function() {
-        self.loading(false);
-    });
-
-    var urlParams = $osf.urlParams();
-    if (urlParams.campaign && urlParams.campaign === 'prereg') {
-        $osf.block();
-        ready.done(function() {
-            var preregSchema = self.schemas().filter(function(schema) {
-                return schema.name === 'Prereg Challenge';
-            })[0];
-            preregSchema.askConsent(true).then(function() {
-                self.selectedSchema(preregSchema);
-                $('#newDraftRegistrationForm').submit();
+    if ($osf.currentUser().isAdmin) {
+        var getDraftRegistrations = self.getDraftRegistrations();
+        getDraftRegistrations.done(function(response) {
+            var drafts = $.map(response.drafts, function(draft) {
+                return new Draft(draft);
             });
-        }).always($osf.unblock);
+            drafts.sort(function(a, b) {
+                return a.initiated.getTime() < b.initiated.getTime();
+            });
+            self.drafts(drafts);
+            self.loadingDrafts(false);
+        });
+        getDraftRegistrations.fail(function(xhr, status, error) {
+            Raven.captureMessage('Could not load draft registrations', {
+                url: self.urls.list,
+                textStatus: status,
+                error: error
+            });
+            $osf.growl('Error loading draft registrations', language.loadDraftsFail);
+        });
+
+        var urlParams = $osf.urlParams();
+        if (urlParams.campaign && urlParams.campaign === 'prereg') {
+            $osf.block();
+            getSchemas.done(function() {
+                var preregSchema = self.schemas().filter(function(schema) {
+                    return schema.name === 'Prereg Challenge';
+                })[0];
+                preregSchema.askConsent(true).then(function() {
+                    self.selectedSchema(preregSchema);
+                    $('#newDraftRegistrationForm').submit();
+                });
+            }).always($osf.unblock);
+        }
     }
 };
 /**
@@ -1353,6 +1400,7 @@ RegistrationManager.prototype.previewDraft = function(draft) {
 module.exports = {
     Comment: Comment,
     Question: Question,
+    Page: Page,
     MetaSchema: MetaSchema,
     Draft: Draft,
     RegistrationEditor: RegistrationEditor,

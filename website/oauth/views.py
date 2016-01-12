@@ -16,10 +16,10 @@ def oauth_disconnect(external_account_id, auth):
     user = auth.user
 
     if account is None:
-        HTTPError(http.NOT_FOUND)
+        raise HTTPError(http.NOT_FOUND)
 
     if account not in user.external_accounts:
-        HTTPError(http.FORBIDDEN)
+        raise HTTPError(http.FORBIDDEN)
 
     # iterate AddonUserSettings for addons
     for user_settings in user.get_oauth_addons():

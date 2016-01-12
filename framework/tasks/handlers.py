@@ -3,8 +3,9 @@
 import logging
 import functools
 
-from flask import g
 from celery import group
+
+from framework.tasks import queue
 
 from website import settings
 
@@ -13,19 +14,20 @@ logger = logging.getLogger(__name__)
 
 
 def celery_before_request():
-    g._celery_tasks = []
+    global queue
+    queue = []  # noqa
 
 
 def celery_teardown_request(error=None):
+    global queue
     if error is not None:
         return
     try:
-        tasks = g._celery_tasks
-        if tasks:
+        if queue:
             if settings.USE_CELERY:
-                group(tasks).apply_async()
+                group(queue).apply_async()
             else:
-                for task in tasks:
+                for task in queue:
                     task.apply()
     except AttributeError:
         if not settings.DEBUG_MODE:
@@ -33,13 +35,14 @@ def celery_teardown_request(error=None):
 
 
 def enqueue_task(signature):
+    global queue
     """If working in a request context, push task signature to ``g`` to run
     after request is complete; else run signature immediately.
     :param signature: Celery task signature
     """
     try:
-        if signature not in g._celery_tasks:
-            g._celery_tasks.append(signature)
+        if signature not in queue:
+            queue.append(signature)
     except RuntimeError:
         signature()
 

@@ -1,64 +1,88 @@
 import functools
-
-from django.contrib.auth.decorators import login_required  # , user_passes_test
-from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render
-from django.http import JsonResponse
-
-import json
 import httplib as http
+import json
+import operator
+from copy import deepcopy
 
-from modularodm import Q
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.paginator import Paginator, EmptyPage
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseBadRequest
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
 
-import serializers
-# from admin.common_auth.models import MyUser
-
-from framework.mongo.utils import get_or_http_error
+from admin.pre_reg import serializers
+from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import HTTPError
-from website.project.model import MetaSchema, DraftRegistration
+from framework.mongo.utils import get_or_http_error
+from modularodm import Q
 from website.exceptions import NodeStateError
+from website.files.models import FileNode
+from website.project.model import MetaSchema, DraftRegistration
 
 get_draft_or_error = functools.partial(get_or_http_error, DraftRegistration)
 
+def get_prereg_drafts(user=None, filters=tuple()):
+    prereg_schema = MetaSchema.find_one(
+        Q('name', 'eq', 'Prereg Challenge') &
+        Q('schema_version', 'eq', 2)
+    )
+    query = (
+        Q('registration_schema', 'eq', prereg_schema) &
+        Q('approval', 'ne', None)
+    )
+    if user:
+        pass
+        # TODO: filter by assignee; this requires multiple levels of Prereg admins-
+        # one level that can see all drafts, and another than can see only the ones they're assigned.
+        # As a followup to this, we need to make sure this applies to approval/rejection/commenting endpoints
+        # query = query & Q('_metaschema_flags.assignee', 'eq', user._id)
+    return sorted(
+        DraftRegistration.find(query),
+        key=operator.attrgetter('approval.initiation_date')
+    )
 
 def is_in_prereg_group(user):
     """Determines whether a user is in the prereg_group
     :param user: User wanting access to prereg material
     :return: True if prereg False if not
     """
-    return user.groups.filter(name='prereg_group').exists()
-
+    return user.is_in_group('prereg_group')
 
 @login_required
-# @user_passes_test(is_in_prereg_group)
+@user_passes_test(is_in_prereg_group)
 def prereg(request):
     """Redirects to prereg page if user has prereg access
     :param request: Current logged in user
     :return: Redirect to prereg page with username, reviewers, and user obj
     """
-    #prereg_admin = request.user.has_perm('auth.prereg_admin')
-    #user = {
-    #     'username': str(request.user.username),
-    #     'admin': json.dumps(prereg_admin)
-    # }
-    user = {
-        'username': 'user_placeholder',
-        'admin': 'admin_placeholder'
-    }
-    # reviewers = MyUser.objects.prereg_users()
-    reviewers = ['admin_placeholder']
+    paginator = Paginator(get_prereg_drafts(user=request.user), 5)
 
-    #context = {'user_info': user, 'reviewers': reviewers, 'user': request.user}
+    try:
+        page_number = int(request.GET.get('page'))
+    except (TypeError, ValueError):
+        page_number = 1
+
+    page = paginator.page(page_number)
+
+    try:
+        drafts = [serializers.serialize_draft_registration(d, json_safe=False) for d in page]
+    except EmptyPage:
+        drafts = []
+
+    for draft in drafts:
+        draft['form'] = DraftRegistrationForm(draft)
+
     context = {
-        'user_info': user,
-        'reviewers': reviewers
+        'drafts': drafts,
+        'page': page
     }
     return render(request, 'pre_reg/prereg.html', context)
 
-
 @login_required
-# @user_passes_test(is_in_prereg_group)
-def prereg_form(request, draft_pk):
+@user_passes_test(is_in_prereg_group)
+def view_draft(request, draft_pk):
     """Redirects to prereg form review page if user has prereg access
     :param draft_pk: Unique id for selected draft
     :return: Redirect to prereg form review page with draft obj
@@ -69,33 +93,16 @@ def prereg_form(request, draft_pk):
     }
     return render(request, 'pre_reg/edit_draft_registration.html', context)
 
-
 @login_required
-# @user_passes_test(is_in_prereg_group)
-def get_drafts(request):
-    """Determines whether a user is in the general_administrator_group
-    :param user: User wanting access to administrator material
-    :return: True if general administrator False if not
-    """
-    prereg_schema = MetaSchema.find_one(
-        Q('name', 'eq', 'Prereg Challenge') &
-        Q('schema_version', 'eq', 2)
-    )
-    all_drafts = DraftRegistration.find(
-        Q('registration_schema', 'eq', prereg_schema) &
-        Q('approval', 'ne', None)
-    )
-    serialized_drafts = {
-        'drafts': [serializers.serialize_draft_registration(d) for d in all_drafts]
-    }
-    return JsonResponse(
-        serialized_drafts
-    )
-
+@user_passes_test(is_in_prereg_group)
+def view_file(request, node_id, provider, file_id):
+    file = FileNode.load(file_id)
+    wb_url = file.generate_waterbutler_url()
+    return redirect(wb_url)
 
 @csrf_exempt
 @login_required
-# @user_passes_test(is_in_prereg_group)
+@user_passes_test(is_in_prereg_group)
 def approve_draft(request, draft_pk):
     """Approves current draft
     :param user: Current logged in user
@@ -106,12 +113,11 @@ def approve_draft(request, draft_pk):
 
     user = request.user.osf_user
     draft.approve(user)
-    return JsonResponse({})
-
+    return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 @csrf_exempt
 @login_required
-# @user_passes_test(is_in_prereg_group)
+@user_passes_test(is_in_prereg_group)
 def reject_draft(request, draft_pk):
     """Rejects current draft
     :param user: Current logged in user
@@ -122,12 +128,10 @@ def reject_draft(request, draft_pk):
 
     user = request.user.osf_user
     draft.reject(user)
-    return JsonResponse({})
-
+    return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 @csrf_exempt
 @login_required
-# @user_passes_test(is_in_prereg_group)
 def update_draft(request, draft_pk):
     """Updates current draft to save admin comments
 
@@ -137,10 +141,23 @@ def update_draft(request, draft_pk):
     data = json.loads(request.body)
     draft = get_draft_or_error(draft_pk)
 
-    schema_data = data.get('schema_data', {})
-    try:
-        draft.update_metadata(schema_data)
+    if 'admin_settings' in data:
+        form = DraftRegistrationForm(data=data['admin_settings'])
+        if not form.is_valid():
+            return HttpResponseBadRequest("Invalid form data")
+        admin_settings = form.cleaned_data
+        draft.notes = admin_settings.get('notes', draft.notes)
+        del admin_settings['notes']
+        draft.flags = admin_settings
         draft.save()
-    except (NodeStateError):
-        raise HTTPError(http.BAD_REQUEST)
+    else:
+        schema_data = data.get('schema_data', {})
+        data = deepcopy(draft.registration_metadata)
+        for key, value in data.items():
+            data[key]['comments'] = schema_data.get(key, {}).get('comments', [])
+        try:
+            draft.update_metadata(data)
+            draft.save()
+        except (NodeStateError):
+            raise HTTPError(http.BAD_REQUEST)
     return JsonResponse(serializers.serialize_draft_registration(draft))

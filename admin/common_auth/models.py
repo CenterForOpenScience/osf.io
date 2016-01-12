@@ -53,8 +53,7 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
 
     def get_full_name(self):
-        # The user is identified by their email address
-        return self.email
+        return ("{0} {1}".format(self.first_name, self.last_name)).strip() or self.email
 
     def get_short_name(self):
         # The user is identified by their email address
@@ -77,3 +76,9 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         if not self.osf_id:
             raise RuntimeError('This user does not have an associated Osf User')
         return OsfUserModel.load(self.osf_id)
+
+    def is_in_group(self, group):
+        return self.groups.filter(name=group).exists()
+
+    def group_names(self):
+        return self.groups.all().values_list('name', flat=True)

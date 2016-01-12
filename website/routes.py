@@ -214,13 +214,6 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/meetings/submissions/',
-            'get',
-            conference_views.conference_submissions,
-            json_renderer,
-        ),
-
-        Rule(
             '/presentations/',
             'get',
             conference_views.redirect_to_meetings,
@@ -318,16 +311,6 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/comments/',
-                '/project/<pid>/node/<nid>/comments/',
-            ],
-            'get',
-            project_views.comment.list_comments,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/comments/discussion/',
                 '/project/<pid>/node/<nid>/comments/discussion/',
             ],
@@ -338,71 +321,11 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/comment/',
-                '/project/<pid>/node/<nid>/comment/',
-            ],
-            'post',
-            project_views.comment.add_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/',
-                '/project/<pid>/node/<nid>/comment/<cid>/',
-            ],
-            'put',
-            project_views.comment.edit_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/',
-                '/project/<pid>/node/<nid>/comment/<cid>/',
-            ],
-            'delete',
-            project_views.comment.delete_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/undelete/',
-                '/project/<pid>/node/<nid>/comment/<cid>/undelete/',
-            ],
-            'put',
-            project_views.comment.undelete_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/comments/timestamps/',
                 '/project/<pid>/node/<nid>/comments/timestamps/',
             ],
             'put',
             project_views.comment.update_comments_timestamp,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/report/',
-                '/project/<pid>/node/<nid>/comment/<cid>/report/',
-            ],
-            'post',
-            project_views.comment.report_abuse,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/unreport/',
-                '/project/<pid>/node/<nid>/comment/<cid>/unreport/',
-            ],
-            'post',
-            project_views.comment.unreport_abuse,
             json_renderer,
         ),
 
@@ -1566,7 +1489,7 @@ def make_url_map(app):
             'post',
             project_views.contributor.invite_contributor_post,
             json_renderer
-        ),
+        )
     ], prefix='/api/v1')
 
     # Set up static routing for addons

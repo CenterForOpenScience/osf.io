@@ -16,7 +16,6 @@ from tests.test_features import requires_search
 
 from modularodm import Q
 from modularodm.exceptions import ValidationError
-from dateutil.parser import parse as parse_date
 
 from framework import auth
 from framework.exceptions import HTTPError
@@ -43,7 +42,6 @@ from website.util import api_url_for, web_url_for
 from website import mails, settings
 from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
-from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
@@ -159,6 +157,39 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.request.GET['key'], self.link.key)
+
+    def test_cannot_access_registrations_or_forks_with_anon_key(self):
+        anonymous_link = PrivateLinkFactory(anonymous=True)
+        anonymous_link.nodes.append(self.project)
+        anonymous_link.save()
+        self.project.is_public = False
+        self.project.save()
+        url = self.project_url + 'registrations/?view_only={}'.format(anonymous_link.key)
+        res = self.app.get(url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
+        url = self.project_url + 'forks/?view_only={}'.format(anonymous_link.key)
+
+        res = self.app.get(url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
+    def test_can_access_registrations_and_forks_with_not_anon_key(self):
+        link = PrivateLinkFactory(anonymous=False)
+        link.nodes.append(self.project)
+        link.save()
+        self.project.is_public = False
+        self.project.save()
+        url = self.project_url + 'registrations/?view_only={}'.format(self.link.key)
+        res = self.app.get(url)
+
+        assert_equal(res.status_code, 200)
+
+        url = self.project_url + 'forks/?view_only={}'.format(self.link.key)
+        res = self.app.get(url)
+
+        assert_equal(res.status_code, 200)
 
     def test_check_can_access_valid(self):
         contributor = AuthUserFactory()
@@ -319,12 +350,12 @@ class TestProjectViews(OsfTestCase):
 
     def test_new_user_gets_dashboard_on_dashboard_path(self):
         my_user = AuthUserFactory()
-        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        dashboard = Node.find_for_user(my_user, subquery=Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 0)
         url = api_url_for('get_dashboard')
         self.app.get(url, auth=my_user.auth)
         my_user.reload()
-        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        dashboard = Node.find_for_user(my_user, subquery=Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 1)
 
     def test_add_contributor_post(self):
@@ -1108,8 +1139,8 @@ class TestGetNodeTree(OsfTestCase):
         child = NodeFactory(parent=project, creator=self.user2)
         url = project.api_url_for('get_node_tree')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
-        assert_equal(res.json['message_long'], 'User does not have read permission.')
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, [])
 
     # Parent node should show because of user2 read access, the children should not
     def test_get_node_parent_not_admin(self):
@@ -1163,6 +1194,20 @@ class TestUserProfile(OsfTestCase):
         for key, value in payload.iteritems():
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
+
+    # Regression test for help-desk ticket
+    def test_making_email_primary_is_not_case_sensitive(self):
+        user = AuthUserFactory(username='fred@queen.test')
+        # make confirmed email have different casing
+        user.emails[0] = user.emails[0].capitalize()
+        user.save()
+        url = api_url_for('update_user')
+        res = self.app.put_json(
+            url,
+            {'id': user._id, 'emails': [{'address': 'fred@queen.test', 'primary': True, 'confirmed': True}]},
+            auth=user.auth
+        )
+        assert_equal(res.status_code, 200)
 
     def test_unserialize_social_validation_failure(self):
         url = api_url_for('unserialize_social')
@@ -1722,6 +1767,7 @@ class TestAddingContributorViews(OsfTestCase):
         super(TestAddingContributorViews, self).setUp()
         self.creator = AuthUserFactory()
         self.project = ProjectFactory(creator=self.creator)
+        self.auth = Auth(self.project.creator)
         # Authenticate all requests
         self.app.authenticate(*self.creator.auth)
         contributor_added.connect(notify_added_contributor)
@@ -1974,14 +2020,15 @@ class TestAddingContributorViews(OsfTestCase):
             'permissions': ['read', 'write']
         }]
         project = ProjectFactory()
-        project.add_contributors(contributors, auth=Auth(self.project.creator))
+        project.add_contributors(contributors, auth=self.auth)
         project.save()
         assert_true(send_mail.called)
         send_mail.assert_called_with(
             contributor.username,
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
-            node=project)
+            node=project,
+            referrer_name=self.auth.user.fullname)
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
     @mock.patch('website.mails.send_mail')
@@ -2020,11 +2067,12 @@ class TestAddingContributorViews(OsfTestCase):
     def test_notify_contributor_email_does_not_send_before_throttle_expires(self, send_mail):
         contributor = UserFactory()
         project = ProjectFactory()
-        notify_added_contributor(project, contributor)
+        auth = Auth(project.creator)
+        notify_added_contributor(project, contributor, auth)
         assert_true(send_mail.called)
 
         # 2nd call does not send email because throttle period has not expired
-        notify_added_contributor(project, contributor)
+        notify_added_contributor(project, contributor, auth)
         assert_equal(send_mail.call_count, 1)
 
     @mock.patch('website.mails.send_mail')
@@ -2033,11 +2081,12 @@ class TestAddingContributorViews(OsfTestCase):
 
         contributor = UserFactory()
         project = ProjectFactory()
-        notify_added_contributor(project, contributor, throttle=throttle)
+        auth = Auth(project.creator)
+        notify_added_contributor(project, contributor, auth, throttle=throttle)
         assert_true(send_mail.called)
 
         time.sleep(1)  # throttle period expires
-        notify_added_contributor(project, contributor, throttle=throttle)
+        notify_added_contributor(project, contributor, auth, throttle=throttle)
         assert_equal(send_mail.call_count, 2)
 
     def test_add_multiple_contributors_only_adds_one_log(self):
@@ -3509,323 +3558,6 @@ class TestComments(OsfTestCase):
         project.comment_level = comment_level
         project.save()
 
-    def _add_comment(self, project, content=None, **kwargs):
-
-        content = content if content is not None else 'hammer to fall'
-        url = project.api_url + 'comment/'
-        return self.app.post_json(
-            url,
-            {
-                'content': content,
-                'isPublic': 'public',
-            },
-            **kwargs
-        )
-
-    def test_add_comment_public_contributor(self):
-
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(
-            self.project, auth=self.project.creator.auth,
-        )
-
-        self.project.reload()
-
-        res_comment = res.json['comment']
-        date_created = parse_date(str(res_comment.pop('dateCreated')))
-        date_modified = parse_date(str(res_comment.pop('dateModified')))
-
-        serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
-        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
-        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
-
-        assert_datetime_equal(date_created, date_created2)
-        assert_datetime_equal(date_modified, date_modified2)
-
-        assert_equal(len(self.project.commented), 1)
-        assert_equal(res_comment, serialized_comment)
-
-    def test_add_comment_public_non_contributor(self):
-
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(
-            self.project, auth=self.non_contributor.auth,
-        )
-
-        self.project.reload()
-
-        res_comment = res.json['comment']
-        date_created = parse_date(res_comment.pop('dateCreated'))
-        date_modified = parse_date(res_comment.pop('dateModified'))
-
-        serialized_comment = serialize_comment(self.project.commented[0], Auth(user=self.non_contributor))
-        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
-        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
-
-        assert_datetime_equal(date_created, date_created2)
-        assert_datetime_equal(date_modified, date_modified2)
-
-        assert_equal(len(self.project.commented), 1)
-        assert_equal(res_comment, serialized_comment)
-
-    def test_add_comment_private_contributor(self):
-
-        self._configure_project(self.project, 'private')
-        res = self._add_comment(
-            self.project, auth=self.project.creator.auth,
-        )
-
-        self.project.reload()
-
-        res_comment = res.json['comment']
-        date_created = parse_date(str(res_comment.pop('dateCreated')))
-        date_modified = parse_date(str(res_comment.pop('dateModified')))
-
-        serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
-        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
-        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
-
-        assert_datetime_equal(date_created, date_created2)
-        assert_datetime_equal(date_modified, date_modified2)
-
-        assert_equal(len(self.project.commented), 1)
-        assert_equal(res_comment, serialized_comment)
-
-    def test_add_comment_private_non_contributor(self):
-
-        self._configure_project(self.project, 'private')
-        res = self._add_comment(
-            self.project, auth=self.non_contributor.auth, expect_errors=True,
-        )
-
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_add_comment_logged_out(self):
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(self.project)
-
-        assert_equal(res.status_code, 302)
-        assert_in('login', res.headers.get('location'))
-
-    def test_add_comment_off(self):
-
-        self._configure_project(self.project, None)
-        res = self._add_comment(
-            self.project, auth=self.project.creator.auth, expect_errors=True,
-        )
-
-        assert_equal(res.status_code, http.BAD_REQUEST)
-
-    def test_add_comment_empty(self):
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(
-            self.project, content='',
-            auth=self.project.creator.auth,
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_false(getattr(self.project, 'commented', []))
-
-    def test_add_comment_toolong(self):
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(
-            self.project, content='toolong' * 500,
-            auth=self.project.creator.auth,
-            expect_errors=True,
-        )
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_false(getattr(self.project, 'commented', []))
-
-    def test_add_comment_whitespace(self):
-        self._configure_project(self.project, 'public')
-        res = self._add_comment(
-            self.project, content='  ',
-            auth=self.project.creator.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_false(getattr(self.project, 'commented', []))
-
-    def test_edit_comment(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
-
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.put_json(
-            url,
-            {
-                'content': 'edited',
-                'isPublic': 'private',
-            },
-            auth=self.project.creator.auth,
-        )
-
-        comment.reload()
-
-        assert_equal(res.json['content'], 'edited')
-
-        assert_equal(comment.content, 'edited')
-
-    def test_edit_comment_short(self):
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, content='short')
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.put_json(
-            url,
-            {
-                'content': '',
-                'isPublic': 'private',
-            },
-            auth=self.project.creator.auth,
-            expect_errors=True,
-        )
-        comment.reload()
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_equal(comment.content, 'short')
-
-    def test_edit_comment_toolong(self):
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project, content='short')
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.put_json(
-            url,
-            {
-                'content': 'toolong' * 500,
-                'isPublic': 'private',
-            },
-            auth=self.project.creator.auth,
-            expect_errors=True,
-        )
-        comment.reload()
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_equal(comment.content, 'short')
-
-    def test_edit_comment_non_author(self):
-        "Contributors who are not the comment author cannot edit."
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
-        non_author = AuthUserFactory()
-        self.project.add_contributor(non_author, auth=self.consolidated_auth)
-
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.put_json(
-            url,
-            {
-                'content': 'edited',
-                'isPublic': 'private',
-            },
-            auth=non_author.auth,
-            expect_errors=True,
-        )
-
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_edit_comment_non_contributor(self):
-        "Non-contributors who are not the comment author cannot edit."
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
-
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.put_json(
-            url,
-            {
-                'content': 'edited',
-                'isPublic': 'private',
-            },
-            auth=self.non_contributor.auth,
-            expect_errors=True,
-        )
-
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_delete_comment_author(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
-
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        self.app.delete_json(
-            url,
-            auth=self.project.creator.auth,
-        )
-
-        comment.reload()
-
-        assert_true(comment.is_deleted)
-
-    def test_delete_comment_non_author(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
-
-        url = self.project.api_url + 'comment/{0}/'.format(comment._id)
-        res = self.app.delete_json(
-            url,
-            auth=self.non_contributor.auth,
-            expect_errors=True,
-        )
-
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-        comment.reload()
-
-        assert_false(comment.is_deleted)
-
-    def test_report_abuse(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
-        reporter = AuthUserFactory()
-
-        url = self.project.api_url + 'comment/{0}/report/'.format(comment._id)
-
-        self.app.post_json(
-            url,
-            {
-                'category': 'spam',
-                'text': 'ads',
-            },
-            auth=reporter.auth,
-        )
-
-        comment.reload()
-        assert_in(reporter._id, comment.reports)
-        assert_equal(
-            comment.reports[reporter._id],
-            {'category': 'spam', 'text': 'ads'}
-        )
-
-    def test_can_view_private_comments_if_contributor(self):
-
-        self._configure_project(self.project, 'public')
-        CommentFactory(node=self.project, user=self.project.creator, is_public=False)
-
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url, auth=self.project.creator.auth)
-
-        assert_equal(len(res.json['comments']), 1)
-
-    def test_view_comments_with_anonymous_link(self):
-        self.project.save()
-        self.project.set_privacy('private')
-        self.project.reload()
-        user = AuthUserFactory()
-        link = PrivateLinkFactory(anonymous=True)
-        link.nodes.append(self.project)
-        link.save()
-
-        CommentFactory(node=self.project, user=self.project.creator, is_public=False)
-
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url, {"view_only": link.key}, auth=user.auth)
-        comment = res.json['comments'][0]
-        author = comment['author']
-        assert_in('A user', author['name'])
-        assert_false(author['gravatarUrl'])
-        assert_false(author['url'])
-        assert_false(author['id'])
-
     def test_discussion_recursive(self):
 
         self._configure_project(self.project, 'public')
@@ -3892,45 +3624,6 @@ class TestComments(OsfTestCase):
 
         self.non_contributor.reload()
         assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
-
-    def test_n_unread_comments_updates_when_comment_is_added(self):
-        self._add_comment(self.project, auth=self.project.creator.auth)
-        self.project.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=self.user.auth)
-        self.user.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 0)
-
-    def test_n_unread_comments_updates_when_comment_reply(self):
-        comment = CommentFactory(node=self.project, user=self.project.creator)
-        reply = CommentFactory(node=self.project, user=self.user, target=comment)
-        self.project.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.project.creator.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-
-    def test_n_unread_comments_updates_when_comment_is_edited(self):
-        self.test_edit_comment()
-        self.project.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-    def test_n_unread_comments_is_zero_when_no_comments(self):
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.project.creator.auth)
-        assert_equal(res.json.get('nUnread'), 0)
 
 
 class TestTagViews(OsfTestCase):

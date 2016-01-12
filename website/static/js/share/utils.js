@@ -498,7 +498,6 @@ utils.generateColors = function (numColors) {
         color = colorsToGenerate.shift();
         if (typeof color === 'undefined') {
             colorsToGenerate = utils.getNewColors(colorsUsed);
-            colorsUsed = [];
         } else {
             colorsUsed.push(color);
             colorsOut.push(rgbToHex(color));

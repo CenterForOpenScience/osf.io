@@ -218,23 +218,31 @@ var handleEditableError = function(response) {
     return 'Error: ' + response.responseJSON.message_long;
 };
 
-var block = function(message) {
-    $.blockUI({
-        css: {
-            border: 'none',
-            padding: '15px',
-            backgroundColor: '#000',
-            '-webkit-border-radius': '10px',
-            '-moz-border-radius': '10px',
-            opacity: 0.5,
-            color: '#fff'
-        },
-        message: message || 'Please wait'
-    });
+var block = function(message, $element) {
+    ($element ? $element.block : $.blockUI).call(
+        $element || window,
+        {
+            css: {
+                border: 'none',
+                padding: '15px',
+                backgroundColor: '#000',
+                '-webkit-border-radius': '10px',
+                '-moz-border-radius': '10px',
+                opacity: 0.5,
+                color: '#fff'
+            },
+            message: message || 'Please wait'
+        }
+    );
 };
 
-var unblock = function() {
-    $.unblockUI();
+var unblock = function(element) {
+    if (element) {
+        $(element).unblock();
+    }
+    else {
+        $.unblockUI();
+    }
 };
 
 var joinPrompts = function(prompts, base) {
@@ -733,10 +741,15 @@ function indexOf(array, searchFn) {
  * @param {Array[Any]} listOfBools
  * @returns {Boolean}
  **/
-var any = function(listOfBools) {
+var any = function(listOfBools, check) {
     var someTruthy = false;
     for(var i = 0; i < listOfBools.length; i++){
-        someTruthy = someTruthy || Boolean(listOfBools[i]);
+        if (check) {
+            someTruthy = someTruthy || Boolean(check(listOfBools[i]));
+        }
+        else {
+            someTruthy = someTruthy || Boolean(listOfBools[i]);
+        }
         if (someTruthy) {
             return someTruthy;
         }
@@ -744,6 +757,19 @@ var any = function(listOfBools) {
     return false;
 };
 
+/** 
+ * A helper for creating a style-guide conformant bootbox modal. Returns a promise.
+ * @param {String} title: 
+ * @param {String} message:
+ * @param {String} actionButtonLabel:
+ * @param {Object} options: optional options
+ * @param {String} options.actionButtonClass: CSS class for action button, default 'btn-success'
+ * @param {String} options.cancelButtonLabel: label for cancel button, default 'Cancel'
+ * @param {String} options.cancelButtonClass: CSS class for cancel button, default 'btn-default'
+ *
+ * @example
+ * dialog('Hello', 'Just saying hello', 'Say hi').done(successCallback).fail(doNothing);
+ **/
 var dialog = function(title, message, actionButtonLabel, options) {
     var ret = $.Deferred();
     options = $.extend({}, {
@@ -773,6 +799,7 @@ var dialog = function(title, message, actionButtonLabel, options) {
     });
     return ret.promise();
 };
+
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.

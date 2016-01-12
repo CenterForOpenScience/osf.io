@@ -1,5 +1,7 @@
 from django.conf.urls import include, url, patterns
 from django.contrib import admin
+from django.views.generic import RedirectView
+
 from settings import ADMIN_BASE
 
 from . import views
@@ -8,6 +10,7 @@ base_pattern = '^{}'.format(ADMIN_BASE)
 
 urlpatterns = [
     ### ADMIN ###
+    url(r'^project/', include('admin.pre_reg.urls', namespace='pre_reg')),
     url(base_pattern,
         include(patterns('',
                          url(r'^$', views.home, name='home'),
@@ -21,5 +24,6 @@ urlpatterns = [
                             name='password_reset_complete'),
                          )
                 )
-        )
+        ),
+    url(r'^$', RedirectView.as_view(url='/admin/')),
 ]

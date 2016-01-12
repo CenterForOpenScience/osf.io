@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 """Factory boy factories for the Dropbox addon."""
 
-from framework.auth import Auth
-
-from factory import SubFactory, Sequence, post_generation
-from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
+from factory import SubFactory, Sequence
+from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
 
 from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings
 )
 
 
-# TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
 class DropboxUserSettingsFactory(ModularOdmFactory):
     FACTORY_FOR = DropboxUserSettings
 
@@ -25,3 +22,8 @@ class DropboxNodeSettingsFactory(ModularOdmFactory):
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(DropboxUserSettingsFactory)
     folder = 'Camera Uploads'
+
+class DropboxAccountFactory(ExternalAccountFactory):
+    provider = 'dropbox'
+    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
+    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
