@@ -1,16 +1,7 @@
 
-.outline-row {
-    border-top: 2px solid #333333;
-    border-bottom: 2px solid #333333
-}
-
-.left-col-outline {
-   border-left: 2px solid #333333
-}
-
-.right-col-outline {
-    border-right: 2px solid #333333
-
+.node-styling {
+    background-color: #fcfcfc;
+    border: 1px solid #cccccc;
 }
 
 button {
