@@ -34,18 +34,25 @@ def spam_list(request):
         page = paginator.page(paginator.num_pages)
     context = {
         'spam': map(serialize_comment, page),
-        'page': page
+        'page': page,
+        'page_number': page_number,
     }
     return render_to_response('spam/spam.html', context)
 
 
 @login_required
 def spam_detail(request, spam_id):
-    context = {'comment': serialize_comment(Comment.load(spam_id))}
+    context = {
+        'comment': serialize_comment(Comment.load(spam_id)),
+        'page_number': request.GET.get('page', 1),
+    }
     return render(request, 'spam/comment.html', context)
 
 
 @login_required
 def email(request, spam_id):
-    context = {'comment': serialize_comment(Comment.load(spam_id), full=True)}
+    context = {
+        'comment': serialize_comment(Comment.load(spam_id), full=True),
+        'page_number': request.GET.get('page', 1),
+    }
     return render(request, 'spam/email.html', context)

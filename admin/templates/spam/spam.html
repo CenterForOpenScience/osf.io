@@ -42,7 +42,8 @@
             {{ comment.content|truncatechars:30 }}
         </td>
         <td>
-            <a href="{% url 'spam:detail' comment.id %}" class="btn btn-primary">
+            <a href="{% url 'spam:detail' comment.id %}?page={{ page_number }}"
+               class="btn btn-primary">
                 Detail
             </a>
         </td>
