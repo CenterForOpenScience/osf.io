@@ -1,7 +1,6 @@
 from django.shortcuts import render, render_to_response
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
-from django.conf import settings
 from django.core.mail import send_mail
 from django.views.generic import FormView
 
@@ -12,8 +11,17 @@ from .forms import EmailForm
 class EmailFormView(FormView):
 
     form_class = EmailForm
-    template_name = ""  # TODO: <-
+    template_name = "spam/email.html"  # TODO: <-
     success_url = ''  # TODO <-
+
+    def form_valid(self, form):
+        send_mail(
+            subject=form.cleaned_data.get('subject').strip(),
+            message=form.cleaned_data.get('message'),
+            from_email='support@osf.io',
+            recipient_list=[]
+        )
+        return super(EmailFormView, self).form_valid(form)
 
 
 @login_required

@@ -2,6 +2,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 import floppyforms as forms
 
+
 class EmailForm(forms.Form):
 
     name = forms.CharField(required=True)
