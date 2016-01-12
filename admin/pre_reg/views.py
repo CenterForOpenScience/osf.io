@@ -81,7 +81,8 @@ def prereg(request):
 
     context = {
         'drafts': drafts,
-        'page': page
+        'page': page,
+        'IMMEDIATE': serializers.IMMEDIATE,
     }
     return render(request, 'pre_reg/prereg.html', context)
 

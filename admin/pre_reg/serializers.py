@@ -4,6 +4,10 @@ from dateutil import parser
 from website.project.metadata.utils import serialize_meta_schema
 
 
+EMBARGO = 'embargo'
+IMMEDIATE = 'immediate'
+
+
 def serialize_user(user):
     return {
         'full_name': user.fullname,
@@ -14,11 +18,11 @@ def serialize_user(user):
 
 # TODO: Write and use APIv2 serializer for this
 def serialize_draft_registration(draft, json_safe=True):
-    if draft.approval.meta['registration_choice'] == 'embargo':
+    if draft.approval.meta['registration_choice'] == EMBARGO:
         time = parser.parse(draft.approval.meta['embargo_end_date'])
         embargo = iso8601format(time) if json_safe else time
     else:
-        embargo = 'Immediate'
+        embargo = IMMEDIATE
 
     return {
         'pk': draft._id,
