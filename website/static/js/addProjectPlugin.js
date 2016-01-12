@@ -28,24 +28,36 @@ var AddProject = {
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
-        self.categoryList = [
-            { value: 'project', label: 'Project'},
-            { value: 'hypothesis', label : 'Hypothesis' },
-            { value: 'methods and measures', label :  'Methods and Measures'},
-            { value: 'procedure', label:  'Procedure'},
-            { value: 'instrumentation', label: 'Instrumentation'},
-            { value: 'data', label:  'Data'},
-            { value: 'analysis', label: 'Analysis'},
-            { value: 'communication',label: 'Communication'},
-            { value: 'other', label: 'Other'}
-        ];
-        self.newProjectCategory = m.prop(self.categoryList[0].value);
+        self.newProjectCategory = m.prop('');
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
         };
+        // Load Category list from API
+        self.categoryList = [];
+        self.loadCategories = function () {
+            m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig}).then(function _success(results){
+                console.log(results);
+                if(results.actions.POST.category){
+                    self.categoryList = results.actions.POST.category.choices;
+                    self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
+                        if(a.value < b.value) return -1;
+                        if(a.value > b.value) return 1;
+                        return 0;
+                    });
+                    self.categoryList.forEach(function(cat){
+                        if(cat.value === 'project'){
+                            self.newProjectCategory(cat.value);
+                        }
+                    });
+                }
+            }, function _error(results){
+                console.error('Error loading category names:', results);
+            });
+        };
+        self.loadCategories();
         // Validation
         self.isValid = m.prop(false);
         self.checkValid = function () {
@@ -56,9 +68,6 @@ var AddProject = {
                 self.isValid(false);
             }
         };
-        //self.chooseCategory = function(event){
-        //    self.newProjectCategory = $(this).val();
-        //};
         self.add = function _add () {
             var url;
             var data;
@@ -91,8 +100,6 @@ var AddProject = {
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);
             self.newProjectName('');
-            //m.redraw(true);
-
         };
         self.reset = function _reset(){
             self.newProjectName('');
@@ -149,7 +156,8 @@ var AddProject = {
                                         value: cat.value,
                                         checked: ctrl.newProjectCategory() === cat.value,
                                         onchange : m.withAttr('value', ctrl.newProjectCategory)
-                                    }), cat.label ]));
+                                    }), cat.display_name || m('i.text-muted', '(Empty category)') ]));
+
                                 })
                             ])
                         ] : ''
