@@ -14,7 +14,7 @@ from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 
 from website import settings
-from website.models import Node, Tag
+from website.models import Node
 from website.util import web_url_for
 from website.mails import send_mail
 from website.files.models import StoredFileNode
@@ -221,37 +221,6 @@ def conference_results(meeting):
         # Needed in order to use base.mako namespace
         'settings': settings,
     }
-
-def conference_submissions(**kwargs):
-    """Return data for all OSF4M submissions.
-
-    The total number of submissions for each meeting is calculated and cached
-    in the Conference.num_submissions field.
-    """
-    submissions = []
-    for conf in Conference.find():
-        # For efficiency, we filter by tag first, then node
-        # instead of doing a single Node query
-        projects = set()
-        for tag in Tag.find(Q('_id', 'iexact', conf.endpoint)):
-            for node in tag.node__tagged:
-                if not node:
-                    continue
-                if not node.is_public or node.is_deleted:
-                    continue
-                projects.add(node)
-
-        for idx, node in enumerate(projects):
-            submissions.append(_render_conference_node(node, idx, conf))
-        num_submissions = len(projects)
-        # Cache the number of submissions
-        conf.num_submissions = num_submissions
-        conf.save()
-        if num_submissions < settings.CONFERENCE_MIN_COUNT:
-            continue
-    submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
-
-    return {'submissions': submissions}
 
 def conference_view(**kwargs):
     meetings = []

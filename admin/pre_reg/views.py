@@ -1,27 +1,25 @@
 import functools
+import httplib as http
+import json
 import operator
 from copy import deepcopy
 
-from django.http import HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage
 from django.core.urlresolvers import reverse
-
-import json
-import httplib as http
-
-from modularodm import Q
+from django.http import HttpResponseBadRequest
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
 
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
-
-from framework.mongo.utils import get_or_http_error
 from framework.exceptions import HTTPError
-from website.project.model import MetaSchema, DraftRegistration
+from framework.mongo.utils import get_or_http_error
+from modularodm import Q
 from website.exceptions import NodeStateError
+from website.files.models import FileNode
+from website.project.model import MetaSchema, DraftRegistration
 
 get_draft_or_error = functools.partial(get_or_http_error, DraftRegistration)
 
@@ -94,6 +92,13 @@ def view_draft(request, draft_pk):
         'draft': serializers.serialize_draft_registration(draft)
     }
     return render(request, 'pre_reg/edit_draft_registration.html', context)
+
+@login_required
+@user_passes_test(is_in_prereg_group)
+def view_file(request, node_id, provider, file_id):
+    file = FileNode.load(file_id)
+    wb_url = file.generate_waterbutler_url()
+    return redirect(wb_url)
 
 @csrf_exempt
 @login_required
