@@ -14,6 +14,10 @@ class EmailFormView(FormView):
     template_name = "spam/email.html"  # TODO: <-
     success_url = ''  # TODO <-
 
+    def get(self, request, spam_id, *args, **kwargs):
+        form = self.form_class(initial=self.initial)
+        return render(request, self.template_name, {'form': form})
+
     def form_valid(self, form):
         send_mail(
             subject=form.cleaned_data.get('subject').strip(),
