@@ -12,3 +12,31 @@
   width: 80px;
   margin-left: -40px;
 }
+
+.fb-activity-list .progress.category-bar {
+    border-bottom: 3px solid #E0E0E0;
+    border-left: 5px solid #E0E0E0;
+    border-right: 5px solid #E0E0E0;
+    vertical-align: top;
+}
+
+.col-xs-1 .page-button {
+    font-size: 400%;
+    background-color: white;
+}
+
+.activity-item {
+    padding: 10px 10px 10px 5px;
+    background-color: #f5f5f5;
+}
+
+.time-slider-parent {
+    margin-bottom: -10px;
+    bottom: -10px;
+    position: relative;
+}
+
+.no-items-progress-bar {
+    width: 100%;
+    background-color: dimgrey;
+}

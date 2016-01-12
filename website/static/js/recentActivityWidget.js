@@ -23,6 +23,7 @@ var LogWrap = {
         self.today = moment.utc();
         self.page = 1;
         self.cache = [];
+        self.loading = false;
 
         self.getLogs = function(init, reset) {
             if (!(init || reset)  && self.cache[self.page - 1]){
@@ -47,6 +48,7 @@ var LogWrap = {
             var url = $osf.apiV2Url('users/' + self.userId + '/node_logs/', { query : query});
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
+                self.laoding = false;
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
                 });
@@ -103,16 +105,17 @@ var LogWrap = {
             var ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             var progBar = $('#rAProgressBar');
-            var leftHandle = $('.ui-slider-handle')[0];
-            var rightHandle = $('.ui-slider-handle')[1];
+            var handle = $('.ui-slider-handle');
+            var leftHandle = handle[0];
+            var rightHandle = handle[1];
             ctx.beginPath();
-            ctx.moveTo(leftHandle.offsetLeft, 0);
+            ctx.moveTo(leftHandle.offsetLeft + handle.width(), 0);
             ctx.lineTo(progBar.offset()['left'] - $('#rACanvas').offset()['left'], 50);
             ctx.strokeStyle = '#E0E0E0 ';
             ctx.lineWidth = 4;
             ctx.stroke();
             ctx.beginPath();
-            ctx.moveTo(rightHandle.offsetLeft + rightHandle.offsetWidth, 0);
+            ctx.moveTo(rightHandle.offsetLeft + handle.width(), 0);
             ctx.lineTo(progBar.offset()['left'] + progBar[0].offsetWidth - $('#rACanvas').offset()['left'], 50);
             ctx.strokeStyle = '#E0E0E0 ';
             ctx.lineWidth = 4;
@@ -133,9 +136,10 @@ var LogWrap = {
                         ctrl.getLogs(false, true);
                     },
                     start: function (event, ui){
+                        ctrl.loading = true;
                         $("#fillerBar").replaceWith(
                             '<div id="fillerBar" class="progress" style="height: 11px">' +
-                                '<div class="progress-bar" style="background-color: lightgrey, width:100%;"> Loading... </div>' +
+                                '<div class="progress-bar progress-bar-success progress-bar-striped active" style="width:100%;"></div>' +
                             '</div>'
                         );
                     },
@@ -197,64 +201,62 @@ var LogWrap = {
             m('.panel-heading', 'Recent Activity'),
             m('.panel-body',
             m('.fb-activity-list.m-t-md', [
-                m('', {style: {verticalAlign: 'bottom'}},
-                    m('#recentActivitySlider', {style: {margin: '10px', paddingBottom: '-10px', verticalAlign: 'bottom'}, config: addSlider})
+                m('.time-slider-parent',
+                    m('#recentActivitySlider',  {config: addSlider})
                 ),
                 m('canvas#rACanvas[width="' + $('#recentActivitySlider').width() + '"][height="50px"]', {style:{verticalAlign: 'middle'}}),
-                m('.row', {style: {paddingTop: '-10px'}}, [m('.col-xs-1'), m('.col-xs-10',
-                m('#rAProgressBar.progress', {style: {
-                    borderBottom:'3px solid #E0E0E0',
-                    borderLeft: '5px solid #E0E0E0',
-                    borderRight:'5px solid #E0E0E0',
-                    verticalAlign: 'top'
-                }}, [
-                    m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : '.muted'), {style: {width: fileEvents+'%'}},
-                        m('a', {onclick: function(){
-                            ctrl.callLogs('file');
-                        }, style: {color: 'white'}}, m('i.fa.fa-file'))
+                m('.row', [
+                    m('.col-xs-1'),
+                    m('.col-xs-10',
+                        m('#rAProgressBar.progress.category-bar',
+                            ([
+                                m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : '.muted'), {style: {width: fileEvents+'%'}},
+                                    m('a', {onclick: function(){
+                                        ctrl.callLogs('file');
+                                    }, style: {color: 'white'}}, m('i.fa.fa-file'))
+                                ),
+                                m('.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ? '.active.progress-bar-striped' : '.muted'), {style: {width: nodeEvents+'%'}},
+                                    m('a', {onclick: function(){
+                                        ctrl.callLogs('project');
+                                    }, style: {color: 'white'}}, m('i.fa.fa-cube'))
+                                ),
+                                m('.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' ? '.active.progress-bar-striped' : '.muted'), {style: {width: commentEvents+'%'}},
+                                    m('a', {onclick: function(){
+                                        ctrl.callLogs('comment');
+                                    }, style: {color: 'white'}}, m('i.fa.fa-comment'))
+                                ),
+                                m('.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' ? '.active.progress-bar-striped' : '.muted'), {style: {width: wikiEvents+'%'}},
+                                    m('a', {onclick: function(){
+                                        ctrl.callLogs('wiki');
+                                    }, style: {color: 'white'}}, m('i.fa.fa-book'))
+                                ),
+                                (ctrl.totalEvents !== 0) ?
+                                    m('.progress-bar.progress-bar-success.muted', {style: {width: otherEvents+'%'}}, m('i.fa.fa-plus')) :
+                                    m('.progress-bar.no-items-progress-bar', 'None')
+                            ])
+                        )
                     ),
-                    m('.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ? '.active.progress-bar-striped' : '.muted'), {style: {width: nodeEvents+'%'}},
-                        m('a', {onclick: function(){
-                            ctrl.callLogs('project');
-                        }, style: {color: 'white'}}, m('i.fa.fa-cube'))
-                    ),
-                    m('.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' ? '.active.progress-bar-striped' : '.muted'), {style: {width: commentEvents+'%'}},
-                        m('a', {onclick: function(){
-                            ctrl.callLogs('comment');
-                        }, style: {color: 'white'}}, m('i.fa.fa-comment'))
-                    ),
-                    m('.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' ? '.active.progress-bar-striped' : '.muted'), {style: {width: wikiEvents+'%'}},
-                        m('a', {onclick: function(){
-                            ctrl.callLogs('wiki');
-                        }, style: {color: 'white'}}, m('i.fa.fa-book'))
-                    ),
-                    (ctrl.totalEvents !== 0) ?
-                        m('.progress-bar.progress-bar-success.muted', {style: {width: otherEvents+'%'}}, m('i.fa.fa-plus')) :
-                        m('.progress-bar', {style: {width: '100%', 'background-image': 'none', 'background-color': 'grey'}}, 'None')
-                ])), m('.col-xs-1')]
-                ),
+                    m('.col-xs-1')
+                ]),
                 m('row', [
-                    m('.col-xs-1', m('button.btn.fa.fa-angle-left#leftButton' + (ctrl.page > 1 ? '' : '.disabled'), {
-                        style:{
-                            fontSize: '400%', backgroundColor: 'white'
-                        }, onclick: function(){
-                        ctrl.page--;
-                        ctrl.getLogs()
+                    m('.col-xs-1', m('button.btn.fa.fa-angle-left.page-button#leftButton' + (ctrl.page > 1 ? '' : '.disabled'), {
+                        onclick: function(){
+                            ctrl.loading = true;
+                            ctrl.page--;
+                            ctrl.getLogs()
                     }})),
                     m('#logs.col-xs-10', {config: addButtons},(ctrl.activityLogs() && (ctrl.activityLogs().length > 0))? ctrl.activityLogs().map(function(item){
-                        return m('', [m('.fb-activity-item',
-                            {style: {padding: '10px', paddingLeft: '5px', backgroundColor: '#f5f5f5', borderLeft: 'solid 5px ' + categoryColor(item.attributes.action)}}, [
+                        return m('', [m('.fb-activity-item.activity-item',
+                            {style: {borderLeft: 'solid 5px ' + categoryColor(item.attributes.action)}}, [
                             m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
                             m.component(LogText,item)
                         ]), m('', {style: {padding: '5px'}})]);
                     }) : m('p','No activity in this time range.')),
-                    m('.col-xs-1', m('button.btn.fa.fa-angle-right#rightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled'), {
-                        style:{
-                            fontSize: '400%', backgroundColor: 'white'
-                        },
+                    m('.col-xs-1', m('button.btn.fa.fa-angle-right.page-button#rightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled'), {
                         onclick: function(){
-                        ctrl.page++;
-                        ctrl.getLogs()
+                            ctrl.loading = true;
+                            ctrl.page++;
+                            ctrl.getLogs()
                         }
                     }))
                 ])
