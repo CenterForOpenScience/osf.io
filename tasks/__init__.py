@@ -75,7 +75,7 @@ def apiserver(port=8000, wait=True):
         return run(cmd, echo=True, pty=True)
     from subprocess import Popen
 
-    return Popen(cmd, shell=True, env=env) #, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    return Popen(cmd, shell=True, env=env)
 
 
 @task
