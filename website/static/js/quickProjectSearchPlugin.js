@@ -365,14 +365,15 @@ var quickSearchProject = {
 
         function projectView(project) {
             console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
-            return [m('div', {class: 'row m-v-sm'}, [
-                m('div', {class: 'col-xs-1 p-v-sm'}),
-                m('div', {class: 'col-xs-4 outline-row left-col-outline p-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
-                m('div', {class: 'col-xs-4 outline-row text-muted p-v-xs'}, ctrl.getContributors(project)),
-                m('div', {class: 'col-xs-2 outline-row right-col-outline p-v-xs'}, ctrl.formatDate(project)),
-                m('div', {class: 'col-xs-1 p-v-xs' })
-
-            ])];
+            return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-md-10 col-md-offset-1'},
+                m('div', {class: 'row node-styling'}, [
+                    m('div', {class: 'col-md-1 p-v-xs'}),
+                    m('div', {class: 'col-md-4 p-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
+                    m('div', {class: 'col-md-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
+                    m('div', {class: 'col-md-2 p-v-xs'}, ctrl.formatDate(project)),
+                    m('div', {class: 'col-md-1 p-v-xs'})
+                ])
+            ))
         }
 
         function resultsFound(){
@@ -389,13 +390,16 @@ var quickSearchProject = {
                     ]),
                     m('div', {class: 'col-xs-3'})),
 
-                m('div', {class: 'row m-v-sm'}, [
-                    m('div', {class: 'col-xs-1'}),
-                    m('div', {class: 'col-xs-4 f-w-xl'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
-                    m('div', {class: 'col-xs-4 f-w-xl'}, 'Contributors'),
-                    m('div', {class: 'col-xs-2 f-w-xl'}, 'Date Modified', sortDateAsc(), sortDateDesc()),
-                    m('div', {class: 'col-xs-1'})
-                ]),
+                m('div', {class: 'row'}, m('div', {class: 'col-md-10 col-md-offset-1'},
+                m('div', {class: 'row'}, [
+                    m('div', {class: 'col-md-1 p-v-xs'}),
+                    m('div', {class: 'col-md-4 p-v-xs, f-w-xl'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
+                    m('div', {class: 'col-md-4 f-w-xl p-v-xs'}, 'Contributors'),
+                    m('div', {class: 'col-md-2 f-w-xl p-v-xs'}, 'Date Modified', sortDateAsc(), sortDateDesc()),
+                    m('div', {class: 'col-md-1 p-v-xs'})
+                ])
+                )),
+
                 displayNodes(),
                 m('div', {class: 'row'}, [
                     m('div', {class: 'col-xs-5'}),
