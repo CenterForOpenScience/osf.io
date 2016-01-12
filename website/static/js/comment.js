@@ -447,13 +447,14 @@ CommentModel.prototype.submitAbuse = function() {
                     'type': 'comment_reports',
                     'attributes': {
                         'category': self.abuseCategory(),
-                        'message': self.abuseText()
+                        'message': self.abuseText() || ''
                     }
                 }
             }
         });
     request.done(function() {
         self.isAbuse(true);
+        self.reporting(false);
     });
     request.fail(function(xhr, status, error) {
         self.errorMessage('Could not report abuse.');
