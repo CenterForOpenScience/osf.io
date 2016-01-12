@@ -83,6 +83,7 @@ class NodeSerializer(JSONAPISerializer):
     collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
+    current_user_permissions = ser.SerializerMethodField()
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
@@ -149,6 +150,13 @@ class NodeSerializer(JSONAPISerializer):
         related_view='nodes:node-logs',
         related_view_kwargs={'node_id': '<pk>'},
     )
+
+    def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return ["read"]
+        else:
+            return obj.get_permissions(user=user)
 
     class Meta:
         type_ = 'nodes'
