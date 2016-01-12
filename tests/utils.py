@@ -5,7 +5,7 @@ import datetime
 
 from django.http import HttpRequest
 from nose import SkipTest
-from nose.tools import assert_equal, assert_not_equal
+from nose.tools import assert_equal, assert_not_equal, assert_in
 
 from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS
@@ -178,3 +178,15 @@ def unique(factory):
         used.append(item)
         return item
     return wrapper
+
+
+def assert_mutual_in(list_one, list_two):
+    """Compare two lists to each other to ensure that they contain the same elements. More robust than assert_equal
+    because the lists do not have to be in the same order.
+    :param list_one:
+    :param list_two:
+    :return: True if lists contain the same elements. False if not
+    """
+    assert_equal(len(list_one), len(list_two))
+    for item in list_one:
+        assert_in(item, list_two)
