@@ -394,8 +394,7 @@ var quickSearchProject = {
                     m('div', {class: 'col-sm-1 p-v-xs'}),
                     m('div', {class: 'col-sm-4 p-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
                     m('div', {class: 'col-sm-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
-                    m('div', {class: 'col-sm-2 p-v-xs'}, ctrl.formatDate(project)),
-                    m('div', {class: 'col-sm-1 p-v-xs'})
+                    m('div', {class: 'col-sm-3 p-v-xs'}, ctrl.formatDate(project)),
                 ])
             ))
         }
@@ -419,8 +418,7 @@ var quickSearchProject = {
                     m('div', {class: 'col-sm-1 p-v-xs'}),
                     m('div', {class: 'col-sm-4 p-v-xs, f-w-xl'}, 'Name', sortAlphaAsc(), sortAlphaDesc()),
                     m('div', {class: 'col-sm-4 f-w-xl p-v-xs'}, 'Contributors'),
-                    m('div', {class: 'col-sm-2 f-w-xl p-v-xs'}, 'Date Modified', sortDateAsc(), sortDateDesc()),
-                    m('div', {class: 'col-sm-1 p-v-xs'})
+                    m('div', {class: 'col-sm-3 f-w-xl p-v-xs'}, 'Date Modified', sortDateAsc(), sortDateDesc()),
                 ])
                 )),
 
