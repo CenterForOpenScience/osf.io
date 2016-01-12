@@ -307,7 +307,7 @@ var quickSearchProject = {
                     ctrl.sortState('alphaAsc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
-                    m('i', {class: 'fa fa-chevron-up'})
+                    m('i', {class: 'fa fa-angle-up'})
 )
             }
         }
@@ -318,7 +318,7 @@ var quickSearchProject = {
                     ctrl.sortState('alphaDesc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
-                m('i', {class: 'fa fa-chevron-down'}))
+                m('i', {class: 'fa fa-angle-down'}))
             }
         }
 
@@ -327,7 +327,7 @@ var quickSearchProject = {
                  return m('button', {onclick: function() {
                      ctrl.sortState('dateAsc');
                      ctrl.sortNodesAndModifyDisplay()}},
-                 m('i', {class: 'fa fa-chevron-up'}))
+                 m('i', {class: 'fa fa-angle-up'}))
             }
         }
         function sortDateDesc(){
@@ -336,7 +336,7 @@ var quickSearchProject = {
                     ctrl.sortState('dateDesc');
                     ctrl.sortNodesAndModifyDisplay();
                }},
-                m('i', {class: 'fa fa-chevron-down'}))
+                m('i', {class: 'fa fa-angle-down'}))
             }
         }
 
