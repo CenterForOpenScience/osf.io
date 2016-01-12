@@ -318,7 +318,7 @@ def migrate(dry_run=True):
     if broken_user_or_oauth_settings:
         logger.info(
             "Failed to migrate {0} (user, oauth) settings tuples because they could not be verified:\n{1}".format(
-                len(broken_user_or_oauth_settings), ['({}, {})'.format(e, f) for e, f in user_no_oauth_settings]
+                len(broken_user_or_oauth_settings), ['({}, {})'.format(e, f) for e, f in broken_user_or_oauth_settings]
             )
         )
     if invalid_oauth_creds:
@@ -336,7 +336,7 @@ def migrate(dry_run=True):
     if no_oauth_creds:
         logger.info(
             "Failed to migrate {0} user settings due a lack of oauth credentials:\n{1}".format(
-                len(inactive_user_or_no_owner), [e for e in inactive_user_or_no_owner]
+                len(no_oauth_creds), [e for e in no_oauth_creds]
             )
         )
     if unverifiable_node_settings:
