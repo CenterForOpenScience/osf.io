@@ -51,6 +51,14 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         expected = {'owner': self.node_settings.user, 'repo': self.node_settings.repo}
         assert_equal(settings, expected)
 
+    @mock.patch('website.addons.github.api.GitHubClient.repos')
+    @mock.patch('website.addons.github.api.GitHubClient.my_org_repos')
+    def test_to_json(self, mock_org, mock_repos):
+        mock_repos.return_value = {}
+        mock_org.return_value = {}
+        super(TestNodeSettings, self).test_to_json()
+        
+
 class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 
     short_name = 'github'
