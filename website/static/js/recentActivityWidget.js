@@ -28,7 +28,7 @@ var LogWrap = {
         self.getLogs = function(init, reset) {
             if (!(init || reset)  && self.cache[self.page - 1]){
                 self.activityLogs(self.cache[self.page - 1]);
-                return
+                return;
             }
             var query = {
                 'embed': ['nodes', 'user', 'linked_node', 'template_node'],
@@ -39,7 +39,7 @@ var LogWrap = {
                 query['filter[action]'] = self.eventFilter;
             }
             if (init || reset) {
-                query['aggregate'] = 1;
+                query.aggregate = 1;
             }
             if (!init) {
                 query['filter[date][lte]'] = self.dateEnd.toISOString();
@@ -94,12 +94,14 @@ var LogWrap = {
         var values = [(Number(ctrl.dateBegin.format('x'))/div | 0), (Number(ctrl.dateEnd.format('x'))/div | 0)];
         var makeSliderProgress =  function(){
             return '<div id="fillerBar" class="progress" style="height: 11px">' +
+                ((ctrl.totalEvents !== 0) ?
                         '<div class="progress-bar" style="width:'+ fileEvents +'%;"></div>' +
                         '<div class="progress-bar progress-bar-warning"  style="width:'+ nodeEvents +'%;"></div>' +
                         '<div class="progress-bar progress-bar-info" style="width:'+ commentEvents +'%;"></div>' +
                         '<div class="progress-bar progress-bar-danger"  style="width:'+ wikiEvents +'%;"></div>' +
-                        '<div class="progress-bar progress-bar-success"  style="width:'+ otherEvents +'%;"></div>' +
-                    '</div>'
+                        '<div class="progress-bar progress-bar-success"  style="width:'+ otherEvents +'%;"></div>'
+                    : '<div class="progress-bar no-items-progress-bar">') +
+                '</div>';
         };
         var makeLine = function(canvas){
             var ctx = canvas.getContext('2d');
@@ -110,13 +112,13 @@ var LogWrap = {
             var rightHandle = handle[1];
             ctx.beginPath();
             ctx.moveTo(leftHandle.offsetLeft + handle.width(), 0);
-            ctx.lineTo(progBar.offset()['left'] - $('#rACanvas').offset()['left'], 50);
+            ctx.lineTo(progBar.offset().left - $('#rACanvas').offset().left, 50);
             ctx.strokeStyle = '#E0E0E0 ';
             ctx.lineWidth = 4;
             ctx.stroke();
             ctx.beginPath();
             ctx.moveTo(rightHandle.offsetLeft + handle.width(), 0);
-            ctx.lineTo(progBar.offset()['left'] + progBar[0].offsetWidth - $('#rACanvas').offset()['left'], 50);
+            ctx.lineTo(progBar.offset().left + progBar[0].offsetWidth - $('#rACanvas').offset().left, 50);
             ctx.strokeStyle = '#E0E0E0 ';
             ctx.lineWidth = 4;
             ctx.stroke();
@@ -124,7 +126,7 @@ var LogWrap = {
         var addSlider = function(ele, isInitialized){
             var canvas = document.getElementById('rACanvas');
             if (!isInitialized) {
-                $("#recentActivitySlider").slider({
+                $('#recentActivitySlider').slider({
                     min: begin,
                     max: end,
                     range: true,
@@ -138,7 +140,7 @@ var LogWrap = {
                     start: function (event, ui){
                         ctrl.loading = true;
                         m.redraw();
-                        $("#fillerBar").replaceWith(
+                        $('#fillerBar').replaceWith(
                             '<div id="fillerBar" class="progress" style="height: 11px">' +
                                 '<div class="progress-bar progress-bar-success progress-bar-striped active" style="width:100%;"></div>' +
                             '</div>'
@@ -148,54 +150,54 @@ var LogWrap = {
                         makeLine(canvas);
                     }
                 });
-                $("#recentActivitySlider").slider('pips', {
+                $('#recentActivitySlider').slider('pips', {
                     last: false,
                     rest: 'label',
                     step: 30,
                     formatLabel: function(value){
-                        return String(moment.utc(value*div).format("MMM D YY"))
+                        return String(moment.utc(value*div).format('MMM D YY'));
                     }
                 }).slider('float', {
                     formatLabel: function(value){
-                        return String(moment.utc(value*div).format("MMM D YY"))
+                        return String(moment.utc(value*div).format('MMM D YY'));
                     }
                 });
                 ctrl.getLogs();
-                var bar = $("#recentActivitySlider").find('.ui-slider-range');
+                var bar = $('#recentActivitySlider').find('.ui-slider-range');
                 bar.append(makeSliderProgress());
                 makeLine(canvas);
             }
             else {
-                $("#recentActivitySlider").slider('option', "values", values);
-                $("#fillerBar").replaceWith(makeSliderProgress());
+                $('#recentActivitySlider').slider('option', 'values', values);
+                $('#fillerBar').replaceWith(makeSliderProgress());
                 makeLine(canvas);
             }
         };
         var addButtons = function(ele, isInitialized) {
             if (isInitialized) {
                 if ($('#leftButton')){
-                    $('#leftButton').css('height', $("#logs").height());
+                    $('#leftButton').css('height', $('#logs').height());
                 }
                 if ($('#rightButton')){
-                    $('#rightButton').css('height', $("#logs").height());
+                    $('#rightButton').css('height', $('#logs').height());
                 }
             }
         };
         var categoryColor = function(category){
-            if (category.indexOf('wiki') + 1){
-                return '#d9534f'
+            if (category.indexOf('wiki') !== -1){
+                return '#d9534f';
             }
-            if (category.indexOf('comment') + 1){
-                return '#5bc0de'
+            if (category.indexOf('comment') !== -1){
+                return '#5bc0de';
             }
-            if (category.indexOf('file') + 1){
-                return '#337ab7'
+            if (category.indexOf('file') !== -1){
+                return '#337ab7';
             }
-            if (category.indexOf('project') + 1){
-                return '#f0ad4e'
+            if (category.indexOf('project') !== -1){
+                return '#f0ad4e';
             }
             else{
-                return '#5cb85c'
+                return '#5cb85c';
             }
         };
         return m('.panel.panel-default', [
@@ -239,12 +241,14 @@ var LogWrap = {
                     ),
                     m('.col-xs-1')
                 ]),
+                //m('row', [m('.col-xs-1'), m('.col-xs-10', m('a', {onclick: {
+
+                //}},'Files')), m('.col-xs-1')]),
                 m('row', [
-                    m('.col-xs-1', m('button.btn.fa.fa-angle-left.page-button#leftButton' + (ctrl.page > 1 ? '' : '.disabled'), {
+                    m('.col-xs-1.text-center', m('button.btn.fa.fa-angle-left.page-button#leftButton' + (ctrl.page > 1 ? '' : '.disabled'), {
                         onclick: function(){
-                            ctrl.loading = true;
                             ctrl.page--;
-                            ctrl.getLogs()
+                            ctrl.getLogs();
                     }})),
                     m('#logs.col-xs-10', {config: addButtons},(ctrl.activityLogs() && (ctrl.activityLogs().length > 0))? ctrl.activityLogs().map(function(item){
                         return m('', [m('.fb-activity-item.activity-item',
@@ -253,11 +257,10 @@ var LogWrap = {
                             m.component(LogText,item)
                         ]), m('', {style: {padding: '5px'}})]);
                     }) : m('p','No activity in this time range.')),
-                    m('.col-xs-1', m('button.btn.fa.fa-angle-right.page-button#rightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled'), {
+                    m('.col-xs-1.text-center', m('button.btn.fa.fa-angle-right.page-button#rightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled'), {
                         onclick: function(){
-                            ctrl.loading = true;
                             ctrl.page++;
-                            ctrl.getLogs()
+                            ctrl.getLogs();
                         }
                     }))
                 ])
