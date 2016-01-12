@@ -78,6 +78,11 @@
                 may no longer be valid. Contact ${auth_osf_name} to verify.
             % endif
         </div>
+    % elif not is_owner:
+        <div class="addon-settings-message text-danger p-t-sm">
+            The GitHub addon credentials are valid, but only the authorizer has permission to make changes. 
+            Contact ${auth_osf_name} to make changes.
+        </div>
     % else:
         <div class="addon-settings-message p-t-sm" style="display: none"></div>
     % endif

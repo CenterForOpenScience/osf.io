@@ -166,22 +166,22 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if self.user_settings and self.user_settings.has_auth:
             valid_credentials = False
             owner = self.user_settings.owner
-            if user_settings and user_settings.owner == owner:
-                connection = GitHubClient(external_account=self.external_account)
-                # TODO: Fetch repo list client-side
-                # Since /user/repos excludes organization repos to which the
-                # current user has push access, we have to make extra requests to
-                # find them
-                valid_credentials = True
-                try:
-                    repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
-                    repo_names = [
-                        '{0} / {1}'.format(repo.owner.login, repo.name)
-                        for repo in repos
-                    ]
-                except GitHubError:
-                    repo_names = []
-                    valid_credentials = False
+            connection = GitHubClient(external_account=self.external_account)
+            # TODO: Fetch repo list client-side
+            # Since /user/repos excludes organization repos to which the
+            # current user has push access, we have to make extra requests to
+            # find them
+            valid_credentials = True
+            try:
+                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+                repo_names = [
+                    '{0} / {1}'.format(repo.owner.login, repo.name)
+                    for repo in repos
+                ]
+            except GitHubError:
+                repo_names = []
+                valid_credentials = False
+            if owner == user:
                 ret.update({'repo_names': repo_names})
             ret.update({
                 'node_has_auth': True,
