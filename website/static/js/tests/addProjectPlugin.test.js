@@ -25,4 +25,19 @@ describe('AddProjectPlugin', () => {
             console.log(project.categoryList);
         });
     });
+    it('should reset states and defaults when reset function runs', () => {
+        var project = new AddProject.controller();
+        // Change values
+        project.newProjectName('Hello there');
+        project.viewState('error');
+        project.newProjectDesc('Description');
+        project.newProjectCategory('thesis');
+        // Reset
+        project.reset();
+        // Assert the return to defaults;
+        assert.equal(project.newProjectName(), '');
+        assert.equal(project.viewState(), 'form');
+        assert.equal(project.newProjectDesc(), '');
+        assert.equal(project.newProjectCategory(), 'project');
+    });
 });
