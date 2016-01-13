@@ -1145,4 +1145,13 @@ var Modals = {
     }
 };
 
-module.exports = { FileBrowser : FileBrowser, LinkObject: LinkObject };
+module.exports = {
+    FileBrowser : FileBrowser,
+    Collections : Collections,
+    MicroPagination : MicroPagination,
+    ActivityLogs : ActivityLogs,
+    LinkObject: LinkObject,
+    PrivateFunctions : {
+        makeTree : _makeTree
+    }
+};
