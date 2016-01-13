@@ -137,81 +137,6 @@ def get_contributors_from_parent(auth, node, **kwargs):
     return {'contributors': contribs}
 
 
-@must_be_valid_project  # returns project
-@must_be_contributor
-@must_not_be_registration
-def project_before_remove_contributor(auth, node, **kwargs):
-
-    contributor = User.load(request.json.get('id'))
-
-    # Forbidden unless user is removing herself
-    if not node.has_permission(auth.user, 'admin'):
-        if auth.user != contributor:
-            raise HTTPError(http.FORBIDDEN)
-
-    if len(node.visible_contributor_ids) == 1 \
-            and node.visible_contributor_ids[0] == contributor._id:
-        raise HTTPError(http.FORBIDDEN, data={
-            'message_long': 'Must have at least one bibliographic contributor'
-        })
-
-    prompts = node.callback(
-        'before_remove_contributor', removed=contributor,
-    )
-
-    if auth.user == contributor:
-        prompts.insert(
-            0,
-            'Are you sure you want to remove yourself from this project?'
-        )
-
-    return {'prompts': prompts}
-
-
-@must_be_valid_project  # returns project
-@must_be_contributor
-@must_not_be_registration
-def project_removecontributor(auth, node, **kwargs):
-
-    contributor = User.load(request.json['id'])
-    if contributor is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    # Forbidden unless user is removing herself
-    if not node.has_permission(auth.user, 'admin'):
-        if auth.user != contributor:
-            raise HTTPError(http.FORBIDDEN)
-
-    if len(node.visible_contributor_ids) == 1 \
-            and node.visible_contributor_ids[0] == contributor._id:
-        raise HTTPError(http.FORBIDDEN, data={
-            'message_long': 'Must have at least one bibliographic contributor'
-        })
-
-    outcome = node.remove_contributor(
-        contributor=contributor, auth=auth,
-    )
-
-    if outcome:
-        if auth.user == contributor:
-            status.push_status_message('Removed self from project', kind='success', trust=False)
-            return {'redirectUrl': web_url_for('dashboard')}
-        status.push_status_message('Contributor removed', kind='success', trust=False)
-        return {}
-
-    raise HTTPError(
-        http.BAD_REQUEST,
-        data={
-            'message_long': (
-                '{0} must have at least one contributor with admin '
-                'rights'.format(
-                    node.project_or_component.capitalize()
-                )
-            )
-        }
-    )
-
-
 def deserialize_contributors(node, user_dicts, auth, validate=False):
     """View helper that returns a list of User objects from a list of
     serialized users (dicts). The users in the list may be registered or
@@ -378,9 +303,8 @@ def project_manage_contributors(auth, node, **kwargs):
     return {}
 
 
-@no_auto_transaction
-@must_be_valid_project  # injects project
-@must_have_permission(ADMIN)
+@must_be_valid_project  # returns project
+@must_be_contributor
 @must_not_be_registration
 def project_remove_contributor(auth, **kwargs):
     """Remove a contributor from a list of nodes.
@@ -396,9 +320,24 @@ def project_remove_contributor(auth, **kwargs):
     contributor_id = request.json.get('contributorID')
     node_ids = request.json.get('nodeIDs')
     contributor = User.load(contributor_id)
+    if contributor is None:
+        raise HTTPError(http.BAD_REQUEST)
+
     for node_id in node_ids:
         # Update permissions and order
         node = Node.load(node_id)
+
+    # Forbidden unless user is removing herself
+        if not node.has_permission(auth.user, 'admin'):
+            if auth.user != contributor:
+                raise HTTPError(http.FORBIDDEN)
+
+        if len(node.visible_contributor_ids) == 1 \
+                and node.visible_contributor_ids[0] == contributor._id:
+            raise HTTPError(http.FORBIDDEN, data={
+                'message_long': 'Must have at least one bibliographic contributor'
+            })
+
         try:
             node.remove_contributor(contributor, auth=auth)
         except ValueError as error:
@@ -415,14 +354,6 @@ def project_remove_contributor(auth, **kwargs):
             if node.is_public:
                 return {'redirectUrl': node.url}
             return {'redirectUrl': web_url_for('dashboard')}
-        # Else if user has revoked her admin permissions, alert and stay on
-        # current page
-        if not node.has_permission(auth.user, ADMIN):
-            status.push_status_message(
-                'You have removed your administrative privileges for this project',
-                kind='success',
-                trust=False
-            )
         # Else stay on current page
     return {}
 

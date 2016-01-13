@@ -12,43 +12,6 @@ var oop = require('./oop');
 var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
 
-function getNodesOriginal(nodeTree, nodesOriginal) {
-    /**
-     * take treebeard tree structure of nodes and get a dictionary of parent node and all its
-     * children
-     */
-    var i;
-    var j;
-    var adminContributors = [];
-    var registeredContributors = [];
-    var nodeId = nodeTree.node.id;
-    for (i=0; i < nodeTree.node.contributors.length; i++) {
-        if (nodeTree.node.contributors[i].is_admin) {
-            adminContributors.push(nodeTree.node.contributors[i].id);
-        }
-        if (nodeTree.node.contributors[i].is_confirmed) {
-            registeredContributors.push(nodeTree.node.contributors[i].id);
-        }
-    }
-    nodesOriginal[nodeId] = {
-        public: nodeTree.node.is_public,
-        id: nodeTree.node.id,
-        title: nodeTree.node.title,
-        contributors: nodeTree.node.contributors,
-        isAdmin: nodeTree.node.is_admin,
-        visibleContributors: nodeTree.node.visible_contributors,
-        adminContributors: adminContributors,
-        registeredContributors: registeredContributors
-    };
-
-    if (nodeTree.children) {
-        for (j in nodeTree.children) {
-            nodesOriginal = getNodesOriginal(nodeTree.children[j], nodesOriginal);
-        }
-    }
-    return nodesOriginal;
-}
-
 var RemoveContributorViewModel = oop.extend(Paginator, {
     constructor: function(title, nodeId, userName, userId, contribShouter, pageChangedShouter) {
         this.super.constructor.call(this);
@@ -236,7 +199,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             type: 'GET',
             dataType: 'json'
         }).done(function(response) {
-            nodesOriginal = getNodesOriginal(response[0], nodesOriginal);
+            nodesOriginal = $osf.getNodesOriginal(response[0], nodesOriginal);
             self.nodesOriginal(nodesOriginal);
         }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve projects and components');

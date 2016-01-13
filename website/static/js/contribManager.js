@@ -415,57 +415,6 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         self.collapsed(self.table.children().filter('thead').is(':hidden'));
     };
 
-    // TODO: copied-and-pasted from nodeControl. When nodeControl
-    // gets refactored, update this to use global method.
-    self.removeSelf = function(contrib) {
-        var id = contrib.id;
-        var name = contrib.fullname;
-        var payload = {
-            id: id,
-            name: name
-        };
-
-        if (self.visibleCount() > 0 && contrib.visible()) {
-            self.visibleCount(self.visibleCount() - 1);
-        }
-
-        if (self.visibleCount() > 0) {
-            $osf.postJSON(
-                window.contextVars.node.urls.api + 'beforeremovecontributors/',
-                payload
-            ).done(function (response) {
-                bootbox.confirm({
-                    title: 'Delete contributor?',
-                    message: ('Are you sure you want to remove yourself (<strong>' + name + '</strong>) from contributor list?'),
-                    callback: function (result) {
-                        if (result) {
-                            $osf.postJSON(
-                                window.contextVars.node.urls.api + 'removecontributors/',
-                                payload
-                            ).done(function (response) {
-                                    if (response.redirectUrl) {
-                                        window.location.href = response.redirectUrl;
-                                    } else {
-                                        window.location.reload();
-                                    }
-                                }).fail(
-                                $osf.handleJSONError
-                            );
-                        }
-                    },
-                    buttons:{
-                        confirm:{
-                            label:'Delete',
-                            className:'btn-danger'
-                        }
-                    }
-                });
-            }).fail(
-                $osf.handleJSONError
-            );
-            return false;
-        }
-    };
 };
 
 ////////////////

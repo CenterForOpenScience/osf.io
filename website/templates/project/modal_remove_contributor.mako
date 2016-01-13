@@ -15,7 +15,7 @@
                             <span data-bind="visible:removeSelf()">Do you want to remove yourself from <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it.</span>
                             <span data-bind="visible:!removeSelf()">Do you want to remove <b>{{contributorToRemove()["fullname"]}}</b> from <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it.</span>
                         </div>
-                        <div data-bind="visible:removeSelf()" id="remove-page-radio-buttons" class="col-md-8" align="left">
+                        <div data-bind="if:removeSelf()" id="remove-page-radio-buttons" class="col-md-8" align="left">
                             <div class="radio">
                                 <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>
                                     Remove yourself from  <span class="f-w-lg" data-bind="text: title"></span></label>
@@ -27,7 +27,7 @@
                             </div>
                         </div>
 
-                        <div data-bind="visible:!removeSelf()" id="remove-page-radio-buttons" class="col-md-8" align="left">
+                        <div data-bind="if:!removeSelf()" id="remove-page-radio-buttons" class="col-md-8" align="left">
                             <div class="radio">
                                 <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>
                                     Remove <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from  <span class="f-w-lg" data-bind="text: title"></span></label>

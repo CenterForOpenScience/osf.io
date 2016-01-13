@@ -247,23 +247,13 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_in('Invalid title.', res.body)
 
-    def test_cannot_remove_only_visible_contributor_before_remove_contributor(self):
-        self.project.visible_contributor_ids.remove(self.user1._id)
-        self.project.save()
-
-        url = self.project.api_url_for('project_before_remove_contributor')
-        res = self.app.post_json(
-            url, {'id': self.user2._id}, auth=self.auth, expect_errors=True
-        )
-        assert_equal(res.status_code, http.FORBIDDEN)
-        assert_equal(res.json['message_long'], 'Must have at least one bibliographic contributor')
-
     def test_cannot_remove_only_visible_contributor_remove_contributor(self):
         self.project.visible_contributor_ids.remove(self.user1._id)
         self.project.save()
-        url = self.project.api_url_for('project_removecontributor')
+        url = self.project.api_url_for('project_remove_contributor')
         res = self.app.post_json(
-            url, {'id': self.user2._id}, auth=self.auth, expect_errors=True
+            url, {'contributorID': self.user2._id,
+                  'nodeIDs': [self.project._id]}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_equal(res.json['message_long'], 'Must have at least one bibliographic contributor')
@@ -504,9 +494,11 @@ class TestProjectViews(OsfTestCase):
         )
 
     def test_project_remove_contributor(self):
-        url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
+        url = "/api/v1/project/{0}/contributor/remove/".format(self.project._id)
         # User 1 removes user2
-        self.app.post(url, json.dumps({"id": self.user2._id}),
+        payload = {"contributorID": self.user2._id,
+                   "nodeIDs": [self.project._id]}
+        self.app.post(url, json.dumps(payload),
                       content_type="application/json",
                       auth=self.auth).maybe_follow()
         self.project.reload()

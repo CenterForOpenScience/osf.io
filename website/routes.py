@@ -1259,15 +1259,6 @@ def make_url_map(app):
             '/project/<pid>/contributors/',
             '/project/<pid>/node/<nid>/contributors/',
         ], 'post', project_views.contributor.project_contributors_post, json_renderer),
-        Rule([
-            '/project/<pid>/beforeremovecontributors/',
-            '/project/<pid>/node/<nid>/beforeremovecontributors/',
-        ], 'post', project_views.contributor.project_before_remove_contributor, json_renderer),
-        # TODO(sloria): should be a delete request to /contributors/
-        Rule([
-            '/project/<pid>/removecontributors/',
-            '/project/<pid>/node/<nid>/removecontributors/',
-        ], 'post', project_views.contributor.project_removecontributor, json_renderer),
 
         # Forks
         Rule(
