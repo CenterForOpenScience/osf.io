@@ -3273,11 +3273,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.set_privacy('private', Auth(user))
 
     def get_admin_contributors_recursive(self, *args, **kwargs):
+        """Return a set of all admin contributors for this node and admin
+        contributors on descendant nodes. Excludes contributors on node links and
+        inactive users.
+        """
         return {
             contrib
             for node in self.node_and_primary_descendants(*args, **kwargs)
             for contrib in node.contributors
-            if node.has_permission(contrib, 'admin')
+            if node.has_permission(contrib, 'admin') and contrib.is_active
         }
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
