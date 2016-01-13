@@ -107,7 +107,7 @@ describe('s3NodeConfigViewModel', () => {
         it('DOES NOT allow these names in strict mode', (done) => {
             assert.isFalse(isValidBucketName(''), 'empty');
             assert.isFalse(isValidBucketName('no'), 'too short');
-            assert.isFalse(isValidBucketName(longName + 'a'), 'too long');
+            assert.isFalse(isValidBucketName(longName + 'a'), '64 characters, too long');
             assert.isFalse(isValidBucketName(' aaa'), 'leading space');
             assert.isFalse(isValidBucketName('aaa '), 'trailing space');
             assert.isFalse(isValidBucketName('aaa.'), 'trailing period');
@@ -143,16 +143,16 @@ describe('s3NodeConfigViewModel', () => {
             assert.isTrue(isValidBucketName('aaa-', true), 'trailing hyphen');
             assert.isTrue(isValidBucketName('-aaa', true), 'leading hyphen');
             assert.isTrue(isValidBucketName('bBb', true), 'mixed case');
-            assert.isTrue(isValidBucketName('a-.b', true), 'label cannot end with hyphen');
-            assert.isTrue(isValidBucketName('a.-b', true), 'label cannot begin with hyphen');
-            assert.isTrue(isValidBucketName('8.8.8.8', true), 'label cannot look like IP addr');
+            assert.isTrue(isValidBucketName('a-.b', true), 'label can end with hyphen');
+            assert.isTrue(isValidBucketName('a.-b', true), 'label can begin with hyphen');
+            assert.isTrue(isValidBucketName('8.8.8.8', true), 'label can look like IP addr');
             assert.isTrue(isValidBucketName('600.9000.0.28', true), '  ..not even a fake IP addr');
             done();
         });
 
         it('DOES NOT allow these names in lax mode', (done) => {
             assert.isFalse(isValidBucketName('', true), 'empty');
-            assert.isFalse(isValidBucketName(reallyLongName + 'a', true), 'too long');
+            assert.isFalse(isValidBucketName(reallyLongName + 'a', true), ' 256 characters, too long');
             assert.isFalse(isValidBucketName(' aaa', true), 'leading space');
             assert.isFalse(isValidBucketName('aaa ', true), 'trailing space');
             assert.isFalse(isValidBucketName(':aa', true), 'colon leading character');

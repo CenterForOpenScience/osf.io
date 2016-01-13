@@ -124,7 +124,7 @@ ViewModel.prototype.selectBucket = function() {
     self.loading(true);
 
     var ret = $.Deferred();
-    if (!isValidBucketName(self.selectedBucket(), false)) {
+    if (!isValidBucketName(self.selectedBucket(), true)) {
         self.loading(false);
         bootbox.alert({
             title: 'Invalid bucket name',
