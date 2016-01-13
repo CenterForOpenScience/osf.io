@@ -124,7 +124,7 @@ BaseComment.prototype.fetch = function() {
         var urlParams = osfHelpers.urlParams();
         var query = 'embed=user';
         if (urlParams.view_only) {
-            query = 'view_only=' + urlParams.view_only;
+            query += '&view_only=' + urlParams.view_only;
         }
         if (self.id() !== undefined) {
             query += '&filter[target]=' + self.id();
@@ -284,19 +284,21 @@ var CommentModel = function(data, $parent, $root) {
 
     if ('embeds' in data && 'user' in data.embeds) {
         var userData = data.embeds.user.data;
-        self.author = {
-            'id': userData.id,
-            'url': userData.links.html,
-            'fullname': userData.attributes.full_name,
-            'gravatarUrl': userData.links.profile_image
-        };
-    } else if (osfHelpers.urlParams().view_only) {
-        self.author = {
-            'id': null,
-            'url': '',
-            'fullname': 'A User',
-            'gravatarUrl': ''
-        };
+        if (userData.id !== '') {
+            self.author = {
+                'id': userData.id,
+                'url': userData.links.html,
+                'fullname': userData.attributes.full_name,
+                'gravatarUrl': userData.links.profile_image
+            };
+        } else {
+            self.author = {
+                'id': null,
+                'url': '',
+                'fullname': 'A User',
+                'gravatarUrl': ''
+            };
+        }
     } else {
         self.author = self.$root.author;
     }
