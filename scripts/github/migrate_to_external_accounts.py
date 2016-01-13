@@ -28,6 +28,10 @@ HOOK_DOMAIN = github_settings.HOOK_DOMAIN or settings.DOMAIN
 # set of {ExternalAccount._id: (user_settings, oauth_settings)} mappings
 # with invalid credentials, for logging purposes
 invalid_oauth_creds = {}
+# set of (node_settings[_'id'], external_account._id) tuples without a
+# hook_secret, whether they were repairable or not. for logging purposes
+settings_need_repair = {}
+
 
 def verify_user_and_oauth_settings_documents(user_document, oauth_document):
     try:
@@ -60,6 +64,10 @@ def verify_node_settings_document(document, account):
         assert_in('hook_secret', document)
     except AssertionError:
         try:
+            settings_need_repair.append((document['_id'], account._id))
+            logger.info(
+                'Making GH API request attempting to repair node settings<_id: {}> with ExternalAccount<_id: {}>'.format(document['_id'], account._id)
+            )
             add_hook_to_old_node_settings(document, account)
         except (GitHubError, ApiError):
             return False
@@ -68,23 +76,20 @@ def verify_node_settings_document(document, account):
 def add_hook_to_old_node_settings(document, account):
     connect = GitHubClient(external_account=account)
     secret = make_hook_secret()
-    try:
-        hook = connect.add_hook(
-            document['user'], document['repo'],
-            'web',
-            {
-                'url': urlparse.urljoin(
-                    HOOK_DOMAIN,
-                    os.path.join(
-                        Node.load(document['owner']).api_url, 'github', 'hook/'
-                    )
-                ),
-                'content_type': github_settings.HOOK_CONTENT_TYPE,
-                'secret': secret,
-            }
-        )
-    except (GitHubError, ApiError):
-        raise
+    hook = connect.add_hook(
+        document['user'], document['repo'],
+        'web',
+        {
+            'url': urlparse.urljoin(
+                HOOK_DOMAIN,
+                os.path.join(
+                    Node.load(document['owner']).api_url, 'github', 'hook/'
+                )
+            ),
+            'content_type': github_settings.HOOK_CONTENT_TYPE,
+            'secret': secret,
+        }
+    )
 
     if hook:
         database['addongithubnodesettings'].find_and_modify(
@@ -202,8 +207,10 @@ def migrate(dry_run=True):
     nodeless_node_settings = []
 
     for user_settings_document in user_settings_list:
+        oauth_settings_document = None
         try:
-            oauth_settings_document = old_oauth_settings_collection.find_one({'github_user_id': user_settings_document['oauth_settings']})
+            if user_settings_document.get('oauth_settings', None):
+                oauth_settings_document = old_oauth_settings_collection.find_one({'github_user_id': user_settings_document['oauth_settings']})
         except KeyError:
             pass
         if not oauth_settings_document:
@@ -259,7 +266,7 @@ def migrate(dry_run=True):
                                 node_settings_document['_id'],
                             )
                         )
-                        unverifiable_node_settings.append(node_settings_document['_id'])
+                        unverifiable_node_settings.append((node_settings_document['_id'], external_account._id))
                         continue
                     if node_settings_document['deleted']:
                         logger.info(
@@ -304,55 +311,61 @@ def migrate(dry_run=True):
     )
 
     if user_no_oauth_settings:
-        logger.info(
+        logger.error(
             "Failed to migrate {0} user settings due to a lack of associated oauth settings:\n{1}".format(
                 len(user_no_oauth_settings), [e for e in user_no_oauth_settings]
             )
         )
     if deleted_user_settings:
-        logger.info(
+        logger.error(
             "Failed to migrate {0} deleted user settings: {1}".format(
                 len(deleted_user_settings), [e for e in deleted_user_settings]
             )
         )
     if broken_user_or_oauth_settings:
-        logger.info(
+        logger.error(
             "Failed to migrate {0} (user, oauth) settings tuples because they could not be verified:\n{1}".format(
                 len(broken_user_or_oauth_settings), ['({}, {})'.format(e, f) for e, f in broken_user_or_oauth_settings]
             )
         )
     if invalid_oauth_creds:
-        logger.info(
+        logger.error(
             "Created {0} invalid ExternalAccounts from (user, oauth) settings tuples due to invalid oauth credentials:\n{1}".format(
                 len(invalid_oauth_creds), ['{}: ({}, {})'.format(e, invalid_oauth_creds[e][0], invalid_oauth_creds[e][1]) for e in invalid_oauth_creds.keys()]
             )
         )
     if inactive_user_or_no_owner:
-        logger.info(
+        logger.error(
             "Failed to migrate {0} user settings due to an inactive or null owner:\n{1}".format(
                 len(inactive_user_or_no_owner), [e for e in inactive_user_or_no_owner]
             )
         )
     if no_oauth_creds:
-        logger.info(
+        logger.error(
             "Failed to migrate {0} user settings due a lack of oauth credentials:\n{1}".format(
                 len(no_oauth_creds), [e for e in no_oauth_creds]
             )
         )
+    if settings_need_repair:
+        logger.error(
+            "Made GH API calls for {0} node settings documents with external accounts because they needed to be repaired:\n{1}".format(
+                len(settings_need_repair), ['({}, {})'.format(e, f) for e, f in settings_need_repair]
+            )
+        )
     if unverifiable_node_settings:
-        logger.info(
-            "Failed to migrate {0} node settings because they could not be verified:\n{1}".format(
-                len(unverifiable_node_settings), [e for e in unverifiable_node_settings]
+        logger.error(
+            "Failed to migrate {0} (node settings, external_account) tuples because they could not be verified or repaired:\n{1}".format(
+                len(unverifiable_node_settings), ['({}, {})'.format(e, f) for e, f in unverifiable_node_settings]
             )
         )
     if deleted_node_settings:
-        logger.info(
+        logger.error(
             "Failed to migrate {0} deleted node settings:\n{1}".format(
                 len(deleted_node_settings), [e for e in deleted_node_settings]
             )
         )
     if nodeless_node_settings:
-        logger.info(
+        logger.error(
             "Failed to migrate {0} node settings without an associated node:\n{1}".format(
                 len(nodeless_node_settings), [e for e in nodeless_node_settings]
             )
