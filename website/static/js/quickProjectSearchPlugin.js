@@ -256,7 +256,8 @@ var quickSearchProject = {
         };
 
         self.mouseOver = function (node) {
-            node.style.backgroundColor='#E0EBF3'
+            node.style.backgroundColor='#E0EBF3';
+            node.style.cursor = 'pointer'
         };
 
         self.mouseOut = function (node) {
@@ -285,6 +286,10 @@ var quickSearchProject = {
                 return self.displayedNodes()
             }
 
+        };
+
+        self.nodeDirect = function(node) {
+            location.href = '/'+ node.id
         };
 
     },
@@ -365,11 +370,11 @@ var quickSearchProject = {
         function projectView(project) {
             console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
             return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
-                m('div', {class: 'row node-styling',  onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}}, [
+                m('div', {class: 'row node-styling',  onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(project)}}}, [
                     m('div', {class: 'col-sm-1 p-v-xs'}),
-                    m('div', {class: 'col-sm-4 p-v-xs'}, m("a", {href: '/'+ project.id}, project.attributes.title)),
+                    m('div', {class: 'col-sm-4 p-v-xs'}, project.attributes.title),
                     m('div', {class: 'col-sm-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
-                    m('div', {class: 'col-sm-3 p-v-xs'}, ctrl.formatDate(project)),
+                    m('div', {class: 'col-sm-3 p-v-xs'}, ctrl.formatDate(project))
                 ])
             ))
         }
