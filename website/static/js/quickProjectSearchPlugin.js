@@ -235,10 +235,20 @@ var quickSearchProject = {
             return true
         };
 
+        self.noTagMatch = function (node) {
+            var tags = node.attributes.tags;
+            for (var t = 0; t < tags.length; t++){
+                if (tags[t].toUpperCase().indexOf(self.filter().toUpperCase()) !== -1) {
+                    return false
+                }
+            }
+            return true
+        };
+
         self.filterNodes = function (){
             for (var n = self.nodes().length - 1; n >= 0; n--) {
                 var node = self.nodes()[n];
-                if (self.noTitleMatch(node) && self.noContributorMatch(node)) {
+                if (self.noTitleMatch(node) && self.noContributorMatch(node) && self.noTagMatch(node)) {
                     self.nonMatchingNodes().push(node);
                     self.nodes().splice(n, 1)
                 }
@@ -251,7 +261,7 @@ var quickSearchProject = {
 
         self.mouseOut = function (node) {
             node.style.backgroundColor='#fcfcfc'
-        }
+        };
 
         self.quickSearch = function () {
             self.filter(document.getElementById('searchQuery').value);
