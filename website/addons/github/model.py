@@ -187,7 +187,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'node_has_auth': True,
                 'github_user': self.user or '',
                 'github_repo': self.repo or '',
-                'github_repo_full_name': '{0} / {1}'.format(self.user, self.repo),
+                'github_repo_full_name': '{0} / {1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
@@ -196,6 +196,7 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'is_owner': owner == user,
                 'valid_credentials': valid_credentials,
                 'addons_url': web_url_for('user_addons'),
+                'files_url': self.owner.web_url_for('collect_file_trees')
             })
         return ret
 
