@@ -397,12 +397,11 @@ var quickSearchProject = {
                     ]),
                     m('div', {class: 'col-sm-3'})),
 
-                m('div', {class: 'row'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
-                m('div', {class: 'row'}, [
-                    m('div', {class: 'col-sm-1 p-v-xs'}),
-                    m('div', {class: 'col-sm-4 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
+                m('div', {class: 'row'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
+                m('div', {class: 'row node-col-headers'}, [
+                    m('div', {class: 'col-sm-5 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
                     m('div', {class: 'col-sm-4 f-w-xl p-v-xs'}, 'Contributors'),
-                    m('div', {class: 'col-sm-3 f-w-xl p-v-xs'}, 'Date Modified', sortDateAsc(), sortDateDesc()),
+                    m('div', {class: 'col-sm-3 f-w-xl p-v-xs'}, 'Modified', m('span', {class: 'sort-group'}, sortDateAsc(), sortDateDesc())),
                 ])
                 )),
 

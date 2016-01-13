@@ -23,3 +23,23 @@ button {
     color: #347BB7;
 }
 
+.sort-group {
+    display: inline;
+}
+
+.sort-group {
+  display: inline-block;
+
+}
+
+@media screen and (max-width: 768px) {
+    .node-col-headers {
+        display: none;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .node-sort-dropdown {
+        display: none;
+    }
+}
