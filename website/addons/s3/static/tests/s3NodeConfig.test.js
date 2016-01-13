@@ -122,6 +122,9 @@ describe('s3NodeConfigViewModel', () => {
             assert.isFalse(isValidBucketName('a.-b'), 'label cannot begin with hyphen');
             assert.isFalse(isValidBucketName('8.8.8.8'), 'label cannot look like IP addr');
             assert.isFalse(isValidBucketName('600.9000.0.28'), '  ..not even a fake IP addr');
+            assert.isFalse(isValidBucketName(':aa', true), 'colon leading character');
+            assert.isFalse(isValidBucketName('aa;', true), 'semicolon trailing');
+            assert.isFalse(isValidBucketName('space middle', true), 'space in the middle');
             done();
         });
 
