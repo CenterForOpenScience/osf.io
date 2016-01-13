@@ -16,19 +16,36 @@ from .forms import EmailForm
 class EmailFormView(FormView):
 
     form_class = EmailForm
-    template_name = "spam/email.html"  # TODO: <-
-    success_url = ''  # TODO <-
+    template_name = "spam/email.html"
+    success_url = ''
 
-    def get(self, request, spam_id, *args, **kwargs):
-        form = self.form_class(initial=self.initial)
-        return render(request, self.template_name, {'form': form})
+    def get(self, request, *args, **kwargs):
+        spam_id = kwargs.get('spam_id', None)
+        try:
+            spam = serialize_comment(Comment.load(spam_id))
+        except:
+            pass
+        initial = {
+            'name': spam['author'].fullname,
+            'email': [(i, r) for i, r in enumerate(spam['author'].emails)],
+            'subject': 'Reports of spam',
+            'message': 'certainly <b> unfortunate </b>',  # TODO: <-
+        }
+        form = self.form_class(initial=initial)
+        self.success_url = None  # TODO: <-
+        context = {
+            'comment': spam,
+            'page_number': request.GET.get('page', 1),
+            'form': form
+        }
+        return render(request, self.template_name, context)
 
     def form_valid(self, form):
         send_mail(
             subject=form.cleaned_data.get('subject').strip(),
             message=form.cleaned_data.get('message'),
             from_email='support@osf.io',
-            recipient_list=[]
+            recipient_list=[]  # TODO: <-
         )
         return super(EmailFormView, self).form_valid(form)
 
@@ -70,11 +87,3 @@ def spam_detail(request, spam_id):
         'page_number': request.GET.get('page', 1),
     }
     return render(request, 'spam/comment.html', context)
-
-
-def email(request, spam_id):
-    context = {
-        'comment': serialize_comment(Comment.load(spam_id)),
-        'page_number': request.GET.get('page', 1),
-    }
-    return render(request, 'spam/email.html', context)
