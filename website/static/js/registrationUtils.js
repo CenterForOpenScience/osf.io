@@ -77,7 +77,7 @@ function Comment(data) {
         }
     });
 
-    self.seenBy = ko.observableArray([self.user.id]);
+    self.seenBy = ko.observableArray(data.seenBy || [self.user.id]);
 
     /**
      * Returns true if the current user is the comment owner
