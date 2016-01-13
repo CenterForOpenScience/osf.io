@@ -11,12 +11,16 @@ MAX_RENDER_SIZE = (1024 ** 2) * 3
 
 ALLOWED_ORIGIN = '*'
 
-BUCKET_LOCATIONS = {}
+BUCKET_LOCATIONS = {
+    "us-east-1": "US Standard",
+    "EU": "Europe Standard"
+}
+
 ENCRYPT_UPLOADS_DEFAULT = True
 # Load S3 settings used in both front and back end
 with open(os.path.join(STATIC_PATH, 'settings.json')) as fp:
     settings = json.load(fp)
-    BUCKET_LOCATIONS = settings.get('bucketLocations', {})
+    BUCKET_LOCATIONS.update(settings.get('bucketLocations', {}))
     ENCRYPT_UPLOADS_DEFAULT = settings.get('encryptUploads', True)
 
 OSF_USER = 'osf-user{0}'

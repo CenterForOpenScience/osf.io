@@ -1,8 +1,6 @@
 {
     "bucketLocations": {
         "": "US Standard",
-        "us-east-1": "US Standard",
-        "EU": "Europe Standard",
         "eu-central-1": "Frankfurt",
         "eu-west-1": "Ireland",
         "us-west-1": "California",
