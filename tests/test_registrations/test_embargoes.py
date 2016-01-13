@@ -12,9 +12,10 @@ from tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
 )
+from modularodm.exceptions import ValidationValueError
 
 from framework.exceptions import PermissionsError
-from modularodm.exceptions import ValidationValueError
+from framework.auth import Auth
 from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
@@ -60,6 +61,33 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         assert_true(self.user._id in embargo.approval_state)
         assert_false(unconfirmed_user._id in embargo.approval_state)
+
+    def test__initiate_embargo_adds_admins_on_child_nodes(self):
+        project_admin = UserFactory()
+        project_non_admin = UserFactory()
+        child_admin = UserFactory()
+        child_non_admin = UserFactory()
+        grandchild_admin = UserFactory()
+
+        project = ProjectFactory(creator=project_admin)
+        project.add_contributor(project_non_admin, auth=Auth(project.creator), save=True)
+
+        child = NodeFactory(creator=child_admin, parent=project)
+        child.add_contributor(child_non_admin, auth=Auth(project.creator), save=True)
+
+        grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
+
+        embargo = project._initiate_embargo(
+            project.creator,
+            self.valid_embargo_end_date,
+            for_existing_registration=True
+        )
+        assert_in(project_admin._id, embargo.approval_state)
+        assert_in(child_admin._id, embargo.approval_state)
+        assert_in(grandchild_admin._id, embargo.approval_state)
+
+        assert_not_in(project_non_admin._id, embargo.approval_state)
+        assert_not_in(child_non_admin._id, embargo.approval_state)
 
     def test__initiate_embargo_with_save_does_save_embargo(self):
         initial_count = Embargo.find().count()
