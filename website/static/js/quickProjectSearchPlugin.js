@@ -202,12 +202,9 @@ var quickSearchProject = {
 
         self.colorSortButtons = function () {
             var sortButtons = ['dateAsc', 'dateDesc', 'alphaAsc', 'alphaDesc']
-            console.log(document.getElementById(self.sortState()));
             var button = document.getElementById(self.sortState()).className = 'selected';
             sortButtons.forEach(function(button) {
-                console.log(button);
                 if (self.sortState() !== button) {
-                    console.log(document.getElementById(button));
                     document.getElementById(button).className = 'not-selected'
                 }
             })
@@ -262,6 +259,12 @@ var quickSearchProject = {
 
         self.mouseOut = function (node) {
             node.style.backgroundColor='#fcfcfc'
+        };
+
+        self.clearSearch = function () {
+            document.getElementById('searchQuery').value="";
+            self.filter(document.getElementById('searchQuery').value);
+            self.quickSearch()
         };
 
         self.quickSearch = function () {
@@ -346,7 +349,8 @@ var quickSearchProject = {
             if (ctrl.loadingComplete()){
                 return m('div', {class : 'input-group'}, [
                     m('span', {class: 'input-group-addon'}, m('i', {class: 'fa fa-search'})),
-                    m('input[type=search]', {class: 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {ctrl.quickSearch()}})
+                    m('input[type=search]', {class: 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {ctrl.quickSearch()}}),
+                    m('span', {class: 'input-group-addon', onclick: function() {ctrl.clearSearch()}},  m('button', m('i', {class: 'fa fa-times'})))
                 ])
             }
         }
