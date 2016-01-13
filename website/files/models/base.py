@@ -21,6 +21,7 @@ from framework.analytics import get_basic_counters
 from website import util
 from website.files import utils
 from website.files import exceptions
+from website.project import signals as project_signals
 
 
 __all__ = (
@@ -398,9 +399,10 @@ class FileNode(object):
 
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
+        if self.parent.node != destination_parent.node:
+            project_signals.file_moved_node.send(self, destination_node=destination_parent.node)
         self.parent = destination_parent.stored_object
-        self._update_node(save=True)
-        # Trust _update_node to save us
+        self._update_node(save=True)  # Trust _update_node to save us
 
         return self
 
