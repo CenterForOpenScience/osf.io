@@ -200,14 +200,50 @@ var quickSearchProject = {
             }
         };
 
+        self.sortFieldGivenDirection = function(){
+            var dropdown = document.getElementById('sortDropDown');
+            var fieldSort = dropdown.options[dropdown.selectedIndex].value;
+            var directionSort = self.preSelectDirection();
+            self.sortState(fieldSort + directionSort);
+            self.sortNodesAndModifyDisplay()
+        };
+
+        self.sortDirectionGivenField = function(clicked) {
+            console.log('sorted');
+            var fieldSort = self.preSelectField();
+            var directionSort = clicked.id
+            self.sortState(fieldSort + directionSort);
+            self.sortNodesAndModifyDisplay()
+        };
+
+        self.preSelectField = function(){
+            var fieldSort = self.sortState().split(/[A-Z][a-z]+/g)[0];
+            return fieldSort;
+        };
+
+        self.preSelectDirection = function(){
+            var directionSort = self.sortState().match(/[A-Z][a-z]+/g)[0];
+            return directionSort
+        };
+
         self.colorSortButtons = function () {
-            var sortButtons = ['dateAsc', 'dateDesc', 'alphaAsc', 'alphaDesc']
+            var sortButtons = ['dateAsc', 'dateDesc', 'alphaAsc', 'alphaDesc'];
             var button = document.getElementById(self.sortState()).className = 'selected';
             sortButtons.forEach(function(button) {
                 if (self.sortState() !== button) {
                     document.getElementById(button).className = 'not-selected'
                 }
-            })
+            });
+
+            var shrunkSortButtons = ['Asc', 'Desc'];
+            var direction = self.preSelectDirection()
+            document.getElementById(direction).className = 'selected';
+            if (direction === 'Asc'){
+                document.getElementById('Desc').className = 'not-selected'
+            }
+            else {
+                document.getElementById('Asc').className = 'not-selected'
+            }
         };
 
         self.sortNodesAndModifyDisplay = function () {
@@ -345,6 +381,57 @@ var quickSearchProject = {
             }
         }
 
+        function ascending() {
+            if (ctrl.loadingComplete()){
+                var direction = ctrl.preSelectDirection()
+                if (direction === 'Asc') {
+                    return m('button', {id: 'Asc', class: 'selected', onclick: function() {
+                         ctrl.sortDirectionGivenField(this)
+                         }},
+                         m('i', {class: 'fa fa-angle-up'}))
+                }
+                else {
+                    return m('button', {id: 'Asc', class: 'not-selected', onclick: function() {
+                         ctrl.sortDirectionGivenField(this)
+                         }},
+                         m('i', {class: 'fa fa-angle-up'}))
+
+                }
+
+            }
+        }
+
+          function descending() {
+            if (ctrl.loadingComplete()){
+                var direction = ctrl.preSelectDirection()
+                if (direction === 'Desc') {
+                    return m('button', {id: 'Desc', class: 'selected', onclick: function() {
+                         ctrl.sortDirectionGivenField(this)
+                         }},
+                         m('i', {class: 'fa fa-angle-down'}))
+                }
+                else {
+                    return m('button', {id: 'Desc', class: 'not-selected', onclick: function() {
+                         ctrl.sortDirectionGivenField(this)
+                         }},
+                         m('i', {class: 'fa fa-angle-down'}))
+
+                }
+
+            }
+        }
+
+        function defaultSelected() {
+            var selected = ctrl.preSelectField();
+            if (selected === 'alpha') {
+                return [m('option', {value: 'alpha', selected:'selected'}, 'Title'), m('option', {value: 'date'}, 'Modified')]
+            }
+            else {
+                return [m('option', {value: 'alpha'}, 'Title'), m('option', {value: 'date', selected:'selected'}, 'Modified')]
+            }
+
+        }
+
         function searchBar() {
             if (ctrl.loadingComplete()){
                 return m('div', {class : 'input-group'}, [
@@ -373,10 +460,9 @@ var quickSearchProject = {
 
         function projectView(project) {
             console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
-            return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
+            return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
                 m('div', {class: 'row node-styling',  onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(project)}}}, [
-                    m('div', {class: 'col-sm-1 p-v-xs'}),
-                    m('div', {class: 'col-sm-4 p-v-xs'}, project.attributes.title),
+                    m('div', {class: 'col-sm-5 p-v-xs'}, project.attributes.title),
                     m('div', {class: 'col-sm-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
                     m('div', {class: 'col-sm-3 p-v-xs'}, ctrl.formatDate(project))
                 ])
@@ -404,6 +490,18 @@ var quickSearchProject = {
                     m('div', {class: 'col-sm-3 f-w-xl p-v-xs'}, 'Modified', m('span', {class: 'sort-group'}, sortDateAsc(), sortDateDesc())),
                 ])
                 )),
+
+                m('div', {class: 'row'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
+                    m('div', {class: 'row node-sort-dropdown'}, [
+                        m('div', {class: 'col-sm-12 p-v-xs, f-w-xl'},
+                            m('label', [m('span', 'Order by: '),
+                                m('select', {id: 'sortDropDown', onchange: function(){ctrl.sortFieldGivenDirection(this)}},
+                                    defaultSelected())],
+                                ascending(), descending()
+                            )
+                        )]
+                    ))
+                ),
 
                 displayNodes(),
                 m('div', {class: 'row'}, [
