@@ -432,6 +432,19 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
+    @mock.patch('website.archiver.tasks.archive')
+    def test_delete_draft_registration_approved_and_registration_deleted(self, mock_register_draft):
+        self.draft.register(auth=self.auth, save=True)
+        self.draft.registered_node.is_deleted = True
+        self.draft.registered_node.save()
+
+        assert_equal(1, DraftRegistration.find().count())
+        url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
+
+        res = self.app.delete(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.NO_CONTENT)
+        assert_equal(0, DraftRegistration.find().count())
+
     def test_only_admin_can_delete_registration(self):
         non_admin = AuthUserFactory()
         assert_equal(1, DraftRegistration.find().count())
