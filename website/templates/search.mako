@@ -169,6 +169,7 @@
                     <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
                 </p>
                 <!-- ko if: social -->
+                <!-- <p>social.researchGate</p> -->
                 <ul class="list-inline">
                     <li data-bind="visible: social.personal">
                         <a data-bind="attr.href: social.personal">
@@ -209,6 +210,11 @@
                     <li data-bind="visible: social.researcherId">
                         <a data-bind="attr.href: social.researcherId">
                             <i class="fa social-icons" data-toggle="tooltip" title="ResearcherID">R</i>
+                        </a>
+                    </li>
+                     <li data-bind="visible: social.researchGate">
+                        <a data-bind="attr.href: social.researchGate">
+                            <img class="social-icons" src="/static/img/researchgate.jpg" data-toggle="tooltip" title="ResearchGate"></i>
                         </a>
                     </li>
                 </ul>
