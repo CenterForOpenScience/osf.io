@@ -137,6 +137,5 @@
       </table>
     </div>
 </div>
-<%include file="components/dashboard_templates.mako"/>
 <%include file="components/autocomplete.mako"/>
 </%def>

@@ -8,6 +8,50 @@ require('js/onboarder.js');
 require('js/components/autocomplete');
 
 $(function(){
+    var getUser = $.ajax({
+        method: 'GET',
+        url : $osf.apiV2Url('users/me/', { query : {}}),
+        crossOrigin: true,
+        xhrFields: {
+            withCredentials: true
+        }
+    });
+    getUser.done(function(result){
+        var currentUser = result.data.id;
+        $.ajax({
+            method: 'GET',
+            url : url,
+            crossOrigin: true,
+            xhrFields: {
+                withCredentials: true
+            }
+        }).done(function(response) {
+            var allNodes = response.data;
+
+            // If we need to change what nodes can be registered, filter here
+            var registrationSelection = ko.utils.arrayFilter(allNodes, function(node) {
+                return $.inArray(node.permissions, ['admin']) !== -1;
+            });
+
+            $osf.applyBindings({
+                nodes: registrationSelection,
+                enableComponents: true
+            }, '#existingProject');
+            $osf.applyBindings({
+                nodes: registrationSelection,
+                enableComponents: true
+            }, '#existingProjectXS');
+        }).fail(function(xhr, textStatus, error) {
+            Raven.captureMessage('Could not fetch dashboard nodes.', {
+                url: '/api/v1/dashboard/get_nodes/', textStatus: textStatus, error: error
+            });
+        });
+    })
+
+    // Activate "existing projects" typeahead.
+    var url = $osf.apiV2Url('users/me/nodes', { query : { embed : 'contributors'}});
+
+
     $('.prereg-button').qToggle();
     $('.prereg-button').click(function(){
         var target = $(this).attr('data-qToggle-target');
@@ -29,29 +73,7 @@ $(function(){
         });
     });
 
-    // Activate "existing projects" typeahead.
-    var url = '/api/v1/dashboard/get_nodes/';
-    $.getJSON(url).done(function(response) {
-        var allNodes = response.nodes;
 
-        // If we need to change what nodes can be registered, filter here
-        var registrationSelection = ko.utils.arrayFilter(allNodes, function(node) {
-            return $.inArray(node.permissions, ['admin']) !== -1;
-        });
-
-        $osf.applyBindings({
-            nodes: registrationSelection,
-            enableComponents: true
-        }, '#existingProject');
-        $osf.applyBindings({
-            nodes: registrationSelection,
-            enableComponents: true
-        }, '#existingProjectXS');
-    }).fail(function(xhr, textStatus, error) {
-        Raven.captureMessage('Could not fetch dashboard nodes.', {
-            url: '/api/v1/dashboard/get_nodes/', textStatus: textStatus, error: error
-        });
-    });
 
     // Activate autocomplete for draft registrations
     $.getJSON('/api/v1/prereg/draft_registrations/').then(function(response){
