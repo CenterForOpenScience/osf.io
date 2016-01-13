@@ -43,3 +43,7 @@ button {
         display: none;
     }
 }
+
+label {
+    font-weight: normal;
+}
