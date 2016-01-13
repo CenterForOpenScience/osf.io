@@ -26,7 +26,7 @@ var LogWrap = {
         self.loading = false;
 
         self.getLogs = function(init, reset) {
-            if (!(init || reset)  && self.cache[self.page - 1]){
+            if (!(init || reset )  && self.cache[self.page - 1]){
                 self.activityLogs(self.cache[self.page - 1]);
                 return;
             }
@@ -68,7 +68,7 @@ var LogWrap = {
                     self.cache.push(result.data.slice(10,19));
                     self.activityLogs(self.cache[self.page - 1]);
                 }
-                self.lastPage = (result.links.meta.total / result.links.meta.per_page | 0) + 1;
+                self.lastPage = (result.links.meta.total / (result.links.meta.per_page/2) | 0) + 1;
             });
             return promise;
         };
@@ -83,10 +83,10 @@ var LogWrap = {
         self.getLogs(true, false);
     },
     view: function(ctrl, args){
-        var fileEvents = ((ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0);
-        var commentEvents = ((ctrl.eventNumbers.comments/ctrl.totalEvents)*100 | 0);
-        var wikiEvents = ((ctrl.eventNumbers.wiki/ctrl.totalEvents)*100 | 0);
-        var nodeEvents = ((ctrl.eventNumbers.nodes/ctrl.totalEvents)*100 | 0);
+        var fileEvents = ((ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.files ? 5 : 0);
+        var commentEvents = ((ctrl.eventNumbers.comments/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.comments ? 5 : 0);
+        var wikiEvents = ((ctrl.eventNumbers.wiki/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.wiki ? 5 : 0);
+        var nodeEvents = ((ctrl.eventNumbers.nodes/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.nodes ? 5 : 0);
         var otherEvents = 100 - (fileEvents + commentEvents + wikiEvents + nodeEvents);
         var div = 8.64e+7;
         var begin = (Number(ctrl.firstDay.format('x'))/div | 0);
@@ -200,6 +200,25 @@ var LogWrap = {
                 return '#5cb85c';
             }
         };
+        var filterLabels = function(){
+            if (!ctrl.eventFilter){
+                if (otherEvents === 100) {
+                    return m('p', 'No filters available')
+                }
+                return m('p', [
+                    'Filter on: ',
+                    fileEvents ? m('a', {onclick: function(){ctrl.callLogs('file')}}, 'Files' + (nodeEvents || commentEvents || wikiEvents ? ', ': '')): '',
+                    nodeEvents ? m('a', {onclick: function(){ctrl.callLogs('project')}}, 'Projects' + (commentEvents || wikiEvents ? ', ': '')): '',
+                    commentEvents ? m('a', {onclick: function(){ctrl.callLogs('comment')}}, 'Comments' + (wikiEvents ? ', ': '')): '',
+                    wikiEvents ? m('a', {onclick: function(){ctrl.callLogs('wiki')}}, 'Wiki'): ''
+                ])
+            } else {
+                return m('p', [
+                    'Filtering on ' + (ctrl.eventFilter === 'file' ? 'Files' : ctrl.eventFilter === 'project' ? 'Projects' : ctrl.eventFilter === 'comment' ? 'Comments' : 'Wiki') + ' ',
+                    m('a.fa.fa-close', {onclick: function(){ctrl.callLogs(ctrl.eventFilter)}})
+                ])
+            }
+        };
         return m('.panel.panel-default', [
             m('.panel-heading', 'Recent Activity'),
             m('.panel-body',
@@ -213,39 +232,38 @@ var LogWrap = {
                     m('.col-xs-10',
                         m('#rAProgressBar.progress.category-bar',
                             ctrl.loading ? m('.progress-bar.progress-bar-success.active.progress-bar-striped', {style: {width: '100%'}}, m('b', {style:{color: 'white'}}, 'Loading')) : ([
-                                m('.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : '.muted'), {style: {width: fileEvents+'%'}},
-                                    m('a', {onclick: function(){
+                                m('a.progress-bar' + (ctrl.eventFilter === 'file' ? '.active.progress-bar-striped' : '.muted'), {style: {width: fileEvents+'%'},
+                                    onclick: function(){
                                         ctrl.callLogs('file');
-                                    }, style: {color: 'white'}}, m('i.fa.fa-file'))
+                                    }}, m('i.fa.fa-file.progress-bar-button')
                                 ),
-                                m('.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ? '.active.progress-bar-striped' : '.muted'), {style: {width: nodeEvents+'%'}},
-                                    m('a', {onclick: function(){
+                                m('.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ? '.active.progress-bar-striped' : ''), {style: {width: nodeEvents+'%'},
+                                    onclick: function(){
                                         ctrl.callLogs('project');
-                                    }, style: {color: 'white'}}, m('i.fa.fa-cube'))
+                                    }},  m('i.fa.fa-cube.progress-bar-button')
                                 ),
-                                m('.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' ? '.active.progress-bar-striped' : '.muted'), {style: {width: commentEvents+'%'}},
-                                    m('a', {onclick: function(){
+                                m('.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' ? '.active.progress-bar-striped' : ''), {style: {width: commentEvents+'%'},
+                                    onclick: function(){
                                         ctrl.callLogs('comment');
-                                    }, style: {color: 'white'}}, m('i.fa.fa-comment'))
+                                    }}, m('i.fa.fa-comment.progress-bar-button')
                                 ),
-                                m('.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' ? '.active.progress-bar-striped' : '.muted'), {style: {width: wikiEvents+'%'}},
-                                    m('a', {onclick: function(){
+                                m('.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' ? '.active.progress-bar-striped' : ''), {style: {width: wikiEvents+'%'},
+                                    onclick: function(){
                                         ctrl.callLogs('wiki');
-                                    }, style: {color: 'white'}}, m('i.fa.fa-book'))
+                                    }}, m('i.fa.fa-book.progress-bar-button')
                                 ),
                                 (ctrl.totalEvents !== 0) ?
-                                    m('.progress-bar.progress-bar-success.muted', {style: {width: otherEvents+'%'}}, m('i.fa.fa-plus')) :
+                                    m('.progress-bar.progress-bar-success', {style: {width: otherEvents+'%'}}, m('i.fa.fa-plus.progress-bar-button')) :
                                     m('.progress-bar.no-items-progress-bar', 'None')
                             ])
                         )
                     ),
                     m('.col-xs-1')
                 ]),
-                //m('row', [m('.col-xs-1'), m('.col-xs-10', m('a', {onclick: {
-
-                //}},'Files')), m('.col-xs-1')]),
-                m('row', [
-                    m('.col-xs-1.text-center', m('button.btn.fa.fa-angle-left.page-button#leftButton' + (ctrl.page > 1 ? '' : '.disabled'), {
+                m('row', [m('.col-xs-1'), m('.col-xs-10', filterLabels()), m('.col-xs-1')]),
+                m('br'), m('br'),
+                m('row',{style:{paddingTop: '15px'}}, [
+                    m('.col-xs-1', m('button.btn.fa.fa-angle-left.page-button#leftButton' + (ctrl.page > 1 ? '' : '.disabled.hidden'), {
                         onclick: function(){
                             ctrl.page--;
                             ctrl.getLogs();
@@ -257,13 +275,14 @@ var LogWrap = {
                             m.component(LogText,item)
                         ]), m('', {style: {padding: '5px'}})]);
                     }) : m('p','No activity in this time range.')),
-                    m('.col-xs-1.text-center', m('button.btn.fa.fa-angle-right.page-button#rightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled'), {
+                    m('.col-xs-1', m('button.btn.fa.fa-angle-right.page-button#rightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled.hidden'), {
                         onclick: function(){
                             ctrl.page++;
                             ctrl.getLogs();
                         }
                     }))
-                ])
+                ]), m('br'),
+                m('p.text-center', ctrl.page + ' of ' + ctrl.lastPage)
             ]))
         ]);
     }

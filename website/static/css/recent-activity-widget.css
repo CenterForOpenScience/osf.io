@@ -18,6 +18,7 @@
     border-left: 5px solid #E0E0E0;
     border-right: 5px solid #E0E0E0;
     vertical-align: top;
+    height: 30px;
 }
 
 .col-xs-1 .page-button {
@@ -39,4 +40,10 @@
 .no-items-progress-bar {
     width: 100%;
     background-color: dimgrey;
+}
+
+.progress-bar .progress-bar-button {
+    color: white;
+    font-size: 150%;
+    margin-top: 5px;
 }
