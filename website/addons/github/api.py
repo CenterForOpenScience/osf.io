@@ -102,16 +102,6 @@ class GitHubClient(object):
 
         return resp.headers, resp.content
 
-    def set_privacy(self, user, repo, private):
-        """Set privacy of GitHub repo.
-
-        :param str user: GitHub user name
-        :param str repo: GitHub repo name
-        :param bool private: Make repo private; see
-            http://developer.github.com/v3/repos/#edit
-        """
-        return self.repo(user, repo).edit(repo, private=private)
-
     #########
     # Hooks #
     #########

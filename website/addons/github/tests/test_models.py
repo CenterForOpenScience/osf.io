@@ -198,57 +198,6 @@ class TestCallbacks(OsfTestCase):
             None,
         )
 
-    @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
-    @mock.patch('website.addons.github.api.GitHubClient.set_privacy')
-    def test_after_set_privacy_private_authenticated(self, mock_set_privacy):
-        mock_set_privacy.return_value = {}
-        message = self.node_settings.after_set_privacy(
-            self.project, 'private',
-        )
-        mock_set_privacy.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-            True,
-        )
-        assert_true(message)
-        assert_in('made private', message.lower())
-
-    @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
-    @mock.patch('website.addons.github.api.GitHubClient.set_privacy')
-    def test_after_set_privacy_public_authenticated(self, mock_set_privacy):
-        mock_set_privacy.return_value = {}
-        message = self.node_settings.after_set_privacy(
-            self.project, 'public'
-        )
-        mock_set_privacy.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-            False,
-        )
-        assert_true(message)
-        assert_in('made public', message.lower())
-
-    @unittest.skipIf(not github_settings.SET_PRIVACY, 'Setting privacy is disabled.')
-    @mock.patch('website.addons.github.api.GitHubClient.repo')
-    @mock.patch('website.addons.github.api.GitHubClient.set_privacy')
-    def test_after_set_privacy_not_authenticated(self, mock_set_privacy, mock_repo):
-        mock_set_privacy.return_value = {'errors': ['it broke']}
-        mock_repo.return_value = {'private': True}
-        message = self.node_settings.after_set_privacy(
-            self.project, 'private',
-        )
-        mock_set_privacy.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-            True,
-        )
-        mock_repo.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-        )
-        assert_true(message)
-        assert_in('could not set privacy', message.lower())
-
     def test_after_fork_authenticator(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(
