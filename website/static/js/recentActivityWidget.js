@@ -270,7 +270,7 @@ var LogWrap = {
                     ),
                     m('.col-xs-1')
                 ]),
-                m('row', [m('.col-xs-1'), m('.col-xs-10', filterLabels()), m('.col-xs-1')]),
+                m('row', !ctrl.loading ? [m('.col-xs-1'), m('.col-xs-10', filterLabels()), m('.col-xs-1')] : ''),
                 m('br'), m('br'), !ctrl.loading ?
                 m('row',{style:{paddingTop: '15px'}}, [
                     m('.col-xs-1', m('button.btn.fa.fa-angle-left.page-button#leftButton' + (ctrl.page > 1 ? '' : '.disabled.hidden'), {
