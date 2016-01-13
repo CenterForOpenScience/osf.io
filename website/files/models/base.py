@@ -24,7 +24,6 @@ from website.files import exceptions
 from website.project import signals as project_signals
 
 
-
 __all__ = (
     'File',
     'Folder',
