@@ -25,9 +25,14 @@ var LogWrap = {
         self.cache = [];
         self.loading = false;
 
-        self.getLogs = function(init, reset) {
-            if (!(init || reset )  && self.cache[self.page - 1]){
+        self.getLogs = function(init, reset, update) {
+            if (!(init || reset || update)  && self.cache[self.page - 1]){
                 self.activityLogs(self.cache[self.page - 1]);
+                if (!self.cache[self.page] && self.page <= self.lastPage){
+                    self.page = self.page + 1;
+                    self.getLogs(false, false, true);
+                    self.page = self.page - 1;
+                }
                 return;
             }
             var query = {
@@ -46,7 +51,7 @@ var LogWrap = {
                 query['filter[date][gte]'] = self.dateBegin.toISOString();
             }
             var url = $osf.apiV2Url('users/' + self.userId + '/node_logs/', { query : query});
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: (update ? true : false)});
             promise.then(function(result){
                 self.loading = false;
                 result.data.map(function(log){
@@ -66,7 +71,9 @@ var LogWrap = {
                 if (!init) {
                     self.cache.push(result.data.slice(0,9));
                     self.cache.push(result.data.slice(10,19));
-                    self.activityLogs(self.cache[self.page - 1]);
+                    if (!update) {
+                        self.activityLogs(self.cache[self.page - 1]);
+                    }
                 }
                 self.lastPage = (result.links.meta.total / (result.links.meta.per_page/2) | 0) + 1;
             });
@@ -237,17 +244,17 @@ var LogWrap = {
                                         ctrl.callLogs('file');
                                     }}, m('i.fa.fa-file.progress-bar-button')
                                 ),
-                                m('.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ? '.active.progress-bar-striped' : ''), {style: {width: nodeEvents+'%'},
+                                m('a.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ? '.active.progress-bar-striped' : ''), {style: {width: nodeEvents+'%'},
                                     onclick: function(){
                                         ctrl.callLogs('project');
                                     }},  m('i.fa.fa-cube.progress-bar-button')
                                 ),
-                                m('.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' ? '.active.progress-bar-striped' : ''), {style: {width: commentEvents+'%'},
+                                m('a.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' ? '.active.progress-bar-striped' : ''), {style: {width: commentEvents+'%'},
                                     onclick: function(){
                                         ctrl.callLogs('comment');
                                     }}, m('i.fa.fa-comment.progress-bar-button')
                                 ),
-                                m('.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' ? '.active.progress-bar-striped' : ''), {style: {width: wikiEvents+'%'},
+                                m('a.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' ? '.active.progress-bar-striped' : ''), {style: {width: wikiEvents+'%'},
                                     onclick: function(){
                                         ctrl.callLogs('wiki');
                                     }}, m('i.fa.fa-book.progress-bar-button')
