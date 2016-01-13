@@ -25,32 +25,44 @@ var AddProject = {
         };
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
         self.options = $.extend(self.defaults, options);
-        self.init = function _init () {
-
-        };
+        self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
-        self.categoryList = [
-            { value: 'project', label: 'Project'},
-            { value: 'hypothesis', label : 'Hypothesis' },
-            { value: 'methods and measures', label :  'Methods and Measures'},
-            { value: 'procedure', label:  'Procedure'},
-            { value: 'instrumentation', label: 'Instrumentation'},
-            { value: 'data', label:  'Data'},
-            { value: 'analysis', label: 'Analysis'},
-            { value: 'communication',label: 'Communication'},
-            { value: 'other', label: 'Other'}
-        ];
-        self.newProjectCategory = m.prop(self.categoryList[0].value);
+        self.newProjectCategory = m.prop('project');
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
         };
-        //self.chooseCategory = function(event){
-        //    self.newProjectCategory = $(this).val();
-        //};
+        // Load Category list from API
+        self.categoryList = [];
+        self.loadCategories = function () {
+            m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig}).then(function _success(results){
+                console.log(results);
+                if(results.actions.POST.category){
+                    self.categoryList = results.actions.POST.category.choices;
+                    self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
+                        if(a.value < b.value) return -1;
+                        if(a.value > b.value) return 1;
+                        return 0;
+                    });
+                }
+            }, function _error(results){
+                console.error('Error loading category names:', results);
+            });
+        };
+        self.loadCategories();
+        // Validation
+        self.isValid = m.prop(false);
+        self.checkValid = function () {
+            var projectNameNotEmpty = self.newProjectName().trim().length > 0 ? true : false;
+            if(projectNameNotEmpty){
+                self.isValid(true);
+            } else {
+                self.isValid(false);
+            }
+        };
         self.add = function _add () {
             var url;
             var data;
@@ -83,14 +95,12 @@ var AddProject = {
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);
             self.newProjectName('');
-            //m.redraw(true);
-
         };
         self.reset = function _reset(){
             self.newProjectName('');
             self.viewState('form');
             self.newProjectDesc('');
-            self.newProjectCategory(self.categoryList[0].value);
+            self.newProjectCategory('project');
             $('.modal').modal('hide');
         };
     },
@@ -104,43 +114,53 @@ var AddProject = {
                     m('h3.modal-title', 'Add New Project')
                 ]),
                 m('.modal-body', [
-                    m('', [
+                    m('.text-left', [
                         m('.form-group.m-v-sm', [
                             m('label[for="projectName].f-w-lg.text-bigger', 'Project Name'),
                             m('input[type="text"].form-control', {
-                                onchange: function(ev){
+                                onkeyup: function(ev){
                                     if (ev.which === 13) {
                                          ctrl.add();
                                     }
                                     ctrl.newProjectName($(this).val());
+                                    ctrl.checkValid();
                                 },
                                 value : ctrl.newProjectName()
                             })
                         ]),
-                        m('.form-group.m-v-sm', [
-                            m('label[for="projectDesc].f-w-lg.text-bigger', 'Project Description'),
-                            m('textarea.form-control', {
-                                onchange: m.withAttr('value', ctrl.newProjectDesc),
-                                value : ctrl.newProjectDesc()
-                            })
+                        m('.text-muted', { onclick : function(){
+                            ctrl.showMore(!ctrl.showMore());
+                        }},[
+                            ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
+                            ' More (description, type)'
                         ]),
-                        m('.f-w-lg.text-bigger','Category'),
-                        m('.category-radio.p-h-md', [
-                            ctrl.categoryList.map(function(cat){
-                                return m('.radio', m('label', [  m('input', {
-                                    type: 'radio',
-                                    name: 'projectCategory',
-                                    value: cat.value,
-                                    checked: ctrl.newProjectCategory() === cat.value,
-                                    onchange : m.withAttr('value', ctrl.newProjectCategory)
-                                }), cat.label ]));
-                            })
-                        ])
+                        ctrl.showMore() ? [
+                            m('.form-group.m-v-sm', [
+                                m('label[for="projectDesc].f-w-lg.text-bigger', 'Project Description'),
+                                m('textarea.form-control.noresize', {
+                                    onchange: m.withAttr('value', ctrl.newProjectDesc),
+                                    value : ctrl.newProjectDesc()
+                                })
+                            ]),
+                            m('.f-w-lg.text-bigger','Category'),
+                            m('.category-radio.p-h-md', [
+                                ctrl.categoryList.map(function(cat){
+                                    return m('.radio', m('label', [  m('input', {
+                                        type: 'radio',
+                                        name: 'projectCategory',
+                                        value: cat.value,
+                                        checked: ctrl.newProjectCategory() === cat.value,
+                                        onchange : m.withAttr('value', ctrl.newProjectCategory)
+                                    }), cat.display_name || m('i.text-muted', '(Empty category)') ]));
+
+                                })
+                            ])
+                        ] : ''
                     ])
                 ]),
                 m('.modal-footer', [
                     m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : ctrl.reset},  'Cancel'),
-                    m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Add')
+                    ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Add') : m('button[type="button"].btn.btn-success[disabled]','Add')
                 ])
             ]),
             processing : m('.modal-content',
@@ -150,7 +170,7 @@ var AddProject = {
                             m('span[aria-hidden="true"]','×'),
                         ]),
                     ]),
-                    m('.modal-body', [
+                    m('.modal-body.text-left', [
                             m('.add-project-processing', 'Saving your project...')
                         ]
                     )
@@ -158,7 +178,7 @@ var AddProject = {
             ),
             success : m('.modal-content', [
                 m('.modal-content',
-                    m('.modal-body', [
+                    m('.modal-body.text-left', [
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
@@ -178,7 +198,7 @@ var AddProject = {
             ]),
             error : m('.modal-content', [
                 m('.modal-content',
-                    m('.modal-body', [
+                    m('.modal-body.text-left', [
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
@@ -190,7 +210,7 @@ var AddProject = {
             ])
         };
 
-        return  m('', [
+        return  m('span', [
             ctrl.options.buttonTemplate,
             m('#' + ctrl.options.modalID + '.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addProject"][aria-hidden="true"]',
                 m('.modal-dialog',
