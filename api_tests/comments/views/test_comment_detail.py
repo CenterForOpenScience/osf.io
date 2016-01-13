@@ -1,8 +1,6 @@
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
-from rest_framework.exceptions import NotFound
-
 from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings
 from api_tests import utils as test_utils
@@ -262,69 +260,31 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_private_node_only_logged_in_contributor_commenter_can_delete_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
-        url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_true(res.json['data']['attributes']['deleted'])
-        assert_equal(res.json['data']['attributes']['content'], comment.content)
+        res = self.app.delete_json_api(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 204)
 
     def test_private_node_contributor_cannot_delete_other_users_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
-        url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(url, payload, auth=self.contributor.auth, expect_errors=True)
+        res = self.app.delete_json_api(self.private_url, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_private_node_non_contributor_cannot_delete_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
-        url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
+        res = self.app.delete_json_api(self.private_url, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_private_node_logged_out_user_cannot_delete_comment(self):
         self._set_up_private_project_with_comment()
-        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
-        url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(url, payload, expect_errors=True)
+        res = self.app.delete_json_api(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
+
+    def test_private_node_user_cannot_delete_already_deleted_comment(self):
+        self._set_up_private_project_with_comment()
+        self.comment.is_deleted = True
+        self.comment.save()
+        res = self.app.delete_json_api(self.private_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Comment already deleted.')
 
     def test_private_node_only_logged_in_contributor_commenter_can_undelete_comment(self):
         self._set_up_private_project_with_comment()
@@ -401,88 +361,39 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_only_logged_in_contributor_commenter_can_delete_comment(self):
-        public_project = ProjectFactory(is_public=True, creator=self.user)
-        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
-        url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_true(res.json['data']['attributes']['deleted'])
-        assert_equal(res.json['data']['attributes']['content'], comment.content)
+        self._set_up_public_project_with_comment()
+        res = self.app.delete_json_api(self.public_url, auth=self.user.auth)
+        assert_equal(res.status_code, 204)
 
     def test_public_node_contributor_cannot_delete_other_users_comment(self):
-        public_project = ProjectFactory(is_public=True, creator=self.user)
-        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
-        url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(url, payload, auth=self.contributor.auth, expect_errors=True)
+        self._set_up_public_project_with_comment()
+        res = self.app.delete_json_api(self.public_url, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_public_node_non_contributor_cannot_delete_other_users_comment(self):
-        public_project = ProjectFactory(is_public=True, creator=self.user)
-        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
-        url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
+        self._set_up_public_project_with_comment()
+        res = self.app.delete_json_api(self.public_url, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_public_node_logged_out_user_cannot_delete_comment(self):
-        public_project = ProjectFactory(is_public=True, creator=self.user)
-        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
-        url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(url, payload, expect_errors=True)
+        self._set_up_public_project_with_comment()
+        res = self.app.delete_json_api(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_public_node_non_contributor_commenter_can_delete_comment(self):
         project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory(node=project, target=project, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(url, payload, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 200)
-        assert_true(res.json['data']['attributes']['deleted'])
-        assert_equal(res.json['data']['attributes']['content'], comment.content)
+        res = self.app.delete_json_api(url, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 204)
+
+    def test_public_node_user_cannot_delete_already_deleted_comment(self):
+        self._set_up_public_project_with_comment()
+        self.public_comment.is_deleted = True
+        self.public_comment.save()
+        res = self.app.delete_json_api(self.public_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Comment already deleted.')
 
     def test_private_node_only_logged_in_commenter_can_view_deleted_comment(self):
         self._set_up_private_project_with_comment()
@@ -779,64 +690,34 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_private_node_only_logged_in_contributor_commenter_can_delete_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        payload = {
-            'data': {
-                'id': self.comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_true(res.json['data']['attributes']['deleted'])
-        assert_equal(res.json['data']['attributes']['content'], self.comment.content)
+        res = self.app.delete_json_api(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 204)
 
     def test_private_node_contributor_cannot_delete_other_users_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        payload = {
-            'data': {
-                'id': self.comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(self.private_url, payload, auth=self.contributor.auth, expect_errors=True)
+        res = self.app.delete_json_api(self.private_url, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_private_node_non_contributor_cannot_delete_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        payload = {
-            'data': {
-                'id': self.comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(self.private_url, payload, auth=self.non_contributor.auth, expect_errors=True)
+        res = self.app.delete_json_api(self.private_url, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_private_node_logged_out_user_cannot_delete_file_comment(self):
         self._set_up_private_project_with_file_comment()
-        payload = {
-            'data': {
-                'id': self.comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(self.private_url, payload, expect_errors=True)
+        res = self.app.delete_json_api(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_private_node_user_cannot_delete_already_deleted_file_comment(self):
+        self._set_up_private_project_with_file_comment()
+        self.comment.is_deleted = True
+        self.comment.save()
+        res = self.app.delete_json_api(self.private_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Comment already deleted.')
 
     def test_private_node_only_logged_in_contributor_commenter_can_undelete_file_comment(self):
         self._set_up_private_project_with_file_comment()
@@ -917,62 +798,24 @@ class TestFileCommentDetailView(ApiTestCase):
 
     def test_public_node_only_logged_in_contributor_commenter_can_delete_file_comment(self):
         self._set_up_public_project_with_file_comment()
-        payload = {
-            'data': {
-                'id': self.public_comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(self.public_url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_true(res.json['data']['attributes']['deleted'])
-        assert_equal(res.json['data']['attributes']['content'], self.public_comment.content)
+        res = self.app.delete_json_api(self.public_url, auth=self.user.auth)
+        assert_equal(res.status_code, 204)
 
     def test_public_node_contributor_cannot_delete_other_users_file_comment(self):
         self._set_up_public_project_with_file_comment()
-        payload = {
-            'data': {
-                'id': self.public_comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(self.public_url, payload, auth=self.contributor.auth, expect_errors=True)
+        res = self.app.delete_json_api(self.public_url, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_public_node_non_contributor_cannot_delete_other_users_file_comment(self):
         self._set_up_public_project_with_file_comment()
-        payload = {
-            'data': {
-                'id': self.public_comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(self.public_url, payload, auth=self.non_contributor.auth, expect_errors=True)
+        res = self.app.delete_json_api(self.public_url, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_public_node_logged_out_user_cannot_delete_file_comment(self):
         self._set_up_public_project_with_file_comment()
-        payload = {
-            'data': {
-                'id': self.public_comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(self.public_url, payload, expect_errors=True)
+        res = self.app.delete_json_api(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
@@ -981,19 +824,16 @@ class TestFileCommentDetailView(ApiTestCase):
         test_file = test_utils.create_test_file(project, project.creator)
         comment = CommentFactory(node=project, target=test_file, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
-        res = self.app.patch_json_api(url, payload, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 200)
-        assert_true(res.json['data']['attributes']['deleted'])
-        assert_equal(res.json['data']['attributes']['content'], comment.content)
+        res = self.app.delete_json_api(url, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 204)
+
+    def test_public_node_user_cannot_delete_already_deleted_file_comment(self):
+        self._set_up_public_project_with_file_comment()
+        self.public_comment.is_deleted = True
+        self.public_comment.save()
+        res = self.app.delete_json_api(self.public_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Comment already deleted.')
 
     def test_private_node_only_logged_in_commenter_can_view_deleted_file_comment(self):
         self._set_up_private_project_with_file_comment()

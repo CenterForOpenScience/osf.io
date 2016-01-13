@@ -1,3 +1,5 @@
+import bleach
+
 from rest_framework import serializers as ser
 from modularodm import Q
 from framework.auth.core import Auth
@@ -87,12 +89,7 @@ class CommentSerializer(JSONAPISerializer):
                     comment.edit(content, auth=auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to edit this comment.')
-            if validated_data.get('is_deleted', None) is True:
-                try:
-                    comment.delete(auth, save=True)
-                except PermissionsError:
-                    raise PermissionDenied('Not authorized to delete this comment.')
-            elif comment.is_deleted:
+            if validated_data.get('is_deleted', None) is False and comment.is_deleted:
                 try:
                     comment.undelete(auth, save=True)
                 except PermissionsError:
@@ -111,6 +108,14 @@ class CommentSerializer(JSONAPISerializer):
                 source={'pointer': '/data/relationships/target/links/related/meta/type'},
                 detail='Invalid comment target type.'
             )
+
+    def sanitize_data(self):
+        ret = super(CommentSerializer, self).sanitize_data()
+        content = self.validated_data.get('get_content', None)
+        if content:
+            ret['get_content'] = bleach.clean(content)
+        return ret
+
 
 class CommentCreateSerializer(CommentSerializer):
 
