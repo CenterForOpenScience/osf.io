@@ -137,6 +137,37 @@ def get_contributors_from_parent(auth, node, **kwargs):
     return {'contributors': contribs}
 
 
+@must_be_valid_project  # returns project
+@must_be_contributor
+@must_not_be_registration
+def project_before_remove_contributor(auth, node, **kwargs):
+
+    contributor = User.load(request.json.get('id'))
+
+    # Forbidden unless user is removing herself
+    if not node.has_permission(auth.user, 'admin'):
+        if auth.user != contributor:
+            raise HTTPError(http.FORBIDDEN)
+
+    if len(node.visible_contributor_ids) == 1 \
+            and node.visible_contributor_ids[0] == contributor._id:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_long': 'Must have at least one bibliographic contributor'
+        })
+
+    prompts = node.callback(
+        'before_remove_contributor', removed=contributor,
+    )
+
+    if auth.user == contributor:
+        prompts.insert(
+            0,
+            'Are you sure you want to remove yourself from this project?'
+        )
+
+    return {'prompts': prompts}
+
+
 def deserialize_contributors(node, user_dicts, auth, validate=False):
     """View helper that returns a list of User objects from a list of
     serialized users (dicts). The users in the list may be registered or
