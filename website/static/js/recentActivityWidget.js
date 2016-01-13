@@ -21,9 +21,11 @@ var LogWrap = {
         self.dateEnd = moment.utc();
         self.dateBegin = moment.utc();
         self.today = moment.utc();
+        self.sixMonthsAgo = moment.utc().subtract(6, 'months');
         self.page = 1;
         self.cache = [];
         self.loading = false;
+        self.div = 8.64e+7;
 
         self.getLogs = function(init, reset, update) {
             if (!(init || reset || update)  && self.cache[self.page - 1]){
@@ -60,8 +62,25 @@ var LogWrap = {
                 if (init) {
                     self.lastDay = moment.utc(result.data[0].attributes.date);
                     self.dateEnd = self.lastDay;
-                    self.dateBegin = moment.utc(result.data[0].attributes.date).subtract(1, 'months');
-                    self.firstDay = moment.utc(result.links.meta.last_log_date);
+                    var firstDay = moment.utc(result.links.meta.last_log_date);
+                    self.firstDay = ((firstDay >= self.sixMonthsAgo) ? firstDay : self.sixMonthsAgo).startOf('month');
+                    var dateBegin = moment.utc(result.data[0].attributes.date).subtract(1, 'months');
+                    self.dateBegin = ((dateBegin > self.firstDay) ? dateBegin : self.firstDay).startOf('day');
+                    if ((self.today - self.firstDay)/2629746000 < 1){
+                        self.div = self.div/4;
+                        self.formatFloat = 'Do h a';
+                        self.steps = 14;
+                        self.formatPip = 'MMM Do';
+                    } else if ((self.today - self.firstDay)/2629746000 < 3){
+                        self.div = self.div/2;
+                        self.formatFloat = 'MMM Do h';
+                        self.steps = 28;
+                        self.formatPip = 'MMM Do';
+                    } else {
+                        self.formatFloat = 'MMM Do';
+                        self.steps = 30;
+                        self.formatPip = 'MMM';
+                    }
                 }
                 if (init || reset){
                     self.totalEvents = result.links.meta.total;
@@ -95,19 +114,13 @@ var LogWrap = {
         var wikiEvents = ((ctrl.eventNumbers.wiki/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.wiki ? 5 : 0);
         var nodeEvents = ((ctrl.eventNumbers.nodes/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.nodes ? 5 : 0);
         var otherEvents = 100 - (fileEvents + commentEvents + wikiEvents + nodeEvents);
-        var div = 8.64e+7;
+        var div = ctrl.div;
         var begin = (Number(ctrl.firstDay.format('x'))/div | 0);
         var end = (Number(ctrl.today.format('x'))/div | 0);
         var values = [(Number(ctrl.dateBegin.format('x'))/div | 0), (Number(ctrl.dateEnd.format('x'))/div | 0)];
         var makeSliderProgress =  function(){
             return '<div id="fillerBar" class="progress" style="height: 11px">' +
-                ((ctrl.totalEvents !== 0) ?
-                        '<div class="progress-bar" style="width:'+ fileEvents +'%;"></div>' +
-                        '<div class="progress-bar progress-bar-warning"  style="width:'+ nodeEvents +'%;"></div>' +
-                        '<div class="progress-bar progress-bar-info" style="width:'+ commentEvents +'%;"></div>' +
-                        '<div class="progress-bar progress-bar-danger"  style="width:'+ wikiEvents +'%;"></div>' +
-                        '<div class="progress-bar progress-bar-success"  style="width:'+ otherEvents +'%;"></div>'
-                    : '<div class="progress-bar no-items-progress-bar">') +
+                        '<div class="progress-bar" style="width:100%; background-color:#00022c;"></div>' + //need right color for this
                 '</div>';
         };
         var makeLine = function(canvas){
@@ -160,13 +173,13 @@ var LogWrap = {
                 $('#recentActivitySlider').slider('pips', {
                     last: false,
                     rest: 'label',
-                    step: 30,
+                    step: ctrl.steps,
                     formatLabel: function(value){
-                        return String(moment.utc(value*div).format('MMM D YY'));
+                        return String(moment.utc(value*div).format(ctrl.formatPip));
                     }
                 }).slider('float', {
                     formatLabel: function(value){
-                        return String(moment.utc(value*div).format('MMM D YY'));
+                        return String(moment.utc(value*div).format(ctrl.formatFloat));
                     }
                 });
                 ctrl.getLogs();
@@ -210,7 +223,7 @@ var LogWrap = {
         var filterLabels = function(){
             if (!ctrl.eventFilter){
                 if (otherEvents === 100) {
-                    return m('p', 'No filters available')
+                    return m('p', 'No filters available');
                 }
                 return m('p', [
                     'Filter on: ',
@@ -223,7 +236,7 @@ var LogWrap = {
                 return m('p', [
                     'Filtering on ' + (ctrl.eventFilter === 'file' ? 'Files' : ctrl.eventFilter === 'project' ? 'Projects' : ctrl.eventFilter === 'comment' ? 'Comments' : 'Wiki') + ' ',
                     m('a.fa.fa-close', {onclick: function(){ctrl.callLogs(ctrl.eventFilter)}})
-                ])
+                ]);
             }
         };
         return m('.panel.panel-default', [
@@ -268,7 +281,7 @@ var LogWrap = {
                     m('.col-xs-1')
                 ]),
                 m('row', [m('.col-xs-1'), m('.col-xs-10', filterLabels()), m('.col-xs-1')]),
-                m('br'), m('br'),
+                m('br'), m('br'), !ctrl.loading ?
                 m('row',{style:{paddingTop: '15px'}}, [
                     m('.col-xs-1', m('button.btn.fa.fa-angle-left.page-button#leftButton' + (ctrl.page > 1 ? '' : '.disabled.hidden'), {
                         onclick: function(){
@@ -288,7 +301,7 @@ var LogWrap = {
                             ctrl.getLogs();
                         }
                     }))
-                ]), m('br'),
+                ]) : m('.spinner-loading-wrapper', [m('.logo-spin.logo-lg'), m('p.m-t-sm.fg-load-message', 'Loading logs...')]), m('br'),
                 m('p.text-center', ctrl.page + ' of ' + ctrl.lastPage)
             ]))
         ]);
