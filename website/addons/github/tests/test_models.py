@@ -57,7 +57,32 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         mock_repos.return_value = {}
         mock_org.return_value = {}
         super(TestNodeSettings, self).test_to_json()
-        
+
+    @mock.patch('website.addons.github.api.GitHubClient.repos')
+    @mock.patch('website.addons.github.api.GitHubClient.my_org_repos')
+    def test_to_json_user_is_owner(self, mock_org, mock_repos):
+        mock_repos.return_value = {}
+        mock_org.return_value = {}
+        result = self.node_settings.to_json(self.user)
+        assert_true(result['user_has_auth'])
+        assert_equal(result['github_user'], 'abc')
+        assert_true(result['is_owner'])
+        assert_true(result['valid_credentials'])
+        assert_equal(result.get('repo_names', None), [])
+
+    @mock.patch('website.addons.github.api.GitHubClient.repos')
+    @mock.patch('website.addons.github.api.GitHubClient.my_org_repos')
+    def test_to_json_user_is_not_owner(self, mock_org, mock_repos):
+        mock_repos.return_value = {}
+        mock_org.return_value = {}
+        not_owner = UserFactory()
+        result = self.node_settings.to_json(not_owner)
+        assert_false(result['user_has_auth'])
+        assert_equal(result['github_user'], 'abc')
+        assert_false(result['is_owner'])
+        assert_true(result['valid_credentials'])
+        assert_equal(result.get('repo_names', None), None)
+
 
 class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 
@@ -67,6 +92,7 @@ class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 
     def test_public_id(self):
         assert_equal(self.user.external_accounts[0].display_name, self.user_settings.public_id)
+
 
 class TestCallbacks(OsfTestCase):
 
@@ -296,22 +322,3 @@ class TestGithubNodeSettings(OsfTestCase):
         res = self.node_settings.delete_hook()
         assert_false(res)
         mock_delete_hook.assert_called_with(*args)
-
-
-    # This test was already not behaving as expected. self.oauth_settings was the
-    # current equivalent of self.external_account, not the local variable of the
-    # same name. This can either be removed or replaced with a single line.
-    #
-    # def test_to_json_noauthorizing_authed_user(self):
-    #     user = UserFactory()
-    #     user.add_addon('github')
-    #     user_settings = user.get_addon('github')
-
-    #     oauth_settings = AddonGitHubOauthSettings(oauth_access_token='foobar')
-    #     oauth_settings.github_user_id = 'testuser'
-    #     oauth_settings.save()
-
-    #     user_settings.oauth_settings = self.oauth_settings
-    #     user_settings.save()
-
-    #     self.node_settings.to_json(user)
