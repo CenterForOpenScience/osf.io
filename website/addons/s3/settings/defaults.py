@@ -11,19 +11,12 @@ MAX_RENDER_SIZE = (1024 ** 2) * 3
 
 ALLOWED_ORIGIN = '*'
 
-# These bucket locations are valid, but not currently used to create a bucket by the
-# front end of the OSF.  Since we are expecting the API v2 to handle this in the future,
-# we will leave them in.
-BUCKET_LOCATIONS = {
-    "us-east-1": "US Standard",
-    "EU": "Europe Standard"
-}
-
+BUCKET_LOCATIONS = {}
 ENCRYPT_UPLOADS_DEFAULT = True
 # Load S3 settings used in both front and back end
 with open(os.path.join(STATIC_PATH, 'settings.json')) as fp:
     settings = json.load(fp)
-    BUCKET_LOCATIONS.update(settings.get('bucketLocations', {}))
+    BUCKET_LOCATIONS = settings.get('bucketLocations', {})
     ENCRYPT_UPLOADS_DEFAULT = settings.get('encryptUploads', True)
 
 OSF_USER = 'osf-user{0}'
