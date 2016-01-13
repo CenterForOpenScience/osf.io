@@ -78,7 +78,7 @@ var LogWrap = {
                         self.formatPip = 'MMM Do';
                     } else {
                         self.formatFloat = 'MMM Do';
-                        self.steps = 30;
+                        self.steps = 31;
                         self.formatPip = 'MMM';
                     }
                 }
@@ -204,21 +204,11 @@ var LogWrap = {
             }
         };
         var categoryColor = function(category){
-            if (category.indexOf('wiki') !== -1){
-                return '#d9534f';
-            }
-            if (category.indexOf('comment') !== -1){
-                return '#5bc0de';
-            }
-            if (category.indexOf('file') !== -1){
-                return '#337ab7';
-            }
-            if (category.indexOf('project') !== -1){
-                return '#f0ad4e';
-            }
-            else{
-                return '#5cb85c';
-            }
+            if (category.indexOf('wiki') !== -1){ return '#d9534f'; }
+            if (category.indexOf('comment') !== -1){ return '#5bc0de'; }
+            if (category.indexOf('file') !== -1){ return '#337ab7'; }
+            if (category.indexOf('project') !== -1){ return '#f0ad4e'; }
+            else { return '#5cb85c'; }
         };
         var filterLabels = function(){
             if (!ctrl.eventFilter){
@@ -302,7 +292,7 @@ var LogWrap = {
                         }
                     }))
                 ]) : m('.spinner-loading-wrapper', [m('.logo-spin.logo-lg'), m('p.m-t-sm.fg-load-message', 'Loading logs...')]), m('br'),
-                m('p.text-center', ctrl.page + ' of ' + ctrl.lastPage)
+                !ctrl.loading ? m('p.text-center', ctrl.page + ' of ' + ctrl.lastPage) : '',
             ]))
         ]);
     }
