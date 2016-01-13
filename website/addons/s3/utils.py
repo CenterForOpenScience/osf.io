@@ -17,7 +17,7 @@ def connect_s3(access_key=None, secret_key=None, user_settings=None):
     """
     if user_settings is not None:
         access_key, secret_key = user_settings.access_key, user_settings.secret_key
-    connection = S3Connection(access_key, secret_key)
+    connection = S3Connection(access_key, secret_key, calling_format=OrdinaryCallingFormat())
     return connection
 
 
