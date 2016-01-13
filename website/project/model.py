@@ -3202,7 +3202,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         retraction.save()  # Save retraction so it has a primary key
         self.retraction = retraction
         self.save()  # Set foreign field reference Node.retraction
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
+        admins = self.get_admin_contributors_recursive()
         for admin in admins:
             retraction.add_authorizer(admin)
         retraction.save()  # Save retraction approval state
@@ -3253,7 +3253,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         embargo.save()  # Save embargo so it has a primary key
         self.embargo = embargo
         self.save()  # Set foreign field reference Node.embargo
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
+        admins = self.get_admin_contributors_recursive()
         for admin in admins:
             embargo.add_authorizer(admin)
         embargo.save()  # Save embargo's approval_state
@@ -3290,6 +3290,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
+    def get_admin_contributors_recursive(self, *args, **kwargs):
+        """Return a set of all admin contributors for this node and admin
+        contributors on descendant nodes. Excludes contributors on node links and
+        inactive users.
+        """
+        return {
+            contrib
+            for node in self.node_and_primary_descendants(*args, **kwargs)
+            for contrib in node.contributors
+            if node.has_permission(contrib, 'admin') and contrib.is_active
+        }
+
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME
         approval = RegistrationApproval(
@@ -3300,7 +3312,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         approval.save()  # Save approval so it has a primary key
         self.registration_approval = approval
         self.save()  # Set foreign field reference Node.registration_approval
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
+        admins = self.get_admin_contributors_recursive()
         for admin in admins:
             approval.add_authorizer(admin)
         approval.save()  # Save approval's approval_state
@@ -3851,10 +3863,6 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
             })
         return context
 
-    def _validate_authorizer(self, user):
-        registration = self._get_registration()
-        return registration.has_permission(user, ADMIN)
-
     def _on_reject(self, user):
         parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
@@ -4109,10 +4117,12 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         self.state = Sanction.APPROVED
         register = self._get_registration()
         registered_from = register.registered_from
-        auth = Auth(self.initiated_by)
-        register.set_privacy('public', auth, log=False)
+        # Pass auth=None because the registration initiator may not be
+        # an admin on components (component admins had the opportunity
+        # to disapprove the registration by this point)
+        register.set_privacy('public', auth=None, log=False)
         for child in register.get_descendants_recursive(lambda n: n.primary):
-            child.set_privacy('public', auth, log=False)
+            child.set_privacy('public', auth=None, log=False)
         # Accounts for system actions where no `User` performs the final approval
         auth = Auth(user) if user else None
         registered_from.add_log(
