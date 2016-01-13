@@ -112,33 +112,7 @@ var quickSearchProject = {
             self.countDisplayed(self.displayedNodes().length);
             return self.displayedNodes()
         };
-
-        self.removeUpToTen = function() {
-            var remove = 0;
-            if (self.countDisplayed() - 10 >= 10) {
-                if (self.countDisplayed() % 10 === 0) {
-                    remove = 10
-                }
-                else {
-                    remove = self.countDisplayed() % 10
-                }
-
-            }
-            else if (self.countDisplayed() - 10 >= 0) {
-                remove = self.countDisplayed() - 10
-            }
-            else {
-                return
-            }
-            var removedNodes = self.displayedNodes().splice(self.displayedNodes().length - remove);
-            for (var i = 0; i < removedNodes.length; i++) {
-                self.nodes().push(removedNodes[i])
-            }
-            self.sortBySortState();
-            self.countDisplayed(self.displayedNodes().length);
-            return self.displayedNodes()
-        };
-
+        
         self.getFamilyName = function(i, node) {
             return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
         };
@@ -314,15 +288,6 @@ var quickSearchProject = {
             }
         }
 
-        function loadLessButton() {
-            if (ctrl.displayedNodes().length > 10 && ctrl.loadingComplete()){
-                return m('button', {class: 'col-sm-12 text-muted', onclick: function() {
-                        ctrl.removeUpToTen()}
-                    },
-                m('i', {class: 'fa fa-caret-up load-nodes'}))
-            }
-        }
-
         function sortAlphaAsc() {
             if (ctrl.loadingComplete()) {
                 return m('button', {id: 'alphaAsc', class: 'not-selected', onclick: function() {
@@ -425,7 +390,7 @@ var quickSearchProject = {
                 displayNodes(),
                 m('div', {class: 'row'}, [
                     m('div', {class: 'col-sm-5'}),
-                    m('div', {class: 'col-sm-2'}, loadLessButton(), loadMoreButton()),
+                    m('div', {class: 'col-sm-2'}, loadMoreButton()),
                     m('div', {class: 'col-sm-5'})
                 ])
             ]);
