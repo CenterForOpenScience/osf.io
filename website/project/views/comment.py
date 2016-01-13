@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytz
 from flask import request
+from modularodm import Q
 
 from framework.auth.decorators import must_be_logged_in
 
@@ -8,9 +9,13 @@ from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify
 from website.models import Comment
 from website.project.decorators import must_be_contributor_or_public
-from website.project.signals import comment_added
+from website.project.signals import comment_added, file_moved_node
 from datetime import datetime
 
+
+@file_moved_node.connect
+def update_comment_node(file_obj, destination_node):
+    Comment.update(Q('root_target', 'eq', file_obj._id), data={'node': destination_node})
 
 @comment_added.connect
 def send_comment_added_notification(comment, auth):
