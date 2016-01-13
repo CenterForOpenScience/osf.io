@@ -4,15 +4,14 @@ import pytz
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
-from website.files.exceptions import FileNodeCheckedOutError
-from website.addons.osfstorage import settings as osfstorage_settings
-
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     UserFactory,
     AuthUserFactory
 )
+from website.addons.osfstorage import settings as osfstorage_settings
+from website.project.model import NodeLog
 
 
 # stolen from^W^Winspired by DRF rest_framework.fields.DateTimeField.to_representation
@@ -85,6 +84,7 @@ class TestFileView(ApiTestCase):
             auth=self.user.auth
         )
         self.file.reload()
+        self.file.save()
         assert_equal(res.status_code, 200)
         assert_equal(self.file.checkout, self.user)
 
@@ -92,6 +92,8 @@ class TestFileView(ApiTestCase):
             '/{}files/{}/'.format(API_BASE, self.file._id),
             auth=self.user.auth
         )
+        assert_equal(len(self.node.logs),2)
+        assert_equal(self.node.logs[-1].action, NodeLog.CHECKED_OUT)
         assert_equal(
             self.user._id,
             res.json['data']['relationships']['checkout']['links']['related']['meta']['id']
