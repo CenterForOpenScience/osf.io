@@ -65,6 +65,9 @@ class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
     full_name = 'GitHub'
     ExternalAccountFactory = GitHubAccountFactory
 
+    def test_public_id(self):
+        assert_equal(self.user.external_accounts[0].display_name, self.user_settings.public_id)
+
 class TestCallbacks(OsfTestCase):
 
     def setUp(self):
