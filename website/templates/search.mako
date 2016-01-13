@@ -215,6 +215,11 @@
                             <i class="fa social-icons" data-toggle="tooltip" title="ResearcherID">R</i>
                         </a>
                     </li>
+                    <li data-bind="visible: social.academiaInstitution + social.academiaProfileID">
+                        <a data-bind="attr.href: social.academiaInstitution + social.academiaProfileID">
+                            <img class="social-icons" src="/static/img/academia.png"data-toggle="tooltip" title="Academia">
+                        </a>
+                    </li>
                 </ul>
                 <!-- /ko -->
             </div>
