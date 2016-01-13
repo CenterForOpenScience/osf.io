@@ -472,6 +472,8 @@ class TestCreateBucket(OsfTestCase):
         assert_true(validate_bucket_location('ap-southeast-1'))
         assert_true(validate_bucket_location('ap-southeast-2'))
         assert_true(validate_bucket_location('sa-east-1'))
+        assert_true(validate_bucket_location('eu-west-1'))
+
 
     @mock.patch('website.addons.s3.views.crud.utils.create_bucket')
     @mock.patch('website.addons.s3.views.crud.utils.get_bucket_names')

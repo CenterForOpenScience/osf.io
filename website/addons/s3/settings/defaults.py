@@ -11,6 +11,9 @@ MAX_RENDER_SIZE = (1024 ** 2) * 3
 
 ALLOWED_ORIGIN = '*'
 
+# These bucket locations are valid, but not currently used to create a bucket by the
+# front end of the OSF.  Since we are expecting the API v2 to handle this in the future,
+# we will leave them in.
 BUCKET_LOCATIONS = {
     "us-east-1": "US Standard",
     "EU": "Europe Standard"
