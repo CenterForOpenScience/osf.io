@@ -803,11 +803,13 @@ class JSONAPISerializer(ser.Serializer):
 
         return ret
 
-class JSONAPIRelationshipsSerializer(ser.Serializer):
+class JSONAPIRelationshipSerializer(ser.Serializer):
     """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
     Provides a simplified serialization of the relationship, allowing for simple update request
     bodies.
     """
+    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    type = TypeField(required=False, allow_null=True)
 
     def to_representation(self, obj):
         meta = getattr(self, 'Meta', None)
@@ -850,10 +852,6 @@ class RestrictedDictSerializer(ser.Serializer):
                 data[field.field_name] = field.to_representation(attribute)
         return data
 
-
-class RelationshipResourceIdObjectSerializer(JSONAPIRelationshipsSerializer):
-    id = ser.CharField(source='node._id', required=False, allow_null=True)
-    type = TypeField(required=False, allow_null=True)
 
 def relationship_diff(current_items, new_items):
     """

@@ -4,7 +4,7 @@ from modularodm.exceptions import ValidationValueError
 from framework.exceptions import PermissionsError
 
 from website.models import Node
-from api.base.serializers import LinksField, RelationshipField, DevOnly, RelationshipResourceIdObjectSerializer
+from api.base.serializers import LinksField, RelationshipField, DevOnly, JSONAPIRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, relationship_diff
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse, get_user_auth
@@ -98,7 +98,7 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
         )
 
 
-class LinkedNode(RelationshipResourceIdObjectSerializer):
+class LinkedNode(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'linked_nodes'
 
