@@ -4,7 +4,8 @@ import mock
 import unittest
 from nose.tools import *  # noqa
 
-from tests.factories import ProjectFactory
+from tests.base import capture_signals
+from tests.factories import ProjectFactory, NodeFactory, CommentFactory
 
 from website.addons.osfstorage.tests import factories
 from website.addons.osfstorage.tests.utils import StorageTestCase
@@ -18,6 +19,8 @@ from website.files import models
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import settings
 from website.files.exceptions import FileNodeCheckedOutError
+from website.project.signals import file_moved_node
+
 
 class TestOsfstorageFileNode(StorageTestCase):
 
@@ -281,6 +284,27 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         assert_equal(to_move, moved)
         assert_equal(moved.parent, move_to)
+
+    def test_move_between_nodes_sends_file_moved_node_signal(self):
+        to_move = self.node_settings.get_root().append_file('file_to_move')
+        component = NodeFactory(parent=self.node)
+        component_settings = component.get_addon('osfstorage')
+        with capture_signals() as mock_signals:
+            moved = to_move.move_under(component_settings.get_root())
+        assert_equal(mock_signals.signals_sent(), set([file_moved_node]))
+
+    def test_comments_move_when_file_moved_to_component(self):
+        to_move = self.node_settings.get_root().append_file('file_to_move')
+        comment = CommentFactory(node=self.node, target=to_move)
+
+        component = NodeFactory(parent=self.node)
+        component_settings = component.get_addon('osfstorage')
+        moved = to_move.move_under(component_settings.get_root())
+        comment.reload()
+
+        assert_equal(to_move, moved)
+        assert_equal(to_move.node, moved.node)
+        assert_equal(comment.node, moved.node)
 
     def test_move_and_rename(self):
         to_move = self.node_settings.get_root().append_file('Carp')
