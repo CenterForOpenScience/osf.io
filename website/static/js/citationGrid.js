@@ -316,7 +316,7 @@ CitationGrid.prototype.initStyleSelect = function() {
         allowClear: false,
         formatResult: formatResult,
         formatSelection: formatSelection,
-        placeholder: 'Citation Style (e.g. "APA")',
+        placeholder: 'Enter citation style (e.g. "APA")',
         minimumInputLength: 1,
         ajax: {
             url: '/api/v1/citations/styles/',

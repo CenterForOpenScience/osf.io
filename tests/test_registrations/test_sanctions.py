@@ -31,6 +31,9 @@ class EmailApprovableSanctionTestClass(PreregCallbackMixin, EmailApprovableSanct
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = 'authorizer'
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = 'non-authorizer'
 
+    def _get_registration(self):
+        return factories.RegistrationFactory()
+
 
 class SanctionsTestCase(OsfTestCase):
 

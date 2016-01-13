@@ -498,7 +498,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             message = textStatus;
         } else {
             message = 'Please refresh the page or ' +
-                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }
 
