@@ -433,7 +433,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_equal(res.status_code, http.FORBIDDEN)
 
     @mock.patch('website.archiver.tasks.archive')
-    def testn_delete_draft_registration_approved_and_registration_deleted(self, mock_register_draft):
+    def test_delete_draft_registration_approved_and_registration_deleted(self, mock_register_draft):
         self.draft.register(auth=self.auth, save=True)
         self.draft.registered_node.is_deleted = True
         self.draft.registered_node.save()
