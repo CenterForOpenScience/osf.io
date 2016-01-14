@@ -21,7 +21,8 @@ var socialRules = {
     linkedIn: /.*\/?(in\/.*|profile\/.*|pub\/.*)/i,
     impactStory: /impactstory\.org\/([\w\.-]+)/i,
     github: /github\.com\/(\w+)/i,
-    academia: /(\w+)\.academia\.edu\/(\w+)/i,
+    researchGate: /researchgate\.net\/profile\/(\w+)/i,
+    academia: /(\w+)\.academia\.edu\/(\w+)/i
 };
 
 var cleanByRule = function(rule) {
@@ -537,6 +538,11 @@ var SocialViewModel = function(urls, modes) {
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.github)}),
         self, 'github', 'https://github.com/'
     );
+    self.researchGate = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.researchGate)}),
+        self, 'researchGate', 'https://researchgate.net/profile/'
+    );
+
     self.academiaInstitution = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.academia)}),
         self, 'academiaInstitution', 'https://'
@@ -545,7 +551,7 @@ var SocialViewModel = function(urls, modes) {
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.academia)}),
         self, 'academiaProfileID', '.academia.edu/'
     );
-    
+
     self.trackedProperties = [
         self.profileWebsites,
         self.orcid,
@@ -555,8 +561,9 @@ var SocialViewModel = function(urls, modes) {
         self.linkedIn,
         self.impactStory,
         self.github,
+        self.researchGate,
         self.academiaInstitution,
-        self.academiaProfileID,
+        self.academiaProfileID
     ];
 
     var validated = ko.validatedObservable(self);
@@ -574,7 +581,8 @@ var SocialViewModel = function(urls, modes) {
             {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
             {label: 'ImpactStory', text: self.impactStory(), value: self.impactStory.url()},
             {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()},
-            {label: 'Academia', text: self.academiaInstitution() + '.academia.edu/' + self.academiaProfileID(), value: self.academiaInstitution.url() + self.academiaProfileID.url()},
+            {label: 'ResearchGate', text: self.researchGate(), value: self.researchGate.url()},
+            {label: 'Academia', text: self.academiaInstitution() + '.academia.edu/' + self.academiaProfileID(), value: self.academiaInstitution.url() + self.academiaProfileID.url()}
         ];
     });
 
@@ -596,7 +604,7 @@ var SocialViewModel = function(urls, modes) {
             ensureHttp: true
         }));
     };
-    
+
     self.removeWebsite = function(profileWebsite) {
         var profileWebsites = ko.toJS(self.profileWebsites());
             bootbox.confirm({
@@ -1003,3 +1011,4 @@ module.exports = {
     // Expose private viewmodels
     _NameViewModel: NameViewModel
 };
+

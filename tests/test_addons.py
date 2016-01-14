@@ -10,7 +10,7 @@ import jwe
 import jwt
 import furl
 import itsdangerous
-from modularodm import storage
+from modularodm import storage, Q
 
 from framework.auth import cas
 from framework.auth import signing
@@ -18,10 +18,12 @@ from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions.model import Session
 from framework.mongo import set_up_storage
+from tests import factories
 
 from website import settings
 from website.files import models
 from website.files.models.base import PROVIDER_MAP
+from website.project.model import MetaSchema, ensure_schemas
 from website.util import api_url_for, rubeus
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
@@ -332,6 +334,50 @@ class TestCheckAuth(OsfTestCase):
         self.node.is_public = True
         self.node.save()
         res = views.check_access(self.node, Auth(), 'download', None)
+
+    def setUpPrereg(self):
+        ensure_schemas()
+        self.prereg_challenge_admin_user = AuthUserFactory()
+        self.prereg_challenge_admin_user.system_tags.append(settings.PREREG_ADMIN_TAG)
+        self.prereg_challenge_admin_user.save()
+        prereg_schema = MetaSchema.find_one(
+                Q('name', 'eq', 'Prereg Challenge') &
+                Q('schema_version', 'eq', 2)
+        )
+        # import ipdb; ipdb.set_trace()
+        self.draft_registration = factories.DraftRegistrationFactory(
+                initiator=self.user,
+                registration_schema=prereg_schema
+        )
+
+    def test_has_permission_download_prereg_challenge_admin(self):
+        self.setUpPrereg()
+        res = views.check_access(self.draft_registration.branched_from,
+            Auth(user=self.prereg_challenge_admin_user), 'download', None)
+
+        assert_true(res)
+
+    def test_has_permission_download_not_prereg_challenge_admin(self):
+        self.setUpPrereg()
+        new_user = AuthUserFactory()
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.draft_registration.branched_from,
+                 Auth(user=new_user), 'download', None)
+            assert_equal(exc_info.exception.code, 403)
+
+    def test_has_permission_download_prereg_challenge_admin_not_draft(self):
+        self.setUpPrereg()
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.node,
+                 Auth(user=self.prereg_challenge_admin_user), 'download', None)
+            assert_equal(exc_info.exception.code, 403)
+
+    def test_has_permission_write_prereg_challenge_admin(self):
+        self.setUpPrereg()
+        with assert_raises(HTTPError) as exc_info:
+            res = views.check_access(self.draft_registration.branched_from,
+                 Auth(user=self.prereg_challenge_admin_user), 'write', None)
+            assert_equal(exc_info.exception.code, 403)
 
     def test_not_has_permission_read_has_link(self):
         link = new_private_link('red-special', self.user, [self.node], anonymous=False)

@@ -57,7 +57,7 @@ class FilterMixin(object):
     MATCH_OPERATORS = ('contains', 'icontains')
     MATCHABLE_FIELDS = (ser.CharField, ser.ListField)
 
-    DEFAULT_OPERATOR = 'eq'
+    DEFAULT_OPERATORS = ('eq', 'ne')
     DEFAULT_OPERATOR_OVERRIDES = {
         ser.CharField: 'icontains',
         ser.ListField: 'contains',
@@ -81,13 +81,13 @@ class FilterMixin(object):
             raise NotImplementedError()
 
     def _get_default_operator(self, field):
-        return self.DEFAULT_OPERATOR_OVERRIDES.get(type(field), self.DEFAULT_OPERATOR)
+        return self.DEFAULT_OPERATOR_OVERRIDES.get(type(field), 'eq')
 
     def _get_valid_operators(self, field):
         if isinstance(field, self.COMPARABLE_FIELDS):
-            return self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )
+            return self.COMPARISON_OPERATORS + self.DEFAULT_OPERATORS
         elif isinstance(field, self.MATCHABLE_FIELDS):
-            return self.MATCH_OPERATORS + (self.DEFAULT_OPERATOR, )
+            return self.MATCH_OPERATORS + self.DEFAULT_OPERATORS
         else:
             return None
 
@@ -111,7 +111,7 @@ class FilterMixin(object):
         :raises InvalidFilterMatchType: If the query contains comparisons against non-string or non-list fields
         :raises InvalidFilterOperator: If the filter operator is not a member of self.COMPARISON_OPERATORS
         """
-        if op not in set(self.MATCH_OPERATORS + self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )):
+        if op not in set(self.MATCH_OPERATORS + self.COMPARISON_OPERATORS + self.DEFAULT_OPERATORS):
             valid_operators = self._get_valid_operators(field)
             raise InvalidFilterOperator(value=op, valid_operators=valid_operators)
         if op in self.COMPARISON_OPERATORS:
@@ -151,6 +151,18 @@ class FilterMixin(object):
                 'value': stop
             }]
 
+    def bulk_get_values(self, value, field):
+        """
+        Returns list of values from query_param for IN query
+
+        If url contained `/nodes/?filter[id]=12345, abcde`, the returned values would be:
+        [u'12345', u'abcde']
+        """
+        value = value.lstrip('[').rstrip(']')
+        separated_values = value.split(',')
+        values = [self.convert_value(val.strip(), field) for val in separated_values]
+        return values
+
     def parse_query_params(self, query_params):
         """Maps query params to a dict useable for filtering
         :param dict query_params:
@@ -179,6 +191,11 @@ class FilterMixin(object):
                 # Special case date(time)s to allow for ambiguous date matches
                 if isinstance(field, self.DATE_FIELDS):
                     query[field_name].extend(self._parse_date_param(field, field_name, op, value))
+                elif not isinstance(value, int) and field_name == '_id':
+                    query[field_name].append({
+                        'op': 'in',
+                        'value': self.bulk_get_values(value, field)
+                    })
                 else:
                     query[field_name].append({
                         'op': op,
@@ -191,7 +208,10 @@ class FilterMixin(object):
         :param basestring field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
-        return field.source or field_name
+        source = field.source
+        if source == '*':
+            source = getattr(field, 'filter_key', None)
+        return source or field_name
 
     def convert_value(self, value, field):
         """Used to convert incoming values from query params to the appropriate types for filter comparisons
@@ -218,6 +238,8 @@ class FilterMixin(object):
                 )
         elif isinstance(field, (self.LIST_FIELDS, self.RELATIONSHIP_FIELDS)) \
                 or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
+            if value == 'null':
+                value = None
             return value
         else:
             try:
