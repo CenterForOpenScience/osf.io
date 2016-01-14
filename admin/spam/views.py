@@ -18,22 +18,19 @@ class EmailFormView(FormView):
 
     form_class = EmailForm
     template_name = "spam/email.html"
+    spam_id = None
+    page = 1
 
     def get(self, request, *args, **kwargs):
         spam_id = kwargs.get('spam_id', None)
+        self.spam_id = spam_id
+        self.page = request.GET.get('page', 1)
         try:
             spam = serialize_comment(Comment.load(spam_id))
         except:
             pass
-        initial = {
-            'name': spam['author'].fullname,
-            'email': [(i, r) for i, r in enumerate(spam['author'].emails)],
-            'subject': 'Reports of spam',
-            'message': 'certainly <b> unfortunate </b>',  # TODO: <-
-        }
-        form = self.form_class(initial=initial)
-        self.success_url = reverse('spam:detail',
-                                   kwargs={'spam_id': spam_id})  # TODO: <-
+        self.set_initial(spam)
+        form = self.get_form()
         context = {
             'comment': spam,
             'page_number': request.GET.get('page', 1),
@@ -43,33 +40,40 @@ class EmailFormView(FormView):
 
     def post(self, request, *args, **kwargs):
         spam_id = kwargs.get('spam_id', None)
+        self.spam_id = spam_id
+        self.page = request.GET.get('page', 1)
         try:
             spam = serialize_comment(Comment.load(spam_id))
         except:
             pass
-        # initial = {
-        #     'name': spam['author'].fullname,
-        #     'email': [(i, r) for i, r in enumerate(spam['author'].emails)],
-        #     'subject': 'Reports of spam',
-        #     'message': 'certainly <b> unfortunate </b>',  # TODO: <-
-        # }
-        # form = self.form_class(initial=initial)
-        form = self.form_class()
-        context = {
-            'comment': spam,
-            'page_number': request.GET.get('page', 1),
-            'form': form
+        self.set_initial(spam)
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def set_initial(self, spam):
+        self.initial = {
+            'author': spam['author'].fullname,
+            'email': [(r, r) for r in spam['author'].emails],
+            'subject': 'Reports of spam',
+            'message': 'certainly <b> unfortunate </b>',  # TODO: <-
         }
-        return render(request, self.template_name, context)
 
     def form_valid(self, form):
         send_mail(
             subject=form.cleaned_data.get('subject').strip(),
             message=form.cleaned_data.get('message'),
             from_email='support@osf.io',
-            recipient_list=[]  # TODO: <-
+            recipient_list=[form.cleaned_data.get('email')]
         )
         return super(EmailFormView, self).form_valid(form)
+
+    @property
+    def success_url(self):
+        return reverse('spam:detail', kwargs={'spam_id': self.spam_id}) +\
+               '?page={}'.format(self.page)
 
 
 def get_spam_list():

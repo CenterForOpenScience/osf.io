@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load static %}
-{% load crispy_forms_tags %}
 {% block title %}
     <title>Email</title>
 {% endblock title %}
@@ -9,7 +8,14 @@
         <div class="row">
             <div class="span6">
                 <h4>Email</h4>
-                {% crispy form form.helper %}
+                <form action="{% url 'spam:email' comment.id %}?page={{ page_number }}"
+                      method="post">
+                    {% csrf_token %}
+                    <ul>
+                    {{ form.as_ul }}
+                    </ul>
+                    <input type="submit" value="Submit" />
+                </form>
             </div>
         </div>
         <div class="row">

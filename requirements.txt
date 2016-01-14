@@ -58,5 +58,3 @@ pyjwe==0.1.6
 
 # Admin requirements
 django-webpack-loader==0.2.3
-django-crispy-forms==1.6.0
-django-floppyforms==1.6.0
