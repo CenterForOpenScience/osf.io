@@ -624,6 +624,7 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+}
 
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
