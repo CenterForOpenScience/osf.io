@@ -156,20 +156,21 @@ class MetaData(GuidStoredObject):
 
 
 def validate_reports(value, *args, **kwargs):
-    if not isinstance(value, dict):
-        raise ValidationTypeError('Values must be dictionaries')
-    if (
-        'category' not in value or
-        'message' not in value or
-        'date' not in value or
-        'user' not in value or
-        'retracted' not in value
-    ):
-        raise ValidationValueError(
-            'Values must include `user`, `date`, `category`, `message`, `retracted` keys'
-        )
-    if not User.load(value['user']):
-        raise ValidationValueError('Keys must be user IDs')
+    for key, val in value.iteritems():
+        if not User.load(key):
+            raise ValidationValueError('Keys must be user IDs')
+        if not isinstance(val, dict):
+            raise ValidationTypeError('Values must be dictionaries')
+        if (
+            'category' not in val or
+            'message' not in val or
+            'date' not in val or
+            'retracted' not in val
+        ):
+            raise ValidationValueError(
+                ('Values must include `date`, `category`, ',
+                 '`message`, `retracted` keys')
+            )
 
 
 class SpamMixin(StoredObject):
@@ -195,7 +196,7 @@ class SpamMixin(StoredObject):
     #  - category: What type of spam does the reporter believe this is
     #  - message: Comment on the comment
     reports = fields.DictionaryField(
-        list=True, default=[], validate=validate_reports
+        default={}, validate=validate_reports
     )
 
     def flag_spam(self, save=False):
@@ -237,9 +238,9 @@ class SpamMixin(StoredObject):
         if user == self.user:
             raise ValueError
         self.flag_spam()
-        report = {'user': user._id, 'date': date, 'retracted': False}
+        report = {'date': date, 'retracted': False}
         report.update(kwargs)
-        self.reports.append(report)
+        self.reports[user._id] = report
         if save:
             self.save()
 
