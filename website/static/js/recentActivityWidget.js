@@ -30,7 +30,7 @@ var LogWrap = {
         self.getLogs = function(init, reset, update) {
             if (!(init || reset || update)  && self.cache[self.page - 1]){
                 self.activityLogs(self.cache[self.page - 1]);
-                if (!self.cache[self.page] && self.page <= self.lastPage){
+                if (!self.cache[self.page] && self.page < self.lastPage){
                     self.page = self.page + 1;
                     self.getLogs(false, false, true);
                     self.page = self.page - 1;
