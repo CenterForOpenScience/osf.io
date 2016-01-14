@@ -1,17 +1,53 @@
 # -*- coding: utf-8 -*-
 import pytz
+from datetime import datetime
 from flask import request
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from framework.auth.decorators import must_be_logged_in
+from framework.tasks import app
 
+from website.files.models import FileNode, TrashedFileNode
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify
 from website.models import Comment
-from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_be_contributor_or_public, must_have_permission
+from website.project.model import Node
 from website.project.signals import comment_added, file_moved_node
-from datetime import datetime
+from website import settings
 
+
+@app.task
+@must_be_logged_in
+@must_have_permission('write')
+def update_comment_root_target_file(auth, **kwargs):
+    data = request.get_json()
+    source = data.get('source')
+    destination = data.get('destination')
+    node = Node.load(source.get('nodeId'))
+    destination_node = Node.load(destination.get('nodeId'))
+
+    if source.get('provider') == 'osfstorage':
+        try:
+            old_file = TrashedFileNode.find_one(Q('provider', 'eq', source.get('provider')) &
+                                                Q('node', 'eq', node) &
+                                                Q('path', 'eq', source.get('path')))
+        except NoResultsFound:
+            old_file = FileNode.load(source.get('path').strip('/'))
+    else:
+        old_file = FileNode.resolve_class(source.get('provider'), FileNode.FILE).get_or_create(node, source.get('path'))
+
+    new_file = FileNode.resolve_class(destination.get('provider'), FileNode.FILE).get_or_create(destination_node, destination.get('path'))
+    new_file.touch(
+        request.headers.get('Authorization'),
+        cookie=request.cookies.get(settings.COOKIE_NAME)
+    )
+    if node._id != destination_node._id:
+        Comment.update(Q('root_target', 'eq', old_file), data={'node': destination_node})
+
+    Comment.update(Q('root_target', 'eq', old_file), data={'root_target': new_file})
+    Comment.update(Q('target', 'eq', old_file), data={'target': new_file})
 
 @file_moved_node.connect
 def update_comment_node(file_obj, destination_node):

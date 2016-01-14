@@ -407,6 +407,8 @@ function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
     tb.modal.dismiss();
     var ogParent = from.parentID;
+    var source = from.data;
+
     if (to.id === ogParent && (!rename || rename === from.data.name)){
       return;
     }
@@ -479,6 +481,11 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         // no need to redraw because fangornOrderFolder does it
         orderFolder.call(tb, from.parent());
+
+        if (operation === OPERATIONS.MOVE) {
+            updateCommentsOnMove(from.data.nodeApiUrl, source, resp);
+        }
+
     }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
@@ -517,6 +524,19 @@ function doItemOp(operation, to, from, rename, conflict) {
         orderFolder.call(tb, from.parent());
     });
 }
+
+function updateCommentsOnMove(nodeApiUrl, source, destination) {
+    var url = nodeApiUrl + 'comments/update/';
+    var request = $osf.putJSON(
+        url,
+        {
+            'source': source,
+            'destination': destination
+        }
+    );
+    return request;
+}
+
 
 /**
  * Find out what the upload URL is for each item

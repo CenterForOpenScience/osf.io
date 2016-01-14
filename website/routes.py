@@ -328,6 +328,16 @@ def make_url_map(app):
 
         Rule(
             [
+                '/project/<pid>/comments/update/',
+                '/project/<pid>/node/<nid>/comments/update/',
+            ],
+            'put',
+            project_views.comment.update_comment_root_target_file,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/citation/',
                 '/project/<pid>/node/<nid>/citation/',
             ],
