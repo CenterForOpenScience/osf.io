@@ -24,10 +24,6 @@ button {
 }
 
 .sort-group {
-    display: inline;
-}
-
-.sort-group {
   display: inline-block;
 
 }

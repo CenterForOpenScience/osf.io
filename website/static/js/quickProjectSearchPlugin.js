@@ -76,6 +76,17 @@ var quickSearchProject = {
                     }
         })};
 
+         // When 'load more' button pressed, loads up to 10 nodes
+        self.loadUpToTen = function () {
+            var requested = self.nodes().splice(0, 10);
+            for (var i = 0; i < requested.length; i++) {
+                self.displayedNodes().push(requested[i])
+            }
+            self.countDisplayed(self.displayedNodes().length);
+            return self.displayedNodes()
+        };
+
+        // If < 10 contribs, map node id to contrib names. Otherwise, make a call to get all contribs.
         self.retrieveContributors = function(node) {
             if (node.embeds.contributors.links.meta.total > 10) {
                 self.pullOverTenContributorNames(node)
@@ -86,6 +97,7 @@ var quickSearchProject = {
                 }
         };
 
+        // Call to get up to 1000 contributors on a node.
         self.pullOverTenContributorNames = function (node) {
             var url = $osf.apiV2Url('nodes/' + node.id + '/contributors/', { query : { 'page[size]': 1000 }});
             var promise = m.request({method: 'GET', url : url, config: xhrconfig, background : true});
@@ -94,6 +106,7 @@ var quickSearchProject = {
             })
         };
 
+        // Maps node id to list of contrib names for later searching
         self.mapNodeToContributors = function (node, contributors){
             var contributorList = [];
             contributors.data.forEach(function(contrib){
@@ -104,19 +117,12 @@ var quickSearchProject = {
             self.contributorMapping[node.id] = contributorList
         };
 
-        self.loadUpToTen = function () {
-            var requested = self.nodes().splice(0, 10);
-            for (var i = 0; i < requested.length; i++) {
-                self.displayedNodes().push(requested[i])
-            }
-            self.countDisplayed(self.displayedNodes().length);
-            return self.displayedNodes()
-        };
-
+        // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
             return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
         };
 
+        // Formats contrib family names for display
         self.getContributors = function (node) {
             var numContributors = node.embeds.contributors.links.meta.total;
             if (numContributors === 1) {
@@ -139,10 +145,13 @@ var quickSearchProject = {
 
         };
 
+         // Formats date for display
         self.formatDate = function (node) {
             return new $osf.FormattableDate(node.attributes.date_modified).local
         };
 
+
+        // Shifts nodes back to master node list (from displayedNodes or nonMatchingNodes)
         self.restoreToNodeList = function (missingNodes) {
             for (var i = 0; i < missingNodes.length ; i++) {
                 self.nodes().push(missingNodes[i])
@@ -185,6 +194,7 @@ var quickSearchProject = {
             self.sortState('dateDesc');
         };
 
+        // Sorts nodes depending on current sort state.
         self.sortBySortState = function () {
             if (self.sortState() === 'alphaAsc') {
                 self.sortAlphabeticalAscending()
@@ -200,6 +210,7 @@ var quickSearchProject = {
             }
         };
 
+        // For xs screen
         self.sortFieldGivenDirection = function(){
             var dropdown = document.getElementById('sortDropDown');
             var fieldSort = dropdown.options[dropdown.selectedIndex].value;
@@ -208,6 +219,7 @@ var quickSearchProject = {
             self.sortNodesAndModifyDisplay()
         };
 
+        // For xs screen
         self.sortDirectionGivenField = function(clicked) {
             console.log('sorted');
             var fieldSort = self.preSelectField();
@@ -216,16 +228,19 @@ var quickSearchProject = {
             self.sortNodesAndModifyDisplay()
         };
 
+        // When shifting to xs screen, tells which field to automatically display in select
         self.preSelectField = function(){
             var fieldSort = self.sortState().split(/[A-Z][a-z]+/g)[0];
             return fieldSort;
         };
 
+        // When shifting to xs screen, tells which direction to automatically highlight in select
         self.preSelectDirection = function(){
             var directionSort = self.sortState().match(/[A-Z][a-z]+/g)[0];
             return directionSort
         };
 
+        // Colors sort asc/desc buttons either selected or not-selected
         self.colorSortButtons = function () {
             var sortButtons = ['dateAsc', 'dateDesc', 'alphaAsc', 'alphaDesc'];
             var button = document.getElementById(self.sortState()).className = 'selected';
@@ -246,6 +261,7 @@ var quickSearchProject = {
             }
         };
 
+        // Shifts all nodes back to master node list, sorts, and returns self.countDisplayed() number of nodes for display
         self.sortNodesAndModifyDisplay = function () {
             self.restoreToNodeList(self.displayedNodes());
             self.sortBySortState();
@@ -253,10 +269,12 @@ var quickSearchProject = {
             self.displayedNodes(self.nodes().splice(0, self.countDisplayed()))
         };
 
+        // Filtering on title
         self.noTitleMatch = function (node) {
             return (node.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) === -1);
         };
 
+        // Filtering on contrib
         self.noContributorMatch = function (node) {
             var contributors = self.contributorMapping[node.id];
 
@@ -268,6 +286,7 @@ var quickSearchProject = {
             return true
         };
 
+        // Filtering on tag
         self.noTagMatch = function (node) {
             var tags = node.attributes.tags;
             for (var t = 0; t < tags.length; t++){
@@ -278,6 +297,7 @@ var quickSearchProject = {
             return true
         };
 
+        // Filters nodes
         self.filterNodes = function (){
             for (var n = self.nodes().length - 1; n >= 0; n--) {
                 var node = self.nodes()[n];
@@ -288,6 +308,7 @@ var quickSearchProject = {
             }
         };
 
+        // Colors node div and changes cursor to pointer on hover
         self.mouseOver = function (node) {
             node.style.backgroundColor='#E0EBF3';
             node.style.cursor = 'pointer'
@@ -327,6 +348,7 @@ var quickSearchProject = {
 
         };
 
+        // Onclick, directs user to project page
         self.nodeDirect = function(node) {
             location.href = '/'+ node.id
         };
@@ -348,8 +370,7 @@ var quickSearchProject = {
                     ctrl.sortState('alphaAsc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
-                    m('i', {class: 'fa fa-angle-up'})
-)
+                    m('i', {class: 'fa fa-angle-up'}))
             }
         }
 
@@ -371,6 +392,7 @@ var quickSearchProject = {
                  m('i', {class: 'fa fa-angle-up'}))
             }
         }
+
         function sortDateDesc(){
             if (ctrl.loadingComplete()){
                 return m('button', {id: 'dateDesc', class: 'selected', onclick: function() {
@@ -381,6 +403,7 @@ var quickSearchProject = {
             }
         }
 
+        // Sort button for xs screen
         function ascending() {
             if (ctrl.loadingComplete()){
                 var direction = ctrl.preSelectDirection()
@@ -397,11 +420,11 @@ var quickSearchProject = {
                          m('i', {class: 'fa fa-angle-up'}))
 
                 }
-
             }
         }
 
-          function descending() {
+        // Sort button for xs screen
+        function descending() {
             if (ctrl.loadingComplete()){
                 var direction = ctrl.preSelectDirection()
                 if (direction === 'Desc') {
@@ -415,9 +438,7 @@ var quickSearchProject = {
                          ctrl.sortDirectionGivenField(this)
                          }},
                          m('i', {class: 'fa fa-angle-down'}))
-
                 }
-
             }
         }
 
@@ -502,7 +523,6 @@ var quickSearchProject = {
                         )]
                     ))
                 ),
-
                 displayNodes(),
                 m('div', {class: 'row'}, [
                     m('div', {class: 'col-sm-5'}),
