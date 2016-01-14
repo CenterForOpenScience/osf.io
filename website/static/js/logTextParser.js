@@ -231,6 +231,99 @@ var LogPieces = {
             return returnTextParams('dataset', 'a dataset', logObject);
         }
     },
+
+    folder: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('folder', 'a folder', logObject);
+        }
+    },
+
+    repo: {
+        view: function(ctrl, logObject) {
+            var github = logObject.attributes.params.github;
+            if (paramIsReturned(github, logObject)){
+                var user = github.user;
+                var repo = github.repo;
+                if(paramIsReturned(user, logObject) && paramIsReturned(repo, logObject)){
+                    return m('p', user + '/' + repo)
+                }
+            }
+            return ''
+        }
+    },
+
+    folder_name: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('folder_name', 'a folder', logObject);
+        }
+    },
+
+    bucket: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('bucket', 'a bucket', logObject);
+        }
+    },
+
+    forward_url: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('forward_url', 'a new URL', logObject);
+        }
+    },
+
+    box_folder: {
+        view: function(ctrl, logObject) {
+            var folder = logObject.attributes.params.folder;
+            if(paramIsReturned(folder, logObject)){
+                return m('p', folder === 'All Files' ? '/ (Full Box)' : (folder || '').replace('All Files',''))
+            }
+            return '';
+        }
+    },
+
+    citation: {
+        view: function(ctrl, logObject) {
+            var citation = logObject.attributes.params.citation;
+            if(paramIsReturned(citation, logObject)){
+                var name = citation.name;
+                if (paramIsReturned(name, logObject)){
+                    return m('p', 'name');
+                }
+            }
+            return '';
+        }
+    },
+
+    dataset: {
+        view: function(ctrl, logObject){
+            return returnTextParams('dataset', '', logObject)
+        }
+    },
+
+    study: {
+        view: function(ctrl, logObject){
+            return returnTextParams('study', '', logObject)
+        }
+    },
+
+    googledrive_path: {
+        view: function(ctrl, logObject){
+            var path = logObject.attributes.params.path;
+            if(paramIsReturned(folder, logObject)){
+                return m('p', decodeURIComponent(path))
+            }
+            return ''
+        }
+    },
+
+    googledrive_folder: {
+        view: function(ctrl, logObject){
+            var folder = logObject.attributes.params.folder;
+            if(paramIsReturned(folder, logObject)){
+                return m('p', folder === '/' ? '(Full Google Drive)' : decodeURIComponent(folder))
+            }
+            return ''
+        }
+    }
 };
 
 
