@@ -128,7 +128,8 @@ ViewModel.prototype.selectBucket = function() {
         self.loading(false);
         bootbox.alert({
             title: 'Invalid bucket name',
-            message: 'Sorry, the S3 addon only supports bucket names with letters, numbers, periods, and hyphens.'
+            message: 'Amazon S3 buckets can contain lowercase letters, numbers, and hyphens, seperated by' +
+            ' periods.  Please try another name.',
         });
         ret.reject();
     } else {
@@ -375,7 +376,7 @@ ViewModel.prototype.openCreateBucket = function() {
                     } else if (!isValidBucketName(bucketName, false)) {
                         bootbox.confirm({
                             title: 'Invalid bucket name',
-                            message: 'Amazon S3 buckets can contain lowercase letters, numbers, and hyphens, and' +
+                            message: 'Amazon S3 buckets can contain lowercase letters, numbers, and hyphens, seperated by' +
                             ' periods.  Please try another name.',
                             callback: function (result) {
                                 if (result) {
