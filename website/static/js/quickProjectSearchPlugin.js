@@ -462,9 +462,9 @@ var quickSearchProject = {
             console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
             return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
                 m('div', {class: 'row node-styling',  onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(project)}}}, [
-                    m('div', {class: 'col-sm-5 p-v-xs'}, project.attributes.title),
-                    m('div', {class: 'col-sm-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
-                    m('div', {class: 'col-sm-3 p-v-xs'}, ctrl.formatDate(project))
+                    m('div', {class: 'col-sm-7 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
+                    m('div', {class: 'col-sm-3 col-md-3 col-lg-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
+                    m('div', {class: 'col-sm-2 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
                 ])
             ))
         }
@@ -485,9 +485,9 @@ var quickSearchProject = {
 
                 m('div', {class: 'row'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
                 m('div', {class: 'row node-col-headers'}, [
-                    m('div', {class: 'col-sm-5 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
-                    m('div', {class: 'col-sm-4 f-w-xl p-v-xs'}, 'Contributors'),
-                    m('div', {class: 'col-sm-3 f-w-xl p-v-xs'}, 'Modified', m('span', {class: 'sort-group'}, sortDateAsc(), sortDateDesc())),
+                    m('div', {class: 'col-sm-7 col-md-6 col-lg-5 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
+                    m('div', {class: 'col-sm-3 col-md-3 col-lg-4 f-w-xl p-v-xs'}, 'Contributors'),
+                    m('div', {class: 'col-sm-2 col-md-3 col-lg-3 f-w-xl p-v-xs'}, 'Modified', m('span', {class: 'sort-group'}, sortDateAsc(), sortDateDesc())),
                 ])
                 )),
 
