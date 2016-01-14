@@ -1,4 +1,5 @@
 from nose.tools import *  # flake8: noqa
+from datetime import datetime
 
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
@@ -26,8 +27,10 @@ class TestCommentReportsView(ApiTestCase):
         self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.contributor)
-        self.comment.reports = self.comment.reports or {}
-        self.comment.reports[self.user._id] = {'category': 'spam', 'text': 'This is spam'}
+        # self.comment.reports = self.comment.reports or {}
+        # self.comment.reports[self.user._id] = {'category': 'spam', 'text': 'This is spam'}
+        self.comment.report_spam(self.user, datetime.utcnow(),
+                                 category='spam', message='Really?')
         self.comment.save()
         self.private_url = '/{}comments/{}/reports/'.format(API_BASE, self.comment._id)
 
@@ -189,6 +192,8 @@ class TestCommentReportsView(ApiTestCase):
         self._set_up_private_project_comment_reports()
         comment = CommentFactory(node=self.private_project, user=self.contributor)
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
+
+        get_res = self.app.get(url, auth=self.user.auth)
 
         res = self.app.post_json_api(url, self.payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
