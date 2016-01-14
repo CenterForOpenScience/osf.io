@@ -5,6 +5,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.views.generic import FormView
+from django.core.urlresolvers import reverse
 
 from modularodm import Q
 from website.project.model import Comment
@@ -17,7 +18,6 @@ class EmailFormView(FormView):
 
     form_class = EmailForm
     template_name = "spam/email.html"
-    success_url = ''
 
     def get(self, request, *args, **kwargs):
         spam_id = kwargs.get('spam_id', None)
@@ -32,7 +32,29 @@ class EmailFormView(FormView):
             'message': 'certainly <b> unfortunate </b>',  # TODO: <-
         }
         form = self.form_class(initial=initial)
-        self.success_url = None  # TODO: <-
+        self.success_url = reverse('spam:detail',
+                                   kwargs={'spam_id': spam_id})  # TODO: <-
+        context = {
+            'comment': spam,
+            'page_number': request.GET.get('page', 1),
+            'form': form
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        spam_id = kwargs.get('spam_id', None)
+        try:
+            spam = serialize_comment(Comment.load(spam_id))
+        except:
+            pass
+        # initial = {
+        #     'name': spam['author'].fullname,
+        #     'email': [(i, r) for i, r in enumerate(spam['author'].emails)],
+        #     'subject': 'Reports of spam',
+        #     'message': 'certainly <b> unfortunate </b>',  # TODO: <-
+        # }
+        # form = self.form_class(initial=initial)
+        form = self.form_class()
         context = {
             'comment': spam,
             'page_number': request.GET.get('page', 1),
