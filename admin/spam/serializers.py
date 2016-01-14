@@ -5,7 +5,7 @@ def serialize_comment(comment):
     reports = [
         serialize_report(user, report)
         for user, report in comment.reports.iteritems()
-        ]
+    ]
 
     return {
         'id': comment._id,
