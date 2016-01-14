@@ -344,7 +344,7 @@ var FileBrowser = {
             self.users = {};
             self.tags = {};
             self.data().data.map(function(item){
-                var contributors = item.embeds.contributors.data;
+                var contributors = item.embeds.contributors.data ? item.embeds.contributors.data : [];
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
                     if(self.users[u.id] === undefined) {
@@ -357,7 +357,7 @@ var FileBrowser = {
                     }
                 }
 
-                var tags = item.attributes.tags;
+                var tags = item.attributes.tags ? item.attributes.tags : [];
                 for(var j = 0; j < tags.length; j++) {
                     var t = tags[j];
                     if(self.tags[t] === undefined) {
