@@ -68,7 +68,7 @@ def process_token_or_pass(func):
         if encoded_token:
             handler = TokenHandler.from_string(encoded_token)
             try:
-                return handler.to_response()
+                res = handler.to_response()
             except TokenHandlerNotFound as e:
                 raise HTTPError(
                     http.BAD_REQUEST,
@@ -77,6 +77,8 @@ def process_token_or_pass(func):
                         'message_long': 'No token handler for action: {} found'.format(e.action)
                     }
                 )
+            if res:
+                return res
         return func(*args, **kwargs)
     return wrapper
 
