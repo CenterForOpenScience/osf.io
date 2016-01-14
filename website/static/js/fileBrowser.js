@@ -32,7 +32,7 @@ function _formatDataforPO(item) {
     item.tags = item.attributes.tags.toString();
     item.contributors = '';
     if (!item.embeds.contributors.data){
-        console.log(item.embed.contributors.errors);
+        console.log(item.embeds.contributors.errors);
     } else {
         item.embeds.contributors.data.forEach(function(c){
             item.contributors += c.embeds.users.data.attributes.full_name;
