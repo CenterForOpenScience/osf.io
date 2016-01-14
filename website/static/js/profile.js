@@ -22,6 +22,7 @@ var socialRules = {
     impactStory: /impactstory\.org\/([\w\.-]+)/i,
     github: /github\.com\/(\w+)/i,
     researchGate: /researchgate\.net\/profile\/(\w+)/i,
+    academia: /(\w+)\.academia\.edu\/(\w+)/i
 };
 
 var cleanByRule = function(rule) {
@@ -542,6 +543,15 @@ var SocialViewModel = function(urls, modes) {
         self, 'researchGate', 'https://researchgate.net/profile/'
     );
 
+    self.academiaInstitution = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.academia)}),
+        self, 'academiaInstitution', 'https://'
+    );
+    self.academiaProfileID = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.academia)}),
+        self, 'academiaProfileID', '.academia.edu/'
+    );
+
     self.trackedProperties = [
         self.profileWebsites,
         self.orcid,
@@ -552,6 +562,8 @@ var SocialViewModel = function(urls, modes) {
         self.impactStory,
         self.github,
         self.researchGate,
+        self.academiaInstitution,
+        self.academiaProfileID
     ];
 
     var validated = ko.validatedObservable(self);
@@ -570,9 +582,10 @@ var SocialViewModel = function(urls, modes) {
             {label: 'ImpactStory', text: self.impactStory(), value: self.impactStory.url()},
             {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()},
             {label: 'ResearchGate', text: self.researchGate(), value: self.researchGate.url()},
+            {label: 'Academia', text: self.academiaInstitution() + '.academia.edu/' + self.academiaProfileID(), value: self.academiaInstitution.url() + self.academiaProfileID.url()}
         ];
     });
-    
+
     self.hasValues = ko.computed(function() {
         var values = self.values();
         if (self.hasProfileWebsites()) {
@@ -591,7 +604,7 @@ var SocialViewModel = function(urls, modes) {
             ensureHttp: true
         }));
     };
-    
+
     self.removeWebsite = function(profileWebsite) {
         var profileWebsites = ko.toJS(self.profileWebsites());
             bootbox.confirm({

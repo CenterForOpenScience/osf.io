@@ -480,10 +480,12 @@ class CommentFactory(ModularOdmFactory):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
         target = kwargs.pop('target', None) or node
+        content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
             user=user,
             target=target,
+            content=content,
             *args, **kwargs
         )
         return instance
@@ -493,10 +495,12 @@ class CommentFactory(ModularOdmFactory):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
         target = kwargs.pop('target', None) or node
+        content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
             user=user,
             target=target,
+            content=content,
             *args, **kwargs
         )
         instance.save()
@@ -551,6 +555,8 @@ class MockOAuth2Provider(ExternalProvider):
 
     auth_url_base = "https://mock2.com/auth"
     callback_url = "https://mock2.com/callback"
+    auto_refresh_url = "https://mock2.com/callback"
+    refresh_time = 300
 
     def handle_callback(self, response):
         return {

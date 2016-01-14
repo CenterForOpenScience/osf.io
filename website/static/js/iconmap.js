@@ -7,6 +7,7 @@ module.exports = {
         procedure: 'fa fa-cogs',
         instrumentation: 'fa fa-flask',
         data: 'fa fa-database',
+        software: 'fa fa-laptop',
         analysis: 'fa fa-bar-chart',
         communication: 'fa fa-comment',
         other: 'fa fa-th-large',

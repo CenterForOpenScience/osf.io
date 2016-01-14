@@ -201,6 +201,8 @@ class User(GuidStoredObject, AddonModelMixin):
         'impactStory': u'https://impactstory.org/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
         'researchGate': u'https://researchgate.net/profile/{}',
+        'academiaInstitution': u'https://{}',
+        'academiaProfileID': u'.academia.edu/{}'
     }
 
     # This is a GuidStoredObject, so this will be a GUID.
@@ -402,6 +404,11 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def pk(self):
         return self._id
+
+    @property
+    def contributed(self):
+        from website.project.model import Node
+        return Node.find(Q('contributors', 'contains', self._id))
 
     @property
     def email(self):
@@ -650,6 +657,11 @@ class User(GuidStoredObject, AddonModelMixin):
             'given': self.csl_given_name,
         }
 
+    @property
+    def created(self):
+        from website.project.model import Node
+        return Node.find(Q('creator', 'eq', self._id))
+
     # TODO: This should not be on the User object.
     def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
         """Change the password for this user to the hash of ``raw_new_password``."""
@@ -878,7 +890,7 @@ class User(GuidStoredObject, AddonModelMixin):
         registration or claiming.
 
         """
-        for node in self.node__contributed:
+        for node in self.contributed:
             node.update_search()
 
     def update_search_nodes_contributors(self):
@@ -1022,7 +1034,7 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def contributor_to(self):
         return (
-            node for node in self.node__contributed
+            node for node in self.contributed
             if not (
                 node.is_deleted
                 or node.is_dashboard
@@ -1255,7 +1267,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         # - projects where the user was a contributor
         with disconnected_from(signal=contributor_added, listener=notify_added_contributor):
-            for node in user.node__contributed:
+            for node in user.contributed:
                 # Skip dashboard node
                 if node.is_dashboard:
                     continue
@@ -1293,7 +1305,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 node.save()
 
         # - projects where the user was the creator
-        for node in user.node__created:
+        for node in user.created:
             node.creator = self
             node.save()
 
@@ -1322,11 +1334,12 @@ class User(GuidStoredObject, AddonModelMixin):
         or just their primary keys
         """
         if primary_keys:
-            projects_contributed_to = set(self.node__contributed._to_primary_keys())
-            return projects_contributed_to.intersection(other_user.node__contributed._to_primary_keys())
+            projects_contributed_to = set([node._id for node in self.contributed])
+            other_projects_primary_keys = set([node._id for node in other_user.contributed])
+            return projects_contributed_to.intersection(other_projects_primary_keys)
         else:
-            projects_contributed_to = set(self.node__contributed)
-            return projects_contributed_to.intersection(other_user.node__contributed)
+            projects_contributed_to = set(self.contributed)
+            return projects_contributed_to.intersection(other_user.contributed)
 
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""

@@ -4,7 +4,7 @@ import mock
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from tests.factories import (
-    AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
+    EmbargoFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
 )
 
@@ -18,6 +18,7 @@ from website.project.model import (
     PreregCallbackMixin,
     RegistrationApproval,
 )
+from framework.auth import Auth
 
 
 DUMMY_TOKEN = tokens.encode({
@@ -52,6 +53,29 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         )
         assert_true(self.user._id in approval.approval_state)
         assert_false(unconfirmed_user._id in approval.approval_state)
+
+    def test__initiate_approval_adds_admins_on_child_nodes(self):
+        project_admin = UserFactory()
+        project_non_admin = UserFactory()
+        child_admin = UserFactory()
+        child_non_admin = UserFactory()
+        grandchild_admin = UserFactory()
+
+        project = ProjectFactory(creator=project_admin)
+        project.add_contributor(project_non_admin, auth=Auth(project.creator), save=True)
+
+        child = NodeFactory(creator=child_admin, parent=project)
+        child.add_contributor(child_non_admin, auth=Auth(project.creator), save=True)
+
+        grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
+
+        approval = project._initiate_approval(project.creator)
+        assert_in(project_admin._id, approval.approval_state)
+        assert_in(child_admin._id, approval.approval_state)
+        assert_in(grandchild_admin._id, approval.approval_state)
+
+        assert_not_in(project_non_admin._id, approval.approval_state)
+        assert_not_in(child_non_admin._id, approval.approval_state)
 
     def test_require_approval_from_non_admin_raises_PermissionsError(self):
         self.registration.remove_permission(self.user, 'admin')
@@ -231,3 +255,16 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
             self.registration.registration_approval._on_complete(self.user)
         mock_notify.assert_called()
+
+    def test__on_complete_makes_project_and_components_public(self):
+        project_admin = UserFactory()
+        child_admin = UserFactory()
+        grandchild_admin = UserFactory()
+
+        project = ProjectFactory(creator=project_admin, is_public=False)
+        child = NodeFactory(creator=child_admin, parent=project, is_public=False)
+        grandchild = NodeFactory(creator=grandchild_admin, parent=child, is_public=False)  # noqa
+
+        registration = RegistrationFactory(project=project)
+        with mock.patch.object(PreregCallbackMixin, '_notify_initiator'):
+            registration.registration_approval._on_complete(self.user)

@@ -55,6 +55,29 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_true(self.user._id in retraction.approval_state)
         assert_false(unconfirmed_user._id in retraction.approval_state)
 
+    def test__initiate_retraction_adds_admins_on_child_nodes(self):
+        project_admin = UserFactory()
+        project_non_admin = UserFactory()
+        child_admin = UserFactory()
+        child_non_admin = UserFactory()
+        grandchild_admin = UserFactory()
+
+        project = ProjectFactory(creator=project_admin)
+        project.add_contributor(project_non_admin, auth=Auth(project.creator), save=True)
+
+        child = NodeFactory(creator=child_admin, parent=project)
+        child.add_contributor(child_non_admin, auth=Auth(project.creator), save=True)
+
+        grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
+
+        retraction = project._initiate_retraction(project.creator)
+        assert_in(project_admin._id, retraction.approval_state)
+        assert_in(child_admin._id, retraction.approval_state)
+        assert_in(grandchild_admin._id, retraction.approval_state)
+
+        assert_not_in(project_non_admin._id, retraction.approval_state)
+        assert_not_in(child_non_admin._id, retraction.approval_state)
+
     # Backref tests
     def test_retraction_initiator_has_backref(self):
         self.registration.retract_registration(self.user, self.valid_justification)

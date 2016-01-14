@@ -4,14 +4,11 @@ import re
 from dateutil import parser
 
 from nose.tools import *  # flake8: noqa
-import mock
 
 from rest_framework import serializers as ser
 
 from tests.base import ApiTestCase
-from tests import factories
 
-from api.base.settings.defaults import API_BASE
 from api.base.filters import FilterMixin
 
 from api.base.exceptions import (
@@ -19,8 +16,6 @@ from api.base.exceptions import (
     InvalidFilterOperator,
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
-    InvalidFilterValue,
-    InvalidFilterFieldError
 )
 
 class FakeSerializer(ser.Serializer):
@@ -178,7 +173,7 @@ class TestFilterMixin(ApiTestCase):
             self.view.parse_query_params(query_params)
         except InvalidFilterOperator as err:
             ops = re.search(r'one of (?P<ops>.+)\.$', err.detail).groupdict()['ops']
-            assert_equal(ops, "gt, gte, lt, lte, eq")
+            assert_equal(ops, "gt, gte, lt, lte, eq, ne")
 
         query_params = {
             'filter[string_field][bar]': 'foo'
@@ -187,7 +182,7 @@ class TestFilterMixin(ApiTestCase):
             self.view.parse_query_params(query_params)
         except InvalidFilterOperator as err:
             ops = re.search(r'one of (?P<ops>.+)\.$', err.detail).groupdict()['ops']
-            assert_equal(ops, "contains, icontains, eq")
+            assert_equal(ops, "contains, icontains, eq, ne")
 
 
     def test_parse_query_params_supports_multiple_filters(self):
