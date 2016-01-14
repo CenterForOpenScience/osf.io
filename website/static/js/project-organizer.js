@@ -12,112 +12,14 @@ require('css/fangorn.css');
 
 var $ = require('jquery');
 var m = require('mithril');
-var Fangorn = require('js/fangorn');
-var bootbox = require('bootbox');
-var Bloodhound = require('exports?Bloodhound!typeahead.js');
 var moment = require('moment');
 var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
-var Fangorn = require('js/fangorn');
 
-
-// Initialize projectOrganizer object (separate from the ProjectOrganizer constructor at the end)
-var projectOrganizer = {};
-
-// Link ID's used to add existing project to folder
-var linkName;
-var linkID;
-
-// Cross browser key codes for the Command key
-var COMMAND_KEYS = [224, 17, 91, 93];
-var ESCAPE_KEY = 27;
-var ENTER_KEY = 13;
 
 var LinkObject;
-/**
- * Bloodhound is a typeahead suggestion engine. Searches here for public projects
- * @type {Bloodhound}
- */
-projectOrganizer.publicProjects = new Bloodhound({
-    datumTokenizer: function (d) {
-        return Bloodhound.tokenizers.whitespace(d.name);
-    },
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    remote: {
-        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
-        filter: function (projects) {
-            return $.map(projects, function (project) {
-                return {
-                    name: project.value,
-                    node_id: project.id,
-                    category: project.category
-                };
-            });
-        },
-        limit: 10
-    }
-});
-
-/**
- * Bloodhound is a typeahead suggestion engine. Searches here for users projects
- * @type {Bloodhound}
- */
-projectOrganizer.myProjects = new Bloodhound({
-    datumTokenizer: function (d) {
-        return Bloodhound.tokenizers.whitespace(d.name);
-    },
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    remote: {
-        url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
-        filter: function (projects) {
-            return $.map(projects, function (project) {
-                return {
-                    name: project.value,
-                    node_id: project.id,
-                    category: project.category
-                };
-            });
-        },
-        limit: 10
-    }
-});
-
-
-/**
- * Organize flat list of nodes returned from server to a hierarchical list
- * @param {Array} flatData flat list of nodes as returned from the server
- * @returns {Array} root a hierarchical list of the nodes
- */
-function _makeTree (flatData) {
-    var root = {id:0, children: [], data : {} };
-    var node_list = { 0 : root};
-    for (var i = 0; i < flatData.length; i++) {
-        var n = flatData[i];
-        var parentLink = n.relationships.parent.links.related.href; // Find where parent id string can be extracted
-        var parentID = parentLink.split('/')[5];
-
-        if(!node_list[n.id]){ // If this node is not in the object list, add it
-            node_list[n.id] = { id: n.id, data : n, children : [] };
-        } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
-            node_list[n.id].id = n.id;
-            node_list[n.id].data = n;
-        }
-
-        if(parentID && parentID !== n.id && !n.attributes.registration ) {
-            if(!node_list[parentID]){
-                node_list[parentID] = { children : [] };
-            }
-            node_list[parentID].children.push(node_list[n.id]);
-
-        } else {
-            node_list[0].children.push(node_list[n.id]);
-        }
-    }
-    console.log(root, node_list);
-    return root;
-}
-
+var allProjectsCache;
 /**
  * Edits the template for the column titles.
  * Used here to make smart folder italicized
@@ -135,10 +37,9 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if(node.links.html){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title)
-        ];
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, onclick : preventSelect}, node.attributes.title) ];
     } else {
-        return  m('span', { 'class' : css}, node.attributes.title);
+        return  m('span', { 'class' : css, 'data-nodeID' : node.id }, node.attributes.title);
     }
 }
 
@@ -148,7 +49,6 @@ function _poTitleColumn(item) {
  * @returns {Object} A Mithril virtual DOM template object
  * @private
  */
-// TODO : May need refactor based on the api data
 function _poContributors(item) {
     var contributorList = item.data.embeds.contributors.data;
     if (contributorList.length === 0) {
@@ -214,7 +114,7 @@ function _poResolveRows(item) {
     if (!mobile) {
         default_columns.push({
             data : 'contributors',
-            filter : false,
+            filter : true,
             custom : _poContributors
         }, {
             data : 'dateModified',
@@ -227,7 +127,7 @@ function _poResolveRows(item) {
             filter : false,
             custom : function (row){
                 return m('.btn.btn-default.btn-sm[data-toggle="modal"][data-target="#infoModal"]', {
-                }, m('i.fa.fa-info-circle.text-muted'));
+                }, m('i.fa.fa-ellipsis-h'));
             }
         });
     }
@@ -285,7 +185,7 @@ function _poResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus'),
         togglePlus = m('i.fa.fa-plus'),
         childrenCount = item.data.relationships.children.links.related.meta.count;
-    if (item.kind === 'folder' && childrenCount > 0) {
+    if (childrenCount > 0) {
         if (item.open) {
             return toggleMinus;
         }
@@ -303,13 +203,20 @@ function _poResolveToggle(item) {
  */
 function _poResolveLazyLoad(item) {
     var node = item.data;
-    return $osf.apiV2Url('nodes/', {
-        query : {
-            'filter[root]' : node.id,
-            'related_counts' : true,
-            'embed' : 'contributors'
-        }
-    });
+    if(item.children.length > 0) {
+        return false;
+    }
+    if(node.relationships.children){
+        //return node.relationships.children.links.related.href;
+        return $osf.apiV2Url('nodes/' + node.id + '/children/', {
+            query : {
+                'related_counts' : true,
+                'embed' : 'contributors'
+            }
+        });
+    }
+    return false;
+
 }
 
 /**
@@ -323,20 +230,9 @@ function _poMultiselect(event, tree) {
     var tb = this;
     filterRowsNotInParent.call(tb, tb.multiselected());
     var scrollToItem = false;
-    //if (tb.toolbarMode() === 'search') {
-    //    _dismissToolbar.call(tb);
-    //    scrollToItem = true;
-    //    // recursively open parents of the selected item but do not lazyload;
-    //    Fangorn.Utils.openParentFolders.call(tb, tree);
-    //}
     tb.options.updateSelected(tb.multiselected());
     if (tb.multiselected().length === 1) {
-        // temporarily remove classes until mithril redraws raws with another hover.
-        //tb.inputValue(tb.multiselected()[0].data.name);
         tb.select('#tb-tbody').removeClass('unselectable');
-        //if (scrollToItem) {
-        //    Fangorn.Utils.scrollToFile.call(tb, tb.multiselected()[0].id);
-        //}
     } else if (tb.multiselected().length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
     }
@@ -375,32 +271,7 @@ function filterRowsNotInParent(rows) {
 }
 
 function _poIconView(item) {
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
-    var node = item.data;
-    function returnView(type, category) {
-        var iconType = projectIcons[type];
-        if (type === 'component' || type === 'registeredComponent') {
-                iconType = componentIcons[category];
-        } else if (type === 'project' || type === 'registeredProject') {
-            iconType = projectIcons[category];
-        }
-        if (type === 'registeredComponent' || type === 'registeredProject') {
-            iconType += ' po-icon-registered';
-        } else {
-            iconType += ' po-icon';
-        }
-        var template = m('span', { 'class' : iconType});
-        return template;
-    }
-    if (node.attributes.category === 'project') {
-        if (node.attributes.registration) {
-            return returnView('registeredProject', node.attributes.category);
-        } else {
-            return returnView('project', node.attributes.category);
-        }
-    }
-    return null;
+    return false;
 }
 
 /**
@@ -427,6 +298,7 @@ var tbOptions = {
     },
     sortDepth : 0,
     onload : function () {
+
         var tb = this,
             rowDiv = tb.select('.tb-row');
         rowDiv.first().trigger('click');
@@ -478,9 +350,14 @@ var tbOptions = {
     filterTemplate : function() {
         var tb = this;
         return [
-            m('input.form-control[placeholder="' + tb.options.filterPlaceholder + '"][type="text"]', {
+            m('input.form-control[placeholder="Search all my projects"][type="text"]', {
                 style: 'display:inline;',
-                onkeyup: tb.filter,
+                onkeyup: function(event){
+                    if ($(this).val().length === 1){
+                        tb.updateFolder(allProjectsCache().data, tb.treeData);
+                    }
+                    tb.filter(event);
+                },
                 onchange: m.withAttr('value', tb.filterText),
                 value: tb.filterText()
             }),
@@ -490,18 +367,8 @@ var tbOptions = {
             } }, tb.options.removeIcon())
         ];
     },
-    lazyLoadPreprocess : function (value) {
-        // For when we load root filtered nodes this is removing the parent from the returned list. requires the root to be in relationship object
-        var treeData = _makeTree(value.data);
-        value.data.map(function(item, index){
-            item.kind = 'folder';
-            item.uid = item.id;
-            item.name = item.attributes.title;
-            item.date = new $osf.FormattableDate(item.attributes.date_modified);
-        });
-
-        return value;
-    }
+    hiddenFilterRows : ['tags'],
+    onselectrow : function (row) {console.log(row);}
 };
 
 var ProjectOrganizer = {
@@ -523,6 +390,7 @@ var ProjectOrganizer = {
             m.redraw.strategy('all');
             return tb;
         };
+        allProjectsCache = args.allProjects;
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {

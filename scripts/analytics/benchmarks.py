@@ -56,8 +56,8 @@ def get_private_links():
 
 def get_folders():
     return Node.find(
-        Q('is_folder', 'eq', True) &
-        Q('is_dashboard', 'ne', True) &
+        Q('is_collection', 'eq', True) &
+        Q('is_bookmark_collection', 'ne', True) &
         Q('is_deleted', 'ne', True)
     )
 
@@ -68,7 +68,7 @@ def count_user_nodes(users=None):
         len(
             user.node__contributed.find(
                 Q('is_deleted', 'eq', False) &
-                Q('is_folder', 'ne', True)
+                Q('is_collection', 'ne', True)
             )
         )
         for user in users
@@ -145,7 +145,7 @@ def get_projects():
     projects = Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True)
+        Q('is_collection', 'ne', True)
     )
     return projects
 
@@ -153,7 +153,7 @@ def get_projects_forked():
     projects_forked = list(Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True) &
+        Q('is_collection', 'ne', True) &
         Q('is_fork', 'eq', True)
     ))
     return projects_forked
@@ -162,7 +162,7 @@ def get_projects_registered():
     projects_registered = Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True) &
+        Q('is_collection', 'ne', True) &
         Q('is_registration', 'eq', True)
     )
     return projects_registered
@@ -171,7 +171,7 @@ def get_projects_public():
     projects_public = Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True) &
+        Q('is_collection', 'ne', True) &
         Q('is_public', 'eq', True)
     )
     return projects_public

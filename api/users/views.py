@@ -250,7 +250,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
         fork           boolean            is this project a fork?
         registration   boolean            has this project been registered?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -333,7 +332,6 @@ class UserRegistrations(UserNodes):
         tags                            array of strings   list of tags that describe the registered node
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered?
-        dashboard                       boolean            is this registered node visible on the user dashboard?
         public                          boolean            has this registration been made publicly-visible?
         retracted                       boolean            has this registration been retracted?
         date_registered                 iso8601 timestamp  timestamp that the registration was created
@@ -395,7 +393,7 @@ class UserRegistrations(UserNodes):
         user = self.get_user()
         return (
             Q('contributors', 'eq', user) &
-            Q('is_folder', 'ne', True) &
+            Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True) &
             Q('is_registration', 'eq', True)
         )

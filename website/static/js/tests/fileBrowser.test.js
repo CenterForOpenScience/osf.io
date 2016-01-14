@@ -1,3 +1,5 @@
+
+//TODO uncomment and write more tests
 /* Tests for fileBrowser.js for My Projects in Dashboard */
 /*global describe, it, expect, example, before, after, beforeEach, afterEach, mocha, sinon*/
 'use strict';
@@ -55,20 +57,6 @@ describe('fileBrowser', function() {
             it('should return correct node link', function () {
                 assert.equal(node.link, 'nodes/qwerty/children/?related_counts=true&embed=contributors');
             });
-        });
-    });
-
-    describe('fileBrowserModule', function(){
-        var fb;
-        before(function() {
-            fb = m.mount(document.body, m.component(FileBrowser, {wrapperSelector : 'body'}));
-        });
-        describe('mainModule', function () {
-            it('should throw error when url is not string', function () {
-                assert.throws(function(){
-                    FileBrowser.controller.updateList(234234);
-                }, Error);
-            })
         });
     });
 });

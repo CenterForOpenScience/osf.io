@@ -2,7 +2,7 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, DashboardFactory, FolderFactory, ProjectFactory
+from tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -28,16 +28,16 @@ class TestUserNodes(ApiTestCase):
         self.private_project_user_two = ProjectFactory(title="Private Project User Two",
                                                        is_public=False,
                                                        creator=self.user_two)
-        self.deleted_project_user_one = FolderFactory(title="Deleted Project User One",
-                                                      is_public=False,
-                                                      creator=self.user_one,
-                                                      is_deleted=True)
-        self.folder = FolderFactory()
-        self.deleted_folder = FolderFactory(title="Deleted Folder User One",
-                                            is_public=False,
-                                            creator=self.user_one,
-                                            is_deleted=True)
-        self.dashboard = DashboardFactory()
+        self.deleted_project_user_one = CollectionFactory(title="Deleted Project User One",
+                                                          is_public=False,
+                                                          creator=self.user_one,
+                                                          is_deleted=True)
+        self.folder = CollectionFactory()
+        self.deleted_folder = CollectionFactory(title="Deleted Folder User One",
+                                                is_public=False,
+                                                creator=self.user_one,
+                                                is_deleted=True)
+        self.bookmark_collection = BookmarkCollectionFactory()
 
     def tearDown(self):
         super(TestUserNodes, self).tearDown()
