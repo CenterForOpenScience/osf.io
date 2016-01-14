@@ -76,7 +76,7 @@ var quickSearchProject = {
                     }
         })};
 
-         // When 'load more' button pressed, loads up to 10 nodes
+        // When 'load more' button pressed, loads up to 10 nodes
         self.loadUpToTen = function () {
             var requested = self.nodes().splice(0, 10);
             for (var i = 0; i < requested.length; i++) {
@@ -223,21 +223,19 @@ var quickSearchProject = {
         self.sortDirectionGivenField = function(clicked) {
             console.log('sorted');
             var fieldSort = self.preSelectField();
-            var directionSort = clicked.id
+            var directionSort = clicked.id;
             self.sortState(fieldSort + directionSort);
             self.sortNodesAndModifyDisplay()
         };
 
         // When shifting to xs screen, tells which field to automatically display in select
         self.preSelectField = function(){
-            var fieldSort = self.sortState().split(/[A-Z][a-z]+/g)[0];
-            return fieldSort;
+            return self.sortState().split(/[A-Z][a-z]+/g)[0];
         };
 
         // When shifting to xs screen, tells which direction to automatically highlight in select
         self.preSelectDirection = function(){
-            var directionSort = self.sortState().match(/[A-Z][a-z]+/g)[0];
-            return directionSort
+            return self.sortState().match(/[A-Z][a-z]+/g)[0];
         };
 
         // Colors sort asc/desc buttons either selected or not-selected
@@ -251,7 +249,7 @@ var quickSearchProject = {
             });
 
             var shrunkSortButtons = ['Asc', 'Desc'];
-            var direction = self.preSelectDirection()
+            var direction = self.preSelectDirection();
             document.getElementById(direction).className = 'selected';
             if (direction === 'Asc'){
                 document.getElementById('Desc').className = 'not-selected'
@@ -265,7 +263,7 @@ var quickSearchProject = {
         self.sortNodesAndModifyDisplay = function () {
             self.restoreToNodeList(self.displayedNodes());
             self.sortBySortState();
-            self.colorSortButtons()
+            self.colorSortButtons();
             self.displayedNodes(self.nodes().splice(0, self.countDisplayed()))
         };
 
@@ -426,7 +424,7 @@ var quickSearchProject = {
         // Sort button for xs screen
         function descending() {
             if (ctrl.loadingComplete()){
-                var direction = ctrl.preSelectDirection()
+                var direction = ctrl.preSelectDirection();
                 if (direction === 'Desc') {
                     return m('button', {id: 'Desc', class: 'selected', onclick: function() {
                          ctrl.sortDirectionGivenField(this)
@@ -516,9 +514,9 @@ var quickSearchProject = {
                     m('div', {class: 'row node-sort-dropdown'}, [
                         m('div', {class: 'col-sm-12 p-v-xs, f-w-xl'},
                             m('label', [m('span', 'Order by: '),
-                                m('select', {id: 'sortDropDown', onchange: function(){ctrl.sortFieldGivenDirection(this)}},
-                                    defaultSelected())],
-                                ascending(), descending()
+                                m('select', {class: 'form-control', id: 'sortDropDown', onchange: function(){ctrl.sortFieldGivenDirection(this)}},
+                                    defaultSelected()),
+                                ascending(), descending()]
                             )
                         )]
                     ))
