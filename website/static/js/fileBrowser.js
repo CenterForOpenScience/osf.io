@@ -25,23 +25,6 @@ var xhrconfig = function (xhr) {
     xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
 };
 
-// Refactor the information needed for filtering rows
-function _formatDataforPO(item) {
-    item.uid = item.id;
-    item.name = item.attributes.title;
-    item.tags = item.attributes.tags.toString();
-    item.contributors = '';
-    if (!item.embeds.contributors.data){
-        console.log(item.embed.contributors.errors);
-    } else {
-        item.embeds.contributors.data.forEach(function(c){
-            item.contributors += c.embeds.users.data.attributes.full_name;
-        });
-    }
-    item.date = new $osf.FormattableDate(item.attributes.date_modified);
-    return item;
-}
-
 var LinkObject = function (type, data, label, index) {
     if (type === undefined || data === undefined || label === undefined) {
         throw new Error('LinkObject expects type, data and label to be defined.');
@@ -77,7 +60,34 @@ var LinkObject = function (type, data, label, index) {
     self.link = self.generateLink();
 };
 
+/**
+ * Adds some information to the data object in a way that helps Treebeard be able to sort directly
+ * @param {Object} item Node object as returned from API
+ * @returns {Object} item The item with added attributes is returned
+ * @private
+ */
+function _formatDataforPO(item) {
+    item.uid = item.id;
+    item.name = item.attributes.title;
+    item.tags = item.attributes.tags.toString();
+    item.contributors = '';
+    if (!item.embeds.contributors.data){
+        console.log(item.embeds.contributors.errors);
+    } else {
+        item.embeds.contributors.data.forEach(function(c){
+            item.contributors += c.embeds.users.data.attributes.full_name;
+        });
+    }
+    item.date = new $osf.FormattableDate(item.attributes.date_modified);
+    return item;
+}
 
+/**
+ * Converts a flat list of nodes to their hierarchical structure
+ * @param {Array} flatData The flat list of node objects returned from API
+ * @returns {Array} Hierarchical version of the flat data
+ * @private
+ */
 function _makeTree (flatData) {
     var root = {id:0, children: [], data : {} };
     var node_list = { 0 : root};
