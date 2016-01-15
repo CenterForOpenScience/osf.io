@@ -122,12 +122,12 @@ var newAndNoteworthy = {
 
     },
     view : function(ctrl) {
-        function nodeDisplay(node) {
-            return m('div', {class: 'row node-styling m-v-sm', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
+        function nodeDisplay(type, node) {
+            return m('div', {class: 'row node-styling m-v-sm m-r-xs', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
                 m('div', {class: 'col-sm-12'},
-                    m('h5', m('em', node.attributes.title)),
-                    m('h5', node.attributes.description),
-                    m('div', m('h5', {class: 'contributors-bold f-w-xl'}, 'Contributors: '), ctrl.getContributors(node)
+                    m('h5', m('em', ctrl.getTitle(type, node))),
+                    m('h5', ctrl.getDescription(type, node)),
+                    m('div', m('h5', {class: 'contributors-bold f-w-xl'}, 'Contributors: '), m('h5', {class: 'contributors-bold'}, ctrl.getContributors(type, node))
                     )
                 )
             )
@@ -135,12 +135,14 @@ var newAndNoteworthy = {
 
         function newProjectsTemplate () {
             return ctrl.newNodes().map(function(node){
-                return nodeDisplay(node)
+                return nodeDisplay('new', node)
             })
 
         }
         function noteworthyProjectsTemplate() {
-            return m('h1', 'Nodes')
+            return ctrl.noteworthyNodes().map(function(node){
+                return nodeDisplay('noteworthy', node)
+            })
 
         }
 
