@@ -44,10 +44,10 @@ def update_comment_root_target_file(auth, **kwargs):
         cookie=request.cookies.get(settings.COOKIE_NAME)
     )
     if node._id != destination_node._id:
-        Comment.update(Q('root_target', 'eq', old_file), data={'node': destination_node})
+        Comment.update(Q('root_target', 'eq', old_file._id), data={'node': destination_node})
 
-    Comment.update(Q('root_target', 'eq', old_file), data={'root_target': new_file})
-    Comment.update(Q('target', 'eq', old_file), data={'target': new_file})
+    Comment.update(Q('root_target', 'eq', old_file._id), data={'root_target': new_file})
+    Comment.update(Q('target', 'eq', old_file._id), data={'target': new_file})
 
 
 @comment_added.connect
