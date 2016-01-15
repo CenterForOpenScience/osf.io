@@ -6,6 +6,10 @@
             <div id="addQuickProjectSearchWrap"></div>
      </div>
 
+    <div>
+            <div id="newAndNoteworthyWrap"></div>
+    </div>
+
 
 </%def>
 
