@@ -7,6 +7,9 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var nodeModule = require('js/quickProjectSearchPlugin');
 
+// CSS
+require('css/new-and-noteworthy-plugin.css');
+
 // XHR config for apiserver connection
 var xhrconfig = function(xhr) {
     xhr.withCredentials = true;
