@@ -12,30 +12,17 @@
                     <!-- remove page -->
                     <div data-bind='if:page() === REMOVE'>
                         <div class="form-group">
-                            <span data-bind="visible:removeSelf()">Do you want to remove yourself from <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it.</span>
-                            <span data-bind="visible:!removeSelf()">Do you want to remove <b>{{contributorToRemove()["fullname"]}}</b> from <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it.</span>
+                            <span>Do you want to remove <b data-bind="text:removeSelf() ? 'yourself' : contributorToRemove()['fullname']"></b> from <b>{{title}}</b>, or from <b>{{title}}</b> and every component in it.</span>
                         </div>
-                        <div data-bind="if:removeSelf()" id="remove-page-radio-buttons" class="col-md-8" align="left">
+                        <div id="remove-page-radio-buttons" class="col-md-8" align="left">
                             <div class="radio">
                                 <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>
-                                    Remove yourself from  <span class="f-w-lg" data-bind="text: title"></span></label>
+                                    Remove <b data-bind="text:removeSelf() ? 'yourself' : contributorToRemove()['fullname']"></b> from  <span class="f-w-lg" data-bind="text: title"></span></label>
                             </div>
 
                             <div class="radio">
                                 <label><input  type="radio" name="radioBoxGroup" data-bind="checked: deleteAll, checkedValue: true" >
-                                    Remove yourself from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</label>
-                            </div>
-                        </div>
-
-                        <div data-bind="if:!removeSelf()" id="remove-page-radio-buttons" class="col-md-8" align="left">
-                            <div class="radio">
-                                <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>
-                                    Remove <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from  <span class="f-w-lg" data-bind="text: title"></span></label>
-                            </div>
-
-                            <div class="radio">
-                                <label><input  type="radio" name="radioBoxGroup" data-bind="checked: deleteAll, checkedValue: true" >
-                                    Remove <span class="f-w-lg" >{{contributorToRemove()["fullname"]}}</span> from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</label>
+                                    Remove <b data-bind="text:removeSelf() ? 'yourself' : contributorToRemove()['fullname']"></b> from <span class="f-w-lg" data-bind="text: title"></span> and every component in it.</label>
                             </div>
                         </div>
 
@@ -43,8 +30,7 @@
                     <!-- removeNoChildren page -->
                     <div data-bind='if:page() === REMOVE_NO_CHILDREN'>
                         <div class="form-group" data-bind="if:contributorToRemove">
-                            <span data-bind="visible:removeSelf()">Remove yourself from {{title}}?</span>
-                            <span data-bind="visible:!removeSelf()">Remove <b>{{contributorToRemove()["fullname"]}}</b> from {{title}}?</span>
+                            <span>Remove <b data-bind="text:removeSelf() ? 'yourself' : contributorToRemove()['fullname']"></b> from {{title}}?</span>
                         </div>
 
                     </div><!-- end removeNoChildren page -->
@@ -55,8 +41,7 @@
                             <div class="panel panel-default">
                                 <div class="panel-body">
                                     <div class="form-group" data-bind="if:contributorToRemove">
-                                        <span data-bind="visible:removeSelf()">You removed from the following projects and/or components.</span>
-                                        <span data-bind="visible:!removeSelf()"><b>{{contributorToRemove()["fullname"]}} will be</b> removed from the following projects and/or components.</span>
+                                        <span><b data-bind="text:removeSelf() ? 'You' : contributorToRemove()['fullname']"></b> will be removed from the following projects and/or components.</span>
                                     </div>
                                     <div class="col-md-8" align="left">
                                         <ul data-bind="foreach: { data: titlesToRemove(), as: 'item' }">
@@ -72,8 +57,7 @@
                             <div class="panel panel-default">
                                 <div class="panel-body">
                                     <div class="form-group" data-bind="if:contributorToRemove">
-                                        <span data-bind="visible:removeSelf()"><b>You cannot</b> be removed from the following projects and/or components.</span>
-                                        <span data-bind="visible:!removeSelf()"><b>{{contributorToRemove()["fullname"]}} cannot</b> be removed from the following projects and/or components.</span>
+                                        <span><b data-bind="text:removeSelf() ? 'You' : contributorToRemove()['fullname']"></b> cannot be removed from the following projects and/or components.</span>
                                     </div>
                                     <div class="col-md-8" align="left">
                                         <ul data-bind="foreach: { data: titlesToKeep(), as: 'item' }">
@@ -88,7 +72,7 @@
                     </div><!-- end removeAll page -->
                 </div>
                 <div data-bind="if: !canRemoveNode() && !pageChanged()">
-                    <span><b>{{contributorToRemove()["fullname"]}}</b> cannot be removed as a contributor.  You need at least one administrator, bibliographic contributor, and registered user.</span>
+                    <span><b data-bind="text:removeSelf() ? 'You' : contributorToRemove()['fullname']"></b> cannot be removed as a contributor.  You need at least one administrator, bibliographic contributor, and registered user.</span>
                 </div>
                 <div data-bind="if: pageChanged()">
                     <span>Please save or discard your existing changes before removing a contributor.</span>

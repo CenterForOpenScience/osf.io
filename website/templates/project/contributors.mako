@@ -342,8 +342,6 @@
         <td>
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: (contributor.canEdit() || canRemove) -->
-                        <!-- Note: Prevent clickBubble so that removing a
-                        contributor does not immediately un-remove her. -->
                         <button href="#removeContributor" class="btn btn-danger btn-sm m-l-md"
                            data-bind="click: remove,  tooltip: {title: 'Remove contributor'}"
                            data-toggle="modal">Remove</button>
