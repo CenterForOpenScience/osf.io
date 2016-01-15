@@ -26,9 +26,9 @@ var newAndNoteworthy = {
         var url = $osf.apiV2Url('nodes/', { query : { 'embed': 'contributors'}});
         var promise = m.request({method: 'GET', url : url, config: xhrconfig});
         promise.then(function(result){
-            result.data.forEach(function(node){
-                self.newNodes().push(node);
-            });
+            for (var i = 0; i <= 4; i++) {
+                self.newNodes().push(result.data[i])
+            }
             return promise
         });
 
