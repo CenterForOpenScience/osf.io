@@ -1,5 +1,5 @@
 /**
- * UI and function to quick search projects
+ * New and Noteworthy Projects
  */
 
 var $ = require('jquery');
@@ -93,7 +93,7 @@ var newAndNoteworthy = {
         }
 
         function findMoreProjectsButton () {
-            return m('button', {type:'button', class:'btn btn-default', onclick: function(){
+            return m('button', {type:'button', class:'btn btn-default m-v-md', onclick: function(){
                 ctrl.redirectToSearch()
             }}, 'Find more projects with advanced search')
         }

@@ -4,7 +4,7 @@
     border: 1px solid #cccccc;
 }
 
-button.no-outline {
+button {
     -webkit-appearance: none;
     outline: none;
     border: 0;
