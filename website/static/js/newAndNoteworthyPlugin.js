@@ -20,16 +20,39 @@ var newAndNoteworthy = {
         var self = this;
         self.newNodes = m.prop([]);
         self.noteworthyNodes = m.prop([]);
+        self.noteworthyContributors = {};
 
         // Load new nodes
-        var url = $osf.apiV2Url('nodes/', { query : { 'embed': 'contributors'}});
-        var promise = m.request({method: 'GET', url : url, config: xhrconfig});
-        promise.then(function(result){
+        var newUrl = $osf.apiV2Url('nodes/', { query : { 'embed': 'contributors'}});
+        var newPromise = m.request({method: 'GET', url : newUrl, config: xhrconfig});
+        newPromise.then(function(result){
             for (var i = 0; i <= 4; i++) {
                 self.newNodes().push(result.data[i])
             }
-            return promise
+            return newPromise
         });
+
+        var noteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.noteworthy + '/node_links/', {});
+        var noteworthyPromise = m.request({method: 'GET', url: noteworthyUrl, config: xhrconfig});
+        noteworthyPromise.then(function(result){
+            for (var l=0; l <= 4; l++) {
+                self.noteworthyNodes().push(result.data[l]);
+                self.fetchNoteworthyContributors(result.data[l]);
+                  }
+            return noteworthyPromise
+        });
+
+        // Additional API call to fetch node link contributors
+        self.fetchNoteworthyContributors = function(nodeLink) {
+            url = nodeLink.embeds.target_node.data.relationships.contributors.links.related.href;
+            var promise = m.request({method: 'GET', url : url, config: xhrconfig});
+            promise.then(function(result){
+                var firstContrib = result.data[0].embeds.users.data.attributes.full_name;
+                var numContrib = result.links.meta.total;
+                var nodeId = nodeLink.id;
+                self.noteworthyContributors[nodeId] = [firstContrib, numContrib]
+            })
+        };
 
         // Gets contrib full name for display
         self.getFullName = function(node) {
