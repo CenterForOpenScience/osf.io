@@ -49,11 +49,26 @@ var newAndNoteworthy = {
 
         };
 
+         // Colors node div and changes cursor to pointer on hover
+        self.mouseOver = function (node) {
+            node.style.backgroundColor='#E0EBF3';
+            node.style.cursor = 'pointer'
+        };
+
+        self.mouseOut = function (node) {
+            node.style.backgroundColor='#fcfcfc'
+        };
+
+         // Onclick, directs user to project page
+        self.nodeDirect = function(node) {
+            location.href = '/'+ node.id
+        };
+
 
     },
     view : function(ctrl) {
         function nodeDisplay(node) {
-            return m('div', {class: 'row'},
+            return m('div', {class: 'row node-styling m-v-sm', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
                 m('div', {class: 'col-sm-12'},
                     m('h5', node.attributes.title),
                     m('h5', node.attributes.description),
