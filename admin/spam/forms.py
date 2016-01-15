@@ -6,7 +6,8 @@ class EmailForm(forms.Form):
     email = forms.ChoiceField(label='Email')
     subject = forms.CharField(label='Subject', required=True)
     message = forms.CharField(label='Message', required=True,
-                              widget=forms.Textarea)
+                              widget=forms.Textarea(
+                                  attrs={'class': 'col-lg-6 col-md-8 col-sm-12'}))
 
     def __init__(self, *args, **kwargs):
         choices = kwargs.get('initial', {}).get('email', [])

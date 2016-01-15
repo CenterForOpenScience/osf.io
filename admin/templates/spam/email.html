@@ -6,19 +6,6 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <div class="span6">
-                <h4>Email</h4>
-                <form action="{% url 'spam:email' comment.id %}?page={{ page_number }}"
-                      method="post">
-                    {% csrf_token %}
-                    <ul>
-                    {{ form.as_ul }}
-                    </ul>
-                    <input type="submit" value="Submit" />
-                </form>
-            </div>
-        </div>
-        <div class="row">
             <div class="btn-group col-sm-12">
                 <a href="{% url 'spam:spam' %}?page={{ page_number }}"
                    class="btn btn-primary">
@@ -32,48 +19,41 @@
         </div>
 
         <hr>
-
-        <div class="row">
-            <form>
-                <div class="form-group">
-                <label for="author">
+        <form action="{% url 'spam:email' comment.id %}?page={{ page_number }}"
+              method="post">
+            {% csrf_token %}
+            <div class="form-group row">
+                <label for="{{ form.author.id_for_label }}">
                     <strong>Author:</strong>
                 </label>
-                <input id="author"
-                       placeholder="{{ comment.author.fullname }}"
-                       disabled>
-                </div>
+                {{ form.author }}
+            </div>
 
-                <div class="form-group">
-                <label for="email">
+            <div class="form-group row">
+                <label for="{{ form.email.id_for_label }}">
                     <strong>Email:</strong>
                 </label>
-                <select id="email">
-                    {% for email in comment.author.emails %}
-                        {% if forloop.counter0 == 0 %}
-                            <option value="{{ email }}" selected>
-                                {{ email }}
-                            </option>
-                        {% else %}
-                            <option value="{{ email }}">
-                                {{ email }}
-                            </option>
-                        {% endif %}
-                    {% endfor %}
-                </select>
-                <p class="help-block">User's primary email originally selected</p>
-                </div>
+                {{ form.email }}
+            <p class="help-block">User's primary email originally selected</p>
+            </div>
 
-                <label for="message">
-                    <strong>Message</strong>
+            <div class="form-group row">
+                <label for="{{ form.subject.id_for_label }}">
+                    <strong>Subject:</strong>
                 </label>
-                <div class="form-group">
-                    {% include 'spam/email_template.html' with item=comment %}
-                </div>
-                <button type="submit" class="btn btn-primary">
-                    Submit
-                </button>
-            </form>
-        </div>
+                {{ form.subject }}
+            </div>
+
+            <div class="form-group row">
+                <label for="{{ form.message.id_for_label }}">
+                    <strong>Message:</strong>
+                </label>
+                <br>
+                {{ form.message }}
+            </div>
+            <div class="row">
+                <input type="submit" class="btn btn-primary" value="Submit" />
+            </div>
+        </form>
     </div>
 {% endblock content %}
