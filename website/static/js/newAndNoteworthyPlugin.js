@@ -75,7 +75,7 @@ var newAndNoteworthy = {
                 m('div', {class: 'col-sm-12'},
                     m('h5', m('em', node.attributes.title)),
                     m('h5', node.attributes.description),
-                    m('div', m('h5', {class: 'contributors-bold'}, 'Contributors: '), ctrl.getContributors(node)
+                    m('div', m('h5', {class: 'contributors-bold f-w-xl'}, 'Contributors: '), ctrl.getContributors(node)
                     )
                 )
             )
@@ -99,11 +99,13 @@ var newAndNoteworthy = {
         }
 
         return m('div', {class: 'container'}, [
-            m('div', {class: 'row'}, m('div', {class: 'col-sm-12'}, m('h3', 'Discover Public Projects'))),
             m('div', {class: 'row'},
+                m('div', {class: 'col-sm-1'}),
+                m('div', {class: 'col-sm-11'}, m('h3', 'Discover Public Projects'))),
+            m('div', {class: 'row'}, m('div', {class:'col-sm-10 col-sm-offset-1'},
                 m('div', {class: 'col-sm-6'}, [m('h4', 'New'), newProjectsTemplate() ]),
                 m('div', {class: 'col-sm-6'}, [m('h4', 'Noteworthy', noteworthyProjectsTemplate())])
-            ),
+            )),
             m('div', {class: 'row'},
                 m('div', {class: 'col-sm-1'}),
                 m('div', {class: 'col-sm-10 text-center'}, findMoreProjectsButton()),
