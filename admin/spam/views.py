@@ -58,7 +58,10 @@ class EmailFormView(FormView):
             'author': spam['author'].fullname,
             'email': [(r, r) for r in spam['author'].emails],
             'subject': 'Reports of spam',
-            'message': 'certainly <b> unfortunate </b>',  # TODO: <-
+            'message': render_to_response(
+                'spam/email_template.html',
+                {'item': spam}
+            ).content,
         }
 
     def form_valid(self, form):
@@ -72,8 +75,7 @@ class EmailFormView(FormView):
 
     @property
     def success_url(self):
-        return reverse('spam:detail', kwargs={'spam_id': self.spam_id}) +\
-               '?page={}'.format(self.page)
+        return reverse('spam:detail', kwargs={'spam_id': self.spam_id}) + '?page={}'.format(self.page)
 
 
 def get_spam_list():

@@ -22,6 +22,7 @@
         <form action="{% url 'spam:email' comment.id %}?page={{ page_number }}"
               method="post">
             {% csrf_token %}
+            {{ form.media }}
             <div class="form-group row">
                 <label for="{{ form.author.id_for_label }}">
                     <strong>Author:</strong>

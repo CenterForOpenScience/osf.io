@@ -43,6 +43,7 @@ INSTALLED_APPS = (
     # 3rd party
     'raven.contrib.django.raven_compat',
     'webpack_loader',
+    'ckeditor',
 )
 
 # Custom user model (extends AbstractBaseUser)
@@ -135,4 +136,16 @@ WEBPACK_LOADER = {
         'BUNDLE_DIR_NAME': 'public/js/',
         'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
     }
+}
+
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            ['Source'],
+            ['Bold', 'Italic', 'Underline'],
+            ['NumberedList', 'BulletedList'],
+            ['Link']
+        ]
+    },
 }
