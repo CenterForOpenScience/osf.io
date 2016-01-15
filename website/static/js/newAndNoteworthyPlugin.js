@@ -59,16 +59,45 @@ var newAndNoteworthy = {
             return node.embeds.contributors.data[0].embeds.users.data.attributes.full_name
         };
 
-        // Formats contrib names for display
-        self.getContributors = function (node) {
-            var numContributors = node.embeds.contributors.links.meta.total;
-            if (numContributors === 1) {
-                return self.getFullName(node)
+        // Returns name if one contrib, or adds et al if > 1
+        self.contribNameFormat = function(name, number) {
+            if (number === 1) {
+                    return name
             }
             else {
-                return self.getFullName(node) + ' et al'
+                return name + ' et al'
             }
+        };
 
+        // Formats contrib names for display
+        self.getContributors = function (type, node) {
+            if (type === 'new') {
+                return self.contribNameFormat(self.getFullName(node), node.embeds.contributors.links.meta.total)
+            }
+            else {
+                return self.contribNameFormat(self.noteworthyContributors[node.id][0], self.noteworthyContributors[node.id][1])
+            }
+        };
+
+        // Grabs title for display
+        self.getTitle = function (type, node){
+            if (type === 'new') {
+                return node.attributes.title
+            }
+            else {
+                return node.embeds.target_node.data.attributes.title
+
+            }
+        };
+
+        // Grabs description for display
+        self.getDescription = function(type, node){
+            if (type === 'new'){
+                return node.attributes.description
+            }
+            else {
+                return node.embeds.target_node.data.attributes.description
+            }
         };
 
          // Colors node div and changes cursor to pointer on hover
