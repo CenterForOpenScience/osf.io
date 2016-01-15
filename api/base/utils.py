@@ -119,3 +119,11 @@ def add_dev_only_items(items, dev_only_items):
     if website_settings.DEV_MODE:
         items.update(dev_only_items)
     return items
+
+
+def default_node_list_query():
+    return (
+            Q('is_deleted', 'ne', True) &
+            Q('is_collection', 'ne', True) &
+            Q('is_registration', 'ne', True)
+        )

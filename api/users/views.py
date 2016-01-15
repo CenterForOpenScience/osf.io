@@ -5,7 +5,6 @@ from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import User, Node
@@ -16,6 +15,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.base.utils import default_node_list_query
 
 from .serializers import UserSerializer, UserDetailSerializer
 from .permissions import ReadOnlyOrCurrentUser
@@ -293,20 +293,13 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
         user = self.get_user()
         return (
             Q('contributors', 'eq', user) &
-            Q('is_collection', 'ne', True) &
-            Q('is_deleted', 'ne', True)
+            default_node_list_query()
         )
 
     # overrides ListAPIView
     def get_queryset(self):
-        current_user = self.request.user
-        if current_user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(current_user)
         query = self.get_query_from_request()
-        raw_nodes = Node.find(self.get_default_odm_query() & query)
-        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
+        nodes = Node.find(self.get_default_odm_query() & query)
         return nodes
 
 

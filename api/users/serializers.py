@@ -61,6 +61,11 @@ class UserSerializer(DoNotRelateWhenAnonymous, JSONAPISerializer):
         related_view_kwargs={'user_id': '<pk>'},
     )
 
+    registrations = DevOnly(RelationshipField(
+        related_view='users:user-registrations',
+        related_view_kwargs={'user_id': '<pk>'},
+    ))
+
     class Meta:
         type_ = 'users'
 
