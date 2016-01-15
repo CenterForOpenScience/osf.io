@@ -4,7 +4,7 @@
     border: 1px solid #cccccc;
 }
 
-button {
+button.no-outline {
     -webkit-appearance: none;
     outline: none;
     border: 0;
@@ -42,4 +42,8 @@ button {
 
 label {
     font-weight: normal;
+}
+
+h5.contributors-bold {
+    display: inline;
 }
