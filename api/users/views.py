@@ -5,6 +5,7 @@ from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
+from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import User, Node
@@ -298,8 +299,13 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
     # overrides ListAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        nodes = Node.find(self.get_default_odm_query() & query)
+        user = self.request.user
+        base_query = self.get_query_from_request()
+        permission_query = Q('is_public', 'eq', True)
+        if not user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+        query = base_query & permission_query
+        nodes = Node.find(query)
         return nodes
 
 
