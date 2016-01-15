@@ -296,7 +296,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
         return (
             Q('contributors', 'contains', user._id) &
             Q('is_collection', 'ne', True) &
-            Q('is_deleted', 'ne', True)
+            Q('is_deleted', 'ne', True) &
+            Q('is_registration', 'ne', True)
         )
 
     # overrides ListAPIView
