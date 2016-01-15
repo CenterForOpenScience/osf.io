@@ -70,9 +70,10 @@ var newAndNoteworthy = {
         function nodeDisplay(node) {
             return m('div', {class: 'row node-styling m-v-sm', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
                 m('div', {class: 'col-sm-12'},
-                    m('h5', node.attributes.title),
+                    m('h5', m('em', node.attributes.title)),
                     m('h5', node.attributes.description),
-                    m('h5', 'Contributors: ' + ctrl.getContributors(node))
+                    m('div', m('h5', {class: 'contributors-bold'}, 'Contributors: '), ctrl.getContributors(node)
+                    )
                 )
             )
         }
