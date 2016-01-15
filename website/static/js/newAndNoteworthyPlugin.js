@@ -123,7 +123,7 @@ var newAndNoteworthy = {
     },
     view : function(ctrl) {
         function nodeDisplay(type, node) {
-            return m('div', {class: 'row node-styling m-v-sm m-r-xs', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
+            return m('div', {class: 'row node-styling m-v-md m-r-xs', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
                 m('div', {class: 'col-sm-12'},
                     m('h5', m('em', ctrl.getTitle(type, node))),
                     m('h5', ctrl.getDescription(type, node)),
