@@ -5,10 +5,9 @@
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
-var nodeModule = require('js/quickProjectSearchPlugin');
 
 // CSS
-require('css/new-and-noteworthy-plugin.css');
+require('css/quick-project-search-plugin.css');
 
 // XHR config for apiserver connection
 var xhrconfig = function(xhr) {
@@ -64,6 +63,10 @@ var newAndNoteworthy = {
             location.href = '/'+ node.id
         };
 
+        self.redirectToSearch = function() {
+            location.href = '/search'
+        }
+
 
     },
     view : function(ctrl) {
@@ -88,11 +91,24 @@ var newAndNoteworthy = {
             return m('h1', 'Nodes')
 
         }
+
+        function findMoreProjectsButton () {
+            return m('button', {type:'button', class:'btn btn-default', onclick: function(){
+                ctrl.redirectToSearch()
+            }}, 'Find more projects with advanced search')
+        }
+
         return m('div', {class: 'container'}, [
             m('div', {class: 'row'}, m('div', {class: 'col-sm-12'}, m('h3', 'Discover Public Projects'))),
             m('div', {class: 'row'},
                 m('div', {class: 'col-sm-6'}, [m('h4', 'New'), newProjectsTemplate() ]),
                 m('div', {class: 'col-sm-6'}, [m('h4', 'Noteworthy', noteworthyProjectsTemplate())])
+            ),
+            m('div', {class: 'row'},
+                m('div', {class: 'col-sm-1'}),
+                m('div', {class: 'col-sm-10 text-center'}, findMoreProjectsButton()),
+                m('div', {class: 'col-sm-1'})
+
             )
         ])
     }
