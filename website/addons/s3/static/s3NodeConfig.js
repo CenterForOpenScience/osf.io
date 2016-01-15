@@ -7,6 +7,8 @@ var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
+var $modal = $('#s3InputCredentials');
+
 var s3Settings = require('json!./settings.json');
 
 ko.punches.enableAll();
@@ -74,6 +76,9 @@ var ViewModel = function(selector, settings) {
 
     self.saveButtonText = ko.pureComputed (function(){
         return self.loading()? 'Saving': 'Save';
+    });
+    self.showTokenCreateButton = ko.pureComputed(function() {
+        return !self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
     });
 };
 
@@ -190,7 +195,7 @@ ViewModel.prototype.deauthorizeNode = function() {
 
 ViewModel.prototype._importAuthConfirm = function() {
     var self = this;
-    return $osf.postJSON(
+    return $osf.putJSON(
         self.urls().import_auth, {}
     ).done(function(response) {
         self.changeMessage('Successfully imported S3 credentials.', 'text-success');
@@ -227,12 +232,21 @@ ViewModel.prototype.importAuth = function() {
     });
 };
 
-ViewModel.prototype.createCredentials = function() {
+/** Reset all fields from S3 credentials input modal */
+ViewModel.prototype.clearModal = function() {
+    var self = this;
+    self.message('');
+    self.messageClass('text-info');
+    self.secretKey(null);
+    self.accessKey(null);
+};
+
+ViewModel.prototype.sendAuth = function() {
     var self = this;
     self.creatingCredentials(true);
 
     return $osf.postJSON(
-        self.urls().create_auth, {
+        self.urls().create, {
             secret_key: self.secretKey(),
             access_key: self.accessKey()
         }
