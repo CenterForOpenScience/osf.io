@@ -5,7 +5,6 @@ from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import User, Node
@@ -292,19 +291,19 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
-        return (
-            Q('contributors', 'eq', user) &
-            default_node_list_query()
-        )
+        current_user = self.request.user
+
+        query = (Q('contributors', 'eq', user) & default_node_list_query())
+
+        permission_query = Q('is_public', 'eq', True)
+        if not current_user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'icontains', current_user._id))
+        query = (query & permission_query)
+        return query
 
     # overrides ListAPIView
     def get_queryset(self):
-        user = self.request.user
-        base_query = self.get_query_from_request()
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
-        query = base_query & permission_query
+        query = self.get_query_from_request()
         nodes = Node.find(query)
         return nodes
 
@@ -394,9 +393,16 @@ class UserRegistrations(UserNodes):
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
-        return (
-            Q('contributors', 'eq', user) &
+        current_user = self.request.user
+
+        query = (
             Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True) &
-            Q('is_registration', 'eq', True)
+            Q('is_registration', 'eq', True) &
+            Q('contributors', 'icontains', user._id)
         )
+        permission_query = Q('is_public', 'eq', True)
+        if not current_user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'icontains', current_user._id))
+        query = query & permission_query
+        return query
