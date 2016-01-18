@@ -149,11 +149,11 @@ def check_access(node, auth, action, cas_resp):
             Q('name', 'eq', 'Prereg Challenge') &
             Q('schema_version', 'eq', 2)
         )
+        allowed_nodes = [node] + node.parents
         prereg_draft_registration = DraftRegistration.find(
-            Q('branched_from', 'eq', node) &
+            Q('branched_from', 'in', [n._id for n in allowed_nodes]) &
             Q('registration_schema', 'eq', prereg_schema)
         )
-
         if action == 'download' and \
                     auth.user is not None and \
                     prereg_draft_registration.count() > 0 and \

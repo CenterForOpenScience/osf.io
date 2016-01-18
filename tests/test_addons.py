@@ -5,6 +5,7 @@ import mock
 import datetime
 import unittest
 from nose.tools import *  # noqa
+import httplib as http
 
 import jwe
 import jwt
@@ -335,50 +336,6 @@ class TestCheckAuth(OsfTestCase):
         self.node.save()
         res = views.check_access(self.node, Auth(), 'download', None)
 
-    def setUpPrereg(self):
-        ensure_schemas()
-        self.prereg_challenge_admin_user = AuthUserFactory()
-        self.prereg_challenge_admin_user.system_tags.append(settings.PREREG_ADMIN_TAG)
-        self.prereg_challenge_admin_user.save()
-        prereg_schema = MetaSchema.find_one(
-                Q('name', 'eq', 'Prereg Challenge') &
-                Q('schema_version', 'eq', 2)
-        )
-        # import ipdb; ipdb.set_trace()
-        self.draft_registration = factories.DraftRegistrationFactory(
-                initiator=self.user,
-                registration_schema=prereg_schema
-        )
-
-    def test_has_permission_download_prereg_challenge_admin(self):
-        self.setUpPrereg()
-        res = views.check_access(self.draft_registration.branched_from,
-            Auth(user=self.prereg_challenge_admin_user), 'download', None)
-
-        assert_true(res)
-
-    def test_has_permission_download_not_prereg_challenge_admin(self):
-        self.setUpPrereg()
-        new_user = AuthUserFactory()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.draft_registration.branched_from,
-                 Auth(user=new_user), 'download', None)
-            assert_equal(exc_info.exception.code, 403)
-
-    def test_has_permission_download_prereg_challenge_admin_not_draft(self):
-        self.setUpPrereg()
-        with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.node,
-                 Auth(user=self.prereg_challenge_admin_user), 'download', None)
-            assert_equal(exc_info.exception.code, 403)
-
-    def test_has_permission_write_prereg_challenge_admin(self):
-        self.setUpPrereg()
-        with assert_raises(HTTPError) as exc_info:
-            res = views.check_access(self.draft_registration.branched_from,
-                 Auth(user=self.prereg_challenge_admin_user), 'write', None)
-            assert_equal(exc_info.exception.code, 403)
-
     def test_not_has_permission_read_has_link(self):
         link = new_private_link('red-special', self.user, [self.node], anonymous=False)
         res = views.check_access(self.node, Auth(private_key=link.key), 'download', None)
@@ -419,6 +376,63 @@ class TestCheckAuth(OsfTestCase):
         res = views.check_access(component, Auth(user=self.user), 'copyfrom', None)
         assert_true(res)
 
+class TestCheckPreregAuth(OsfTestCase):
+
+    def setUp(self):
+        super(TestCheckPreregAuth, self).setUp()
+
+        ensure_schemas()
+        self.prereg_challenge_admin_user = AuthUserFactory()
+        self.prereg_challenge_admin_user.system_tags.append(settings.PREREG_ADMIN_TAG)
+        self.prereg_challenge_admin_user.save()
+        prereg_schema = MetaSchema.find_one(
+                Q('name', 'eq', 'Prereg Challenge') &
+                Q('schema_version', 'eq', 2)
+        )
+
+        self.user = AuthUserFactory()
+        self.node = factories.ProjectFactory(creator=self.user)
+
+        self.parent = factories.ProjectFactory()
+        self.child = factories.NodeFactory(parent=self.parent)
+
+        self.draft_registration = factories.DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema,
+            branched_from=self.parent
+        )
+
+    def test_has_permission_download_prereg_challenge_admin(self):
+        res = views.check_access(self.draft_registration.branched_from,
+            Auth(user=self.prereg_challenge_admin_user), 'download', None)
+        assert_true(res)
+
+    def test_has_permission_download_on_component_prereg_challenge_admin(self):
+        try:
+            res = views.check_access(self.draft_registration.branched_from.nodes[0],
+                                     Auth(user=self.prereg_challenge_admin_user), 'download', None)
+        except Exception:
+            self.fail()
+        assert_true(res)
+
+    def test_has_permission_download_not_prereg_challenge_admin(self):
+        new_user = AuthUserFactory()
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.draft_registration.branched_from,
+                 Auth(user=new_user), 'download', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+
+    def test_has_permission_download_prereg_challenge_admin_not_draft(self):
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.node,
+                 Auth(user=self.prereg_challenge_admin_user), 'download', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+
+    def test_has_permission_write_prereg_challenge_admin(self):
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.draft_registration.branched_from,
+                Auth(user=self.prereg_challenge_admin_user), 'write', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
 
