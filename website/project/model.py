@@ -3185,8 +3185,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.retraction = retraction
         self.save()  # Set foreign field reference Node.retraction
         admins = self.get_admin_contributors_recursive()
-        for admin in admins:
-            retraction.add_authorizer(admin)
+        for (admin, node) in admins:
+            retraction.add_authorizer(admin, node)
         retraction.save()  # Save retraction approval state
         return retraction
 
@@ -3236,8 +3236,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.embargo = embargo
         self.save()  # Set foreign field reference Node.embargo
         admins = self.get_admin_contributors_recursive()
-        for admin in admins:
-            embargo.add_authorizer(admin)
+        for (admin, node) in admins:
+            embargo.add_authorizer(admin, node)
         embargo.save()  # Save embargo's approval_state
         return embargo
 
@@ -3273,12 +3273,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.set_privacy('private', Auth(user))
 
     def get_admin_contributors_recursive(self, *args, **kwargs):
-        """Return a set of all admin contributors for this node and admin
-        contributors on descendant nodes. Excludes contributors on node links and
-        inactive users.
+        """Return a set of all (admin, node) tuples for this node and
+        descendant nodes. Excludes contributors on node links and inactive users.
         """
         return {
-            contrib
+            (contrib, node)
             for node in self.node_and_primary_descendants(*args, **kwargs)
             for contrib in node.contributors
             if node.has_permission(contrib, 'admin') and contrib.is_active
@@ -3295,8 +3294,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.registration_approval = approval
         self.save()  # Set foreign field reference Node.registration_approval
         admins = self.get_admin_contributors_recursive()
-        for admin in admins:
-            approval.add_authorizer(admin)
+        for (admin, node) in admins:
+            approval.add_authorizer(admin, node=node)
         approval.save()  # Save approval's approval_state
         return approval
 
@@ -3523,11 +3522,19 @@ class TokenApprovableSanction(Sanction):
         """
         return True
 
-    def add_authorizer(self, user, approved=False, save=False):
+    def add_authorizer(self, user, node, approved=False, save=False):
+        """Add an admin user to this Sanction's approval state.
+
+        :param User user: User to add.
+        :param Node registration: The pending registration node.
+        :param bool approved: Whether `user` has approved.
+        :param bool save: Whether to save this object.
+        """
         valid = self._validate_authorizer(user)
         if valid and user._id not in self.approval_state:
             self.approval_state[user._id] = {
                 'has_approved': approved,
+                'node_id': node._id,
                 'approval_token': tokens.encode(
                     {
                         'user_id': user._id,
@@ -3694,8 +3701,8 @@ class EmailApprovableSanction(TokenApprovableSanction):
         else:
             raise NotImplementedError
 
-    def add_authorizer(self, user, **kwargs):
-        super(EmailApprovableSanction, self).add_authorizer(user, **kwargs)
+    def add_authorizer(self, user, node, **kwargs):
+        super(EmailApprovableSanction, self).add_authorizer(user, node, **kwargs)
         self.stashed_urls[user._id] = {
             'view': self._view_url(user._id),
             'approve': self._approval_url(user._id),
@@ -3799,20 +3806,25 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         }
 
     def _approval_url_context(self, user_id):
-        approval_token = self.approval_state.get(user_id, {}).get('approval_token')
+        user_approval_state = self.approval_state.get(user_id, {})
+        approval_token = user_approval_state.get('approval_token')
         if approval_token:
             registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', registration._id)
             return {
-                'node_id': registration._id,
+                'node_id': node_id,
                 'token': approval_token,
             }
 
     def _rejection_url_context(self, user_id):
-        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
+        user_approval_state = self.approval_state.get(user_id, {})
+        rejection_token = user_approval_state.get('rejection_token')
         if rejection_token:
-            registration = self._get_registration()
+            root_registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', root_registration._id)
+            registration = Node.load(node_id)
             return {
-                'node_id': registration._id,
+                'node_id': registration.registered_from,
                 'token': rejection_token,
             }
 
@@ -3922,20 +3934,25 @@ class Retraction(EmailApprovableSanction):
         }
 
     def _approval_url_context(self, user_id):
-        approval_token = self.approval_state.get(user_id, {}).get('approval_token')
+        user_approval_state = self.approval_state.get(user_id, {})
+        approval_token = user_approval_state.get('approval_token')
         if approval_token:
-            registration = Node.find_one(Q('retraction', 'eq', self))
+            root_registration = Node.find_one(Q('retraction', 'eq', self))
+            node_id = user_approval_state.get('node_id', root_registration._id)
             return {
-                'node_id': registration._id,
+                'node_id': node_id,
                 'token': approval_token,
             }
 
     def _rejection_url_context(self, user_id):
-        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
+        user_approval_state = self.approval_state.get(user_id, {})
+        rejection_token = user_approval_state.get('rejection_token')
         if rejection_token:
-            registration = Node.find_one(Q('retraction', 'eq', self))
+            root_registration = Node.find_one(Q('retraction', 'eq', self))
+            node_id = user_approval_state.get('node_id', root_registration._id)
+            registration = Node.load(node_id)
             return {
-                'node_id': registration._id,
+                'node_id': registration.registered_from._id,
                 'token': rejection_token,
             }
 
@@ -3999,9 +4016,11 @@ class Retraction(EmailApprovableSanction):
             )
             parent_registration.embargo.save()
         # Ensure retracted registration is public
-        auth = Auth(self.initiated_by)
+        # Pass auth=None because the registration initiator may not be
+        # an admin on components (component admins had the opportunity
+        # to disapprove the retraction by this point)
         for node in parent_registration.node_and_primary_descendants():
-            node.set_privacy('public', auth=auth, save=True)
+            node.set_privacy('public', auth=None, save=True, log=False)
             node.update_search()
 
     def approve_retraction(self, user, token):
@@ -4035,20 +4054,25 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         }
 
     def _approval_url_context(self, user_id):
-        approval_token = self.approval_state.get(user_id, {}).get('approval_token')
+        user_approval_state = self.approval_state.get(user_id, {})
+        approval_token = user_approval_state.get('approval_token')
         if approval_token:
             registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', registration._id)
             return {
-                'node_id': registration._id,
+                'node_id': node_id,
                 'token': approval_token,
             }
 
     def _rejection_url_context(self, user_id):
+        user_approval_state = self.approval_state.get(user_id, {})
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            registration = self._get_registration()
+            root_registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', root_registration._id)
+            registration = Node.load(node_id)
             return {
-                'node_id': registration._id,
+                'node_id': registration.registered_from._id,
                 'token': rejection_token,
             }
 

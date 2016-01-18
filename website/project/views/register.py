@@ -104,7 +104,9 @@ def node_registration_retraction_post(auth, node, **kwargs):
     try:
         node.retract_registration(auth.user, data.get('justification', None))
         node.save()
-        node.retraction.ask(node.active_contributors())
+        admins = [user for (user, _) in
+                  node.get_admin_contributors_recursive()]
+        node.retraction.ask(admins)
     except NodeStateError as err:
         raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
 
