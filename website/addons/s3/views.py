@@ -39,9 +39,11 @@ s3_get_config = generic_views.get_config(
     S3Serializer
 )
 
-def _get_buckets(node_addon, **kwargs):
+def _get_buckets(node_addon, folder_id=None, **kwargs):
+    """Used by generic_view `folder_list` to fetch a list of buckets.
+    `folder_id` required by generic, but not actually used"""
     return {
-        'buckets': utils.get_bucket_names(node_addon.user_settings)
+        'buckets': utils.get_bucket_names(node_addon)
     }
 
 s3_folder_list = generic_views.folder_list(
@@ -89,6 +91,7 @@ def s3_add_user_account(auth, **kwargs):
             oauth_key=access_key,
             oauth_secret=secret_key,
             provider_id=user_id,
+            display_name='S3User<[...]{}>'.format(user_id[-10:]),
         )
         account.save()
     except KeyExistsException:
@@ -130,7 +133,7 @@ def s3_set_config(node, auth, user_addon, node_addon, **kwargs):
 
     bucket = request.json.get('s3_bucket', '')
 
-    if not utils.bucket_exists(user_addon.access_key, user_addon.secret_key, bucket):
+    if not utils.bucket_exists(node_addon.external_account.oauth_key, node_addon.external_account.oauth_secret, bucket):
         error_message = ('We are having trouble connecting to that bucket. '
                          'Try a different one.')
         return {'message': error_message}, httplib.BAD_REQUEST
@@ -174,7 +177,7 @@ def create_bucket(auth, node_addon, **kwargs):
         }, httplib.NOT_ACCEPTABLE
 
     try:
-        utils.create_bucket(node_addon.user_settings, bucket_name, bucket_location)
+        utils.create_bucket(node_addon, bucket_name, bucket_location)
     except exception.S3ResponseError as e:
         return {
             'message': e.message,
@@ -192,5 +195,5 @@ def create_bucket(auth, node_addon, **kwargs):
         }, httplib.NOT_ACCEPTABLE
 
     return {
-        'buckets': utils.get_bucket_names(node_addon.user_settings)
+        'buckets': utils.get_bucket_names(node_addon)
     }
