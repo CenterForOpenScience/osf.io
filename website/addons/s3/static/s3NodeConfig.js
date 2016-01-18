@@ -214,22 +214,74 @@ ViewModel.prototype._importAuthConfirm = function() {
 
 };
 
+ViewModel.prototype.connectExistingAccount = function(accountId) {
+    var self = this;
+    $osf.putJSON(
+            self.urls().import_auth,
+            {'external_account_id': accountId}
+    ).done(function() {
+            if($osf.isIE()){
+                window.location.hash = '#configureAddonsAnchor';
+            }
+            window.location.reload();
+    }).fail(
+        $osf.handleJSONError
+    );
+};
+
 ViewModel.prototype.importAuth = function() {
     var self = this;
-    bootbox.confirm({
-        title: 'Import S3 credentials?',
-        message: 'Are you sure you want to authorize this project with your S3 credentials?',
-        callback: function(confirmed) {
-            if (confirmed) {
-                return self._importAuthConfirm();
-            }
-        },
-        buttons:{
-            confirm:{
-                label:'Import'
-            }
-        }
-    });
+    $.get('/api/v1/settings/s3/accounts/'
+            ).done(function(data){
+                var accounts = data.accounts.map(function(account) {
+                    return {
+                        name: account.display_name,
+                        id: account.id
+                    };
+                });
+                if (accounts.length > 1) {
+                    bootbox.prompt({
+                        title: 'Choose Amazon S3 Account to Import',
+                        inputType: 'select',
+                        inputOptions: ko.utils.arrayMap(
+                            accounts,
+                            function(item) {
+                                return {
+                                    text: item.name,
+                                    value: item.id
+                                };
+                            }
+                        ),
+                        value: accounts[0].id,
+                        callback: function(accountId) {
+                            self.connectExistingAccount(accountId);
+                        },
+                        buttons: {
+                            confirm:{
+                                label:'Import',
+                            }
+                        }
+                    });
+                } else {
+                    bootbox.confirm({
+                        title: 'Import Amazon S3 Account?',
+                        message: 'Are you sure you want to link your S3 account with this project?',
+                        callback: function(confirmed) {
+                            if (confirmed) {
+                                self.connectExistingAccount(accounts[0].id);
+                            }
+                        },
+                        buttons: {
+                            confirm: {
+                                label:'Import',
+                            }
+                        }
+                    });
+                }
+            }).fail(function(xhr, textStatus, error) {
+                self.messageClass('text-danger');
+                self.message('Could not GET S3 accounts for user.');
+            });
 };
 
 /** Reset all fields from S3 credentials input modal */
@@ -251,9 +303,12 @@ ViewModel.prototype.sendAuth = function() {
             access_key: self.accessKey()
         }
     ).done(function(response) {
+        self.clearModal();
+        $modal.modal('hide');
         self.creatingCredentials(false);
         self.changeMessage('Successfully added S3 credentials.', 'text-success');
         self.updateFromData(response);
+        self.importAuth();
     }).fail(function(xhr, status, error) {
         self.creatingCredentials(false);
         var message = '';

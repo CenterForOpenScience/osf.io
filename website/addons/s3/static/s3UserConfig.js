@@ -26,7 +26,7 @@ function ViewModel(url) {
     self.properName = 'Amazon S3';
     self.accessKey = ko.observable();
     self.secretKey = ko.observable();
-    self.urls = ko.observable({});
+    self.account_url = '/api/v1/settings/s3/accounts/';
     // Whether the initial data has been loaded
     self.loaded = ko.observable(false);
     self.accounts = ko.observableArray();
@@ -44,8 +44,7 @@ function ViewModel(url) {
     };
 
     self.updateAccounts = function() {
-        var url = self.urls().accounts;
-        var request = $.get(url);
+        var request = $.get(self.account_url);
         request.done(function(data) {
             self.accounts($.map(data.accounts, function(account) {
                 var externalAccount =  new ExternalAccount(account);
@@ -82,11 +81,8 @@ function ViewModel(url) {
             self.changeMessage("Please enter an API secret key.", 'text-danger');
             return;
         }
-
-        var url = self.urls().create;
-
         return osfHelpers.postJSON(
-            url,
+            self.account_url,
             ko.toJS({
                 access_key: self.accessKey,
                 secret_key: self.secretKey,
@@ -100,7 +96,7 @@ function ViewModel(url) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.changeMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with S3', {
-                url: url,
+                url: self.account_url,
                 textStatus: textStatus,
                 error: error
             });
@@ -112,7 +108,7 @@ function ViewModel(url) {
         bootbox.confirm({
             title: 'Disconnect Amazon S3 Account?',
             message: '<p class="overflow">' +
-                'Are you sure you want to disconnect the S3 account on <strong>' +
+                'Are you sure you want to disconnect the S3 account <strong>' +
                 account.name + '</strong>? This will revoke access to S3 for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
@@ -170,11 +166,13 @@ function ViewModel(url) {
             type: 'GET',
             dataType: 'json'
         }).done(function (response) {
-            var data = response.result;
-            self.urls(data.urls);
-            self.hosts(data.hosts);
-            self.loaded(true);
-            self.updateAccounts();
+            self.accounts($.map(response.accounts, function(account) {
+                var externalAccount =  new ExternalAccount(account);
+                externalAccount.accessKey = account.oauth_key;
+                externalAccount.secretKey = account.oauth_secret;
+                return externalAccount;
+            }));
+            $('.addon-auth-table').osfToggleHeight({height: 140});
         }).fail(function (xhr, textStatus, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Could not GET S3 settings', {
