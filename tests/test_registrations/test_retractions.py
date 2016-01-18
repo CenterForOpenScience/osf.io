@@ -70,7 +70,9 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
 
-        retraction = project._initiate_retraction(project.creator)
+        registration = RegistrationFactory(project=project)
+
+        retraction = registration._initiate_retraction(registration.creator)
         assert_in(project_admin._id, retraction.approval_state)
         assert_in(child_admin._id, retraction.approval_state)
         assert_in(grandchild_admin._id, retraction.approval_state)
@@ -368,6 +370,21 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         # Logs: Created, registered, retraction initiated, retraction cancelled
         assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 2)
 
+    def test__on_complete_makes_project_and_components_public(self):
+        project_admin = UserFactory()
+        child_admin = UserFactory()
+        grandchild_admin = UserFactory()
+
+        project = ProjectFactory(creator=project_admin, is_public=False)
+        child = NodeFactory(creator=child_admin, parent=project, is_public=False)
+        grandchild = NodeFactory(creator=grandchild_admin, parent=child, is_public=False)  # noqa
+
+        registration = RegistrationFactory(project=project)
+        registration._initiate_retraction(self.user)
+        registration.retraction._on_complete(self.user)
+        for each in registration.node_and_primary_descendants():
+            assert_true(each.is_public)
+
     # Retraction property tests
     def test_new_retraction_is_pending_retraction(self):
         self.registration.retract_registration(self.user)
@@ -574,7 +591,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    def test_GET_approve_with_valid_token_returns_redirect(self):
+    def test_GET_approve_with_valid_token_returns_200(self):
         res = self.app.get(
             self.registration.web_url_for('view_project', token=self.approval_token),
             auth=self.user.auth
@@ -582,7 +599,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.retraction.reload()
         assert_true(self.registration.is_retracted)
         assert_false(self.registration.is_pending_retraction)
-        assert_equal(res.status_code, http.FOUND)
+        assert_equal(res.status_code, http.OK)
 
     # node_registration_retraction_disapprove_tests
     def test_GET_disapprove_from_unauthorized_user_returns_HTTPError_UNAUTHORIZED(self):
@@ -625,7 +642,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_false(self.registration.is_retracted)
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.retraction.is_rejected)
-        assert_equal(res.status_code, http.FOUND)
+        assert_equal(res.status_code, http.OK)
 
 class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):

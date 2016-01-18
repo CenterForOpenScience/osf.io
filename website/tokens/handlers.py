@@ -5,7 +5,6 @@ from modularodm import Q
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
 from framework import status
-from framework.flask import redirect
 
 from website.tokens.exceptions import UnsupportedSanctionHandlerKind, TokenError
 
@@ -14,30 +13,24 @@ def registration_approval_handler(action, registration, registered_from):
         'approve': 'Your registration approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the registration has been cancelled.',
     }[action], kind='success', trust=False)
-    if action == 'approve':
-        return redirect(registration.web_url_for('view_project'))
-    else:
-        return redirect(registered_from.web_url_for('view_project'))
+    # Allow decorated view function to return response
+    return None
 
 def embargo_handler(action, registration, registered_from):
     status.push_status_message({
         'approve': 'Your embargo approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the embargo has been cancelled.',
     }[action], kind='success', trust=False)
-    if action == 'approve':
-        return redirect(registration.web_url_for('view_project'))
-    else:
-        return redirect(registered_from.web_url_for('view_project'))
+    # Allow decorated view function to return response
+    return None
 
 def retraction_handler(action, registration, registered_from):
     status.push_status_message({
         'approve': 'Your retraction approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the retraction has been cancelled.'
     }[action], kind='success', trust=False)
-    if action == 'approve':
-        return redirect(registered_from.web_url_for('view_project'))
-    elif action == 'reject':
-        return redirect(registration.web_url_for('view_project'))
+    # Allow decorated view function to return response
+    return None
 
 @must_be_logged_in
 def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
