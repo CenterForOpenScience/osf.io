@@ -21,6 +21,9 @@ class S3UserSettings(AddonOAuthUserSettingsBase):
 
 class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
+    oauth_provider = S3Provider
+    serializer = S3Serializer
+
     bucket = fields.StringField()
     encrypt_uploads = fields.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
 
@@ -86,8 +89,8 @@ class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if not self.has_auth:
             raise exceptions.AddonError('Cannot serialize credentials for S3 addon')
         return {
-            'access_key': self.user_settings.access_key,
-            'secret_key': self.user_settings.secret_key,
+            'access_key': self.external_account.oauth_key,
+            'secret_key': self.external_account.oauth_secret,
         }
 
     def serialize_waterbutler_settings(self):
