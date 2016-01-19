@@ -142,9 +142,9 @@ describe('s3NodeConfigViewModel', () => {
                             .always(function() {
                                 // VM is updated with data from the fake server
                                 // observables
-                                assert.equal(vm.ownerName(), expected.owner);
-                                assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
-                                assert.equal(vm.userHasAuth(), expected.user_has_auth);
+                                assert.equal(vm.ownerName(), expected.ownerName);
+                                assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
+                                assert.equal(vm.userHasAuth(), expected.userHasAuth);
                                 assert.equal(vm.currentBucket(), (expected.bucket === null) ? null : '');
                                 assert.deepEqual(vm.urls(), expected.urls);
                                 done();
@@ -212,12 +212,12 @@ describe('s3NodeConfigViewModel', () => {
             }, [{
                 description: 'Node is unauthorized and User is unauthorized',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: false,
-                    user_has_auth: false,
-                    user_is_owner: false,
-                    owner: null,
+                    nodeHasAuth: false,
+                    userHasAuth: false,
+                    userIsOwner: false,
+                    ownerName: null,
                     bucket: null,
-                    valid_credentials: false
+                    validCredentials: false
                 }),
                 data: {
                     showSettings: false,
@@ -231,12 +231,12 @@ describe('s3NodeConfigViewModel', () => {
             }, {
                 description: 'Node is authorized and User not auth owner',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: true,
-                    user_has_auth: false,
-                    user_is_owner: false,
-                    owner: faker.name.findName(),
+                    nodeHasAuth: true,
+                    userHasAuth: false,
+                    userIsOwner: false,
+                    ownerName: faker.name.findName(),
                     bucket: null,
-                    valid_credentials: true
+                    validCredentials: true
                 }),
                 data: {
                     showSettings: true,
@@ -250,12 +250,12 @@ describe('s3NodeConfigViewModel', () => {
             }, {
                 description: 'Node is unauthorized and User has auth',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: false,
-                    user_has_auth: true,
-                    user_is_owner: true,
-                    owner: faker.name.findName(),
+                    nodeHasAuth: false,
+                    userHasAuth: true,
+                    userIsOwner: true,
+                    ownerName: faker.name.findName(),
                     bucket: null,
-                    valid_credentials: true
+                    validCredentials: true
                 }),
                 data: {
                     showSettings: false,
@@ -269,12 +269,12 @@ describe('s3NodeConfigViewModel', () => {
             }, {
                 description: 'Node is authorized and User is auth owner',
                 endpoint: makeSettingsEndpoint({
-                    node_has_auth: true,
-                    user_has_auth: true,
-                    user_is_owner: true,
-                    owner: faker.name.findName(),
+                    nodeHasAuth: true,
+                    userHasAuth: true,
+                    userIsOwner: true,
+                    ownerName: faker.name.findName(),
                     bucket: null,
-                    valid_credentials: true
+                    validCredentials: true
                 }),
                 data: {
                     showSettings: true,
@@ -324,15 +324,15 @@ describe('s3NodeConfigViewModel', () => {
         });
     });
     describe('#selectBucket', () => {
-        var postEndpoint = makeSettingsEndpoint();
-        postEndpoint.method = 'POST';
-        postEndpoint.response = postEndpoint.response.result;
+        var putEndpoint = makeSettingsEndpoint();
+        putEndpoint.method = 'PUT';
+        putEndpoint.response = putEndpoint.response.result;
         // Bucket names cannot include periods
         var bucket = 'validbucket';
-        postEndpoint.response.bucket = bucket;
-        postEndpoint.response.has_bucket = true;
+        putEndpoint.response.bucket = bucket;
+        putEndpoint.response.hasBucket = true;
         var endpoints = [
-            postEndpoint,
+            putEndpoint,
             makeSettingsEndpoint()
         ];
         var server;
@@ -370,37 +370,37 @@ describe('s3NodeConfigViewModel', () => {
     });
     describe('Authorization/Authentication: ', () => {
         var deleteEndpoint = makeSettingsEndpoint({
-            user_has_auth: true,
-            user_is_owner: true,
-            node_has_auth: false,
-            valid_credentials: true
+            nodeHasAuth: false,
+            userHasAuth: true,
+            userIsOwner: false,
+            validCredentials: false
         });
         deleteEndpoint.method = 'DELETE';
         deleteEndpoint.response = deleteEndpoint.response.result;
         var importEndpoint = makeSettingsEndpoint({
-            node_has_auth: true,
-            user_has_auth: true,
-            user_is_owner: true,
-            valid_credentials: true
+            nodeHasAuth: true,
+            userHasAuth: true,
+            userIsOwner: true,
+            validCredentials: true
         });
-        importEndpoint.method = 'POST';
+        importEndpoint.method = 'PUT';
         importEndpoint.url = URLS.import_auth;
         importEndpoint.response = importEndpoint.response.result;
         var createEndpoint = makeSettingsEndpoint({
-            node_has_auth: true,
-            user_has_auth: true,
-            user_is_owner: true,
-            valid_credentials: true
+            nodeHasAuth: true,
+            userHasAuth: true,
+            userIsOwner: true,
+            validCredentials: true
         });
         createEndpoint.method = 'POST';
-        createEndpoint.url = URLS.create_auth;
+        createEndpoint.url = URLS.create;
         createEndpoint.response = createEndpoint.response.result;
         var endpoints = [
             makeSettingsEndpoint({
-                user_has_auth: true,
-                user_is_owner: true,
-                node_has_auth: true,
-                valid_credentials: true
+                nodeHasAuth: true,
+                userHasAuth: true,
+                userIsOwner: true,
+                validCredentials: true
             }),
             deleteEndpoint,
             importEndpoint,
@@ -422,8 +422,8 @@ describe('s3NodeConfigViewModel', () => {
                     .always(function() {
                         var promise = vm._deauthorizeNodeConfirm();
                         promise.always(function() {
-                            assert.equal(vm.userHasAuth(), expected.user_has_auth);
-                            assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                            assert.equal(vm.userHasAuth(), expected.userHasAuth);
+                            assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
                             assert.isFalse(vm.showSettings());
                             assert.isTrue(vm.showImport());
                             done();
@@ -434,16 +434,18 @@ describe('s3NodeConfigViewModel', () => {
         describe('#_importAuthConfirm', () => {
             before(() => {
                 // Prepare settings endpoint for next test
-                endpoints[0].response.result.node_has_auth = false;
+                endpoints[0].response.result.nodeHasAuth = false;
+                endpoints[0].response.result.validCredentials = false;
+
             });
-            it('makes a POST request to import auth and updates settings on success', (done) => {
+            it('makes a PUT request to import auth and updates settings on success', (done) => {
                 var expected = endpoints[2].response;
                 var vm = new s3NodeConfigVM('', {url: '/api/v1/12345/s3/settings/' });
                 vm.updateFromData()
                     .always(function() {
                         var promise = vm._importAuthConfirm();
                         promise.always(function() {
-                            assert.equal(vm.nodeHasAuth(), expected.node_has_auth);
+                            assert.equal(vm.nodeHasAuth(), expected.nodeHasAuth);
                             assert.isTrue(vm.showSettings());
                             done();
                         });
@@ -453,9 +455,8 @@ describe('s3NodeConfigViewModel', () => {
         describe('#createCredentials', () => {
             before(() => {
                 // Prepare settings endpoint for next test
-                endpoints[0].response.result.node_has_auth = false;
-                endpoints[0].response.result.user_has_auth = false;
-                endpoints[0].response.result.user_is_owner = false;
+                endpoints[0].response.result.nodeHasAuth = false;
+                endpoints[0].response.result.userHasAuth = false;
                 // temporarily disable mock server autoRespond
                 server.autoRespond = false;
             });
@@ -468,7 +469,7 @@ describe('s3NodeConfigViewModel', () => {
                 var vm = new s3NodeConfigVM('', {url: '/api/v1/12345/s3/settings/' });
                 vm.updateFromData()
                     .always(function() {
-                        var promise = vm.createCredentials();
+                        var promise = vm.sendAuth();
                         assert.isTrue(vm.creatingCredentials());
                         assert.isFalse(vm.userHasAuth());
                         server.respond();
