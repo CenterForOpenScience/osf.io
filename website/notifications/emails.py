@@ -27,7 +27,7 @@ def notify(event, user, node, timestamp, **context):
     if target_user:
         target_user_id = target_user._id
         if event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
-            subscriptions = check_target_user(target_user, event_type)
+            subscriptions = get_user_subscriptions(target_user, event_type)
     for notification_type in subscriptions:
         if notification_type != 'none' and subscriptions[notification_type]:
             if user in subscriptions[notification_type]:
@@ -126,7 +126,7 @@ def check_node(node, event):
     return node_subscriptions
 
 
-def check_target_user(user, event):
+def get_user_subscriptions(user, event):
     user_subscription = NotificationSubscription.load(utils.to_subscription_key(user._id, event))
     return {key: getattr(user_subscription, key, []) for key in constants.NOTIFICATION_TYPES}
 
