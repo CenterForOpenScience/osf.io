@@ -81,10 +81,10 @@ var LogPieces = {
     user: {
         view: function (ctrl, logObject) {
             var userObject = logObject.embeds.user;
-            if(paramIsReturned(userObject, logObject)) {
+            if(paramIsReturned(userObject, logObject) && userObject.data) {
                 return m('a', {href: userObject.data.links.html}, userObject.data.attributes.full_name);
             } else {
-                return m('span', 'a user');
+                return m('span', 'A user');
             }
         }
     },
@@ -312,7 +312,7 @@ var LogPieces = {
     googledrive_path: {
         view: function(ctrl, logObject){
             var path = logObject.attributes.params.path;
-            if(paramIsReturned(folder, logObject)){
+            if(paramIsReturned(path, logObject)){
                 return m('span', decodeURIComponent(path))
             }
             return m('span', '');
