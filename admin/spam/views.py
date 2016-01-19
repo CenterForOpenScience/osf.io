@@ -9,6 +9,7 @@ from django.core.urlresolvers import reverse
 
 from modularodm import Q
 from website.project.model import Comment
+from website.settings import SUPPORT_EMAIL
 
 from .serializers import serialize_comment
 from .forms import EmailForm
@@ -58,7 +59,8 @@ class EmailFormView(FormView):
             'author': spam['author'].fullname,
             'email': [(r, r) for r in spam['author'].emails],
             'subject': 'Reports of spam',
-            'message': render_to_response(
+            'message': render(
+                None,
                 'spam/email_template.html',
                 {'item': spam}
             ).content,
@@ -68,7 +70,7 @@ class EmailFormView(FormView):
         send_mail(
             subject=form.cleaned_data.get('subject').strip(),
             message=form.cleaned_data.get('message'),
-            from_email='support@osf.io',
+            from_email=SUPPORT_EMAIL,
             recipient_list=[form.cleaned_data.get('email')]
         )
         return super(EmailFormView, self).form_valid(form)
