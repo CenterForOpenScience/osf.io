@@ -1,3 +1,4 @@
+from website.util import web_url_for
 from website.addons.base.serializer import OAuthAddonSerializer
 from website.addons.s3 import utils
 
@@ -22,7 +23,8 @@ class S3Serializer(OAuthAddonSerializer):
             'files': node.web_url_for('collect_file_trees'),
         }
         if user_settings:
-            result['owner'] = user_settings.owner._id
+            result['owner'] = web_url_for('profile_view_id',
+                uid=user_settings.owner._primary_key)
         return result
 
     def credentials_are_valid(self, user_settings):
@@ -33,7 +35,7 @@ class S3Serializer(OAuthAddonSerializer):
                 for account in user_settings.external_accounts])
         return False
 
-    def serialize_settings(self, node_settings, current_user):
+    def serialize_settings(self, node_settings, current_user, client=None):
         self.user_settings = node_settings.user_settings
         self.node_settings = node_settings
 
@@ -42,22 +44,20 @@ class S3Serializer(OAuthAddonSerializer):
 
         ret.update({
             'bucket': self.node_settings.bucket or '',
-            'encrypt_uploads': self.node_settings.encrypt_uploads,
-            'has_bucket': self.node_settings.bucket is not None,
-            'user_is_owner': (
+            'encryptUploads': self.node_settings.encrypt_uploads,
+            'hasBucket': self.node_settings.bucket is not None,
+            'userIsOwner': (
                 self.user_settings and self.user_settings.owner == current_user
             ),
-            'user_has_auth': bool(current_user_settings) and current_user_settings.has_auth,
-            'node_has_auth': self.node_settings.has_auth,
-            'owner': None,
-            'bucket_list': None,
-            'valid_credentials': bool(current_user_settings) and self.credentials_are_valid(current_user_settings),
+            'userHasAuth': bool(current_user_settings) and current_user_settings.has_auth,
+            'nodeHasAuth': self.node_settings.has_auth,
+            'ownerName': None,
+            'bucketList': None,
+            'validCredentials': bool(current_user_settings) and self.credentials_are_valid(current_user_settings),
         })
 
-        if node_settings.has_auth:
-            ret['owner'] = self.user_settings.owner.fullname
-            ret['owner_url'] = self.user_settings.owner.url
-            ret['node_has_auth'] = True
+        if self.node_settings.has_auth:
+            ret['ownerName'] = self.user_settings.owner.fullname
 
         ret['urls'] = self.serialized_urls
 

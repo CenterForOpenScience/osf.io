@@ -121,7 +121,7 @@ ViewModel.prototype.selectBucket = function() {
         });
         ret.reject();
     } else {
-        $osf.postJSON(
+        $osf.putJSON(
                 self.urls().set_bucket, {
                     's3_bucket': self.selectedBucket(),
                     'encrypt_uploads': self.encryptUploads()
@@ -487,12 +487,12 @@ ViewModel.prototype.updateFromData = function(data) {
     var self = this;
     var ret = $.Deferred();
     var applySettings = function(settings){
-        self.nodeHasAuth(settings.node_has_auth);
-        self.userHasAuth(settings.user_has_auth);
-        self.userIsOwner(settings.user_is_owner);
-        self.ownerName(settings.owner);
-        self.validCredentials(settings.valid_credentials);
-        self.currentBucket(settings.has_bucket ? settings.bucket : null);
+        self.nodeHasAuth(settings.nodeHasAuth);
+        self.userHasAuth(settings.userHasAuth);
+        self.userIsOwner(settings.userIsOwner);
+        self.ownerName(settings.ownerName);
+        self.validCredentials(settings.validCredentials);
+        self.currentBucket(settings.hasBucket ? settings.bucket : null);
         if (settings.urls) {
             self.urls(settings.urls);
         }
@@ -513,7 +513,7 @@ ViewModel.prototype.updateFromData = function(data) {
         }
         ret.resolve(settings);
     };
-    if (typeof data === 'undefined'){
+    if ((typeof data === 'undefined') || (data === null) ){
         return self.fetchFromServer()
             .done(applySettings);
     }
