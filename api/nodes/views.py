@@ -236,7 +236,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         base_query = (
             Q('is_deleted', 'ne', True) &
             Q('is_collection', 'ne', True) &
-            Q('is_registration', 'ne', True)
+            Q('is_registration', 'ne', True) &
+            Q('is_folder', 'ne', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
