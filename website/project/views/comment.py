@@ -50,6 +50,12 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
         Comment.update(Q('root_target', 'eq', old_file._id), data={'root_target': new_file})
         Comment.update(Q('target', 'eq', old_file._id), data={'target': new_file})
 
+        # update node record of commented files
+        if old_file._id in source_node.commented_files:
+            destination_node.commented_files[new_file._id] = source_node.commented_files[old_file._id]
+            del source_node.commented_files[old_file._id]
+            source_node.save()
+
 
 @comment_added.connect
 def send_comment_added_notification(comment, auth):
