@@ -17,7 +17,7 @@ from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
-    NodeAlternativeCitationsList, NodeAlternativeCitationDetail)
+    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer
 
@@ -257,6 +257,11 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-comments'
+
+
+class RegistrationLogList(NodeLogList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-logs'
 
 
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
