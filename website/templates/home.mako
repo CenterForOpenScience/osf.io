@@ -10,6 +10,10 @@
             <div id="newAndNoteworthyWrap"></div>
     </div>
 
+    <div>
+            <div id="hostingAMeetingWrap"></div>
+    </div>
+
 
 </%def>
 
