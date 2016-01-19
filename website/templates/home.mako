@@ -2,7 +2,14 @@
 <%def name="title()">Home</%def>
 <%def name="content()">
     <h1>Placeholder</h1>
-    <div id="recentActivityWidget"></div>
+    <div id="recentActivityWidget">
+        <div class="spinner-loading-wrapper">
+            <div class="logo-spin logo-xl"></div>
+            <p class="m-t-sm fg-load-message">
+                Loading Recent Activity...
+            </p>
+        </div>
+    </div>
 </%def>
 
 <%def name="stylesheets()">
