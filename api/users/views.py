@@ -297,7 +297,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
         permission_query = Q('is_public', 'eq', True)
         if not current_user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', current_user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
         query = (query & permission_query)
         return query
 
@@ -399,10 +399,10 @@ class UserRegistrations(UserNodes):
             Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True) &
             Q('is_registration', 'eq', True) &
-            Q('contributors', 'icontains', user._id)
+            Q('contributors', 'eq', user._id)
         )
         permission_query = Q('is_public', 'eq', True)
         if not current_user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', current_user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
         query = query & permission_query
         return query
