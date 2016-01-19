@@ -169,7 +169,7 @@ def validate_reports(value, *args, **kwargs):
         ):
             raise ValidationValueError(
                 ('Values must include `date`, `category`, ',
-                 '`message`, `retracted` keys')
+                 '`text`, `retracted` keys')
             )
 
 
@@ -208,7 +208,11 @@ class SpamMixin(StoredObject):
 
     def remove_flag(self, save=False):
         if self.spam_status == self.FLAGGED:
-            self.spam_status = self.UNKNOWN
+            return
+        for user, report in self.reports.iteritems():
+            if not report['retracted']:
+                return
+        self.spam_status = self.UNKNOWN
         if save:
             self.save()
 
@@ -253,9 +257,10 @@ class SpamMixin(StoredObject):
         :param user: User retracting
         :param save: Save changes
         """
-        for report in reversed(self.reports):
-            if report['user'] == user._id:
-                report['retracted'] = True
+        if user._id in self.reports:
+            if not self.reports[user._id]['retracted']:
+                self.reports[user._id]['retracted'] = True
+                self.remove_flag()
         if save:
             self.save()
 

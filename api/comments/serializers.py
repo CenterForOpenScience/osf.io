@@ -201,7 +201,7 @@ class CommentReportSerializer(JSONAPISerializer):
         if user._id != comment_report._id:
             raise ValidationError('You cannot report a comment on behalf of another user.')
         try:
-            comment.report_abuse(user, save=True, **validated_data)
+            comment.report_spam(user, save=True, **validated_data)
         except ValueError:
             raise ValidationError('You cannot report your own comment.')
         return CommentReport(user._id, **validated_data)
