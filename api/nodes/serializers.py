@@ -90,6 +90,8 @@ class NodeSerializer(JSONAPISerializer):
                                             'level project by submitting the appropriate fields in the request body, '
                                             'and some information will not change. By default, the description will '
                                             'be cleared and the project will be made private.')
+    current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
+                                                                   'for the current user on this node.')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
@@ -156,6 +158,13 @@ class NodeSerializer(JSONAPISerializer):
         related_view='nodes:node-logs',
         related_view_kwargs={'node_id': '<pk>'},
     )
+
+    def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return ["read"]
+        else:
+            return obj.get_permissions(user=user)
 
     class Meta:
         type_ = 'nodes'
