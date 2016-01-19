@@ -430,6 +430,11 @@ def make_url_map(app):
         ),
     ])
 
+    process_rules(app, [
+        Rule('/explore/activity/popular/raw/', 'get', discovery_views.popular_activity_json, json_renderer),
+
+    ], prefix='/api/v1')
+
     ### Auth ###
 
     # Web
