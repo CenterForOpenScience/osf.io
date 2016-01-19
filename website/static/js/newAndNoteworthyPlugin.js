@@ -113,8 +113,13 @@ var newAndNoteworthy = {
         };
 
          // Onclick, directs user to project page
-        self.nodeDirect = function(node) {
-            location.href = '/'+ node.id
+        self.nodeDirect = function(type, node) {
+            if (type === 'new') {
+                location.href = '/'+ node.id
+            }
+            else {
+                location.href = '/' + node.embeds.target_node.data.id
+            }
         };
 
         self.redirectToSearch = function() {
@@ -125,7 +130,7 @@ var newAndNoteworthy = {
     },
     view : function(ctrl) {
         function nodeDisplay(type, node) {
-            return m('div', {class: 'row node-styling m-v-md m-r-xs', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
+            return m('div', {class: 'row node-styling m-v-md m-r-xs', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(type, node)}}},
                 m('div', {class: 'col-sm-12'},
                     m('h5', m('em', ctrl.getTitle(type, node))),
                     m('h5', ctrl.getDescription(type, node)),
