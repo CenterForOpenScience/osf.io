@@ -250,6 +250,20 @@ class RegistrationContributorDetail(NodeContributorDetail, RegistrationMixin):
 class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-children'
+    serializer_class = RegistrationSerializer
+
+    def get_default_odm_query(self):
+        base_query = (
+            Q('is_deleted', 'ne', True) &
+            Q('is_registration', 'eq', True)
+        )
+        user = self.request.user
+        permission_query = Q('is_public', 'eq', True)
+        if not user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+
+        query = base_query & permission_query
+        return query
 
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
