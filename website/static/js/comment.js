@@ -282,23 +282,21 @@ var CommentModel = function(data, $parent, $root) {
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
 
-    if ('embeds' in data && 'user' in data.embeds) {
+    if (window.contextVars.node.anonymous) {
+        self.author = {
+            'id': null,
+            'url': '',
+            'fullname': 'A User',
+            'gravatarUrl': ''
+        };
+    } else if ('embeds' in data && 'user' in data.embeds) {
         var userData = data.embeds.user.data;
-        if (userData.id !== '') {
-            self.author = {
-                'id': userData.id,
-                'url': userData.links.html,
-                'fullname': userData.attributes.full_name,
-                'gravatarUrl': userData.links.profile_image
-            };
-        } else {
-            self.author = {
-                'id': null,
-                'url': '',
-                'fullname': 'A User',
-                'gravatarUrl': ''
-            };
-        }
+        self.author = {
+            'id': userData.id,
+            'url': userData.links.html,
+            'fullname': userData.attributes.full_name,
+            'gravatarUrl': userData.links.profile_image
+        };
     } else {
         self.author = self.$root.author;
     }
