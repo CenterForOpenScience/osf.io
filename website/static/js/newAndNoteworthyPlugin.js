@@ -23,7 +23,7 @@ var newAndNoteworthy = {
         self.noteworthyContributors = {};
 
         // Load new nodes
-        var newUrl = $osf.apiV2Url('nodes/', { query : { 'embed': 'contributors'}});
+        var newUrl = $osf.apiV2Url('nodes/', { query : { 'embed': 'contributors', 'sort': '-date_created'}});
         var newPromise = m.request({method: 'GET', url : newUrl, config: xhrconfig});
         newPromise.then(function(result){
             for (var i = 0; i <= 4; i++) {
