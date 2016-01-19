@@ -12,7 +12,8 @@ var meetingsAndConferences = require('js/meetingsAndConferencesPlugin');
 var m = require('mithril');
 
 $(document).ready(function(){
-    m.mount(document.getElementById('addQuickProjectSearchWrap'), m.component(quickSearchProject, {}));
     m.mount(document.getElementById('newAndNoteworthyWrap'), m.component(newAndNoteworthy, {}));
     m.mount(document.getElementById('hostingAMeetingWrap'), m.component(meetingsAndConferences, {}));
+    m.mount(document.getElementById('addQuickProjectSearchWrap'), m.component(quickSearchProject, {}));
+
 });
