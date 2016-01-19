@@ -39,7 +39,7 @@ s3_get_config = generic_views.get_config(
     S3Serializer
 )
 
-def _get_buckets(node_addon, folder_id=None, **kwargs):
+def _get_buckets(node_addon, folder_id=None):
     """Used by generic_view `folder_list` to fetch a list of buckets.
     `folder_id` required by generic, but not actually used"""
     return {
@@ -140,19 +140,8 @@ def s3_set_config(node, auth, user_addon, node_addon, **kwargs):
 
     if bucket != node_addon.bucket:
 
-        # Update node settings
-        node_addon.bucket = bucket
-        node_addon.save()
-
-        node.add_log(
-            action='s3_bucket_linked',
-            params={
-                'node': node._id,
-                'project': node.parent_id,
-                'bucket': node_addon.bucket,
-            },
-            auth=auth,
-        )
+        # Update node settings and log
+        node_addon.set_folder(bucket, auth)
 
     return S3Serializer().serialize_settings(node_addon, auth.user)
 
