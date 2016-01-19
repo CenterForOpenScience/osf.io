@@ -25,7 +25,7 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
     source_node = Node.load(source['node']['_id'])
     destination_node = node
     
-    if event_type == 'addon_file_moved':
+    if event_type == 'addon_file_moved' or (event_type == 'addon_file_renamed' and source.get('provider') != 'osfstorage'):
         if source.get('provider') == 'osfstorage':
             try:
                 old_file = TrashedFileNode.find_one(Q('provider', 'eq', source.get('provider')) &
