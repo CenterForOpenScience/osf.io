@@ -19,5 +19,4 @@ ALL_SIGNALS = [
     auth.unconfirmed_user_created,
     event.file_updated,
     conference.osf4m_user_created,
-    project.file_moved_node
 ]
