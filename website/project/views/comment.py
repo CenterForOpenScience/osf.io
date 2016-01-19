@@ -6,7 +6,6 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from framework.auth.decorators import must_be_logged_in
-from framework.tasks import app
 
 from website.files.models import FileNode, TrashedFileNode
 from website.notifications.constants import PROVIDERS
@@ -18,7 +17,6 @@ from website.project.signals import comment_added
 from website import settings
 
 
-@app.task
 @must_be_logged_in
 @must_have_permission('write')
 def update_comment_root_target_file(auth, **kwargs):

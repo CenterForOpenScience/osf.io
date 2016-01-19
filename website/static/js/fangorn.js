@@ -526,7 +526,7 @@ function doItemOp(operation, to, from, rename, conflict) {
 }
 
 function updateCommentsOnMove(nodeApiUrl, source, destination) {
-    var url = nodeApiUrl + 'comments/update/';
+    var url = nodeApiUrl + 'comments/target/';
     var request = $osf.putJSON(
         url,
         {
@@ -534,6 +534,14 @@ function updateCommentsOnMove(nodeApiUrl, source, destination) {
             'destination': destination
         }
     );
+    request.fail(function(xhr, textStatus) {
+        Raven.captureMessage('Failed to move or copy file', {
+            xhr: xhr,
+            url: url,
+            source: source,
+            destination: destination
+        });
+    });
     return request;
 }
 
@@ -1206,7 +1214,7 @@ function _fangornTitleColumn(item, col) {
             };
         }
         return m(
-            'span', 
+            'span',
             attrs,
             item.data.name
         );

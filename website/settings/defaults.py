@@ -295,7 +295,6 @@ CELERY_IMPORTS = (
     'website.notifications.tasks',
     'website.archiver.tasks',
     'website.search.search',
-    'website.project.views.comment'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
