@@ -178,15 +178,3 @@ def unique(factory):
         used.append(item)
         return item
     return wrapper
-
-
-def assert_mutual_in(list_one, list_two):
-    """Compare two lists to each other to ensure that they contain the same elements. More robust than assert_equal
-    because the lists do not have to be in the same order.
-    :param list_one:
-    :param list_two:
-    :return: True if lists contain the same elements. False if not
-    """
-    assert_equal(len(list_one), len(list_two))
-    for item in list_one:
-        assert_in(item, list_two)
