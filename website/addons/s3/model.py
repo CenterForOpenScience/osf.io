@@ -46,22 +46,19 @@ class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def display_name(self):
         return u'{0}: {1}'.format(self.config.full_name, self.bucket)
 
+    def set_folder(self, folder_id, auth):
+        self.bucket = str(folder_id)
+        self.save()
+
+        self.nodelogger.log(action="bucket_linked", extra={'bucket': folder_id}, save=True)
+
     @property
     def complete(self):
         return self.has_auth and self.bucket is not None
 
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
-        self.owner.add_log(
-            action='s3_node_authorized',
-            params={
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-            },
-            auth=Auth(user_settings.owner),
-        )
-        if save:
-            self.save()
+        self.nodelogger.log(action='node_authorized', save=save)
 
     def clear_settings(self):
         self.bucket = None
@@ -72,17 +69,10 @@ class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.clear_auth()  # Also performs a save
 
         if log:
-            self.owner.add_log(
-                action='s3_node_deauthorized',
-                params={
-                    'project': self.owner.parent_id,
-                    'node': self.owner._id,
-                },
-                auth=auth,
-            )
+            self.nodelogger.log(action='node_deauthorized', save=True)
 
     def delete(self, save=True):
-        self.deauthorize(log=False, save=False)
+        self.deauthorize(log=False)
         super(S3NodeSettings, self).delete(save=save)
 
     def serialize_waterbutler_credentials(self):
@@ -120,4 +110,4 @@ class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         )
 
     def after_delete(self, node, user):
-        self.deauthorize(Auth(user=user), log=True, save=True)
+        self.deauthorize(Auth(user=user), log=True)
