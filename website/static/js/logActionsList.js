@@ -13,7 +13,7 @@ var logActions = {
     'made_public':  '${user} made ${node} public', // case: made_public_no_user
     'made_private':     '${user} made ${node} private',
     'tag_added':    '${user} tagged ${node} as ${tag}',
-    'tag_removed':  '${user} removed {$tag} from ${node}',
+    'tag_removed':  '${user} removed ${tag} from ${node}',
     'edit_title':   '${user} changed the title from ${title_original} to ${title_new}',
     'edit_description': '${user} edited description of ${node}',
     'updated_fields':   '${user} changed the ${updated_fields} for ${node}', // i.e change category
@@ -70,9 +70,9 @@ var logActions = {
     'citation_added' : '${user} added a citation ${citation} to ${node}',
     'citation_edited' : '${user} updated a citation ${citation} in ${node}', //changed to be more concise
     'citation_removed' : '${user} removed a citation ${citation} in ${node}',
-    'dataverse_dataset_linked' : '${user} linked Dataverse dataset ${dataset} to {$node}',
-    'dataverse_study_linkek' : '${user} linked Dataverse dataset ${study} to {$node}',
-    'dataverse_dataset_published' : '{$user} published a Dataverse dataset in {$node}',
+    'dataverse_dataset_linked' : '${user} linked Dataverse dataset ${dataset} to ${node}',
+    'dataverse_study_linked' : '${user} linked Dataverse dataset ${study} to ${node}',
+    'dataverse_dataset_published' : '${user} published a Dataverse dataset in ${node}',
     'dataverse_file_added' : '${user} added file ${filename} to Dataverse dataset ${dataset} in ${node}',
     'dataverse_file_removed' : '${user} removed file ${filename} from Dataverse dataset ${dataset} in ${node}',
     'dataverse_node_authorized' : '${user} authorized the Dataverse addon in ${node}',

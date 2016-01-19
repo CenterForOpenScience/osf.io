@@ -226,7 +226,7 @@ var LogPieces = {
         }
     },
         //
-    dataset: {
+        dataset: {
         view: function (ctrl, logObject) {
             return returnTextParams('dataset', 'a dataset', logObject);
         }
@@ -241,14 +241,18 @@ var LogPieces = {
     repo: {
         view: function(ctrl, logObject) {
             var github = logObject.attributes.params.github;
+            var github_user = logObject.attributes.params.github_user;
+            var github_repo = logObject.attributes.params.github_repo;
             if (paramIsReturned(github, logObject)){
                 var user = github.user;
                 var repo = github.repo;
                 if(paramIsReturned(user, logObject) && paramIsReturned(repo, logObject)){
-                    return m('p', user + '/' + repo)
+                    return m('span', user + '/' + repo)
                 }
+            } else if (paramIsReturned(github_repo, logObject) && paramIsReturned(github_user, logObject)){
+                return m('span', github_user + '/' + github_repo)
             }
-            return ''
+            return m('span', '');
         }
     },
 
@@ -274,9 +278,9 @@ var LogPieces = {
         view: function(ctrl, logObject) {
             var folder = logObject.attributes.params.folder;
             if(paramIsReturned(folder, logObject)){
-                return m('p', folder === 'All Files' ? '/ (Full Box)' : (folder || '').replace('All Files',''))
+                return m('span', folder === 'All Files' ? '/ (Full Box)' : (folder || '').replace('All Files',''))
             }
-            return '';
+            return m('span', '');
         }
     },
 
@@ -286,10 +290,10 @@ var LogPieces = {
             if(paramIsReturned(citation, logObject)){
                 var name = citation.name;
                 if (paramIsReturned(name, logObject)){
-                    return m('p', 'name');
+                    return m('span', 'name');
                 }
             }
-            return '';
+            return m('span', '');
         }
     },
 
@@ -309,9 +313,9 @@ var LogPieces = {
         view: function(ctrl, logObject){
             var path = logObject.attributes.params.path;
             if(paramIsReturned(folder, logObject)){
-                return m('p', decodeURIComponent(path))
+                return m('span', decodeURIComponent(path))
             }
-            return ''
+            return m('span', '');
         }
     },
 
@@ -319,12 +323,17 @@ var LogPieces = {
         view: function(ctrl, logObject){
             var folder = logObject.attributes.params.folder;
             if(paramIsReturned(folder, logObject)){
-                return m('p', folder === '/' ? '(Full Google Drive)' : decodeURIComponent(folder))
+                return m('span', folder === '/' ? '(Full Google Drive)' : decodeURIComponent(folder))
             }
-            return ''
+            return m('span', '');
+        }
+    },
+
+    addon: {
+        view: function(ctrl, logObject){
+            return returnTextParams('addon', '', logObject)
         }
     }
 };
-
 
 module.exports = LogText;
