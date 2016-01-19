@@ -35,7 +35,9 @@ var newAndNoteworthy = {
         var noteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.noteworthy + '/node_links/', {});
         var noteworthyPromise = m.request({method: 'GET', url: noteworthyUrl, config: xhrconfig});
         noteworthyPromise.then(function(result){
-            for (var l=0; l <= 4; l++) {
+            var numNoteworthy = Math.min(result.data.length - 1, 4);
+            console.log(numNoteworthy);
+            for (var l=0; l <= numNoteworthy; l++) {
                 self.noteworthyNodes().push(result.data[l]);
                 self.fetchNoteworthyContributors(result.data[l]);
                   }
