@@ -86,7 +86,7 @@ class TestShareSearch(OsfTestCase):
             'count': True,
             'v': '1'
         })
-        assert_is(mock_count.called, True)
+        assert_is(mock_count.called, False)
 
     def test_share_count_cleans_query(self):
         cleaned_query = share_search.clean_count_query({
