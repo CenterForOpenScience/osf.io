@@ -26,7 +26,7 @@ api_routes = {
                 '/project/<pid>/s3/settings/',
                 '/project/<pid>/node/<nid>/s3/settings/',
             ],
-            'post',
+            'put',
             views.s3_set_config,
             json_renderer,
         ),
