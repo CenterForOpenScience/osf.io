@@ -87,19 +87,21 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
         elif request.method == 'DELETE':
             return parent_node.can_edit(auth)
         else:
+            has_parent_auth = parent_node.can_edit(auth)
+            if not has_parent_auth:
+                return False
             pointer_nodes = []
             for pointer in request.data.get('data', []):
                 node = Node.load(pointer['id'])
                 if not node or node.is_folder:
                     raise exceptions.NotFound
                 pointer_nodes.append(node)
-            has_parent_auth = parent_node.can_edit(auth)
             has_pointer_auth = True
             for pointer in pointer_nodes:
                 if not pointer.can_view(auth):
                     has_pointer_auth = False
                     break
-            return has_parent_auth and has_pointer_auth
+            return has_pointer_auth
 
 
 class ReadOnlyIfRegistration(permissions.BasePermission):

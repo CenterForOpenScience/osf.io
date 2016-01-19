@@ -558,7 +558,7 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
                        }
         Success:       201
 
-    This requires both admin permission on the collection, and for the user that is
+    This requires both edit permission on the collection, and for the user that is
     making the request to be able to read the nodes requested. Data can be contain any number of
     node identifiers. This will create a node_link for all node_ids in the request that
     do not currently have a corresponding node_link in this collection.
@@ -576,7 +576,7 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
                        }
         Success:       200
 
-    This requires both admin permission on the collection, and for the user that is
+    This requires both edit permission on the collection, and for the user that is
     making the request to be able to read the nodes requested. Data can be contain any number of
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
@@ -597,7 +597,7 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
                        }
         Success:       204
 
-    This requires admin permission on the node. This will delete any node_links that have a
+    This requires edit permission on the node. This will delete any node_links that have a
     corresponding node_id in the request.
     """
     permission_classes = (
@@ -633,5 +633,5 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
         current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
-            if val['id'] in current_pointers.keys():
+            if val['id'] in current_pointers:
                 collection.rm_pointer(current_pointers[val['id']], auth)

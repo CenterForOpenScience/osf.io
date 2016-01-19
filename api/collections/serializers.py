@@ -125,7 +125,7 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
         )
 
         nodes_to_add = []
-        for node_id in diff['add'].keys():
+        for node_id in diff['add']:
             node = Node.load(node_id)
             if not node:
                 raise exceptions.NotFound

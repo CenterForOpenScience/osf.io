@@ -136,13 +136,13 @@ class JSONAPIRelationshipParser(JSONParser):
         if data:
             if not isinstance(data, list):
                 raise ParseError('Data must be an array')
-            for i in range(0, len(data)):
+            for i, datum in enumerate(data):
 
-                if data[i].get('id') is None:
-                    raise JSONAPIException(source={'pointer': '/data/' + str(i) + '/id'}, detail=NO_ID_ERROR)
+                if datum.get('id') is None:
+                    raise JSONAPIException(source={'pointer': '/data/{}/id'.format(str(i))}, detail=NO_ID_ERROR)
 
-                if data[i].get('type') is None:
-                    raise JSONAPIException(source={'pointer': '/data/' + str(i) + '/type'}, detail=NO_TYPE_ERROR)
+                if datum.get('type') is None:
+                    raise JSONAPIException(source={'pointer': '/data/{}/type'.format(str(i))}, detail=NO_TYPE_ERROR)
 
             return {'data': data}
 
