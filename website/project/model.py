@@ -163,7 +163,7 @@ def validate_reports(value, *args, **kwargs):
             raise ValidationTypeError('Values must be dictionaries')
         if (
             'category' not in val or
-            'message' not in val or
+            'text' not in val or
             'date' not in val or
             'retracted' not in val
         ):
@@ -226,7 +226,7 @@ class SpamMixin(StoredObject):
     def is_spam(self):
         return self.spam_status == self.SPAM
 
-    def report_spam(self, user, date, save=False, **kwargs):
+    def report_spam(self, user, save=False, **kwargs):
         """Report object is spam or other abuse of OSF
 
         :param user: User submitting report
@@ -238,7 +238,7 @@ class SpamMixin(StoredObject):
         if user == self.user:
             raise ValueError
         self.flag_spam()
-        report = {'date': date, 'retracted': False}
+        report = {'date': datetime.datetime.utcnow(), 'retracted': False}
         report.update(kwargs)
         self.reports[user._id] = report
         if save:

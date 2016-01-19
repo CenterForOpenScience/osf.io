@@ -190,7 +190,7 @@ class CommentReportSerializer(JSONAPISerializer):
         if user._id in comment.reports:
             raise ValidationError('Comment already reported.')
         try:
-            comment.report_abuse(user, save=True, **validated_data)
+            comment.report_spam(user, save=True, **validated_data)
         except ValueError:
             raise ValidationError('You cannot report your own comment.')
         return CommentReport(user._id, **validated_data)
