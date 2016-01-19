@@ -77,7 +77,7 @@ function Comment(data) {
         }
     });
 
-    self.seenBy = ko.observableArray([self.user.id]);
+    self.seenBy = ko.observableArray(data.seenBy || [self.user.id]);
 
     /**
      * Returns true if the current user is the comment owner
@@ -140,7 +140,9 @@ Comment.prototype.delete = function(save) {
 Comment.prototype.viewComment = function(user) {
     if (this.seenBy.indexOf(user.id) === -1) {
         this.seenBy.push(user.id);
+        return true;
     }
+    return false;
 };
 
 /**
@@ -396,9 +398,11 @@ var Page = function(schemaPage, schemaData) {
 Page.prototype.viewComments = function() {
     var self = this;
     var comments = self.comments();
+    var viewed = false;
     $.each(comments, function(index, comment) {
-        comment.viewComment($osf.currentUser());
+        viewed = comment.viewComment($osf.currentUser()) || viewed;
     });
+    return viewed;
 };
 Page.prototype.getUnseenComments = function() {
     var self = this;
@@ -800,7 +804,9 @@ var RegistrationEditor = function(urls, editorId, preview) {
         page.comments.subscribe(function() {
             self.dirtyCount(self.dirtyCount() + 1);
         });
-        page.viewComments();
+        if(page.viewComments()) {
+            self.save();
+        }
     });
 
     self.hasValidationInfo = ko.computed(function() {
