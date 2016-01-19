@@ -158,6 +158,7 @@ var LogWrap = {
                         ctrl.getLogs(false, true);
                     },
                     start: function (event, ui){
+                        ctrl.eventFilter = false;
                         ctrl.loading = true;
                         m.redraw();
                         $('#fillerBar').replaceWith(
@@ -168,7 +169,20 @@ var LogWrap = {
                     },
                     slide: function (){
                         makeLine(canvas);
-                    }
+                    }, /*
+                    change: function (event, ui){
+                        ctrl.loading = true;
+                        m.redraw();
+                        $('#fillerBar').replaceWith(
+                            '<div id="fillerBar" class="progress" style="height: 11px">' +
+                                '<div class="progress-bar progress-bar-success progress-bar-striped active" style="width:100%;"></div>' +
+                            '</div>'
+                        );
+                        ctrl.page = 1;
+                        ctrl.dateBegin = moment.utc(ui.values[0]*div);
+                        ctrl.dateEnd = moment.utc(ui.values[1]*div);
+                        ctrl.getLogs(false, true);
+                    } */
                 });
                 $('#recentActivitySlider').slider('pips', {
                     last: false,
