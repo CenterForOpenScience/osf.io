@@ -3271,7 +3271,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         retraction.save()  # Save retraction so it has a primary key
         self.retraction = retraction
         self.save()  # Set foreign field reference Node.retraction
-        admins = self.get_admin_contributors_recursive()
+        admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
             retraction.add_authorizer(admin, node)
         retraction.save()  # Save retraction approval state
@@ -3322,7 +3322,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         embargo.save()  # Save embargo so it has a primary key
         self.embargo = embargo
         self.save()  # Set foreign field reference Node.embargo
-        admins = self.get_admin_contributors_recursive()
+        admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
             embargo.add_authorizer(admin, node)
         embargo.save()  # Save embargo's approval_state
@@ -3359,16 +3359,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
-    def get_admin_contributors_recursive(self, *args, **kwargs):
-        """Return a set of all (admin, node) tuples for this node and
+    def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
+        """Yield (admin, node) tuples for this node and
         descendant nodes. Excludes contributors on node links and inactive users.
+
+        :param bool unique_users: If True, a given admin will only be yielded once
+            during iteration.
         """
-        return {
-            (contrib, node)
-            for node in self.node_and_primary_descendants(*args, **kwargs)
-            for contrib in node.contributors
-            if node.has_permission(contrib, 'admin') and contrib.is_active
-        }
+        visited_user_ids = []
+        for node in self.node_and_primary_descendants(*args, **kwargs):
+            for contrib in node.contributors:
+                if node.has_permission(contrib, ADMIN) and contrib.is_active:
+                    if unique_users:
+                        if contrib._id not in visited_user_ids:
+                            visited_user_ids.append(contrib._id)
+                            yield (contrib, node)
+                    else:
+                        yield (contrib, node)
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME
@@ -3380,7 +3387,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         approval.save()  # Save approval so it has a primary key
         self.registration_approval = approval
         self.save()  # Set foreign field reference Node.registration_approval
-        admins = self.get_admin_contributors_recursive()
+        admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
             approval.add_authorizer(admin, node=node)
         approval.save()  # Save approval's approval_state

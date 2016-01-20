@@ -111,6 +111,7 @@ class TestRegistrationDetail(ApiTestCase):
             'pending_embargo_approval': None,
             "embargo_end_date": None,
             "registered_meta": None,
+            'current_user_permissions': None,
             "registration_supplement": registration.registered_meta.keys()[0]
         })
 
