@@ -340,9 +340,15 @@ def project_remove_contributor(auth, **kwargs):
             })
 
         try:
-            node.remove_contributor(contributor, auth=auth)
+            nodes_removed = node.remove_contributor(contributor, auth=auth)
         except ValueError as error:
             raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
+
+        # remove_contributor returns false if there is not one admin or visible contributor left after the move.
+        if not nodes_removed:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_long': 'Could not remove contributor.'})
+
 
         # If user has removed herself from project, alert; redirect to user
         # dashboard if node is private, else node dashboard

@@ -606,7 +606,7 @@ class TestProjectViews(OsfTestCase):
 
         self.project.reload()
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['message_long'], 'Must have at least one registered admin contributor')
+        assert_equal(res.json['message_long'], 'Could not remove contributor.')
         assert_in(self.user1._id, self.project.contributors)
 
     def test_get_contributors_abbrev(self):

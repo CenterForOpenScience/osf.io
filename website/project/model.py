@@ -2584,7 +2584,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # Node must have at least one registered admin user
         admins = self.get_admin_contributors(self.contributors)
         if not admins:
-            raise ValueError('Must have at least one registered admin contributor')
+            return False
 
         # Clear permissions for removed user
         self.permissions.pop(contributor._id, None)
