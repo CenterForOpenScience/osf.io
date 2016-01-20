@@ -110,11 +110,6 @@ var LogWrap = {
         self.getLogs(true, false);
     },
     view: function(ctrl, args){
-        var fileEvents = ((ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.files ? 5 : 0);
-        var commentEvents = ((ctrl.eventNumbers.comments/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.comments ? 5 : 0);
-        var wikiEvents = ((ctrl.eventNumbers.wiki/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.wiki ? 5 : 0);
-        var nodeEvents = ((ctrl.eventNumbers.nodes/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.nodes ? 5 : 0);
-        var otherEvents = 100 - (fileEvents + commentEvents + wikiEvents + nodeEvents);
         var div = ctrl.div;
         var begin = (Number(ctrl.firstDay.format('x'))/div | 0);
         var end = (Number(ctrl.today.format('x'))/div | 0);
@@ -170,7 +165,7 @@ var LogWrap = {
                     },
                     slide: function (){
                         makeLine(canvas);
-                    }, /*
+                    },
                     change: function (event, ui){
                         ctrl.loading = true;
                         m.redraw();
@@ -183,7 +178,7 @@ var LogWrap = {
                         ctrl.dateBegin = moment.utc(ui.values[0]*div);
                         ctrl.dateEnd = moment.utc(ui.values[1]*div);
                         ctrl.getLogs(false, true);
-                    } */
+                    }
                 });
                 $('#recentActivitySlider').slider('pips', {
                     last: false,
@@ -203,7 +198,7 @@ var LogWrap = {
                 makeLine(canvas);
             }
             else {
-                $('#recentActivitySlider').slider('option', 'values', values);
+                //$('#recentActivitySlider').slider('option', 'values', values);
                 $('#fillerBar').replaceWith(makeSliderProgress());
                 makeLine(canvas);
             }
@@ -225,6 +220,11 @@ var LogWrap = {
             if (category.indexOf('project') !== -1){ return '#f0ad4e'; }
             else { return '#5cb85c'; }
         };
+        var fileEvents = ((ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.files ? 5 : 0);
+        var commentEvents = ((ctrl.eventNumbers.comments/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.comments ? 5 : 0);
+        var wikiEvents = ((ctrl.eventNumbers.wiki/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.wiki ? 5 : 0);
+        var nodeEvents = ((ctrl.eventNumbers.nodes/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.nodes ? 5 : 0);
+        var otherEvents = 100 - (fileEvents + commentEvents + wikiEvents + nodeEvents);
         var filterLabels = function(){
             if (!ctrl.eventFilter){
                 if (otherEvents === 100) {
@@ -247,7 +247,7 @@ var LogWrap = {
                 ]);
             }
         };
-        return m('.fb-activity-list.col-md-8.col-md-offset-2.m-t-xl', [
+        return m('.fb-activity-list.col-md-10.col-md-offset-1.m-t-xl', [
                 m('.time-slider-parent',
                     m('#recentActivitySlider',  {config: addSlider})
                 ),
@@ -296,7 +296,7 @@ var LogWrap = {
                             ctrl.getLogs();
                         }},m('i.fa.fa-angle-left.page-button'))),
                     m('#logs.col-xs-10', {config: addButtons} ,(ctrl.activityLogs() && (ctrl.activityLogs().length > 0))? ctrl.activityLogs().map(function(item){
-                        return m('.fb-activity-item.activity-item',
+                        return m('.activity-item',
                             {style: {borderLeft: 'solid 5px ' + categoryColor(item.attributes.action)}}, [
                             m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
                             m.component(LogText,item)
