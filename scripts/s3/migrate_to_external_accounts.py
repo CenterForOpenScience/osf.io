@@ -165,6 +165,8 @@ def migrate(dry_run=True):
     unverifiable_node_settings = []
     deleted_node_settings = []
     nodeless_node_settings = []
+    duped_accounts = {}
+    dupe_count = 0
 
     for user_settings_document in user_settings_list:
         if user_settings_document['deleted']:
@@ -187,6 +189,13 @@ def migrate(dry_run=True):
         external_account, user, new = migrate_to_external_account(user_settings_document)
         if new:
             external_accounts_created.append(external_account._id)
+        else:
+            try:
+                duped_accounts[external_account._id].append(user_settings_document['_id'])
+            except KeyError:
+                duped_accounts[external_account._id] = [user_settings_document['_id']]
+            finally:
+                dupe_count += 1
         linked_node_settings_documents = old_node_settings_collection.find({
             'user_settings': user_settings_document['_id']
         })
@@ -256,6 +265,17 @@ def migrate(dry_run=True):
         )
     )
 
+    if duped_accounts:
+        logger.info(
+            "Found {0} cases of duplicate account use across {1} addons3usersettings, causing ExternalAccounts to not be created for {2} user settings.\n\
+            Note that original linked user settings are excluded from this list:\n{3}".format(
+                len(duped_accounts),
+                len(duped_accounts) + dupe_count,
+                dupe_count,
+                ['{}: {}'.format(e, duped_accounts[e]) for e in duped_accounts.keys()]
+            )
+        )
+
     if user_no_oauth_creds:
         logger.warn(
             "Migrated {0} invalid user settings with a lack of oauth credentials:\n{1}".format(
@@ -268,6 +288,7 @@ def migrate(dry_run=True):
                 len(invalid_oauth_creds), ['{}: {}'.format(e, invalid_oauth_creds[e]) for e in invalid_oauth_creds.keys()]
             )
         )
+
     if deleted_user_settings:
         logger.error(
             "Failed to migrate {0} deleted user settings: {1}".format(
