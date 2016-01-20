@@ -223,7 +223,8 @@ class TestProjectViews(OsfTestCase):
         self.user1.save()
         self.consolidate_auth1 = Auth(user=self.user1)
         self.auth = self.user1.auth
-        self.user2 = UserFactory()
+        self.user2 = AuthUserFactory()
+        self.auth2 = self.user2.auth
         # A project has 2 contributors
         self.project = ProjectFactory(
             title="Ham",
@@ -232,6 +233,14 @@ class TestProjectViews(OsfTestCase):
         )
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
+
+        self.project2 = ProjectFactory(
+            title="Tofu",
+            description='Glazed',
+            creator=self.user1
+        )
+        self.project2.add_contributor(self.user2, auth=Auth(self.user1))
+        self.project2.save()
 
     def test_edit_title_empty(self):
         node = ProjectFactory(creator=self.user1)
@@ -494,7 +503,7 @@ class TestProjectViews(OsfTestCase):
         )
 
     def test_project_remove_contributor(self):
-        url = "/api/v1/project/{0}/contributor/remove/".format(self.project._id)
+        url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
         payload = {"contributorID": self.user2._id,
                    "nodeIDs": [self.project._id]}
@@ -505,6 +514,100 @@ class TestProjectViews(OsfTestCase):
         assert_not_in(self.user2._id, self.project.contributors)
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_removed")
+
+    def test_multiple_project_remove_contributor(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # User 1 removes user2
+        payload = {"contributorID": self.user2._id,
+                   "nodeIDs": [self.project._id, self.project2._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            auth=self.auth).maybe_follow()
+        self.project.reload()
+        self.project2.reload()
+        assert_not_in(self.user2._id, self.project.contributors)
+        assert_not_in('/dashboard/', res.json)
+
+        assert_not_in(self.user2._id, self.project2.contributors)
+        # A log event was added
+        assert_equal(self.project.logs[-1].action, "contributor_removed")
+
+    def test_private_project_remove_self_not_admin(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # User 1 removes user2
+        payload = {"contributorID": self.user2._id,
+                   "nodeIDs": [self.project._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            auth=self.auth2).maybe_follow()
+        self.project.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['redirectUrl'], '/dashboard/')
+        assert_not_in(self.user2._id, self.project.contributors)
+
+    def test_public_project_remove_self_not_admin(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # User 1 removes user2
+        self.public_project = ProjectFactory(creator=self.user1, is_public=True)
+        self.public_project.add_contributor(self.user2, auth=Auth(self.user1))
+        self.public_project.save()
+        payload = {"contributorID": self.user2._id,
+                   "nodeIDs": [self.public_project._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            auth=self.auth2).maybe_follow()
+        self.public_project.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['redirectUrl'], '/' + self.public_project._id + '/')
+        assert_not_in(self.user2._id, self.public_project.contributors)
+
+    def test_project_remove_other_not_admin(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # User 1 removes user2
+        payload = {"contributorID": self.user1._id,
+                   "nodeIDs": [self.project._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            expect_errors=True,
+                            auth=self.auth2).maybe_follow()
+        self.project.reload()
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['message_long'],
+                     'You do not have permission to perform this action. '
+                     'If this should not have occurred and the issue persists, '
+                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'
+                     )
+        assert_in(self.user1._id, self.project.contributors)
+
+    def test_project_remove_fake_contributor(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # User 1 removes user2
+        payload = {"contributorID": 'badid',
+                   "nodeIDs": [self.project._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            expect_errors=True,
+                            auth=self.auth).maybe_follow()
+        self.project.reload()
+        # Assert the contributor id was invalid
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Contributor not found.')
+        assert_not_in('badid', self.project.contributors)
+
+    def test_project_remove_self_only_admin(self):
+        url = self.project.api_url_for('project_remove_contributor')
+        # User 1 removes user2
+        payload = {"contributorID": self.user1._id,
+                   "nodeIDs": [self.project._id]}
+        res = self.app.post(url, json.dumps(payload),
+                            content_type="application/json",
+                            expect_errors=True,
+                            auth=self.auth).maybe_follow()
+
+        self.project.reload()
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Must have at least one registered admin contributor')
+        assert_in(self.user1._id, self.project.contributors)
 
     def test_get_contributors_abbrev(self):
         # create a project with 3 registered contributors

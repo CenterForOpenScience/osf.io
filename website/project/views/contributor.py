@@ -137,36 +137,6 @@ def get_contributors_from_parent(auth, node, **kwargs):
     return {'contributors': contribs}
 
 
-@must_be_valid_project  # returns project
-@must_be_contributor
-@must_not_be_registration
-def project_before_remove_contributor(auth, node, **kwargs):
-
-    contributor = User.load(request.json.get('id'))
-
-    # Forbidden unless user is removing herself
-    if not node.has_permission(auth.user, 'admin'):
-        if auth.user != contributor:
-            raise HTTPError(http.FORBIDDEN)
-
-    if len(node.visible_contributor_ids) == 1 \
-            and node.visible_contributor_ids[0] == contributor._id:
-        raise HTTPError(http.FORBIDDEN, data={
-            'message_long': 'Must have at least one bibliographic contributor'
-        })
-
-    prompts = node.callback(
-        'before_remove_contributor', removed=contributor,
-    )
-
-    if auth.user == contributor:
-        prompts.insert(
-            0,
-            'Are you sure you want to remove yourself from this project?'
-        )
-
-    return {'prompts': prompts}
-
 
 def deserialize_contributors(node, user_dicts, auth, validate=False):
     """View helper that returns a list of User objects from a list of
@@ -341,9 +311,6 @@ def project_remove_contributor(auth, **kwargs):
     """Remove a contributor from a list of nodes.
 
     :param Auth auth: Consolidated authorization
-    :param-json list contributors: Ordered list of contributors represented as
-        dictionaries of the form:
-        {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
     :raises: HTTPError(400) if contributors to be removed are not in list
         or if no admin users would remain after changes were applied
 
@@ -352,13 +319,16 @@ def project_remove_contributor(auth, **kwargs):
     node_ids = request.json.get('nodeIDs')
     contributor = User.load(contributor_id)
     if contributor is None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_long': 'Contributor not found.'
+        }
+)
 
     for node_id in node_ids:
         # Update permissions and order
         node = Node.load(node_id)
 
-    # Forbidden unless user is removing herself
+        # Forbidden unless user is removing herself
         if not node.has_permission(auth.user, 'admin'):
             if auth.user != contributor:
                 raise HTTPError(http.FORBIDDEN)

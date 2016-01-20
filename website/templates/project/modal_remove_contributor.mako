@@ -91,7 +91,7 @@
                 <div data-bind="if:canRemoveNode() && !pageChanged()" align="right">
                     <span data-bind="if: page() === REMOVE">
                             <div class="row">
-                                <div  class="col-md-4 remove-page-buttons">
+                                <div  class="col-md-4-remove-contrib-buttons remove-page-buttons">
                                     <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
                                     <a class="btn btn-danger" data-bind="click:submit, visible: !deleteAll()">Remove</a>
                                     <a class="btn btn-default" data-bind="click:deleteAllNodes, visible: deleteAll">Continue</a>
