@@ -207,7 +207,7 @@ class SpamMixin(StoredObject):
             self.save()
 
     def remove_flag(self, save=False):
-        if self.spam_status == self.FLAGGED:
+        if self.spam_status != self.FLAGGED:
             return
         for user, report in self.reports.iteritems():
             if not report['retracted']:
