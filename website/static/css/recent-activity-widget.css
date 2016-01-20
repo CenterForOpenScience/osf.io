@@ -1,3 +1,31 @@
+
+
+#recentActivityWidget {
+    min-height: 660px;
+}
+
+#recentActivitySlider .progress-bar {
+    background-color: #214762;
+    width: 100%;
+}
+
+#recentActivityWidget .badge {
+    background-color: #bbbbbb;
+}
+/*  Override  slider */
+.ui-slider .ui-slider-handle {
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+    box-shadow: 0 1px 1px #999;
+    background-image: -webkit-linear-gradient(top, #f4f4f4 0%, #e5e5e5 100%);
+    background-image: linear-gradient(to bottom, #f4f4f4 0%, #e5e5e5 100%);
+}
+#recentActivitySlider.ui-slider {
+    border: none;
+    background: #E4E3E3;
+}
 .ui-slider-pip.ui-slider-pip-label {
   margin-top: -2em;
 }
@@ -14,22 +42,23 @@
 }
 
 .fb-activity-list .progress.category-bar {
-    border-bottom: 3px solid #E0E0E0;
-    border-left: 5px solid #E0E0E0;
-    border-right: 5px solid #E0E0E0;
     vertical-align: top;
     height: 30px;
 }
 
 .col-xs-1 .page-button {
-    font-size: 400%;
-    background-color: white;
+    font-size: 30px;
 }
 
 .activity-item {
-    padding: 10px 10px 10px 5px;
-    background-color: #f5f5f5;
+    padding: 10px;
+    background-color: #f8f8f8;
+    margin-bottom: 5px;
 }
+.activity-item:last-child {
+    margin-bottom: 0;
+}
+
 
 .time-slider-parent {
     margin-bottom: -10px;
@@ -47,3 +76,36 @@
     font-size: 150%;
     margin-top: 5px;
 }
+
+#rAProgressBar {
+    box-shadow: 0px 2px 7px -2px #7F7E7E;
+}
+
+#rightButton, #leftButton {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: pointer;
+    color: #666;
+    text-align: center;
+    border: 1px solid #f8f8f8;
+}
+
+#rightButton:hover, #leftButton:hover {
+    color: #333;
+    background-color: #fcfcfc;
+}
+
+#rAProgressBar .progress-bar {
+    opacity: 0.6;
+}
+#rAProgressBar .progress-bar.selected {
+    opacity: 1;
+}
+
+@media only screen and  (max-width : 992px) {
+    .col-xs-1 .page-button {
+        font-size: 20px;
+    }
+}
+

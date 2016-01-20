@@ -1,7 +1,8 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Home</%def>
 <%def name="content()">
-    <h1>Placeholder</h1>
+    <h3> Recent Activity </h3>
+    <p class="text-muted">Latest activities on your projects adjustable by date and category <p>
     <div id="recentActivityWidget">
         <div class="spinner-loading-wrapper">
             <div class="logo-spin logo-xl"></div>
