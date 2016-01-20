@@ -110,7 +110,17 @@ addons.addons.forEach(function(addonName) {
         for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
     }
 });
-fs.writeFileSync(staticPath('js/_allLogTexts.js'), 'var logActions = ' + JSON.stringify(mainLogs, null, 2) + ' \n module.exports = logActions;');
+// This function is needed because jshint doesn't like double quotes
+function objToString (obj) {
+    var str = '';
+    for (var p in obj) {
+        if (obj.hasOwnProperty(p)) {
+            str += '    \'' + p + '\' : ' + '\'' + obj[p] + '\', \n';
+        }
+    }
+    return str;
+}
+fs.writeFileSync(staticPath('js/_allLogTexts.js'), 'var logActions = {\n' + objToString(mainLogs) + '}; \n module.exports = logActions;');
 
 var resolve = {
     extensions: ['', '.es6.js', '.js', '.min.js'],

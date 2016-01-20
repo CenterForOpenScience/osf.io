@@ -59,8 +59,7 @@ class NodeSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     fork = ser.BooleanField(read_only=True, source='is_fork')
-    collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
-    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
+    collection = DevOnly(ser.BooleanField(read_only=True, source='is_collection'))
     tags = JSONAPIListField(child=NodeTagField(), required=False)
 
     # Public is only write-able by admins--see update method
@@ -341,7 +340,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         target_node_id = validated_data['_id']
         pointer_node = Node.load(target_node_id)
-        if not pointer_node or pointer_node.is_folder:
+        if not pointer_node or pointer_node.is_collection:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
                 detail='Target Node \'{}\' not found.'.format(target_node_id)

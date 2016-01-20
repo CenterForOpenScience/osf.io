@@ -35,7 +35,7 @@ def iter_children(file_node):
     to_go = [file_node]
     while to_go:
         for child in to_go.pop(0).children:
-            if child.is_folder:
+            if child.is_collection:
                 to_go.append(child)
             yield child
 

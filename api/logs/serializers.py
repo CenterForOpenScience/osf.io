@@ -40,6 +40,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     page = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
+    destination = NodeLogFileParamsSerializer(read_only=True)
     study = ser.CharField(read_only=True)
     tag = ser.CharField(read_only=True)
     tags = ser.CharField(read_only=True)
@@ -48,7 +49,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     title_original = ser.CharField(read_only=True)
     updated_fields = ser.ListField(read_only=True)
     version = ser.CharField(read_only=True)
-
+    citation_name = ser.CharField(read_only=True, source='citation.name')
 
 class NodeLogSerializer(JSONAPISerializer):
 
