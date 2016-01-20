@@ -447,7 +447,12 @@ def populate_conferences():
             print('{0} Conference already exists. Updating existing record...'.format(meeting))
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
-                setattr(conf, key, value)
+                if isinstance(value, dict):
+                    current = getattr(conf, key)
+                    current.update(value)
+                    setattr(conf, key, current)
+                else:
+                    setattr(conf, key, value)
             conf.save()
 
 
