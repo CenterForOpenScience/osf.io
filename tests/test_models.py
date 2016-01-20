@@ -35,7 +35,14 @@ from website.project.model import (
     Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo, MetaSchema, DraftRegistration
 )
-from website.util.permissions import CREATOR_PERMISSIONS, ADMIN, READ, WRITE, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from website.util.permissions import (
+    CREATOR_PERMISSIONS,
+    ADMIN,
+    READ,
+    WRITE,
+    DEFAULT_CONTRIBUTOR_PERMISSIONS,
+    expand_permissions,
+)
 from website.util import web_url_for, api_url_for
 from website.addons.wiki.exceptions import (
     NameEmptyError,
@@ -53,7 +60,7 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
     AuthUserFactory, DashboardFactory, FolderFactory,
-    NodeLicenseRecordFactory, DraftRegistrationFactory
+    NodeLicenseRecordFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -2105,6 +2112,45 @@ class TestNodeTraversals(OsfTestCase):
         reg = RegistrationFactory(project=proj)
         reg.delete_registration_tree(save=True)
         assert_false(proj.node__registrations)
+
+    def test_get_admin_contributors_recursive_with_duplicate_users(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        child.save()
+
+        grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
+
+        admins = list(parent.get_admin_contributors_recursive())
+        assert_equal(len(admins), 3)
+        admin_ids = [user._id for user, node in admins]
+        assert_in(self.user._id, admin_ids)
+        assert_in(self.viewer._id, admin_ids)
+
+        node_ids = [node._id for user, node in admins]
+        assert_in(parent._id, node_ids)
+
+    def test_get_admin_contributors_recursive_no_duplicates(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        child.save()
+
+        grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
+
+        admins = list(parent.get_admin_contributors_recursive(unique_users=True))
+        assert_equal(len(admins), 2)
+        admin_ids = [user._id for user, node in admins]
+        assert_in(self.user._id, admin_ids)
+        assert_in(self.viewer._id, admin_ids)
 
     def test_get_descendants_recursive(self):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)

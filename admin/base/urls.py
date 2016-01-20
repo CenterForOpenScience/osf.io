@@ -10,6 +10,7 @@ base_pattern = '^{}'.format(ADMIN_BASE)
 
 urlpatterns = [
     ### ADMIN ###
+    url(r'^project/', include('admin.pre_reg.urls', namespace='pre_reg')),
     url(base_pattern,
         include(patterns('',
                          url(r'^$', views.home, name='home'),

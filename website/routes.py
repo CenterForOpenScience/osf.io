@@ -214,13 +214,6 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/meetings/submissions/',
-            'get',
-            conference_views.conference_submissions,
-            json_renderer,
-        ),
-
-        Rule(
             '/presentations/',
             'get',
             conference_views.redirect_to_meetings,

@@ -19,6 +19,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/citations/$', views.RegistrationAlternativeCitationsList.as_view(), name=views.RegistrationAlternativeCitationsList.view_name),
     url(r'^(?P<node_id>\w+)/citations/(?P<citation_id>\w+)/$', views.RegistrationAlternativeCitationDetail.as_view(), name=views.RegistrationAlternativeCitationDetail.view_name),
     url(r'^(?P<node_id>\w+)/comments/$', views.RegistrationCommentsList.as_view(), name=views.RegistrationCommentsList.view_name),
+    url(r'^(?P<node_id>\w+)/logs/$', views.RegistrationLogList.as_view(), name=views.RegistrationLogList.view_name),
 ]
 
 # Routes only active in local/staging environments
