@@ -614,8 +614,17 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'aps2016': {
+        'name': '28th APS Annual Convention',
+        'info_url': 'http://www.psychologicalscience.org/convention',
+        'logo_url': 'http://www.psychologicalscience.org/redesign/wp-content/uploads/2015/03/APS_2016_Banner_990x157.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
-
 
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
