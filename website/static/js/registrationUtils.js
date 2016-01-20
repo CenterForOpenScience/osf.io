@@ -902,10 +902,18 @@ RegistrationEditor.prototype.init = function(draft) {
     self.lastSaved = ko.computed(function() {
         var t = self.lastSaveTime();
         if (t) {
-            return t.toGMTString();
+            return t.toLocaleString();
         } else {
             return 'never';
         }
+    });
+    self.lastSavedGMT = ko.computed(function() {
+       var t = self.lastSaveTime();
+       if (t) {
+            return t.toGMTString();
+       } else {
+            return 'never';
+       }
     });
 
     // Set currentPage to the first page
