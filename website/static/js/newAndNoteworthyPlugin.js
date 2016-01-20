@@ -49,35 +49,55 @@ var newAndNoteworthy = {
             url = nodeLink.embeds.target_node.data.relationships.contributors.links.related.href;
             var promise = m.request({method: 'GET', url : url, config: xhrconfig});
             promise.then(function(result){
-                var firstContrib = result.data[0].embeds.users.data.attributes.full_name;
+                var contribNames = [];
+                result.data.forEach(function (contrib){
+                    contribNames.push(contrib.embeds.users.data.attributes.family_name)
+                });
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;
-                self.noteworthyContributors[nodeId] = [firstContrib, numContrib]
+                self.noteworthyContributors[nodeId] = [contribNames, numContrib]
             })
         };
 
-        // Gets contrib full name for display
-        self.getFullName = function(node) {
-            return node.embeds.contributors.data[0].embeds.users.data.attributes.full_name
+        // Gets contrib family name for display
+        self.getFamilyName = function(i, node, type) {
+            if (type === 'new') {
+                return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
+            }
+            else {
+                return self.noteworthyContributors[node.id][0][i]
+            }
+
         };
 
         // Returns name if one contrib, or adds et al if > 1
-        self.contribNameFormat = function(name, number) {
+        self.contribNameFormat = function(node, number, type) {
             if (number === 1) {
-                    return name
+                return self.getFamilyName(0, node, type)
+            }
+            else if (number === 2) {
+                return self.getFamilyName(0, node, type) + ' and ' +
+                    self.getFamilyName(1, node, type)
+            }
+            else if (number === 3) {
+                return self.getFamilyName(0, node, type) + ', ' +
+                    self.getFamilyName(1, node, type) + ', and ' +
+                    self.getFamilyName(2, node, type)
             }
             else {
-                return name + ' et al'
+                return self.getFamilyName(0, node, type) + ', ' +
+                    self.getFamilyName(1, node, type) + ', ' +
+                    self.getFamilyName(2, node, type) + ' + ' + (number - 3)
             }
         };
 
         // Formats contrib names for display
         self.getContributors = function (type, node) {
             if (type === 'new') {
-                return self.contribNameFormat(self.getFullName(node), node.embeds.contributors.links.meta.total)
+                return self.contribNameFormat(node, node.embeds.contributors.links.meta.total, type)
             }
             else {
-                return self.contribNameFormat(self.noteworthyContributors[node.id][0], self.noteworthyContributors[node.id][1])
+                return self.contribNameFormat(node, self.noteworthyContributors[node.id][1], type)
             }
         };
 
@@ -164,8 +184,8 @@ var newAndNoteworthy = {
                 m('div', {class: 'col-sm-1'}),
                 m('div', {class: 'col-sm-11'}, m('h3', 'Discover Public Projects'))),
             m('div', {class: 'row'}, m('div', {class:'col-sm-10 col-sm-offset-1'},
-                m('div', {class: 'col-sm-6'}, [m('h4', 'New'), newProjectsTemplate() ]),
-                m('div', {class: 'col-sm-6'}, [m('h4', 'Noteworthy', noteworthyProjectsTemplate())])
+                m('div', {class: 'col-sm-6'}, [m('h4', 'New and Noteworthy'), newProjectsTemplate() ]),
+                m('div', {class: 'col-sm-6'}, [m('h4', 'Most Popular', noteworthyProjectsTemplate())])
             )),
             m('div', {class: 'row'},
                 m('div', {class: 'col-sm-1'}),
