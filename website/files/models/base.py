@@ -529,6 +529,7 @@ class File(FileNode):
         headers = {}
         if auth_header:
             headers['Authorization'] = auth_header
+
         resp = requests.get(
             self.generate_waterbutler_url(revision=revision, meta=True, **kwargs),
             headers=headers,
