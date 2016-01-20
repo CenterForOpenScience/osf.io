@@ -244,6 +244,8 @@ class SpamMixin(StoredObject):
         self.flag_spam()
         report = {'date': datetime.datetime.utcnow(), 'retracted': False}
         report.update(kwargs)
+        if 'text' not in report:
+            report['text'] = None
         self.reports[user._id] = report
         if save:
             self.save()

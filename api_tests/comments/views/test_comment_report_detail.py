@@ -19,7 +19,7 @@ class TestReportDetailView(ApiTestCase):
                 'type': 'comment_reports',
                 'attributes': {
                     'category': 'spam',
-                    'text': 'Spam is delicious.'
+                    'message': 'Spam is delicious.'
                 }
             }
         }
@@ -96,7 +96,12 @@ class TestReportDetailView(ApiTestCase):
     def test_public_node_logged_in_non_contributor_reporter_can_view_report_detail(self):
         project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory.build(node=project, user=project.creator)
-        comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.non_contributor._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.non_contributor._id)
         res = self.app.get(url, auth=self.non_contributor.auth)
