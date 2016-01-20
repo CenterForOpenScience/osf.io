@@ -19,10 +19,10 @@ var newAndNoteworthy = {
     controller: function() {
         var self = this;
         self.newNodes = m.prop([]);
-        self.noteworthyNodes = m.prop([]);
-        self.noteworthyContributors = {};
+        self.popularNodes = m.prop([]);
+        self.popularContributors = {};
 
-        // Load new nodes
+        // Load new and noteworthy nodes
         var newUrl = $osf.apiV2Url('nodes/', { query : { 'embed': 'contributors', 'sort': '-date_created'}});
         var newPromise = m.request({method: 'GET', url : newUrl, config: xhrconfig});
         newPromise.then(function(result){
@@ -32,20 +32,21 @@ var newAndNoteworthy = {
             return newPromise
         });
 
-        var noteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.noteworthy + '/node_links/', {});
-        var noteworthyPromise = m.request({method: 'GET', url: noteworthyUrl, config: xhrconfig});
-        noteworthyPromise.then(function(result){
-            var numNoteworthy = Math.min(result.data.length - 1, 4);
-            console.log(numNoteworthy);
-            for (var l=0; l <= numNoteworthy; l++) {
-                self.noteworthyNodes().push(result.data[l]);
-                self.fetchNoteworthyContributors(result.data[l]);
+        // Load popular nodes
+        var popularUrl = $osf.apiV2Url('nodes/' + window.contextVars.popular + '/node_links/', {});
+        var popularPromise = m.request({method: 'GET', url: popularUrl, config: xhrconfig});
+        popularPromise.then(function(result){
+            var numPopular = Math.min(result.data.length - 1, 4);
+            console.log(numPopular);
+            for (var l=0; l <= numPopular; l++) {
+                self.popularNodes().push(result.data[l]);
+                self.fetchPopularContributors(result.data[l]);
                   }
-            return noteworthyPromise
+            return popularPromise
         });
 
         // Additional API call to fetch node link contributors
-        self.fetchNoteworthyContributors = function(nodeLink) {
+        self.fetchPopularContributors = function(nodeLink) {
             url = nodeLink.embeds.target_node.data.relationships.contributors.links.related.href;
             var promise = m.request({method: 'GET', url : url, config: xhrconfig});
             promise.then(function(result){
@@ -55,7 +56,7 @@ var newAndNoteworthy = {
                 });
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;
-                self.noteworthyContributors[nodeId] = [contribNames, numContrib]
+                self.popularContributors[nodeId] = [contribNames, numContrib]
             })
         };
 
@@ -65,7 +66,7 @@ var newAndNoteworthy = {
                 return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
             }
             else {
-                return self.noteworthyContributors[node.id][0][i]
+                return self.popularContributors[node.id][0][i]
             }
 
         };
@@ -97,7 +98,7 @@ var newAndNoteworthy = {
                 return self.contribNameFormat(node, node.embeds.contributors.links.meta.total, type)
             }
             else {
-                return self.contribNameFormat(node, self.noteworthyContributors[node.id][1], type)
+                return self.contribNameFormat(node, self.popularContributors[node.id][1], type)
             }
         };
 
@@ -160,14 +161,14 @@ var newAndNoteworthy = {
             )
         }
 
-        function newProjectsTemplate () {
+        function newAndNoteworthyProjectsTemplate () {
             return ctrl.newNodes().map(function(node){
                 return nodeDisplay('new', node)
             })
 
         }
-        function noteworthyProjectsTemplate() {
-            return ctrl.noteworthyNodes().map(function(node){
+        function popularProjectsTemplate() {
+            return ctrl.popularNodes().map(function(node){
                 return nodeDisplay('noteworthy', node)
             })
 
@@ -184,8 +185,8 @@ var newAndNoteworthy = {
                 m('div', {class: 'col-sm-1'}),
                 m('div', {class: 'col-sm-11'}, m('h3', 'Discover Public Projects'))),
             m('div', {class: 'row'}, m('div', {class:'col-sm-10 col-sm-offset-1'},
-                m('div', {class: 'col-sm-6'}, [m('h4', 'New and Noteworthy'), newProjectsTemplate() ]),
-                m('div', {class: 'col-sm-6'}, [m('h4', 'Most Popular', noteworthyProjectsTemplate())])
+                m('div', {class: 'col-sm-6'}, [m('h4', 'New and Noteworthy'), newAndNoteworthyProjectsTemplate() ]),
+                m('div', {class: 'col-sm-6'}, [m('h4', 'Most Popular', popularProjectsTemplate())])
             )),
             m('div', {class: 'row'},
                 m('div', {class: 'col-sm-1'}),
