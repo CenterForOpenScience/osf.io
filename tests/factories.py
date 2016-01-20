@@ -247,7 +247,7 @@ class RegistrationFactory(AbstractNodeFactory):
             else:
                 reg.require_approval(reg.creator)
             reg.save()
-            reg.sanction.add_authorizer(reg.creator)
+            reg.sanction.add_authorizer(reg.creator, reg)
             reg.sanction.save()
 
         if archive:
@@ -480,10 +480,12 @@ class CommentFactory(ModularOdmFactory):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
         target = kwargs.pop('target', None) or node
+        content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
             user=user,
             target=target,
+            content=content,
             *args, **kwargs
         )
         return instance
@@ -493,10 +495,12 @@ class CommentFactory(ModularOdmFactory):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
         target = kwargs.pop('target', None) or node
+        content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
             user=user,
             target=target,
+            content=content,
             *args, **kwargs
         )
         instance.save()
