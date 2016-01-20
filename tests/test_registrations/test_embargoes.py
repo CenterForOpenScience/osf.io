@@ -48,6 +48,12 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         assert_equal(Embargo.find().count(), initial_count + 1)
 
+    def test_state_can_be_set_to_complete(self):
+        embargo = EmbargoFactory()
+        embargo.state = Embargo.COMPLETED
+        embargo.save()  # should pass validation
+        assert_equal(embargo.state, Embargo.COMPLETED)
+
     def test__initiate_embargo_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
         self.registration.contributors.append(unconfirmed_user)
