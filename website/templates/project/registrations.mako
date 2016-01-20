@@ -78,8 +78,8 @@
                 </div>
                 <small>
                 <p>Initiated by: <span data-bind="text: initiator.fullname"></span>
-                <p>Started: <span data-bind="text: initiated"></span></p>
-                <p>Last updated: <span data-bind="text: updated"></span></p>
+                <p>Started: <span data-bind="text: initiated.toLocaleString(), tooltip: {title: initiated.toGMTString()}"></span></p>
+                <p>Last updated: <span data-bind="text: updated.toLocaleString(), tooltip: {title: updated.toGMTString()}" ></span></p>
                 <span data-bind="if: requiresApproval">
                     <div data-bind="if: isPendingApproval">
                         <div class="draft-status-badge bg-warning"> Pending Review</div>
