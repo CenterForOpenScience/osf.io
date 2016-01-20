@@ -108,6 +108,12 @@ var LogWrap = {
         };
 
         self.getLogs(true, false);
+
+        $(window).resize(function(){
+            var canvas = document.getElementById('rACanvas');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
     },
     view: function(ctrl, args){
         var div = ctrl.div;
