@@ -4416,21 +4416,20 @@ class TestComments(OsfTestCase):
     def test_report_spam(self):
         user = UserFactory()
         time = datetime.datetime.utcnow()
-        self.comment.report_spam(user, time, category='spam', message='ads', save=True)
+        self.comment.report_spam(user, date=time, category='spam', text='ads', save=True)
         equivalent = {
-            'user': user._id,
             'date': time,
             'category': 'spam',
-            'message': 'ads',
+            'text': 'ads',
             'retracted': False
         }
-        assert_in(equivalent, self.comment.reports)
+        assert_in(user._id, self.comment.reports)
+        assert_equal(self.comment.reports[user._id], equivalent)
 
     def test_report_spam_own_comment(self):
         with assert_raises(ValueError):
             self.comment.report_spam(
                 self.comment.user,
-                datetime.datetime.utcnow(),
                 category='spam', text='ads',
                 save=True
             )
@@ -4439,52 +4438,46 @@ class TestComments(OsfTestCase):
         user = UserFactory()
         time = datetime.datetime.utcnow()
         self.comment.report_spam(
-            user, time, category='spam', message='ads', save=True
+            user, date=time, category='spam', text='ads', save=True
         )
         self.comment.retract_report(user, save=True)
         equivalent = {
-            'user': user._id,
             'date': time,
             'category': 'spam',
-            'message': 'ads',
+            'text': 'ads',
             'retracted': True
         }
-        assert_in(equivalent, self.comment.reports)
+        assert_in(user._id, self.comment.reports)
+        assert_equal(self.comment.reports[user._id], equivalent)
 
     def test_retract_report_not_reporter(self):
         reporter = UserFactory()
         non_reporter = UserFactory()
         time = datetime.datetime.utcnow()
         self.comment.report_spam(
-            reporter, time, category='spam', message='ads', save=True
+            reporter, date=time, category='spam', text='ads', save=True
         )
         equivalent = {
-            'user': reporter._id,
             'date': time,
             'category': 'spam',
-            'message': 'ads',
+            'text': 'ads',
             'retracted': False
         }
-        assert_in(equivalent, self.comment.reports)
+        assert_in(reporter._id, self.comment.reports)
+        assert_equal(self.comment.reports[reporter._id], equivalent)
 
-    def test_validate_reports_user(self):
-        self.comment.reports.append(dict(
-            user=None,
-            date=1,
-            category='spam',
-            message='ads',
-            retracted=False
-        ))
+    def test_validate_reports_bad_key(self):
+        self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
         with assert_raises(ValidationValueError):
             self.comment.save()
 
     def test_validate_reports_bad_type(self):
-        self.comment.reports.append('not a dict')
+        self.comment.reports[self.comment.user._id] = 'not a dict'
         with assert_raises(ValidationTypeError):
             self.comment.save()
 
     def test_validate_reports_bad_value(self):
-        self.comment.reports.append({'foo': 'bar'})
+        self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
         with assert_raises(ValidationValueError):
             self.comment.save()
 
