@@ -7,45 +7,54 @@ from modularodm.exceptions import NoResultsFound
 
 from framework.auth.decorators import must_be_logged_in
 
+from website.addons.base.signals import file_updated
 from website.files.models import FileNode, TrashedFileNode
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify
 from website.models import Comment
-from website.project.decorators import must_be_contributor_or_public, must_have_permission
+from website.project.decorators import must_be_contributor_or_public
 from website.project.model import Node
 from website.project.signals import comment_added
 from website import settings
 
 
-@must_be_logged_in
-@must_have_permission('write')
-def update_comment_root_target_file(auth, **kwargs):
-    data = request.get_json()
-    source = data.get('source')
-    destination = data.get('destination')
-    node = Node.load(source.get('nodeId'))
-    destination_node = Node.load(destination.get('nodeId'))
+@file_updated.connect
+def update_comment_root_target_file(self, node, event_type, payload, user=None):
+    if event_type == 'addon_file_moved' or event_type == 'addon_file_renamed':
+        source = payload['source']
+        destination = payload['destination']
+        source_node = Node.load(source['node']['_id'])
+        destination_node = node
 
-    if source.get('provider') == 'osfstorage':
-        try:
-            old_file = TrashedFileNode.find_one(Q('provider', 'eq', source.get('provider')) &
-                                                Q('node', 'eq', node) &
-                                                Q('path', 'eq', source.get('path')))
-        except NoResultsFound:
-            old_file = FileNode.load(source.get('path').strip('/'))
-    else:
-        old_file = FileNode.resolve_class(source.get('provider'), FileNode.FILE).get_or_create(node, source.get('path'))
+        if event_type == 'addon_file_renamed' and source.get('provider') == 'osfstorage':
+            return
 
-    new_file = FileNode.resolve_class(destination.get('provider'), FileNode.FILE).get_or_create(destination_node, destination.get('path'))
-    new_file.touch(
-        request.headers.get('Authorization'),
-        cookie=request.cookies.get(settings.COOKIE_NAME)
-    )
-    if node._id != destination_node._id:
-        Comment.update(Q('root_target', 'eq', old_file._id), data={'node': destination_node})
+        if source.get('provider') == 'osfstorage':
+            try:
+                old_file = TrashedFileNode.find_one(Q('provider', 'eq', source.get('provider')) &
+                                                    Q('node', 'eq', source_node) &
+                                                    Q('path', 'eq', source.get('path')))
+            except NoResultsFound:
+                old_file = FileNode.load(source.get('path').strip('/'))
+        else:
+            old_file = FileNode.resolve_class(source.get('provider'), FileNode.FILE).get_or_create(source_node, source.get('path'))
 
-    Comment.update(Q('root_target', 'eq', old_file._id), data={'root_target': new_file})
-    Comment.update(Q('target', 'eq', old_file._id), data={'target': new_file})
+        new_file = FileNode.resolve_class(destination.get('provider'), FileNode.FILE).get_or_create(destination_node, destination.get('path'))
+        new_file.touch(
+            request.headers.get('Authorization'),
+            cookie=request.cookies.get(settings.COOKIE_NAME)
+        )
+        if source_node._id != destination_node._id:
+            Comment.update(Q('root_target', 'eq', old_file._id), data={'node': destination_node})
+
+        Comment.update(Q('root_target', 'eq', old_file._id), data={'root_target': new_file})
+        Comment.update(Q('target', 'eq', old_file._id), data={'target': new_file})
+
+        # update node record of commented files
+        if old_file._id in source_node.commented_files:
+            destination_node.commented_files[new_file._id] = source_node.commented_files[old_file._id]
+            del source_node.commented_files[old_file._id]
+            source_node.save()
 
 
 @comment_added.connect
