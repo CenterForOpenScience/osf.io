@@ -227,7 +227,8 @@ ALL_MY_PROJECTS_ID = '-amp'
 ALL_MY_REGISTRATIONS_ID = '-amr'
 ALL_MY_PROJECTS_NAME = 'All my projects'
 ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
-NOTEWORTHY_LINKS_NODE = 'x7n5h'  # Temporary.  Needs to be set to public node in production.
+POPULAR_LINKS_NODE = 'x7n5h'  # Temporary.  Needs to be set to public node in production.
+NEW_AND_NOTEWORTHY_LINKS_NODE = 'mwsdy' # Temporary. Needs to be set to public node in production.
 
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.

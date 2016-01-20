@@ -63,7 +63,8 @@ def get_globals():
         'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
-        'noteworthy_links_node': settings.NOTEWORTHY_LINKS_NODE,
+        'noteworthy_links_node': settings.NEW_AND_NOTEWORTHY_LINKS_NODE,
+        'popular_links_node': settings.POPULAR_LINKS_NODE,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'api_v2_url': util.api_v2_url,  # URL function for templates
