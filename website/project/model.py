@@ -10,6 +10,7 @@ from dateutil.parser import parse as parse_date
 import urlparse
 from collections import OrderedDict
 import warnings
+import requests
 
 import pytz
 from flask import request
@@ -280,8 +281,11 @@ class Comment(GuidStoredObject):
         commented_files = File.find(Q('_id', 'in', node.commented_files.keys()))
         for file_obj in commented_files:
             if node.get_addon(file_obj.provider):
-                exists = file_obj and file_obj.touch(request.headers.get('Authorization'),
-                                                     cookie=request.cookies.get(settings.COOKIE_NAME))
+                try:
+                    exists = file_obj and file_obj.touch(request.headers.get('Authorization'),
+                                                         cookie=request.cookies.get(settings.COOKIE_NAME))
+                except requests.ConnectionError:
+                    return 0
                 if not exists:
                     Comment.update(Q('root_target', 'eq', file_obj), data={'root_target': None})
                     continue
