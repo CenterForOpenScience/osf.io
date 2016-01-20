@@ -376,8 +376,7 @@ var tbOptions = {
             } }, tb.options.removeIcon())
         ];
     },
-    hiddenFilterRows : ['tags'],
-    onselectrow : function (row) {console.log(row);}
+    hiddenFilterRows : ['tags']
 };
 
 var ProjectOrganizer = {

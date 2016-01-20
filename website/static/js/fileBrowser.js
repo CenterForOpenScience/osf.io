@@ -107,7 +107,6 @@ function _makeTree (flatData) {
             node_list[0].children.push(node_list[n.id]);
         }
     }
-    console.log(root, node_list);
     return root.children;
 }
 
@@ -248,13 +247,14 @@ var FileBrowser = {
         };
         // GETTING THE NODES
         self.updateList = function(linkObject, success, error){
-            self.refreshView(true);
             if(linkObject.data.systemCollection === 'nodes' && self.allProjectsLoaded()){
                 self.data(self.allProjects());
                 self.reload(true);
                 self.refreshView(false);
                 return;
             }
+            self.refreshView(true);
+            m.redraw();
             if (success === undefined){
                 success = self.updateListSuccess;
             }
@@ -377,7 +377,6 @@ var FileBrowser = {
                 var t2 = self.tags[tag];
                 self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : true }}, tag));
             }
-            console.log(self.data().data, self.users, self.tags);
         };
 
         // BREADCRUMBS
@@ -559,7 +558,6 @@ var Collections  = {
         args.activeFilter(self.collections()[0]);
 
         self.addCollection = function () {
-            console.log( self.newCollectionName());
             var url = $osf.apiV2Url('collections/', {});
             var data = {
                 'data': {
@@ -571,7 +569,6 @@ var Collections  = {
             };
             var promise = m.request({method : 'POST', url : url, config : xhrconfig, data : data});
             promise.then(function(result){
-                console.log(result);
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count;
                 self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
@@ -599,7 +596,6 @@ var Collections  = {
             return promise;
         };
         self.renameCollection = function () {
-            console.log(self.collectionMenuObject());
             var url = self.collectionMenuObject().item.data.node.links.self;
             var nodeId = self.collectionMenuObject().item.data.node.id;
             var title = self.collectionMenuObject().item.renamedLabel;
@@ -614,7 +610,6 @@ var Collections  = {
             };
             var promise = m.request({method : 'PATCH', url : url, config : xhrconfig, data : data});
             promise.then(function(result){
-                console.log(url, result);
                 self.collectionMenuObject().item.label = title;
                 m.redraw(true);
             });
@@ -625,7 +620,6 @@ var Collections  = {
             $('.fb-collections ul>li').droppable({
                 hoverClass: 'bg-color-hover',
                 drop: function( event, ui ) {
-                    console.log('dropped', event, ui, this);
                     var collection = self.collections()[$(this).attr('data-index')];
                     var dataArray = [];
                     // If multiple items are dragged they have to be selected to make it work
