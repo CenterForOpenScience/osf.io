@@ -2582,8 +2582,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
 
         # Node must have at least one registered admin user
-            # TODO: Move to validator or helper
-        admins = self.get_admin_contributors()
+        admins = self.get_admin_contributors(self.contributors)
         if not admins:
             raise ValueError('Must have at least one registered admin contributor')
 
@@ -2743,8 +2742,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 else:
                     to_remove.append(user)
 
-            # TODO: Move to validator or helper @jmcarp
-            admins = self.get_admin_contributors()
+            admins = self.get_admin_contributors(users)
             if users is None or not admins:
                 raise ValueError(
                     'Must have at least one registered admin contributor'
@@ -3293,13 +3291,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if node.has_permission(contrib, 'admin') and contrib.is_active
         }
 
-    def get_admin_contributors(self):
+    def get_admin_contributors(self, users):
         """Return a set of all admin contributors for this node and admin
         contributors on descendant nodes. Excludes contributors on node links and
         inactive users.
         """
         return [
-            user for user in self.contributors
+            user for user in users
             if self.has_permission(user, 'admin') and
             user.is_registered
             ]
