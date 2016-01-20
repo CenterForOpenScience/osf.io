@@ -90,7 +90,7 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['collection_id']
         return absolute_reverse(
-            'collections:node-pointer-detail',
+        ''    'collections:node-pointer-detail',
             kwargs={
                 'collection_id': node_id,
                 'node_link_id': obj._id
@@ -128,7 +128,7 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
         for node_id in diff['add']:
             node = Node.load(node_id)
             if not node:
-                raise exceptions.NotFound
+                raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
             nodes_to_add.append(node)
 
         return nodes_to_add, diff['remove'].values()
