@@ -21,13 +21,12 @@ var quickSearchProject = {
         self.nodes = m.prop([]); // Pending nodes waiting to be displayed
         self.displayedNodes = m.prop([]); // Nodes that are rendered
         self.nonMatchingNodes = m.prop([]); //Nodes that don't match search query
-        self.sortState = m.prop('dateDesc');
-        self.countDisplayed = m.prop();
-        self.next = m.prop();
-        self.loadingComplete = m.prop(false);
-        self.contributorMapping = {};
-        self.filter = m.prop();
-        self.totalLoaded = m.prop();
+        self.sortState = m.prop('dateDesc'); //How nodes are sorted - default is date descending - dateDesc
+        self.countDisplayed = m.prop(); // Number of nodes that are rendered.  'Load more' increases this by up to ten.
+        self.next = m.prop(); // URL for getting the next ten user nodes. When null, all nodes are loaded.
+        self.loadingComplete = m.prop(false); // True when all user nodes are loaded.
+        self.contributorMapping = {}; // Maps node id to list of contributors for searching
+        self.filter = m.prop(); // Search query from user
 
         // Load first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
@@ -40,7 +39,6 @@ var quickSearchProject = {
             });
             self.next(result.links.next);
             self.displayedNodes(self.nodes().splice(0, 10));
-            self.totalLoaded(self.displayedNodes().length)
         });
         promise.then(
             function(){
