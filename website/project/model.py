@@ -2348,6 +2348,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return '/project/{}/'.format(self._primary_key)
 
     @property
+    def linked_nodes_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/linked_nodes/'
+
+    @property
+    def linked_nodes_related_url(self):
+        return self.absolute_api_v2_url + 'linked_nodes/'
+
+    @property
     def csl(self):  # formats node information into CSL format for citation parsing
         """a dict in CSL-JSON schema
 
@@ -3451,13 +3459,16 @@ class Sanction(StoredObject):
     APPROVED = 'approved'
     # Rejected by at least one person
     REJECTED = 'rejected'
+    # Embargo has been completed
+    COMPLETED = 'completed'
 
     state = fields.StringField(
         default=UNAPPROVED,
         validate=validators.choice_in((
             UNAPPROVED,
             APPROVED,
-            REJECTED
+            REJECTED,
+            COMPLETED,
         ))
     )
 
@@ -3775,7 +3786,6 @@ class PreregCallbackMixin(object):
 class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
-    COMPLETED = 'completed'
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
 
