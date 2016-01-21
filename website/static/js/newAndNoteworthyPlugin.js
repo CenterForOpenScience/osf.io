@@ -125,21 +125,24 @@ var newAndNoteworthy = {
             location.href = '/search'
         };
 
-        self.addToolTip = function(text) {
-            $('[data-toggle="tooltip"]').tooltip();
-
+        self.addToolTip = function(line) {
+            var $line = $(line);
+            console.log(line.offsetWidth, line.scrollWidth);
+            if (line.offsetWidth < line.scrollWidth && !$line.attr('title')) {
+                $line.attr('title', $line.text())
+            }
         }
-
-
     },
     view : function(ctrl) {
         function nodeDisplay(node) {
-            return m('div', {class: 'row node-styling m-v-md m-r-sm', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
+            var title = ctrl.getTitle(node);
+            var description = ctrl.getDescription(node);
+            var contribs = ctrl.getContributors(node);
+            return m('div', {class: 'row node-styling m-v-xs m-h-xs', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
                 m('div', {class: 'col-sm-12'},
-                    m('h5', {'class': 'prevent-overflow', 'data-placement':"top", 'data-toggle': 'tooltip', 'title': ctrl.getTitle(node), onmouseenter: function(){ctrl.addToolTip(this)}}, m('em', ctrl.getTitle(node))),
-                    m('h5', {'class': 'prevent-overflow', 'data-placement':"top", 'data-toggle': 'tooltip', 'title': ctrl.getDescription(node)}, ctrl.getDescription(node)),
-                    m('div', m('h5', {class: 'contributors-bold f-w-xl prevent-overflow'}, 'Contributors: '), m('h5', {class: 'contributors-bold'}, ctrl.getContributors(node))
-                    )
+                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this)}}, m('em', ctrl.getTitle(node))),
+                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this)}},  ctrl.getDescription(node)),
+                    m('h5', {class: 'prevent-overflow'}, m('span', {'class': 'f-w-xl'}, 'Contributors: '), m('span',  ctrl.getContributors(node)))
                 )
             )
         }
