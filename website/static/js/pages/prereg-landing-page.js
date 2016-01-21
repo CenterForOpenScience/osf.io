@@ -43,7 +43,10 @@ $(function(){
         });
         promise.done(function(result){
             // loop through items and check for admin permission first
-            allNodes = allNodes.concat(result.data);
+            result.data.forEach(function(item){
+                item.formattedDate = new $osf.FormattableDate(item.attributes.date_modified);
+                allNodes.push(item);
+            });
             if(result.links.next){
                 collectProjects(result.links.next);
             }

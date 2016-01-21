@@ -40,7 +40,7 @@
 <% size = size or '' %>
 <div id="existingProject${size}" class="prereg-existing-project p-md osf-box box-round clearfix m-b-lg" style="display:none">
   <p>Preregister an existing project:</p>
-  <input id="projectSearch${size}"></input>
+  <input id="projectSearch${size}" class="form-control"></input>
 </div>
 </%def>
 
