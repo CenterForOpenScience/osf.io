@@ -49,6 +49,10 @@ class UserSerializer(JSONAPISerializer):
                                                       allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId'))
     researchGate = DevOnly(AllowMissing(ser.CharField(required=False, source='social.researchGate',
                                                       allow_blank=True, help_text='ResearchGate Account'), required=False, source='social.researchGate'))
+    academiaInstitution = DevOnly(AllowMissing(ser.CharField(required=False, source='social.academiaInstitution',
+                                                      allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution'))
+    academiaProfileID = DevOnly(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
+                                                      allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID'))
 
     links = LinksField(
         add_dev_only_items({
