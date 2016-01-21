@@ -18,7 +18,8 @@ def serialize_user(user):
 
 # TODO: Write and use APIv2 serializer for this
 def serialize_draft_registration(draft, json_safe=True):
-    if draft.approval.meta['registration_choice'] == EMBARGO:
+    registration_choice = draft.approval.meta.get('registration_choice', None)
+    if registration_choice == EMBARGO:
         time = parser.parse(draft.approval.meta['embargo_end_date'])
         embargo = iso8601format(time) if json_safe else time
     else:
