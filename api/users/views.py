@@ -432,16 +432,15 @@ class UserNodeLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, 
         query = [Q('params.node', 'eq', node._id) for node in nodes]
         return reduce(lambda x, y: x | y, query)
 
-
     def get_queryset(self):
         self.paginator.node_log_aggregates = self.get_aggregates
         return NodeLog.find(self.get_query_from_request())
 
     def get_aggregates(self):
         query = self.get_query_from_request()
-        query_files = Q('action', 'contains', 'file')
-        query_wiki = Q('action', 'contains', 'wiki')
-        query_comments = Q('action', 'contains', 'comment')
-        query_nodes = Q('action', 'contains', 'project')
+        query_files = Q('params.path', 'ne', None)  # Finds most files_added and file_updated
+        query_wiki = Q('action', 'eq', 'wiki_updated')
+        query_comments = Q('action', 'eq', 'comment_added')
+        query_nodes = Q('action', 'eq', 'project_created') | Q('action', 'eq', 'project_updated')
         return (NodeLog.find(query & query_comments)).count(), (NodeLog.find(query & query_nodes)).count(), \
                (NodeLog.find(query & query_wiki)).count(), (NodeLog.find(query & query_files)).count()
