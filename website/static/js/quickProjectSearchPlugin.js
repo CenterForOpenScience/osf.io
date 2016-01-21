@@ -194,17 +194,18 @@ var quickSearchProject = {
 
         // Sorts nodes depending on current sort state.
         self.sortBySortState = function () {
-            if (self.sortState() === 'alphaAsc') {
-                self.sortAlphabeticalAscending()
-            }
-            else if (self.sortState() === 'alphaDesc') {
-                self.sortAlphabeticalDescending()
-            }
-            else if (self.sortState() === 'dateAsc') {
-                self.sortDateAscending()
-            }
-            else {
-                self.sortDateDescending()
+            switch (self.sortState()) {
+                case 'alphaAsc':
+                    self.sortAlphabeticalAscending();
+                    break;
+                case 'alphaDesc':
+                    self.sortAlphabeticalDescending();
+                    break;
+                case 'dateAsc':
+                    self.sortDateAscending()
+                    break;
+                default:
+                    self.sortDateDescending()
             }
         };
 
