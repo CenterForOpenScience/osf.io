@@ -169,7 +169,6 @@
                     <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
                 </p>
                 <!-- ko if: social -->
-                <!-- <p>social.researchGate</p> -->
                 <ul class="list-inline">
                     <li data-bind="visible: social.personal">
                         <a data-bind="attr.href: social.personal">
