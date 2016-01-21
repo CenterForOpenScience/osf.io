@@ -221,7 +221,7 @@ def project_new_node(auth, node, **kwargs):
     else:
         # TODO: This function doesn't seem to exist anymore?
         status.push_errors_to_status(form.errors)
-    raise HTTPError(http.BAD_REQUEST, redirect_url=node.url + 'contributors/')
+    raise HTTPError(http.BAD_REQUEST, redirect_url=node.url)
 
 
 @must_be_logged_in
