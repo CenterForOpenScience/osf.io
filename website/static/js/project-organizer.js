@@ -56,7 +56,16 @@ function _poContributors(item) {
     }
 
     return contributorList.map(function (person, index, arr) {
-        var name = person.embeds.users.data.attributes.family_name;
+        var name;
+        var familyName = person.embeds.users.data.attributes.family_name;
+        var givenName = person.embeds.users.data.attributes.given_name;
+        if (familyName) {
+            name = familyName;
+        } else if(givenName){
+            name = givenName;
+        } else {
+            name = 'A Contributor'
+        }
         var comma;
         if (index === 0) {
             comma = '';
@@ -367,8 +376,7 @@ var tbOptions = {
             } }, tb.options.removeIcon())
         ];
     },
-    hiddenFilterRows : ['tags'],
-    onselectrow : function (row) {console.log(row);}
+    hiddenFilterRows : ['tags']
 };
 
 var ProjectOrganizer = {

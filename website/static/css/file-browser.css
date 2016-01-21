@@ -119,6 +119,7 @@
     padding: 0 0 1px 0;
     /* width is set as inline style in file-browser.js because it changes based on information panel visibility */
     border-left: 1px solid #eee;
+    position: relative; /* need this for absolute refresh positioning */
 }
 
 /* Information Panel */
