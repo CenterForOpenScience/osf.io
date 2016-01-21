@@ -126,6 +126,7 @@ class NodeSerializer(JSONAPISerializer):
     logs = RelationshipField(
         related_view='nodes:node-logs',
         related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_logs_count'}
     )
 
     class Meta:
@@ -143,6 +144,10 @@ class NodeSerializer(JSONAPISerializer):
         else:
             auth = Auth(user)
         return auth
+
+    def get_logs_count(self, obj):
+        logs = obj.logs
+        return len(logs)
 
     def get_node_count(self, obj):
         auth = self.get_user_auth(self.context['request'])
