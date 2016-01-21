@@ -14,6 +14,7 @@ $(function(){
         var input = $(target).find('input').first().focus();
     });
 
+    // New projects
     $('#newProject, #newProjectXS').click( function() {
         var title = $(this).parent().find('.new-project-title').val();
         if (!title) {
@@ -29,9 +30,13 @@ $(function(){
         });
     });
 
+    // Existing Nodes
     var allNodes = [];
-    var allRegistrations = [];
-
+    function onSelectProject (event, data) {
+        var link = data.links.html + 'registrations/';
+        $('#existingProject .projectRegButton').removeClass('disabled').attr('href', link);
+        $('#existingProjectXS .projectRegButton').removeClass('disabled').attr('href', link);
+    }
     // Get all projects with multiple calls to get all pages
     function collectProjects (url) {
         var promise = $.ajax({
@@ -51,8 +56,8 @@ $(function(){
                 collectProjects(result.links.next);
             }
             else {
-                $('#projectSearch').projectsSelect({data : allNodes});
-                $('#projectSearchXS').projectsSelect({data : allNodes});
+                $('#projectSearch').projectsSelect({data : allNodes, complete : onSelectProject});
+                $('#projectSearchXS').projectsSelect({data : allNodes, complete : onSelectProject});
             }
         });
         promise.fail(function(xhr, textStatus, error) {
@@ -61,17 +66,19 @@ $(function(){
             });
         });
     }
-
-
-    // Get nodes and apply bindings
     var nodeLink = $osf.apiV2Url('users/me/nodes/', { query : { 'page[size]' : 100}});
     collectProjects(nodeLink);
 
-    // Activate autocomplete for draft registrations
+    function onSelectRegistrations (event, data) {
+        $('#existingPrereg .regDraftButton').removeClass('disabled').attr('href', data.url);
+        $('#existingPreregXS .regDraftButton').removeClass('disabled').attr('href', data.url);
+    }
+
+    // Existing Draft Registrations
     $.getJSON('/api/v1/prereg/draft_registrations/').then(function(response){
         if (response.draftRegistrations.length) {
-            $osf.applyBindings({}, '#existingPrereg');
-            $osf.applyBindings({}, '#existingPreregXS');
+            $('#regDraftSearch').projectsSelect({data : response.draftRegistrations, type : 'registration', complete : onSelectRegistrations});
+            $('#regDraftSearchXS').projectsSelect({data : response.draftRegistrations, type : 'registration', complete : onSelectRegistrations});
         }
     });
 });

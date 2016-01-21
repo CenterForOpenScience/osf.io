@@ -25,14 +25,9 @@
 <% size = size or '' %>
 <div id="existingPrereg${size}" class="prereg-exisitng-prereg p-md osf-box box-round clearfix m-b-lg" style="display:none">
   <p>Go to an existing preregistration:</p>
-  <form>
-    <osf-draft-registrations-search
-       params="placeholder: 'Type to search for a project',
-               data: '${api_url_for("prereg_draft_registrations")}',
+    <div><input id="regDraftSearch${size}" class="form-control"></input></div>
+    <div><a href="#" class="regDraftButton btn btn-primary disabled">Preregister</a></div>
 
-               submitText: 'Edit draft'">
-    </osf-draft-registrations-search>
-  </form>
 </div>
 </%def>
 
@@ -40,7 +35,8 @@
 <% size = size or '' %>
 <div id="existingProject${size}" class="prereg-existing-project p-md osf-box box-round clearfix m-b-lg" style="display:none">
   <p>Preregister an existing project:</p>
-  <input id="projectSearch${size}" class="form-control"></input>
+  <div><input id="projectSearch${size}" class="form-control"></input></div>
+  <div><a href="#" class="projectRegButton btn btn-primary disabled">Preregister</a></div>
 </div>
 </%def>
 

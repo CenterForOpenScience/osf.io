@@ -12,6 +12,7 @@ var MAX_RESULTS = 14;
         // Default options
         var settings = $.extend({
             data : [],
+            type : 'project',
             complete: null
         }, options);
 
@@ -54,12 +55,19 @@ var MAX_RESULTS = 14;
                 minLength: 0
             },
             {
-                // name: 'projectSearch' + nodeType + namespace,
                 displayKey: function(data) {
+                    if(settings.type === 'registration'){
+                        return data.value.node.title;
+                    }
                     return data.value.attributes.title;
                 },
                 templates: {
                     suggestion: function(data) {
+                        if(settings.type === 'registration'){
+                            return '<p>' + data.value.node.title + '</p> ' +
+                            '<p><small class="m-l-md text-muted">'+
+                            'modified ' + data.value.dateUpdated +   '</small></p>';
+                        }
                         return '<p>' + data.value.attributes.title + '</p> ' +
                             '<p><small class="m-l-md text-muted">'+
                             'modified ' + data.value.formattedDate.local +   '</small></p>';
@@ -68,9 +76,11 @@ var MAX_RESULTS = 14;
                 source: substringMatcher(settings.data)
             });
 
-        this.bind('typeahead:selected', function(obj, datum) {
-            // Call the parent viewModel's onSelected
-            console.log('selected');
+        this.bind('typeahead:selected', function(event, data) {
+            console.log('selected', event, data);
+            if ( $.isFunction( settings.complete ) ) {
+                settings.complete( event, data.value );
+            }
         });
 
         return this;
