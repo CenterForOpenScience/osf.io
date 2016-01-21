@@ -22,16 +22,6 @@ var newAndNoteworthy = {
         self.popularNodes = m.prop([]);
         self.contributorsMapping = {};
 
-        //// Load new and noteworthy nodes
-        //var newUrl = $osf.apiV2Url('nodes/', { query : { 'embed': 'contributors', 'sort': '-date_created'}});
-        //var newPromise = m.request({method: 'GET', url : newUrl, config: xhrconfig});
-        //newPromise.then(function(result){
-        //    for (var i = 0; i <= 4; i++) {
-        //        self.newAndNoteworthyNodes().push(result.data[i])
-        //    }
-        //    return newPromise
-        //});
-
         // Load new and noteworthy nodes
         var newAndNoteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.newAndNoteworthy + '/node_links/', {});
         var newAndNoteworthyPromise = m.request({method: 'GET', url: newAndNoteworthyUrl, config: xhrconfig});
