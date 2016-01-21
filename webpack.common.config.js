@@ -84,6 +84,10 @@ var entry = {
     ]
 };
 
+// Collect log text from addons
+var mainLogs = require(staticPath('js/logActionsList.js'));
+var addonLog;
+
 // Collect adddons endpoints. If an addon's static folder has
 // any of the following files, it will be added as an entry point
 // and output to website/static/public/js/<addon-name>/files.js
@@ -98,7 +102,24 @@ addons.addons.forEach(function(addonName) {
             entry[entryPoint] =  modulePath;
         }
     });
+    var logTextPath = path.join(__dirname, 'website', 'addons',
+        addonName, 'static', addonName + 'LogActionList.js');
+    if(fs.existsSync(logTextPath)){
+        addonLog = require(logTextPath);
+        for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
+    }
 });
+// This function is needed because jshint doesn't like double quotes
+function objToString (obj) {
+    var str = '';
+    for (var p in obj) {
+        if (obj.hasOwnProperty(p)) {
+            str += '    \'' + p + '\' : ' + '\'' + obj[p] + '\', \n';
+        }
+    }
+    return str;
+}
+fs.writeFileSync(staticPath('js/_allLogTexts.js'), 'var logActions = {\n' + objToString(mainLogs) + '}; \n module.exports = logActions;');
 
 var resolve = {
     extensions: ['', '.es6.js', '.js', '.min.js'],

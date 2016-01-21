@@ -46,6 +46,7 @@ from website.files.models import OsfStorageFileNode
 from website.models import Node, Pointer, Comment, NodeLog
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
+from api.base.utils import default_node_list_query
 
 
 class NodeMixin(object):
@@ -64,7 +65,7 @@ class NodeMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder or node.is_registration:
+        if node.is_collection or node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -167,7 +168,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         tags           array of strings   list of tags that describe the node
         registration   boolean            is this a registration?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -237,13 +237,13 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
+            Q('is_collection', 'ne', True) &
             Q('is_registration', 'ne', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -362,7 +362,6 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Relationships
@@ -766,7 +765,6 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         tags               array of strings   list of tags that describe the registered node
         fork               boolean            is this project a fork?
         registration       boolean            has this project been registered?
-        dashboard          boolean            is this registered node visible on the user dashboard?
         public             boolean            has this registration been made publicly-visible?
         retracted          boolean            has this registration been retracted?
         date_registered    iso8601 timestamp  timestamp that the registration was created
@@ -835,7 +833,6 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -902,10 +899,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return (
-            Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
-        )
+        return default_node_list_query()
 
     # overrides ListBulkCreateJSONAPIView
     def get_queryset(self):

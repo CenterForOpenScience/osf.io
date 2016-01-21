@@ -51,16 +51,16 @@
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to dashboard folder',
+                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-folder-open"></i>
+                               <i class="fa fa-bookmark"></i>
                                <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
-                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from dashboard folder',
+                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-folder-open"></i>
+                               <i class="fa fa-bookmark"></i>
                                <i class="fa fa-minus"></i>
                            </a>
                         <!-- /ko -->

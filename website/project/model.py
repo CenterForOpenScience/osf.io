@@ -715,15 +715,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     visible_contributor_ids = fields.StringField(list=True)
 
     # Project Organization
-    is_dashboard = fields.BooleanField(default=False, index=True)
-    is_folder = fields.BooleanField(default=False, index=True)
-
-    # Expanded: Dictionary field mapping user IDs to expand state of this node:
-    # {
-    #   'icpnw': True,
-    #   'cdi38': False,
-    # }
-    expanded = fields.DictionaryField(default={}, validate=validate_user)
+    is_bookmark_collection = fields.BooleanField(default=False, index=True)
+    is_collection = fields.BooleanField(default=False, index=True)
 
     is_deleted = fields.BooleanField(default=False, index=True)
     deleted_date = fields.DateTimeField(index=True)
@@ -1025,26 +1018,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.is_admin_parent(auth.user)
         )
 
-    def is_expanded(self, user=None):
-        """Return if a user is has expanded the folder in the dashboard view.
-        Must specify one of (`auth`, `user`).
-
-        :param User user: User object to check
-        :returns: Boolean if the folder is expanded.
-        """
-        if user._id in self.expanded:
-            return self.expanded[user._id]
-        else:
-            return False
-
-    def expand(self, user=None):
-        self.expanded[user._id] = True
-        self.save()
-
-    def collapse(self, user=None):
-        self.expanded[user._id] = False
-        self.save()
-
     def is_derived_from(self, other, attr):
         derived_from = getattr(self, attr)
         while True:
@@ -1321,7 +1294,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 continue
             # Title and description have special methods for logging purposes
             if key == 'title':
-                self.set_title(title=value, auth=auth, save=False)
+                if not self.is_bookmark_collection:
+                    self.set_title(title=value, auth=auth, save=False)
+                else:
+                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
@@ -1390,13 +1366,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         first_save = not self._is_loaded
 
-        if first_save and self.is_dashboard:
-            existing_dashboards = self.find_for_user(
-                self.creator,
-                Q('is_dashboard', 'eq', True)
+        if first_save and self.is_bookmark_collection:
+            existing_bookmark_collections = Node.find(
+                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
             )
-            if existing_dashboards.count() > 0:
-                raise NodeStateError("Only one dashboard allowed per user.")
+            if existing_bookmark_collections.count() > 0:
+                raise NodeStateError("Only one bookmark collection allowed per user.")
+
+        # Bookmark collections are always named 'Bookmarks'
+        if self.is_bookmark_collection and self.title != 'Bookmarks':
+            self.title = 'Bookmarks'
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
@@ -1444,7 +1423,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
-        if self.is_folder or self.archiving:
+        if self.is_collection or self.archiving:
             need_update = False
         if need_update:
             self.update_search()
@@ -1585,16 +1564,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_registration:
             raise NodeStateError('Cannot add a pointer to a registration')
 
-        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
-        # Also, no pointers to the dashboard project, which could cause loops as well.
+        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the project organizer.
         already_pointed = node.pointed
-        if node.is_folder and len(already_pointed) > 0:
+        if node.is_collection and len(already_pointed) > 0:
             raise ValueError(
                 'Pointer to folder {0} already exists. Only one pointer to any given folder allowed'.format(node._id)
             )
-        if node.is_dashboard:
+        if node.is_bookmark_collection:
             raise ValueError(
-                'Pointer to dashboard ({0}) not allowed.'.format(node._id)
+                'Pointer to bookmark collection ({0}) not allowed.'.format(node._id)
             )
 
         # Append pointer
@@ -1757,7 +1735,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ret = []
         for each in self.pointed:
             pointer_node = get_pointer_parent(each)
-            if not folders and pointer_node.is_folder:
+            if not folders and pointer_node.is_collection:
                 continue
             if not deleted and pointer_node.is_deleted:
                 continue
@@ -1938,16 +1916,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
         # TODO: rename "date" param - it's shadowing a global
 
-        if self.is_dashboard:
-            raise NodeStateError("Dashboards may not be deleted.")
+        if self.is_bookmark_collection:
+            raise NodeStateError("Bookmark collections may not be deleted.")
 
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
-        #if this is a folder, remove all the folders that this is pointing at.
-        if self.is_folder:
+        #if this is a collection, remove all the collections that this is pointing at.
+        if self.is_collection:
             for pointed in self.nodes_pointer:
-                if pointed.node.is_folder:
+                if pointed.node.is_collection:
                     pointed.node.remove_node(auth=auth)
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
@@ -2100,7 +2078,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'User {} does not have permission '
                 'to register this node'.format(auth.user._id)
             )
-        if self.is_folder:
+        if self.is_collection:
             raise NodeStateError("Folders may not be registered")
 
         when = datetime.datetime.utcnow()
@@ -2328,7 +2306,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def absolute_api_v2_url(self):
         if self.is_registration:
             return absolute_reverse('registrations:registration-detail', kwargs={'node_id': self._id})
-        if self.is_folder:
+        if self.is_collection:
             return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
 
@@ -3496,13 +3474,6 @@ class Sanction(StoredObject):
     # Sanction subclasses must have an initiated_by field
     # initiated_by = fields.ForeignField('user', backref='initiated')
 
-    # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
-    # {
-    #   'b3k97': {
-    #     'has_approved': False,
-    #     'approval_token': 'Pew7wj1Puf7DENUPFPnXSwa1rf3xPN',
-    #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
-    # }
     approval_state = fields.DictionaryField()
 
     def __repr__(self):
@@ -3557,8 +3528,8 @@ class TokenApprovableSanction(Sanction):
         :return Boolean: True if user is allowed to be an authorizer else False
         """
         return True
-
     def add_authorizer(self, user, node, approved=False, save=False):
+
         """Add an admin user to this Sanction's approval state.
 
         :param User user: User to add.

@@ -18,7 +18,7 @@ def get_projects(user):
             Q('category', 'eq', 'project') &
             Q('is_registration', 'eq', False) &
             Q('is_deleted', 'eq', False) &
-            Q('is_folder', 'eq', False)
+            Q('is_collection', 'eq', False)
         )
     ))
 
