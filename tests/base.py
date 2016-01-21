@@ -39,13 +39,11 @@ from website.project.model import (
 )
 from website import settings
 
-from website.addons.base.signals import file_updated
 from website.addons.wiki.model import NodeWikiPage
 
 import website.models
 from website.signals import ALL_SIGNALS
 from website.project.signals import contributor_added
-from website.project.views.comment import update_comment_root_target_file
 from website.app import init_app
 from website.addons.base import AddonConfig
 from website.project.views.contributor import notify_added_contributor
@@ -164,8 +162,7 @@ class AppTestCase(unittest.TestCase):
 
     DISCONNECTED_SIGNALS = {
         # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests
-        contributor_added: [notify_added_contributor],
-        file_updated: [update_comment_root_target_file]
+        contributor_added: [notify_added_contributor]
     }
 
     def setUp(self):
