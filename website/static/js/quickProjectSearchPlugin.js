@@ -304,17 +304,7 @@ var quickSearchProject = {
                 }
             }
         };
-
-        // Colors node div and changes cursor to pointer on hover
-        self.mouseOver = function (node) {
-            node.style.backgroundColor='#E0EBF3';
-            node.style.cursor = 'pointer';
-        };
-
-        self.mouseOut = function (node) {
-            node.style.backgroundColor='#fcfcfc';
-        };
-
+        
         self.clearSearch = function () {
             document.getElementById('searchQuery').value='';
             self.filter(document.getElementById('searchQuery').value);
@@ -354,50 +344,50 @@ var quickSearchProject = {
     view : function(ctrl) {
         function loadMoreButton() {
             if (ctrl.nodes().length !== 0){
-                return m('button', {class: 'col-sm-12 text-muted', onclick: function() {
+                return m('button', {'class': 'col-sm-12 text-muted', onclick: function() {
                         ctrl.loadUpToTen();
                 }},
-                m('i', {class: 'fa fa-caret-down load-nodes'}));
+                m('i', {'class': 'fa fa-caret-down load-nodes'}));
             }
         }
 
         function sortAlphaAsc() {
             if (ctrl.loadingComplete()) {
-                return m('button', {id: 'alphaAsc', class: 'not-selected', onclick: function() {
+                return m('button', {id: 'alphaAsc', 'class': 'not-selected', onclick: function() {
                     ctrl.sortState('alphaAsc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
-                    m('i', {class: 'fa fa-angle-up'}));
+                    m('i', {'class': 'fa fa-angle-up'}));
             }
         }
 
         function sortAlphaDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {id: 'alphaDesc', class: 'not-selected', onclick: function() {
+                return m('button', {id: 'alphaDesc', 'class': 'not-selected', onclick: function() {
                     ctrl.sortState('alphaDesc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
-                m('i', {class: 'fa fa-angle-down'}));
+                m('i', {'class': 'fa fa-angle-down'}));
             }
         }
 
         function sortDateAsc(){
             if (ctrl.loadingComplete()){
-                 return m('button', {id: 'dateAsc', class: 'not-selected', onclick: function() {
+                 return m('button', {id: 'dateAsc', 'class': 'not-selected', onclick: function() {
                      ctrl.sortState('dateAsc');
                      ctrl.sortNodesAndModifyDisplay();
                  }},
-                 m('i', {class: 'fa fa-angle-up'}));
+                 m('i', {'class': 'fa fa-angle-up'}));
             }
         }
 
         function sortDateDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {id: 'dateDesc', class: 'selected', onclick: function() {
+                return m('button', {id: 'dateDesc', 'class': 'selected', onclick: function() {
                     ctrl.sortState('dateDesc');
                     ctrl.sortNodesAndModifyDisplay();
                }},
-                m('i', {class: 'fa fa-angle-down'}));
+                m('i', {'class': 'fa fa-angle-down'}));
             }
         }
 
@@ -406,16 +396,16 @@ var quickSearchProject = {
             if (ctrl.loadingComplete()){
                 var direction = ctrl.preSelectDirection();
                 if (direction === 'Asc') {
-                    return m('button', {id: 'Asc', class: 'selected', onclick: function() {
+                    return m('button', {id: 'Asc', 'class': 'selected', onclick: function() {
                          ctrl.sortDirectionGivenField(this);
                          }},
-                         m('i', {class: 'fa fa-angle-up'}));
+                         m('i', {'class': 'fa fa-angle-up'}));
                 }
                 else {
-                    return m('button', {id: 'Asc', class: 'not-selected', onclick: function() {
+                    return m('button', {id: 'Asc', 'class': 'not-selected', onclick: function() {
                          ctrl.sortDirectionGivenField(this);
                          }},
-                         m('i', {class: 'fa fa-angle-up'}));
+                         m('i', {'class': 'fa fa-angle-up'}));
 
                 }
             }
@@ -426,16 +416,16 @@ var quickSearchProject = {
             if (ctrl.loadingComplete()){
                 var direction = ctrl.preSelectDirection();
                 if (direction === 'Desc') {
-                    return m('button', {id: 'Desc', class: 'selected', onclick: function() {
+                    return m('button', {id: 'Desc', 'class': 'selected', onclick: function() {
                          ctrl.sortDirectionGivenField(this);
                          }},
-                         m('i', {class: 'fa fa-angle-down'}));
+                         m('i', {'class': 'fa fa-angle-down'}));
                 }
                 else {
-                    return m('button', {id: 'Desc', class: 'not-selected', onclick: function() {
+                    return m('button', {id: 'Desc', 'class': 'not-selected', onclick: function() {
                          ctrl.sortDirectionGivenField(this);
                          }},
-                         m('i', {class: 'fa fa-angle-down'}));
+                         m('i', {'class': 'fa fa-angle-down'}));
                 }
             }
         }
@@ -453,24 +443,24 @@ var quickSearchProject = {
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div', {class : 'input-group'}, [
-                    m('span', {class: 'input-group-addon'}, m('i', {class: 'fa fa-search'})),
-                    m('input[type=search]', {class: 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {
+                return m('div', {'class' : 'input-group'}, [
+                    m('span', {'class': 'input-group-addon'}, m('i', {'class': 'fa fa-search'})),
+                    m('input[type=search]', {'class': 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {
                         ctrl.quickSearch();}
                     }),
-                    m('span', {class: 'input-group-addon', onclick: function() {
+                    m('span', {'class': 'input-group-addon', onclick: function() {
                         ctrl.clearSearch();
-                    }},  m('button', m('i', {class: 'fa fa-times'})))
+                    }},  m('button', m('i', {'class': 'fa fa-times'})))
                 ]);
             }
         }
 
         function displayNodes() {
             if (ctrl.displayedNodes().length === 0 && ctrl.filter() != null) {
-                return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
-                    m('div', {class: 'row'}, [
-                        m('div', {class: 'col-sm-1'}),
-                        m('div', {class: 'col-sm-11'},[m('p', {class :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
+                return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-10 col-sm-offset-1'},
+                    m('div', {'class': 'row'}, [
+                        m('div', {'class': 'col-sm-1'}),
+                        m('div', {'class': 'col-sm-11'},[m('p', {'class' :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
                     ])
                 ));
             }
@@ -483,43 +473,43 @@ var quickSearchProject = {
 
         function projectView(project) {
             console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
-            return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
-                m('div', {class: 'row node-styling',  onmouseover: function(){ctrl.mouseOver(this);}, onmouseout: function(){ctrl.mouseOut(this);}, onclick: function(){{ctrl.nodeDirect(project);
+            return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
+                m('div', {'class': 'row node-styling', onclick: function(){{ctrl.nodeDirect(project);
                 }}}, [
-                    m('div', {class: 'col-sm-7 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
-                    m('div', {class: 'col-sm-3 col-md-3 col-lg-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
-                    m('div', {class: 'col-sm-2 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
+                    m('div', {'class': 'col-sm-7 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
+                    m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
+                    m('div', {'class': 'col-sm-2 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
                 ])
             ));
         }
 
         function resultsFound(){
-            return m('div', {class: 'container'}, [
-                m('div', {class: 'row'}, [
+            return m('div', {'class': 'container'}, [
+                m('div', {'class': 'row'}, [
                     m('div', {'class': 'col-sm-1'}),
                     m('div', {'class': 'col-sm-11'}, m('h3', 'My Projects'))
                 ]),
-                m('div', {class: 'row'},
-                    m('div', {class: 'col-sm-3'}),
-                    m('div', {class: 'col-sm-6 m-b-md text-center'}, [
+                m('div', {'class': 'row'},
+                    m('div', {'class': 'col-sm-3'}),
+                    m('div', {'class': 'col-sm-6 m-b-md text-center'}, [
                         searchBar(),
-                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('div', {class:'logo-spin logo-sm m-r-lg'}), 'Loading projects...')
+                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('div', {'class':'logo-spin logo-sm m-r-lg'}), 'Loading projects...')
                     ]),
-                    m('div', {class: 'col-sm-3'})),
+                    m('div', {'class': 'col-sm-3'})),
 
-                m('div', {class: 'row'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
-                    m('div', {class: 'row node-col-headers'}, [
-                        m('div', {class: 'col-sm-7 col-md-6 col-lg-5 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
-                        m('div', {class: 'col-sm-3 col-md-3 col-lg-4 f-w-xl p-v-xs'}, 'Contributors'),
-                        m('div', {class: 'col-sm-2 col-md-3 col-lg-3 f-w-xl p-v-xs'}, 'Modified', m('span', {class: 'sort-group'}, sortDateAsc(), sortDateDesc()))]
+                m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
+                    m('div', {'class': 'row node-col-headers'}, [
+                        m('div', {'class': 'col-sm-7 col-md-6 col-lg-5 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
+                        m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 f-w-xl p-v-xs'}, 'Contributors'),
+                        m('div', {'class': 'col-sm-2 col-md-3 col-lg-3 f-w-xl p-v-xs'}, 'Modified', m('span', {'class': 'sort-group'}, sortDateAsc(), sortDateDesc()))]
                     )
                 )),
 
-                m('div', {class: 'row'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
-                    m('div', {class: 'row node-sort-dropdown'}, [
-                        m('div', {class: 'col-sm-12 p-v-xs, f-w-xl'},
+                m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
+                    m('div', {'class': 'row node-sort-dropdown'}, [
+                        m('div', {'class': 'col-sm-12 p-v-xs, f-w-xl'},
                             m('label', [m('span', 'Order by: '),
-                                m('select', {class: 'form-control', id: 'sortDropDown', onchange: function(){ctrl.sortFieldGivenDirection(this);}},
+                                m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(){ctrl.sortFieldGivenDirection(this);}},
                                     defaultSelected()),
                                 ascending(), descending()]
                             )
@@ -527,23 +517,23 @@ var quickSearchProject = {
                     ))
                 ),
                 displayNodes(),
-                m('div', {class: 'row'}, [
-                    m('div', {class: 'col-sm-5'}),
-                    m('div', {class: 'col-sm-2'}, loadMoreButton()),
-                    m('div', {class: 'col-sm-5'})
+                m('div', {'class': 'row'}, [
+                    m('div', {'class': 'col-sm-5'}),
+                    m('div', {'class': 'col-sm-2'}, loadMoreButton()),
+                    m('div', {'class': 'col-sm-5'})
                 ])
             ]);
         }
 
         if (ctrl.displayedNodes().length === 0 && ctrl.filter() == null) {
-            return m('div', {class: 'container'}, [
-                m('div', {class: 'row'}, [
+            return m('div', {'class': 'container'}, [
+                m('div', {'class': 'row'}, [
                     m('div', {'class': 'col-sm-1'}),
                     m('div', {'class': 'col-sm-11'}, m('h3', 'My Projects'))
                 ]),
-                m('div', {class: 'row m-v-md'},
-                    m('div', {class: 'col-sm-1'}),
-                    m('div', {class: 'col-sm-11'}, m('h4', 'You have no projects. Go here to create one.'))
+                m('div', {'class': 'row m-v-md'},
+                    m('div', {'class': 'col-sm-1'}),
+                    m('div', {'class': 'col-sm-11'}, m('h4', 'You have no projects. Go here to create one.'))
             )]
         );
         }
