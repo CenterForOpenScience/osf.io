@@ -80,9 +80,17 @@ class NodeSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     fork = ser.BooleanField(read_only=True, source='is_fork')
-    collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
-    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
+    collection = DevOnly(ser.BooleanField(read_only=True, source='is_collection'))
     tags = JSONAPIListField(child=NodeTagField(), required=False)
+    template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
+                                  help_text='Specify a node id for a node you would like to use as a template for the '
+                                            'new node. Templating is like forking, except that you do not copy the '
+                                            'files, only the project structure. Some information is changed on the top '
+                                            'level project by submitting the appropriate fields in the request body, '
+                                            'and some information will not change. By default, the description will '
+                                            'be cleared and the project will be made private.')
+    current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
+                                                                   'for the current user on this node.')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
@@ -150,6 +158,13 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'},
     )
 
+    def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return ["read"]
+        else:
+            return obj.get_permissions(user=user)
+
     class Meta:
         type_ = 'nodes'
 
@@ -188,7 +203,14 @@ class NodeSerializer(JSONAPISerializer):
         return Comment.find_unread(user=user, node=obj)
 
     def create(self, validated_data):
-        node = Node(**validated_data)
+        if 'template_from' in validated_data:
+            template_from = validated_data.pop('template_from')
+            template_node = Node.load(key=template_from)
+            validated_data.pop('creator')
+            changed_data = {template_from: validated_data}
+            node = template_node.use_as_template(auth=self.get_user_auth(self.context['request']), changes=changed_data)
+        else:
+            node = Node(**validated_data)
         try:
             node.save()
         except ValidationValueError as e:
@@ -362,7 +384,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         target_node_id = validated_data['_id']
         pointer_node = Node.load(target_node_id)
-        if not pointer_node or pointer_node.is_folder:
+        if not pointer_node or pointer_node.is_collection:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
                 detail='Target Node \'{}\' not found.'.format(target_node_id)

@@ -63,6 +63,7 @@ def get_globals():
         'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
+        'noteworthy_links_node': settings.NOTEWORTHY_LINKS_NODE,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'api_v2_url': util.api_v2_url,  # URL function for templates
@@ -172,6 +173,8 @@ def make_url_map(app):
     ### Base ###
 
     process_rules(app, [
+
+        Rule('/home/', 'get', website_views.home, OsfWebRenderer('home.mako')),
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
         Rule('/reproducibility/', 'get',
@@ -294,19 +297,7 @@ def make_url_map(app):
             json_renderer,
         )
     ], prefix='/api/v1')
-
-    process_rules(app, [
-        Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
-        Rule(
-            [
-                '/dashboard/<nid>',
-                '/dashboard/',
-            ],
-            'get', website_views.get_dashboard, json_renderer),
-    ], prefix='/api/v1')
-
     ### Metadata ###
-
     process_rules(app, [
 
         Rule(
@@ -745,7 +736,6 @@ def make_url_map(app):
 
         # # TODO: Add API endpoint for tags
         # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
-        Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
         Rule('/project/new/<pid>/beforeTemplate/', 'get',
              project_views.node.project_before_template, json_renderer),
 
@@ -1011,15 +1001,6 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
-        Rule([
-            '/project/<pid>/expand/',
-            '/project/<pid>/node/<nid>/expand/',
-        ], 'post', project_views.node.expand, json_renderer),
-        Rule([
-            '/project/<pid>/collapse/',
-            '/project/<pid>/node/<nid>/collapse/',
-        ], 'post', project_views.node.collapse, json_renderer),
-
         Rule(
             [
                 '/project/<pid>/pointer/',
@@ -1071,23 +1052,6 @@ def make_url_map(app):
             project_views.node.remove_pointer_from_folder,
             json_renderer,
         ),
-        Rule(
-            [
-                '/folder/<pid>/pointers/',
-            ],
-            'delete',
-            project_views.node.remove_pointers_from_folder,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/folder/<pid>',
-            ],
-            'delete',
-            project_views.node.delete_folder,
-            json_renderer,
-        ),
-        Rule('/folder/', 'put', project_views.node.add_folder, json_renderer),
         Rule([
             '/project/<pid>/get_summary/',
             '/project/<pid>/node/<nid>/get_summary/',
@@ -1097,9 +1061,6 @@ def make_url_map(app):
             '/project/<pid>/get_children/',
             '/project/<pid>/node/<nid>/get_children/',
         ], 'get', project_views.node.get_children, json_renderer),
-        Rule([
-            '/project/<pid>/get_folder_pointers/'
-        ], 'get', project_views.node.get_folder_pointers, json_renderer),
         Rule([
             '/project/<pid>/get_forks/',
             '/project/<pid>/node/<nid>/get_forks/',

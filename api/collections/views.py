@@ -44,7 +44,7 @@ class CollectionMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a non-collection through a collection endpoint, we return a 404
-        if not node.is_folder:
+        if not node.is_collection:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -132,12 +132,12 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'eq', True)
+            Q('is_collection', 'eq', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -324,7 +324,6 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
         tags           array of strings   list of tags that describe the node
         registration   boolean            is this is a registration?
         collection     boolean            is this node a collection of other nodes?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -364,7 +363,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
         return [
             pointer.node for pointer in
             self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_folder
+            if not pointer.node.is_deleted and not pointer.node.is_collection
         ]
 
     # overrides APIView
@@ -438,7 +437,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         return [
             pointer for pointer in
             self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_folder
+            if not pointer.node.is_deleted and not pointer.node.is_collection
         ]
 
     # Overrides BulkDestroyJSONAPIView

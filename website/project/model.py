@@ -715,15 +715,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     visible_contributor_ids = fields.StringField(list=True)
 
     # Project Organization
-    is_dashboard = fields.BooleanField(default=False, index=True)
-    is_folder = fields.BooleanField(default=False, index=True)
-
-    # Expanded: Dictionary field mapping user IDs to expand state of this node:
-    # {
-    #   'icpnw': True,
-    #   'cdi38': False,
-    # }
-    expanded = fields.DictionaryField(default={}, validate=validate_user)
+    is_bookmark_collection = fields.BooleanField(default=False, index=True)
+    is_collection = fields.BooleanField(default=False, index=True)
 
     is_deleted = fields.BooleanField(default=False, index=True)
     deleted_date = fields.DateTimeField(index=True)
@@ -1025,26 +1018,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.is_admin_parent(auth.user)
         )
 
-    def is_expanded(self, user=None):
-        """Return if a user is has expanded the folder in the dashboard view.
-        Must specify one of (`auth`, `user`).
-
-        :param User user: User object to check
-        :returns: Boolean if the folder is expanded.
-        """
-        if user._id in self.expanded:
-            return self.expanded[user._id]
-        else:
-            return False
-
-    def expand(self, user=None):
-        self.expanded[user._id] = True
-        self.save()
-
-    def collapse(self, user=None):
-        self.expanded[user._id] = False
-        self.save()
-
     def is_derived_from(self, other, attr):
         derived_from = getattr(self, attr)
         while True:
@@ -1321,7 +1294,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 continue
             # Title and description have special methods for logging purposes
             if key == 'title':
-                self.set_title(title=value, auth=auth, save=False)
+                if not self.is_bookmark_collection:
+                    self.set_title(title=value, auth=auth, save=False)
+                else:
+                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'is_public':
@@ -1390,13 +1366,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         first_save = not self._is_loaded
 
-        if first_save and self.is_dashboard:
-            existing_dashboards = self.find_for_user(
-                self.creator,
-                Q('is_dashboard', 'eq', True)
+        if first_save and self.is_bookmark_collection:
+            existing_bookmark_collections = Node.find(
+                Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
             )
-            if existing_dashboards.count() > 0:
-                raise NodeStateError("Only one dashboard allowed per user.")
+            if existing_bookmark_collections.count() > 0:
+                raise NodeStateError("Only one bookmark collection allowed per user.")
+
+        # Bookmark collections are always named 'Bookmarks'
+        if self.is_bookmark_collection and self.title != 'Bookmarks':
+            self.title = 'Bookmarks'
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
@@ -1444,7 +1423,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
-        if self.is_folder or self.archiving:
+        if self.is_collection or self.archiving:
             need_update = False
         if need_update:
             self.update_search()
@@ -1585,16 +1564,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_registration:
             raise NodeStateError('Cannot add a pointer to a registration')
 
-        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
-        # Also, no pointers to the dashboard project, which could cause loops as well.
+        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the project organizer.
         already_pointed = node.pointed
-        if node.is_folder and len(already_pointed) > 0:
+        if node.is_collection and len(already_pointed) > 0:
             raise ValueError(
                 'Pointer to folder {0} already exists. Only one pointer to any given folder allowed'.format(node._id)
             )
-        if node.is_dashboard:
+        if node.is_bookmark_collection:
             raise ValueError(
-                'Pointer to dashboard ({0}) not allowed.'.format(node._id)
+                'Pointer to bookmark collection ({0}) not allowed.'.format(node._id)
             )
 
         # Append pointer
@@ -1757,7 +1735,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ret = []
         for each in self.pointed:
             pointer_node = get_pointer_parent(each)
-            if not folders and pointer_node.is_folder:
+            if not folders and pointer_node.is_collection:
                 continue
             if not deleted and pointer_node.is_deleted:
                 continue
@@ -1938,16 +1916,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
         # TODO: rename "date" param - it's shadowing a global
 
-        if self.is_dashboard:
-            raise NodeStateError("Dashboards may not be deleted.")
+        if self.is_bookmark_collection:
+            raise NodeStateError("Bookmark collections may not be deleted.")
 
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
-        #if this is a folder, remove all the folders that this is pointing at.
-        if self.is_folder:
+        #if this is a collection, remove all the collections that this is pointing at.
+        if self.is_collection:
             for pointed in self.nodes_pointer:
-                if pointed.node.is_folder:
+                if pointed.node.is_collection:
                     pointed.node.remove_node(auth=auth)
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
@@ -2100,7 +2078,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'User {} does not have permission '
                 'to register this node'.format(auth.user._id)
             )
-        if self.is_folder:
+        if self.is_collection:
             raise NodeStateError("Folders may not be registered")
 
         when = datetime.datetime.utcnow()
@@ -2328,7 +2306,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def absolute_api_v2_url(self):
         if self.is_registration:
             return absolute_reverse('registrations:registration-detail', kwargs={'node_id': self._id})
-        if self.is_folder:
+        if self.is_collection:
             return absolute_reverse('collections:collection-detail', kwargs={'collection_id': self._id})
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
 
@@ -3202,9 +3180,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         retraction.save()  # Save retraction so it has a primary key
         self.retraction = retraction
         self.save()  # Set foreign field reference Node.retraction
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
-        for admin in admins:
-            retraction.add_authorizer(admin)
+        admins = self.get_admin_contributors_recursive()
+        for (admin, node) in admins:
+            retraction.add_authorizer(admin, node)
         retraction.save()  # Save retraction approval state
         return retraction
 
@@ -3253,9 +3231,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         embargo.save()  # Save embargo so it has a primary key
         self.embargo = embargo
         self.save()  # Set foreign field reference Node.embargo
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
-        for admin in admins:
-            embargo.add_authorizer(admin)
+        admins = self.get_admin_contributors_recursive()
+        for (admin, node) in admins:
+            embargo.add_authorizer(admin, node)
         embargo.save()  # Save embargo's approval_state
         return embargo
 
@@ -3290,6 +3268,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
+    def get_admin_contributors_recursive(self, *args, **kwargs):
+        """Return a set of all (admin, node) tuples for this node and
+        descendant nodes. Excludes contributors on node links and inactive users.
+        """
+        return {
+            (contrib, node)
+            for node in self.node_and_primary_descendants(*args, **kwargs)
+            for contrib in node.contributors
+            if node.has_permission(contrib, 'admin') and contrib.is_active
+        }
+
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME
         approval = RegistrationApproval(
@@ -3300,9 +3289,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         approval.save()  # Save approval so it has a primary key
         self.registration_approval = approval
         self.save()  # Set foreign field reference Node.registration_approval
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
-        for admin in admins:
-            approval.add_authorizer(admin)
+        admins = self.get_admin_contributors_recursive()
+        for (admin, node) in admins:
+            approval.add_authorizer(admin, node=node)
         approval.save()  # Save approval's approval_state
         return approval
 
@@ -3467,13 +3456,6 @@ class Sanction(StoredObject):
     # Sanction subclasses must have an initiated_by field
     # initiated_by = fields.ForeignField('user', backref='initiated')
 
-    # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
-    # {
-    #   'b3k97': {
-    #     'has_approved': False,
-    #     'approval_token': 'Pew7wj1Puf7DENUPFPnXSwa1rf3xPN',
-    #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
-    # }
     approval_state = fields.DictionaryField()
 
     def __repr__(self):
@@ -3528,12 +3510,20 @@ class TokenApprovableSanction(Sanction):
         :return Boolean: True if user is allowed to be an authorizer else False
         """
         return True
+    def add_authorizer(self, user, node, approved=False, save=False):
 
-    def add_authorizer(self, user, approved=False, save=False):
+        """Add an admin user to this Sanction's approval state.
+
+        :param User user: User to add.
+        :param Node registration: The pending registration node.
+        :param bool approved: Whether `user` has approved.
+        :param bool save: Whether to save this object.
+        """
         valid = self._validate_authorizer(user)
         if valid and user._id not in self.approval_state:
             self.approval_state[user._id] = {
                 'has_approved': approved,
+                'node_id': node._id,
                 'approval_token': tokens.encode(
                     {
                         'user_id': user._id,
@@ -3700,8 +3690,8 @@ class EmailApprovableSanction(TokenApprovableSanction):
         else:
             raise NotImplementedError
 
-    def add_authorizer(self, user, **kwargs):
-        super(EmailApprovableSanction, self).add_authorizer(user, **kwargs)
+    def add_authorizer(self, user, node, **kwargs):
+        super(EmailApprovableSanction, self).add_authorizer(user, node, **kwargs)
         self.stashed_urls[user._id] = {
             'view': self._view_url(user._id),
             'approve': self._approval_url(user._id),
@@ -3805,20 +3795,25 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         }
 
     def _approval_url_context(self, user_id):
-        approval_token = self.approval_state.get(user_id, {}).get('approval_token')
+        user_approval_state = self.approval_state.get(user_id, {})
+        approval_token = user_approval_state.get('approval_token')
         if approval_token:
             registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', registration._id)
             return {
-                'node_id': registration._id,
+                'node_id': node_id,
                 'token': approval_token,
             }
 
     def _rejection_url_context(self, user_id):
-        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
+        user_approval_state = self.approval_state.get(user_id, {})
+        rejection_token = user_approval_state.get('rejection_token')
         if rejection_token:
-            registration = self._get_registration()
+            root_registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', root_registration._id)
+            registration = Node.load(node_id)
             return {
-                'node_id': registration._id,
+                'node_id': registration.registered_from,
                 'token': rejection_token,
             }
 
@@ -3850,10 +3845,6 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
                 'embargo_end_date': self.end_date,
             })
         return context
-
-    def _validate_authorizer(self, user):
-        registration = self._get_registration()
-        return registration.has_permission(user, ADMIN)
 
     def _on_reject(self, user):
         parent_registration = self._get_registration()
@@ -3932,20 +3923,25 @@ class Retraction(EmailApprovableSanction):
         }
 
     def _approval_url_context(self, user_id):
-        approval_token = self.approval_state.get(user_id, {}).get('approval_token')
+        user_approval_state = self.approval_state.get(user_id, {})
+        approval_token = user_approval_state.get('approval_token')
         if approval_token:
-            registration = Node.find_one(Q('retraction', 'eq', self))
+            root_registration = Node.find_one(Q('retraction', 'eq', self))
+            node_id = user_approval_state.get('node_id', root_registration._id)
             return {
-                'node_id': registration._id,
+                'node_id': node_id,
                 'token': approval_token,
             }
 
     def _rejection_url_context(self, user_id):
-        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
+        user_approval_state = self.approval_state.get(user_id, {})
+        rejection_token = user_approval_state.get('rejection_token')
         if rejection_token:
-            registration = Node.find_one(Q('retraction', 'eq', self))
+            root_registration = Node.find_one(Q('retraction', 'eq', self))
+            node_id = user_approval_state.get('node_id', root_registration._id)
+            registration = Node.load(node_id)
             return {
-                'node_id': registration._id,
+                'node_id': registration.registered_from._id,
                 'token': rejection_token,
             }
 
@@ -4009,9 +4005,11 @@ class Retraction(EmailApprovableSanction):
             )
             parent_registration.embargo.save()
         # Ensure retracted registration is public
-        auth = Auth(self.initiated_by)
+        # Pass auth=None because the registration initiator may not be
+        # an admin on components (component admins had the opportunity
+        # to disapprove the retraction by this point)
         for node in parent_registration.node_and_primary_descendants():
-            node.set_privacy('public', auth=auth, save=True)
+            node.set_privacy('public', auth=None, save=True, log=False)
             node.update_search()
 
     def approve_retraction(self, user, token):
@@ -4045,20 +4043,25 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         }
 
     def _approval_url_context(self, user_id):
-        approval_token = self.approval_state.get(user_id, {}).get('approval_token')
+        user_approval_state = self.approval_state.get(user_id, {})
+        approval_token = user_approval_state.get('approval_token')
         if approval_token:
             registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', registration._id)
             return {
-                'node_id': registration._id,
+                'node_id': node_id,
                 'token': approval_token,
             }
 
     def _rejection_url_context(self, user_id):
+        user_approval_state = self.approval_state.get(user_id, {})
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            registration = self._get_registration()
+            root_registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', root_registration._id)
+            registration = Node.load(node_id)
             return {
-                'node_id': registration._id,
+                'node_id': registration.registered_from._id,
                 'token': rejection_token,
             }
 
@@ -4109,10 +4112,12 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         self.state = Sanction.APPROVED
         register = self._get_registration()
         registered_from = register.registered_from
-        auth = Auth(self.initiated_by)
-        register.set_privacy('public', auth, log=False)
+        # Pass auth=None because the registration initiator may not be
+        # an admin on components (component admins had the opportunity
+        # to disapprove the registration by this point)
+        register.set_privacy('public', auth=None, log=False)
         for child in register.get_descendants_recursive(lambda n: n.primary):
-            child.set_privacy('public', auth, log=False)
+            child.set_privacy('public', auth=None, log=False)
         # Accounts for system actions where no `User` performs the final approval
         auth = Auth(user) if user else None
         registered_from.add_log(

@@ -182,12 +182,12 @@ class ProjectFactory(AbstractNodeFactory):
     category = 'project'
 
 
-class FolderFactory(ProjectFactory):
-    is_folder = True
+class CollectionFactory(ProjectFactory):
+    is_collection = True
 
 
-class DashboardFactory(FolderFactory):
-    is_dashboard = True
+class BookmarkCollectionFactory(CollectionFactory):
+    is_bookmark_collection = True
 
 
 class NodeFactory(AbstractNodeFactory):
@@ -247,7 +247,7 @@ class RegistrationFactory(AbstractNodeFactory):
             else:
                 reg.require_approval(reg.creator)
             reg.save()
-            reg.sanction.add_authorizer(reg.creator)
+            reg.sanction.add_authorizer(reg.creator, reg)
             reg.sanction.save()
 
         if archive:
