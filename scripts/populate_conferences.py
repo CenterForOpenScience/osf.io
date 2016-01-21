@@ -563,6 +563,14 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': False,
         'talk': False,
+        'field_names': {
+            'submission1': 'poster',
+            'submission2': 'study',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'studies',
+            'meeting_title_type': 'Studies',
+            'add_submission': 'studies',
+        }
     },
     'ASCERM2016': {
         'name': 'ASCE Rocky Mountain Student Conference 2016',
@@ -645,7 +653,12 @@ def populate_conferences():
         except ModularOdmException:
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
-                setattr(conf, key, value)
+                if isinstance(value, dict):
+                    current = getattr(conf, key)
+                    current.update(value)
+                    setattr(conf, key, current)
+                else:
+                    setattr(conf, key, value)
             conf.admins = admin_objs
             changed_fields = conf.save()
             if changed_fields:
