@@ -32,20 +32,23 @@ button {
     .node-col-headers {
         display: none;
     }
+
+    .sm-new-and-noteworthy {
+        display: none;
+    }
 }
 
 @media screen and (min-width: 768px) {
     .node-sort-dropdown {
         display: none;
     }
+    .xs-new-and-noteworthy {
+        display: none
+    }
 }
 
 label {
     font-weight: normal;
-}
-
-h5.contributors-bold {
-    display: inline;
 }
 
 .conferences-and-meetings {

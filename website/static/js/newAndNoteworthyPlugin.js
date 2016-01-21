@@ -144,17 +144,36 @@ var newAndNoteworthy = {
             )
         }
 
-        function newAndNoteworthyProjectsTemplate () {
+        function populateNodesSmallScreen () {
+            var formattedNodes = [];
+            formattedNodes.push(
+                m('div', {class: 'row sm-new-and-noteworthy'}, m('div', {class:'col-sm-10 col-sm-offset-1'},
+                    m('div', {class: 'col-sm-6'}, m('h4', 'New and Noteworthy')),
+                    m('div', {class: 'col-sm-6'}, m('h4', 'Most Popular')))
+            ));
+            for (var i = 0; i <= ctrl.popularNodes().length - 1; i++) {
+                var newNoteworthy = ctrl.newAndNoteworthyNodes()[i];
+                var popular = ctrl.popularNodes()[i];
+                formattedNodes.push(m('div', {'class': 'row sm-new-and-noteworthy'},
+                    m('div', {'class': 'col-sm-10 col-sm-offset-1'},
+                        m('div', {class: 'col-sm-6'}, nodeDisplay(newNoteworthy)),
+                        m('div', {class: 'col-sm-6'}, nodeDisplay(popular))
+                    )
+                ))
+            }
+            return formattedNodes
+        }
+
+        function newAndNoteworthyProjectsTemplateXSScreen () {
             return ctrl.newAndNoteworthyNodes().map(function(node){
                 return nodeDisplay(node)
             })
-
         }
-        function popularProjectsTemplate() {
+
+        function popularProjectsTemplateXSScreen () {
             return ctrl.popularNodes().map(function(node){
                 return nodeDisplay(node)
             })
-
         }
 
         function findMoreProjectsButton () {
@@ -167,10 +186,12 @@ var newAndNoteworthy = {
             m('div', {class: 'row'},
                 m('div', {class: 'col-sm-1'}),
                 m('div', {class: 'col-sm-11'}, m('h3', 'Discover Public Projects'))),
-            m('div', {class: 'row'}, m('div', {class:'col-sm-10 col-sm-offset-1'},
-                m('div', {class: 'col-sm-6'}, [m('h4', 'New and Noteworthy'), newAndNoteworthyProjectsTemplate() ]),
-                m('div', {class: 'col-sm-6'}, [m('h4', 'Most Popular', popularProjectsTemplate())])
+
+            m('div', {class: 'row xs-new-and-noteworthy'}, m('div', {class:'col-sm-10 col-sm-offset-1'},
+                m('div', {class: 'col-sm-6'}, [m('h4', 'New and Noteworthy')]), newAndNoteworthyProjectsTemplateXSScreen(),
+                m('div', {class: 'col-sm-6'}, [m('h4', 'Most Popular')], popularProjectsTemplateXSScreen ())
             )),
+            populateNodesSmallScreen(),
             m('div', {class: 'row'},
                 m('div', {class: 'col-sm-1'}),
                 m('div', {class: 'col-sm-10 text-center'}, findMoreProjectsButton()),
@@ -182,4 +203,3 @@ var newAndNoteworthy = {
 };
 
 module.exports = newAndNoteworthy;
-
