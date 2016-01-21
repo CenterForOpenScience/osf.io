@@ -3451,13 +3451,16 @@ class Sanction(StoredObject):
     APPROVED = 'approved'
     # Rejected by at least one person
     REJECTED = 'rejected'
+    # Embargo has been completed
+    COMPLETED = 'completed'
 
     state = fields.StringField(
         default=UNAPPROVED,
         validate=validators.choice_in((
             UNAPPROVED,
             APPROVED,
-            REJECTED
+            REJECTED,
+            COMPLETED,
         ))
     )
 
@@ -3775,7 +3778,6 @@ class PreregCallbackMixin(object):
 class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
-    COMPLETED = 'completed'
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
 
