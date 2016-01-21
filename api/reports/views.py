@@ -1,31 +1,21 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
-
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 from api.base.exceptions import Gone
-from api.base.filters import ODMFilterMixin
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
-from api.comments.permissions import (
-    CanCommentOrPublic,
-    CommentDetailPermissions,
-    CommentReportsPermissions
-)
-from api.comments.serializers import (
-    CommentSerializer,
-    CommentDetailSerializer,
-    CommentReportSerializer,
-    CommentReportDetailSerializer,
-    CommentReport
+from api.reports.permissions import ReportsPermissions
+from api.reports.serializers import (
+    ReportSerializer,
+    ReportDetailSerializer,
+    Report
 )
 from framework.auth.oauth_scopes import CoreScopes
-from website.project.model import Comment
+
 from api.comments.views import CommentMixin
 
 
-class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin):
+class ReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin):
     """List of reports made for a comment. *Writeable*.
 
     Paginated list of reports for a comment. Each resource contains the full representation of the
@@ -80,14 +70,14 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        CommentReportsPermissions,
+        ReportsPermissions,
         base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.COMMENT_REPORTS_READ]
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
-    serializer_class = CommentReportSerializer
+    serializer_class = ReportSerializer
 
     view_category = 'comments'
     view_name = 'comment-reports'
@@ -98,12 +88,12 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
         reports = comment.reports
         serialized_reports = []
         if user_id in reports:
-            report = CommentReport(user_id, reports[user_id]['category'], reports[user_id]['text'])
+            report = Report(user_id, reports[user_id]['category'], reports[user_id]['text'])
             serialized_reports.append(report)
         return serialized_reports
 
 
-class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
+class ReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     """Details about a specific comment report. *Writeable*.
 
     ###Permissions
@@ -164,14 +154,14 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        CommentReportsPermissions,
+        ReportsPermissions,
         base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.COMMENT_REPORTS_READ]
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
-    serializer_class = CommentReportDetailSerializer
+    serializer_class = ReportDetailSerializer
     view_category = 'comments'
     view_name = 'report-detail'
 
@@ -186,7 +176,7 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
             raise PermissionDenied("Not authorized to comment on this project.")
 
         if reporter_id in reports:
-            return CommentReport(user_id, reports[user_id]['category'], reports[user_id]['text'])
+            return Report(user_id, reports[user_id]['category'], reports[user_id]['text'])
         else:
             raise Gone(detail='The requested comment report is no longer available.')
 
