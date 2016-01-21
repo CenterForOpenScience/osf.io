@@ -35,7 +35,7 @@ var quickSearchProject = {
             self.countDisplayed(result.data.length);
             result.data.forEach(function (node) {
                 self.nodes().push(node);
-                self.retrieveContributors(node)
+                self.retrieveContributors(node);
             });
             self.next(result.links.next);
             self.displayedNodes(self.nodes().splice(0, 10));
@@ -43,11 +43,11 @@ var quickSearchProject = {
         promise.then(
             function(){
                 if (self.next()) {
-                    self.recursiveNodes(self.next())
+                    self.recursiveNodes(self.next());
                 }
                 else {
                     self.loadingComplete(true);
-                    m.redraw()
+                    m.redraw();
                 }
             }
         );
@@ -55,43 +55,44 @@ var quickSearchProject = {
         // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
             if (self.nodes().length > 0) {
-                m.redraw()
+                m.redraw();
             }
              var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
                 nextPromise.then(function(result){
                     result.data.forEach(function(node){
                         self.nodes().push(node);
-                        self.retrieveContributors(node)
+                        self.retrieveContributors(node);
                     });
                     self.next(result.links.next);
                     console.log(self.next());
                     if (self.next()) {
-                        self.recursiveNodes(self.next())
+                        self.recursiveNodes(self.next());
                     }
                     else {
                         self.loadingComplete(true);
-                        m.redraw()
+                        m.redraw();
                     }
-        })};
+                });
+        };
 
         // When 'load more' button pressed, loads up to 10 nodes
         self.loadUpToTen = function () {
             var requested = self.nodes().splice(0, 10);
             for (var i = 0; i < requested.length; i++) {
-                self.displayedNodes().push(requested[i])
+                self.displayedNodes().push(requested[i]);
             }
             self.countDisplayed(self.displayedNodes().length);
-            return self.displayedNodes()
+            return self.displayedNodes();
         };
 
         // If < 10 contribs, map node id to contrib names. Otherwise, make a call to get all contribs.
         self.retrieveContributors = function(node) {
             if (node.embeds.contributors.links.meta.total > 10) {
-                self.pullOverTenContributorNames(node)
+                self.pullOverTenContributorNames(node);
             }
             else {
                 var contributors = node.embeds.contributors;
-                self.mapNodeToContributors(node, contributors)
+                self.mapNodeToContributors(node, contributors);
                 }
         };
 
@@ -100,8 +101,8 @@ var quickSearchProject = {
             var url = $osf.apiV2Url('nodes/' + node.id + '/contributors/', { query : { 'page[size]': 1000 }});
             var promise = m.request({method: 'GET', url : url, config: xhrconfig, background : true});
             promise.then(function(result){
-                self.mapNodeToContributors(node, result)
-            })
+                self.mapNodeToContributors(node, result);
+            });
         };
 
         // Maps node id to list of contrib names for later searching
@@ -109,50 +110,49 @@ var quickSearchProject = {
             var contributorList = [];
             contributors.data.forEach(function(contrib){
                 fullName = contrib.embeds.users.data.attributes.full_name;
-                contributorList.push(fullName)
-
+                contributorList.push(fullName);
             });
-            self.contributorMapping[node.id] = contributorList
+            self.contributorMapping[node.id] = contributorList;
         };
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
-            return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
+            return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name;
         };
 
         // Formats contrib family names for display
         self.getContributors = function (node) {
             var numContributors = node.embeds.contributors.links.meta.total;
             if (numContributors === 1) {
-                return self.getFamilyName(0, node)
+                return self.getFamilyName(0, node);
             }
             else if (numContributors === 2) {
                 return self.getFamilyName(0, node) + ' and ' +
-                    self.getFamilyName(1, node)
+                    self.getFamilyName(1, node);
             }
             else if (numContributors === 3) {
                 return self.getFamilyName(0, node) + ', ' +
                     self.getFamilyName(1, node) + ', and ' +
-                    self.getFamilyName(2, node)
+                    self.getFamilyName(2, node);
             }
             else {
                 return self.getFamilyName(0, node) + ', ' +
                     self.getFamilyName(1, node) + ', ' +
-                    self.getFamilyName(2, node) + ' + ' + (numContributors - 3)
+                    self.getFamilyName(2, node) + ' + ' + (numContributors - 3);
             }
 
         };
 
          // Formats date for display
         self.formatDate = function (node) {
-            return new $osf.FormattableDate(node.attributes.date_modified).local
+            return new $osf.FormattableDate(node.attributes.date_modified).local;
         };
 
 
         // Shifts nodes back to master node list (from displayedNodes or nonMatchingNodes)
         self.restoreToNodeList = function (missingNodes) {
             for (var i = 0; i < missingNodes.length ; i++) {
-                self.nodes().push(missingNodes[i])
+                self.nodes().push(missingNodes[i]);
             }
         };
 
@@ -180,7 +180,7 @@ var quickSearchProject = {
                 var B = b.attributes.date_modified;
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
             });
-            self.sortState('dateAsc')
+            self.sortState('dateAsc');
         };
 
         self.sortDateDescending = function () {
@@ -202,10 +202,10 @@ var quickSearchProject = {
                     self.sortAlphabeticalDescending();
                     break;
                 case 'dateAsc':
-                    self.sortDateAscending()
+                    self.sortDateAscending();
                     break;
                 default:
-                    self.sortDateDescending()
+                    self.sortDateDescending();
             }
         };
 
@@ -215,7 +215,7 @@ var quickSearchProject = {
             var fieldSort = dropdown.options[dropdown.selectedIndex].value;
             var directionSort = self.preSelectDirection();
             self.sortState(fieldSort + directionSort);
-            self.sortNodesAndModifyDisplay()
+            self.sortNodesAndModifyDisplay();
         };
 
         // For xs screen
@@ -224,7 +224,7 @@ var quickSearchProject = {
             var fieldSort = self.preSelectField();
             var directionSort = clicked.id;
             self.sortState(fieldSort + directionSort);
-            self.sortNodesAndModifyDisplay()
+            self.sortNodesAndModifyDisplay();
         };
 
         // When shifting to xs screen, tells which field to automatically display in select
@@ -243,7 +243,7 @@ var quickSearchProject = {
             var button = document.getElementById(self.sortState()).className = 'selected';
             sortButtons.forEach(function(button) {
                 if (self.sortState() !== button) {
-                    document.getElementById(button).className = 'not-selected'
+                    document.getElementById(button).className = 'not-selected';
                 }
             });
 
@@ -251,10 +251,10 @@ var quickSearchProject = {
             var direction = self.preSelectDirection();
             document.getElementById(direction).className = 'selected';
             if (direction === 'Asc'){
-                document.getElementById('Desc').className = 'not-selected'
+                document.getElementById('Desc').className = 'not-selected';
             }
             else {
-                document.getElementById('Asc').className = 'not-selected'
+                document.getElementById('Asc').className = 'not-selected';
             }
         };
 
@@ -263,7 +263,7 @@ var quickSearchProject = {
             self.restoreToNodeList(self.displayedNodes());
             self.sortBySortState();
             self.colorSortButtons();
-            self.displayedNodes(self.nodes().splice(0, self.countDisplayed()))
+            self.displayedNodes(self.nodes().splice(0, self.countDisplayed()));
         };
 
         // Filtering on title
@@ -277,10 +277,10 @@ var quickSearchProject = {
 
             for (var c = 0; c < contributors.length; c++) {
                 if (contributors[c].toUpperCase().indexOf(self.filter().toUpperCase()) !== -1){
-                    return false
+                    return false;
                 }
             }
-            return true
+            return true;
         };
 
         // Filtering on tag
@@ -288,10 +288,10 @@ var quickSearchProject = {
             var tags = node.attributes.tags;
             for (var t = 0; t < tags.length; t++){
                 if (tags[t].toUpperCase().indexOf(self.filter().toUpperCase()) !== -1) {
-                    return false
+                    return false;
                 }
             }
-            return true
+            return true;
         };
 
         // Filters nodes
@@ -300,7 +300,7 @@ var quickSearchProject = {
                 var node = self.nodes()[n];
                 if (self.noTitleMatch(node) && self.noContributorMatch(node) && self.noTagMatch(node)) {
                     self.nonMatchingNodes().push(node);
-                    self.nodes().splice(n, 1)
+                    self.nodes().splice(n, 1);
                 }
             }
         };
@@ -308,17 +308,17 @@ var quickSearchProject = {
         // Colors node div and changes cursor to pointer on hover
         self.mouseOver = function (node) {
             node.style.backgroundColor='#E0EBF3';
-            node.style.cursor = 'pointer'
+            node.style.cursor = 'pointer';
         };
 
         self.mouseOut = function (node) {
-            node.style.backgroundColor='#fcfcfc'
+            node.style.backgroundColor='#fcfcfc';
         };
 
         self.clearSearch = function () {
-            document.getElementById('searchQuery').value="";
+            document.getElementById('searchQuery').value='';
             self.filter(document.getElementById('searchQuery').value);
-            self.quickSearch()
+            self.quickSearch();
         };
 
         self.quickSearch = function () {
@@ -330,24 +330,24 @@ var quickSearchProject = {
             // if backspace completely, previous nodes with prior sorting/count will be displayed
             if (self.filter() === '') {
                 self.sortNodesAndModifyDisplay();
-                return self.displayedNodes()
+                return self.displayedNodes();
             }
             else {
                 self.filterNodes();
                 self.sortBySortState();
                 var numDisplay = Math.min(self.nodes().length, self.countDisplayed());
                 for (var i = 0; i < numDisplay; i++) {
-                    self.displayedNodes().push(self.nodes()[i])
+                    self.displayedNodes().push(self.nodes()[i]);
                 }
                 self.nodes().splice(0, numDisplay);
-                return self.displayedNodes()
+                return self.displayedNodes();
             }
 
         };
 
         // Onclick, directs user to project page
         self.nodeDirect = function(node) {
-            location.href = '/'+ node.id
+            location.href = '/'+ node.id;
         };
 
     },
@@ -355,9 +355,9 @@ var quickSearchProject = {
         function loadMoreButton() {
             if (ctrl.nodes().length !== 0){
                 return m('button', {class: 'col-sm-12 text-muted', onclick: function() {
-                        ctrl.loadUpToTen()}
-                },
-                m('i', {class: 'fa fa-caret-down load-nodes'}))
+                        ctrl.loadUpToTen();
+                }},
+                m('i', {class: 'fa fa-caret-down load-nodes'}));
             }
         }
 
@@ -367,7 +367,7 @@ var quickSearchProject = {
                     ctrl.sortState('alphaAsc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
-                    m('i', {class: 'fa fa-angle-up'}))
+                    m('i', {class: 'fa fa-angle-up'}));
             }
         }
 
@@ -377,7 +377,7 @@ var quickSearchProject = {
                     ctrl.sortState('alphaDesc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
-                m('i', {class: 'fa fa-angle-down'}))
+                m('i', {class: 'fa fa-angle-down'}));
             }
         }
 
@@ -385,8 +385,9 @@ var quickSearchProject = {
             if (ctrl.loadingComplete()){
                  return m('button', {id: 'dateAsc', class: 'not-selected', onclick: function() {
                      ctrl.sortState('dateAsc');
-                     ctrl.sortNodesAndModifyDisplay()}},
-                 m('i', {class: 'fa fa-angle-up'}))
+                     ctrl.sortNodesAndModifyDisplay();
+                 }},
+                 m('i', {class: 'fa fa-angle-up'}));
             }
         }
 
@@ -396,25 +397,25 @@ var quickSearchProject = {
                     ctrl.sortState('dateDesc');
                     ctrl.sortNodesAndModifyDisplay();
                }},
-                m('i', {class: 'fa fa-angle-down'}))
+                m('i', {class: 'fa fa-angle-down'}));
             }
         }
 
         // Sort button for xs screen
         function ascending() {
             if (ctrl.loadingComplete()){
-                var direction = ctrl.preSelectDirection()
+                var direction = ctrl.preSelectDirection();
                 if (direction === 'Asc') {
                     return m('button', {id: 'Asc', class: 'selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this)
+                         ctrl.sortDirectionGivenField(this);
                          }},
-                         m('i', {class: 'fa fa-angle-up'}))
+                         m('i', {class: 'fa fa-angle-up'}));
                 }
                 else {
                     return m('button', {id: 'Asc', class: 'not-selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this)
+                         ctrl.sortDirectionGivenField(this);
                          }},
-                         m('i', {class: 'fa fa-angle-up'}))
+                         m('i', {class: 'fa fa-angle-up'}));
 
                 }
             }
@@ -426,15 +427,15 @@ var quickSearchProject = {
                 var direction = ctrl.preSelectDirection();
                 if (direction === 'Desc') {
                     return m('button', {id: 'Desc', class: 'selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this)
+                         ctrl.sortDirectionGivenField(this);
                          }},
-                         m('i', {class: 'fa fa-angle-down'}))
+                         m('i', {class: 'fa fa-angle-down'}));
                 }
                 else {
                     return m('button', {id: 'Desc', class: 'not-selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this)
+                         ctrl.sortDirectionGivenField(this);
                          }},
-                         m('i', {class: 'fa fa-angle-down'}))
+                         m('i', {class: 'fa fa-angle-down'}));
                 }
             }
         }
@@ -442,10 +443,10 @@ var quickSearchProject = {
         function defaultSelected() {
             var selected = ctrl.preSelectField();
             if (selected === 'alpha') {
-                return [m('option', {value: 'alpha', selected:'selected'}, 'Title'), m('option', {value: 'date'}, 'Modified')]
+                return [m('option', {value: 'alpha', selected:'selected'}, 'Title'), m('option', {value: 'date'}, 'Modified')];
             }
             else {
-                return [m('option', {value: 'alpha'}, 'Title'), m('option', {value: 'date', selected:'selected'}, 'Modified')]
+                return [m('option', {value: 'alpha'}, 'Title'), m('option', {value: 'date', selected:'selected'}, 'Modified')];
             }
 
         }
@@ -454,37 +455,42 @@ var quickSearchProject = {
             if (ctrl.loadingComplete()){
                 return m('div', {class : 'input-group'}, [
                     m('span', {class: 'input-group-addon'}, m('i', {class: 'fa fa-search'})),
-                    m('input[type=search]', {class: 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {ctrl.quickSearch()}}),
-                    m('span', {class: 'input-group-addon', onclick: function() {ctrl.clearSearch()}},  m('button', m('i', {class: 'fa fa-times'})))
-                ])
+                    m('input[type=search]', {class: 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {
+                        ctrl.quickSearch();}
+                    }),
+                    m('span', {class: 'input-group-addon', onclick: function() {
+                        ctrl.clearSearch();
+                    }},  m('button', m('i', {class: 'fa fa-times'})))
+                ]);
             }
         }
 
         function displayNodes() {
-            if (ctrl.displayedNodes().length == 0 && ctrl.filter() != null) {
+            if (ctrl.displayedNodes().length === 0 && ctrl.filter() != null) {
                 return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
                     m('div', {class: 'row'}, [
                         m('div', {class: 'col-sm-1'}),
                         m('div', {class: 'col-sm-11'},[m('p', {class :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
                     ])
-                ))
+                ));
             }
             else {
                 return ctrl.displayedNodes().map(function(n){
-                    return projectView(n)
-                })
+                    return projectView(n);
+                });
             }
         }
 
         function projectView(project) {
             console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
             return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
-                m('div', {class: 'row node-styling',  onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(project)}}}, [
+                m('div', {class: 'row node-styling',  onmouseover: function(){ctrl.mouseOver(this);}, onmouseout: function(){ctrl.mouseOut(this);}, onclick: function(){{ctrl.nodeDirect(project);
+                }}}, [
                     m('div', {class: 'col-sm-7 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
                     m('div', {class: 'col-sm-3 col-md-3 col-lg-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
                     m('div', {class: 'col-sm-2 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
                 ])
-            ))
+            ));
         }
 
         function resultsFound(){
@@ -502,18 +508,18 @@ var quickSearchProject = {
                     m('div', {class: 'col-sm-3'})),
 
                 m('div', {class: 'row'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
-                m('div', {class: 'row node-col-headers'}, [
-                    m('div', {class: 'col-sm-7 col-md-6 col-lg-5 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
-                    m('div', {class: 'col-sm-3 col-md-3 col-lg-4 f-w-xl p-v-xs'}, 'Contributors'),
-                    m('div', {class: 'col-sm-2 col-md-3 col-lg-3 f-w-xl p-v-xs'}, 'Modified', m('span', {class: 'sort-group'}, sortDateAsc(), sortDateDesc())),
-                ])
+                    m('div', {class: 'row node-col-headers'}, [
+                        m('div', {class: 'col-sm-7 col-md-6 col-lg-5 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
+                        m('div', {class: 'col-sm-3 col-md-3 col-lg-4 f-w-xl p-v-xs'}, 'Contributors'),
+                        m('div', {class: 'col-sm-2 col-md-3 col-lg-3 f-w-xl p-v-xs'}, 'Modified', m('span', {class: 'sort-group'}, sortDateAsc(), sortDateDesc()))]
+                    )
                 )),
 
                 m('div', {class: 'row'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
                     m('div', {class: 'row node-sort-dropdown'}, [
                         m('div', {class: 'col-sm-12 p-v-xs, f-w-xl'},
                             m('label', [m('span', 'Order by: '),
-                                m('select', {class: 'form-control', id: 'sortDropDown', onchange: function(){ctrl.sortFieldGivenDirection(this)}},
+                                m('select', {class: 'form-control', id: 'sortDropDown', onchange: function(){ctrl.sortFieldGivenDirection(this);}},
                                     defaultSelected()),
                                 ascending(), descending()]
                             )
@@ -529,7 +535,7 @@ var quickSearchProject = {
             ]);
         }
 
-        if (ctrl.displayedNodes().length == 0 && ctrl.filter() == null) {
+        if (ctrl.displayedNodes().length === 0 && ctrl.filter() == null) {
             return m('div', {class: 'container'}, [
                 m('div', {class: 'row'}, [
                     m('div', {'class': 'col-sm-1'}),
@@ -539,9 +545,10 @@ var quickSearchProject = {
                     m('div', {class: 'col-sm-1'}),
                     m('div', {class: 'col-sm-11'}, m('h4', 'You have no projects. Go here to create one.'))
             )]
-        )}
+        );
+        }
         else {
-            return resultsFound()
+            return resultsFound();
         }
     }
 };
