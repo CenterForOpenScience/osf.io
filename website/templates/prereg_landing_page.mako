@@ -40,12 +40,7 @@
 <% size = size or '' %>
 <div id="existingProject${size}" class="prereg-existing-project p-md osf-box box-round clearfix m-b-lg" style="display:none">
   <p>Preregister an existing project:</p>
-  <osf-project-search
-     params="data: nodes,
-             onSubmit: function(selected) { window.location = selected.urls.register; },
-             enableComponents: false,
-             submitText: 'Preregister'">
-  </osf-project-search>
+  <input id="projectSearch${size}"></input>
 </div>
 </%def>
 

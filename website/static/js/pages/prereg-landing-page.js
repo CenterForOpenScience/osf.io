@@ -2,17 +2,10 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
-var ko = require('knockout');
+var m = require('mithril');
 require('js/qToggle');
-require('js/onboarder.js');
 require('js/components/autocomplete');
-
-var xhrconfig = function (xhr) {
-    xhr.withCredentials = true;
-    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json');
-    xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
-};
-
+require('js/projectsSelect.js');
 
 $(function(){
     $('.prereg-button').qToggle();
@@ -42,7 +35,7 @@ $(function(){
     // Get all projects with multiple calls to get all pages
     function collectProjects (url) {
         var promise = $.ajax({
-            method: "GET",
+            method: 'GET',
             url: url,
             xhrFields: {
                 withCredentials: true
@@ -50,19 +43,13 @@ $(function(){
         });
         promise.done(function(result){
             // loop through items and check for admin permission first
-            allNodes.concat(result.data);
+            allNodes = allNodes.concat(result.data);
             if(result.links.next){
                 collectProjects(result.links.next);
             }
             else {
-                $osf.applyBindings({
-                    nodes: allNodes,
-                    enableComponents: true
-                }, '#existingProject');
-                $osf.applyBindings({
-                    nodes: allNodes,
-                    enableComponents: true
-                }, '#existingProjectXS');
+                $('#projectSearch').projectsSelect({data : allNodes});
+                $('#projectSearchXS').projectsSelect({data : allNodes});
             }
         });
         promise.fail(function(xhr, textStatus, error) {
