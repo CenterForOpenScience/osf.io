@@ -99,7 +99,11 @@ var newAndNoteworthy = {
 
         // Grabs description for display
         self.getDescription = function(node){
-            return node.embeds.target_node.data.attributes.description
+            var description = node.embeds.target_node.data.attributes.description
+            if (description){
+                return description
+            }
+            return m('p')
         };
 
          // Colors node div and changes cursor to pointer on hover
@@ -119,6 +123,11 @@ var newAndNoteworthy = {
 
         self.redirectToSearch = function() {
             location.href = '/search'
+        };
+
+        self.addToolTip = function(text) {
+            $('[data-toggle="tooltip"]').tooltip();
+
         }
 
 
@@ -127,9 +136,9 @@ var newAndNoteworthy = {
         function nodeDisplay(node) {
             return m('div', {class: 'row node-styling m-v-md m-r-sm', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
                 m('div', {class: 'col-sm-12'},
-                    m('h5', m('em', ctrl.getTitle(node))),
-                    m('h5', ctrl.getDescription(node)),
-                    m('div', m('h5', {class: 'contributors-bold f-w-xl'}, 'Contributors: '), m('h5', {class: 'contributors-bold'}, ctrl.getContributors(node))
+                    m('h5', {'class': 'prevent-overflow', 'data-placement':"top", 'data-toggle': 'tooltip', 'title': ctrl.getTitle(node), onmouseenter: function(){ctrl.addToolTip(this)}}, m('em', ctrl.getTitle(node))),
+                    m('h5', {'class': 'prevent-overflow', 'data-placement':"top", 'data-toggle': 'tooltip', 'title': ctrl.getDescription(node)}, ctrl.getDescription(node)),
+                    m('div', m('h5', {class: 'contributors-bold f-w-xl prevent-overflow'}, 'Contributors: '), m('h5', {class: 'contributors-bold'}, ctrl.getContributors(node))
                     )
                 )
             )

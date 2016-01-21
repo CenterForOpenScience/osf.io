@@ -51,3 +51,9 @@ h5.contributors-bold {
 .conferences-and-meetings {
     background-color: #EEEEEE
 }
+
+.prevent-overflow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
