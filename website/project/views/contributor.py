@@ -137,7 +137,6 @@ def get_contributors_from_parent(auth, node, **kwargs):
     return {'contributors': contribs}
 
 
-
 def deserialize_contributors(node, user_dicts, auth, validate=False):
     """View helper that returns a list of User objects from a list of
     serialized users (dicts). The users in the list may be registered or
