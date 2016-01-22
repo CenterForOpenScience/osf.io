@@ -6,7 +6,7 @@
 
 <%def name="title()">${file_name | h}</%def>
 
-% if (user['can_comment'] or node['has_comments']):
+% if (user['can_comment'] or node['has_comments']) and allow_comments:
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
