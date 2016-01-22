@@ -145,8 +145,8 @@ class CommentCreateSerializer(CommentSerializer):
             else:
                 raise ValueError('Cannot post reply to comment on another node.')
         elif target_file:
-            if target_file.provider != 'osfstorage':
-                raise ValueError('Cannot post comment to non-osfstorage file.')
+            if target_file.provider not in osf_settings.ADDONS_COMMENTABLE:
+                raise ValueError('Comments are not supported for this file provider.')
             elif target_file.node._id != node_id:
                 raise ValueError('Cannot post comment to file on another node.')
             else:
