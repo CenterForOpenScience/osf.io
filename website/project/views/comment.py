@@ -2,15 +2,40 @@
 import pytz
 from datetime import datetime
 from flask import request
+from modularodm import Q
 
 from framework.auth.decorators import must_be_logged_in
 
+from website.addons.base.signals import file_updated
+from website.files.models import FileNode
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify
 from website.models import Comment
 from website.project.decorators import must_be_contributor_or_public
+from website.project.model import Node
 from website.project.signals import comment_added
 
+
+@file_updated.connect
+def update_comment_root_target_file(self, node, event_type, payload, user=None):
+    if event_type == 'addon_file_moved':
+        source = payload['source']
+        destination = payload['destination']
+        source_node = Node.load(source['node']['_id'])
+        destination_node = node
+
+        if (source.get('provider') == destination.get('provider') == 'osfstorage') and source_node._id != destination_node._id:
+            old_file = FileNode.load(source.get('path').strip('/'))
+            new_file = FileNode.resolve_class(destination.get('provider'), FileNode.FILE).get_or_create(destination_node, destination.get('path'))
+
+            Comment.update(Q('root_target', 'eq', old_file._id), data={'node': destination_node})
+
+            # update node record of commented files
+            if old_file._id in source_node.commented_files:
+                destination_node.commented_files[new_file._id] = source_node.commented_files[old_file._id]
+                del source_node.commented_files[old_file._id]
+                source_node.save()
+                destination_node.save()
 
 @comment_added.connect
 def send_comment_added_notification(comment, auth):
