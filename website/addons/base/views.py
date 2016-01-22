@@ -569,6 +569,7 @@ def addon_view_file(auth, node, file_node, version):
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
         'file_tags': [tag._id for tag in file_node.tags],
         'file_id': file_node._id,
+        'allow_comments': file_node.provider == 'osfstorage'
     })
 
     ret.update(rubeus.collect_addon_assets(node))
