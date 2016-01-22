@@ -256,7 +256,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_in('Invalid title.', res.body)
 
-    def test_cannot_remove_only_visible_contributor_remove_contributor(self):
+    def test_cannot_remove_only_visible_contributor(self):
         self.project.visible_contributor_ids.remove(self.user1._id)
         self.project.save()
         url = self.project.api_url_for('project_remove_contributor')
@@ -534,7 +534,7 @@ class TestProjectViews(OsfTestCase):
 
     def test_private_project_remove_self_not_admin(self):
         url = self.project.api_url_for('project_remove_contributor')
-        # User 1 removes user2
+        # user2 removes self
         payload = {"contributorID": self.user2._id,
                    "nodeIDs": [self.project._id]}
         res = self.app.post(url, json.dumps(payload),
@@ -547,7 +547,7 @@ class TestProjectViews(OsfTestCase):
 
     def test_public_project_remove_self_not_admin(self):
         url = self.project.api_url_for('project_remove_contributor')
-        # User 1 removes user2
+        # user2 removes self
         self.public_project = ProjectFactory(creator=self.user1, is_public=True)
         self.public_project.add_contributor(self.user2, auth=Auth(self.user1))
         self.public_project.save()
