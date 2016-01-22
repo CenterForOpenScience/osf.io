@@ -93,7 +93,7 @@ var LogPieces = {
     node: {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.nodes;
-            if(paramIsReturned(nodeObject, logObject)){
+            if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
                 return m('a', {href: nodeObject.data[0].links.html}, nodeObject.data[0].attributes.title);
             } else {
                 return m('span', 'a project');

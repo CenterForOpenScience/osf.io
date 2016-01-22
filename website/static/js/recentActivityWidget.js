@@ -27,6 +27,8 @@ var LogWrap = {
         self.loading = false;
         self.div = 8.64e+7;
         self.canvasHeight = 40;
+        self.totalEvents = 0;
+        self.eventNumbers = {};
 
         self.getLogs = function(init, reset, update) {
             if (!(init || reset || update)  && self.cache[self.page - 1]){
@@ -46,7 +48,7 @@ var LogWrap = {
             if (self.eventFilter) {
                 query['filter[action]'] = self.eventFilter;
             }
-            if (init || reset) {
+            if (reset || init) {
                 query.aggregate = 1;
             }
             if (!init) {
@@ -83,7 +85,7 @@ var LogWrap = {
                         self.formatPip = 'MMM';
                     }
                 }
-                if (init || reset){
+                if (reset){
                     self.totalEvents = result.links.meta.total;
                     self.eventNumbers = result.links.meta.aggregates;
                     self.cache = [];
@@ -198,7 +200,7 @@ var LogWrap = {
                         return String(moment.utc(value*div).format(ctrl.formatFloat));
                     }
                 });
-                ctrl.getLogs();
+                ctrl.getLogs(false, true);
                 var bar = $('#recentActivitySlider').find('.ui-slider-range');
                 bar.append(makeSliderProgress());
                 makeLine(canvas);
