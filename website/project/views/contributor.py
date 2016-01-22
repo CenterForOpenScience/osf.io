@@ -307,7 +307,7 @@ def project_manage_contributors(auth, node, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor
 @must_not_be_registration
-def project_remove_contributor(auth):
+def project_remove_contributor(auth, **kwargs):
     """Remove a contributor from a list of nodes.
 
     :param Auth auth: Consolidated authorization
