@@ -830,6 +830,27 @@ class JSONAPISerializer(ser.Serializer):
 
         return ret
 
+class JSONAPIRelationshipSerializer(ser.Serializer):
+    """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
+    Provides a simplified serialization of the relationship, allowing for simple update request
+    bodies.
+    """
+    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    type = TypeField(required=False, allow_null=True)
+
+    def to_representation(self, obj):
+        meta = getattr(self, 'Meta', None)
+        type_ = getattr(meta, 'type_', None)
+        assert type_ is not None, 'Must define Meta.type_'
+
+        relation_id_field = self.fields['id']
+        attribute = relation_id_field.get_attribute(obj)
+        relationship = relation_id_field.to_representation(attribute)
+
+        data = {'type': type_, 'id': relationship} if relationship else None
+
+        return data
+
 
 def DevOnly(field):
     """Make a field only active in ``DEV_MODE``. ::
@@ -857,3 +878,20 @@ class RestrictedDictSerializer(ser.Serializer):
             else:
                 data[field.field_name] = field.to_representation(attribute)
         return data
+
+
+def relationship_diff(current_items, new_items):
+    """
+    To be used in POST and PUT/PATCH relationship requests, as, by JSON API specs,
+    in update requests, the 'remove' items' relationships would be deleted, and the
+    'add' would be added, while for create requests, only the 'add' would be added.
+
+    :param current_items: The current items in the relationship
+    :param new_items: The items passed in the request
+    :return:
+    """
+
+    return {
+        'add': {k: new_items[k] for k in (set(new_items.keys()) - set(current_items.keys()))},
+        'remove': {k: current_items[k] for k in (set(current_items.keys()) - set(new_items.keys()))}
+    }

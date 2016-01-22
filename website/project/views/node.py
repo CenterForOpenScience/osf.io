@@ -380,7 +380,6 @@ def configure_comments(node, **kwargs):
 @must_be_contributor_or_public
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
-
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
 

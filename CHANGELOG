@@ -6,7 +6,7 @@ Changelog
 ===================
 
 - Added date_modified field to Node (no longer a property).
-- Add Researchgate links to user profiles.
+- Add ResearchGate links to user profiles.
 - Add Academia.edu links to user profiles.
 - Components may be categorized as "Software".
 - Reorganize wiki configuration on project settings page.
