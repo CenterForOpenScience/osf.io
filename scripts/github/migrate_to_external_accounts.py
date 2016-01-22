@@ -3,7 +3,6 @@ import os
 import sys
 import urlparse
 
-from nose.tools import *  # noqa
 from modularodm import Q
 
 from framework.mongo import database
@@ -35,33 +34,36 @@ settings_need_repair = {}
 
 def verify_user_and_oauth_settings_documents(user_document, oauth_document):
     try:
-        assert_in('_id', user_document)
-        assert_in('oauth_settings', user_document)
-        assert_in('deleted', user_document)
-        assert_in('owner', user_document)
-        assert_in('_id', oauth_document)
-        assert_in('github_user_id', oauth_document)
-        assert_in('github_user_name', oauth_document)
-        assert_in('oauth_access_token', oauth_document)
-        assert_is_not_none(user_document['owner'])
-        assert_equal(user_document['oauth_settings'], oauth_document['github_user_id'])
+        assert('_id' in user_document)
+        assert('oauth_settings' in user_document)
+        assert('deleted' in user_document)
+        assert('owner' in user_document)
+        assert('_id' in oauth_document)
+        assert('github_user_id' in oauth_document)
+        assert('github_user_name' in oauth_document)
+        assert('oauth_access_token' in oauth_document)
+        assert(user_document.get('owner', None))
+        assert(user_document['oauth_settings'] == oauth_document['github_user_id'])
     except AssertionError:
         return False
     else:
         return True
 
 def verify_node_settings_document(document, account):
-    assert_in('_id', document)
-    assert_in('deleted', document)
-    assert_in('hook_id', document)
-    assert_in('repo', document)
-    assert_in('user', document)
-    assert_in('registration_data', document)
-    assert_in('owner', document)
-    assert_is_not_none(document['owner'])
-    assert_in('user_settings', document)
     try:
-        assert_in('hook_secret', document)
+        assert('_id' in document)
+        assert('deleted' in document)
+        assert('hook_id' in document)
+        assert('repo' in document)
+        assert('user' in document)
+        assert('registration_data' in document)
+        assert('owner' in document)
+        assert(document.get('owner', None))
+        assert('user_settings' in document)
+    except AssertionError:
+        return False
+    try:
+        assert('hook_secret' in document)
     except AssertionError:
         try:
             settings_need_repair.append((document['_id'], account._id))
