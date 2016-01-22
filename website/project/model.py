@@ -3305,8 +3305,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return [
             user for user in users
             if self.has_permission(user, 'admin') and
-            user.is_registered
-            ]
+            user.is_registered]
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME
