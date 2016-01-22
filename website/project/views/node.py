@@ -722,8 +722,6 @@ def _view_project(node, auth, primary=False):
             messages = addon.before_page_load(node, user) or []
             for message in messages:
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
-    n_unread_node = Comment.find_n_unread(user, node, page='node')
-    n_unread_files = Comment.find_n_unread(user, node, page='files')
     data = {
         'node': {
             'id': node._primary_key,
@@ -810,11 +808,6 @@ def _view_project(node, auth, primary=False):
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': dashboard_id,
-            'unread_comments': {
-                'node': n_unread_node,
-                'files': n_unread_files,
-                'total': n_unread_node + n_unread_files
-            }
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts

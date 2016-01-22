@@ -239,7 +239,7 @@ class Comment(GuidStoredObject):
         return self.content
 
     @classmethod
-    def find_n_unread(cls, user, node, page=None, root_id=None, check=False):
+    def find_n_unread(cls, user, node, page=None, root_id=None):
         if node.is_contributor(user):
             if not page:
                 return cls.n_unread_node_comments(user, node) + cls.n_unread_file_comments(user, node)
@@ -251,17 +251,12 @@ class Comment(GuidStoredObject):
                 else:
                     view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
                     root_target = File.load(root_id)
-                    if check:
-                        if not (root_target and root_target.touch(request.headers.get('Authorization'),
-                                                                  cookie=request.cookies.get(settings.COOKIE_NAME))):
-                            return 0
-                    else:
-                        return Comment.find(Q('node', 'eq', node) &
-                                            Q('user', 'ne', user) &
-                                            Q('is_deleted', 'eq', False) &
-                                            (Q('date_created', 'gt', view_timestamp) |
-                                            Q('date_modified', 'gt', view_timestamp)) &
-                                            Q('root_target', 'eq', root_target)).count()
+                    return Comment.find(Q('node', 'eq', node) &
+                                        Q('user', 'ne', user) &
+                                        Q('is_deleted', 'eq', False) &
+                                        (Q('date_created', 'gt', view_timestamp) |
+                                        Q('date_modified', 'gt', view_timestamp)) &
+                                        Q('root_target', 'eq', root_target)).count()
 
         return 0
 
