@@ -3,7 +3,6 @@ import os
 import sys
 import urlparse
 
-from nose.tools import *  # noqa
 from modularodm import Q
 
 from framework.mongo import database
@@ -23,19 +22,15 @@ PROVIDER = 's3'
 PROVIDER_NAME = 'Amazon S3'
 ENCRYPT_UPLOADS = s3_settings.ENCRYPT_UPLOADS_DEFAULT
 
-# set of {ExternalAccount._id: [old_user_settings._id, ...]} mappings
-# with invalid credentials, for logging purposes
-invalid_oauth_creds = {}
-
 
 def verify_user_settings_documents(user_document):
     try:
-        assert_in('_id', user_document)
-        assert_in('deleted', user_document)
-        assert_in('owner', user_document)
-        assert_in('access_key', user_document)
-        assert_in('secret_key', user_document)
-        assert_is_not_none(user_document['owner'])
+        assert('_id' in user_document)
+        assert('deleted' in user_document)
+        assert('owner' in user_document)
+        assert('access_key' in user_document)
+        assert('secret_key' in user_document)
+        assert(user_document.get('owner', None))
     except AssertionError:
         return False
     else:
@@ -43,16 +38,16 @@ def verify_user_settings_documents(user_document):
 
 def verify_node_settings_document(document):
     try:    
-        assert_in('_id', document)
-        assert_in('deleted', document)
-        assert_in('bucket', document)
-        assert_in('owner', document)
-        assert_is_not_none(document['owner'])
-        assert_in('user_settings', document) # This causes issues
+        assert('_id' in document)
+        assert('deleted' in document)
+        assert('bucket' in document)
+        assert('owner' in document)
+        assert('user_settings' in document)
+        assert(document.get('owner', None))
     except AssertionError:
         return False
     try:
-        assert_in('encrypt_uploads', document)
+        assert('encrypt_uploads' in document)
     except AssertionError:
         try:
             database['addons3nodesettings'].find_and_modify(
@@ -70,20 +65,14 @@ def verify_node_settings_document(document):
 def migrate_to_external_account(user_settings_document):
     user_id = utils.get_user_id(access_key=user_settings_document['access_key'], secret_key=user_settings_document['secret_key'])
     user = User.load(user_settings_document['owner'])
-    invalid = False
     if not user_id:
-        user_id = user._id
-        display_name = user.fullname
-        logger.info('Unable to fetch user_id, AddonS3UserSettings<{}> has invalid credentials'.format(
-            user_settings_document['_id']
-        ))
-        invalid = True
+        return (None, None, None)
     else:
         display_name = 'S3User<[...]>{}'.format(user_id[-10:])
 
     new = False
     try:
-        external_account = ExternalAccount.find(Q('oauth_key', 'eq', user_settings_document['access_key']))[0]
+        external_account = ExternalAccount.find(Q('provider_id', 'eq', user_id))[0]
         logger.info('Duplicate account use found: s3usersettings {0} with id {1}'.format(user_settings_document['_id'], user._id))
     except IndexError:
         new = True
@@ -96,15 +85,6 @@ def migrate_to_external_account(user_settings_document):
             display_name=display_name,
         )
         external_account.save()
-
-    if invalid:
-        try:
-            invalid_oauth_creds[external_account._id].append(user_settings_document['_id'])
-        except KeyError:
-            invalid_oauth_creds[external_account._id] = [user_settings_document['_id']]
-            logger.info("Created ExternalAccount<_id:{0}> with invalid oauth credentials.".format(
-                external_account._id
-            ))
 
     user.external_accounts.append(external_account)
     user.save()
@@ -161,6 +141,7 @@ def migrate(dry_run=True):
     deleted_user_settings = []
     broken_user_settings = []
     user_no_oauth_creds = []
+    invalid_oauth_creds = []
     inactive_user_or_no_owner = []
     unverifiable_node_settings = []
     deleted_node_settings = []
@@ -183,10 +164,17 @@ def migrate(dry_run=True):
             continue
         if not user_settings_document['access_key'] or not user_settings_document['secret_key']:
             logger.info(
-                "Found addons3usersettings document (id:{0}) with incomplete or no oauth credentials. Migrating anyway".format(user_settings_document['_id'])
+                "Found addons3usersettings document (id:{0}) with incomplete or no oauth credentials. It will not be migrated.".format(user_settings_document['_id'])
             )
             user_no_oauth_creds.append(user_settings_document['_id'])
+            continue
         external_account, user, new = migrate_to_external_account(user_settings_document)
+        if not external_account:
+            invalid_oauth_creds.append(user_settings_document['_id'])
+            logger.warn('AddonS3UserSettings<{}> has invalid credentials. It will not be migrated'.format(
+                user_settings_document['_id']
+            ))
+            continue
         if new:
             external_accounts_created.append(external_account._id)
         else:
@@ -277,18 +265,17 @@ def migrate(dry_run=True):
         )
 
     if user_no_oauth_creds:
-        logger.warn(
-            "Migrated {0} invalid user settings with a lack of oauth credentials:\n{1}".format(
+        logger.error(
+            "Found {0} invalid user settings with a lack of oauth credentials:\n{1}".format(
                 len(user_no_oauth_creds), [e for e in user_no_oauth_creds]
             )
         )
     if invalid_oauth_creds:
-        logger.warn(
-            "Created {0} invalid ExternalAccounts from user settings due to invalid oauth credentials:\n{1}".format(
-                len(invalid_oauth_creds), ['{}: {}'.format(e, invalid_oauth_creds[e]) for e in invalid_oauth_creds.keys()]
+        logger.error(
+            "Failed to migrate {0} user settings due to invalid oauth credentials:\n{1}".format(
+                len(invalid_oauth_creds), [e for e in invalid_oauth_creds]
             )
         )
-
     if deleted_user_settings:
         logger.error(
             "Failed to migrate {0} deleted user settings: {1}".format(
