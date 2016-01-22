@@ -210,7 +210,7 @@ class SpamMixin(StoredObject):
         if self.spam_status != self.FLAGGED:
             return
         for user, report in self.reports.iteritems():
-            if not report['retracted']:
+            if not report.get('retracted', True):
                 return
         self.spam_status = self.UNKNOWN
         if save:
