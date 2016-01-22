@@ -7,10 +7,9 @@
 .node-styling:hover {
     background-color: #E0EBF3;
     cursor: pointer;
-    cursor: hand;
 }
 
-button {
+.quick-project button {
     -webkit-appearance: none;
     outline: none;
     border: 0;

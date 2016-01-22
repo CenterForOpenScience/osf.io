@@ -304,7 +304,7 @@ var quickSearchProject = {
                 }
             }
         };
-        
+
         self.clearSearch = function () {
             document.getElementById('searchQuery').value='';
             self.filter(document.getElementById('searchQuery').value);
@@ -484,7 +484,7 @@ var quickSearchProject = {
         }
 
         function resultsFound(){
-            return m('div', {'class': 'container'}, [
+            return m('div', {'class': 'container quick-project'}, [
                 m('div', {'class': 'row'}, [
                     m('div', {'class': 'col-sm-1'}),
                     m('div', {'class': 'col-sm-11'}, m('h3', 'My Projects'))
