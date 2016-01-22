@@ -307,7 +307,7 @@ def project_manage_contributors(auth, node, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor
 @must_not_be_registration
-def project_remove_contributor(auth, **kwargs):
+def project_remove_contributor(auth):
     """Remove a contributor from a list of nodes.
 
     :param Auth auth: Consolidated authorization
@@ -319,10 +319,7 @@ def project_remove_contributor(auth, **kwargs):
     node_ids = request.json.get('nodeIDs')
     contributor = User.load(contributor_id)
     if contributor is None:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_long': 'Contributor not found.'
-        }
-)
+        raise HTTPError(http.BAD_REQUEST, data={'message_long': 'Contributor not found.'})
 
     for node_id in node_ids:
         # Update permissions and order
@@ -348,7 +345,6 @@ def project_remove_contributor(auth, **kwargs):
         if not nodes_removed:
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_long': 'Could not remove contributor.'})
-
 
         # If user has removed herself from project, alert; redirect to user
         # dashboard if node is private, else node dashboard
