@@ -458,6 +458,25 @@ var quickSearchProject = {
             ));
         }
 
+        function xsDropdown () {
+            if (ctrl.loadingComplete()) {
+                return m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
+                    m('div', {'class': 'row node-sort-dropdown'}, [
+                        m('div', {'class': 'col-sm-12 p-v-xs, f-w-xl'},
+                            m('label', [m('span', 'Order by: '),
+                                m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(dropdown){
+                                    ctrl.fieldSort(dropdown.target['value']);
+                                    ctrl.sortFieldGivenDirection();
+                                }}, defaultSelected()),
+                                ascending(),
+                                descending()
+                            ])
+                        )]
+                    ))
+                )
+            }
+        }
+
         function resultsFound(){
             return m('div', {'class': 'container quick-project'}, [
                 m('div', {'class': 'row'}, [
@@ -480,19 +499,8 @@ var quickSearchProject = {
                     )
                 )),
 
-                m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
-                    m('div', {'class': 'row node-sort-dropdown'}, [
-                        m('div', {'class': 'col-sm-12 p-v-xs, f-w-xl'},
-                            m('label', [m('span', 'Order by: '),
-                                m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(dropdown){
-                                    ctrl.fieldSort(dropdown.target['value']);
-                                    ctrl.sortFieldGivenDirection();}},
-                                    defaultSelected()),
-                                ascending(), descending()]
-                            )
-                        )]
-                    ))
-                ),
+                xsDropdown(),
+
                 displayNodes(),
                 m('div', {'class': 'row'}, [
                     m('div', {'class': 'col-sm-5'}),
