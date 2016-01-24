@@ -302,14 +302,7 @@ var quickSearchProject = {
             }
         };
 
-        self.clearSearch = function () {
-            document.getElementById('searchQuery').value='';
-            self.filter(document.getElementById('searchQuery').value);
-            self.quickSearch();
-        };
-
         self.quickSearch = function () {
-            self.filter(document.getElementById('searchQuery').value);
             self.restoreToNodeList(self.nonMatchingNodes());
             self.restoreToNodeList(self.displayedNodes());
             self.displayedNodes([]);
@@ -423,11 +416,13 @@ var quickSearchProject = {
             if (ctrl.loadingComplete()){
                 return m('div', {'class' : 'input-group'}, [
                     m('span', {'class': 'input-group-addon'}, m('i', {'class': 'fa fa-search'})),
-                    m('input[type=search]', {'class': 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {
+                    m('input[type=search]', {'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
+                        ctrl.filter(search.target['value']);
                         ctrl.quickSearch();}
                     }),
                     m('span', {'class': 'input-group-addon', onclick: function() {
-                        ctrl.clearSearch();
+                        ctrl.filter('');
+                        ctrl.quickSearch();
                     }},  m('button', m('i', {'class': 'fa fa-times'})))
                 ]);
             }
