@@ -27,6 +27,7 @@ var quickSearchProject = {
         self.loadingComplete = m.prop(false); // True when all user nodes are loaded.
         self.contributorMapping = {}; // Maps node id to list of contributors for searching
         self.filter = m.prop(); // Search query from user
+        self.fieldSort = m.prop(); // For xs screen, either title or modified
 
         // Load first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
@@ -64,7 +65,7 @@ var quickSearchProject = {
                         self.retrieveContributors(node);
                     });
                     self.next(result.links.next);
-                    console.log(self.next());
+                    //console.log(self.next());
                     if (self.next()) {
                         self.recursiveNodes(self.next());
                     }
@@ -211,10 +212,8 @@ var quickSearchProject = {
 
         // For xs screen
         self.sortFieldGivenDirection = function(){
-            var dropdown = document.getElementById('sortDropDown');
-            var fieldSort = dropdown.options[dropdown.selectedIndex].value;
             var directionSort = self.preSelectDirection();
-            self.sortState(fieldSort + directionSort);
+            self.sortState(self.fieldSort() + directionSort);
             self.sortNodesAndModifyDisplay();
         };
 
@@ -384,7 +383,7 @@ var quickSearchProject = {
         // Sort button for xs screen
         function ascending() {
             if (ctrl.loadingComplete()){
-                return m('button', {'class': ctrl.colorSortButtonsXS('Asc'), onclick: function() {
+                return m('button', {'id': 'Asc', 'class': ctrl.colorSortButtonsXS('Asc'), onclick: function() {
                      ctrl.sortDirectionGivenField(this);
                      }},
                      m('i', {'class': 'fa fa-angle-up'}));
@@ -394,13 +393,14 @@ var quickSearchProject = {
         // Sort button for xs screen
         function descending() {
             if (ctrl.loadingComplete()){
-                return m('button', {'class': ctrl.colorSortButtonsXS('Desc'), onclick: function() {
+                return m('button', {'id': 'Desc', 'class': ctrl.colorSortButtonsXS('Desc'), onclick: function() {
                      ctrl.sortDirectionGivenField(this);
                      }},
                      m('i', {'class': 'fa fa-angle-down'}));
             }
         }
 
+        // For XS screen - if sort on title on large screen, when resize to xs, 'title' is default selected
         function defaultSelected() {
             var selected = ctrl.preSelectField();
             if (selected === 'alpha') {
@@ -482,7 +482,9 @@ var quickSearchProject = {
                     m('div', {'class': 'row node-sort-dropdown'}, [
                         m('div', {'class': 'col-sm-12 p-v-xs, f-w-xl'},
                             m('label', [m('span', 'Order by: '),
-                                m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(){ctrl.sortFieldGivenDirection(this);}},
+                                m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(dropdown){
+                                    ctrl.fieldSort(dropdown.target['value']);
+                                    ctrl.sortFieldGivenDirection();}},
                                     defaultSelected()),
                                 ascending(), descending()]
                             )
