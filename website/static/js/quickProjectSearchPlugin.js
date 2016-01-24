@@ -220,7 +220,6 @@ var quickSearchProject = {
 
         // For xs screen
         self.sortDirectionGivenField = function(clicked) {
-            console.log('sorted');
             var fieldSort = self.preSelectField();
             var directionSort = clicked.id;
             self.sortState(fieldSort + directionSort);
@@ -238,23 +237,22 @@ var quickSearchProject = {
         };
 
         // Colors sort asc/desc buttons either selected or not-selected
-        self.colorSortButtons = function () {
-            var sortButtons = ['dateAsc', 'dateDesc', 'alphaAsc', 'alphaDesc'];
-            var button = document.getElementById(self.sortState()).className = 'selected';
-            sortButtons.forEach(function(button) {
-                if (self.sortState() !== button) {
-                    document.getElementById(button).className = 'not-selected';
+        self.colorSortButtons = function (sort) {
+                if (self.sortState() === sort) {
+                    return 'selected'
                 }
-            });
+                else {
+                    return 'not-selected'
+                }
+        };
 
-            var shrunkSortButtons = ['Asc', 'Desc'];
-            var direction = self.preSelectDirection();
-            document.getElementById(direction).className = 'selected';
-            if (direction === 'Asc'){
-                document.getElementById('Desc').className = 'not-selected';
+        // Colors asc/desc buttons on XS screen
+        self.colorSortButtonsXS = function (sort) {
+            if (self.preSelectDirection() === sort) {
+                return 'selected'
             }
             else {
-                document.getElementById('Asc').className = 'not-selected';
+                return 'not-selected'
             }
         };
 
@@ -262,7 +260,6 @@ var quickSearchProject = {
         self.sortNodesAndModifyDisplay = function () {
             self.restoreToNodeList(self.displayedNodes());
             self.sortBySortState();
-            self.colorSortButtons();
             self.displayedNodes(self.nodes().splice(0, self.countDisplayed()));
         };
 
@@ -353,7 +350,7 @@ var quickSearchProject = {
 
         function sortAlphaAsc() {
             if (ctrl.loadingComplete()) {
-                return m('button', {id: 'alphaAsc', 'class': 'not-selected', onclick: function() {
+                return m('button', {id: 'alphaAsc', 'class': ctrl.colorSortButtons('alphaAsc'), onclick: function() {
                     ctrl.sortState('alphaAsc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
@@ -363,7 +360,7 @@ var quickSearchProject = {
 
         function sortAlphaDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {id: 'alphaDesc', 'class': 'not-selected', onclick: function() {
+                return m('button', {'class': ctrl.colorSortButtons('alphaDesc'), onclick: function() {
                     ctrl.sortState('alphaDesc');
                     ctrl.sortNodesAndModifyDisplay();
                 }},
@@ -373,7 +370,7 @@ var quickSearchProject = {
 
         function sortDateAsc(){
             if (ctrl.loadingComplete()){
-                 return m('button', {id: 'dateAsc', 'class': 'not-selected', onclick: function() {
+                 return m('button', {'class': ctrl.colorSortButtons('dateAsc'), onclick: function() {
                      ctrl.sortState('dateAsc');
                      ctrl.sortNodesAndModifyDisplay();
                  }},
@@ -383,7 +380,7 @@ var quickSearchProject = {
 
         function sortDateDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {id: 'dateDesc', 'class': 'selected', onclick: function() {
+                return m('button', {'class': ctrl.colorSortButtons('dateDesc'), onclick: function() {
                     ctrl.sortState('dateDesc');
                     ctrl.sortNodesAndModifyDisplay();
                }},
@@ -394,39 +391,20 @@ var quickSearchProject = {
         // Sort button for xs screen
         function ascending() {
             if (ctrl.loadingComplete()){
-                var direction = ctrl.preSelectDirection();
-                if (direction === 'Asc') {
-                    return m('button', {id: 'Asc', 'class': 'selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this);
-                         }},
-                         m('i', {'class': 'fa fa-angle-up'}));
-                }
-                else {
-                    return m('button', {id: 'Asc', 'class': 'not-selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this);
-                         }},
-                         m('i', {'class': 'fa fa-angle-up'}));
-
-                }
+                return m('button', {'class': ctrl.colorSortButtonsXS('Asc'), onclick: function() {
+                     ctrl.sortDirectionGivenField(this);
+                     }},
+                     m('i', {'class': 'fa fa-angle-up'}));
             }
         }
 
         // Sort button for xs screen
         function descending() {
             if (ctrl.loadingComplete()){
-                var direction = ctrl.preSelectDirection();
-                if (direction === 'Desc') {
-                    return m('button', {id: 'Desc', 'class': 'selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this);
-                         }},
-                         m('i', {'class': 'fa fa-angle-down'}));
-                }
-                else {
-                    return m('button', {id: 'Desc', 'class': 'not-selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this);
-                         }},
-                         m('i', {'class': 'fa fa-angle-down'}));
-                }
+                return m('button', {'class': ctrl.colorSortButtonsXS('Desc'), onclick: function() {
+                     ctrl.sortDirectionGivenField(this);
+                     }},
+                     m('i', {'class': 'fa fa-angle-down'}));
             }
         }
 
