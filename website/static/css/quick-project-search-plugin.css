@@ -20,11 +20,11 @@
     font-size: 1.5em;
 }
 
-.selected {
+.quick-project .selected {
     color: #000000
 }
 
-.not-selected {
+.quick-project .not-selected {
     color: #347BB7;
 }
 
