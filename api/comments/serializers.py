@@ -83,17 +83,17 @@ class CommentSerializer(JSONAPISerializer):
         assert isinstance(comment, Comment), 'comment must be a Comment'
         auth = Auth(self.context['request'].user)
         if validated_data:
-            if 'get_content' in validated_data:
-                content = validated_data.pop('get_content')
-                try:
-                    comment.edit(content, auth=auth, save=True)
-                except PermissionsError:
-                    raise PermissionDenied('Not authorized to edit this comment.')
             if validated_data.get('is_deleted', None) is False and comment.is_deleted:
                 try:
                     comment.undelete(auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to undelete this comment.')
+            elif 'get_content' in validated_data:
+                content = validated_data.pop('get_content')
+                try:
+                    comment.edit(content, auth=auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to edit this comment.')
         return comment
 
     def get_target_type(self, obj):
