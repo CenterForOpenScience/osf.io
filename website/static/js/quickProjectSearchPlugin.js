@@ -36,7 +36,7 @@ var quickSearchProject = {
             self.countDisplayed(result.data.length);
             result.data.forEach(function (node) {
                 self.nodes().push(node);
-                self.retrieveContributors(node);O
+                self.retrieveContributors(node);
             });
             self.populateEligibleNodes(0, self.countDisplayed() - 1);
             self.next(result.links.next);

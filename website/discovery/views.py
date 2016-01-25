@@ -82,5 +82,3 @@ def popular_activity_json():
     for project in popular:
         popular_ids['popular_node_ids'].append(project._id)
     return popular_ids
-
-

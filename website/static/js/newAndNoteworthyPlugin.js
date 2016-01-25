@@ -31,7 +31,7 @@ var newAndNoteworthy = {
                 self.newAndNoteworthyNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
                   }
-            return newAndNoteworthyPromise
+            return newAndNoteworthyPromise;
         });
 
         // Load popular nodes
@@ -43,47 +43,47 @@ var newAndNoteworthy = {
                 self.popularNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
                   }
-            return popularPromise
+            return popularPromise;
         });
 
         // Additional API call to fetch node link contributors
         self.fetchContributors = function(nodeLink) {
-            url = nodeLink.embeds.target_node.data.relationships.contributors.links.related.href;
+            var url = nodeLink.embeds.target_node.data.relationships.contributors.links.related.href;
             var promise = m.request({method: 'GET', url : url, config: xhrconfig});
             promise.then(function(result){
                 var contribNames = [];
                 result.data.forEach(function (contrib){
-                    contribNames.push(contrib.embeds.users.data.attributes.family_name)
+                    contribNames.push(contrib.embeds.users.data.attributes.family_name);
                 });
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;
                 self.contributorsMapping[nodeId] = [contribNames, numContrib];
-            })
+            });
         };
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
-            return self.contributorsMapping[node.id][0][i]
+            return self.contributorsMapping[node.id][0][i];
         };
 
         // Returns name if one contrib, or adds et al if > 1
         self.contribNameFormat = function(node, number) {
             if (number === 1) {
-                return self.getFamilyName(0, node)
+                return self.getFamilyName(0, node);
             }
             else if (number === 2) {
                 return self.getFamilyName(0, node) + ' and ' +
-                    self.getFamilyName(1, node)
+                    self.getFamilyName(1, node);
             }
             else if (number === 3) {
                 return self.getFamilyName(0, node) + ', ' +
                     self.getFamilyName(1, node) + ', and ' +
-                    self.getFamilyName(2, node)
+                    self.getFamilyName(2, node);
             }
             else {
                 return self.getFamilyName(0, node) + ', ' +
                     self.getFamilyName(1, node) + ', ' +
-                    self.getFamilyName(2, node) + ' + ' + (number - 3)
+                    self.getFamilyName(2, node) + ' + ' + (number - 3);
             }
         };
 
@@ -94,57 +94,44 @@ var newAndNoteworthy = {
 
         // Grabs title for display
         self.getTitle = function (node){
-            return node.embeds.target_node.data.attributes.title
+            return node.embeds.target_node.data.attributes.title;
         };
 
         // Grabs description for display
         self.getDescription = function(node){
-            var description = node.embeds.target_node.data.attributes.description
+            var description = node.embeds.target_node.data.attributes.description;
             if (description){
-                return description
+                return description;
             }
-            return m('p')
-        };
-
-         // Colors node div and changes cursor to pointer on hover
-        self.mouseOver = function (node) {
-            node.style.backgroundColor='#E0EBF3';
-            node.style.cursor = 'pointer'
-        };
-
-        self.mouseOut = function (node) {
-            node.style.backgroundColor='#fcfcfc'
+            return m('p');
         };
 
          // Onclick, directs user to project page
         self.nodeDirect = function(node) {
-            location.href = '/' + node.embeds.target_node.data.id
+            location.href = '/' + node.embeds.target_node.data.id;
         };
 
         self.redirectToSearch = function() {
-            location.href = '/search'
+            location.href = '/search';
         };
 
         self.addToolTip = function(line) {
             var $line = $(line);
             console.log(line.offsetWidth, line.scrollWidth);
             if (line.offsetWidth < line.scrollWidth && !$line.attr('title')) {
-                $line.attr('title', $line.text())
+                $line.attr('title', $line.text());
             }
-        }
+        };
     },
     view : function(ctrl) {
         function nodeDisplay(node) {
-            var title = ctrl.getTitle(node);
-            var description = ctrl.getDescription(node);
-            var contribs = ctrl.getContributors(node);
-            return m('div', {class: 'row node-styling m-v-xs m-h-xs', onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(node)}}},
+            return m('div', {class: 'row node-styling m-v-xs m-h-xs', onclick: function(){{ctrl.nodeDirect(node);}}},
                 m('div', {class: 'col-sm-12'},
-                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this)}}, m('em', ctrl.getTitle(node))),
-                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this)}},  ctrl.getDescription(node)),
+                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this);}}, m('em', ctrl.getTitle(node))),
+                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this);}},  ctrl.getDescription(node)),
                     m('h5', {class: 'prevent-overflow'}, m('span', {'class': 'f-w-xl'}, 'Contributors: '), m('span',  ctrl.getContributors(node)))
                 )
-            )
+            );
         }
 
         function populateNodesSmallScreen () {
@@ -162,27 +149,27 @@ var newAndNoteworthy = {
                         m('div', {class: 'col-sm-6'}, nodeDisplay(newNoteworthy)),
                         m('div', {class: 'col-sm-6'}, nodeDisplay(popular))
                     )
-                ))
+                ));
             }
-            return formattedNodes
+            return formattedNodes;
         }
 
         function newAndNoteworthyProjectsTemplateXSScreen () {
             return ctrl.newAndNoteworthyNodes().map(function(node){
-                return nodeDisplay(node)
-            })
+                return nodeDisplay(node);
+            });
         }
 
         function popularProjectsTemplateXSScreen () {
             return ctrl.popularNodes().map(function(node){
-                return nodeDisplay(node)
-            })
+                return nodeDisplay(node);
+            });
         }
 
         function findMoreProjectsButton () {
             return m('button', {type:'button', class:'btn btn-default m-v-md', onclick: function(){
-                ctrl.redirectToSearch()
-            }}, 'Find more projects with advanced search')
+                ctrl.redirectToSearch();
+            }}, 'Find more projects with advanced search');
         }
 
         return m('div', {class: 'container'}, [
@@ -201,7 +188,7 @@ var newAndNoteworthy = {
                 m('div', {class: 'col-sm-1'})
 
             )
-        ])
+        ]);
     }
 };
 

@@ -28,14 +28,14 @@ def retrieve_data(url):
 
 def get_popular_nodes():
     """ Fetch data from url that returns dict with a list of popular nodes from piwik """
-    # TODO Change discover url to production url in production
+    # TODO Shouldn't hardcode URL - only works locally
     discover_url = 'http://127.0.0.1:5000/api/v1/explore/activity/popular/raw/'
     return retrieve_data(discover_url)
 
 
 def get_new_and_noteworthy_nodes():
-    """ Fetches nodes created in the last month and returns 25 sorted by log activity """
-    # TODO Change discover url to production url
+    """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """
+    # TODO Shouldn't hardcode URL - only works locally
     today = datetime.datetime.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1)).isoformat()
     discover_url = 'http://127.0.0.1:8000/v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(last_month)

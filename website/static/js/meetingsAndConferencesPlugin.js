@@ -19,21 +19,21 @@ var meetingsAndConferences = {
     controller: function() {
         var self = this;
         self.findAMeeting = function(){
-            location.href = '/meetings/'
-        }
+            location.href = '/meetings/';
+        };
     },
     view: function(ctrl) {
         function findAMeetingButton() {
              return m('button', {type:'button', class:'btn btn-default btn-block m-v-xl', onclick: function(){
-                ctrl.findAMeeting()
-            }}, 'Find a Meeting')
+                ctrl.findAMeeting();
+            }}, 'Find a Meeting');
 
         }
 
         function createAMeetingButton() {
              return m('button', {type:'button', class:'btn btn-default btn-block m-v-xl', onclick: function(){
-                ctrl.findAMeeting()
-            }}, 'Create a Meeting')
+                ctrl.findAMeeting();
+            }}, 'Create a Meeting');
         }
         return m('div', {class: 'container conferences-and-meetings m-v-md'}, [
             m('div', {class: 'row m-v-sm'},
@@ -60,7 +60,7 @@ var meetingsAndConferences = {
                         m('div', {class: 'col-sm-1'})
                     ))
             )
-        ])
+        ]);
     }
 };
 
