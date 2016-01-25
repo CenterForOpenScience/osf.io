@@ -17,7 +17,7 @@ from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
-    NodeAlternativeCitationsList, NodeAlternativeCitationDetail)
+    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer
 
@@ -43,7 +43,7 @@ class RegistrationMixin(NodeMixin):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_collection:
+        if node.is_collection or not node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -129,7 +129,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -250,11 +250,30 @@ class RegistrationContributorDetail(NodeContributorDetail, RegistrationMixin):
 class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-children'
+    serializer_class = RegistrationSerializer
+
+    def get_default_odm_query(self):
+        base_query = (
+            Q('is_deleted', 'ne', True) &
+            Q('is_registration', 'eq', True)
+        )
+        user = self.request.user
+        permission_query = Q('is_public', 'eq', True)
+        if not user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'eq', user._id))
+
+        query = base_query & permission_query
+        return query
 
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-comments'
+
+
+class RegistrationLogList(NodeLogList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-logs'
 
 
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):

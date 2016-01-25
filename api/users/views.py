@@ -6,7 +6,6 @@ from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import User, Node, NodeLog
@@ -18,6 +17,7 @@ from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.logs.serializers import NodeLogSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.base.utils import default_node_list_query
 
 from .serializers import UserSerializer, UserDetailSerializer
 from .permissions import ReadOnlyOrCurrentUser
@@ -294,22 +294,20 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
-        return (
-            Q('contributors', 'eq', user) &
-            Q('is_collection', 'ne', True) &
-            Q('is_deleted', 'ne', True)
-        )
+        current_user = self.request.user
+
+        query = (Q('contributors', 'eq', user) & default_node_list_query())
+
+        permission_query = Q('is_public', 'eq', True)
+        if not current_user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
+        query = (query & permission_query)
+        return query
 
     # overrides ListAPIView
     def get_queryset(self):
-        current_user = self.request.user
-        if current_user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(current_user)
         query = self.get_query_from_request()
-        raw_nodes = Node.find(self.get_default_odm_query() & query)
-        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
+        nodes = Node.find(query)
         return nodes
 
 
@@ -398,13 +396,20 @@ class UserRegistrations(UserNodes):
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
-        return (
-            Q('contributors', 'eq', user) &
+        current_user = self.request.user
+
+        query = (
             Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True) &
-            Q('is_registration', 'eq', True)
+            Q('is_registration', 'eq', True) &
+            Q('contributors', 'eq', user._id)
         )
 
+        permission_query = Q('is_public', 'eq', True)
+        if not current_user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
+        query = query & permission_query
+        return query
 
 class UserNodeLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, UserMixin):
 

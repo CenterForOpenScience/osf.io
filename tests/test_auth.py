@@ -4,7 +4,6 @@ import unittest
 from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp
 import mock
-import datetime
 import httplib as http
 
 from flask import Flask
@@ -26,7 +25,6 @@ from framework.auth.decorators import must_be_logged_in
 
 from website import mails
 from website import settings
-from website.util import web_url_for
 from website.project.decorators import (
     must_have_permission, must_be_contributor,
     must_have_addon, must_be_addon_authorizer,

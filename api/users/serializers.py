@@ -7,13 +7,13 @@ from api.base.serializers import AllowMissing
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, DoNotRelateWhenAnonymous
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
 from api.base.utils import add_dev_only_items
 from api.logs.serializers import NodeLogSerializer
 
 
-class UserSerializer(DoNotRelateWhenAnonymous, JSONAPISerializer):
+class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'full_name',
         'given_name',
@@ -61,6 +61,11 @@ class UserSerializer(DoNotRelateWhenAnonymous, JSONAPISerializer):
         related_view='users:user-nodes',
         related_view_kwargs={'user_id': '<pk>'},
     )
+
+    registrations = DevOnly(RelationshipField(
+        related_view='users:user-registrations',
+        related_view_kwargs={'user_id': '<pk>'},
+    ))
 
     class Meta:
         type_ = 'users'

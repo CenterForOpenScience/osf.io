@@ -227,6 +227,7 @@ ALL_MY_PROJECTS_ID = '-amp'
 ALL_MY_REGISTRATIONS_ID = '-amr'
 ALL_MY_PROJECTS_NAME = 'All my projects'
 ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
+NOTEWORTHY_LINKS_NODE = None
 
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
@@ -326,3 +327,5 @@ WATERBUTLER_JWT_EXPIRATION = 15
 
 DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
+
+PREREG_ADMIN_TAG = "prereg_admin"
