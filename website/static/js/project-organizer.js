@@ -64,7 +64,7 @@ function _poContributors(item) {
         } else if(givenName){
             name = givenName;
         } else {
-            name = 'A Contributor'
+            name = 'A Contributor';
         }
         var comma;
         if (index === 0) {
@@ -73,7 +73,7 @@ function _poContributors(item) {
             comma = ', ';
         }
         if (index > 2) {
-            return;
+            return m('span');
         }
         if (index === 2) {
             return m('span', ' + ' + (arr.length - 2));
