@@ -897,3 +897,61 @@ class TestSearchFiles(SearchTestCase):
         node.save()
         find = query_file('The Dock of the Bay.mp3')['results']
         assert_equal(len(find), 0)
+
+
+class TestSearchProjectFile(SearchTestCase):
+
+    def setUp(self):
+        super(TestSearchProjectFile, self).setUp()
+        self.node_one = ProjectFactory(is_public=True, title='Food')
+        self.osf_storage = self.node_one.get_addon('osfstorage')
+        self.root = self.osf_storage.get_root()
+
+    def test_filter_filename(self):
+        file_1 = self.root.append_file('sweet.txt')
+        file_2 = self.root.append_file('savory.txt')
+
+        node_id = self.node_one._id
+        results = elastic_search.project_file_search('sweet.txt', self.node_one._id, index=TEST_INDEX)
+        logging.debug(results[0]['_source'])
+        assert_true(len(results) == 1)
+
+    def test_filter_tags(self):
+        file_1 = self.root.append_file('sweet.txt')
+        file_2 = self.root.append_file('savory.txt')
+
+        tag_1 = Tag(_id='apple')
+        tag_1.save()
+
+        tag_2 = Tag(_id='carrot')
+        tag_2.save()
+
+        file_1.tags.append(tag_1)
+        file_1.save()
+
+        file_2.tags.append(tag_1)
+        file_2.tags.append(tag_2)
+        file_2.save()
+
+        results = elastic_search.project_file_search('apple', self.node_one._id, index=TEST_INDEX)
+        assert_true(len(results) == 2)
+
+        results = elastic_search.project_file_search('carrot', self.node_one._id, index=TEST_INDEX)
+        assert_true(len(results) == 1)
+
+    def test_project_specific(self):
+        node_two = ProjectFactory(is_public=True, title='Food')
+        osf_storage = node_two.get_addon('osfstorage')
+        root = osf_storage.get_root()
+
+        file_1 = self.root.append_file('sweet.txt')
+        file_2 = self.root.append_file('savory.txt')
+
+        file_3 = root.append_file('sweet.txt')
+        file_4 = root.append_file('savory.txt')
+
+        results = elastic_search.project_file_search('sweet.txt', self.node_one._id, index=TEST_INDEX)
+        assert_true(len(results) == 1)
+
+        results = elastic_search.project_file_search('sweet.txt', node_two._id, index=TEST_INDEX)
+        assert_true(len(results) == 1)
