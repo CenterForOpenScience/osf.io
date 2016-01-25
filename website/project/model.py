@@ -791,7 +791,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     piwik_site_id = fields.StringField()
 
     # Primary institution node is attached to
-    primary_institution = fields.ForeignField('institution', backref='node')
+    primary_institution = fields.ForeignField('institution')
 
     def add_primary_institution(self, user, inst):
         if inst.auth(user):

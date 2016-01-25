@@ -835,7 +835,7 @@ class JSONAPIRelationshipSerializer(ser.Serializer):
     Provides a simplified serialization of the relationship, allowing for simple update request
     bodies.
     """
-    id = ser.CharField()
+    id = ser.CharField(required=False, allow_null=True)
     type = TypeField(required=False, allow_null=True)
 
     def to_representation(self, obj):

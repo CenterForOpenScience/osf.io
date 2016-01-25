@@ -30,18 +30,7 @@ class AdminOrPublic(permissions.BasePermission):
         else:
             return node.has_permission(auth.user, osf_permissions.ADMIN)
 
-class AdminOrPublicRelationship(AdminOrPublic):
 
-    def has_object_permission(self, request, view, obj):
-        if isinstance(obj, dict):
-            obj = obj['data']
-        assert isinstance(obj, (Node, User, Institution)), 'obj must be a Node, User or Institution, got {}'.format(obj)
-        auth = get_user_auth(request)
-        node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
-        if request.method in permissions.SAFE_METHODS:
-            return node.is_public or node.can_view(auth)
-        else:
-            return node.has_permission(auth.user, osf_permissions.ADMIN)
 class ExcludeRetractions(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):

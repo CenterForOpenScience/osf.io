@@ -458,7 +458,7 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
         node = instance
         user = self.context['request'].user
 
-        inst = validated_data.get('institution_id')
+        inst = validated_data.get('institution_id', None)
         if inst:
             inst = Institution.load(inst)
             if not inst:

@@ -3,7 +3,8 @@ import requests
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
-from rest_framework.status import is_server_error
+from rest_framework.status import is_server_error, HTTP_204_NO_CONTENT
+from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -1988,7 +1989,7 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
                            null
                          }
                        }
-        Success:       200
+        Success:       204
 
     This requires admin permission on the node.
     """
@@ -2008,3 +2009,16 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_node()
+
+    def update(self, request, *args, **kwargs):
+        # same as drf's update method from the update mixin, with the addition of
+        # returning a 204 when successfully deletes relationship with PUT/PATCH
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        inst = request.data.get('id', None)
+        if not inst:
+            return Response(status=HTTP_204_NO_CONTENT)
+        return Response(serializer.data)

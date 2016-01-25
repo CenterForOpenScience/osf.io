@@ -21,7 +21,7 @@
                     % endif
                 % endif
                 <h2 class="node-title">
-                    <span id="nodeTitleEditable" class="overflow"> ${node['title']}</span>
+                    <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
             <div class="col-sm-7 col-md-5">
