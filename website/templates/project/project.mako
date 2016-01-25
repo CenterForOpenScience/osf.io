@@ -318,7 +318,7 @@
                     ##     <!-- /ko -->
                     ## % endif
                 </div>
-                <p><strong>More</strong></p>
+                <p><strong>Get more citations</strong></p>
                 <div id="citationStylePanel" class="citation-picker">
                     <input id="citationStyleInput" type="hidden" />
                 </div>
@@ -412,7 +412,6 @@ ${parent.javascript_bottom()}
     // Hack to allow mako variables to be accessed to JS modules
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
-            name: ${ user_full_name | sjson, n },
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n }
         },

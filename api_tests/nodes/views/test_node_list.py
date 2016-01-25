@@ -552,6 +552,35 @@ class TestNodeCreate(ApiTestCase):
         project = Node.load(pid)
         assert_equal(project.logs[-1].action, NodeLog.PROJECT_CREATED)
 
+    def test_creates_project_from_template(self):
+        template_from = ProjectFactory(creator=self.user_one, is_public=True)
+        template_component = ProjectFactory(creator=self.user_one, is_public=True, parent=template_from)
+        templated_project_title = 'Templated Project'
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': templated_project_title,
+                        'category': self.category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+
+        res = self.app.post_json_api(self.url, templated_project_data, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        json_data = res.json['data']
+
+        new_project_id = json_data['id']
+        new_project = Node.load(new_project_id)
+        assert_equal(new_project.title, templated_project_title)
+        assert_equal(new_project.description, None)
+        assert_false(new_project.is_public)
+        assert_equal(len(new_project.nodes), len(template_from.nodes))
+        assert_equal(new_project.nodes[0].title, template_component.title)
+
+
     def test_creates_project_creates_project_and_sanitizes_html(self):
         title = '<em>Cool</em> <strong>Project</strong>'
         description = 'An <script>alert("even cooler")</script> project'
@@ -1295,6 +1324,15 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         res = self.app.patch_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+
+    def test_bulk_partial_update_privacy_has_no_effect_on_tags(self):
+        self.public_project.add_tag('tag1', Auth(self.public_project.creator), save=True)
+        payload = {'id': self.public_project._id, 'type': 'nodes', 'attributes': {'public': False}}
+        res = self.app.patch_json_api(self.url, {'data': [payload]}, auth=self.user.auth, bulk=True)
+        assert_equal(res.status_code, 200)
+        self.public_project.reload()
+        assert_equal(self.public_project.tags, ['tag1'])
+        assert_equal(self.public_project.is_public, False)
 
 
 class TestNodeBulkUpdateSkipUneditable(ApiTestCase):

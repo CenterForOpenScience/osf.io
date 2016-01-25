@@ -203,6 +203,9 @@ class User(GuidStoredObject, AddonModelMixin):
         'linkedIn': u'https://www.linkedin.com/{}',
         'impactStory': u'https://impactstory.org/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
+        'researchGate': u'https://researchgate.net/profile/{}',
+        'academiaInstitution': u'https://{}',
+        'academiaProfileID': u'.academia.edu/{}'
     }
 
     # This is a GuidStoredObject, so this will be a GUID.

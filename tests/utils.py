@@ -5,7 +5,7 @@ import datetime
 
 from django.http import HttpRequest
 from nose import SkipTest
-from nose.tools import assert_equal, assert_not_equal
+from nose.tools import assert_equal, assert_not_equal, assert_in
 
 from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS

@@ -260,6 +260,10 @@ def node_fork_page(auth, node, **kwargs):
             http.FORBIDDEN,
             redirect_url=node.url
         )
+    message = '{} has been successfully forked.'.format(
+        node.project_or_component.capitalize()
+    )
+    status.push_status_message(message, kind='success', trust=False)
     return fork.url
 
 
@@ -302,8 +306,13 @@ def node_setting(auth, node, **kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name != 'wiki'
     ], key=lambda addon: addon.full_name.lower())
+
+    for addon in settings.ADDONS_AVAILABLE:
+        if 'node' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name == 'wiki':
+            ret['wiki'] = addon
+            break
 
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
@@ -371,7 +380,6 @@ def configure_comments(node, **kwargs):
 @must_be_contributor_or_public
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
-
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
 
@@ -609,7 +617,7 @@ def component_remove(auth, node, **kwargs):
         )
     node.save()
 
-    message = '{} deleted'.format(
+    message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
     status.push_status_message(message, kind='success', trust=False)

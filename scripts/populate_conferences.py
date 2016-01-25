@@ -563,6 +563,14 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': False,
         'talk': False,
+        'field_names': {
+            'submission1': 'poster',
+            'submission2': 'study',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'studies',
+            'meeting_title_type': 'Studies',
+            'add_submission': 'studies',
+        }
     },
     'ASCERM2016': {
         'name': 'ASCE Rocky Mountain Student Conference 2016',
@@ -574,8 +582,57 @@ MEETING_DATA = {
         'poster': False,
         'talk': True,
     },
+        'ARCA2016': {
+        'name': '5th Applied Research Conference in Africa',
+        'info_url': 'http://www.arcaconference.org/',
+        'logo_url': 'http://www.arcaconference.org/images/ARCA_LOGO_NEW.JPG',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+    },
+        'CURCONF2016': {
+        'name': 'CUR Biennial Conference 2016',
+        'info_url': 'http://www.cur.org/conferences_and_events/biennial2016/',
+        'logo_url': 'http://s11.postimg.org/itsmubimq/Conference_logo_eps.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+        'CATALISE2016': {
+        'name': 'Criteria and Terminology Applied to Language Impairments: Synthesising the Evidence (CATALISE) 2016',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'Emergy2016': {
+        'name': '9th Biennial Emergy Research Conference',
+        'info_url': 'http://www.cep.ees.ufl.edu/emergy/conferences/ERC09_2016/index.shtml',
+        'logo_url': 'http://s12.postimg.org/uf9ioqmct/emergy.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'aps2016': {
+        'name': '28th APS Annual Convention',
+        'info_url': 'http://www.psychologicalscience.org/convention',
+        'logo_url': 'http://www.psychologicalscience.org/redesign/wp-content/uploads/2015/03/APS_2016_Banner_990x157.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
-
 
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
@@ -596,7 +653,12 @@ def populate_conferences():
         except ModularOdmException:
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
-                setattr(conf, key, value)
+                if isinstance(value, dict):
+                    current = getattr(conf, key)
+                    current.update(value)
+                    setattr(conf, key, current)
+                else:
+                    setattr(conf, key, value)
             conf.admins = admin_objs
             changed_fields = conf.save()
             if changed_fields:

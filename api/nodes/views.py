@@ -11,7 +11,7 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
+from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
@@ -189,11 +189,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                          "data": {
                            "type": "nodes", # required
                            "attributes": {
-                             "title":       {title},          # required
-                             "category":    {category},       # required
-                             "description": {description},    # optional
-                             "tags":        [{tag1}, {tag2}], # optional
-                             "public":      true|false        # optional
+                             "title":         {title},          # required
+                             "category":      {category},       # required
+                             "description":   {description},    # optional
+                             "tags":          [{tag1}, {tag2}], # optional
+                             "public":        true|false        # optional
+                             "template_from": {node_id}         # optional
                            }
                          }
                        }
@@ -1806,6 +1807,9 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         date_modified  iso8601 timestamp  timestamp when the comment was last updated
         modified       boolean            has this comment been edited?
         deleted        boolean            is this comment deleted?
+        is_abuse       boolean            has this comment been reported by the current user?
+        has_children   boolean            does this comment have replies?
+        can_edit       boolean            can the current user edit this comment?
 
     ##Links
 
@@ -1996,7 +2000,7 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     serializer_class = NodeInstitutionRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
 
     view_category = 'nodes'
     view_name = 'node-relationships-institution'

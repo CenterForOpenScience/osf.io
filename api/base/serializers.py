@@ -48,6 +48,7 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
 
     return ret
 
+
 def is_anonymized(request):
     is_anonymous = False
     private_key = request.query_params.get('view_only', None)
@@ -59,10 +60,6 @@ def is_anonymized(request):
         if link is not None:
             is_anonymous = link.anonymous
     return is_anonymous
-
-
-class DoNotRelateWhenAnonymous(object):
-    pass
 
 
 class HideIfRegistration(ser.Field):
@@ -638,6 +635,10 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
+        # if PATCH request, the child serializer's partial attribute needs to be True
+        if self.context['request'].method == 'PATCH':
+            self.child.partial = True
+
         bulk_skip_uneditable = utils.is_truthy(self.context['request'].query_params.get('skip_uneditable', False))
         if not bulk_skip_uneditable:
             if len(instance) != len(validated_data):
@@ -696,6 +697,13 @@ class JSONAPISerializer(ser.Serializer):
     according to JSON API spec. Relational fields must set json_api_link=True flag.
     Self/html links must be nested under "links".
     """
+
+    # Don't serialize relationships that use these views
+    # when viewing thru an anonymous VOL
+    views_to_hide_if_anonymous = [
+        'users:user-detail',
+        'nodes:node-registrations',
+    ]
 
     # overrides Serializer
     @classmethod
@@ -770,8 +778,8 @@ class JSONAPISerializer(ser.Serializer):
                 else:
                     try:
                         if not (is_anonymous and
-                                hasattr(field, 'view_name') and not
-                                isinstance(field.root, DoNotRelateWhenAnonymous)):
+                                hasattr(field, 'view_name') and
+                                field.view_name in self.views_to_hide_if_anonymous):
                             data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
                         continue
@@ -795,6 +803,8 @@ class JSONAPISerializer(ser.Serializer):
 
         if envelope:
             ret[envelope] = data
+            if is_anonymous:
+                ret['meta'] = {'anonymous': True}
         else:
             ret = data
         return ret
@@ -823,26 +833,21 @@ class JSONAPISerializer(ser.Serializer):
 class JSONAPIRelationshipSerializer(ser.Serializer):
     """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
     Provides a simplified serialization of the relationship, allowing for simple update request
-    bodies. Also provides links to itself and to the endpoint providing information about the related
-    object.
+    bodies.
     """
+    id = ser.CharField()
+    type = TypeField(required=False, allow_null=True)
+
 
     def to_representation(self, obj):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
-
-        data = collections.OrderedDict([
-            ('data', collections.OrderedDict()),
-            ('links', collections.OrderedDict()),
-        ])
         relation_id_field = self.fields['id']
-
         attribute = relation_id_field.get_attribute(obj)
         relationship = relation_id_field.to_representation(attribute)
 
-        data['data'] = {'type': type_, 'id': relationship} if relationship else None
-        data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
+        data = {'type': type_, 'id': relationship} if relationship else None
 
         return data
 
@@ -873,3 +878,20 @@ class RestrictedDictSerializer(ser.Serializer):
             else:
                 data[field.field_name] = field.to_representation(attribute)
         return data
+
+
+def relationship_diff(current_items, new_items):
+    """
+    To be used in POST and PUT/PATCH relationship requests, as, by JSON API specs,
+    in update requests, the 'remove' items' relationships would be deleted, and the
+    'add' would be added, while for create requests, only the 'add' would be added.
+
+    :param current_items: The current items in the relationship
+    :param new_items: The items passed in the request
+    :return:
+    """
+
+    return {
+        'add': {k: new_items[k] for k in (set(new_items.keys()) - set(current_items.keys()))},
+        'remove': {k: current_items[k] for k in (set(current_items.keys()) - set(new_items.keys()))}
+    }
