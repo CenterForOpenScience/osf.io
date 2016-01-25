@@ -4,7 +4,7 @@
     min-height: 660px;
 }
 
-#recentActivitySlider .progress-bar {
+#rASlider .progress-bar {
     background-color: #214762;
     width: 100%;
 }
@@ -22,7 +22,7 @@
     background-image: -webkit-linear-gradient(top, #f4f4f4 0%, #e5e5e5 100%);
     background-image: linear-gradient(to bottom, #f4f4f4 0%, #e5e5e5 100%);
 }
-#recentActivitySlider.ui-slider {
+#rASlider.ui-slider {
     border: none;
     background: #E4E3E3;
 }
@@ -67,7 +67,7 @@
 }
 
 .no-items-progress-bar {
-    width: 100%;
+    width: 100%; 
     background-color: dimgrey;
 }
 
@@ -81,7 +81,7 @@
     box-shadow: 0px 2px 7px -2px #7F7E7E;
 }
 
-#rightButton, #leftButton {
+#rARightButton, #rALeftButton {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -91,7 +91,7 @@
     border: 1px solid #f8f8f8;
 }
 
-#rightButton:hover, #leftButton:hover {
+#rARightButton:hover, #rALeftButton:hover {
     color: #333;
     background-color: #fcfcfc;
 }

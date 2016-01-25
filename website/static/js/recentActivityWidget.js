@@ -126,13 +126,13 @@ var LogWrap = {
             var rightHandle = handle[1];
             ctx.beginPath();
             ctx.moveTo(leftHandle.offsetLeft + (handle.width()/2), 0);
-            ctx.lineTo(progBar.offset().left - $('#rACanvas').offset().left, ctrl.canvasHeight);
+            ctx.lineTo(progBar.offset().left - $('#rACanvas').offset().left, self.canvasHeight);
             ctx.strokeStyle = '#E0E0E0 ';
             ctx.lineWidth = 2;
             ctx.stroke();
             ctx.beginPath();
             ctx.moveTo(rightHandle.offsetLeft + (handle.width()/2), 0);
-            ctx.lineTo(progBar.offset().left + progBar[0].offsetWidth - $('#rACanvas').offset().left, ctrl.canvasHeight);
+            ctx.lineTo(progBar.offset().left + progBar[0].offsetWidth - $('#rACanvas').offset().left, self.canvasHeight);
             ctx.strokeStyle = '#E0E0E0 ';
             ctx.lineWidth = 2;
             ctx.stroke();
