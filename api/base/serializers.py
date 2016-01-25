@@ -838,7 +838,6 @@ class JSONAPIRelationshipSerializer(ser.Serializer):
     id = ser.CharField()
     type = TypeField(required=False, allow_null=True)
 
-
     def to_representation(self, obj):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)

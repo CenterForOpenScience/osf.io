@@ -82,7 +82,8 @@ class TestNodeRegistrationSerializer(DbTestCase):
         assert_equal(data['type'], 'registrations')
         should_not_relate_to_registrations = [
             'registered_from',
-            'registered_by'
+            'registered_by',
+            'primary_institution'
         ]
 
         # Attributes
