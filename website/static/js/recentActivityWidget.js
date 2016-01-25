@@ -144,18 +144,27 @@ var LogWrap = {
             if (category.indexOf('project') !== -1){ return '#f0ad4e'; }
             else { return '#5cb85c'; }
         };
-    },
-    view: function(ctrl, args){
-        var div = ctrl.div;
-        var begin = (Number(ctrl.firstDay.format('x'))/div | 0);
-        var end = (Number(ctrl.today.format('x'))/div | 0);
-        var values = [(Number(ctrl.dateBegin.format('x'))/div | 0), (Number(ctrl.dateEnd.format('x'))/div | 0)];
-        var makeSliderProgress =  function(){
+        self.addButtons = function(ele, isInitialized) {
+            if ($('#rALeftButton')){
+                $('#rALeftButton').css('height', $('#rALogs').height());
+            }
+            if ($('#rARightButton')){
+                $('#rARightButton').css('height', $('#rALogs').height());
+            }
+        };
+        self.makeSliderProgress =  function(){
             return '<div id="rAFilleBar" class="progress" style="height: 11px">' +
                         '<div class="progress-bar"></div>' +
                 '</div>';
         };
+    },
+    view: function(ctrl, args){
+        var div = ctrl.div;
+
         var addSlider = function(ele, isInitialized){
+            var begin = (Number(ctrl.firstDay.format('x'))/div | 0);
+            var end = (Number(ctrl.today.format('x'))/div | 0);
+            var values = [(Number(ctrl.dateBegin.format('x'))/div | 0), (Number(ctrl.dateEnd.format('x'))/div | 0)];
             var canvas = document.getElementById('rACanvas');
             if (!isInitialized) {
                 $('#rASlider').slider({
@@ -210,21 +219,13 @@ var LogWrap = {
                 });
                 ctrl.getLogs(false, true);
                 var bar = $('#rASlider').find('.ui-slider-range');
-                bar.append(makeSliderProgress());
+                bar.append(ctrl.makeSliderProgress());
                 ctrl.makeLine(canvas);
             }
             else {
                 //$('#rASlider').slider('option', 'values', values);
-                $('#rAFilleBar').replaceWith(makeSliderProgress());
+                $('#rAFilleBar').replaceWith(ctrl.makeSliderProgress());
                 ctrl.makeLine(canvas);
-            }
-        };
-        var addButtons = function(ele, isInitialized) {
-            if ($('#rALeftButton')){
-                $('#rALeftButton').css('height', $('#rALogs').height());
-            }
-            if ($('#rARightButton')){
-                $('#rARightButton').css('height', $('#rALogs').height());
             }
         };
 
@@ -310,7 +311,7 @@ var LogWrap = {
                             m.component(LogText,item)
                         ]);
                     }) : m('p','No activity in this time range.')),
-                    m('.col-xs-1', {config: addButtons}, m('#rARightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled.hidden'),{
+                    m('.col-xs-1', {config: ctrl.addButtons}, m('#rARightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled.hidden'),{
                         onclick: function(){
                             ctrl.page++;
                             ctrl.getLogs();
