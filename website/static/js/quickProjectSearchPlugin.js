@@ -43,15 +43,32 @@ var quickSearchProject = {
         });
         promise.then(
             function(){
-                if (self.next()) {
-                    self.recursiveNodes(self.next());
-                }
-                else {
-                    self.loadingComplete(true);
-                    m.redraw();
-                }
+                self.recursiveNodes(self.next());
             }
         );
+
+        // Recursively fetches remaining user's nodes
+        self.recursiveNodes = function (url) {
+            if (self.pendingNodes()) {
+                m.redraw();
+            }
+            if (self.next()) {
+                var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
+                nextPromise.then(function(result){
+                    result.data.forEach(function(node){
+                        self.nodes().push(node);
+                        self.retrieveContributors(node);
+                    });
+                self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length - 1);
+                self.next(result.links.next);
+                self.recursiveNodes(self.next());
+                });
+            }
+            else {
+                self.loadingComplete(true);
+                m.redraw()
+            }
+        };
 
         // Adds eligible node indices to array - used when no filter
         self.populateEligibleNodes = function (first, last) {
@@ -65,28 +82,6 @@ var quickSearchProject = {
             return (self.countDisplayed() < self.eligibleNodes().length);
         };
 
-        // Recursively fetches remaining user's nodes
-        self.recursiveNodes = function (url) {
-            if (self.pendingNodes()) {
-                m.redraw();
-            }
-            var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
-            nextPromise.then(function(result){
-                result.data.forEach(function(node){
-                    self.nodes().push(node);
-                    self.retrieveContributors(node);
-                });
-                self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length - 1);
-                self.next(result.links.next);
-                if (self.next()) {
-                    self.recursiveNodes(self.next());
-                }
-                else {
-                    self.loadingComplete(true);
-                    m.redraw();
-                }
-            });
-        };
 
         // When 'load more' button pressed, loads up to 10 nodes
         self.loadUpToTen = function () {
