@@ -116,18 +116,8 @@ var LogWrap = {
             var ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
-    },
-    view: function(ctrl, args){
-        var div = ctrl.div;
-        var begin = (Number(ctrl.firstDay.format('x'))/div | 0);
-        var end = (Number(ctrl.today.format('x'))/div | 0);
-        var values = [(Number(ctrl.dateBegin.format('x'))/div | 0), (Number(ctrl.dateEnd.format('x'))/div | 0)];
-        var makeSliderProgress =  function(){
-            return '<div id="fillerBar" class="progress" style="height: 11px">' +
-                        '<div class="progress-bar"></div>' +
-                '</div>';
-        };
-        var makeLine = function(canvas){
+
+        self.makeLine = function(canvas){
             var ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             var progBar = $('#rAProgressBar');
@@ -147,10 +137,28 @@ var LogWrap = {
             ctx.lineWidth = 2;
             ctx.stroke();
         };
+        self.categoryColor = function(category){
+            if (category.indexOf('wiki') !== -1){ return '#d9534f'; }
+            if (category.indexOf('comment') !== -1){ return '#5bc0de'; }
+            if (category.indexOf('file') !== -1){ return '#337ab7'; }
+            if (category.indexOf('project') !== -1){ return '#f0ad4e'; }
+            else { return '#5cb85c'; }
+        };
+    },
+    view: function(ctrl, args){
+        var div = ctrl.div;
+        var begin = (Number(ctrl.firstDay.format('x'))/div | 0);
+        var end = (Number(ctrl.today.format('x'))/div | 0);
+        var values = [(Number(ctrl.dateBegin.format('x'))/div | 0), (Number(ctrl.dateEnd.format('x'))/div | 0)];
+        var makeSliderProgress =  function(){
+            return '<div id="rAFilleBar" class="progress" style="height: 11px">' +
+                        '<div class="progress-bar"></div>' +
+                '</div>';
+        };
         var addSlider = function(ele, isInitialized){
             var canvas = document.getElementById('rACanvas');
             if (!isInitialized) {
-                $('#recentActivitySlider').slider({
+                $('#rASlider').slider({
                     min: begin,
                     max: end,
                     range: true,
@@ -165,20 +173,20 @@ var LogWrap = {
                         ctrl.eventFilter = false;
                         ctrl.loading = true;
                         m.redraw();
-                        $('#fillerBar').replaceWith(
-                            '<div id="fillerBar" class="progress" style="height: 11px">' +
+                        $('#rAFilleBar').replaceWith(
+                            '<div id="rAFilleBar" class="progress" style="height: 11px">' +
                                 '<div class="progress-bar progress-bar-success progress-bar-striped active" style="width:100%;"></div>' +
                             '</div>'
                         );
                     },
                     slide: function (){
-                        makeLine(canvas);
+                        ctrl.makeLine(canvas);
                     },
                     change: function (event, ui){
                         ctrl.loading = true;
                         m.redraw();
-                        $('#fillerBar').replaceWith(
-                            '<div id="fillerBar" class="progress" style="height: 11px">' +
+                        $('#rAFilleBar').replaceWith(
+                            '<div id="rAFilleBar" class="progress" style="height: 11px">' +
                                 '<div class="progress-bar progress-bar-success progress-bar-striped active" style="width:100%;"></div>' +
                             '</div>'
                         );
@@ -188,7 +196,7 @@ var LogWrap = {
                         ctrl.getLogs(false, true);
                     }
                 });
-                $('#recentActivitySlider').slider('pips', {
+                $('#rASlider').slider('pips', {
                     last: false,
                     rest: 'label',
                     step: ctrl.steps,
@@ -201,31 +209,25 @@ var LogWrap = {
                     }
                 });
                 ctrl.getLogs(false, true);
-                var bar = $('#recentActivitySlider').find('.ui-slider-range');
+                var bar = $('#rASlider').find('.ui-slider-range');
                 bar.append(makeSliderProgress());
-                makeLine(canvas);
+                ctrl.makeLine(canvas);
             }
             else {
-                //$('#recentActivitySlider').slider('option', 'values', values);
-                $('#fillerBar').replaceWith(makeSliderProgress());
-                makeLine(canvas);
+                //$('#rASlider').slider('option', 'values', values);
+                $('#rAFilleBar').replaceWith(makeSliderProgress());
+                ctrl.makeLine(canvas);
             }
         };
         var addButtons = function(ele, isInitialized) {
-            if ($('#leftButton')){
-                $('#leftButton').css('height', $('#logs').height());
+            if ($('#rALeftButton')){
+                $('#rALeftButton').css('height', $('#rALogs').height());
             }
-            if ($('#rightButton')){
-                $('#rightButton').css('height', $('#logs').height());
+            if ($('#rARightButton')){
+                $('#rARightButton').css('height', $('#rALogs').height());
             }
         };
-        var categoryColor = function(category){
-            if (category.indexOf('wiki') !== -1){ return '#d9534f'; }
-            if (category.indexOf('comment') !== -1){ return '#5bc0de'; }
-            if (category.indexOf('file') !== -1){ return '#337ab7'; }
-            if (category.indexOf('project') !== -1){ return '#f0ad4e'; }
-            else { return '#5cb85c'; }
-        };
+
         var fileEvents = ((ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.files ? 5 : 0);
         var commentEvents = ((ctrl.eventNumbers.comments/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.comments ? 5 : 0);
         var wikiEvents = ((ctrl.eventNumbers.wiki/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.wiki ? 5 : 0);
@@ -255,11 +257,11 @@ var LogWrap = {
         };
         return m('.fb-activity-list.col-md-10.col-md-offset-1.m-t-xl', [
                 m('.time-slider-parent',
-                    m('#recentActivitySlider',  {config: addSlider})
+                    m('#rASlider',  {config: addSlider})
                 ),
                 m('canvas#rACanvas', {
                     style: {verticalAlign: 'middle'},
-                    width: $('#recentActivitySlider').width(),
+                    width: $('#rASlider').width(),
                     height: ctrl.canvasHeight
                 }),
                 m('.row', [
@@ -296,19 +298,19 @@ var LogWrap = {
                 m('.row', !ctrl.loading ? [m('.col-xs-10.col-xs-offset-1', filterLabels())] : ''),
                  !ctrl.loading ?
                 m('.row',{style:{paddingTop: '15px'}}, [
-                    m('.col-xs-1', m('#leftButton' + (ctrl.page > 1 ? '' : '.disabled.hidden'), {
+                    m('.col-xs-1', m('#rALeftButton' + (ctrl.page > 1 ? '' : '.disabled.hidden'), {
                         onclick: function(){
                             ctrl.page--;
                             ctrl.getLogs();
                         }},m('i.fa.fa-angle-left.page-button'))),
-                    m('#logs.col-xs-10' ,(ctrl.activityLogs() && (ctrl.activityLogs().length > 0))? ctrl.activityLogs().map(function(item){
+                    m('#rALogs.col-xs-10' ,(ctrl.activityLogs() && (ctrl.activityLogs().length > 0))? ctrl.activityLogs().map(function(item){
                         return m('.activity-item',
-                            {style: {borderLeft: 'solid 5px ' + categoryColor(item.attributes.action)}}, [
+                            {style: {borderLeft: 'solid 5px ' + ctrl.categoryColor(item.attributes.action)}}, [
                             m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
                             m.component(LogText,item)
                         ]);
                     }) : m('p','No activity in this time range.')),
-                    m('.col-xs-1', {config: addButtons}, m('#rightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled.hidden'),{
+                    m('.col-xs-1', {config: addButtons}, m('#rARightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled.hidden'),{
                         onclick: function(){
                             ctrl.page++;
                             ctrl.getLogs();
