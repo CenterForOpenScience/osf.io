@@ -55,7 +55,7 @@ var MAX_RESULTS = 14;
                 minLength: 0
             },
             {
-                displayKey: function(data) {
+                display: function(data) {
                     if(settings.type === 'registration'){
                         return data.value.node.title;
                     }
