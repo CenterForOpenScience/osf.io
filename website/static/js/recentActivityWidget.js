@@ -212,13 +212,11 @@ var LogWrap = {
             }
         };
         var addButtons = function(ele, isInitialized) {
-            if (isInitialized) {
-                if ($('#leftButton')){
-                    $('#leftButton').css('height', $('#logs').height());
-                }
-                if ($('#rightButton')){
-                    $('#rightButton').css('height', $('#logs').height());
-                }
+            if ($('#leftButton')){
+                $('#leftButton').css('height', $('#logs').height());
+            }
+            if ($('#rightButton')){
+                $('#rightButton').css('height', $('#logs').height());
             }
         };
         var categoryColor = function(category){
@@ -303,14 +301,14 @@ var LogWrap = {
                             ctrl.page--;
                             ctrl.getLogs();
                         }},m('i.fa.fa-angle-left.page-button'))),
-                    m('#logs.col-xs-10', {config: addButtons} ,(ctrl.activityLogs() && (ctrl.activityLogs().length > 0))? ctrl.activityLogs().map(function(item){
+                    m('#logs.col-xs-10' ,(ctrl.activityLogs() && (ctrl.activityLogs().length > 0))? ctrl.activityLogs().map(function(item){
                         return m('.activity-item',
                             {style: {borderLeft: 'solid 5px ' + categoryColor(item.attributes.action)}}, [
                             m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
                             m.component(LogText,item)
                         ]);
                     }) : m('p','No activity in this time range.')),
-                    m('.col-xs-1', m('#rightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled.hidden'),{
+                    m('.col-xs-1', {config: addButtons}, m('#rightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled.hidden'),{
                         onclick: function(){
                             ctrl.page++;
                             ctrl.getLogs();
