@@ -157,14 +157,10 @@ var LogWrap = {
                         '<div class="progress-bar"></div>' +
                 '</div>';
         };
-    },
-    view: function(ctrl, args){
-        var div = ctrl.div;
-
-        var addSlider = function(ele, isInitialized){
-            var begin = (Number(ctrl.firstDay.format('x'))/div | 0);
-            var end = (Number(ctrl.today.format('x'))/div | 0);
-            var values = [(Number(ctrl.dateBegin.format('x'))/div | 0), (Number(ctrl.dateEnd.format('x'))/div | 0)];
+        self.addSlider = function(ele, isInitialized){
+            var begin = (Number(self.firstDay.format('x'))/self.div | 0);
+            var end = (Number(self.today.format('x'))/self.div | 0);
+            var values = [(Number(self.dateBegin.format('x'))/self.div | 0), (Number(self.dateEnd.format('x'))/self.div | 0)];
             var canvas = document.getElementById('rACanvas');
             if (!isInitialized) {
                 $('#rASlider').slider({
@@ -173,14 +169,14 @@ var LogWrap = {
                     range: true,
                     values: values,
                     stop: function (event, ui) {
-                        ctrl.page = 1;
-                        ctrl.dateBegin = moment.utc(ui.values[0]*div);
-                        ctrl.dateEnd = moment.utc(ui.values[1]*div);
-                        ctrl.getLogs(false, true);
+                        self.page = 1;
+                        self.dateBegin = moment.utc(ui.values[0]*self.div);
+                        self.dateEnd = moment.utc(ui.values[1]*self.div);
+                        self.getLogs(false, true);
                     },
                     start: function (event, ui){
-                        ctrl.eventFilter = false;
-                        ctrl.loading = true;
+                        self.eventFilter = false;
+                        self.loading = true;
                         m.redraw();
                         $('#rAFilleBar').replaceWith(
                             '<div id="rAFilleBar" class="progress" style="height: 11px">' +
@@ -189,45 +185,48 @@ var LogWrap = {
                         );
                     },
                     slide: function (){
-                        ctrl.makeLine(canvas);
+                        self.makeLine(canvas);
                     },
                     change: function (event, ui){
-                        ctrl.loading = true;
+                        self.loading = true;
                         m.redraw();
                         $('#rAFilleBar').replaceWith(
                             '<div id="rAFilleBar" class="progress" style="height: 11px">' +
                                 '<div class="progress-bar progress-bar-success progress-bar-striped active" style="width:100%;"></div>' +
                             '</div>'
                         );
-                        ctrl.page = 1;
-                        ctrl.dateBegin = moment.utc(ui.values[0]*div);
-                        ctrl.dateEnd = moment.utc(ui.values[1]*div);
-                        ctrl.getLogs(false, true);
+                        self.page = 1;
+                        self.dateBegin = moment.utc(ui.values[0]*self.div);
+                        self.dateEnd = moment.utc(ui.values[1]*self.div);
+                        self.getLogs(false, true);
                     }
                 });
                 $('#rASlider').slider('pips', {
                     last: false,
                     rest: 'label',
-                    step: ctrl.steps,
+                    step: self.steps,
                     formatLabel: function(value){
-                        return String(moment.utc(value*div).format(ctrl.formatPip));
+                        return String(moment.utc(value*self.div).format(self.formatPip));
                     }
                 }).slider('float', {
                     formatLabel: function(value){
-                        return String(moment.utc(value*div).format(ctrl.formatFloat));
+                        return String(moment.utc(value*self.div).format(self.formatFloat));
                     }
                 });
-                ctrl.getLogs(false, true);
+                self.getLogs(false, true);
                 var bar = $('#rASlider').find('.ui-slider-range');
-                bar.append(ctrl.makeSliderProgress());
-                ctrl.makeLine(canvas);
+                bar.append(self.makeSliderProgress());
+                self.makeLine(canvas);
             }
             else {
                 //$('#rASlider').slider('option', 'values', values);
-                $('#rAFilleBar').replaceWith(ctrl.makeSliderProgress());
-                ctrl.makeLine(canvas);
+                $('#rAFilleBar').replaceWith(self.makeSliderProgress());
+                self.makeLine(canvas);
             }
         };
+    },
+
+    view: function(ctrl, args){
 
         var fileEvents = ((ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.files ? 5 : 0);
         var commentEvents = ((ctrl.eventNumbers.comments/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.comments ? 5 : 0);
@@ -258,7 +257,7 @@ var LogWrap = {
         };
         return m('.fb-activity-list.col-md-10.col-md-offset-1.m-t-xl', [
                 m('.time-slider-parent',
-                    m('#rASlider',  {config: addSlider})
+                    m('#rASlider',  {config: ctrl.addSlider})
                 ),
                 m('canvas#rACanvas', {
                     style: {verticalAlign: 'middle'},
