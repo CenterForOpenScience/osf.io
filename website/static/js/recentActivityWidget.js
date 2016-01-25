@@ -240,10 +240,10 @@ var LogWrap = {
                 }
                 return m('p', [
                     'Filter on: ',
-                    fileEvents ? m('a', {onclick: function(){ctrl.callLogs('file')}}, 'Files' + (nodeEvents || commentEvents || wikiEvents ? ', ': '')): '',
-                    nodeEvents ? m('a', {onclick: function(){ctrl.callLogs('project')}}, 'Projects' + (commentEvents || wikiEvents ? ', ': '')): '',
-                    commentEvents ? m('a', {onclick: function(){ctrl.callLogs('comment')}}, 'Comments' + (wikiEvents ? ', ': '')): '',
-                    wikiEvents ? m('a', {onclick: function(){ctrl.callLogs('wiki')}}, 'Wiki'): ''
+                    fileEvents ? m('a', {onclick: function(){ctrl.callLogs('file')}}, 'Files' + (nodeEvents || commentEvents || wikiEvents ? ', ': '')): '', // jshint ignore:line
+                    nodeEvents ? m('a', {onclick: function(){ctrl.callLogs('project')}}, 'Projects' + (commentEvents || wikiEvents ? ', ': '')): '', // jshint ignore:line
+                    commentEvents ? m('a', {onclick: function(){ctrl.callLogs('comment')}}, 'Comments' + (wikiEvents ? ', ': '')): '',// jshint ignore:line
+                    wikiEvents ? m('a', {onclick: function(){ctrl.callLogs('wiki')}}, 'Wiki'): '' // jshint ignore:line
                 ]);
             } else {
                 return m('p', [
