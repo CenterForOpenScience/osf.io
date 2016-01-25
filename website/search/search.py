@@ -89,6 +89,11 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                                               exclude=exclude, current_user=current_user)
     return result
 
+@requires_search
+def search_project_files(query, node_id, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.project_file_search(query, node_id, index)
+
 def search_share(query, raw=False, index='share'):
     return share_search.search(query, raw=raw, index=index)
 

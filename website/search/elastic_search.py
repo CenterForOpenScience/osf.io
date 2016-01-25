@@ -628,3 +628,32 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         'pages': pages,
         'page': page,
     }
+
+
+@requires_search
+def project_file_search(query, node_id, index=None):
+    """ Return the files matching a query in a single project.
+
+    :param query: query text.
+    :param node_id: id of project being searched.
+    :return: list of file dicts.
+    """
+    index = index or INDEX
+    query = {
+        'query': {
+            'filtered': {
+                'query': {
+                    'bool': {
+                        'should': [
+                            {'prefix': {'name': query}},
+                            {'prefix': {'tags': query}},
+                        ]
+                    }
+                },
+                'filter': {
+                    'term': {'node_url': '{}'.format(node_id)}
+                }
+            }
+        }
+    }
+    return es.search(index=index, doc_type='file', body=query)['hits']['hits']
