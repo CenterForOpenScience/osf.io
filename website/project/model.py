@@ -350,6 +350,8 @@ class NodeLog(StoredObject):
     action = fields.StringField(index=True)
     params = fields.DictionaryField()
     should_hide = fields.BooleanField(default=False)
+    original_node = fields.ForeignField('node', index=True)
+    node = fields.ForeignField('node', index=True)
     __indices__ = [
         {
             'key_or_list': [
@@ -454,13 +456,13 @@ class NodeLog(StoredObject):
     def pk(self):
         return self._id
 
-    @property
-    def node(self):
-        """Return the :class:`Node` associated with this log."""
-        return (
-            Node.load(self.params.get('node')) or
-            Node.load(self.params.get('project'))
-        )
+    # @property
+    # def node(self):
+    #     """Return the :class:`Node` associated with this log."""
+    #     return (
+    #         Node.load(self.params.get('node')) or
+    #         Node.load(self.params.get('project'))
+    #     )
 
     @property
     def tz_date(self):
