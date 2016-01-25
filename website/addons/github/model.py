@@ -60,6 +60,17 @@ class GitHubUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
 
+    def revoke_remote_oauth_access(self, external_account):
+        """Overrides default behavior during external_account deactivation.
+
+        Tells GitHub to remove the grant for the OSF associated with this account.
+        """
+        connection = GitHubClient(external_account=external_account)
+        try:
+            connection.revoke_token()
+        except GitHubError:
+            pass
+
     # Required for importing username from social profile configuration page
     # Assumes oldest connected account is primary.
     @property
