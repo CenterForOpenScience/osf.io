@@ -970,13 +970,19 @@ var Filters = {
         var self = this;
         self.nameCurrentPage = m.prop(1);
         self.namePageSize = m.prop(4);
-        self.nameTotalPages = m.prop(Math.ceil(args.nameFilters.length/self.namePageSize()));
+        self.nameTotalPages = m.prop(1);
         self.tagCurrentPage = m.prop(1);
         self.tagPageSize = m.prop(4);
-        self.tagTotalPages = m.prop(Math.ceil(args.tagFilters.length/self.tagPageSize()));
+        self.tagTotalPages = m.prop(1);
     },
     view : function (ctrl, args) {
         var selectedCSS;
+        if(args.nameFilters.length > 0) {
+            ctrl.nameTotalPages(Math.ceil(args.nameFilters.length/ctrl.namePageSize()));
+        }
+        if(args.tagFilters.length > 0){
+            ctrl.tagTotalPages(Math.ceil(args.tagFilters.length/ctrl.tagPageSize()));
+        }
         var returnNameFilters = function (){
             var list = [];
             var begin = ((ctrl.nameCurrentPage()-1) * ctrl.namePageSize()); // remember indexes start from 0
