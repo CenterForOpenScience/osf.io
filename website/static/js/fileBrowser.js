@@ -569,7 +569,7 @@ var Collections  = {
             var promise = m.request({method : 'POST', url : url, config : xhrconfig, data : data});
             promise.then(function(result){
                 var node = result.data;
-                var count = node.relationships.linked_nodes.links.related.meta.count;
+                var count = node.relationships.linked_nodes.links.related.meta.count || 0;
                 self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 args.sidebarInit();
             });
