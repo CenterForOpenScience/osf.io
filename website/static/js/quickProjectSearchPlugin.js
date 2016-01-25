@@ -18,11 +18,10 @@ var xhrconfig = function(xhr) {
 var quickSearchProject = {
     controller: function() {
         var self = this;
-        self.nodes = m.prop([]); // Pending nodes waiting to be displayed
-        self.displayedNodes = m.prop([]); // Nodes that are rendered
-        self.nonMatchingNodes = m.prop([]); //Nodes that don't match search query
+        self.nodes = m.prop([]); // Master node list
+        self.eligibleNodes = m.prop([]); // Array of indices corresponding to self.nodes() that are eligible to be loaded
         self.sortState = m.prop('dateDesc'); //How nodes are sorted - default is date descending - dateDesc
-        self.countDisplayed = m.prop(); // Number of nodes that are rendered.  'Load more' increases this by up to ten.
+        self.countDisplayed = m.prop(); // Max number of nodes that can be rendered.  'Load more' increases this by up to ten.
         self.next = m.prop(); // URL for getting the next ten user nodes. When null, all nodes are loaded.
         self.loadingComplete = m.prop(false); // True when all user nodes are loaded.
         self.contributorMapping = {}; // Maps node id to list of contributors for searching
@@ -39,8 +38,8 @@ var quickSearchProject = {
                 self.nodes().push(node);
                 self.retrieveContributors(node);
             });
+            self.populateEligibleNodes(0, self.countDisplayed() - 1);
             self.next(result.links.next);
-            self.displayedNodes(self.nodes().splice(0, 10));
         });
         promise.then(
             function(){
@@ -54,37 +53,49 @@ var quickSearchProject = {
             }
         );
 
+        // Adds eligible node indices to array - used when no filter
+        self.populateEligibleNodes = function (first, last) {
+            for (var n = first; n <= last; n++) {
+                self.eligibleNodes().push(n);
+            }
+        };
+
+        // Returns true if there are nodes in the background that are not rendered on screen
+        self.pendingNodes = function () {
+            return (self.countDisplayed() < self.eligibleNodes().length);
+        };
+
         // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
-            if (self.nodes().length > 0) {
+            if (self.pendingNodes()) {
                 m.redraw();
             }
-             var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
-                nextPromise.then(function(result){
-                    result.data.forEach(function(node){
-                        self.nodes().push(node);
-                        self.retrieveContributors(node);
-                    });
-                    self.next(result.links.next);
-                    //console.log(self.next());
-                    if (self.next()) {
-                        self.recursiveNodes(self.next());
-                    }
-                    else {
-                        self.loadingComplete(true);
-                        m.redraw();
-                    }
+            var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
+            nextPromise.then(function(result){
+                result.data.forEach(function(node){
+                    self.nodes().push(node);
+                    self.retrieveContributors(node);
                 });
+                self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length - 1);
+                self.next(result.links.next);
+                if (self.next()) {
+                    self.recursiveNodes(self.next());
+                }
+                else {
+                    self.loadingComplete(true);
+                    m.redraw();
+                }
+            });
         };
 
         // When 'load more' button pressed, loads up to 10 nodes
         self.loadUpToTen = function () {
-            var requested = self.nodes().splice(0, 10);
-            for (var i = 0; i < requested.length; i++) {
-                self.displayedNodes().push(requested[i]);
+            if (self.eligibleNodes().length - self.countDisplayed() >= 10) {
+                self.countDisplayed(self.countDisplayed() + 10);
             }
-            self.countDisplayed(self.displayedNodes().length);
-            return self.displayedNodes();
+            else {
+                self.countDisplayed(self.eligibleNodes().length);
+            }
         };
 
         // If < 10 contribs, map node id to contrib names. Otherwise, make a call to get all contribs.
@@ -95,7 +106,7 @@ var quickSearchProject = {
             else {
                 var contributors = node.embeds.contributors;
                 self.mapNodeToContributors(node, contributors);
-                }
+            }
         };
 
         // Call to get up to 1000 contributors on a node.
@@ -151,13 +162,6 @@ var quickSearchProject = {
         };
 
 
-        // Shifts nodes back to master node list (from displayedNodes or nonMatchingNodes)
-        self.restoreToNodeList = function (missingNodes) {
-            for (var i = 0; i < missingNodes.length ; i++) {
-                self.nodes().push(missingNodes[i]);
-            }
-        };
-
         self.sortAlphabeticalAscending = function () {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
@@ -209,20 +213,23 @@ var quickSearchProject = {
                 default:
                     self.sortDateDescending();
             }
+            if (self.filter()) {
+                self.quickSearch();
+            }
         };
 
         // For xs screen
         self.sortFieldGivenDirection = function(){
             var directionSort = self.preSelectDirection();
             self.sortState(self.fieldSort() + directionSort);
-            self.sortNodesAndModifyDisplay();
+            self.sortBySortState();
         };
 
         // For xs screen
         self.sortDirectionGivenField = function() {
             var fieldSort = self.preSelectField();
             self.sortState(fieldSort + self.directionSort());
-            self.sortNodesAndModifyDisplay();
+            self.sortBySortState();
         };
 
         // When shifting to xs screen, tells which field to automatically display in select
@@ -237,91 +244,70 @@ var quickSearchProject = {
 
         // Colors sort asc/desc buttons either selected or not-selected
         self.colorSortButtons = function (sort) {
-                if (self.sortState() === sort) {
-                    return 'selected'
-                }
-                else {
-                    return 'not-selected'
-                }
+            if (self.sortState() === sort) {
+                return 'selected';
+            }
+            else {
+                return 'not-selected';
+            }
         };
 
         // Colors asc/desc buttons on XS screen
         self.colorSortButtonsXS = function (sort) {
             if (self.preSelectDirection() === sort) {
-                return 'selected'
+                return 'selected';
             }
             else {
-                return 'not-selected'
+                return 'not-selected';
             }
-        };
-
-        // Shifts all nodes back to master node list, sorts, and returns self.countDisplayed() number of nodes for display
-        self.sortNodesAndModifyDisplay = function () {
-            self.restoreToNodeList(self.displayedNodes());
-            self.sortBySortState();
-            self.displayedNodes(self.nodes().splice(0, self.countDisplayed()));
         };
 
         // Filtering on title
-        self.noTitleMatch = function (node) {
-            return (node.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) === -1);
+        self.titleMatch = function (node) {
+            return (node.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
         };
 
         // Filtering on contrib
-        self.noContributorMatch = function (node) {
+        self.contributorMatch = function (node) {
             var contributors = self.contributorMapping[node.id];
-
             for (var c = 0; c < contributors.length; c++) {
                 if (contributors[c].toUpperCase().indexOf(self.filter().toUpperCase()) !== -1){
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
         };
 
         // Filtering on tag
-        self.noTagMatch = function (node) {
+        self.tagMatch = function (node) {
             var tags = node.attributes.tags;
             for (var t = 0; t < tags.length; t++){
                 if (tags[t].toUpperCase().indexOf(self.filter().toUpperCase()) !== -1) {
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
         };
 
         // Filters nodes
         self.filterNodes = function (){
-            for (var n = self.nodes().length - 1; n >= 0; n--) {
+            for (var n = 0;  n <= self.nodes().length - 1;  n++) {
                 var node = self.nodes()[n];
-                if (self.noTitleMatch(node) && self.noContributorMatch(node) && self.noTagMatch(node)) {
-                    self.nonMatchingNodes().push(node);
-                    self.nodes().splice(n, 1);
+                if (self.titleMatch(node) || self.contributorMatch(node) || self.tagMatch(node)) {
+                    self.eligibleNodes().push(n);
                 }
             }
         };
 
         self.quickSearch = function () {
-            self.restoreToNodeList(self.nonMatchingNodes());
-            self.restoreToNodeList(self.displayedNodes());
-            self.displayedNodes([]);
-            self.nonMatchingNodes([]);
+            self.eligibleNodes([]);
             // if backspace completely, previous nodes with prior sorting/count will be displayed
             if (self.filter() === '') {
-                self.sortNodesAndModifyDisplay();
-                return self.displayedNodes();
+                self.populateEligibleNodes(0, self.nodes().length - 1);
             }
             else {
                 self.filterNodes();
-                self.sortBySortState();
-                var numDisplay = Math.min(self.nodes().length, self.countDisplayed());
-                for (var i = 0; i < numDisplay; i++) {
-                    self.displayedNodes().push(self.nodes()[i]);
-                }
-                self.nodes().splice(0, numDisplay);
-                return self.displayedNodes();
             }
-
         };
 
         // Onclick, directs user to project page
@@ -332,7 +318,7 @@ var quickSearchProject = {
     },
     view : function(ctrl) {
         function loadMoreButton() {
-            if (ctrl.nodes().length !== 0){
+            if (ctrl.pendingNodes()){
                 return m('button', {'class': 'col-sm-12 text-muted', onclick: function() {
                         ctrl.loadUpToTen();
                 }},
@@ -343,8 +329,7 @@ var quickSearchProject = {
         function sortAlphaAsc() {
             if (ctrl.loadingComplete()) {
                 return m('button', {id: 'alphaAsc', 'class': ctrl.colorSortButtons('alphaAsc'), onclick: function() {
-                    ctrl.sortState('alphaAsc');
-                    ctrl.sortNodesAndModifyDisplay();
+                    ctrl.sortBySortState(ctrl.sortState('alphaAsc'));
                 }},
                     m('i', {'class': 'fa fa-angle-up'}));
             }
@@ -353,8 +338,7 @@ var quickSearchProject = {
         function sortAlphaDesc(){
             if (ctrl.loadingComplete()){
                 return m('button', {'class': ctrl.colorSortButtons('alphaDesc'), onclick: function() {
-                    ctrl.sortState('alphaDesc');
-                    ctrl.sortNodesAndModifyDisplay();
+                    ctrl.sortBySortState(ctrl.sortState('alphaDesc'));
                 }},
                 m('i', {'class': 'fa fa-angle-down'}));
             }
@@ -363,8 +347,7 @@ var quickSearchProject = {
         function sortDateAsc(){
             if (ctrl.loadingComplete()){
                  return m('button', {'class': ctrl.colorSortButtons('dateAsc'), onclick: function() {
-                     ctrl.sortState('dateAsc');
-                     ctrl.sortNodesAndModifyDisplay();
+                     ctrl.sortBySortState(ctrl.sortState('dateAsc'));
                  }},
                  m('i', {'class': 'fa fa-angle-up'}));
             }
@@ -373,8 +356,7 @@ var quickSearchProject = {
         function sortDateDesc(){
             if (ctrl.loadingComplete()){
                 return m('button', {'class': ctrl.colorSortButtons('dateDesc'), onclick: function() {
-                    ctrl.sortState('dateDesc');
-                    ctrl.sortNodesAndModifyDisplay();
+                    ctrl.sortBySortState(ctrl.sortState('dateDesc'));
                }},
                 m('i', {'class': 'fa fa-angle-down'}));
             }
@@ -411,19 +393,20 @@ var quickSearchProject = {
             else {
                 return [m('option', {value: 'alpha'}, 'Title'), m('option', {value: 'date', selected:'selected'}, 'Modified')];
             }
-
         }
+
 
         function searchBar() {
             if (ctrl.loadingComplete()){
                 return m('div', {'class' : 'input-group'}, [
                     m('span', {'class': 'input-group-addon'}, m('i', {'class': 'fa fa-search'})),
-                    m('input[type=search]', {'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
-                        ctrl.filter(search.target['value']);
+                    m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
+                        ctrl.filter(search.target.value);
                         ctrl.quickSearch();}
                     }),
                     m('span', {'class': 'input-group-addon', onclick: function() {
                         ctrl.filter('');
+                        document.getElementById('searchQuery').value = '';
                         ctrl.quickSearch();
                     }},  m('button', m('i', {'class': 'fa fa-times'})))
                 ]);
@@ -431,7 +414,8 @@ var quickSearchProject = {
         }
 
         function displayNodes() {
-            if (ctrl.displayedNodes().length === 0 && ctrl.filter() != null) {
+            console.log(ctrl.eligibleNodes().length, ctrl.countDisplayed(), ctrl.sortState(), ctrl.loadingComplete());
+            if (ctrl.eligibleNodes().length ===0 && ctrl.filter() != null) {
                 return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-10 col-sm-offset-1'},
                     m('div', {'class': 'row'}, [
                         m('div', {'class': 'col-sm-1'}),
@@ -440,14 +424,13 @@ var quickSearchProject = {
                 ));
             }
             else {
-                return ctrl.displayedNodes().map(function(n){
-                    return projectView(n);
+                return ctrl.eligibleNodes().slice(0, ctrl.countDisplayed()).map(function(n){
+                    return projectView(ctrl.nodes()[n]);
                 });
             }
         }
 
         function projectView(project) {
-            console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
             return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
                 m('div', {'class': 'row node-styling', onclick: function(){{ctrl.nodeDirect(project);
                 }}}, [
@@ -465,7 +448,7 @@ var quickSearchProject = {
                         m('div', {'class': 'col-sm-12 p-v-xs, f-w-xl'},
                             m('label', [m('span', 'Order by: '),
                                 m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(dropdown){
-                                    ctrl.fieldSort(dropdown.target['value']);
+                                    ctrl.fieldSort(dropdown.target.value);
                                     ctrl.sortFieldGivenDirection();
                                 }}, defaultSelected()),
                                 ascending(),
@@ -473,7 +456,7 @@ var quickSearchProject = {
                             ])
                         )]
                     ))
-                )
+                );
             }
         }
 
@@ -503,14 +486,14 @@ var quickSearchProject = {
 
                 displayNodes(),
                 m('div', {'class': 'row'}, [
-                    m('div', {'class': 'col-sm-5'}),
-                    m('div', {'class': 'col-sm-2'}, loadMoreButton()),
-                    m('div', {'class': 'col-sm-5'})
+                    m('div', {'class': 'col-xs-5'}),
+                    m('div', {'class': 'col-xs-2'}, loadMoreButton()),
+                    m('div', {'class': 'col-xs-5'})
                 ])
             ]);
         }
 
-        if (ctrl.displayedNodes().length === 0 && ctrl.filter() == null) {
+        if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
             return m('div', {'class': 'container'}, [
                 m('div', {'class': 'row'}, [
                     m('div', {'class': 'col-sm-1'}),
