@@ -35,7 +35,8 @@ function _formatDataforPO(item) {
         console.log(item.embeds.contributors.errors);
     } else {
         item.embeds.contributors.data.forEach(function(c){
-            item.contributors += c.embeds.users.data.attributes.full_name;
+            var attr = c.embeds.users.data.attributes;
+            item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
         });
     }
     item.date = new $osf.FormattableDate(item.attributes.date_modified);
