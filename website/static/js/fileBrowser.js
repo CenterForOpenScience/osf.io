@@ -400,9 +400,7 @@ var FileBrowser = {
         }.bind(self);
 
         self.sidebarInit = function (element, isInit) {
-            if(!isInit){
-                $('[data-toggle="tooltip"]').tooltip();
-            }
+            $('[data-toggle="tooltip"]').tooltip();
         };
 
         self.init = function () {
