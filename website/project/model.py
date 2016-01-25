@@ -783,7 +783,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     contributors = fields.ForeignField('user', list=True)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
-    logs = fields.ForeignField('nodelog', list=True, backref='logged')
+    # logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
 
     # Tags for internal use
@@ -989,6 +989,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
         else:
             return True
+
+    # @property
+    # def logs(self):
+    #     """ List of logs associated with this node"""
+    #     return list(NodeLog.find(Q('node', 'eq', self._id)))
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
