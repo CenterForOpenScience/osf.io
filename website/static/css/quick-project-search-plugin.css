@@ -4,7 +4,12 @@
     border: 1px solid #cccccc;
 }
 
-button {
+.node-styling:hover {
+    background-color: #E0EBF3;
+    cursor: pointer;
+}
+
+.quick-project button {
     -webkit-appearance: none;
     outline: none;
     border: 0;
@@ -15,11 +20,11 @@ button {
     font-size: 1.5em;
 }
 
-.selected {
+.quick-project .selected {
     color: #000000
 }
 
-.not-selected {
+.quick-project .not-selected {
     color: #347BB7;
 }
 

@@ -18,16 +18,16 @@ var xhrconfig = function(xhr) {
 var quickSearchProject = {
     controller: function() {
         var self = this;
-        self.nodes = m.prop([]); // Pending nodes waiting to be displayed
-        self.displayedNodes = m.prop([]); // Nodes that are rendered
-        self.nonMatchingNodes = m.prop([]); //Nodes that don't match search query
-        self.sortState = m.prop('dateDesc');
-        self.countDisplayed = m.prop();
-        self.next = m.prop();
-        self.loadingComplete = m.prop(false);
-        self.contributorMapping = {};
-        self.filter = m.prop();
-        self.totalLoaded = m.prop();
+        self.nodes = m.prop([]); // Master node list
+        self.eligibleNodes = m.prop([]); // Array of indices corresponding to self.nodes() that are eligible to be loaded
+        self.sortState = m.prop('dateDesc'); //How nodes are sorted - default is date descending - dateDesc
+        self.countDisplayed = m.prop(); // Max number of nodes that can be rendered.  'Load more' increases this by up to ten.
+        self.next = m.prop(); // URL for getting the next ten user nodes. When null, all nodes are loaded.
+        self.loadingComplete = m.prop(false); // True when all user nodes are loaded.
+        self.contributorMapping = {}; // Maps node id to list of contributors for searching
+        self.filter = m.prop(); // Search query from user
+        self.fieldSort = m.prop(); // For xs screen, either alpha or date
+        self.directionSort = m.prop(); // For xs screen, either Asc or Desc
 
         // Load first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
@@ -36,65 +36,72 @@ var quickSearchProject = {
             self.countDisplayed(result.data.length);
             result.data.forEach(function (node) {
                 self.nodes().push(node);
-                self.retrieveContributors(node)
+                self.retrieveContributors(node);O
             });
+            self.populateEligibleNodes(0, self.countDisplayed() - 1);
             self.next(result.links.next);
-            self.displayedNodes(self.nodes().splice(0, 10));
-            self.totalLoaded(self.displayedNodes().length)
         });
         promise.then(
             function(){
-                if (self.next()) {
-                    self.recursiveNodes(self.next())
-                }
-                else {
-                    self.loadingComplete(true);
-                    m.redraw()
-                }
+                self.recursiveNodes(self.next());
             }
         );
 
         // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
-            if (self.nodes().length > 0) {
-                m.redraw()
+            if (self.pendingNodes()) {
+                m.redraw();
             }
-             var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
+            if (self.next()) {
+                var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
                 nextPromise.then(function(result){
                     result.data.forEach(function(node){
                         self.nodes().push(node);
-                        self.retrieveContributors(node)
+                        self.retrieveContributors(node);
                     });
-                    self.next(result.links.next);
-                    console.log(self.next());
-                    if (self.next()) {
-                        self.recursiveNodes(self.next())
-                    }
-                    else {
-                        self.loadingComplete(true);
-                        m.redraw()
-                    }
-        })};
+                self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length - 1);
+                self.next(result.links.next);
+                self.recursiveNodes(self.next());
+                });
+            }
+            else {
+                self.loadingComplete(true);
+                m.redraw();
+            }
+        };
+
+        // Adds eligible node indices to array - used when no filter
+        self.populateEligibleNodes = function (first, last) {
+            for (var n = first; n <= last; n++) {
+                self.eligibleNodes().push(n);
+            }
+        };
+
+        // Returns true if there are nodes in the background that are not rendered on screen
+        self.pendingNodes = function () {
+            return (self.countDisplayed() < self.eligibleNodes().length);
+        };
+
 
         // When 'load more' button pressed, loads up to 10 nodes
         self.loadUpToTen = function () {
-            var requested = self.nodes().splice(0, 10);
-            for (var i = 0; i < requested.length; i++) {
-                self.displayedNodes().push(requested[i])
+            if (self.eligibleNodes().length - self.countDisplayed() >= 10) {
+                self.countDisplayed(self.countDisplayed() + 10);
             }
-            self.countDisplayed(self.displayedNodes().length);
-            return self.displayedNodes()
+            else {
+                self.countDisplayed(self.eligibleNodes().length);
+            }
         };
 
         // If < 10 contribs, map node id to contrib names. Otherwise, make a call to get all contribs.
         self.retrieveContributors = function(node) {
             if (node.embeds.contributors.links.meta.total > 10) {
-                self.pullOverTenContributorNames(node)
+                self.pullOverTenContributorNames(node);
             }
             else {
                 var contributors = node.embeds.contributors;
-                self.mapNodeToContributors(node, contributors)
-                }
+                self.mapNodeToContributors(node, contributors);
+            }
         };
 
         // Call to get up to 1000 contributors on a node.
@@ -102,8 +109,8 @@ var quickSearchProject = {
             var url = $osf.apiV2Url('nodes/' + node.id + '/contributors/', { query : { 'page[size]': 1000 }});
             var promise = m.request({method: 'GET', url : url, config: xhrconfig, background : true});
             promise.then(function(result){
-                self.mapNodeToContributors(node, result)
-            })
+                self.mapNodeToContributors(node, result);
+            });
         };
 
         // Maps node id to list of contrib names for later searching
@@ -111,52 +118,44 @@ var quickSearchProject = {
             var contributorList = [];
             contributors.data.forEach(function(contrib){
                 fullName = contrib.embeds.users.data.attributes.full_name;
-                contributorList.push(fullName)
-
+                contributorList.push(fullName);
             });
-            self.contributorMapping[node.id] = contributorList
+            self.contributorMapping[node.id] = contributorList;
         };
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
-            return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name
+            return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name;
         };
 
         // Formats contrib family names for display
         self.getContributors = function (node) {
             var numContributors = node.embeds.contributors.links.meta.total;
             if (numContributors === 1) {
-                return self.getFamilyName(0, node)
+                return self.getFamilyName(0, node);
             }
             else if (numContributors === 2) {
                 return self.getFamilyName(0, node) + ' and ' +
-                    self.getFamilyName(1, node)
+                    self.getFamilyName(1, node);
             }
             else if (numContributors === 3) {
                 return self.getFamilyName(0, node) + ', ' +
                     self.getFamilyName(1, node) + ', and ' +
-                    self.getFamilyName(2, node)
+                    self.getFamilyName(2, node);
             }
             else {
                 return self.getFamilyName(0, node) + ', ' +
                     self.getFamilyName(1, node) + ', ' +
-                    self.getFamilyName(2, node) + ' + ' + (numContributors - 3)
+                    self.getFamilyName(2, node) + ' + ' + (numContributors - 3);
             }
 
         };
 
          // Formats date for display
         self.formatDate = function (node) {
-            return new $osf.FormattableDate(node.attributes.date_modified).local
+            return new $osf.FormattableDate(node.attributes.date_modified).local;
         };
 
-
-        // Shifts nodes back to master node list (from displayedNodes or nonMatchingNodes)
-        self.restoreToNodeList = function (missingNodes) {
-            for (var i = 0; i < missingNodes.length ; i++) {
-                self.nodes().push(missingNodes[i])
-            }
-        };
 
         self.sortAlphabeticalAscending = function () {
             self.nodes().sort(function(a,b){
@@ -182,7 +181,7 @@ var quickSearchProject = {
                 var B = b.attributes.date_modified;
                 return (A < B) ? -1 : (A > B) ? 1 : 0;
             });
-            self.sortState('dateAsc')
+            self.sortState('dateAsc');
         };
 
         self.sortDateDescending = function () {
@@ -196,36 +195,36 @@ var quickSearchProject = {
 
         // Sorts nodes depending on current sort state.
         self.sortBySortState = function () {
-            if (self.sortState() === 'alphaAsc') {
-                self.sortAlphabeticalAscending()
+            switch (self.sortState()) {
+                case 'alphaAsc':
+                    self.sortAlphabeticalAscending();
+                    break;
+                case 'alphaDesc':
+                    self.sortAlphabeticalDescending();
+                    break;
+                case 'dateAsc':
+                    self.sortDateAscending();
+                    break;
+                default:
+                    self.sortDateDescending();
             }
-            else if (self.sortState() === 'alphaDesc') {
-                self.sortAlphabeticalDescending()
-            }
-            else if (self.sortState() === 'dateAsc') {
-                self.sortDateAscending()
-            }
-            else {
-                self.sortDateDescending()
+            if (self.filter()) {
+                self.quickSearch();
             }
         };
 
         // For xs screen
         self.sortFieldGivenDirection = function(){
-            var dropdown = document.getElementById('sortDropDown');
-            var fieldSort = dropdown.options[dropdown.selectedIndex].value;
             var directionSort = self.preSelectDirection();
-            self.sortState(fieldSort + directionSort);
-            self.sortNodesAndModifyDisplay()
+            self.sortState(self.fieldSort() + directionSort);
+            self.sortBySortState();
         };
 
         // For xs screen
-        self.sortDirectionGivenField = function(clicked) {
-            console.log('sorted');
+        self.sortDirectionGivenField = function() {
             var fieldSort = self.preSelectField();
-            var directionSort = clicked.id;
-            self.sortState(fieldSort + directionSort);
-            self.sortNodesAndModifyDisplay()
+            self.sortState(fieldSort + self.directionSort());
+            self.sortBySortState();
         };
 
         // When shifting to xs screen, tells which field to automatically display in select
@@ -239,310 +238,270 @@ var quickSearchProject = {
         };
 
         // Colors sort asc/desc buttons either selected or not-selected
-        self.colorSortButtons = function () {
-            var sortButtons = ['dateAsc', 'dateDesc', 'alphaAsc', 'alphaDesc'];
-            var button = document.getElementById(self.sortState()).className = 'selected';
-            sortButtons.forEach(function(button) {
-                if (self.sortState() !== button) {
-                    document.getElementById(button).className = 'not-selected'
-                }
-            });
-
-            var shrunkSortButtons = ['Asc', 'Desc'];
-            var direction = self.preSelectDirection();
-            document.getElementById(direction).className = 'selected';
-            if (direction === 'Asc'){
-                document.getElementById('Desc').className = 'not-selected'
+        self.colorSortButtons = function (sort) {
+            if (self.sortState() === sort) {
+                return 'selected';
             }
             else {
-                document.getElementById('Asc').className = 'not-selected'
+                return 'not-selected';
             }
         };
 
-        // Shifts all nodes back to master node list, sorts, and returns self.countDisplayed() number of nodes for display
-        self.sortNodesAndModifyDisplay = function () {
-            self.restoreToNodeList(self.displayedNodes());
-            self.sortBySortState();
-            self.colorSortButtons();
-            self.displayedNodes(self.nodes().splice(0, self.countDisplayed()))
+        // Colors asc/desc buttons on XS screen
+        self.colorSortButtonsXS = function (sort) {
+            if (self.preSelectDirection() === sort) {
+                return 'selected';
+            }
+            else {
+                return 'not-selected';
+            }
         };
 
         // Filtering on title
-        self.noTitleMatch = function (node) {
-            return (node.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) === -1);
+        self.titleMatch = function (node) {
+            return (node.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
         };
 
         // Filtering on contrib
-        self.noContributorMatch = function (node) {
+        self.contributorMatch = function (node) {
             var contributors = self.contributorMapping[node.id];
-
             for (var c = 0; c < contributors.length; c++) {
                 if (contributors[c].toUpperCase().indexOf(self.filter().toUpperCase()) !== -1){
-                    return false
+                    return true;
                 }
             }
-            return true
+            return false;
         };
 
         // Filtering on tag
-        self.noTagMatch = function (node) {
+        self.tagMatch = function (node) {
             var tags = node.attributes.tags;
             for (var t = 0; t < tags.length; t++){
                 if (tags[t].toUpperCase().indexOf(self.filter().toUpperCase()) !== -1) {
-                    return false
+                    return true;
                 }
             }
-            return true
+            return false;
         };
 
         // Filters nodes
         self.filterNodes = function (){
-            for (var n = self.nodes().length - 1; n >= 0; n--) {
+            for (var n = 0;  n <= self.nodes().length - 1;  n++) {
                 var node = self.nodes()[n];
-                if (self.noTitleMatch(node) && self.noContributorMatch(node) && self.noTagMatch(node)) {
-                    self.nonMatchingNodes().push(node);
-                    self.nodes().splice(n, 1)
+                if (self.titleMatch(node) || self.contributorMatch(node) || self.tagMatch(node)) {
+                    self.eligibleNodes().push(n);
                 }
             }
-        };
-
-        // Colors node div and changes cursor to pointer on hover
-        self.mouseOver = function (node) {
-            node.style.backgroundColor='#E0EBF3';
-            node.style.cursor = 'pointer'
-        };
-
-        self.mouseOut = function (node) {
-            node.style.backgroundColor='#fcfcfc'
-        };
-
-        self.clearSearch = function () {
-            document.getElementById('searchQuery').value="";
-            self.filter(document.getElementById('searchQuery').value);
-            self.quickSearch()
         };
 
         self.quickSearch = function () {
-            self.filter(document.getElementById('searchQuery').value);
-            self.restoreToNodeList(self.nonMatchingNodes());
-            self.restoreToNodeList(self.displayedNodes());
-            self.displayedNodes([]);
-            self.nonMatchingNodes([]);
+            self.eligibleNodes([]);
             // if backspace completely, previous nodes with prior sorting/count will be displayed
             if (self.filter() === '') {
-                self.sortNodesAndModifyDisplay();
-                return self.displayedNodes()
+                self.populateEligibleNodes(0, self.nodes().length - 1);
             }
             else {
                 self.filterNodes();
-                self.sortBySortState();
-                var numDisplay = Math.min(self.nodes().length, self.countDisplayed());
-                for (var i = 0; i < numDisplay; i++) {
-                    self.displayedNodes().push(self.nodes()[i])
-                }
-                self.nodes().splice(0, numDisplay);
-                return self.displayedNodes()
             }
-
         };
 
         // Onclick, directs user to project page
         self.nodeDirect = function(node) {
-            location.href = '/'+ node.id
+            location.href = '/'+ node.id;
         };
 
     },
     view : function(ctrl) {
         function loadMoreButton() {
-            if (ctrl.nodes().length !== 0){
-                return m('button', {class: 'col-sm-12 text-muted', onclick: function() {
-                        ctrl.loadUpToTen()}
-                },
-                m('i', {class: 'fa fa-caret-down load-nodes'}))
+            if (ctrl.pendingNodes()){
+                return m('button', {'class': 'col-sm-12 text-muted', onclick: function() {
+                        ctrl.loadUpToTen();
+                }},
+                m('i', {'class': 'fa fa-caret-down load-nodes'}));
             }
         }
 
         function sortAlphaAsc() {
             if (ctrl.loadingComplete()) {
-                return m('button', {id: 'alphaAsc', class: 'not-selected', onclick: function() {
-                    ctrl.sortState('alphaAsc');
-                    ctrl.sortNodesAndModifyDisplay();
+                return m('button', {id: 'alphaAsc', 'class': ctrl.colorSortButtons('alphaAsc'), onclick: function() {
+                    ctrl.sortBySortState(ctrl.sortState('alphaAsc'));
                 }},
-                    m('i', {class: 'fa fa-angle-up'}))
+                    m('i', {'class': 'fa fa-angle-up'}));
             }
         }
 
         function sortAlphaDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {id: 'alphaDesc', class: 'not-selected', onclick: function() {
-                    ctrl.sortState('alphaDesc');
-                    ctrl.sortNodesAndModifyDisplay();
+                return m('button', {'class': ctrl.colorSortButtons('alphaDesc'), onclick: function() {
+                    ctrl.sortBySortState(ctrl.sortState('alphaDesc'));
                 }},
-                m('i', {class: 'fa fa-angle-down'}))
+                m('i', {'class': 'fa fa-angle-down'}));
             }
         }
 
         function sortDateAsc(){
             if (ctrl.loadingComplete()){
-                 return m('button', {id: 'dateAsc', class: 'not-selected', onclick: function() {
-                     ctrl.sortState('dateAsc');
-                     ctrl.sortNodesAndModifyDisplay()}},
-                 m('i', {class: 'fa fa-angle-up'}))
+                 return m('button', {'class': ctrl.colorSortButtons('dateAsc'), onclick: function() {
+                     ctrl.sortBySortState(ctrl.sortState('dateAsc'));
+                 }},
+                 m('i', {'class': 'fa fa-angle-up'}));
             }
         }
 
         function sortDateDesc(){
             if (ctrl.loadingComplete()){
-                return m('button', {id: 'dateDesc', class: 'selected', onclick: function() {
-                    ctrl.sortState('dateDesc');
-                    ctrl.sortNodesAndModifyDisplay();
+                return m('button', {'class': ctrl.colorSortButtons('dateDesc'), onclick: function() {
+                    ctrl.sortBySortState(ctrl.sortState('dateDesc'));
                }},
-                m('i', {class: 'fa fa-angle-down'}))
+                m('i', {'class': 'fa fa-angle-down'}));
             }
         }
 
         // Sort button for xs screen
         function ascending() {
             if (ctrl.loadingComplete()){
-                var direction = ctrl.preSelectDirection()
-                if (direction === 'Asc') {
-                    return m('button', {id: 'Asc', class: 'selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this)
-                         }},
-                         m('i', {class: 'fa fa-angle-up'}))
-                }
-                else {
-                    return m('button', {id: 'Asc', class: 'not-selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this)
-                         }},
-                         m('i', {class: 'fa fa-angle-up'}))
-
-                }
+                return m('button', {'class': ctrl.colorSortButtonsXS('Asc'), onclick: function() {
+                     ctrl.directionSort('Asc');
+                     ctrl.sortDirectionGivenField();
+                }},
+                     m('i', {'class': 'fa fa-angle-up'}));
             }
         }
 
         // Sort button for xs screen
         function descending() {
             if (ctrl.loadingComplete()){
-                var direction = ctrl.preSelectDirection();
-                if (direction === 'Desc') {
-                    return m('button', {id: 'Desc', class: 'selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this)
-                         }},
-                         m('i', {class: 'fa fa-angle-down'}))
-                }
-                else {
-                    return m('button', {id: 'Desc', class: 'not-selected', onclick: function() {
-                         ctrl.sortDirectionGivenField(this)
-                         }},
-                         m('i', {class: 'fa fa-angle-down'}))
-                }
+                return m('button', {'class': ctrl.colorSortButtonsXS('Desc'), onclick: function() {
+                    ctrl.directionSort('Desc');
+                    ctrl.sortDirectionGivenField();
+                }},
+                    m('i', {'class': 'fa fa-angle-down'}));
             }
         }
 
+        // Dropdown for XS screen - if sort on title on large screen, when resize to xs, 'title' is default selected
         function defaultSelected() {
             var selected = ctrl.preSelectField();
             if (selected === 'alpha') {
-                return [m('option', {value: 'alpha', selected:'selected'}, 'Title'), m('option', {value: 'date'}, 'Modified')]
+                return [m('option', {value: 'alpha', selected:'selected'}, 'Title'), m('option', {value: 'date'}, 'Modified')];
             }
             else {
-                return [m('option', {value: 'alpha'}, 'Title'), m('option', {value: 'date', selected:'selected'}, 'Modified')]
+                return [m('option', {value: 'alpha'}, 'Title'), m('option', {value: 'date', selected:'selected'}, 'Modified')];
             }
-
         }
+
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div', {class : 'input-group'}, [
-                    m('span', {class: 'input-group-addon'}, m('i', {class: 'fa fa-search'})),
-                    m('input[type=search]', {class: 'form-control', id: 'searchQuery', placeholder: 'Quick search projects', onkeyup: function() {ctrl.quickSearch()}}),
-                    m('span', {class: 'input-group-addon', onclick: function() {ctrl.clearSearch()}},  m('button', m('i', {class: 'fa fa-times'})))
-                ])
+                return m('div', {'class' : 'input-group'}, [
+                    m('span', {'class': 'input-group-addon'}, m('i', {'class': 'fa fa-search'})),
+                    m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
+                        ctrl.filter(search.target.value);
+                        ctrl.quickSearch();}
+                    }),
+                    m('span', {'class': 'input-group-addon', onclick: function() {
+                        ctrl.filter('');
+                        document.getElementById('searchQuery').value = '';
+                        ctrl.quickSearch();
+                    }},  m('button', m('i', {'class': 'fa fa-times'})))
+                ]);
             }
         }
 
         function displayNodes() {
-            if (ctrl.displayedNodes().length == 0 && ctrl.filter() != null) {
-                return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-10 col-sm-offset-1'},
-                    m('div', {class: 'row'}, [
-                        m('div', {class: 'col-sm-1'}),
-                        m('div', {class: 'col-sm-11'},[m('p', {class :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
+            console.log(ctrl.eligibleNodes().length, ctrl.countDisplayed(), ctrl.sortState(), ctrl.loadingComplete());
+            if (ctrl.eligibleNodes().length ===0 && ctrl.filter() != null) {
+                return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-10 col-sm-offset-1'},
+                    m('div', {'class': 'row'}, [
+                        m('div', {'class': 'col-sm-1'}),
+                        m('div', {'class': 'col-sm-11'},[m('p', {'class' :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
                     ])
-                ))
+                ));
             }
             else {
-                return ctrl.displayedNodes().map(function(n){
-                    return projectView(n)
-                })
+                return ctrl.eligibleNodes().slice(0, ctrl.countDisplayed()).map(function(n){
+                    return projectView(ctrl.nodes()[n]);
+                });
             }
         }
 
         function projectView(project) {
-            console.log('pending: ' + ctrl.nodes().length, ', displayed: ' + ctrl.displayedNodes().length, ', non-matching: ' + ctrl.nonMatchingNodes().length, ctrl.sortState());
-            return m('div', {class: 'row m-v-sm'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
-                m('div', {class: 'row node-styling',  onmouseover: function(){ctrl.mouseOver(this)}, onmouseout: function(){ctrl.mouseOut(this)}, onclick: function(){{ctrl.nodeDirect(project)}}}, [
-                    m('div', {class: 'col-sm-7 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
-                    m('div', {class: 'col-sm-3 col-md-3 col-lg-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
-                    m('div', {class: 'col-sm-2 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
+            return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
+                m('div', {'class': 'row node-styling', onclick: function(){{ctrl.nodeDirect(project);
+                }}}, [
+                    m('div', {'class': 'col-sm-7 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
+                    m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
+                    m('div', {'class': 'col-sm-2 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
                 ])
-            ))
+            ));
+        }
+
+        function xsDropdown () {
+            if (ctrl.loadingComplete()) {
+                return m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
+                    m('div', {'class': 'row node-sort-dropdown'}, [
+                        m('div', {'class': 'col-sm-12 p-v-xs, f-w-xl'},
+                            m('label', [m('span', 'Order by: '),
+                                m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(dropdown){
+                                    ctrl.fieldSort(dropdown.target.value);
+                                    ctrl.sortFieldGivenDirection();
+                                }}, defaultSelected()),
+                                ascending(),
+                                descending()
+                            ])
+                        )]
+                    ))
+                );
+            }
         }
 
         function resultsFound(){
-            return m('div', {class: 'container'}, [
-                m('div', {class: 'row'}, [
+            return m('div', {'class': 'container quick-project'}, [
+                m('div', {'class': 'row'}, [
                     m('div', {'class': 'col-sm-1'}),
                     m('div', {'class': 'col-sm-11'}, m('h3', 'My Projects'))
                 ]),
-                m('div', {class: 'row'},
-                    m('div', {class: 'col-sm-3'}),
-                    m('div', {class: 'col-sm-6 m-b-md text-center'}, [
+                m('div', {'class': 'row'},
+                    m('div', {'class': 'col-sm-3'}),
+                    m('div', {'class': 'col-sm-6 m-b-md text-center'}, [
                         searchBar(),
-                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('div', {class:'logo-spin logo-sm m-r-lg'}), 'Loading projects...')
+                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('div', {'class':'logo-spin logo-sm m-r-lg'}), 'Loading projects...')
                     ]),
-                    m('div', {class: 'col-sm-3'})),
+                    m('div', {'class': 'col-sm-3'})),
 
-                m('div', {class: 'row'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
-                m('div', {class: 'row node-col-headers'}, [
-                    m('div', {class: 'col-sm-7 col-md-6 col-lg-5 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
-                    m('div', {class: 'col-sm-3 col-md-3 col-lg-4 f-w-xl p-v-xs'}, 'Contributors'),
-                    m('div', {class: 'col-sm-2 col-md-3 col-lg-3 f-w-xl p-v-xs'}, 'Modified', m('span', {class: 'sort-group'}, sortDateAsc(), sortDateDesc())),
-                ])
+                m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
+                    m('div', {'class': 'row node-col-headers'}, [
+                        m('div', {'class': 'col-sm-7 col-md-6 col-lg-5 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
+                        m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 f-w-xl p-v-xs'}, 'Contributors'),
+                        m('div', {'class': 'col-sm-2 col-md-3 col-lg-3 f-w-xl p-v-xs'}, 'Modified', m('span', {'class': 'sort-group'}, sortDateAsc(), sortDateDesc()))]
+                    )
                 )),
 
-                m('div', {class: 'row'}, m('div', {class: 'col-sm-8 col-sm-offset-2'},
-                    m('div', {class: 'row node-sort-dropdown'}, [
-                        m('div', {class: 'col-sm-12 p-v-xs, f-w-xl'},
-                            m('label', [m('span', 'Order by: '),
-                                m('select', {class: 'form-control', id: 'sortDropDown', onchange: function(){ctrl.sortFieldGivenDirection(this)}},
-                                    defaultSelected()),
-                                ascending(), descending()]
-                            )
-                        )]
-                    ))
-                ),
+                xsDropdown(),
+
                 displayNodes(),
-                m('div', {class: 'row'}, [
-                    m('div', {class: 'col-sm-5'}),
-                    m('div', {class: 'col-sm-2'}, loadMoreButton()),
-                    m('div', {class: 'col-sm-5'})
+                m('div', {'class': 'row'}, [
+                    m('div', {'class': 'col-xs-5'}),
+                    m('div', {'class': 'col-xs-2'}, loadMoreButton()),
+                    m('div', {'class': 'col-xs-5'})
                 ])
             ]);
         }
 
-        if (ctrl.displayedNodes().length == 0 && ctrl.filter() == null) {
-            return m('div', {class: 'container'}, [
-                m('div', {class: 'row'}, [
+        if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
+            return m('div', {'class': 'container'}, [
+                m('div', {'class': 'row'}, [
                     m('div', {'class': 'col-sm-1'}),
                     m('div', {'class': 'col-sm-11'}, m('h3', 'My Projects'))
                 ]),
-                m('div', {class: 'row m-v-md'},
-                    m('div', {class: 'col-sm-1'}),
-                    m('div', {class: 'col-sm-11'}, m('h4', 'You have no projects. Go here to create one.'))
+                m('div', {'class': 'row m-v-md'},
+                    m('div', {'class': 'col-sm-1'}),
+                    m('div', {'class': 'col-sm-11'}, m('h4', 'You have no projects. Go here to create one.'))
             )]
-        )}
+        );
+        }
         else {
-            return resultsFound()
+            return resultsFound();
         }
     }
 };
