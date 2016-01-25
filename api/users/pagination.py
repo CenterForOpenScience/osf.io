@@ -58,4 +58,3 @@ class UserNodeLogPagination(JSONAPIPagination):
                 ])),
             ])
         return Response(response_dict)
-

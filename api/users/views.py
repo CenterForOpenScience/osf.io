@@ -6,6 +6,7 @@ from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
+from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import User, Node, NodeLog

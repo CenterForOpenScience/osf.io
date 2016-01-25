@@ -10,7 +10,6 @@ from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
 from api.base.utils import add_dev_only_items
-from api.logs.serializers import NodeLogSerializer
 
 
 class UserSerializer(JSONAPISerializer):
