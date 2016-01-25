@@ -155,19 +155,119 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
-def validate_comment_reports(value, *args, **kwargs):
+def validate_reports(value, *args, **kwargs):
     for key, val in value.iteritems():
         if not User.load(key):
             raise ValidationValueError('Keys must be user IDs')
         if not isinstance(val, dict):
             raise ValidationTypeError('Values must be dictionaries')
-        if 'category' not in val or 'text' not in val:
+        if (
+            'category' not in val or
+            'text' not in val or
+            'date' not in val or
+            'retracted' not in val
+        ):
             raise ValidationValueError(
-                'Values must include `category` and `text` keys'
+                ('Values must include `date`, `category`, ',
+                 '`text`, `retracted` keys')
             )
 
 
-class Comment(GuidStoredObject):
+class SpamMixin(StoredObject):
+    """Mixin to add to objects that can be marked as spam.
+    """
+
+    _meta = {
+        'abstract': True
+    }
+
+    UNKNOWN = 0
+    FLAGGED = 1
+    SPAM = 2
+    HAM = 4
+
+    spam_status = fields.IntegerField(default=UNKNOWN, index=True)
+
+    # Reports is a list of reports
+    # Each report is a dictionary including:
+    #  - user: Reporting user
+    #  - date: date reported
+    #  - retracted: if a report has been retracted
+    #  - category: What type of spam does the reporter believe this is
+    #  - message: Comment on the comment
+    reports = fields.DictionaryField(
+        default={}, validate=validate_reports
+    )
+
+    def flag_spam(self, save=False):
+        # If ham and unedited then tell user that they should read it again
+        if self.spam_status == self.UNKNOWN:
+            self.spam_status = self.FLAGGED
+        if save:
+            self.save()
+
+    def remove_flag(self, save=False):
+        if self.spam_status != self.FLAGGED:
+            return
+        for user, report in self.reports.iteritems():
+            if not report['retracted']:
+                return
+        self.spam_status = self.UNKNOWN
+        if save:
+            self.save()
+
+    def confirm_ham(self, save=False):
+        self.spam_status = self.HAM
+        if save:
+            self.save()
+
+    def confirm_spam(self, save=False):
+        self.spam_status = self.SPAM
+        if save:
+            self.save()
+
+    @property
+    def is_spam(self):
+        return self.spam_status == self.SPAM
+
+    def report_spam(self, user, save=False, **kwargs):
+        """Report object is spam or other abuse of OSF
+
+        :param user: User submitting report
+        :param date: Date report submitted
+        :param save: Save changes
+        :param kwargs: Should include category and message
+        :raises ValueError: if user is reporting self
+        """
+        if user == self.user:
+            raise ValueError
+        self.flag_spam()
+        report = {'date': datetime.datetime.utcnow(), 'retracted': False}
+        report.update(kwargs)
+        if 'text' not in report:
+            report['text'] = None
+        self.reports[user._id] = report
+        if save:
+            self.save()
+
+    def retract_report(self, user, save=False):
+        """Retract last report by user
+
+        Only marks the last report as retracted because there could be
+        history in how the object is edited that requires a user
+        to flag or retract even if object is marked as HAM.
+        :param user: User retracting
+        :param save: Save changes
+        """
+        if user._id in self.reports:
+            if not self.reports[user._id]['retracted']:
+                self.reports[user._id]['retracted'] = True
+                self.remove_flag()
+        if save:
+            self.save()
+
+
+class Comment(GuidStoredObject, SpamMixin):
 
     _id = fields.StringField(primary=True)
 
@@ -188,7 +288,6 @@ class Comment(GuidStoredObject):
     #   'icpnw': {'category': 'hate', 'text': 'offensive'},
     #   'cdi38': {'category': 'spam', 'text': 'godwins law'},
     # }
-    reports = fields.DictionaryField(validate=validate_comment_reports)
 
     # For Django compatibility
     @property
@@ -307,36 +406,6 @@ class Comment(GuidStoredObject):
             auth=auth,
             save=False,
         )
-        if save:
-            self.save()
-
-    def report_abuse(self, user, save=False, **kwargs):
-        """Report that a comment is abuse.
-
-        :param User user: User submitting the report
-        :param bool save: Save changes
-        :param dict kwargs: Report details
-        :raises: ValueError if the user submitting abuse is the same as the
-            user who posted the comment
-        """
-        if user == self.user:
-            raise ValueError
-        self.reports[user._id] = kwargs
-        if save:
-            self.save()
-
-    def unreport_abuse(self, user, save=False):
-        """Revoke report of abuse.
-
-        :param User user: User who submitted the report
-        :param bool save: Save changes
-        :raises: ValueError if user has not reported comment as abuse
-        """
-        try:
-            self.reports.pop(user._id)
-        except KeyError:
-            raise ValueError('User has not reported comment as abuse')
-
         if save:
             self.save()
 

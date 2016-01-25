@@ -1,4 +1,5 @@
 from nose.tools import *  # flake8: noqa
+from datetime import datetime
 
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
@@ -27,7 +28,12 @@ class TestCommentReportsView(ApiTestCase):
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.contributor)
         self.comment.reports = self.comment.reports or {}
-        self.comment.reports[self.user._id] = {'category': 'spam', 'text': 'This is spam'}
+        self.comment.reports[self.user._id] = {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }
         self.comment.save()
         self.private_url = '/{}comments/{}/reports/'.format(API_BASE, self.comment._id)
 
@@ -36,7 +42,12 @@ class TestCommentReportsView(ApiTestCase):
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_project, user=self.contributor)
         self.public_comment.reports = self.public_comment.reports or {}
-        self.public_comment.reports[self.user._id] = {'category': 'spam', 'text': 'This is spam'}
+        self.public_comment.reports[self.user._id] = {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }
         self.public_comment.save()
         self.public_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment._id)
 
@@ -101,7 +112,12 @@ class TestCommentReportsView(ApiTestCase):
         project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory.build(node=project, user=project.creator)
         comment.reports = comment.reports or {}
-        comment.reports[self.non_contributor._id] = {'category': 'spam', 'text': 'This is spam.'}
+        comment.reports[self.non_contributor._id] = {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }
         comment.save()
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
         res = self.app.get(url, auth=self.non_contributor.auth)
@@ -189,6 +205,8 @@ class TestCommentReportsView(ApiTestCase):
         self._set_up_private_project_comment_reports()
         comment = CommentFactory(node=self.private_project, user=self.contributor)
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
+
+        get_res = self.app.get(url, auth=self.user.auth)
 
         res = self.app.post_json_api(url, self.payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)

@@ -62,7 +62,7 @@ class CommentSerializer(JSONAPISerializer):
         user = self.context['request'].user
         if user.is_anonymous():
             return False
-        return user._id in obj.reports
+        return user._id in obj.reports and not obj.reports[user._id]['retracted']
 
     def get_can_edit(self, obj):
         user = self.context['request'].user
@@ -187,10 +187,10 @@ class CommentReportSerializer(JSONAPISerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         comment = self.context['view'].get_comment()
-        if user._id in comment.reports:
+        if user._id in comment.reports and not comment.reports[user._id]['retracted']:
             raise ValidationError('Comment already reported.')
         try:
-            comment.report_abuse(user, save=True, **validated_data)
+            comment.report_spam(user, save=True, **validated_data)
         except ValueError:
             raise ValidationError('You cannot report your own comment.')
         return CommentReport(user._id, **validated_data)
@@ -201,7 +201,7 @@ class CommentReportSerializer(JSONAPISerializer):
         if user._id != comment_report._id:
             raise ValidationError('You cannot report a comment on behalf of another user.')
         try:
-            comment.report_abuse(user, save=True, **validated_data)
+            comment.report_spam(user, save=True, **validated_data)
         except ValueError:
             raise ValidationError('You cannot report your own comment.')
         return CommentReport(user._id, **validated_data)

@@ -4459,34 +4459,58 @@ class TestComments(OsfTestCase):
         assert_equal(len(self.comment.node.logs), 3)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
-    def test_report_abuse(self):
+    def test_report_spam(self):
         user = UserFactory()
-        self.comment.report_abuse(user, category='spam', text='ads', save=True)
+        time = datetime.datetime.utcnow()
+        self.comment.report_spam(user, date=time, category='spam', text='ads', save=True)
+        equivalent = {
+            'date': time,
+            'category': 'spam',
+            'text': 'ads',
+            'retracted': False
+        }
         assert_in(user._id, self.comment.reports)
-        assert_equal(
-            self.comment.reports[user._id],
-            {'category': 'spam', 'text': 'ads'}
-        )
+        assert_equal(self.comment.reports[user._id], equivalent)
 
-    def test_report_abuse_own_comment(self):
+    def test_report_spam_own_comment(self):
         with assert_raises(ValueError):
-            self.comment.report_abuse(
-                self.comment.user, category='spam', text='ads', save=True
+            self.comment.report_spam(
+                self.comment.user,
+                category='spam', text='ads',
+                save=True
             )
 
-    def test_unreport_abuse(self):
+    def test_retract_report(self):
         user = UserFactory()
-        self.comment.report_abuse(user, category='spam', text='ads', save=True)
-        self.comment.unreport_abuse(user, save=True)
-        assert_not_in(user._id, self.comment.reports)
+        time = datetime.datetime.utcnow()
+        self.comment.report_spam(
+            user, date=time, category='spam', text='ads', save=True
+        )
+        self.comment.retract_report(user, save=True)
+        equivalent = {
+            'date': time,
+            'category': 'spam',
+            'text': 'ads',
+            'retracted': True
+        }
+        assert_in(user._id, self.comment.reports)
+        assert_equal(self.comment.reports[user._id], equivalent)
 
-    def test_unreport_abuse_not_reporter(self):
+    def test_retract_report_not_reporter(self):
         reporter = UserFactory()
         non_reporter = UserFactory()
-        self.comment.report_abuse(reporter, category='spam', text='ads', save=True)
-        with assert_raises(ValueError):
-            self.comment.unreport_abuse(non_reporter, save=True)
+        time = datetime.datetime.utcnow()
+        self.comment.report_spam(
+            reporter, date=time, category='spam', text='ads', save=True
+        )
+        equivalent = {
+            'date': time,
+            'category': 'spam',
+            'text': 'ads',
+            'retracted': False
+        }
         assert_in(reporter._id, self.comment.reports)
+        assert_equal(self.comment.reports[reporter._id], equivalent)
 
     def test_validate_reports_bad_key(self):
         self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
