@@ -24,33 +24,30 @@ def get_original_node(log):
 
 def main(dry=True):
     init_app(routes=False)
-    node_logs = models.NodeLog.find()
-    log_count = node_logs.count()
+    node_logs = models.NodeLog.find(Q('original_node', 'eq', None))
+    total_log_count = node_logs.count()
+    count = 0
     errored_logs = []
-    for count, log in enumerate(node_logs):
+    for log in node_logs:
+        count += 1
         with TokuTransaction():
             log.original_node = get_original_node(log)
             log.node = get_original_node(log)
             if not dry:
                 try:
                     log.save()
+                    logger.info('{}/{} Log {} "original_node = {} and node = {}" added'.format(count, total_log_count, log._id, log.original_node._id, log.node._id))
                 except KeyError as error:
                     logger.error('Could not migrate log due to error')
                     logger.exception(error)
                     errored_logs.append(log)
-                else:
-                    logger.info('{}/{} Log {} "original_node and node" added'.format(count, log_count, log._id))
 
-    if errored_logs:
-        logger.error('{} errored'.format(len(errored_logs)))
-        logger.error('\n'.join([each._id for each in errored_logs]))
-
-    for count, log in enumerate(node_logs): # for every log in node_logs
-        with TokuTransaction():
             errored_clones = []
             for node in log._backrefs['logged']['node']['logs']:
                 if node != log.original_node._id:
                     clone = log.clone_node_log(node)
+                    print clone.original_node
+                    print clone.node
                     clone.original_node = get_original_node(log)
                     try:
                         clone.save()
@@ -58,7 +55,7 @@ def main(dry=True):
                     except KeyError as error:
                         logger.error('Could not copy node log due to error')
                         logger.exception(error)
-                        errored_clones.append(log, clone)
+                        errored_clones.append([log, clone])
 
 
 if __name__ == '__main__':
