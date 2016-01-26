@@ -2519,7 +2519,7 @@ class TestProject(OsfTestCase):
         link2.save()
 
         user3 = UserFactory()
-        auth3 = Auth(user=user3, private_key="link2")
+        auth3 = Auth(user=user3, private_key="link1")
 
         assert_false(has_anonymous_link(self.project, auth3))
 
