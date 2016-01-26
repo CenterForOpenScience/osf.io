@@ -90,7 +90,8 @@ def add_hook_to_old_node_settings(document, account):
             ),
             'content_type': github_settings.HOOK_CONTENT_TYPE,
             'secret': secret,
-        }
+        },
+        events=github_settings.HOOK_EVENTS,
     )
 
     if hook:
