@@ -720,7 +720,7 @@ var Collections  = {
             return list;
         };
         var collectionListTemplate = [
-            m('h5', [
+            m('h5.clearfix', [
                 'Collections ',
                 m('i.fa.fa-question-circle.text-muted', {
                     'data-toggle':  'tooltip',
