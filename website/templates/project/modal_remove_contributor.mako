@@ -18,8 +18,8 @@
                         <div id="remove-page-radio-buttons" class="col-md-8" align="left">
                             <div class="radio">
                                 <label><input type="radio" name="radioBoxGroup" data-bind="checked:deleteAll, checkedValue: false" checked>
-                                    Remove <b data-bind="text:removeSelf() ? 'yourself' : contributorToRemove()['fullname']."></b> from
-                                    <span class="f-w-lg" data-bind="text: title"></span>
+                                    Remove <b data-bind="text:removeSelf() ? 'yourself' : contributorToRemove()['fullname']"></b> from
+                                    <span class="f-w-lg" data-bind="text: title"></span>.
                                 </label>
                             </div>
 
@@ -100,7 +100,7 @@
                     </span>
                     <span data-bind="if: page() === REMOVE_NO_CHILDREN">
                         <div class="row">
-                            <div  class="col-md-12 remove-page-buttons" align="right">
+                            <div  class="remove-page-buttons" align="right">
                                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
                                 <a class="btn btn-danger" data-bind="click:submit">Remove</a>
                             </div>
@@ -108,7 +108,7 @@
                     </span>
                     <span data-bind="if: page() === REMOVE_ALL" align="right">
                         <div class="row">
-                            <div class="col-md-12 remove-page-buttons">
+                            <div class="remove-page-buttons">
                                 <a href="#" class="btn btn-default" data-bind="click: back" data-dismiss="modal">Back</a>
                                 <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
                                 <a class="btn btn-danger" data-bind="click:submit">Remove</a>
@@ -118,7 +118,7 @@
                 </div>
                 <div data-bind="if:!canRemoveNode() || pageChanged()">
                     <div class="row">
-                        <div  class="col-md-12 remove-page-buttons" align="right">
+                        <div  class="remove-page-buttons" align="right">
                             <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
                         </div>
                     </div>

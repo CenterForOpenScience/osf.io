@@ -335,11 +335,7 @@ def project_remove_contributor(auth, **kwargs):
                 'message_long': 'Must have at least one bibliographic contributor'
             })
 
-        try:
-            nodes_removed = node.remove_contributor(contributor, auth=auth)
-        except ValueError as error:
-            raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
-
+        nodes_removed = node.remove_contributor(contributor, auth=auth)
         # remove_contributor returns false if there is not one admin or visible contributor left after the move.
         if not nodes_removed:
             raise HTTPError(http.BAD_REQUEST, data={
