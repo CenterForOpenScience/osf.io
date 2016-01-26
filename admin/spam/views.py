@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.views.generic import FormView
 from django.core.urlresolvers import reverse
+from django.http import HttpResponseNotFound
 
 from modularodm import Q
 from website.project.model import Comment
@@ -20,18 +21,23 @@ class EmailFormView(FormView):
     spam_id = None
     page = 1
 
+    def __init__(self):
+        self.spam = None
+        super(EmailFormView, self).__init__()
+
     def get(self, request, *args, **kwargs):
         spam_id = kwargs.get('spam_id', None)
         self.spam_id = spam_id
         self.page = request.GET.get('page', 1)
         try:
-            spam = serialize_comment(Comment.load(spam_id))
-        except:
-            pass
-        self.set_initial(spam)
+            self.spam = serialize_comment(Comment.load(spam_id))
+        except (AttributeError, TypeError):
+            return HttpResponseNotFound(
+                '<h1>Spam comment ({}) not found.</h1>'.format(spam_id)
+            )
         form = self.get_form()
         context = {
-            'comment': spam,
+            'comment': self.spam,
             'page_number': request.GET.get('page', 1),
             'form': form
         }
@@ -42,27 +48,25 @@ class EmailFormView(FormView):
         self.spam_id = spam_id
         self.page = request.GET.get('page', 1)
         try:
-            spam = serialize_comment(Comment.load(spam_id))
-        except:
-            pass
-        self.set_initial(spam)
-        form = self.get_form()
-        if form.is_valid():
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
+            self.spam = serialize_comment(Comment.load(spam_id))
+        except (AttributeError, TypeError):
+            return HttpResponseNotFound(
+                '<h1>Spam comment ({}) not found.</h1>'.format(spam_id)
+            )
+        return super(EmailFormView, self).post(request, *args, **kwargs)
 
-    def set_initial(self, spam):
+    def get_initial(self):
         self.initial = {
-            'author': spam['author'].fullname,
-            'email': [(r, r) for r in spam['author'].emails],
+            'author': self.spam['author'].fullname,
+            'email': [(r, r) for r in self.spam['author'].emails],
             'subject': 'Reports of spam',
             'message': render(
                 None,
                 'spam/email_template.html',
-                {'item': spam}
+                {'item': self.spam}
             ).content,
         }
+        return super(EmailFormView, self).get_initial()
 
     def form_valid(self, form):
         send_mail(
