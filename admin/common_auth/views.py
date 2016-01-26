@@ -41,20 +41,14 @@ def register(request):
             user.first_name = first_name
             user.last_name = last_name
             user.save()
-            # Send email invitation (set passwordreset form and save)
 
-
-
-
-
-
-            # reset_form = PasswordResetForm({'email': user.email}, request.POST)
-            # assert reset_form.is_valid()
-            # reset_form.save(
-            #     subject_template_name='common_auth/emails/account_creation_subject.txt',
-            #     email_template_name='common_auth/emails/invitation_email.html',
-            #     request=request
-            # )
+            reset_form = PasswordResetForm({'email': user.email}, request.POST)
+            assert reset_form.is_valid()
+            reset_form.save(
+                subject_template_name='common_auth/emails/account_creation_subject.txt',
+                email_template_name='common_auth/emails/invitation_email.html',
+                request=request
+            )
             messages.success(request, 'Registration successful') # add email reference here
             return redirect('auth:login')
         else:
