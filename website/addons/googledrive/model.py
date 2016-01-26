@@ -90,6 +90,9 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         else:
             return '/ (Full Google Drive)'
 
+    def fetch_folder_name(self):
+        return self.folder_name
+
     def clear_settings(self):
         self.folder_id = None
         self.folder_path = None
@@ -120,7 +123,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         # update this instance
         self.save()
 
-        self.nodelogger.add_log('folder_selected', save=True)
+        self.nodelogger.log('folder_selected', save=True)
 
     @property
     def selected_folder_name(self):
