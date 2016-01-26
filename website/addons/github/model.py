@@ -442,7 +442,8 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                     ),
                     'content_type': github_settings.HOOK_CONTENT_TYPE,
                     'secret': secret,
-                }
+                },
+                events=github_settings.HOOK_EVENTS,
             )
 
             if hook:

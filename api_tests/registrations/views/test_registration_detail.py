@@ -67,8 +67,14 @@ class TestRegistrationDetail(ApiTestCase):
     def test_do_not_return_node_detail(self):
         url = '/{}registrations/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "This is not a registration.")
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], "Not found.")
+
+    def test_do_not_return_node_detail_in_sub_view(self):
+        url = '/{}registrations/{}/contributors/'.format(API_BASE, self.public_project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], "Not found.")
 
     def test_do_not_return_registration_in_node_detail(self):
         url = '/{}nodes/{}/'.format(API_BASE, self.public_registration._id)
@@ -105,6 +111,7 @@ class TestRegistrationDetail(ApiTestCase):
             'pending_embargo_approval': None,
             "embargo_end_date": None,
             "registered_meta": None,
+            'current_user_permissions': None,
             "registration_supplement": registration.registered_meta.keys()[0]
         })
 
