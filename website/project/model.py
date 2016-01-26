@@ -23,6 +23,9 @@ from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
+
+from flask import request
+
 from framework import status
 
 
