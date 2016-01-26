@@ -466,7 +466,6 @@ def test_api():
 @task
 def test_varnish():
     """Run the Varnish test suite."""
-    """Run the OSF test suite."""
     proc = apiserver(wait=False)
     sleep(5)
     test_module(module="api/caching/tests/test_caching.py")
