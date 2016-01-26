@@ -50,42 +50,47 @@
 
                     <!-- projects changed warning page -->
                     <div data-bind="if: page() === CONFIRM">
-                        <div data-bind="if: nodesChanged()">
-                            <div data-bind="visible: nodesChangedPublic().length > 0">
-                                <div class="panel panel-default">
-                                    <div class="panel-heading clearfix">
-                                        <h3 class="panel-title" data-bind="html:message()['nodesPublic']"></h3>
-                                    </div>
-                                    <div class="panel-body">
-                                        <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
-                                            <li>
-                                                <h4 class="f-w-lg" data-bind="text: item"></h4>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                            <div data-bind="visible: nodesChangedPrivate().length > 0">
-                                <div class="panel panel-default">
-                                    <div class="panel-heading clearfix">
-                                        <h3 class="panel-title" data-bind="html:message()['nodesPrivate']"></h3>
-                                    </div>
-                                    <div class="panel-body">
-                                        <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
-                                            <li>
-                                                <h4 class="f-w-lg" data-bind="text: item"></h4>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
+                        <div data-bind="if: nodesChangedPublic().length + nodesChangedPrivate().length <= 100">
 
+                            <div data-bind="if: nodesChanged()">
+                                <div data-bind="visible: nodesChangedPublic().length > 0">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading clearfix">
+                                            <h3 class="panel-title" data-bind="html:message()['nodesPublic']"></h3>
+                                        </div>
+                                        <div class="panel-body">
+                                            <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
+                                                <li>
+                                                    <h4 class="f-w-lg" data-bind="text: item"></h4>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div data-bind="visible: nodesChangedPrivate().length > 0">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading clearfix">
+                                            <h3 class="panel-title" data-bind="html:message()['nodesPrivate']"></h3>
+                                        </div>
+                                        <div class="panel-body">
+                                            <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
+                                                <li>
+                                                    <h4 class="f-w-lg" data-bind="text: item"></h4>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
                         <div data-bind="ifnot: nodesChanged()">
                             <span data-bind="html:message()['nodesNotChangedWarning']"></span>
                         </div>
-                    <!-- end projects changed warning page -->
-                    </div>
+                        <div data-bind="if: nodesChangedPublic().length + nodesChangedPrivate().length > 100">
+                            <span data-bind="html:message()['tooManyNodesWarning']"></span>
+                        </div>
+                    </div><!-- end projects changed warning page -->
                 </div><!-- end modal-body -->
 
                 <div class="modal-footer">
