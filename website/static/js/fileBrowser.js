@@ -277,7 +277,7 @@ var FileBrowser = {
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
                         self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
-                            'You have notcreated any projects yet.'));
+                            'You have not created any projects yet.'));
                     } else if (lastcrumb.data.systemCollection === 'registrations'){
                         self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
                             'You have not made any registrations yet.'));
