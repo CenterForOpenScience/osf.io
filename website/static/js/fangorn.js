@@ -1186,7 +1186,7 @@ function _fangornTitleColumn(item, col) {
             };
         }
         return m(
-            'span', 
+            'span',
             attrs,
             item.data.name
         );
