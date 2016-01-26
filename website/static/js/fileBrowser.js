@@ -657,7 +657,19 @@ var Collections  = {
                 }
             });
         };
-
+        self.validateName = function _validateName (val){
+            if (val === 'Bookmarks') {
+                self.validation(false);
+                self.validationError('Your collection name can\'t be "Bookmarks", because bookmarks feature requires this name. Please select any other name. ');
+            } else {
+                self.validationError('');
+                if(val.length > 0) {
+                    self.validation(true);
+                } else {
+                    self.validation(false);
+                }
+            }
+        }
         self.init();
     },
     view : function (ctrl, args) {
@@ -770,17 +782,7 @@ var Collections  = {
                                 m('input[type="text"].form-control.m-l-sm#addCollInput', {
                                     onkeyup: function (ev){
                                         var val = $(this).val();
-                                        if (val === 'Bookmarks') {
-                                            ctrl.validation(false);
-                                            ctrl.validationError('Your collection name can\'t be "Bookmarks", because bookmarks feature requires this name. Please select any other name. ');
-                                        } else {
-                                            ctrl.validationError('');
-                                            if(val.length > 0) {
-                                                ctrl.validation(true);
-                                            } else {
-                                                ctrl.validation(false);
-                                            }
-                                        }
+                                        ctrl.validateName(val);
                                         if(ctrl.validation()){
                                             if(ev.which === 13){
                                                 ctrl.addCollection();
@@ -803,7 +805,7 @@ var Collections  = {
                                 }
                             }, 'Cancel'),
                         ctrl.validation() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
-                            : m('button[type="button"].btn.btn-success[disabled]', { onclick : ctrl.addCollection },'Add')
+                            : m('button[type="button"].btn.btn-success[disabled]', 'Add')
                     ])
                 }),
                 m.component(mC.modal, {
@@ -820,21 +822,25 @@ var Collections  = {
                                 m('label[for="addCollInput]', 'Rename to: '),
                                 m('input[type="text"].form-control.m-l-sm#renameCollInput',{
                                     onkeyup: function(ev){
-                                        if (ev.which === 13) { // if enter is pressed
-                                            ctrl.renameCollection();
+                                        var val = $(this).val();
+                                        ctrl.validateName(val);
+                                        if(ctrl.validation()) {
+                                            if (ev.which === 13) { // if enter is pressed
+                                                ctrl.renameCollection();
+                                            }
                                         }
-                                        ctrl.collectionMenuObject().item.renamedLabel = $(this).val();
+                                        ctrl.collectionMenuObject().item.renamedLabel = val;
                                     },
-                                    value: ctrl.collectionMenuObject().item.renamedLabel})
+                                    value: ctrl.collectionMenuObject().item.renamedLabel}),
+                                m('span.help-block', ctrl.validationError())
 
                             ])
                         ])
                     ]),
                     footer : m('.modal-footer', [
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
-                        m('button[type="button"].btn.btn-success', {
-                            onclick : ctrl.renameCollection
-                        },'Rename')
+                        ctrl.validation() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.renameCollection },'Rename')
+                            : m('button[type="button"].btn.btn-success[disabled]', 'Rename')
                     ])
                 }),
                 m.component(mC.modal, {
