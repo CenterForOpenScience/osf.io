@@ -998,7 +998,6 @@ var Filters = {
         self.tagTotalPages = m.prop(1);
     },
     view : function (ctrl, args) {
-        var selectedCSS;
         if(args.nameFilters.length > 0) {
             ctrl.nameTotalPages(Math.ceil(args.nameFilters.length/ctrl.namePageSize()));
         }
@@ -1007,13 +1006,16 @@ var Filters = {
         }
         var returnNameFilters = function _returnNameFilters(){
             var list = [];
+            var item;
+            var i;
+            var selectedCSS;
             var begin = ((ctrl.nameCurrentPage()-1) * ctrl.namePageSize()); // remember indexes start from 0
             var end = ((ctrl.nameCurrentPage()) * ctrl.namePageSize()); // 1 more than the last item
             if (args.nameFilters.length < end) {
                 end = args.nameFilters.length;
             }
-            for (var i = begin; i < end; i++) {
-                var item = args.nameFilters[i];
+            for (i = begin; i < end; i++) {
+                item = args.nameFilters[i];
                 selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                 list.push(m('li' + selectedCSS,
                     m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
@@ -1025,13 +1027,16 @@ var Filters = {
         };
         var returnTagFilters = function _returnTagFilters(){
             var list = [];
+            var selectedCSS;
+            var item;
+            var i;
             var begin = ((ctrl.tagCurrentPage()-1) * ctrl.tagPageSize()); // remember indexes start from 0
             var end = ((ctrl.tagCurrentPage()) * ctrl.tagPageSize()); // 1 more than the last item
             if (args.tagFilters.length < end) {
                 end = args.tagFilters.length;
             }
-            for (var i = begin; i < end; i++) {
-                var item = args.tagFilters[i];
+            for (i = begin; i < end; i++) {
+                item = args.tagFilters[i];
                 selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                 list.push(m('li' + selectedCSS,
                     m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
