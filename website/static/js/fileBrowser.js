@@ -184,6 +184,8 @@ var FileBrowser = {
         self.getLogs = function _getLogs (nodeId, link, addToExistingList) {
             var url = link || $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            self.activityLogs([]); // Empty old logs first;
+            self.showMoreActivityLogs(null);
             promise.then(function(result){
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
