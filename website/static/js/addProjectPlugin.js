@@ -37,7 +37,7 @@ var AddProject = {
         };
         // Load Category list from API
         self.categoryList = [];
-        self.loadCategories = function () {
+        self.loadCategories = function _loadCategories () {
             m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig}).then(function _success(results){
                 console.log(results);
                 if(results.actions.POST.category){
@@ -55,7 +55,7 @@ var AddProject = {
         self.loadCategories();
         // Validation
         self.isValid = m.prop(false);
-        self.checkValid = function () {
+        self.checkValid = function _checkValid() {
             var projectNameNotEmpty = self.newProjectName().trim().length > 0 ? true : false;
             if(projectNameNotEmpty){
                 self.isValid(true);

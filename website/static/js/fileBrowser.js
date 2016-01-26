@@ -44,7 +44,7 @@ function _formatDataforPO(item) {
     return item;
 }
 
-var LinkObject = function (type, data, label, index) {
+var LinkObject = function _LinkObject (type, data, label, index) {
     if (type === undefined || data === undefined || label === undefined) {
         throw new Error('LinkObject expects type, data and label to be defined.');
     }
@@ -177,7 +177,7 @@ var FileBrowser = {
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             self.activityLogs([]); // Empty old logs first;
             self.showMoreActivityLogs(null);
-            promise.then(function(result){
+            promise.then(function _getLogsThen (result){
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
                     if(addToExistingList){
@@ -200,7 +200,7 @@ var FileBrowser = {
         };
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
-        self.updateFilesData = function(linkObject) {
+        self.updateFilesData = function _updateFilesData (linkObject) {
             if (linkObject.link !== self.currentLink) {
                 self.updateBreadcrumbs(linkObject);
                 self.updateList(linkObject);
@@ -212,14 +212,14 @@ var FileBrowser = {
         // INFORMATION PANEL
         /* Defines the current selected item so appropriate information can be shown */
         self.selected = m.prop([]);
-        self.updateSelected = function(selectedList){
+        self.updateSelected = function _updateSelected (selectedList){
             self.selected(selectedList);
             self.getCurrentLogs();
         };
 
         // USER FILTER
         self.activeFilter = m.prop({});
-        self.updateFilter = function(filter) {
+        self.updateFilter = function _updateFilter (filter) {
             self.activeFilter(filter);
             self.updateFilesData(filter);
         };
@@ -227,20 +227,20 @@ var FileBrowser = {
         self.removeProjectFromCollections = function _removeProjectFromCollection () {
             // Removes selected items from collect
             var collection = self.activeFilter().data.node;
-            self.selected().map(function(item){
+            self.selected().map(function _removeProjectFromCollectionsMap (item){
                 m.request({
                     method : 'DELETE',
                     url : collection.links.self + 'node_links/' + item.data.id + '/',
                     config : xhrconfig
-                }).then(function(result){
+                }).then(function _removeProjectFromCollectionsSuccess(result){
                     console.log(result);
-                }, function(result){
+                }, function _removeProjectFromCollectionsFail(result){
                     console.log(result);
                 });
             });
         };
         // GETTING THE NODES
-        self.updateList = function(linkObject, success, error){
+        self.updateList = function _updateList (linkObject, success, error){
             if(linkObject.data.systemCollection === 'nodes' && self.allProjectsLoaded()){
                 self.data(self.allProjects());
                 self.reload(true);
@@ -266,7 +266,7 @@ var FileBrowser = {
             promise.then(success, error);
             return promise;
         };
-        self.updateListSuccess = function(value) {
+        self.updateListSuccess = function _updateListSuccess (value) {
             if(self.loadingPages){
                 self.data().data = self.data().data.concat(value.data);
             } else {
@@ -292,7 +292,7 @@ var FileBrowser = {
                             buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new Subcomponent'),
                             parentID : self.breadcrumbs()[self.breadcrumbs().length-1].data.id,
                             modalID : 'addSubcomponent',
-                            stayCallback : function () {
+                            stayCallback : function _stayCallback_inPanel() {
                                 self.allProjectsLoaded(false);
                                 self.updateList(self.breadcrumbs()[self.breadcrumbs().length-1]);
                             }
@@ -322,21 +322,22 @@ var FileBrowser = {
             self.reload(true);
             self.refreshView(false);
         };
-        self.updateListError = function(result){
+        self.updateListError = function _updateListError (result){
             self.nonLoadTemplate(m('.fb-error.text-danger.m-t-lg', [
                 m('p', m('i.fa.fa-exclamation-circle')),
                 m('p','Projects for this selection couldn\'t load.'),
-                m('p', m('.btn.btn-default', { onclick : self.updateFilter.bind(null, self.systemCollections[0])},' Reload \'All My Projects\''))
+                m('p', m('.btn.btn-default', {
+                    onclick : self.updateFilter.bind(null, self.systemCollections[0])
+                },' Reload \'All My Projects\''))
             ]));
             self.data().data = [];
-            console.error(result);
             self.refreshView(false);
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
         };
         self.generateFiltersList = function _generateFilterList () {
             self.users = {};
             self.tags = {};
-            self.data().data.map(function(item){
+            self.data().data.map(function _generateFiltersListMap(item){
                 var contributors = item.embeds.contributors.data ? item.embeds.contributors.data : [];
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
@@ -373,7 +374,7 @@ var FileBrowser = {
         };
 
         // BREADCRUMBS
-        self.updateBreadcrumbs = function(linkObject){
+        self.updateBreadcrumbs = function _updateBreadcrumbs (linkObject){
             if (linkObject.type === 'collection' || linkObject.type === 'name' || linkObject.type === 'tag'){
                 self.breadcrumbs([linkObject]);
                 return;
@@ -391,11 +392,11 @@ var FileBrowser = {
             self.breadcrumbs().push(linkObject);
         }.bind(self);
 
-        self.sidebarInit = function (element, isInit) {
+        self.sidebarInit = function _sidebarInit (element, isInit) {
             $('[data-toggle="tooltip"]').tooltip();
         };
 
-        self.init = function () {
+        self.init = function _init_fileBrowser() {
             self.updateList(self.systemCollections[0]);
         };
         self.init();
@@ -468,7 +469,7 @@ var FileBrowser = {
                 )
             ]),
             mobile ? '' : m('.fb-info-toggle',{
-                    onclick : function(){
+                    onclick : function _showInfoOnclick(){
                         ctrl.showInfo(!ctrl.showInfo());
                     }
                 },
@@ -494,7 +495,7 @@ var Collections  = {
         };
         self.currentPage = m.prop(1);
         self.totalPages = m.prop(1);
-        self.calculateTotalPages = function(result){
+        self.calculateTotalPages = function _calculateTotalPages(result){
             if(result){ // If this calculation comes after GET call to collections
                 self.totalPages(Math.ceil((result.links.meta.total + args.systemCollections.length)/self.pageSize()));
             } else {
@@ -509,7 +510,7 @@ var Collections  = {
         self.resetCollectionMenu = function () {
             self.collectionMenuObject({item : {label:null}, x : 0, y : 0});
         };
-        self.updateCollectionMenu = function (item, event) {
+        self.updateCollectionMenu = function _updateCollectionMenu (item, event) {
             var offset = $(event.target).offset();
             var x = offset.left;
             var y = offset.top;
@@ -531,7 +532,7 @@ var Collections  = {
             new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
         ]);
         // Load collection list
-        var loadCollections = function(url){
+        var loadCollections = function _loadCollections (url){
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
                 result.data.forEach(function(node){
@@ -544,7 +545,7 @@ var Collections  = {
             });
             promise.then(self.calculateTotalPages());
         };
-        self.init = function(element, isInit) {
+        self.init = function _collectionsInit (element, isInit) {
             var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
             loadCollections(collectionsUrl);
             args.activeFilter(self.collections()[0]);
@@ -558,7 +559,7 @@ var Collections  = {
             });
         };
 
-        self.addCollection = function () {
+        self.addCollection = function _addCollection () {
             var url = $osf.apiV2Url('collections/', {});
             var data = {
                 'data': {
@@ -580,7 +581,7 @@ var Collections  = {
             self.calculateTotalPages();
             return promise;
         };
-        self.deleteCollection = function(){
+        self.deleteCollection = function _deleteCollection(){
             var url = self.collectionMenuObject().item.data.node.links.self;
             var promise = m.request({method : 'DELETE', url : url, config : xhrconfig});
             promise.then(function(result){
@@ -596,7 +597,7 @@ var Collections  = {
             self.calculateTotalPages();
             return promise;
         };
-        self.renameCollection = function () {
+        self.renameCollection = function _renameCollection() {
             var url = self.collectionMenuObject().item.data.node.links.self;
             var nodeId = self.collectionMenuObject().item.data.node.id;
             var title = self.collectionMenuObject().item.renamedLabel;
@@ -987,7 +988,7 @@ var Filters = {
         if(args.tagFilters.length > 0){
             ctrl.tagTotalPages(Math.ceil(args.tagFilters.length/ctrl.tagPageSize()));
         }
-        var returnNameFilters = function (){
+        var returnNameFilters = function _returnNameFilters(){
             var list = [];
             var begin = ((ctrl.nameCurrentPage()-1) * ctrl.namePageSize()); // remember indexes start from 0
             var end = ((ctrl.nameCurrentPage()) * ctrl.namePageSize()); // 1 more than the last item
@@ -1005,7 +1006,7 @@ var Filters = {
             }
             return list;
         };
-        var returnTagFilters = function(){
+        var returnTagFilters = function _returnTagFilters(){
             var list = [];
             var begin = ((ctrl.tagCurrentPage()-1) * ctrl.tagPageSize()); // remember indexes start from 0
             var end = ((ctrl.tagCurrentPage()) * ctrl.tagPageSize()); // 1 more than the last item
