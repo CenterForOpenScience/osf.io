@@ -22,8 +22,7 @@ from framework.auth import Auth
 
 from website import settings
 from website.addons.base import serializer, logger
-from website.models import User
-from website.project.model import Node
+from website.project.model import Node, User
 from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
