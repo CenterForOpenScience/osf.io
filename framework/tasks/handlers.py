@@ -43,7 +43,7 @@ def enqueue_task(signature):
     try:
         if signature not in queue:
             queue.append(signature)
-    except RuntimeError:
+    except (RuntimeError):
         signature()
 
 

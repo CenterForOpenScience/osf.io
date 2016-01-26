@@ -615,6 +615,19 @@ class NodeLog(StoredObject):
             'registered': user.is_registered,
         }
 
+    @property
+    def absolute_api_v2_url(self):
+        from api.logs.views import NodeLogDetail
+
+        return absolute_reverse('{}:{}'.format(NodeLogDetail.view_category, NodeLogDetail.view_name), kwargs={'log_id': self._id})
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_url(self):
+        return self.absolute_api_v2_url
+
 
 class Tag(StoredObject):
 
@@ -1222,7 +1235,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :returns: User has required permission
         """
         if user is None:
-            logger.warn('User is ``None``.')
             return False
         if permission in self.permissions.get(user._id, []):
             return True

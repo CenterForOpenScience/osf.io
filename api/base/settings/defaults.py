@@ -166,3 +166,7 @@ SWAGGER_SETTINGS = {
 }
 
 DEBUG_TRANSACTIONS = DEBUG
+
+ENABLE_VARNISH = False
+ENABLE_ESI = False
+VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
