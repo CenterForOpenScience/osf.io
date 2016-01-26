@@ -59,7 +59,9 @@ var LogText = {
             var list = text.split(/(\${.*?})/);
             return m('span.osf-log-item',[
                 list.map(function(piece){
-                    if(piece === '') { return; }
+                    if (piece === '') {
+                        return m('span');
+                    }
                     var startsWith = piece.substring(0,2);
                     if(startsWith === '${'){
                         var last = piece.length-1;
