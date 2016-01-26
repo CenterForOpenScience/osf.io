@@ -2594,12 +2594,12 @@ class TestProject(OsfTestCase):
         mock_property.return_value(mock.MagicMock())
         mock_property.anonymous = False
 
-        link2 = PrivateLinkFactory(key="link1")
+        link2 = PrivateLinkFactory(key="link2")
         link2.nodes.append(self.project)
         link2.save()
 
         user3 = UserFactory()
-        auth3 = Auth(user=user3, private_key="link1")
+        auth3 = Auth(user=user3, private_key="link2")
 
         assert_false(has_anonymous_link(self.project, auth3))
 

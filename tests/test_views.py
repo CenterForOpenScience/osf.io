@@ -112,7 +112,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert_in('Invalid link name.', res.body)
 
     @mock.patch('framework.auth.core.Auth.private_link')
-    def test_can_be_anonymous_for_public_project(self):
+    def test_can_be_anonymous_for_public_project(self, mock_property):
         mock_property.return_value(mock.MagicMock())
         mock_property.anonymous = True
         anonymous_link = PrivateLinkFactory(anonymous=True)
