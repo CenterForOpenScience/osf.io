@@ -360,14 +360,6 @@ class NodeLog(StoredObject):
         }
     ]
 
-    def clone_node_log(self, node_id):
-        original_log = self.load(self._primary_key)
-        node = Node.find(Q('_id', 'eq', node_id))[0]
-        log_clone = original_log.clone()
-        log_clone.node = node
-        log_clone.save()
-        return log_clone
-
     was_connected_to = fields.ForeignField('node', list=True)
 
     user = fields.ForeignField('user', index=True)
@@ -471,6 +463,15 @@ class NodeLog(StoredObject):
     #         Node.load(self.params.get('node')) or
     #         Node.load(self.params.get('project'))
     #     )
+
+    def clone_node_log(self, node_id):
+        original_log = self.load(self._primary_key)
+        node = Node.find(Q('_id', 'eq', node_id))[0]
+        log_clone = original_log.clone()
+        log_clone.node = node
+        log_clone.user = original_log.user
+        log_clone.save()
+        return log_clone
 
     @property
     def tz_date(self):

@@ -46,8 +46,6 @@ def main(dry=True):
             for node in log._backrefs['logged']['node']['logs']:
                 if node != log.original_node._id:
                     clone = log.clone_node_log(node)
-                    print clone.original_node
-                    print clone.node
                     clone.original_node = get_original_node(log)
                     try:
                         clone.save()
