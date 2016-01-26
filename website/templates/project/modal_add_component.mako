@@ -22,15 +22,14 @@
                             %endfor
                         </select>
                     </div>
-                    %if (len(node['contributors']) > 1):
+                    <div id="inheritContributorsCheckbox">
                         <div class="form-group">
-                                <label><input id="inheritContributors"
-                                              name="inheritContributors"
-                                              value="true"
-                                              type="checkbox"/> Add Contributors from ${node['title']}</label>
+                            <label><input id="inheritContributors"
+                                          name="inheritContributors"
+                                          value="true"
+                                          type="checkbox"/> Add Contributors from ${node['title']}</label>
                         </div>
-                    %endif
-
+                    </div>
                 </div><!-- end modal-body -->
                 <div class="modal-footer">
                     <a id="confirm" href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>

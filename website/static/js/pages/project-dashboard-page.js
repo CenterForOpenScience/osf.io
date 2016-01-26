@@ -41,6 +41,7 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
+    $('#inheritContributorsCheckbox').hide();
 
     // TODO: Uncomment when APIv2 concurrency issues are fixed
     // if (window.contextVars.currentUser.isAdmin) {
@@ -179,6 +180,15 @@ $(document).ready(function () {
     $('#newComponent').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
             $('#title').focus();
+        }
+    });
+
+    $('#newComponent').on('shown.bs.modal', function(){
+        if($('#contributorsList').find('ol li').children().length > 1) {
+            $('#inheritContributorsCheckbox').show();
+        }
+        else {
+            $('#inheritContributorsCheckbox').hide();
         }
     });
 
