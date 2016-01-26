@@ -17,3 +17,4 @@ class NewNodeForm(Form):
     ], widget=BootstrapTextInput())
     description = TextAreaField('Description', widget=BootstrapTextArea())
     category = TextAreaField('Category', widget=BootstrapTextArea())
+    inheritContributors = TextAreaField('Category', widget=BootstrapTextArea())
