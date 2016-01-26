@@ -120,15 +120,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         # update this instance
         self.save()
 
-        self.owner.add_log(
-            'googledrive_folder_selected',
-            params={
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-                'folder': self.folder_name,
-            },
-            auth=auth,
-        )
+        self.nodelogger.add_log('folder_selected', save=True)
 
     @property
     def selected_folder_name(self):
