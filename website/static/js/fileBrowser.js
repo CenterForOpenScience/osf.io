@@ -554,9 +554,19 @@ var Collections  = {
             });
             promise.then(self.calculateTotalPages());
         };
-        var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
-        loadCollections(collectionsUrl);
-        args.activeFilter(self.collections()[0]);
+        self.init = function(element, isInit) {
+            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
+            loadCollections(collectionsUrl);
+            args.activeFilter(self.collections()[0]);
+
+            $(window).click(function(event){
+                var target = $(event.target);
+                if(!target.hasClass('collectionMenu') && !target.hasClass('fa-ellipsis-v') && target.parents('.collection').length === 0) {
+                    self.showCollectionMenu(false);
+                    m.redraw(); // we have to force redraw here
+                }
+            });
+        };
 
         self.addCollection = function () {
             var url = $osf.apiV2Url('collections/', {});
@@ -652,6 +662,8 @@ var Collections  = {
                 }
             });
         };
+
+        self.init();
     },
     view : function (ctrl, args) {
         var selectedCSS;
