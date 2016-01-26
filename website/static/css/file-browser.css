@@ -263,7 +263,9 @@
 }
 
 @media only screen and (min-width : 767px) and (max-width : 991px) {
-
+    .fb-infobar .nav-tabs>li>a {
+        padding: 10px 3px;
+    }
 }
 
 @media only screen and (min-width : 767px) {
