@@ -8,10 +8,11 @@ from website.project.model import Comment
 from .serializers import serialize_comment
 
 
-def get_spam_list():
+def get_spam_list(mark=1):
     query = (
         Q('reports', 'ne', {}) &
-        Q('reports', 'ne', None)
+        Q('reports', 'ne', None) &
+        Q('spam_status', 'eq', mark)
     )
     return Comment.find(query).sort('date_created')
 
