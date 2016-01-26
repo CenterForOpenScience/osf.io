@@ -8,7 +8,6 @@ import datetime
 import requests
 import functools
 
-from api.base.utils import absolute_reverse
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
@@ -176,11 +175,7 @@ class StoredFileNode(StoredObject):
             if not create:
                 return None
         return Guid.generate(self)
-
-    @property
-    def absolute_api_v2_url(self):
-        return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
-
+    
 
 class FileNodeMeta(type):
     """Keeps track of subclasses of the ``FileNode`` object
