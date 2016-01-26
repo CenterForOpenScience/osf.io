@@ -151,6 +151,8 @@ var FileBrowser = {
         self.refreshView = m.prop(true); // Internal loading indicator
         self.allProjectsLoaded = m.prop(false);
         self.allProjects = m.prop([]);
+        self.loadingNodePages = false; // Since API returns pages of items, this state shows whether filebrowser is still loading the next pages.
+        self.loadingAllNodes = false; // True if we are loading all nodes
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = [
@@ -253,7 +255,7 @@ var FileBrowser = {
                 success = self.updateListSuccess;
             }
             if(linkObject.data.systemCollection === 'nodes'){
-                self.loadingNodes = true;
+                self.loadingAllNodes = true;
             }
             if (error === undefined){
                 error = self.updateListError;
@@ -267,7 +269,7 @@ var FileBrowser = {
             return promise;
         };
         self.updateListSuccess = function _updateListSuccess (value) {
-            if(self.loadingPages){
+            if(self.loadingNodePages){
                 self.data().data = self.data().data.concat(value.data);
             } else {
                 self.data(value);
@@ -302,7 +304,7 @@ var FileBrowser = {
             }
             // if we have more pages keep loading the pages
             if (value.links.next) {
-                self.loadingPages = true;
+                self.loadingNodePages = true;
                 var collData = {};
                 if(!self.allProjectsLoaded()) {
                     collData = { systemCollection : 'nodes' };
@@ -310,13 +312,13 @@ var FileBrowser = {
                 self.updateList({link : value.links.next, data : collData });
                 return; // stop here so the reloads below don't run
             } else {
-                self.loadingPages = false;
+                self.loadingNodePages = false;
             }
-            if(self.loadingNodes) {
+            if(self.loadingAllNodes) {
                 self.data().data = _makeTree(self.data().data);
                 self.allProjects(self.data());
                 self.generateFiltersList();
-                self.loadingNodes = false;
+                self.loadingAllNodes = false;
                 self.allProjectsLoaded(true);
             }
             self.reload(true);
