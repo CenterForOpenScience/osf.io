@@ -103,9 +103,10 @@ function _poModified(item) {
  */
 function _poResolveRows(item) {
     var mobile = window.innerWidth < 767; // true if mobile view
+    var tb = this;
+    var folderIcons = tb.filterOn ? false : true;
+    var default_columns = [];
 
-    var css = '',
-        default_columns = [];
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     } else {
@@ -114,7 +115,7 @@ function _poResolveRows(item) {
 
     default_columns.push({
         data : 'name',  // Data field name
-        folderIcons : true,
+        folderIcons : folderIcons,
         filter : true,
         css : 'po-draggable', // All projects are draggable since we separated collections from the grid
         custom : _poTitleColumn
