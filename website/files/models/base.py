@@ -175,7 +175,7 @@ class StoredFileNode(StoredObject):
             if not create:
                 return None
         return Guid.generate(self)
-    
+
 
 class FileNodeMeta(type):
     """Keeps track of subclasses of the ``FileNode`` object
