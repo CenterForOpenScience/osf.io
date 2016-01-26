@@ -408,6 +408,7 @@ var FileBrowser = {
         var infoPanel = '';
         var poStyle = 'width : 72%'; // Other percentages are set in CSS in file-browser.css These are here because they change
         var sidebarButtonClass = 'btn-default';
+        var projectCount = ctrl.data().data.length;
         if (ctrl.showInfo() && !mobile){
             infoPanel = m('.fb-infobar', m.component(Information, ctrl));
             poStyle = 'width : 47%';
@@ -420,6 +421,7 @@ var FileBrowser = {
         } else {
             ctrl.showSidebar(true);
         }
+
         return [
             m('.fb-header.row', [
                 m('.col-xs-12.col-sm-6', m.component(Breadcrumbs,ctrl)),
@@ -430,7 +432,7 @@ var FileBrowser = {
                             ctrl.showSidebar(!ctrl.showSidebar());
                         }
                     }, m('.fa.fa-bars')) : '',
-                    m('span.m-r-md.hidden-xs', ctrl.data().data.length + ' Projects'),
+                    m('span.m-r-md.hidden-xs', projectCount === 1 ? projectCount + ' Project' : projectCount + ' Projects'),
                     m('#poFilter.m-r-xs')
                 ])
             ]),
