@@ -13,7 +13,6 @@ import time
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
-
 from modularodm import Q
 from modularodm.exceptions import ValidationError
 
@@ -58,7 +57,7 @@ from tests.base import (
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
+    RegistrationFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
     ProjectWithAddonFactory, MockAddonNodeSettings, DraftRegistrationFactory
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
@@ -3539,91 +3538,6 @@ class TestFileViews(OsfTestCase):
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
         data = res.json['data']
         assert_equal(len(data), len(expected))
-
-
-class TestComments(OsfTestCase):
-
-    def setUp(self):
-        super(TestComments, self).setUp()
-        self.project = ProjectFactory(is_public=True)
-        self.consolidated_auth = Auth(user=self.project.creator)
-        self.non_contributor = AuthUserFactory()
-        self.user = AuthUserFactory()
-        self.project.add_contributor(self.user)
-        self.project.save()
-        self.user.save()
-
-    def _configure_project(self, project, comment_level):
-
-        project.comment_level = comment_level
-        project.save()
-
-    def test_discussion_recursive(self):
-
-        self._configure_project(self.project, 'public')
-        comment_l0 = CommentFactory(node=self.project)
-
-        user_l1 = UserFactory()
-        user_l2 = UserFactory()
-        comment_l1 = CommentFactory(node=self.project, target=comment_l0, user=user_l1)
-        CommentFactory(node=self.project, target=comment_l1, user=user_l2)
-
-        url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url)
-
-        assert_equal(len(res.json['discussion']), 3)
-
-    def test_discussion_no_repeats(self):
-
-        self._configure_project(self.project, 'public')
-        comment_l0 = CommentFactory(node=self.project)
-
-        comment_l1 = CommentFactory(node=self.project, target=comment_l0)
-        CommentFactory(node=self.project, target=comment_l1)
-
-        url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url)
-
-        assert_equal(len(res.json['discussion']), 1)
-
-    def test_discussion_sort(self):
-
-        self._configure_project(self.project, 'public')
-
-        user1 = UserFactory()
-        user2 = UserFactory()
-
-        CommentFactory(node=self.project)
-        for _ in range(3):
-            CommentFactory(node=self.project, user=user1)
-        for _ in range(2):
-            CommentFactory(node=self.project, user=user2)
-
-        url = self.project.api_url + 'comments/discussion/'
-        res = self.app.get(url)
-
-        assert_equal(len(res.json['discussion']), 3)
-        observed = [user['id'] for user in res.json['discussion']]
-        expected = [user1._id, user2._id, self.project.creator._id]
-        assert_equal(observed, expected)
-
-    def test_view_comments_updates_user_comments_view_timestamp(self):
-        CommentFactory(node=self.project)
-
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=self.user.auth)
-        self.user.reload()
-
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
-        view_timestamp = dt.datetime.utcnow()
-        assert_datetime_equal(user_timestamp, view_timestamp)
-
-    def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=self.user.auth)
-
-        self.non_contributor.reload()
-        assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
 
 
 class TestTagViews(OsfTestCase):

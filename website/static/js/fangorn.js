@@ -1186,7 +1186,7 @@ function _fangornTitleColumn(item, col) {
             };
         }
         return m(
-            'span', 
+            'span',
             attrs,
             item.data.name
         );
@@ -1441,7 +1441,7 @@ function _renameEvent () {
 
 var toolbarModes = {
     'DEFAULT' : 'bar',
-    'SEARCH' : 'search',
+    'FILTER' : 'filter',
     'ADDFOLDER' : 'addFolder',
     'RENAME' : 'rename',
     'ADDPROJECT' : 'addProject'
@@ -1655,7 +1655,7 @@ var FGItemButtons = {
 
 var dismissToolbar = function(){
     var tb = this;
-    if (tb.toolbarMode() === toolbarModes.SEARCH){
+    if (tb.toolbarMode() === toolbarModes.FILTER){
         tb.resetFilter();
     }
     tb.toolbarMode(toolbarModes.DEFAULT);
@@ -1688,7 +1688,7 @@ var FGToolbar = {
                 onclick: ctrl.dismissToolbar,
                 icon : 'fa fa-times'
             }, '');
-        templates[toolbarModes.SEARCH] =  [
+        templates[toolbarModes.FILTER] =  [
             m('.col-xs-10', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
                 ]),
@@ -1804,11 +1804,11 @@ var FGToolbar = {
         generalButtons.push(
             m.component(FGButton, {
                 onclick: function(event){
-                    ctrl.mode(toolbarModes.SEARCH);
+                    ctrl.mode(toolbarModes.FILTER);
                 },
                 icon: 'fa fa-search',
                 className : 'text-primary'
-            }, 'Search'));
+            }, 'Filter'));
             if (ctrl.tb.options.placement !== 'fileview') {
                 generalButtons.push(m.component(FGButton, {
                     onclick: function(event){
@@ -1923,7 +1923,7 @@ function openParentFolders (item) {
     var tb = this;
     var scrollToItem = false;
     filterRowsNotInParent.call(tb, tb.multiselected());
-    if (tb.toolbarMode() === 'search') {
+    if (tb.toolbarMode() === 'filter') {
         dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
@@ -2322,7 +2322,7 @@ tbOptions = {
         reapplyTooltips();
     },
     onmultiselect : _fangornMultiselect,
-    filterPlaceholder : 'Search',
+    filterPlaceholder : 'Filter',
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
     dropzone : {                                           // All dropzone options.
