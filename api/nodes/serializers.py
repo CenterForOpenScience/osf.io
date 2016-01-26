@@ -9,6 +9,7 @@ from framework.exceptions import PermissionsError
 
 from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
+from website.files.models.base import File
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
@@ -90,6 +91,8 @@ class NodeSerializer(JSONAPISerializer):
                                             'level project by submitting the appropriate fields in the request body, '
                                             'and some information will not change. By default, the description will '
                                             'be cleared and the project will be made private.')
+    current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
+                                                                   'for the current user on this node.')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
@@ -157,6 +160,13 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'},
     )
 
+    def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return ["read"]
+        else:
+            return obj.get_permissions(user=user)
+
     class Meta:
         type_ = 'nodes'
 
@@ -190,9 +200,28 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def get_unread_comments_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
-        user = auth.user
-        return Comment.find_unread(user=user, node=obj)
+        user = self.get_user_auth(self.context['request']).user
+        node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
+        file_comments = self.get_unread_file_comments(obj)
+
+        return {
+            'total': node_comments + file_comments,
+            'node': node_comments,
+            'files': file_comments
+        }
+
+    def get_unread_file_comments(self, obj):
+        user = self.get_user_auth(self.context['request']).user
+        n_unread = 0
+        commented_files = File.find(Q('_id', 'in', obj.commented_files.keys()))
+        for file_obj in commented_files:
+            if obj.get_addon(file_obj.provider):
+                try:
+                    self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider, check_object_permissions=False)
+                except (exceptions.NotFound, exceptions.PermissionDenied):
+                    continue
+                n_unread += Comment.find_n_unread(user, obj, page='files', root_id=file_obj._id)
+        return n_unread
 
     def create(self, validated_data):
         if 'template_from' in validated_data:

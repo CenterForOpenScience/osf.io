@@ -6,7 +6,7 @@ Changelog
 ===================
 
 - Added date_modified field to Node (no longer a property).
-- Add Researchgate links to user profiles.
+- Add ResearchGate links to user profiles.
 - Add Academia.edu links to user profiles.
 - Components may be categorized as "Software".
 - Reorganize wiki configuration on project settings page.
@@ -24,7 +24,7 @@ Migrations
 - python -m scripts.migration.migrate_date_modified_for_existing_nodes
 - python -m scripts.migration.migrate_root_and_parent_on_node
 
-0.62.0 (unreleased)
+0.62.0 (2016-01-25)
 ===================
 
 - File commenting.

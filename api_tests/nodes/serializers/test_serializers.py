@@ -79,6 +79,10 @@ class TestNodeRegistrationSerializer(DbTestCase):
         data = result['data']
         assert_equal(data['id'], reg._id)
         assert_equal(data['type'], 'registrations')
+        should_not_relate_to_registrations = [
+            'registered_from',
+            'registered_by'
+        ]
 
         # Attributes
         attributes = data['attributes']
@@ -90,6 +94,9 @@ class TestNodeRegistrationSerializer(DbTestCase):
 
         # Relationships
         relationships = data['relationships']
+        relationship_urls = {}
+        for relationship in relationships:
+            relationship_urls[relationship]=relationships[relationship]['links']['related']['href']
         assert_in('registered_by', relationships)
         registered_by = relationships['registered_by']['links']['related']['href']
         assert_equal(
@@ -102,3 +109,9 @@ class TestNodeRegistrationSerializer(DbTestCase):
             urlparse(registered_from).path,
             '/{}nodes/{}/'.format(API_BASE, reg.registered_from._id)
         )
+        for relationship in relationship_urls:
+            if relationship in should_not_relate_to_registrations:
+                assert_not_in('/{}registrations/'.format(API_BASE), relationship_urls[relationship])
+            else:
+                assert_in('/{}registrations/'.format(API_BASE), relationship_urls[relationship],
+                          'For key {}'.format(relationship))

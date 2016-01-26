@@ -10,6 +10,7 @@ from dateutil.parser import parse as parse_date
 import urlparse
 from collections import OrderedDict
 import warnings
+import requests
 
 import pytz
 from flask import request
@@ -54,6 +55,7 @@ from website.exceptions import (
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
+from website.files.models.base import File, StoredFileNode
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -269,17 +271,27 @@ class SpamMixin(StoredObject):
 
 class Comment(GuidStoredObject, SpamMixin):
 
+    __guid_min_length__ = 12
+
+    OVERVIEW = "node"
+    FILES = "files"
+
     _id = fields.StringField(primary=True)
 
-    user = fields.ForeignField('user', required=True, backref='commented')
-    node = fields.ForeignField('node', required=True, backref='comment_owner')
-    target = fields.AbstractForeignField(required=True, backref='commented')
+    user = fields.ForeignField('user', required=True)
+    # the node that the comment belongs to
+    node = fields.ForeignField('node', required=True)
+    # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
+    target = fields.AbstractForeignField(required=True)
+    # The file or project overview page that the comment is for
+    root_target = fields.AbstractForeignField()
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
     modified = fields.BooleanField(default=False)
-
     is_deleted = fields.BooleanField(default=False)
+    # The type of root_target: node/files
+    page = fields.StringField()
     content = fields.StringField(required=True,
                                  validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
 
@@ -295,12 +307,23 @@ class Comment(GuidStoredObject, SpamMixin):
         return self._id
 
     @property
+    def url(self):
+        return '/{}/'.format(self._id)
+
+    @property
     def absolute_api_v2_url(self):
         return absolute_reverse('comments:comment-detail', kwargs={'comment_id': self._id})
 
     # used by django and DRF
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+    def get_comment_page_url(self):
+        if isinstance(self.root_target, StoredFileNode):
+            file_guid = self.root_target.get_guid()._id
+            return settings.DOMAIN + str(file_guid) + '/'
+        else:
+            return self.node.absolute_url
 
     def get_content(self, auth):
         """ Returns the comment content if the user is allowed to see it. Deleted comments
@@ -315,19 +338,52 @@ class Comment(GuidStoredObject, SpamMixin):
         return self.content
 
     @classmethod
-    def find_unread(cls, user, node):
-        default_timestamp = datetime.datetime(1970, 1, 1, 12, 0, 0)
-        n_unread = 0
+    def find_n_unread(cls, user, node, page=None, root_id=None):
         if node.is_contributor(user):
-            if user.comments_viewed_timestamp is None:
-                user.comments_viewed_timestamp = {}
-                user.save()
-            view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
-            n_unread = Comment.find(Q('node', 'eq', node) &
-                                    Q('user', 'ne', user) &
-                                    Q('is_deleted', 'ne', True) &
-                                    (Q('date_created', 'gt', view_timestamp) |
-                                    Q('date_modified', 'gt', view_timestamp))).count()
+            if not page:
+                return cls.n_unread_node_comments(user, node) + cls.n_unread_file_comments(user, node)
+            elif page == Comment.OVERVIEW:
+                return cls.n_unread_node_comments(user, node)
+            elif page == Comment.FILES:
+                if root_id is None:
+                    return cls.n_unread_file_comments(user, node)
+                else:
+                    view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
+                    root_target = File.load(root_id)
+                    return Comment.find(Q('node', 'eq', node) &
+                                        Q('user', 'ne', user) &
+                                        Q('is_deleted', 'eq', False) &
+                                        (Q('date_created', 'gt', view_timestamp) |
+                                        Q('date_modified', 'gt', view_timestamp)) &
+                                        Q('root_target', 'eq', root_target)).count()
+
+        return 0
+
+    @classmethod
+    def n_unread_node_comments(cls, user, node):
+        view_timestamp = user.get_node_comment_timestamps(node, 'node')
+        return Comment.find(Q('node', 'eq', node) &
+                            Q('user', 'ne', user) &
+                            (Q('date_created', 'gt', view_timestamp) |
+                            Q('date_modified', 'gt', view_timestamp)) &
+                            Q('is_deleted', 'eq', False) &
+                            Q('root_target', 'eq', node)).count()
+
+    @classmethod
+    def n_unread_file_comments(cls, user, node):
+        n_unread = 0
+        commented_files = File.find(Q('_id', 'in', node.commented_files.keys()))
+        for file_obj in commented_files:
+            if node.get_addon(file_obj.provider):
+                try:
+                    exists = file_obj and file_obj.touch(request.headers.get('Authorization'),
+                                                         cookie=request.cookies.get(settings.COOKIE_NAME))
+                except requests.ConnectionError:
+                    return 0
+                if not exists:
+                    Comment.update(Q('root_target', 'eq', file_obj), data={'root_target': None})
+                    continue
+                n_unread += cls.find_n_unread(user, node, page=Comment.FILES, root_id=file_obj._id)
         return n_unread
 
     @classmethod
@@ -335,16 +391,31 @@ class Comment(GuidStoredObject, SpamMixin):
         comment = cls(**kwargs)
         if not comment.node.can_comment(auth):
             raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
+        log_dict = {
+            'project': comment.node.parent_id,
+            'node': comment.node._id,
+            'user': comment.user._id,
+            'comment': comment._id,
+        }
+        if isinstance(comment.target, Comment):
+            comment.root_target = comment.target.root_target
+        else:
+            comment.root_target = comment.target
+
+        if isinstance(comment.root_target, Node):
+            comment.page = Comment.OVERVIEW
+        elif isinstance(comment.root_target, StoredFileNode):
+            log_dict['file'] = {'name': comment.root_target.name, 'url': comment.get_comment_page_url()}
+            comment.page = Comment.FILES
+            file_key = comment.root_target._id
+            comment.node.commented_files[file_key] = comment.node.commented_files.get(file_key, 0) + 1
+        else:
+            raise ValueError('Invalid root target.')
         comment.save()
 
         comment.node.add_log(
             NodeLog.COMMENT_ADDED,
-            {
-                'project': comment.node.parent_id,
-                'node': comment.node._id,
-                'user': comment.user._id,
-                'comment': comment._id,
-            },
+            log_dict,
             auth=auth,
             save=False,
         )
@@ -357,57 +428,74 @@ class Comment(GuidStoredObject, SpamMixin):
     def edit(self, content, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
             raise PermissionsError('{0!r} does not have permission to edit this comment'.format(auth.user))
+        log_dict = {
+            'project': self.node.parent_id,
+            'node': self.node._id,
+            'user': self.user._id,
+            'comment': self._id,
+        }
+        if isinstance(self.root_target, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
         self.content = content
         self.modified = True
-        self.node.add_log(
-            NodeLog.COMMENT_UPDATED,
-            {
-                'project': self.node.parent_id,
-                'node': self.node._id,
-                'user': self.user._id,
-                'comment': self._id,
-            },
-            auth=auth,
-            save=False,
-        )
         if save:
             self.save()
+            self.node.add_log(
+                NodeLog.COMMENT_UPDATED,
+                log_dict,
+                auth=auth,
+                save=False,
+            )
+            self.node.save()
 
     def delete(self, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
             raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
+        log_dict = {
+            'project': self.node.parent_id,
+            'node': self.node._id,
+            'user': self.user._id,
+            'comment': self._id,
+        }
         self.is_deleted = True
-        self.node.add_log(
-            NodeLog.COMMENT_REMOVED,
-            {
-                'project': self.node.parent_id,
-                'node': self.node._id,
-                'user': self.user._id,
-                'comment': self._id,
-            },
-            auth=auth,
-            save=False,
-        )
+        if isinstance(self.root_target, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
+            self.node.commented_files[self.root_target._id] -= 1
+            if self.node.commented_files[self.root_target._id] == 0:
+                del self.node.commented_files[self.root_target._id]
         if save:
             self.save()
+            self.node.add_log(
+                NodeLog.COMMENT_REMOVED,
+                log_dict,
+                auth=auth,
+                save=False,
+            )
+            self.node.save()
 
     def undelete(self, auth, save=False):
         if not self.node.can_comment(auth) or self.user._id != auth.user._id:
             raise PermissionsError('{0!r} does not have permission to comment on this node'.format(auth.user))
         self.is_deleted = False
-        self.node.add_log(
-            NodeLog.COMMENT_ADDED,
-            {
-                'project': self.node.parent_id,
-                'node': self.node._id,
-                'user': self.user._id,
-                'comment': self._id,
-            },
-            auth=auth,
-            save=False,
-        )
+        log_dict = {
+            'project': self.node.parent_id,
+            'node': self.node._id,
+            'user': self.user._id,
+            'comment': self._id,
+        }
+        if isinstance(self.root_target, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
+            file_key = self.root_target._id
+            self.node.commented_files[file_key] = self.node.commented_files.get(file_key, 0) + 1
         if save:
             self.save()
+            self.node.add_log(
+                NodeLog.COMMENT_RESTORED,
+                log_dict,
+                auth=auth,
+                save=False,
+            )
+            self.node.save()
 
 
 @unique_on(['params.node', '_id'])
@@ -490,6 +578,7 @@ class NodeLog(StoredObject):
     COMMENT_ADDED = 'comment_added'
     COMMENT_REMOVED = 'comment_removed'
     COMMENT_UPDATED = 'comment_updated'
+    COMMENT_RESTORED = 'comment_restored'
 
     CITATION_ADDED = 'citation_added'
     CITATION_EDITED = 'citation_edited'
@@ -862,6 +951,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
+
+    # Files that contains comments and the number of comments each contains
+    # {<File1.id>: int, <File2.id>: int}
+    commented_files = fields.DictionaryField(default=dict)
 
     alternative_citations = fields.ForeignField('alternativecitation', list=True, backref='citations')
 
@@ -2417,6 +2510,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return '/project/{}/'.format(self._primary_key)
 
     @property
+    def linked_nodes_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/linked_nodes/'
+
+    @property
+    def linked_nodes_related_url(self):
+        return self.absolute_api_v2_url + 'linked_nodes/'
+
+    @property
     def csl(self):  # formats node information into CSL format for citation parsing
         """a dict in CSL-JSON schema
 
@@ -3271,7 +3372,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         retraction.save()  # Save retraction so it has a primary key
         self.retraction = retraction
         self.save()  # Set foreign field reference Node.retraction
-        admins = self.get_admin_contributors_recursive()
+        admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
             retraction.add_authorizer(admin, node)
         retraction.save()  # Save retraction approval state
@@ -3322,7 +3423,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         embargo.save()  # Save embargo so it has a primary key
         self.embargo = embargo
         self.save()  # Set foreign field reference Node.embargo
-        admins = self.get_admin_contributors_recursive()
+        admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
             embargo.add_authorizer(admin, node)
         embargo.save()  # Save embargo's approval_state
@@ -3359,16 +3460,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
-    def get_admin_contributors_recursive(self, *args, **kwargs):
-        """Return a set of all (admin, node) tuples for this node and
+    def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
+        """Yield (admin, node) tuples for this node and
         descendant nodes. Excludes contributors on node links and inactive users.
+
+        :param bool unique_users: If True, a given admin will only be yielded once
+            during iteration.
         """
-        return {
-            (contrib, node)
-            for node in self.node_and_primary_descendants(*args, **kwargs)
-            for contrib in node.contributors
-            if node.has_permission(contrib, 'admin') and contrib.is_active
-        }
+        visited_user_ids = []
+        for node in self.node_and_primary_descendants(*args, **kwargs):
+            for contrib in node.contributors:
+                if node.has_permission(contrib, ADMIN) and contrib.is_active:
+                    if unique_users:
+                        if contrib._id not in visited_user_ids:
+                            visited_user_ids.append(contrib._id)
+                            yield (contrib, node)
+                    else:
+                        yield (contrib, node)
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME
@@ -3380,7 +3488,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         approval.save()  # Save approval so it has a primary key
         self.registration_approval = approval
         self.save()  # Set foreign field reference Node.registration_approval
-        admins = self.get_admin_contributors_recursive()
+        admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
             approval.add_authorizer(admin, node=node)
         approval.save()  # Save approval's approval_state
@@ -3513,13 +3621,16 @@ class Sanction(StoredObject):
     APPROVED = 'approved'
     # Rejected by at least one person
     REJECTED = 'rejected'
+    # Embargo has been completed
+    COMPLETED = 'completed'
 
     state = fields.StringField(
         default=UNAPPROVED,
         validate=validators.choice_in((
             UNAPPROVED,
             APPROVED,
-            REJECTED
+            REJECTED,
+            COMPLETED,
         ))
     )
 
@@ -3837,7 +3948,6 @@ class PreregCallbackMixin(object):
 class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
-    COMPLETED = 'completed'
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
 
