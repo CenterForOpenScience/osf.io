@@ -41,6 +41,8 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
+
+    //Hide checkbox from modal unless there is more then one contributor.
     $('#inheritContributorsCheckbox').hide();
 
     // TODO: Uncomment when APIv2 concurrency issues are fixed
@@ -183,6 +185,8 @@ $(document).ready(function () {
         }
     });
 
+    //Find out if we have contributors to toggle the inherit contributors checkbox.  Using jQuery because
+    //contributor info is gotten directly from a mako templace api v1 call.
     $('#newComponent').on('shown.bs.modal', function(){
         if($('#contributorsList').find('ol li').children().length > 1) {
             $('#inheritContributorsCheckbox').show();
