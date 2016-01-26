@@ -4,9 +4,7 @@ import mock
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-from framework.auth import Auth
-
-from factory import SubFactory, post_generation, Sequence
+from factory import SubFactory, Sequence
 from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
 
 from website.addons.box.model import (
@@ -14,14 +12,10 @@ from website.addons.box.model import (
     BoxNodeSettings
 )
 
-# TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
-
-
 class BoxAccountFactory(ExternalAccountFactory):
     provider = 'box'
     provider_id = Sequence(lambda n: 'id-{0}'.format(n))
     oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
-    oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
     expires_at = datetime.now() + relativedelta(seconds=3600)
 
 

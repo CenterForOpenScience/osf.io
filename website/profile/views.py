@@ -23,6 +23,7 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website.project.model import Node
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
@@ -37,29 +38,34 @@ logger = logging.getLogger(__name__)
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes(
-        list(user.node__contributed.find(
-            (
-                Q('category', 'eq', 'project') &
-                Q('is_public', 'eq', True) &
-                Q('is_registration', 'eq', False) &
-                Q('is_deleted', 'eq', False)
-            )
-        ))
+
+    nodes = Node.find_for_user(
+        user,
+        subquery=(
+            Q('category', 'eq', 'project') &
+            Q('is_public', 'eq', True) &
+            Q('is_registration', 'eq', False) &
+            Q('is_deleted', 'eq', False)
+        )
     )
+    return _render_nodes(list(nodes))
 
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
     # TODO: This should use User.visible_contributor_to?
-    nodes = list(user.node__contributed.find(
-        (
-            Q('category', 'ne', 'project') &
-            Q('is_public', 'eq', True) &
-            Q('is_registration', 'eq', False) &
-            Q('is_deleted', 'eq', False)
+
+    nodes = list(
+        Node.find_for_user(
+            user,
+            (
+                Q('category', 'ne', 'project') &
+                Q('is_public', 'eq', True) &
+                Q('is_registration', 'eq', False) &
+                Q('is_deleted', 'eq', False)
+            )
         )
-    ))
+    )
     return _render_nodes(nodes, show_path=True)
 
 
@@ -137,17 +143,21 @@ def update_user(auth):
 
         emails_list = [x['address'].strip().lower() for x in data['emails']]
 
-        if user.username not in emails_list:
+        if user.username.strip().lower() not in emails_list:
             raise HTTPError(httplib.FORBIDDEN)
 
+        available_emails = [
+            each.strip().lower() for each in
+            user.emails + user.unconfirmed_emails
+        ]
         # removals
         removed_emails = [
-            each
-            for each in user.emails + user.unconfirmed_emails
+            each.strip().lower()
+            for each in available_emails
             if each not in emails_list
         ]
 
-        if user.username in removed_emails:
+        if user.username.strip().lower() in removed_emails:
             raise HTTPError(httplib.FORBIDDEN)
 
         for address in removed_emails:
@@ -162,8 +172,7 @@ def update_user(auth):
         added_emails = [
             each['address'].strip().lower()
             for each in data['emails']
-            if each['address'].strip().lower() not in user.emails
-            and each['address'].strip().lower() not in user.unconfirmed_emails
+            if each['address'].strip().lower() not in available_emails
         ]
 
         for address in added_emails:
@@ -195,7 +204,7 @@ def update_user(auth):
 
         if primary_email:
             primary_email_address = primary_email['address'].strip().lower()
-            if primary_email_address not in user.emails:
+            if primary_email_address not in [each.strip().lower() for each in user.emails]:
                 raise HTTPError(httplib.FORBIDDEN)
             username = primary_email_address
 
@@ -209,7 +218,7 @@ def update_user(auth):
             # Remove old primary email from subscribed mailing lists
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
                 if subscription:
-                    mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
+                    mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
             user.username = username
 
     ###################
@@ -510,7 +519,7 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
+            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",

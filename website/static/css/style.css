@@ -87,6 +87,8 @@ a {
     margin-top: -60px;
     padding-top: 60px;
     display: block;
+    z-index: -1;
+    position: relative;
 }
 
 .scripted {display: none;}
@@ -145,6 +147,24 @@ a {
 #projectSubnav .navbar-collapse {
     padding-left: 0;
     padding-right: 0;
+}
+
+/* Multiple device support for project nav-bar */
+@media (max-width: 767px) {
+    .project-nav {
+        overflow: hidden;
+    }
+
+    /* Allow project nav to move the content on small screen */
+    #projectBanner .osf-project-navbar {
+        position: relative;
+        top: 0;
+        margin-top: -55px;
+    }
+    #projectBanner {
+        margin-right: -15px;
+        margin-left: -15px;
+    }
 }
 
 /* Allow search-bar and nav-bar to support mutiple size of screen */
@@ -308,55 +328,6 @@ a {
     word-wrap: break-word;
     max-width: 90%;
     display: inline-block;
-}
-
-/* Comments Panel */
-.comment-actions i {
-    cursor: pointer;
-}
-
-.comment-info {
-  padding-bottom: 10px;
-}
-
-.comment-container {
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-
-.comment-body {
-    padding: 5px;
-    background-color: white;
-}
-
-.comment-author {
-    color: #999999;
-}
-
-.comment-date {
-    color: #999999;
-}
-.edit-comment {
-    background-color: #F3F3F3;
-}
-
-.comment-body i {
-    padding-right: 5px;
-}
-
-.comment-handle-icon {
-    color: white;
-    vertical-align: middle;
-    line-height: 50px;
-    cursor: pointer;
-    position: relative;
-}
-
-.unread-comments-count {
-    font-size: medium;
-    color: white;
-    position: absolute;
-    margin-left: 40px;
 }
 
 /*  Add-on styles */
@@ -617,4 +588,18 @@ button.close {
 .tb-modal-shade {
     /*  Override z-index here to avoid clashing with navigation elements */
     z-index: 98 !important;
+}
+
+
+/* Cards
+-------------------------------------------------- */
+
+.toggle-icon {
+    color: #337ab7;
+    margin-right: 10px;
+}
+
+.header-content {
+    max-width: 75%;
+    display: inline-block
 }

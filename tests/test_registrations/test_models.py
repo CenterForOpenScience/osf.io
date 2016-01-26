@@ -8,6 +8,7 @@ from modularodm import Q
 import datetime as dt
 
 from website.models import MetaSchema, DraftRegistrationApproval
+from website.settings import PREREG_ADMIN_TAG
 
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
@@ -134,8 +135,6 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
         )
         self.authorizer1 = AuthUserFactory()
         self.authorizer2 = AuthUserFactory()
-        for authorizer in [self.authorizer1, self.authorizer2]:
-            self.approval.add_authorizer(authorizer)
         self.approval.save()
         self.draft.registration_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
@@ -165,8 +164,6 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
         )
         self.authorizer1 = AuthUserFactory()
         self.authorizer2 = AuthUserFactory()
-        for authorizer in [self.authorizer1, self.authorizer2]:
-            self.approval.add_authorizer(authorizer)
         self.approval.save()
         self.draft.approval = self.approval
         self.draft.save()
@@ -178,9 +175,9 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
         assert_equal(registered_node.registered_user, self.draft.initiator)
 
     def test_approval_requires_only_a_single_authorizer(self):
-        token = self.approval.approval_state[self.authorizer1._id]['approval_token']
         with mock.patch.object(self.approval, '_on_complete') as mock_on_complete:
-            self.approval.approve(self.authorizer1, token)
+            self.authorizer1.system_tags.append(PREREG_ADMIN_TAG)
+            self.approval.approve(self.authorizer1)
             assert_true(mock_on_complete.called)
             assert_true(self.approval.is_approved)
 
@@ -188,6 +185,4 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
     def test_on_reject(self, mock_send_mail):
         self.approval._on_reject(self.user)
         assert_equal(self.approval.meta, {})
-        assert_is_none(self.draft.approval)
-        assert_false(self.draft.is_pending_review)
         assert_true(mock_send_mail.called_once)

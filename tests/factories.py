@@ -26,6 +26,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
+from website.files.models import StoredFileNode
 from website.oauth.models import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,
@@ -34,7 +35,7 @@ from website.oauth.models import (
 )
 from website.project.model import (
     Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
-    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig,
+    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig, AlternativeCitation,
     ensure_schemas
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
@@ -165,9 +166,10 @@ class PrivateLinkFactory(ModularOdmFactory):
     FACTORY_FOR = PrivateLink
 
     name = "link"
-    key = "foobarblaz"
+    key = Sequence(lambda n: 'foobar{}'.format(n))
     anonymous = False
     creator = SubFactory(AuthUserFactory)
+
 
 class AbstractNodeFactory(ModularOdmFactory):
     FACTORY_FOR = Node
@@ -246,7 +248,7 @@ class RegistrationFactory(AbstractNodeFactory):
             else:
                 reg.require_approval(reg.creator)
             reg.save()
-            reg.sanction.add_authorizer(reg.creator)
+            reg.sanction.add_authorizer(reg.creator, reg)
             reg.sanction.save()
 
         if archive:
@@ -271,6 +273,23 @@ class RegistrationFactory(AbstractNodeFactory):
         reg.save()
         return reg
 
+
+class RetractedRegistrationFactory(AbstractNodeFactory):
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+
+        registration = kwargs.pop('registration', None)
+        registration.is_public = True
+        user = kwargs.pop('user', registration.creator)
+
+        registration.retract_registration(user)
+        retraction = registration.retraction
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(user, token)
+        retraction.save()
+
+        return retraction
 
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer
@@ -462,12 +481,21 @@ class CommentFactory(ModularOdmFactory):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
         target = kwargs.pop('target', None) or node
+        content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
             user=user,
             target=target,
+            content=content,
             *args, **kwargs
         )
+        if isinstance(target, target_class):
+            instance.root_target = target.root_target
+        else:
+            instance.root_target = target
+            if isinstance(instance.root_target, StoredFileNode):
+                file_id = instance.root_target._id
+                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
         return instance
 
     @classmethod
@@ -475,12 +503,22 @@ class CommentFactory(ModularOdmFactory):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
         target = kwargs.pop('target', None) or node
+        content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
             user=user,
             target=target,
+            content=content,
             *args, **kwargs
         )
+        if isinstance(target, target_class):
+            instance.root_target = target.root_target
+        else:
+            instance.root_target = target
+            if isinstance(instance.root_target, StoredFileNode):
+                file_id = instance.root_target._id
+                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
+                instance.node.save()
         instance.save()
         return instance
 
@@ -533,6 +571,8 @@ class MockOAuth2Provider(ExternalProvider):
 
     auth_url_base = "https://mock2.com/auth"
     callback_url = "https://mock2.com/callback"
+    auto_refresh_url = "https://mock2.com/callback"
+    refresh_time = 300
 
     def handle_callback(self, response):
         return {
@@ -560,6 +600,11 @@ class MockOAuthAddonUserSettings(addons_base.AddonOAuthUserSettingsBase):
 class MockOAuthAddonNodeSettings(addons_base.AddonOAuthNodeSettingsBase):
     oauth_provider = MockOAuth2Provider
 
+    folder_id = 'foo'
+    folder_name = 'Foo'
+    folder_path = '/Foo'
+
+
 
 class ArchiveTargetFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveTarget
@@ -568,6 +613,19 @@ class ArchiveTargetFactory(ModularOdmFactory):
 class ArchiveJobFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveJob
 
+class AlternativeCitationFactory(ModularOdmFactory):
+    FACTORY_FOR = AlternativeCitation
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        name = kwargs.get('name')
+        text = kwargs.get('text')
+        instance = target_class(
+            name=name,
+            text=text
+        )
+        instance.save()
+        return instance
 
 class DraftRegistrationFactory(ModularOdmFactory):
     FACTORY_FOR = DraftRegistration
@@ -596,7 +654,6 @@ class DraftRegistrationFactory(ModularOdmFactory):
             data=registration_metadata,
         )
         return draft
-
 
 class NodeLicenseRecordFactory(ModularOdmFactory):
     FACTORY_FOR = NodeLicenseRecord

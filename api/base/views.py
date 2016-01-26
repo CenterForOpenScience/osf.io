@@ -9,6 +9,7 @@ from website import settings
 from .utils import absolute_reverse
 from .requests import EmbeddedRequest
 
+
 class JSONAPIBaseView(generics.GenericAPIView):
 
     def __init__(self, **kwargs):
@@ -25,6 +26,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
         results for
         :return function object -> dict:
         """
+        if getattr(field, 'field', None):
+                field = field.field
         def partial(item):
             # resolve must be implemented on the field
             view, view_args, view_kwargs = field.resolve(item)
@@ -51,14 +54,20 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds = self.request.query_params.getlist('embed')
 
         fields = self.serializer_class._declared_fields
-        for field in fields:
-            if getattr(fields[field], 'always_embed', False) and field not in embeds:
+        fields_check = fields.copy()
+
+        for field in fields_check:
+            if getattr(fields_check[field], 'field', None):
+                fields_check[field] = fields_check[field].field
+
+        for field in fields_check:
+            if getattr(fields_check[field], 'always_embed', False) and field not in embeds:
                 embeds.append(unicode(field))
-            if getattr(fields[field], 'never_embed', False) and field in embeds:
+            if getattr(fields_check[field], 'never_embed', False) and field in embeds:
                 embeds.remove(field)
         embeds_partials = {}
         for embed in embeds:
-            embed_field = fields.get(embed)
+            embed_field = fields_check.get(embed)
             embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
         context.update({
             'embed': embeds_partials
@@ -127,6 +136,14 @@ def root(request, format=None):
     Boolean fields should be queried with `true` or `false`.
 
         /nodes/?filter[registered]=true
+
+    You can request multiple resources by filtering on id and placing comma-separated values in your query parameter.
+
+        /nodes/?filter[id]=aegu6,me23a
+
+    You can filter with case-sensitivity or case-insensitivity by using `contains` and `icontains`, respectively.
+
+        /nodes/?filter[tags][icontains]=help
 
     ###Embedding
 

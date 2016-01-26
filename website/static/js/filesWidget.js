@@ -1,6 +1,8 @@
 var $ = require('jquery');
+var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
+var osfLanguage = require('js/osfLanguage');
 var Fangorn = require('js/fangorn');
 
 /**
@@ -65,12 +67,39 @@ var FilesWidget = function(divID, filesUrl, opts) {
     self.fangornOpts = $.extend({}, fangornOpts, opts);
 };
 FilesWidget.prototype.init = function() {
-    this.filebrowser = new Fangorn(this.fangornOpts);
+    var self = this;
+
+    return $.ajax({
+        url: self.filesUrl
+    }).done(function(response) {
+        self.fangornOpts.filesData = response.data;
+        self.filebrowser = new Fangorn(self.fangornOpts);
+    }).fail(function(xhr, status, error) {
+        Raven.captureMessage('Could not GET files', {
+            url: self.filesUrl,
+            textStatus: status,
+            error: error
+        });
+        $('#' + self.fangornOpts.divID).replaceWith(
+            $('<div>', {
+                'class': 'col-md-12 bg-danger',
+                css: {
+                    padding: '10px'
+                }
+            }).append(
+                $('<span>', {
+                    html: 'Sorry, we could not load files right now. ' + osfLanguage.REFRESH_OR_SUPPORT
+                })
+            )
+        );
+    });
 };
 FilesWidget.prototype.destroy = function() {
-    this.filebrowser.grid.tbController.destroy();
-    delete this.filebrowser.tbController;    
-    delete this.filebrowser;
+    if (this.filebrowser) {
+        this.filebrowser.grid.tbController.destroy();
+        delete this.filebrowser.tbController;
+        delete this.filebrowser;
+    }
 };
 
 module.exports = FilesWidget;

@@ -17,7 +17,7 @@ def get_active_users(extra=None):
         Q('password', 'ne', None) &
         Q('merged_by', 'eq', None) &
         Q('date_confirmed', 'ne', None) &
-        Q('date_disabled', ' eq', None)
+        Q('date_disabled', 'eq', None)
     )
     query = query & extra if extra else query
     return User.find(query)
@@ -28,7 +28,13 @@ def count_user_logs(user, query=None):
         query &= Q('user', 'eq', user._id)
     else:
         query = Q('user', 'eq', user._id)
-    return NodeLog.find(query).count()
+    logs = NodeLog.find(query)
+    length = logs.count()
+    if length > 0:
+        item = logs[0]
+        if item.action == 'project_created' and item.node.is_dashboard:
+            length -= 1
+    return length
 
 
 def get_depth_users(users):

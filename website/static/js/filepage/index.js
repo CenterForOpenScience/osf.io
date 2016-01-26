@@ -11,6 +11,7 @@ var FileEditor = require('./editor.js');
 var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
+var CommentModel = require('js/comment');
 
 // Sanity
 var Panel = utils.Panel;
@@ -103,7 +104,7 @@ var FileViewPage = {
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
                 self.requestDone = true;
-                self.file.checkoutUser = resp.data.relationships.checkout.links.related.href ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
+                self.file.checkoutUser = resp.data.relationships.checkout ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
                 if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
                         m('strong', 'File is checked out.'),
@@ -134,6 +135,15 @@ var FileViewPage = {
         });
 
         if ($osf.urlParams().branch) {
+            var fileWebViewUrl = waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {branch : $osf.urlParams().branch});
+            $.ajax({
+                dataType: 'json',
+                async: true,
+                url: fileWebViewUrl,
+                beforeSend: $osf.setXHRAuthorization 
+            }).done(function(response) {
+                window.contextVars.file.urls.external = response.data.extra.webView;
+            });
             self.file.urls.revisions = waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {sha: $osf.urlParams().branch});
             self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render', branch: $osf.urlParams().branch});
         }
@@ -483,6 +493,30 @@ var FileViewPage = {
         ]));
     }
 };
+
+
+// Initialize file comment pane
+var $comments = $('.comments');
+if ($comments.length) {
+    var currentUser = {
+        id: window.contextVars.currentUser.id,
+        url: window.contextVars.currentUser.urls.profile,
+        fullname: window.contextVars.currentUser.fullname,
+        gravatarUrl: window.contextVars.currentUser.gravatarUrl
+    };
+    var options = {
+        nodeId: window.contextVars.node.id,
+        nodeApiUrl: window.contextVars.node.urls.api,
+        isRegistration: window.contextVars.node.isRegistration,
+        page: 'files',
+        rootId: window.contextVars.file.id,
+        canComment: window.contextVars.currentUser.canComment,
+        hasChildren: window.contextVars.node.hasChildren,
+        currentUser: currentUser
+    };
+    CommentModel.init('#commentsLink', '.comment-pane', options);
+}
+
 
 module.exports = function(context) {
     // Treebeard forces all mithril to load twice, to avoid

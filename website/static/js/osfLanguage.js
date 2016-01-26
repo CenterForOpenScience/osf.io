@@ -4,6 +4,7 @@ var SUPPORT_LINK = '<a href="mailto:' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL +'<
 var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_LINK + ' if the problem persists.';
 
 module.exports = {
+    REFRESH_OR_SUPPORT: REFRESH_OR_SUPPORT,
     SUPPORT_LINK: SUPPORT_LINK,
     // TODO
     makePublic: null,
@@ -17,7 +18,10 @@ module.exports = {
         registerFail: 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_LINK,
         submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_LINK,
         beforeEditIsApproved: 'This draft registration is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.',
-        beforeEditIsPendingReview: 'This draft registration is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.'
+        beforeEditIsPendingReview: 'This draft registration is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.',
+        loadDraftsFail: 'There was a problem loading draft registrations at this time. ' + REFRESH_OR_SUPPORT,
+        deleteDraftFail: 'There was a problem deleting this draft. ' + REFRESH_OR_SUPPORT,
+        loadMetaSchemaFail: 'There was a problem loading registration templates at this time. ' + REFRESH_OR_SUPPORT
     },
     Addons: {
         dataverse: {

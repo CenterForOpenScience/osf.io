@@ -4,8 +4,10 @@ DraftRegistrationApprovals.
 import sys
 import logging
 
+from framework.tasks.handlers import celery_teardown_request
+
 from website.app import init_app
-from website.models import DraftRegistration, Sanction, User
+from website.project.model import DraftRegistration, Sanction
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.WARN)
@@ -17,7 +19,7 @@ def main(dry_run=True):
         logger.warn('DRY RUN mode')
     pending_approval_drafts = DraftRegistration.find()
     need_approval_drafts = [draft for draft in pending_approval_drafts
-                            if draft.requires_approval and draft.approval and draft.approval.state == Sanction.UNAPPROVED]
+                            if draft.approval and draft.requires_approval and draft.approval.state == Sanction.UNAPPROVED]
 
     for draft in need_approval_drafts:
         sanction = draft.approval
@@ -32,5 +34,6 @@ def main(dry_run=True):
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
-    init_app(routes=False)
+    app = init_app(routes=False)
     main(dry_run=dry_run)
+    celery_teardown_request()

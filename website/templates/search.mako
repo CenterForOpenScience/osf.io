@@ -27,7 +27,6 @@
                                                 <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
                                             </li>
                                         <!-- /ko -->
-
                                 </ul>
                             </div>
                         </div>
@@ -82,7 +81,7 @@
                                       <span style="display: inline-block; max-width: 85%;">{{license.name}}</span>
                                       <span data-bind="text: license.count" class="badge pull-right"></span>
                                     </a>
-                                  </li>                                 
+                                  </li>
                                 </ul>
                                 </span>
                             </div>
@@ -108,11 +107,8 @@
                             <li data-bind="css: {disabled: !nextPageExists()}">
                                 <a href="#" data-bind="click: pageNext"> Next Page</a>
                             </li>
-
                         </ul>
                         <!-- /ko -->
-
-
                         <div class="buffer"></div>
                     </div><!--col-->
                 </div><!--row-->
@@ -215,6 +211,16 @@
                             <i class="fa social-icons" data-toggle="tooltip" title="ResearcherID">R</i>
                         </a>
                     </li>
+                    <li data-bind="visible: social.researchGate">
+                        <a data-bind="attr.href: social.researchGate">
+                            <img class="social-icons" src="/static/img/researchgate.jpg" style="PADDING-BOTTOM: 7px" data-toggle="tooltip" title="ResearchGate"></i>
+                        </a>
+                    </li>
+                    <li data-bind="visible: social.academiaInstitution + social.academiaProfileID">
+                        <a data-bind="attr.href: social.academiaInstitution + social.academiaProfileID">
+                            <i class="fa social-icons" data-toggle="tooltip" title="Academia">A</i>
+                        </a>
+                    </li>
                 </ul>
                 <!-- /ko -->
             </div>
@@ -225,7 +231,7 @@
       <!-- ko if: parent_url -->
       <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
         <!-- /ko -->
-        <!-- ko if: !parent_url -->        
+        <!-- ko if: !parent_url -->
         <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{title }}</a></h4>
         <!-- /ko -->
 

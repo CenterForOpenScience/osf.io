@@ -419,5 +419,3 @@ class TestSignalUtils(unittest.TestCase):
         with util.disconnected_from(self.signal_, self.listener):
             self.signal_.send()
         self.mock_listener.assert_not_called()
-
-

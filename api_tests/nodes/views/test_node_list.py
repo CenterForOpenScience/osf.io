@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
+from modularodm import Q
 from framework.auth.core import Auth
 
 from website.models import Node, NodeLog
@@ -15,7 +16,8 @@ from tests.factories import (
     FolderFactory,
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RetractedRegistrationFactory
 )
 
 
@@ -31,6 +33,10 @@ class TestNodeList(ApiTestCase):
         self.public = ProjectFactory(is_public=True, creator=self.user)
 
         self.url = '/{}nodes/'.format(API_BASE)
+
+    def tearDown(self):
+        super(TestNodeList, self).tearDown()
+        Node.remove()
 
     def test_only_returns_non_deleted_public_projects(self):
         res = self.app.get(self.url)
@@ -77,11 +83,44 @@ class TestNodeList(ApiTestCase):
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
-    def test_node_list_does_not_return_registrations(self):
+    def test_node_list_does_not_returns_registrations(self):
         registration = RegistrationFactory(project=self.public, creator=self.user)
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
         assert_not_in(registration._id, ids)
+
+    def test_omit_retracted_registration(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public)
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+
+    def test_node_list_has_root(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        projects_with_root = 0
+        for project in res.json['data']:
+            if project['relationships'].get('root', None):
+                projects_with_root += 1
+        assert_not_equal(projects_with_root, 0)
+        assert_true(
+            all([each['relationships'].get(
+                'root'
+            ) is not None for each in res.json['data']])
+        )
+
+
+    def test_node_list_has_proper_root(self):
+        project_one = ProjectFactory(title="Project One", is_public=True)
+        ProjectFactory(parent=project_one, is_public=True)
+
+        res = self.app.get(self.url+'?embed=root&embed=parent', auth=self.user.auth)
+
+        for project_json in res.json['data']:
+            project = Node.load(project_json['id'])
+            assert_equal(project_json['embeds']['root']['data']['id'], project.root._id)
+
 
 
 class TestNodeFiltering(ApiTestCase):
@@ -104,9 +143,55 @@ class TestNodeFiltering(ApiTestCase):
 
         self.url = "/{}nodes/".format(API_BASE)
 
+        self.tag1, self.tag2 = 'tag1', 'tag2'
+        self.project_one.add_tag(self.tag1, Auth(self.project_one.creator), save=False)
+        self.project_one.add_tag(self.tag2, Auth(self.project_one.creator), save=False)
+        self.project_one.save()
+
+        self.project_two.add_tag(self.tag1, Auth(self.project_two.creator), save=True)
+
     def tearDown(self):
         super(TestNodeFiltering, self).tearDown()
         Node.remove()
+
+    def test_filtering_by_id(self):
+        url = '/{}nodes/?filter[id]={}'.format(API_BASE, self.project_one._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_equal(len(ids), 1)
+
+    def test_filtering_by_multiple_ids(self):
+        url = '/{}nodes/?filter[id]={},{}'.format(API_BASE, self.project_one._id, self.project_two._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_equal(len(ids), 2)
+
+    def test_filtering_by_multiple_ids_one_private(self):
+        url = '/{}nodes/?filter[id]={},{}'.format(API_BASE, self.project_one._id, self.private_project_user_two._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_equal(len(ids), 1)
+
+    def test_filtering_by_multiple_ids_brackets_in_query_params(self):
+        url = '/{}nodes/?filter[id]=[{},   {}]'.format(API_BASE, self.project_one._id, self.project_two._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_equal(len(ids), 2)
 
     def test_filtering_by_category(self):
         project = ProjectFactory(creator=self.user_one, category='hypothesis')
@@ -151,15 +236,8 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(project._id, ids)
 
     def test_filtering_tags(self):
-        tag1, tag2 = 'tag1', 'tag2'
-        self.project_one.add_tag(tag1, Auth(self.project_one.creator), save=False)
-        self.project_one.add_tag(tag2, Auth(self.project_one.creator), save=False)
-        self.project_one.save()
-
-        self.project_two.add_tag(tag1, Auth(self.project_two.creator), save=True)
-
         # both project_one and project_two have tag1
-        url = '/{}nodes/?filter[tags]={}'.format(API_BASE, tag1)
+        url = '/{}nodes/?filter[tags]={}'.format(API_BASE, self.tag1)
 
         res = self.app.get(url, auth=self.project_one.creator.auth)
         node_json = res.json['data']
@@ -170,7 +248,7 @@ class TestNodeFiltering(ApiTestCase):
 
         # filtering two tags
         # project_one has both tags; project_two only has one
-        url = '/{}nodes/?filter[tags]={}&filter[tags]={}'.format(API_BASE, tag1, tag2)
+        url = '/{}nodes/?filter[tags]={}&filter[tags]={}'.format(API_BASE, self.tag1, self.tag2)
 
         res = self.app.get(url, auth=self.project_one.creator.auth)
         node_json = res.json['data']
@@ -333,6 +411,69 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint.")
 
+    def test_filtering_on_root(self):
+        root = ProjectFactory(is_public=True)
+        child = ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=child, is_public=True)
+        # create some unrelated projects
+        ProjectFactory(title="Road Dogg Jesse James", is_public=True)
+        ProjectFactory(title="Badd *** Billy Gunn", is_public=True)
+
+        url = '/{}nodes/?filter[root]={}'.format(API_BASE, root._id)
+
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+
+        root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root', 'eq', root._id))
+        assert_equal(len(res.json['data']), root_nodes.count())
+
+    def test_filtering_on_null_parent(self):
+        # add some nodes TO be included
+        new_user = AuthUserFactory()
+        root = ProjectFactory(is_public=True)
+        ProjectFactory(is_public=True)
+        # Build up a some of nodes not to be included
+        child = ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=root, is_public=True)
+        ProjectFactory(parent=child, is_public=True)
+
+        url = '/{}nodes/?filter[parent]=null'.format(API_BASE)
+
+        res = self.app.get(url, auth=new_user.auth)
+        assert_equal(res.status_code, 200)
+
+        public_root_nodes = Node.find(Q('is_public', 'eq', True) & Q('parent_node', 'eq', None))
+        assert_equal(len(res.json['data']), public_root_nodes.count())
+
+    def test_filtering_on_title_not_equal(self):
+        url = '/{}nodes/?filter[title][ne]=Project%20One'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(len(data), 3)
+
+        titles = [each['attributes']['title'] for each in data]
+
+        assert_not_in(self.project_one.title, titles)
+        assert_in(self.project_two.title, titles)
+        assert_in(self.project_three.title, titles)
+        assert_in(self.private_project_user_one.title, titles)
+
+    def test_filtering_on_description_not_equal(self):
+        url = '/{}nodes/?filter[description][ne]=One%20Three'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(len(data), 3)
+
+        descriptions = [each['attributes']['description'] for each in data]
+
+        assert_not_in(self.project_two.description, descriptions)
+        assert_in(self.project_one.description, descriptions)
+        assert_in(self.project_three.description, descriptions)
+        assert_in(self.private_project_user_one.description, descriptions)
+
 
 class TestNodeCreate(ApiTestCase):
 
@@ -410,6 +551,35 @@ class TestNodeCreate(ApiTestCase):
         pid = res.json['data']['id']
         project = Node.load(pid)
         assert_equal(project.logs[-1].action, NodeLog.PROJECT_CREATED)
+
+    def test_creates_project_from_template(self):
+        template_from = ProjectFactory(creator=self.user_one, is_public=True)
+        template_component = ProjectFactory(creator=self.user_one, is_public=True, parent=template_from)
+        templated_project_title = 'Templated Project'
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': templated_project_title,
+                        'category': self.category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+
+        res = self.app.post_json_api(self.url, templated_project_data, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        json_data = res.json['data']
+
+        new_project_id = json_data['id']
+        new_project = Node.load(new_project_id)
+        assert_equal(new_project.title, templated_project_title)
+        assert_equal(new_project.description, None)
+        assert_false(new_project.is_public)
+        assert_equal(len(new_project.nodes), len(template_from.nodes))
+        assert_equal(new_project.nodes[0].title, template_component.title)
+
 
     def test_creates_project_creates_project_and_sanitizes_html(self):
         title = '<em>Cool</em> <strong>Project</strong>'
@@ -567,9 +737,9 @@ class TestNodeBulkCreate(ApiTestCase):
                            ["This field may not be blank.", "This field may not be blank."])
 
     def test_bulk_create_limits(self):
-        node_create_list = {'data': [self.public_project] * 11}
+        node_create_list = {'data': [self.public_project] * 101}
         res = self.app.post_json_api(self.url, node_create_list, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
         res = self.app.get(self.url, auth=self.user_one.auth)
@@ -930,9 +1100,9 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
     def test_bulk_update_limits(self):
-        node_update_list = {'data': [self.public_payload['data'][0]] * 11}
+        node_update_list = {'data': [self.public_payload['data'][0]] * 101}
         res = self.app.put_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_update_no_title_or_category(self):
@@ -1150,10 +1320,187 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
 
     def test_bulk_partial_update_limits(self):
-        node_update_list = {'data': [self.public_payload['data'][0]] * 11 }
+        node_update_list = {'data': [self.public_payload['data'][0]] * 101 }
         res = self.app.patch_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
+
+    def test_bulk_partial_update_privacy_has_no_effect_on_tags(self):
+        self.public_project.add_tag('tag1', Auth(self.public_project.creator), save=True)
+        payload = {'id': self.public_project._id, 'type': 'nodes', 'attributes': {'public': False}}
+        res = self.app.patch_json_api(self.url, {'data': [payload]}, auth=self.user.auth, bulk=True)
+        assert_equal(res.status_code, 200)
+        self.public_project.reload()
+        assert_equal(self.public_project.tags, ['tag1'])
+        assert_equal(self.public_project.is_public, False)
+
+
+class TestNodeBulkUpdateSkipUneditable(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkUpdateSkipUneditable, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+
+        self.title = 'Cool Project'
+        self.new_title = 'Super Cool Project'
+        self.description = 'A Properly Cool Project'
+        self.new_description = 'An even cooler project'
+        self.category = 'data'
+        self.new_category = 'project'
+
+        self.public_project = ProjectFactory(title=self.title,
+                                             description=self.description,
+                                             category=self.category,
+                                             is_public=True,
+                                             creator=self.user)
+
+        self.public_project_two = ProjectFactory(title=self.title,
+                                                description=self.description,
+                                                category=self.category,
+                                                is_public=True,
+                                                creator=self.user)
+
+        self.public_project_three = ProjectFactory(title=self.title,
+                                                description=self.description,
+                                                category=self.category,
+                                                is_public=True,
+                                                creator=self.user_two)
+
+        self.public_project_four = ProjectFactory(title=self.title,
+                                                description=self.description,
+                                                category=self.category,
+                                                is_public=True,
+                                                creator=self.user_two)
+
+        self.public_payload = {
+            'data': [
+                {
+                    'id': self.public_project._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                },
+                {
+                    'id': self.public_project_two._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                },
+                 {
+                    'id': self.public_project_three._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                },
+                 {
+                    'id': self.public_project_four._id,
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                        'description': self.new_description,
+                        'category': self.new_category,
+                        'public': True
+                    }
+                }
+            ]
+        }
+
+        self.url = '/{}nodes/?skip_uneditable=True'.format(API_BASE)
+
+    def test_skip_uneditable_bulk_update(self):
+        res = self.app.put_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 200)
+        edited = res.json['data']
+        skipped = res.json['errors']
+        assert_items_equal([edited[0]['id'], edited[1]['id']],
+                           [self.public_project._id, self.public_project_two._id])
+        assert_items_equal([skipped[0]['_id'], skipped[1]['_id']],
+                           [self.public_project_three._id, self.public_project_four._id])
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.new_title)
+        assert_equal(self.public_project_two.title, self.new_title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+
+    def test_skip_uneditable_bulk_update_query_param_required(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.put_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.title)
+        assert_equal(self.public_project_two.title, self.title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+    def test_skip_uneditable_equals_false_bulk_update(self):
+        url = '/{}nodes/?skip_uneditable=False'.format(API_BASE)
+        res = self.app.put_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.title)
+        assert_equal(self.public_project_two.title, self.title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+    def test_skip_uneditable_bulk_partial_update(self):
+        res = self.app.patch_json_api(self.url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 200)
+        edited = res.json['data']
+        skipped = res.json['errors']
+        assert_items_equal([edited[0]['id'], edited[1]['id']],
+                           [self.public_project._id, self.public_project_two._id])
+        assert_items_equal([skipped[0]['_id'], skipped[1]['_id']],
+                           [self.public_project_three._id, self.public_project_four._id])
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.new_title)
+        assert_equal(self.public_project_two.title, self.new_title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
+
+
+    def test_skip_uneditable_bulk_partial_update_query_param_required(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.patch_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+        self.public_project.reload()
+        self.public_project_two.reload()
+        self.public_project_three.reload()
+        self.public_project_four.reload()
+
+        assert_equal(self.public_project.title, self.title)
+        assert_equal(self.public_project_two.title, self.title)
+        assert_equal(self.public_project_three.title, self.title)
+        assert_equal(self.public_project_four.title, self.title)
 
 
 class TestNodeBulkDelete(ApiTestCase):
@@ -1280,11 +1627,11 @@ class TestNodeBulkDelete(ApiTestCase):
         assert_equal(res.status_code, 200)
 
     def test_bulk_delete_limits(self):
-        new_payload = {'data': [{'id': self.private_project_user_one._id, 'type':'nodes'}] * 11 }
+        new_payload = {'data': [{'id': self.private_project_user_one._id, 'type':'nodes'}] * 101 }
         res = self.app.delete_json_api(self.url, new_payload,
                                        auth=self.user_one.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_invalid_payload_one_not_found(self):
@@ -1299,3 +1646,106 @@ class TestNodeBulkDelete(ApiTestCase):
     def test_bulk_delete_no_payload(self):
         res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
+
+
+class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkDeleteSkipUneditable, self).setUp()
+        self.user_one = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user_one)
+        self.project_two = ProjectFactory(title="Project Two",  is_public=True, creator=self.user_one)
+        self.project_three = ProjectFactory(title="Project Three", is_public=True, creator=self.user_two)
+        self.project_four = ProjectFactory(title="Project Four", is_public=True, creator=self.user_two)
+
+        self.payload = {
+            'data': [
+                {
+                    'id': self.project_one._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': self.project_two._id,
+                    'type': 'nodes',
+                },
+                 {
+                    'id': self.project_three._id,
+                    'type': 'nodes',
+                },
+                 {
+                    'id': self.project_four._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+
+
+        self.url = "/{}nodes/?skip_uneditable=True".format(API_BASE)
+
+    def tearDown(self):
+        super(TestNodeBulkDeleteSkipUneditable, self).tearDown()
+        Node.remove()
+
+    def test_skip_uneditable_bulk_delete(self):
+        res = self.app.delete_json_api(self.url, self.payload, auth=self.user_one.auth, bulk=True)
+        assert_equal(res.status_code, 200)
+        skipped = res.json['errors']
+        assert_items_equal([skipped[0]['id'], skipped[1]['id']],
+                           [self.project_three._id, self.project_four._id])
+
+        res = self.app.get('/{}nodes/'.format(API_BASE), auth=self.user_one.auth)
+        assert_items_equal([res.json['data'][0]['id'], res.json['data'][1]['id']],
+                           [self.project_three._id, self.project_four._id])
+
+    def test_skip_uneditable_bulk_delete_query_param_required(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.delete_json_api(url, self.payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get('/{}nodes/'.format(API_BASE), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 4)
+
+    def test_skip_uneditable_has_admin_permission_for_all_nodes(self):
+        payload = {
+            'data': [
+                {
+                    'id': self.project_one._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': self.project_two._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, bulk=True)
+        assert_equal(res.status_code, 204)
+        self.project_one.reload()
+        self.project_two.reload()
+
+        assert_equal(self.project_one.is_deleted, True)
+        assert_equal(self.project_two.is_deleted, True)
+
+    def test_skip_uneditable_does_not_have_admin_permission_for_any_nodes(self):
+        payload = {
+            'data': [
+                {
+                    'id': self.project_three._id,
+                    'type': 'nodes',
+                },
+                {
+                    'id': self.project_four._id,
+                    'type': 'nodes',
+                }
+            ]
+        }
+
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 403)
+
+
+

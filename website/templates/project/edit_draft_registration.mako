@@ -16,8 +16,10 @@
               <div class="span8 col-md-2 columns eight large-8">
                 <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}, visible: pages().length > 1">
                   <li class="re-navbar">
-                    <a class="registration-editor-page" id="top-nav" style="text-align: left;" data-bind="text: title, click: $root.selectPage, style:{'font-weight': active() ? 'bold' : 'normal'}">
-                      <i class="fa fa-caret-right"></i>
+                    <a class="registration-editor-page" id="top-nav" style="text-align: left;"
+                       data-bind="text: title, click: $root.selectPage,
+                                  style:{'font-weight': active() ? 'bold' : 'normal'},
+                                  css: {'bg-danger': ($root.showValidation() && page.hasValidationInfo())}">
                     </a>
                   </li>
                 </ul>
@@ -28,7 +30,7 @@
                 <br />
                 <br />
                 <span data-bind="with: draft">
-                    <div class="progress progress-bar-md">
+                    <div data-bind="visible: hasRequiredQuestions" class="progress progress-bar-md">
                         <div data-bind="progress: completion"></div>
                         <div class="progress-bar progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
                              data-bind="attr.aria-completion: completion,
@@ -39,18 +41,20 @@
                 % endif
                 <!-- EDITOR -->
                 <div data-bind="if: currentPage">
-                  <div data-bind="if: currentPage">                  
+                  <div data-bind="if: currentPage">
                     <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
                   </div>
                 </div>
-                
+
                 <div class="row" style="margin-bottom: 10px;">
                   <span>
-                    Last saved: <span data-bind="text: $root.lastSaved"></span>
+                    Last saved: <span data-bind="text: lastSaveTime"></span>
                   </span>
                   <!-- ko if: onLastPage -->
-                  <span data-bind="if: validationErrors" class="pull-right">
-                    <span class="text text-warning" data-bind="text: validationErrors"></span>
+                  <span data-bind="if: onLastPage() && hasValidationInfo()" class="pull-right">
+                    <span class="text text-warning">
+                      Responses to some questions are invalid or missing where required.
+                    </span>
                   </span>
                   <!-- /ko -->
                 </div>
@@ -59,7 +63,7 @@
                   </button>
                   <!-- ko if: onLastPage -->
                   <a data-bind="css: {disabled: !canSubmit()},
-                                click: $root.check"
+                                click: $root.toPreview"
                      type="button" class="pull-right btn btn-success">Preview for submission
                   </a>
                   <!-- /ko -->
@@ -86,7 +90,6 @@
   </script>
   <script src=${ "/static/public/js/registration-edit-page.js" | webpack_asset}>
   </script>
-
 </%def>
 
 <%include file="project/registration_editor_templates.mako" />
