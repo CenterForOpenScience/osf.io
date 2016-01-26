@@ -5,6 +5,11 @@
 <%def name="container_class()">container-xxl</%def>
 
 <%def name="title()">${file_name | h}</%def>
+
+% if (user['can_comment'] or node['has_comments']) and allow_comments:
+    <%include file="include/comment_pane_template.mako"/>
+% endif
+
 <div class="row">
   <div class="col-sm-5">
     <h2 class="break-word">
@@ -179,6 +184,7 @@
             safeName: ${ file_name | h, sjson},
             materializedPath: ${ materialized_path | sjson, n },
             file_tags: ${file_tags if file_tags else False| sjson, n},
+            id: ${file_id | sjson, n},
           urls: {
         %if error is None:
               render: ${ urls['render'] | sjson, n },

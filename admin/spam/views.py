@@ -1,6 +1,4 @@
-import operator
-
-from django.shortcuts import render, render_to_response
+from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
@@ -85,10 +83,7 @@ def get_spam_list():
         Q('reports', 'ne', {}) &
         Q('reports', 'ne', None)
     )
-    return sorted(
-        Comment.find(query),
-        key=operator.attrgetter('date_created')
-    )
+    return Comment.find(query).sort('date_created')
 
 
 @login_required
@@ -107,7 +102,7 @@ def spam_list(request):
         'page': page,
         'page_number': page_number,
     }
-    return render_to_response('spam/spam.html', context)
+    return render(request, 'spam/spam.html', context)
 
 
 @login_required

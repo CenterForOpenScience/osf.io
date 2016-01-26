@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from rest_framework import permissions
+from rest_framework import exceptions
 
 from website.models import Node, Pointer, User
 from website.util import permissions as osf_permissions
@@ -73,6 +74,34 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
         else:
             has_auth = parent_node.can_edit(auth)
             return has_auth
+
+class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, dict)
+        auth = get_user_auth(request)
+        parent_node = obj['self']
+
+        if request.method in permissions.SAFE_METHODS:
+            return parent_node.can_view(auth)
+        elif request.method == 'DELETE':
+            return parent_node.can_edit(auth)
+        else:
+            has_parent_auth = parent_node.can_edit(auth)
+            if not has_parent_auth:
+                return False
+            pointer_nodes = []
+            for pointer in request.data.get('data', []):
+                node = Node.load(pointer['id'])
+                if not node or node.is_folder:
+                    raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(pointer['id']))
+                pointer_nodes.append(node)
+            has_pointer_auth = True
+            for pointer in pointer_nodes:
+                if not pointer.can_view(auth):
+                    has_pointer_auth = False
+                    break
+            return has_pointer_auth
 
 
 class ReadOnlyIfRegistration(permissions.BasePermission):

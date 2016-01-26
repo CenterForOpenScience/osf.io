@@ -31,6 +31,14 @@
       submitted on <strong>{{ draft.submitted | date:"N dS" }}</strong> at <strong>{{draft.submitted | date:"g:i a" }}</strong>
       <br />
       <a href="mailto:{{ draft.initiator.username }}">{{ draft.initiator.username }} </a>
+      <br />
+      <span>Embargo release:
+          {% if draft.embargo == IMMEDIATE %}
+              <strong>{{ draft.embargo | capfirst }}</strong>
+          {% else %}
+              <strong>{{ draft.embargo | date:"N dS Y" }}</strong> at <strong>{{draft.embargo | date:"g:i a" }}</strong>
+          {%  endif %}
+      </span>
     </div>
     <div class="col-md-6 form">
       <form class="prereg-draft-form" action="{% url 'pre_reg:update_draft' draft.pk %}">

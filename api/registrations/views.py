@@ -17,7 +17,7 @@ from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
-    NodeAlternativeCitationsList, NodeAlternativeCitationDetail)
+    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList, WaterButlerMixin)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer
 
@@ -158,7 +158,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         return nodes
 
 
-class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin):
+class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin, WaterButlerMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view shows details about the given registration.
@@ -257,6 +257,11 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-comments'
+
+
+class RegistrationLogList(NodeLogList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-logs'
 
 
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):

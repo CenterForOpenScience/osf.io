@@ -149,11 +149,11 @@ def check_access(node, auth, action, cas_resp):
             Q('name', 'eq', 'Prereg Challenge') &
             Q('schema_version', 'eq', 2)
         )
+        allowed_nodes = [node] + node.parents
         prereg_draft_registration = DraftRegistration.find(
-            Q('branched_from', 'eq', node) &
+            Q('branched_from', 'in', [n._id for n in allowed_nodes]) &
             Q('registration_schema', 'eq', prereg_schema)
         )
-
         if action == 'download' and \
                     auth.user is not None and \
                     prereg_draft_registration.count() > 0 and \
@@ -590,6 +590,8 @@ def addon_view_file(auth, node, file_node, version):
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
         'file_tags': [tag._id for tag in file_node.tags],
+        'file_id': file_node._id,
+        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE
     })
 
     ret.update(rubeus.collect_addon_assets(node))
