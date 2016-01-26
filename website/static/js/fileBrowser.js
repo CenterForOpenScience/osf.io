@@ -620,6 +620,7 @@ var Collections  = {
                 m.redraw(true);
             });
             self.dismissModal();
+            self.validation(false);
             return promise;
         };
         self.applyDroppable = function _applyDroppable ( ){
@@ -669,7 +670,7 @@ var Collections  = {
                     self.validation(false);
                 }
             }
-        }
+        };
         self.init();
     },
     view : function (ctrl, args) {
@@ -802,6 +803,8 @@ var Collections  = {
                                 onclick : function(){
                                     ctrl.dismissModal();
                                     ctrl.newCollectionName('');
+                                    ctrl.validation(false);
+
                                 }
                             }, 'Cancel'),
                         ctrl.validation() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
@@ -838,7 +841,11 @@ var Collections  = {
                         ])
                     ]),
                     footer : m('.modal-footer', [
-                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Cancel'),
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {
+                            onclick : function(){
+                                ctrl.validation(false);
+                            }
+                        },'Cancel'),
                         ctrl.validation() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.renameCollection },'Rename')
                             : m('button[type="button"].btn.btn-success[disabled]', 'Rename')
                     ])
