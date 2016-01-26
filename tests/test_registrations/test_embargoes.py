@@ -12,9 +12,10 @@ from tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
 )
+from modularodm.exceptions import ValidationValueError
 
 from framework.exceptions import PermissionsError
-from modularodm.exceptions import ValidationValueError
+from framework.auth import Auth
 from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
@@ -47,6 +48,12 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         assert_equal(Embargo.find().count(), initial_count + 1)
 
+    def test_state_can_be_set_to_complete(self):
+        embargo = EmbargoFactory()
+        embargo.state = Embargo.COMPLETED
+        embargo.save()  # should pass validation
+        assert_equal(embargo.state, Embargo.COMPLETED)
+
     def test__initiate_embargo_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
         self.registration.contributors.append(unconfirmed_user)
@@ -60,6 +67,33 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         assert_true(self.user._id in embargo.approval_state)
         assert_false(unconfirmed_user._id in embargo.approval_state)
+
+    def test__initiate_embargo_adds_admins_on_child_nodes(self):
+        project_admin = UserFactory()
+        project_non_admin = UserFactory()
+        child_admin = UserFactory()
+        child_non_admin = UserFactory()
+        grandchild_admin = UserFactory()
+
+        project = ProjectFactory(creator=project_admin)
+        project.add_contributor(project_non_admin, auth=Auth(project.creator), save=True)
+
+        child = NodeFactory(creator=child_admin, parent=project)
+        child.add_contributor(child_non_admin, auth=Auth(project.creator), save=True)
+
+        grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
+
+        embargo = project._initiate_embargo(
+            project.creator,
+            self.valid_embargo_end_date,
+            for_existing_registration=True
+        )
+        assert_in(project_admin._id, embargo.approval_state)
+        assert_in(child_admin._id, embargo.approval_state)
+        assert_in(grandchild_admin._id, embargo.approval_state)
+
+        assert_not_in(project_non_admin._id, embargo.approval_state)
+        assert_not_in(child_non_admin._id, embargo.approval_state)
 
     def test__initiate_embargo_with_save_does_save_embargo(self):
         initial_count = Embargo.find().count()
@@ -612,7 +646,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_true(self.registration.is_pending_embargo)
         assert_equal(res.status_code, 400)
 
-    def test_GET_disapprove_with_valid_token_returns_redirect_to_parent(self):
+    def test_GET_disapprove_with_valid(self):
         project = ProjectFactory(creator=self.user)
         registration = RegistrationFactory(project=project)
         registration.embargo_registration(
@@ -623,18 +657,18 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_true(registration.is_pending_embargo)
 
         rejection_token = registration.embargo.approval_state[self.user._id]['rejection_token']
+
         res = self.app.get(
-            registration.web_url_for('view_project', token=rejection_token),
+            registration.registered_from.web_url_for('view_project', token=rejection_token),
             auth=self.user.auth,
         )
         registration.embargo.reload()
         assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_false(registration.is_pending_embargo)
-        assert_equal(res.status_code, 302)
-        assert_true(project._id in res.location)
+        assert_equal(res.status_code, 200)
+        assert_equal(project.web_url_for('view_project'), res.request.path)
 
-    @mock.patch('flask.redirect')
-    def test_GET_disapprove_for_existing_registration_with_valid_token_redirects_to_registration(self, mock_redirect):
+    def test_GET_disapprove_for_existing_registration_returns_200(self):
         self.registration.embargo_registration(
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10),
@@ -651,7 +685,8 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.embargo.reload()
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_false(self.registration.is_pending_embargo)
-        assert_true(mock_redirect.called_with(self.registration.web_url_for('view_project')))
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, self.registration.web_url_for('view_project'))
 
 
 class RegistrationEmbargoViewsTestCase(OsfTestCase):

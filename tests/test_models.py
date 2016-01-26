@@ -30,12 +30,19 @@ from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
-from website.project.signals import contributor_added, comment_added
+from website.project.signals import contributor_added
 from website.project.model import (
-    Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
+    Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo, MetaSchema, DraftRegistration
 )
-from website.util.permissions import CREATOR_PERMISSIONS, ADMIN, READ, WRITE, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from website.util.permissions import (
+    CREATOR_PERMISSIONS,
+    ADMIN,
+    READ,
+    WRITE,
+    DEFAULT_CONTRIBUTOR_PERMISSIONS,
+    expand_permissions,
+)
 from website.util import web_url_for, api_url_for
 from website.addons.wiki.exceptions import (
     NameEmptyError,
@@ -2105,6 +2112,45 @@ class TestNodeTraversals(OsfTestCase):
         reg = RegistrationFactory(project=proj)
         reg.delete_registration_tree(save=True)
         assert_false(proj.node__registrations)
+
+    def test_get_admin_contributors_recursive_with_duplicate_users(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        child.save()
+
+        grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
+
+        admins = list(parent.get_admin_contributors_recursive())
+        assert_equal(len(admins), 3)
+        admin_ids = [user._id for user, node in admins]
+        assert_in(self.user._id, admin_ids)
+        assert_in(self.viewer._id, admin_ids)
+
+        node_ids = [node._id for user, node in admins]
+        assert_in(parent._id, node_ids)
+
+    def test_get_admin_contributors_recursive_no_duplicates(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        child.save()
+
+        grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
+
+        admins = list(parent.get_admin_contributors_recursive(unique_users=True))
+        assert_equal(len(admins), 2)
+        admin_ids = [user._id for user, node in admins]
+        assert_in(self.user._id, admin_ids)
+        assert_in(self.viewer._id, admin_ids)
 
     def test_get_descendants_recursive(self):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
@@ -4307,248 +4353,6 @@ class TestProjectWithAddons(OsfTestCase):
         p = ProjectWithAddonFactory(addon='s3')
         assert_true(p.get_addon('s3'))
         assert_true(p.creator.get_addon('s3'))
-
-
-class TestComments(OsfTestCase):
-
-    def setUp(self):
-        super(TestComments, self).setUp()
-        self.comment = CommentFactory()
-        self.auth = Auth(user=self.comment.user)
-
-    def test_create(self):
-        comment = Comment.create(
-            auth=self.auth,
-            user=self.comment.user,
-            node=self.comment.node,
-            target=self.comment.target,
-            is_public=True,
-            content='This is a comment.'
-        )
-        assert_equal(comment.user, self.comment.user)
-        assert_equal(comment.node, self.comment.node)
-        assert_equal(comment.target, self.comment.target)
-        assert_equal(len(comment.node.logs), 2)
-        assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
-
-    def test_create_comment_content_cannot_exceed_max_length(self):
-        with assert_raises(ValidationValueError):
-            comment = Comment.create(
-                auth=self.auth,
-                user=self.comment.user,
-                node=self.comment.node,
-                target=self.comment.target,
-                is_public=True,
-                content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH + 1)])
-            )
-
-    def test_create_comment_content_cannot_be_none(self):
-        with assert_raises(ValidationError) as error:
-            comment = Comment.create(
-                auth=self.auth,
-                user=self.comment.user,
-                node=self.comment.node,
-                target=self.comment.target,
-                is_public=True,
-                content=None
-        )
-        assert_equal(error.exception.message, 'Value <content> is required.')
-
-    def test_create_comment_content_cannot_be_empty(self):
-        with assert_raises(ValidationValueError) as error:
-            comment = Comment.create(
-                auth=self.auth,
-                user=self.comment.user,
-                node=self.comment.node,
-                target=self.comment.target,
-                is_public=True,
-                content=''
-        )
-        assert_equal(error.exception.message, 'Value must not be empty.')
-
-    def test_create_comment_content_cannot_be_whitespace(self):
-        with assert_raises(ValidationValueError) as error:
-            comment = Comment.create(
-                auth=self.auth,
-                user=self.comment.user,
-                node=self.comment.node,
-                target=self.comment.target,
-                is_public=True,
-                content='    '
-        )
-        assert_equal(error.exception.message, 'Value must not be empty.')
-
-    def test_create_sends_comment_added_signal(self):
-        with capture_signals() as mock_signals:
-            comment = Comment.create(
-                auth=self.auth,
-                user=self.comment.user,
-                node=self.comment.node,
-                target=self.comment.target,
-                is_public=True,
-                content='This is a comment.'
-            )
-        assert_equal(mock_signals.signals_sent(), set([comment_added]))
-
-    def test_edit(self):
-        self.comment.edit(
-            auth=self.auth,
-            content='edited'
-        )
-        assert_equal(self.comment.content, 'edited')
-        assert_true(self.comment.modified)
-        assert_equal(len(self.comment.node.logs), 2)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
-
-    def test_delete(self):
-        self.comment.delete(auth=self.auth)
-        assert_equal(self.comment.is_deleted, True)
-        assert_equal(len(self.comment.node.logs), 2)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
-
-    def test_undelete(self):
-        self.comment.delete(auth=self.auth)
-        self.comment.undelete(auth=self.auth)
-        assert_equal(self.comment.is_deleted, False)
-        assert_equal(len(self.comment.node.logs), 3)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
-
-    def test_report_abuse(self):
-        user = UserFactory()
-        self.comment.report_abuse(user, category='spam', text='ads', save=True)
-        assert_in(user._id, self.comment.reports)
-        assert_equal(
-            self.comment.reports[user._id],
-            {'category': 'spam', 'text': 'ads'}
-        )
-
-    def test_report_abuse_own_comment(self):
-        with assert_raises(ValueError):
-            self.comment.report_abuse(
-                self.comment.user, category='spam', text='ads', save=True
-            )
-
-    def test_unreport_abuse(self):
-        user = UserFactory()
-        self.comment.report_abuse(user, category='spam', text='ads', save=True)
-        self.comment.unreport_abuse(user, save=True)
-        assert_not_in(user._id, self.comment.reports)
-
-    def test_unreport_abuse_not_reporter(self):
-        reporter = UserFactory()
-        non_reporter = UserFactory()
-        self.comment.report_abuse(reporter, category='spam', text='ads', save=True)
-        with assert_raises(ValueError):
-            self.comment.unreport_abuse(non_reporter, save=True)
-        assert_in(reporter._id, self.comment.reports)
-
-    def test_validate_reports_bad_key(self):
-        self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
-        with assert_raises(ValidationValueError):
-            self.comment.save()
-
-    def test_validate_reports_bad_type(self):
-        self.comment.reports[self.comment.user._id] = 'not a dict'
-        with assert_raises(ValidationTypeError):
-            self.comment.save()
-
-    def test_validate_reports_bad_value(self):
-        self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
-        with assert_raises(ValidationValueError):
-            self.comment.save()
-
-    def test_read_permission_contributor_can_comment(self):
-        project = ProjectFactory()
-        user = UserFactory()
-        project.set_privacy('private')
-        project.add_contributor(user, 'read')
-        project.save()
-
-        assert_true(project.can_comment(Auth(user=user)))
-
-    def test_get_content_for_not_deleted_comment(self):
-        project = ProjectFactory(is_public=True)
-        comment = CommentFactory(node=project)
-        content = comment.get_content(auth=Auth(comment.user))
-        assert_equal(content, comment.content)
-
-    def test_get_content_returns_deleted_content_to_commenter(self):
-        comment = CommentFactory(is_deleted=True)
-        content = comment.get_content(auth=Auth(comment.user))
-        assert_equal(content, comment.content)
-
-    def test_get_content_does_not_return_deleted_content_to_non_commenter(self):
-        user = AuthUserFactory()
-        comment = CommentFactory(is_deleted=True)
-        content = comment.get_content(auth=Auth(user))
-        assert_is_none(content)
-
-    def test_get_content_public_project_does_not_return_deleted_content_to_logged_out_user(self):
-        project = ProjectFactory(is_public=True)
-        comment = CommentFactory(node=project, is_deleted=True)
-        content = comment.get_content(auth=None)
-        assert_is_none(content)
-
-    def test_get_content_private_project_throws_permissions_error_for_logged_out_users(self):
-        project = ProjectFactory(is_public=False)
-        comment = CommentFactory(node=project, is_deleted=True)
-        with assert_raises(PermissionsError):
-            comment.get_content(auth=None)
-
-    def test_find_unread_is_zero_when_no_comments(self):
-        n_unread = Comment.find_unread(user=UserFactory(), node=ProjectFactory())
-        assert_equal(n_unread, 0)
-
-    def test_find_unread_new_comments(self):
-        project = ProjectFactory()
-        user = UserFactory()
-        project.add_contributor(user)
-        project.save()
-        comment = CommentFactory(node=project, user=project.creator)
-        n_unread = Comment.find_unread(user=user, node=project)
-        assert_equal(n_unread, 1)
-
-    def test_find_unread_includes_comment_replies(self):
-        project = ProjectFactory()
-        user = UserFactory()
-        project.add_contributor(user)
-        project.save()
-        comment = CommentFactory(node=project, user=user)
-        reply = CommentFactory(node=project, target=comment, user=project.creator)
-        n_unread = Comment.find_unread(user=user, node=project)
-        assert_equal(n_unread, 1)
-
-    # Regression test for https://openscience.atlassian.net/browse/OSF-5193
-    def test_find_unread_includes_edited_comments(self):
-        project = ProjectFactory()
-        user = AuthUserFactory()
-        project.add_contributor(user)
-        project.save()
-        comment = CommentFactory(node=project, user=project.creator)
-
-        url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=user.auth)
-        user.reload()
-        n_unread = Comment.find_unread(user=user, node=project)
-        assert_equal(n_unread, 0)
-
-        # Edit previously read comment
-        comment.edit(
-            auth=Auth(project.creator),
-            content='edited',
-            save=True
-        )
-        n_unread = Comment.find_unread(user=user, node=project)
-        assert_equal(n_unread, 1)
-
-    def test_find_unread_does_not_include_deleted_comments(self):
-        project = ProjectFactory()
-        user = AuthUserFactory()
-        project.add_contributor(user)
-        project.save()
-        comment = CommentFactory(node=project, user=project.creator, is_deleted=True)
-        n_unread = Comment.find_unread(user=user, node=project)
-        assert_equal(n_unread, 0)
 
 
 class TestPrivateLink(OsfTestCase):

@@ -310,7 +310,7 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
     :return: None
     :rtype: NoneType
     """
-    if draft.registered_node:
+    if draft.registered_node and not draft.registered_node.is_deleted:
         raise HTTPError(
             http.FORBIDDEN,
             data={
