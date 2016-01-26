@@ -34,6 +34,13 @@ class TestAuthViews(DropboxAddonTestCase, views_testing.OAuthAddonAuthViewsTestC
     def test_oauth_start(self):
         super(TestAuthViews, self).test_oauth_start()
 
+    @mock.patch(
+        'website.addons.dropbox.model.DropboxUserSettings.revoke_remote_oauth_access',
+        mock.PropertyMock()
+    )
+    def test_delete_external_account(self):
+        super(TestAuthViews, self).test_delete_external_account()
+
 class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsTestCaseMixin):
 
     folder = {
