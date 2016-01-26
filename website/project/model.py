@@ -1728,7 +1728,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
-        query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
+        query = Q('node', 'in', ids) & Q('should_hide', 'ne', True)
         return query
 
     def get_aggregate_logs_queryset(self, auth):
