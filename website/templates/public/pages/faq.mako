@@ -78,7 +78,7 @@
                         <p>Registering is an optional feature of the OSF.</p>
 
                     <h4 class="m-t-lg f-w-lg">What is the cap on data per user?</h4>
-                        <p>There is a limit on the size of individual files uploaded to the OSF. This limit is 128 MB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</p>
+                    <p>There is a limit on the size of individual files uploaded to the OSF. This limit is 5 GB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</p>
 
                     <h4 class="m-t-lg f-w-lg">How do I get a DOI or ARK for my project?</h4>
                         <p>DOIs and ARKs are available for <b>public registrations</b> of projects. To get a DOI or ARK for your project, first create a registration of your project, and make sure the registration is public. Then click the "Create DOI / ARK" link, located in the block of text below the project title. A DOI and ARK will be automatically created. </p>
