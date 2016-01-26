@@ -17,10 +17,7 @@
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
+
   </head>
  <body class="register-page">
   <div class="register-box">
@@ -30,41 +27,45 @@
     <div class="register-box-body">
       <p class="login-box-msg">Register a new account</p>
       <form action="" method="post">
-      {% csrf_token %}
-       <div class="form-group">
-          <label for="email">Email:</label>
-          <p>{{ form.email }}</p>
-          {% if form.email.errors %}<span class="text-danger"> {{ form.email.errors }}</span>{% endif %}
-      </div>
-      <div class="form-group">
-          <label for="first_name">First name:</label>
-          <p>{{ form.first_name }}</p>
-          {% if form.first_name.errors %}<span class="text-danger"> {{ form.first_name.errors }}</span>{% endif %}
-      </div>
-      <div class="form-group">
-          <label for="last_name">Last name:</label>
-          <p>{{ form.last_name }}</p>
-          {% if form.last_name.errors %}<span class="text-danger"> {{ form.last_name.errors }}</span>{% endif %}
-      </div>
-       <div class="form-group">
-          <label for="password">Password:</label>
-          <p>{{ form.password }}</p>
-          {% if form.password.errors %}<span class="text-danger"> {{ form.password.errors }}</span>{% endif %}
-      </div>
-      <!-- include widget for displaying multi-checkbox permission list -->
-        <div class="row">
-          <div class="col-xs-4">
-            <button type="submit" class="btn btn-primary btn-block btn-flat">Register</button>
-          </div><!-- /.col -->
+        {% csrf_token %}
+         <div class="form-group">
+            <label for="email">Email:</label>
+            <p>{{ form.email }}</p>
+            {% if form.email.errors %}<span class="text-danger"> {{ form.email.errors }}</span>{% endif %}
         </div>
+        <div class="form-group">
+            <label for="first_name">First name:</label>
+            <p>{{ form.first_name }}</p>
+            {% if form.first_name.errors %}<span class="text-danger"> {{ form.first_name.errors }}</span>{% endif %}
+        </div>
+        <sdiv class="form-group">
+            <label for="last_name">Last name:</label>
+            <p>{{ form.last_name }}</p>
+            {% if form.last_name.errors %}<span class="text-danger"> {{ form.last_name.errors }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+            <label for="password1">Password:</label>
+            <p>{{ form.password1 }}</p>
+            {% if form.password1.errors %}<span class="text-danger"> {{ form.password1.errors }}</span>{% endif %}
+          </div>
+       <div class="form-group">
+          <label for="password2">Confirm Password:</label>
+          <p>{{ form.password2 }}</p>
+          {% if form.password2.errors %}<span class="text-danger"> {{ form.password2.errors }}</span>{% endif %}
+      </div>
+
+        <!-- include widget for displaying multi-checkbox permission list -->
+          <div class="row">
+            <div class="col-xs-4">
+              <button type="submit" class="btn btn-primary btn-block btn-flat">Register</button>
+            </div><!-- /.col -->
+          </div>
       </form>
 
       <a href="{% url 'auth:login' %}" class="text-center">I already have an account</a>
     </div><!-- /.form-box -->
   </div><!-- /.register-box -->
 
-   <!-- jQuery 2.1.4 -->
-  <script src="{% static 'js/jquery.min.js' %}"></script>
   <!-- Bootstrap 3.3.2 JS -->
   {% render_bundle 'vendor' %}
   <!-- AdminLTE App -->

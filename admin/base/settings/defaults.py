@@ -26,6 +26,18 @@ ALLOWED_HOSTS = [
     '.osf.io'
 ]
 
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 5,
+        }
+    },
+]
+
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
