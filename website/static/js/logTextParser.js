@@ -41,7 +41,7 @@ var returnTextParams = function (param, text, logObject) {
                         return m('span', item);
                     }
                     if(index === arr.length-1) {
-                        return m('span', ' and ' + item);
+                        return m('span', ', and ' + item);
                     }
                     return m('span', item + ', ');
                 })
@@ -117,9 +117,9 @@ var LogPieces = {
     tag: {
         view: function (ctrl, logObject) {
             var tag = logObject.attributes.params.tag;
-           if(paramIsReturned(tag, logObject)) {
+            if(paramIsReturned(tag, logObject)) {
                return m('a', {href: '/search/?q=%22' + tag + '%22'}, tag);
-           }
+            }
             return m('span', 'a tag');
        }
     },

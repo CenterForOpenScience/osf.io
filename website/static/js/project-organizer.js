@@ -13,16 +13,13 @@ require('css/fangorn.css');
 var $ = require('jquery');
 var m = require('mithril');
 var moment = require('moment');
-var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
-var iconmap = require('js/iconmap');
 
 
 var LinkObject;
 var allProjectsCache;
 /**
  * Edits the template for the column titles.
- * Used here to make smart folder italicized
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller Check Treebeard API for methods available
  * @private
@@ -83,14 +80,13 @@ function _poContributors(item) {
 }
 
 /**
- * Displays who modified the data and when. i.e. "6 days ago, by Uguz"
+ * Displays date modified
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @private
  */
 function _poModified(item) {
-    var dateString = '';
     var node = item.data;
-    dateString = moment.utc(node.attributes.date_modified).fromNow();
+    var dateString = moment.utc(node.attributes.date_modified).fromNow();
     return m('span', dateString);
 }
 
@@ -226,7 +222,6 @@ function _poResolveLazyLoad(item) {
         });
     }
     return false;
-
 }
 
 /**
@@ -271,6 +266,7 @@ function filterRowsNotInParent(rows) {
             if (currentItem.parentID === originalParent && currentItem.id !== -1) {
                 newRows.push(rows[i]);
             } else {
+                // The following row flashes a pastel red shade for a short time to denote that the row in question can't be multiselected with others
                 $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93').animate({ backgroundColor: '#fff'}, 500, changeColor);
             }
         }
@@ -278,10 +274,6 @@ function filterRowsNotInParent(rows) {
     tb.multiselected(newRows);
     tb.highlightMultiselect();
     return newRows;
-}
-
-function _poIconView(item) {
-    return false;
 }
 
 /**
@@ -327,7 +319,9 @@ var tbOptions = {
         $('[data-toggle="tooltip"]').tooltip();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : _poIconView,
+    resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
+        return false;
+    },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
     resolveRefreshIcon : function () {
