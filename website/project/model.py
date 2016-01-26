@@ -815,6 +815,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         tags = kwargs.pop('tags', [])
 
+        logs = kwargs.pop('logs', [])
+
         super(Node, self).__init__(*args, **kwargs)
 
         # Ensure when Node is created with tags through API, tags are added to Tag
@@ -841,6 +843,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
+
+    @property
+    def logs(self):
+        """ List of logs associated with this node"""
+        return list(NodeLog.find(Q('node', 'eq', self._id)))
 
     @property
     def license(self):
@@ -990,11 +997,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
         else:
             return True
-
-    # @property
-    # def logs(self):
-    #     """ List of logs associated with this node"""
-    #     return list(NodeLog.find(Q('node', 'eq', self._id)))
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
