@@ -943,8 +943,9 @@ var Breadcrumbs = {
         return m('.fb-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
+                    var label = item.type === 'node' ? ' Add Component' : ' Add Project';
                     var addProjectTemplate = m.component(AddProject, {
-                        buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), ' Add Component']),
+                        buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), label]),
                         parentID : args.breadcrumbs()[args.breadcrumbs().length-1].data.id,
                         modalID : 'addProject',
                         stayCallback : function () {
@@ -957,7 +958,7 @@ var Breadcrumbs = {
                             m('span.btn', item.label),
                             m('i.fa.fa-angle-right')
                         ]),
-                        item.type === 'node' ? addProjectTemplate : ''
+                        item.type === 'node' || (item.data.systemCollection === 'nodes' ) ? addProjectTemplate : ''
                     ];
                 }
                 item.index = index; // Add index to update breadcrumbs

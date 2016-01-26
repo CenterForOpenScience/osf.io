@@ -10,11 +10,8 @@
 
 <div class="dashboard-header">
     <div class="row">
-        <div class="col-xs-8">
+        <div class="col-xs-12">
             <h3>My Projects <small class="hidden-xs">Browse and organize all your projects </small></h3>
-        </div>
-        <div class="col-xs-4">
-            <div id="addProjectWrap" class="m-t-md pull-right"></div>
         </div>
     </div>
 </div>
