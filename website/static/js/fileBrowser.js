@@ -27,6 +27,7 @@ var xhrconfig = function (xhr) {
 
 // Refactor the information needed for filtering rows
 function _formatDataforPO(item) {
+    item.kind = 'folder';
     item.uid = item.id;
     item.name = item.attributes.title;
     item.tags = item.attributes.tags.toString();
@@ -151,17 +152,7 @@ var FileBrowser = {
         self.allProjectsLoaded = m.prop(false);
         self.allProjects = m.prop([]);
 
-        // Helper function to add properties for Treebeard to work properly
-        self.addTbProperties = function(value){
-            value.data.map(function (item) {
-                item.kind = 'folder';
-                item.uid = item.id;
-                item.name = item.attributes.title;
-                item.date = new $osf.FormattableDate(item.attributes.date_modified);
-            });
-            return value;
-        };
-
+        // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = [
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
             new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
@@ -276,7 +267,6 @@ var FileBrowser = {
             return promise;
         };
         self.updateListSuccess = function(value) {
-            value = self.addTbProperties(value);
             if(self.loadingPages){
                 self.data().data = self.data().data.concat(value.data);
             } else {
@@ -1076,7 +1066,7 @@ var Information = {
                             m('p.fb-info-meta.text-muted', [
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('', 'Category: ' + item.attributes.category),
-                                m('', 'Last Modified on: ' + item.date.local)
+                                m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
                                 m('span', item.attributes.description)
