@@ -2118,6 +2118,49 @@ class TestNodeTraversals(OsfTestCase):
         reg.delete_registration_tree(save=True)
         assert_false(proj.node__registrations)
 
+    def test_get_active_contributors_recursive_with_duplicate_users(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        grandchild = ProjectFactory(creator=self.user, parent=child)
+
+        contributors = list(parent.get_active_contributors_recursive())
+        assert_equal(len(contributors), 4)
+        user_ids = [user._id for user, node in contributors]
+
+        assert_in(self.user._id, user_ids)
+        assert_in(self.viewer._id, user_ids)
+        assert_in(child_non_admin._id, user_ids)
+
+        node_ids = [node._id for user, node in contributors]
+        assert_in(parent._id, node_ids)
+        assert_in(grandchild._id, node_ids)
+
+    def test_get_active_contributors_recursive_with_no_duplicate_users(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
+
+        contributors = list(parent.get_active_contributors_recursive(unique_users=True))
+        assert_equal(len(contributors), 3)
+        user_ids = [user._id for user, node in contributors]
+
+        assert_in(self.user._id, user_ids)
+        assert_in(self.viewer._id, user_ids)
+        assert_in(child_non_admin._id, user_ids)
+
+        node_ids = [node._id for user, node in contributors]
+        assert_in(parent._id, node_ids)
+
     def test_get_admin_contributors_recursive_with_duplicate_users(self):
         parent = ProjectFactory(creator=self.user)
 
