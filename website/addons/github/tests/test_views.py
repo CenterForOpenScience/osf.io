@@ -27,7 +27,13 @@ from website.addons.github.tests.factories import GitHubAccountFactory
 
 
 class TestGitHubAuthViews(GitHubAddonTestCase, OAuthAddonAuthViewsTestCaseMixin):
-    pass
+    
+    @mock.patch(
+        'website.addons.github.model.GitHubUserSettings.revoke_remote_oauth_access',
+        mock.PropertyMock()
+    )
+    def test_delete_external_account(self):
+        super(TestGitHubAuthViews, self).test_delete_external_account()
 
 
 class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMixin):

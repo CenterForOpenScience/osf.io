@@ -51,6 +51,13 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         expected = {'owner': self.node_settings.user, 'repo': self.node_settings.repo}
         assert_equal(settings, expected)
 
+    @mock.patch(
+        'website.addons.github.model.GitHubUserSettings.revoke_remote_oauth_access',
+        mock.PropertyMock()
+    )
+    def test_complete_has_auth_not_verified(self):
+        super(TestNodeSettings, self).test_complete_has_auth_not_verified()
+
     @mock.patch('website.addons.github.api.GitHubClient.repos')
     @mock.patch('website.addons.github.api.GitHubClient.my_org_repos')
     def test_to_json(self, mock_org, mock_repos):
