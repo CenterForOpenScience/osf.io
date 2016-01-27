@@ -70,11 +70,12 @@ def s3_add_user_account(auth, **kwargs):
             'message': ('All the fields above are required.')
         }, httplib.BAD_REQUEST
 
-    user_id = utils.get_user_id(access_key, secret_key)
-    if not user_id:
+    user_info = utils.get_user_info(access_key, secret_key)
+    if not user_info:
         return {
             'message': ('Unable to access account.\n'
-                'Check to make sure that the above credentials are valid.')
+                'Check to make sure that the above credentials are valid, '
+                'and that they have permission to list buckets.')
         }, httplib.BAD_REQUEST
 
     if not utils.can_list(access_key, secret_key):
@@ -90,8 +91,8 @@ def s3_add_user_account(auth, **kwargs):
             provider_name=FULL_NAME,
             oauth_key=access_key,
             oauth_secret=secret_key,
-            provider_id=user_id,
-            display_name='S3User<[...]{}>'.format(user_id[-10:]),
+            provider_id=user_info.id,
+            display_name=user_info.display_name,
         )
         account.save()
     except KeyExistsException:

@@ -83,15 +83,14 @@ def can_list(access_key, secret_key):
         return False
     return True
 
-def get_user_id(access_key, secret_key):
-    """Returns a user's canonical user get_user_id
-    according to S3, or None
+def get_user_info(access_key, secret_key):
+    """Returns an S3 User with .display_name and .id, or None
     """
     if not (access_key and secret_key):
         return None
 
     try:
-        return connect_s3(access_key, secret_key).get_canonical_user_id()
+        return connect_s3(access_key, secret_key).get_all_buckets().owner
     except exception.S3ResponseError:
         return None
     return None

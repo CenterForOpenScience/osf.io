@@ -22,8 +22,8 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
         self.mock_can_list = mock.patch('website.addons.s3.views.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
-        self.mock_uid = mock.patch('website.addons.s3.views.utils.get_user_id')
-        self.mock_uid.return_value = '1234567890'
+        self.mock_uid = mock.patch('website.addons.s3.views.utils.get_user_info')
+        self.mock_uid.return_value = {'id': '1234567890', 'display_name': 's3.user'}
         self.mock_uid.start()
         self.mock_exists = mock.patch('website.addons.s3.views.utils.bucket_exists')
         self.mock_exists.return_value = True

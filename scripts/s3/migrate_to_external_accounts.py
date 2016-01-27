@@ -63,26 +63,24 @@ def verify_node_settings_document(document):
     return True
 
 def migrate_to_external_account(user_settings_document):
-    user_id = utils.get_user_id(access_key=user_settings_document['access_key'], secret_key=user_settings_document['secret_key'])
+    user_info = utils.get_user_info(access_key=user_settings_document['access_key'], secret_key=user_settings_document['secret_key'])
     user = User.load(user_settings_document['owner'])
-    if not user_id:
+    if not user_info:
         return (None, None, None)
-    else:
-        display_name = 'S3User<[...]>{}'.format(user_id[-10:])
 
     new = False
     try:
-        external_account = ExternalAccount.find(Q('provider_id', 'eq', user_id))[0]
+        external_account = ExternalAccount.find(Q('provider_id', 'eq', user_info.id))[0]
         logger.info('Duplicate account use found: s3usersettings {0} with id {1}'.format(user_settings_document['_id'], user._id))
     except IndexError:
         new = True
         external_account = ExternalAccount(
             provider=PROVIDER,
             provider_name=PROVIDER_NAME,
-            provider_id=user_id,
+            provider_id=user_info.id,
             oauth_key=user_settings_document['access_key'],
             oauth_secret=user_settings_document['secret_key'],
-            display_name=display_name,
+            display_name=user_info.display_name,
         )
         external_account.save()
 
