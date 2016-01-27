@@ -299,7 +299,7 @@ class TestFileNodeObj(FilesTestCase):
         assert_equal(trashed.deleted_by, self.user)
         assert_equal(models.StoredFileNode.load(fn._id), None)
 
-    def test_restore(self):
+    def test_restore_file(self):
         fn = models.StoredFileNode(
             path='afile',
             name='name',
@@ -317,6 +317,71 @@ class TestFileNodeObj(FilesTestCase):
             before
         )
         assert_equal(models.TrashedFileNode.load(trashed._id), None)
+
+    def test_restore_folder(self):
+        fn = models.StoredFileNode(
+            path='afolder',
+            name='folder_name',
+            is_file=False,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/folder_name',
+        ).wrapped()
+
+        before = fn.to_storage()
+        trashed = fn.delete(user=self.user)
+
+        assert_equal(
+            trashed.restore().to_storage(),
+            before
+        )
+        assert_equal(models.TrashedFileNode.load(trashed._id), None)
+
+    def test_restore_folder_nested(self):
+        def build_tree(acc=None, parent=None, atleastone=False):
+            import random
+            acc = acc or []
+            if len(acc) > 50:
+                return acc
+            is_folder = atleastone
+            for i in range(random.randrange(3, 15)):
+                fn = models.StoredFileNode(
+                    path='name{}'.format(i),
+                    name='name{}'.format(i),
+                    is_file=not is_folder,
+                    node=self.node,
+                    parent=parent._id,
+                    provider='test',
+                    materialized_path='{}/{}'.format(parent.materialized_path, 'name{}'.format(i)),
+                ).wrapped()
+                fn.save()
+                random.randint(0,5) == 1
+                if is_folder:
+                    build_tree(acc, fn)
+                acc.append(fn)
+                is_folder = random.randint(0,5) == 1
+            return acc
+
+        level1 = models.StoredFileNode(
+            path='afolder',
+            name='folder_name',
+            is_file=False,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/folder_name',
+        ).wrapped()
+        level1.save()
+        children = build_tree(parent=level1, atleastone=True)
+        print(children)
+        before = [level1.to_storage()] + [child.to_storage() for child in children]
+        trashed = level1.delete()
+        for data in before:
+            assert_true(models.TrashedFileNode.load(data['_id']))
+            assert_is(models.StoredFileNode.load(data['_id']), None)
+        trashed.restore()
+        for data in before:
+            assert_is(models.TrashedFileNode.load(data['_id']), None)
+            assert_equals(models.StoredFileNode.load(data['_id']).to_storage(), data)
 
     def test_metadata_url(self):
         pass
