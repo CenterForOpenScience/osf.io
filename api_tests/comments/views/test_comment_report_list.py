@@ -288,7 +288,12 @@ class TestFileCommentReportsView(ApiTestCase):
         self.file = test_utils.create_test_file(self.private_project, self.user)
         self.comment = CommentFactory.build(node=self.private_project, target=self.file, user=self.contributor)
         self.comment.reports = self.comment.reports or {}
-        self.comment.reports[self.user._id] = {'category': 'spam', 'text': 'This is spam'}
+        self.comment.reports[self.user._id] = {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }
         self.comment.save()
         self.private_url = '/{}comments/{}/reports/'.format(API_BASE, self.comment._id)
 
@@ -298,7 +303,12 @@ class TestFileCommentReportsView(ApiTestCase):
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
         self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_file, user=self.contributor)
         self.public_comment.reports = self.public_comment.reports or {}
-        self.public_comment.reports[self.user._id] = {'category': 'spam', 'text': 'This is spam'}
+        self.public_comment.reports[self.user._id] = {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }
         self.public_comment.save()
         self.public_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment._id)
 
@@ -364,7 +374,12 @@ class TestFileCommentReportsView(ApiTestCase):
         test_file = test_utils.create_test_file(project, self.user)
         comment = CommentFactory.build(node=project, target=test_file, user=project.creator)
         comment.reports = comment.reports or {}
-        comment.reports[self.non_contributor._id] = {'category': 'spam', 'text': 'This is spam.'}
+        comment.reports[self.non_contributor._id] = {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }
         comment.save()
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
         res = self.app.get(url, auth=self.non_contributor.auth)
