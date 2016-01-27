@@ -2,7 +2,6 @@
  * UI and function to quick search projects
  */
 
-var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
