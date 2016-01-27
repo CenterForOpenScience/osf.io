@@ -39,6 +39,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Email settings. Account created for testing. Password shouldn't be hardcoded
+# [DEVOPS]: this should be set to 'django.core.mail.backends.smtp.EmailBackend' in the > dev local.py.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Sendgrip Email Settings - Using OSF credentials
