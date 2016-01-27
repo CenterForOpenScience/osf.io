@@ -28,7 +28,7 @@ var quickSearchProject = {
         self.fieldSort = m.prop(); // For xs screen, either alpha or date
         self.directionSort = m.prop(); // For xs screen, either Asc or Desc
 
-        // Load first ten nodes
+        // Load up to first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig});
         promise.then(function(result) {
@@ -238,22 +238,12 @@ var quickSearchProject = {
 
         // Colors sort asc/desc buttons either selected or not-selected
         self.colorSortButtons = function (sort) {
-            if (self.sortState() === sort) {
-                return 'selected';
-            }
-            else {
-                return 'not-selected';
-            }
+            return self.sortState() === sort ? 'selected' : 'not-selected';
         };
 
         // Colors asc/desc buttons on XS screen
         self.colorSortButtonsXS = function (sort) {
-            if (self.preSelectDirection() === sort) {
-                return 'selected';
-            }
-            else {
-                return 'not-selected';
-            }
+            return self.preSelectDirection() === sort ? 'selected' : 'not-selected';
         };
 
         // Filtering on title
