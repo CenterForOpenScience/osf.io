@@ -21,7 +21,7 @@ from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query
 
 from .serializers import UserSerializer, UserDetailSerializer
-from .permissions import ReadOnlyOrCurrentUser
+from .permissions import ReadOnlyOrCurrentUser, CurrentUser
 from .pagination import UserNodeLogPagination
 
 
@@ -414,6 +414,15 @@ class UserRegistrations(UserNodes):
 
 class UserNodeLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, UserMixin):
 
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CurrentUser,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes]
+
     serializer_class = NodeLogSerializer
     pagination_class = UserNodeLogPagination
     view_category = 'users'
@@ -427,11 +436,11 @@ class UserNodeLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, 
             auth = Auth(None)
         else:
             auth = Auth(user)
-        raw_nodes = Node.find(
+        raw_nodes = list(Node.find(
             Q('contributors', 'eq', user) &
             Q('is_folder', 'ne', True) &
             Q('is_deleted', 'ne', True)
-        )
+        ))
         nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
         if not nodes:
             raise NotFound

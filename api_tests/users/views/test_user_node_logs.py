@@ -16,28 +16,85 @@ class TestUserNodeLogs(ApiTestCase):
     def setUp(self):
         super(TestUserNodeLogs, self).setUp()
         self.user = AuthUserFactory()
-        self.other_user = AuthUserFactory
+        self.other_user = AuthUserFactory()
         self.node = NodeFactory(creator=self.user)
         self.other_node = NodeFactory(creator=self.other_user)
         self.other_node.add_contributor(self.user, auth=Auth(self.other_user))
-        self.log = NodeLogFactory(params={'node': self.node._id})
-        self.log2 = NodeLogFactory(params={'node': self.other_node._id})
+        self.other_node.save()
+        # Logs require paths here as the aggregate query assumes that a file log has a path param
+        self.log = NodeLogFactory(action='osf_storage_file_added', params={'node': self.node._id, 'path': 'a_path'})
+        self.log2 = NodeLogFactory(action='osf_storage_file_added', params={'node': self.other_node._id, 'path': 'another_path'})
         self.log_url = '/{0}users/{1}/node_logs/'.format(API_BASE, self.user._id)
 
     def test_retrieve_all_logs(self):
-        pass
+        res = self.app.get(
+            self.log_url,
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+
+        node_log_ids = [node_log['id'] for node_log in res.json['data']]
+        assert_true(self.log._id in node_log_ids)
+        assert_true(self.log2._id in node_log_ids)
+
+        assert_equal(res.json['links']['meta']['total'], 5)  # Node creation (x2), contributor added, custom logs (x2)
 
     def test_no_logs(self):
-        pass
+        user = AuthUserFactory()
+
+        res = self.app.get(
+            '/{0}users/{1}/node_logs/'.format(API_BASE, user._id),
+            auth=user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 404)
 
     def test_aggregates(self):
-        pass
+        log = NodeLogFactory(action='wiki_updated', params={'node': self.node._id})
+        log2 = NodeLogFactory(action='comment_added', params={'node': self.other_node._id})
+        res = self.app.get(
+            self.log_url + '?aggregate=1',
+            auth=self.user.auth
+        )
 
-    def test_logs_from_contrib_nodes(self):
-        pass
+        assert_equal(res.status_code, 200)
+
+        aggregates = res.json['links']['meta']['aggregates']
+        assert_equal(aggregates['nodes'], 2)
+        assert_equal(aggregates['comments'], 1)
+        assert_equal(aggregates['wiki'], 1)
+        assert_equal(aggregates['files'], 2)
 
     def test_logs_from_project_no_longer_being_contributed(self):
-        pass
+        self.other_node.remove_contributor(self.user, auth=Auth(self.other_user))
+        res = self.app.get(
+            self.log_url,
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+
+        node_log_ids = [node_log['id'] for node_log in res.json['data']]
+        assert_true(self.log._id in node_log_ids)
+        assert_true(self.log2._id not in node_log_ids)
+
+        assert_equal(res.json['links']['meta']['total'], 2)
 
     def test_no_auth(self):
-        pass
+        res = self.app.get(
+            '/{0}users/{1}/node_logs/'.format(API_BASE, self.user._id),
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+
+    def test_wrong_auth(self):
+        res = self.app.get(
+            '/{0}users/{1}/node_logs/'.format(API_BASE, self.user._id),
+            auth=self.other_user.auth,
+            expect_errors=True,
+        )
+
+        assert_equal(res.status_code, 403)
