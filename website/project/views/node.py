@@ -718,6 +718,9 @@ def _view_project(node, auth, primary=False):
     anonymous = has_anonymous_link(node, auth)
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
+    contributor_ids = []
+    for contributor in node.contributors:
+        contributor_ids.append(contributor._id)
 
     # Before page load callback; skip if not primary call
     if primary:
@@ -781,6 +784,7 @@ def _view_project(node, auth, primary=False):
             },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
+            'contributors': contributor_ids
         },
         'parent_node': {
             'exists': parent is not None,
@@ -1020,6 +1024,9 @@ def node_child_tree(user, node_ids):
     for node_id in node_ids:
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
+        contributor_ids = []
+        for contributor in node.contributors:
+            contributor_ids.append(contributor._id)
 
         can_read = node.has_permission(user, 'read')
         can_read_children = node.has_permission_on_children(user, 'read')
@@ -1044,7 +1051,8 @@ def node_child_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
-                'can_write': can_write
+                'can_write': can_write,
+                'contributors': contributor_ids
             },
             'user_id': user._id,
             'children': children,

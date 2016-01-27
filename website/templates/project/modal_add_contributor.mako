@@ -9,9 +9,9 @@
             <div class="modal-body">
 
                 <!-- Whom to add -->
+{{ko.toJSON($data)}}
 
                 <div data-bind="if: page() == 'whom'">
-
                     <!-- Find contributors -->
                     <form class='form' data-bind="submit: startSearch">
                         <div class="row">
@@ -185,7 +185,7 @@
 
                 </div>
                 <!-- Component selection page -->
-                <div data-bind="if:page()=='which'">
+                <div data-bind="visible:page()=='which'">
 
                     <div>
                         Adding contributor(s)
@@ -200,28 +200,27 @@
                         Select any other components to which you would like to apply these settings.
                     </div>
 
-                    <div class="row">
-
-                        <div class="col-md-6">
-                            <input type="checkbox" checked disabled />
-                            <span data-bind="text:title"></span> (current component)
-                            <div data-bind="foreach:nodes">
-                                <div data-bind="style:{marginLeft: margin}">
-                                    <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
-                                    <span data-bind="text:title"></span>
-                                </div>
+                    <div>
+                        Select:&nbsp;
+                        <a class="text-bigger" data-bind="click:selectAll">Make all public</a>
+                        &nbsp;|&nbsp;
+                        <a class="text-bigger" data-bind="click:selectNone">Make all private</a>
+                    </div>
+                    <div class="tb-row-titles">
+                        <div style="width: 100%" data-tb-th-col="0" class="tb-th">
+                            <span class="m-r-sm"></span>
+                        </div>
+                    </div>
+                    <div class="osf-treebeard">
+                        <div id="addContributorsTreebeard">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-md"></div>
+                                <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
                             </div>
                         </div>
-
-                        <div class="col-md-6">
-                            <div>
-                                <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
-                            </div>
-                            <div>
-                                <a data-bind="click:deselectNodes, css:{disabled:cantDeselectNodes()}">De-select all</a>
-                            </div>
+                        <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
                         </div>
-
                     </div>
 
                 </div><!-- end component selection page -->

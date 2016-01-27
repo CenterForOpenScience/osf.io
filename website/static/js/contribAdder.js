@@ -12,6 +12,8 @@ var oop = require('js/oop');
 var $osf = require('js/osfHelpers');
 var osfLanguage = require('js/osfLanguage');
 var Paginator = require('js/paginator');
+var AddContributorsTreebeard = require('js/addContributorsTreebeard');
+var m = require('mithril');
 
 var NODE_OFFSET = 25;
 
@@ -40,6 +42,23 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.parentTitle = parentTitle;
         self.async = options.async || false;
         self.callback = options.callback || function() {};
+        self.nodesOriginal = {};
+        //state of current nodes
+        self.nodesToChange = ko.observableArray();
+        self.nodesState = ko.observableArray();
+        self.nodesState.subscribe(function(newValue) {
+            var nodesToChange = [];
+            for (var key in newValue) {
+                if (newValue[key].changed) {
+                    nodesToChange.push(key);
+                }
+            }
+            self.nodesToChange(nodesToChange);
+            m.redraw(true);
+        });
+
+        self.hasChildren = ko.observable(false);
+
 
         //list of permission objects for select.
         self.permissionList = [
@@ -58,13 +77,15 @@ var AddContributorViewModel = oop.extend(Paginator, {
         });
         self.query = ko.observable();
         self.results = ko.observableArray([]);
+        self.results.subscribe(function(newValue) {
+            m.redraw(true);
+        });
         self.contributors = ko.observableArray([]);
         self.selection = ko.observableArray();
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
         self.totalPages = ko.observable(0);
         self.nodes = ko.observableArray([]);
-        self.nodesToChange = ko.observableArray();
 
         self.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
@@ -108,6 +129,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
     },
     selectWhich: function() {
         this.page('which');
+    },
+    selectTreebeard: function() {
+        this.page('treebeard');
     },
     gotoInvite: function() {
         var self = this;
@@ -285,18 +309,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
             self.remove(selected);
         });
     },
-    cantSelectNodes: function() {
-        return this.nodesToChange().length === this.nodes().length;
-    },
-    cantDeselectNodes: function() {
-        return this.nodesToChange().length === 0;
-    },
-    selectNodes: function() {
-        this.nodesToChange($osf.mapByProperty(this.nodes(), 'id'));
-    },
-    deselectNodes: function() {
-        this.nodesToChange([]);
-    },
     selected: function(data) {
         var self = this;
         for (var idx = 0; idx < self.selection().length; idx++) {
@@ -305,6 +317,29 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         }
         return false;
+    },
+    selectAll: function() {
+        var self = this;
+        var nodesState = ko.toJS(self.nodesState());
+        for (var node in nodesState) {
+            if (nodesState[node].canWrite) {
+                nodesState[node].changed = true;
+            }
+        }
+        self.nodesState(nodesState);
+        m.redraw(true);
+    },
+    selectNone: function() {
+        var self = this;
+        var nodesState = ko.toJS(self.nodesState());
+        for (var node in nodesState) {
+            if (nodesState[node].canWrite) {
+                nodesState[node].changed = false;
+
+            }
+        }
+        self.nodesState(nodesState);
+        m.redraw(true);
     },
     submit: function() {
         var self = this;
@@ -377,6 +412,40 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var response = JSON.parse(xhr.responseText);
         // Update error message
         this.inviteError(response.message);
+    },
+        /**
+     * get node tree for treebeard from API V1
+     */
+    fetchNodeTree: function() {
+        var self = this;
+        var treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
+        return $.ajax({
+            url: treebeardUrl,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(response) {
+            self.nodesOriginal = $osf.getNodesOriginal(response[0], self.nodesOriginal);
+            Object.size = function(obj) {
+                var size = 0, key;
+                for (key in obj) {
+                    if (obj.hasOwnProperty(key)) size++;
+                }
+                return size;
+            };
+            // Get the size of an object
+            var size = Object.size(self.nodesOriginal);
+            self.hasChildren(size > 1);
+            var nodesStateLocal = $.extend(true, {}, self.nodesOriginal);
+            var nodeParent = response[0].node.id;
+            //parent node is changed by default
+            nodesStateLocal[nodeParent].changed = true;
+            self.nodesState(nodesStateLocal);
+        }).fail(function(xhr, status, error) {
+            $osf.growl('Error', 'Unable to retrieve project settings');
+            Raven.captureMessage('Could not GET project settings.', {
+                url: treebeardUrl, status: status, error: error
+            });
+        });
     }
 });
 
@@ -408,6 +477,9 @@ ContribAdder.prototype.init = function() {
     var self = this;
     self.viewModel.getContributors();
     self.viewModel.getEditableChildren();
+    self.viewModel.fetchNodeTree().done(function(response) {
+        new AddContributorsTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
+    });
     ko.applyBindings(self.viewModel, self.$element[0]);
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
