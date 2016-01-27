@@ -408,7 +408,6 @@ var quickSearchProject = {
         }
 
         function displayNodes() {
-            console.log(ctrl.eligibleNodes().length, ctrl.countDisplayed(), ctrl.sortState(), ctrl.loadingComplete());
             if (ctrl.eligibleNodes().length ===0 && ctrl.filter() != null) {
                 return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-10 col-sm-offset-1'},
                     m('div', {'class': 'row'}, [
