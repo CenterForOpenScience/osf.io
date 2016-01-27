@@ -38,8 +38,5 @@ class CustomUserAdmin(UserAdmin):
         self.message_user(request, 'Email invitation successfully sent')
     send_email_invitation.short_description = 'Send email invitation to selected users'
 
-    def save_model(self, request, obj, form, change):
-        obj.save()
-
 admin.site.register(MyUser, CustomUserAdmin)
 admin.site.register(Permission, PermissionAdmin)
