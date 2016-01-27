@@ -539,7 +539,14 @@ class InstitutionFactory(ModularOdmFactory):
         instance.save()
         return instance
 
-    _build = _create
+    @classmethod
+    def _build(cls, target_class, _id, name):
+        instance = target_class(
+            _id=_id,
+            name=name,
+            logo_name='logo.img',
+        )
+        return instance
 
 
 class NotificationSubscriptionFactory(ModularOdmFactory):
