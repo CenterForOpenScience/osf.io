@@ -27,6 +27,8 @@ def logout(request):
     logout_user(request)
     return redirect('auth:login')
 
+
+#Permission restriction based on staff (only staff can register new users)
 def register(request):
     # Creates User, takes selected permissions and assigns it to user, then saves resetform for email invitation
 
@@ -34,12 +36,10 @@ def register(request):
         form = CustomUserRegistrationForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data['email']
-            first_name = form.cleaned_data['first_name']
-            last_name = form.cleaned_data['last_name']
             password = form.cleaned_data['password1']
             user = MyUser.objects.create_user(email=email, password=password)
-            user.first_name = first_name
-            user.last_name = last_name
+            user.first_name = form.cleaned_data['first_name']
+            user.last_name = form.cleaned_data['last_name']
             user.save()
 
             reset_form = PasswordResetForm({'email': user.email}, request.POST)
@@ -56,7 +56,8 @@ def register(request):
             context = {'form': form}
             return render(request, 'register.html', context)
     else:
-        ''' User not submitting form, show blank registrations form '''
-        form = CustomUserRegistrationForm()
-        context = {'form': form}
+        # User visiting page, not submitting post req. Display forms
+        reg_form = CustomUserRegistrationForm()
+        #perm_form = PermissionForm()
+        context = {'form': reg_form} #, 'form2': perm_form}
         return render(request, 'register.html', context)

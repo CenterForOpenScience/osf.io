@@ -38,7 +38,7 @@
             <p>{{ form.first_name }}</p>
             {% if form.first_name.errors %}<span class="text-danger"> {{ form.first_name.errors }}</span>{% endif %}
         </div>
-        <sdiv class="form-group">
+        <div class="form-group">
             <label for="last_name">Last name:</label>
             <p>{{ form.last_name }}</p>
             {% if form.last_name.errors %}<span class="text-danger"> {{ form.last_name.errors }}</span>{% endif %}
@@ -55,6 +55,10 @@
       </div>
 
         <!-- include widget for displaying multi-checkbox permission list -->
+
+
+
+
           <div class="row">
             <div class="col-xs-4">
               <button type="submit" class="btn btn-primary btn-block btn-flat">Register</button>
