@@ -615,6 +615,19 @@ class NodeLog(StoredObject):
             'registered': user.is_registered,
         }
 
+    @property
+    def absolute_api_v2_url(self):
+        from api.logs.views import NodeLogDetail
+
+        return absolute_reverse('{}:{}'.format(NodeLogDetail.view_category, NodeLogDetail.view_name), kwargs={'log_id': self._id})
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_url(self):
+        return self.absolute_api_v2_url
+
 
 class Tag(StoredObject):
 
@@ -1222,7 +1235,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :returns: User has required permission
         """
         if user is None:
-            logger.warn('User is ``None``.')
             return False
         if permission in self.permissions.get(user._id, []):
             return True
@@ -3391,6 +3403,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
+    def get_active_contributors_recursive(self, unique_users=False, *args, **kwargs):
+        """Yield (admin, node) tuples for this node and
+        descendant nodes. Excludes contributors on node links and inactive users.
+
+        :param bool unique_users: If True, a given admin will only be yielded once
+            during iteration.
+        """
+        visited_user_ids = []
+        for node in self.node_and_primary_descendants(*args, **kwargs):
+            for contrib in node.active_contributors(*args, **kwargs):
+                if unique_users:
+                    if contrib._id not in visited_user_ids:
+                        visited_user_ids.append(contrib._id)
+                        yield (contrib, node)
+                else:
+                    yield (contrib, node)
+
     def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
         descendant nodes. Excludes contributors on node links and inactive users.
@@ -3740,18 +3769,22 @@ class TokenApprovableSanction(Sanction):
         self.state = Sanction.REJECTED
         self._on_reject(user)
 
-    def _notify_authorizer(self, user):
+    def _notify_authorizer(self, user, node):
         pass
 
-    def _notify_non_authorizer(self, user):
+    def _notify_non_authorizer(self, user, node):
         pass
 
     def ask(self, group):
-        for contrib in group:
+        """
+        :param list group: List of (user, node) tuples containing contributors to notify about the
+        sanction.
+        """
+        for contrib, node in group:
             if contrib._id in self.approval_state:
-                self._notify_authorizer(contrib)
+                self._notify_authorizer(contrib, node)
             else:
-                self._notify_non_authorizer(contrib)
+                self._notify_non_authorizer(contrib, node)
 
 
 class EmailApprovableSanction(TokenApprovableSanction):
@@ -3787,10 +3820,10 @@ class EmailApprovableSanction(TokenApprovableSanction):
             return template.format(**context)
         return ''
 
-    def _view_url(self, user_id):
-        return self._format_or_empty(self.VIEW_URL_TEMPLATE, self._view_url_context(user_id))
+    def _view_url(self, user_id, node):
+        return self._format_or_empty(self.VIEW_URL_TEMPLATE, self._view_url_context(user_id, node))
 
-    def _view_url_context(self, user_id):
+    def _view_url_context(self, user_id, node):
         return None
 
     def _approval_url(self, user_id):
@@ -3813,18 +3846,18 @@ class EmailApprovableSanction(TokenApprovableSanction):
             **context
         )
 
-    def _email_template_context(self, user, is_authorizer=False):
+    def _email_template_context(self, user, node, is_authorizer=False):
         return {}
 
-    def _notify_authorizer(self, authorizer):
-        context = self._email_template_context(authorizer, is_authorizer=True)
+    def _notify_authorizer(self, authorizer, node):
+        context = self._email_template_context(authorizer, node, is_authorizer=True)
         if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
             self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
             raise NotImplementedError
 
-    def _notify_non_authorizer(self, user):
-        context = self._email_template_context(user)
+    def _notify_non_authorizer(self, user, node):
+        context = self._email_template_context(user, node)
         if self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
             self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
@@ -3833,7 +3866,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
     def add_authorizer(self, user, node, **kwargs):
         super(EmailApprovableSanction, self).add_authorizer(user, node, **kwargs)
         self.stashed_urls[user._id] = {
-            'view': self._view_url(user._id),
+            'view': self._view_url(user._id, node),
             'approve': self._approval_url(user._id),
             'reject': self._rejection_url(user._id)
         }
@@ -3866,7 +3899,7 @@ class PreregCallbackMixin(object):
                 mimetype='html'
             )
 
-    def _email_template_context(self, user, is_authorizer=False, urls=None):
+    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
         registration = self._get_registration()
         prereg_schema = prereg_utils.get_prereg_schema()
         if prereg_schema in registration.registered_schema:
@@ -3927,8 +3960,8 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     def _get_registration(self):
         return Node.find_one(Q('embargo', 'eq', self))
 
-    def _view_url_context(self, user_id):
-        registration = self._get_registration()
+    def _view_url_context(self, user_id, node):
+        registration = node or self._get_registration()
         return {
             'node_id': registration._id
         }
@@ -3956,10 +3989,10 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
                 'token': rejection_token,
             }
 
-    def _email_template_context(self, user, is_authorizer=False, urls=None):
-        context = super(Embargo, self)._email_template_context(user, is_authorizer, urls)
+    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
+        context = super(Embargo, self)._email_template_context(user, node, is_authorizer, urls)
         urls = urls or self.stashed_urls.get(user._id, {})
-        registration_link = urls.get('view', self._view_url(user._id))
+        registration_link = urls.get('view', self._view_url(user._id, node))
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
@@ -4055,7 +4088,7 @@ class Retraction(EmailApprovableSanction):
             self._id
         )
 
-    def _view_url_context(self, user_id):
+    def _view_url_context(self, user_id, node):
         registration = Node.find_one(Q('retraction', 'eq', self))
         return {
             'node_id': registration._id
@@ -4084,9 +4117,9 @@ class Retraction(EmailApprovableSanction):
                 'token': rejection_token,
             }
 
-    def _email_template_context(self, user, is_authorizer=False, urls=None):
+    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
         urls = urls or self.stashed_urls.get(user._id, {})
-        registration_link = urls.get('view', self._view_url(user._id))
+        registration_link = urls.get('view', self._view_url(user._id, node))
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
@@ -4175,10 +4208,11 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     def _get_registration(self):
         return Node.find_one(Q('registration_approval', 'eq', self))
 
-    def _view_url_context(self, user_id):
-        registration = self._get_registration()
+    def _view_url_context(self, user_id, node):
+        user_approval_state = self.approval_state.get(user_id, {})
+        node_id = user_approval_state.get('node_id', node._id)
         return {
-            'node_id': registration._id
+            'node_id': node_id
         }
 
     def _approval_url_context(self, user_id):
@@ -4204,10 +4238,10 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
                 'token': rejection_token,
             }
 
-    def _email_template_context(self, user, is_authorizer=False, urls=None):
-        context = super(RegistrationApproval, self)._email_template_context(user, is_authorizer, urls)
+    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
+        context = super(RegistrationApproval, self)._email_template_context(user, node, is_authorizer, urls)
         urls = urls or self.stashed_urls.get(user._id, {})
-        registration_link = urls.get('view', self._view_url(user._id))
+        registration_link = urls.get('view', self._view_url(user._id, node))
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')

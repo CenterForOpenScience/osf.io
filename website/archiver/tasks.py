@@ -386,6 +386,4 @@ def archive_success(dst_pk, job_pk):
     job = ArchiveJob.load(job_pk)
     job.sent = True
     job.save()
-    admins = [user for (user, _) in
-              dst.get_admin_contributors_recursive(unique_users=True)]
-    dst.sanction.ask(admins)
+    dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
