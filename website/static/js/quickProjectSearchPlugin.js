@@ -155,12 +155,21 @@ var quickSearchProject = {
             return new $osf.FormattableDate(node.attributes.date_modified).local;
         };
 
+        // Shortcut for sorting ascending
+        self.sortAscending = function (A, B) {
+            return (A < B) ? -1 : (A > B) ? 1 : 0;
+        };
+
+        // Shortcut for sorting descending
+        self.sortDescending = function (A, B) {
+            return (A > B) ? -1 : (A < B) ? 1 : 0;
+        };
 
         self.sortAlphabeticalAscending = function () {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
-                return (A < B) ? -1 : (A > B) ? 1 : 0;
+                return self.sortAscending(A, B)
             });
             self.sortState('alphaAsc');
         };
@@ -169,7 +178,7 @@ var quickSearchProject = {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
-                return (A > B) ? -1 : (A < B) ? 1 : 0;
+                return self.sortDescending(A, B)
             });
             self.sortState('alphaDesc');
         };
@@ -178,7 +187,7 @@ var quickSearchProject = {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
-                return (A < B) ? -1 : (A > B) ? 1 : 0;
+                return self.sortAscending(A, B)
             });
             self.sortState('dateAsc');
         };
@@ -187,7 +196,7 @@ var quickSearchProject = {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
-                return (A > B) ? -1 : (A < B) ? 1 : 0;
+                return self.sortDescending(A, B)
             });
             self.sortState('dateDesc');
         };
