@@ -2094,6 +2094,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         )
 
         forked.save()
+
+        # Clone each log from the original node for this fork.
+        logs = original.logs
+        for log in logs:
+            log.clone_node_log(forked._id)
+
         # After fork callback
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
@@ -2147,13 +2153,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
         registered.creator = self.creator
-        registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
+
+        # Clone each log from the original node for this registration.
+        logs = original.logs
+        for log in logs:
+            log.clone_node_log(registered._id)
+
         registered.is_public = False
         for node in registered.get_descendants_recursive():
             node.is_public = False
