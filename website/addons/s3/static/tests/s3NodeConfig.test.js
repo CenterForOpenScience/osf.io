@@ -92,7 +92,7 @@ describe('s3NodeConfigViewModel', () => {
         }
         var reallyLongName = moreChars.join('');
 
-        it('allows these names in strict mode', (done) => {
+        it('allows these names in strict mode', () => {
             assert.isTrue(isValidBucketName('valid'), 'basic label');
             assert.isTrue(isValidBucketName('also.valid'), 'two labels');
             assert.isTrue(isValidBucketName('pork.beef.chicken'), 'three labels');
@@ -103,7 +103,7 @@ describe('s3NodeConfigViewModel', () => {
             assert.isTrue(isValidBucketName(longName), 'name up to 63 characters');
         });
 
-        it('DOES NOT allow these names in strict mode', (done) => {
+        it('DOES NOT allow these names in strict mode', () => {
             assert.isFalse(isValidBucketName(''), 'empty');
             assert.isFalse(isValidBucketName('no'), 'too short');
             assert.isFalse(isValidBucketName(longName + 'a'), '64 characters, too long');
@@ -124,10 +124,9 @@ describe('s3NodeConfigViewModel', () => {
             assert.isFalse(isValidBucketName(':aa', true), 'colon leading character');
             assert.isFalse(isValidBucketName('aa;', true), 'semicolon trailing');
             assert.isFalse(isValidBucketName('space middle', true), 'space in the middle');
-            done();
         });
 
-        it('allows these names in lax mode', (done) => {
+        it('allows these names in lax mode', () => {
             assert.isTrue(isValidBucketName('valid', true), 'basic label');
             assert.isTrue(isValidBucketName('also.valid', true), 'two labels');
             assert.isTrue(isValidBucketName('pork.beef.chicken', true), 'three labels');
@@ -149,10 +148,9 @@ describe('s3NodeConfigViewModel', () => {
             assert.isTrue(isValidBucketName('a.-b', true), 'label can begin with hyphen');
             assert.isTrue(isValidBucketName('8.8.8.8', true), 'label can look like IP addr');
             assert.isTrue(isValidBucketName('600.9000.0.28', true), '  ..not even a fake IP addr');
-            done();
         });
 
-        it('DOES NOT allow these names in lax mode', (done) => {
+        it('DOES NOT allow these names in lax mode', () => {
             assert.isFalse(isValidBucketName('', true), 'empty');
             assert.isFalse(isValidBucketName(reallyLongName + 'a', true), ' 256 characters, too long');
             assert.isFalse(isValidBucketName(' aaa', true), 'leading space');
@@ -160,7 +158,6 @@ describe('s3NodeConfigViewModel', () => {
             assert.isFalse(isValidBucketName(':aa', true), 'colon leading character');
             assert.isFalse(isValidBucketName('aa;', true), 'semicolon trailing');
             assert.isFalse(isValidBucketName('space middle', true), 'space in the middle');
-            done();
         });
 
     });
