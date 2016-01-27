@@ -169,7 +169,7 @@ var quickSearchProject = {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
-                return self.sortAscending(A, B)
+                return self.sortAscending(A, B);
             });
             self.sortState('alphaAsc');
         };
@@ -178,7 +178,7 @@ var quickSearchProject = {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
-                return self.sortDescending(A, B)
+                return self.sortDescending(A, B);
             });
             self.sortState('alphaDesc');
         };
@@ -187,7 +187,7 @@ var quickSearchProject = {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
-                return self.sortAscending(A, B)
+                return self.sortAscending(A, B);
             });
             self.sortState('dateAsc');
         };
@@ -196,7 +196,7 @@ var quickSearchProject = {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
-                return self.sortDescending(A, B)
+                return self.sortDescending(A, B);
             });
             self.sortState('dateDesc');
         };
