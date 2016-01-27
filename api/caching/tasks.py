@@ -3,7 +3,7 @@ import urlparse
 import celery
 import requests
 from celery.utils.log import get_task_logger
-from django.conf import settings
+from api.base import settings
 
 from framework.tasks import app as celery_app
 
