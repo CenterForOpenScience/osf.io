@@ -815,7 +815,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         tags = kwargs.pop('tags', [])
 
-        logs = kwargs.pop('logs', [])
+        kwargs.pop('logs', [])
 
         super(Node, self).__init__(*args, **kwargs)
 

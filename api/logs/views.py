@@ -1,14 +1,11 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound
 
 from website.models import NodeLog
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from api.base.filters import ODMFilterMixin
-from api.base.utils import get_user_auth, get_object_or_error
+from api.base.utils import get_object_or_error
 from api.base import permissions as base_permissions
-from api.nodes.serializers import NodeSerializer
 from api.logs.serializers import NodeLogSerializer
 from api.base.views import JSONAPIBaseView
 
