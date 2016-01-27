@@ -253,16 +253,16 @@ in
 </script>
 
 <script type="text/html" id="made_contributor_visible">
-made contributor
+made
 <span data-bind="html: displayContributors"></span>
-visible on
+a bibliographic contributor on
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
 <script type="text/html" id="made_contributor_invisible">
-made contributor
+made
 <span data-bind="html: displayContributors"></span>
-invisible on
+a non-bibliographic contributor on
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
