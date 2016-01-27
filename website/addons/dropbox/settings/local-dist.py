@@ -3,5 +3,5 @@
 these settings.
 """
 # Get an app key and secret at https://www.dropbox.com/developers/apps
-DROPBOX_KEY = 'changeme'
-DROPBOX_SECRET = 'changeme'
+DROPBOX_KEY = 'jnpncg5s2fc7cj8'
+DROPBOX_SECRET = 'sjqv1hrk7sonhu1'
