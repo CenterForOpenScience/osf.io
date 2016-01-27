@@ -2292,6 +2292,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             user=user,
             foreign_user=foreign_user,
             params=params,
+            node=self,
+            original_node=self
         )
 
         if log_date:
@@ -2300,7 +2302,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.date_modified = log.date.replace(tzinfo=None)
 
         log.save()
-        self.logs.append(log)
         if save:
             self.save()
         if user:
