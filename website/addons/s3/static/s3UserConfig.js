@@ -14,6 +14,8 @@ require('js/osfToggleHeight');
 var language = require('js/osfLanguage').Addons.s3;
 var osfHelpers = require('js/osfHelpers');
 var addonSettings = require('js/addonSettings');
+var ChangeMessageMixin = require('js/changeMessage');
+
 
 var ExternalAccount = addonSettings.ExternalAccount;
 
@@ -27,8 +29,6 @@ function ViewModel(url) {
     self.accessKey = ko.observable();
     self.secretKey = ko.observable();
     self.account_url = '/api/v1/settings/s3/accounts/';
-    // Whether the initial data has been loaded
-    self.loaded = ko.observable(false);
     self.accounts = ko.observableArray();
 
     // Flashed messages
@@ -44,8 +44,11 @@ function ViewModel(url) {
     };
 
     self.updateAccounts = function() {
-        var request = $.get(self.account_url);
-        request.done(function(data) {
+        return $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function (data) {
             self.accounts($.map(data.accounts, function(account) {
                 var externalAccount =  new ExternalAccount(account);
                 externalAccount.accessKey = account.oauth_key;
@@ -53,32 +56,31 @@ function ViewModel(url) {
                 return externalAccount;
             }));
             $('.addon-auth-table').osfToggleHeight({height: 140});
-        });
-        request.fail(function(xhr, status, error) {
+        }).fail(function(xhr, status, error) {
+            self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Error while updating addon account', {
                 url: url,
                 status: status,
                 error: error
             });
         });
-        return request;
     };
 
     /** Send POST request to authorize S3 */
     self.sendAuth = function() {
         // Selection should not be empty
         if( !self.accessKey() && !self.secretKey() ){
-            self.changeMessage("Please enter both an API access key and secret key.", 'text-danger');
+            self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');
             return;
         }
 
         if (!self.accessKey() ){
-            self.changeMessage("Please enter an API access key.", 'text-danger');
+            self.changeMessage('Please enter an API access key.', 'text-danger');
             return;
         }
 
         if (!self.secretKey() ){
-            self.changeMessage("Please enter an API secret key.", 'text-danger');
+            self.changeMessage('Please enter an API secret key.', 'text-danger');
             return;
         }
         return osfHelpers.postJSON(
@@ -93,7 +95,7 @@ function ViewModel(url) {
             self.updateAccounts();
 
         }).fail(function(xhr, textStatus, error) {
-            var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
+            var errorMessage = (xhr.status === 400 && xhr.responseJSON.message !== undefined) ? xhr.responseJSON.message : language.authError;
             self.changeMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with S3', {
                 url: self.account_url,
@@ -145,49 +147,13 @@ function ViewModel(url) {
         return request;
     };
 
-    /** Change the flashed status message */
-    self.changeMessage = function(text, css, timeout) {
-        self.message(text);
-        var cssClass = css || 'text-info';
-        self.messageClass(cssClass);
-        if (timeout) {
-            // Reset message after timeout period
-            setTimeout(function() {
-                self.message('');
-                self.messageClass('text-info');
-            }, timeout);
-        }
-    };
-
-    // Update observables with data from the server
-    self.fetch = function() {
-        $.ajax({
-            url: url,
-            type: 'GET',
-            dataType: 'json'
-        }).done(function (response) {
-            self.accounts($.map(response.accounts, function(account) {
-                var externalAccount =  new ExternalAccount(account);
-                externalAccount.accessKey = account.oauth_key;
-                externalAccount.secretKey = account.oauth_secret;
-                return externalAccount;
-            }));
-            $('.addon-auth-table').osfToggleHeight({height: 140});
-        }).fail(function (xhr, textStatus, error) {
-            self.changeMessage(language.userSettingsError, 'text-danger');
-            Raven.captureMessage('Could not GET S3 settings', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
-    };
-
     self.selectionChanged = function() {
         self.changeMessage('','');
     };
 
 }
+
+$.extend(ViewModel.prototype, ChangeMessageMixin.prototype);
 
 function S3UserConfig(selector, url) {
     // Initialization code

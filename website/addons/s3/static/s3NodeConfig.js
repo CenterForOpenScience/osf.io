@@ -73,12 +73,8 @@ var ViewModel = function(selector, settings) {
     self.allowSelectBucket = ko.pureComputed(function() {
         return (self.bucketList().length > 0 || self.loadedBucketList()) && (!self.loading());
     });
-
     self.saveButtonText = ko.pureComputed (function(){
         return self.loading()? 'Saving': 'Save';
-    });
-    self.showTokenCreateButton = ko.pureComputed(function() {
-        return !self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
     });
 };
 
@@ -216,7 +212,7 @@ ViewModel.prototype._importAuthConfirm = function() {
 
 ViewModel.prototype.connectExistingAccount = function(accountId) {
     var self = this;
-    $osf.putJSON(
+    return $osf.putJSON(
             self.urls().import_auth,
             {'external_account_id': accountId}
     ).done(function() {
@@ -231,7 +227,7 @@ ViewModel.prototype.connectExistingAccount = function(accountId) {
 
 ViewModel.prototype.importAuth = function() {
     var self = this;
-    $.get('/api/v1/settings/s3/accounts/'
+    return $.get('/api/v1/settings/s3/accounts/'
             ).done(function(data){
                 var accounts = data.accounts.map(function(account) {
                     return {

@@ -22,7 +22,7 @@
                   Import Account from Profile
                 </a>
             </span>
-            <span data-bind="if: showTokenCreateButton">
+            <span data-bind="if: showCreateCredentials">
                 <a href="#s3InputCredentials" data-toggle="modal" class="pull-right text-primary addon-auth">
                     Connect  Account
                 </a>

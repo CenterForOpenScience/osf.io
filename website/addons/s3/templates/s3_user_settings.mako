@@ -43,8 +43,4 @@
         </div>
         <!-- /ko -->
     </div>
-    <!-- Flashed Messages -->
-    <div class="help-block">
-        <p data-bind="html: message, attr: {class: messageClass}"></p>
-    </div>
 </div>
