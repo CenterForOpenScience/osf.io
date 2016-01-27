@@ -128,7 +128,7 @@ ViewModel.prototype.selectBucket = function() {
         self.loading(false);
         bootbox.alert({
             title: 'Invalid bucket name',
-            message: 'Amazon S3 buckets can contain lowercase letters, numbers, and hyphens, seperated by' +
+            message: 'Amazon S3 buckets can contain lowercase letters, numbers, and hyphens separated by' +
             ' periods.  Please try another name.',
         });
         ret.reject();
@@ -376,7 +376,7 @@ ViewModel.prototype.openCreateBucket = function() {
                     } else if (!isValidBucketName(bucketName, false)) {
                         bootbox.confirm({
                             title: 'Invalid bucket name',
-                            message: 'Amazon S3 buckets can contain lowercase letters, numbers, and hyphens, seperated by' +
+                            message: 'Amazon S3 buckets can contain lowercase letters, numbers, and hyphens separated by' +
                             ' periods.  Please try another name.',
                             callback: function (result) {
                                 if (result) {
