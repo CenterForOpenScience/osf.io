@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Factory boy factories for the Box addon."""
-import mock
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-
+"""Factories for the S3 addon."""
 from factory import SubFactory, Sequence
 from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
 
