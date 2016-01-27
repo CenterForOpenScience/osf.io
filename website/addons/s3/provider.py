@@ -5,7 +5,6 @@ class S3Provider(object):
 
     name = 'Amazon S3'
     short_name = 's3'
-    provider_name = 's3'
     serializer = S3Serializer
 
     def __init__(self, account=None):
