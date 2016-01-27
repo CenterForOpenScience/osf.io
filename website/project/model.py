@@ -198,7 +198,7 @@ class SpamMixin(StoredObject):
     #  - category: What type of spam does the reporter believe this is
     #  - message: Comment on the comment
     reports = fields.DictionaryField(
-        default={}, validate=validate_reports
+        default=dict, validate=validate_reports
     )
 
     def flag_spam(self, save=False):
@@ -211,7 +211,7 @@ class SpamMixin(StoredObject):
     def remove_flag(self, save=False):
         if self.spam_status != self.FLAGGED:
             return
-        for user, report in self.reports.iteritems():
+        for report in self.reports.values():
             if not report.get('retracted', True):
                 return
         self.spam_status = self.UNKNOWN
@@ -232,7 +232,7 @@ class SpamMixin(StoredObject):
     def is_spam(self):
         return self.spam_status == self.SPAM
 
-    def report_spam(self, user, save=False, **kwargs):
+    def report_abuse(self, user, save=False, **kwargs):
         """Report object is spam or other abuse of OSF
 
         :param user: User submitting report
@@ -242,7 +242,7 @@ class SpamMixin(StoredObject):
         :raises ValueError: if user is reporting self
         """
         if user == self.user:
-            raise ValueError
+            raise ValueError('User cannot report self.')
         self.flag_spam()
         report = {'date': datetime.datetime.utcnow(), 'retracted': False}
         report.update(kwargs)
@@ -265,6 +265,8 @@ class SpamMixin(StoredObject):
             if not self.reports[user._id]['retracted']:
                 self.reports[user._id]['retracted'] = True
                 self.remove_flag()
+        else:
+            raise ValueError('User has not reported this content')
         if save:
             self.save()
 
