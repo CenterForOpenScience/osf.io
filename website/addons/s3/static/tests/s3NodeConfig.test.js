@@ -80,17 +80,17 @@ var s3ViewModelSettings = {
 
 describe('s3NodeConfigViewModel', () => {
     describe('isValidBucketName', () => {
-    var chars = [];
-    for (var i = 0; i < 63; i++) {
-        chars.push('a');
-    }
+        var chars = [];
+        for (var i = 0; i < 63; i++) {
+            chars.push('a');
+        }
         var longName = chars.join('');
 
-    var moreChars = [];
-    for (var j = 0; j < 255; j++) {
-        moreChars.push('a');
-    }
-    var reallyLongName = moreChars.join('');
+        var moreChars = [];
+        for (var j = 0; j < 255; j++) {
+            moreChars.push('a');
+        }
+        var reallyLongName = moreChars.join('');
 
         it('allows these names in strict mode', (done) => {
             assert.isTrue(isValidBucketName('valid'), 'basic label');
@@ -101,7 +101,6 @@ describe('s3NodeConfigViewModel', () => {
             assert.isTrue(isValidBucketName('aa.22.cc'), 'mixed label types');
             assert.isTrue(isValidBucketName('a------a'), 'multiple hypens');
             assert.isTrue(isValidBucketName(longName), 'name up to 63 characters');
-            done();
         });
 
         it('DOES NOT allow these names in strict mode', (done) => {
