@@ -37,17 +37,17 @@ initiated an embargoed registration of
 
 ## Retraction related logs
 <script type="text/html" id="retraction_approved">
-approved retraction of registration of
+approved withdrawal of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="retraction_cancelled">
-cancelled retraction of registration of
+cancelled withdrawal of registration of
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
-initiated retraction of registration of
+initiated withdrawal of registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 

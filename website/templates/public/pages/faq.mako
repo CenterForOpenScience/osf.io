@@ -72,7 +72,7 @@
                         <p>You can view, download, delete, and rename any files uploaded into OSF Storage. Files in third party storage add-ons might have restrictions on renaming and downloading.</p>
 
                     <h4 class="m-t-lg f-w-lg">What is a registration?</h4>
-                        <p>A registration is a frozen version of your project that can never be edited or deleted, but you can issue a retraction of it later, leaving behind basic metadata. When you create the registration, you have the option of either making it public immediately or making it private for up to four years through an embargo. A registration is useful for certifying what you did in a project in advance of data analysis, or for confirming the exact state of the project at important points of the lifecycle, such as manuscript submission or the onset of data collection.</p>
+                        <p>A registration is a frozen version of your project that can never be edited or deleted, but you can issue a withdrawal of it later, leaving behind basic metadata. When you create the registration, you have the option of either making it public immediately or making it private for up to four years through an embargo. A registration is useful for certifying what you did in a project in advance of data analysis, or for confirming the exact state of the project at important points of the lifecycle, such as manuscript submission or the onset of data collection.</p>
 
                     <h4 class="m-t-lg f-w-lg">What if I don't want to register anything in the OSF?</h4>
                         <p>Registering is an optional feature of the OSF.</p>

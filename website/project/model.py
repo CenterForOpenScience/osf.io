@@ -3068,7 +3068,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
-                raise NodeStateError("Public registrations must be retracted, not made private.")
+                raise NodeStateError("Public registrations must be withdrawn, not made private.")
             else:
                 self.is_public = False
         else:
@@ -3327,10 +3327,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
 
         if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.is_pending_embargo)):
-            raise NodeStateError('Only public or embargoed registrations may be retracted.')
+            raise NodeStateError('Only public or embargoed registrations may be withdrawn.')
 
         if self.root is not self:
-            raise NodeStateError('Retraction of non-parent registrations is not permitted.')
+            raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
         retraction = self._initiate_retraction(user, justification)
         self.registered_from.add_log(
@@ -4060,7 +4060,11 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
 
 
 class Retraction(EmailApprovableSanction):
-    """Retraction object for public registrations."""
+    """
+    Retraction object for public registrations.
+    Externally (specifically in user-facing language) retractions should be referred to as "Withdrawals", i.e.
+    "Retract Registration" -> "Withdraw Registration", "Retracted" -> "Withdrawn", etc.
+    """
 
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'
