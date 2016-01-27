@@ -894,14 +894,13 @@ class JSONAPIRelationshipSerializer(ser.Serializer):
     Provides a simplified serialization of the relationship, allowing for simple update request
     bodies.
     """
-    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    id = ser.CharField(required=False, allow_null=True)
     type = TypeField(required=False, allow_null=True)
 
     def to_representation(self, obj):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
-
         relation_id_field = self.fields['id']
         attribute = relation_id_field.get_attribute(obj)
         relationship = relation_id_field.to_representation(attribute)

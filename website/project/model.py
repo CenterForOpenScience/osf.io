@@ -892,6 +892,31 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     piwik_site_id = fields.StringField()
 
+    # Primary institution node is attached to
+    primary_institution = fields.ForeignField('institution')
+
+    def add_primary_institution(self, user, inst):
+        if inst.auth(user):
+            self.primary_institution = inst
+            self.save()
+            return True
+        return False
+
+    def remove_primary_institution(self):
+        self.primary_institution = None
+        self.save()
+
+    def institution_id(self):
+        # Empty string over None, as None was somehow being serialized to <string>'None',
+        # there's probably a better way to do this or a problem there.
+        return self.primary_institution._id if self.primary_institution else ''
+
+    def institution_url(self):
+        return self.absolute_api_v2_url + 'institution/'
+
+    def institution_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institution/'
+
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
