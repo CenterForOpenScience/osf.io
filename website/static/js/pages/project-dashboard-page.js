@@ -20,8 +20,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
-// TODO: Uncomment when APIv2 concurrency issues are fixed
-// var NodesPrivacy = require('js/nodesPrivacy');
+var NodesPrivacy = require('js/nodesPrivacy');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -41,25 +40,31 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
-
-    // TODO: Uncomment when APIv2 concurrency issues are fixed
-    // if (window.contextVars.currentUser.isAdmin) {
-    //     new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data.node.is_public);
-    // }
+    if (data.user.is_admin) {
+        new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data.node.is_public);
+    }
 });
 
 // Initialize comment pane w/ its viewmodel
-var $comments = $('#comments');
+var $comments = $('.comments');
 if ($comments.length) {
-    var canComment = window.contextVars.currentUser.canComment;
-    var hasChildren = window.contextVars.node.hasChildren;
     var currentUser = {
         id: ctx.currentUser.id,
         url: ctx.currentUser.urls.profile,
-        name: ctx.currentUser.fullname,
+        fullname: ctx.currentUser.fullname,
         gravatarUrl: ctx.currentUser.gravatarUrl
     };
-    Comment.init('#commentPane', canComment, hasChildren, currentUser);
+    var options = {
+        nodeId : window.contextVars.node.id,
+        nodeApiUrl: window.contextVars.node.urls.api,
+        isRegistration: window.contextVars.node.isRegistration,
+        page: 'node',
+        rootId: window.contextVars.node.id,
+        canComment: window.contextVars.currentUser.canComment,
+        hasChildren: window.contextVars.node.hasChildren,
+        currentUser: currentUser
+    };
+    Comment.init('#commentsLink', '.comment-pane', options);
 }
 
 $(document).ready(function () {

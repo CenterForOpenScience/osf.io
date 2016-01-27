@@ -381,7 +381,12 @@ class User(GuidStoredObject, AddonModelMixin):
     # when comments for a node were last viewed
     comments_viewed_timestamp = fields.DictionaryField()
     # Format: {
-    #   'node_id': 'timestamp'
+    #   'node_id': {
+    #     'node': 'timestamp',
+    #     'files': {
+    #        'file_id': 'timestamp'
+    #     }
+    #   }
     # }
 
     # timezone for user's locale (e.g. 'America/New_York')
@@ -1344,6 +1349,20 @@ class User(GuidStoredObject, AddonModelMixin):
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
+
+    def get_node_comment_timestamps(self, node, page, file_id=None):
+        """ Returns the timestamp for when comments were last viewed on a node or
+            a dictionary of timestamps for when comments were last viewed on files.
+        """
+        default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
+        timestamps = self.comments_viewed_timestamp.get(node._id, {})
+        if page == 'node':
+            page_timestamps = timestamps.get(page, default_timestamp)
+        elif page == 'files':
+            page_timestamps = timestamps.get(page, {})
+            if file_id:
+                page_timestamps = page_timestamps.get(file_id, default_timestamp)
+        return page_timestamps
 
 
 def _merge_into_reversed(*iterables):

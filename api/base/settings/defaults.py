@@ -53,7 +53,7 @@ RAVEN_CONFIG = {
 }
 
 BULK_SETTINGS = {
-    'DEFAULT_BULK_LIMIT': 10
+    'DEFAULT_BULK_LIMIT': 100
 }
 
 REST_FRAMEWORK = {
@@ -166,3 +166,7 @@ SWAGGER_SETTINGS = {
 }
 
 DEBUG_TRANSACTIONS = DEBUG
+
+ENABLE_VARNISH = False
+ENABLE_ESI = False
+VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work

@@ -52,6 +52,68 @@
     padding-bottom: 10px;
 }
 
+/* Multiple device support for project nav-bar */
+@media (max-width: 767px) {
+    .osf-project-navbar li>a {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
+    .osf-project-navbar li #commentsLink {
+        font-size: 15px;
+        padding: 12px 30px;
+    }
+    .osf-project-navbar li #commentsLink:hover {
+        background-color: #DADADA;
+        text-decoration: none;
+    }
+    .osf-project-navbar a.project-title {
+    }
+    .project-nav {
+        overflow: hidden;
+    }
+
+    /* Allow project nav to move the content on small screen */
+    #projectBanner .osf-project-navbar {
+        position: relative;
+        top: 0;
+        margin-top: -55px;
+    }
+    #projectBanner {
+        margin-right: -15px;
+        margin-left: -15px;
+    }
+}
+
+@media (min-width: 768px) {
+    .osf-project-navbar li>a {
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 190px;
+    }
+}
+
+@media (min-width: 992px) {
+   .osf-project-navbar li>a {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 300px;
+    }
+}
+@media (min-width: 1200px) {
+    .osf-project-navbar li>a {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .osf-project-navbar a.project-title {
+        max-width: 400px;
+    }
+}
+
 .editable-error-block {
     font-size: 16px;
     max-width: 100%;

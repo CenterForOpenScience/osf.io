@@ -552,6 +552,35 @@ class TestNodeCreate(ApiTestCase):
         project = Node.load(pid)
         assert_equal(project.logs[-1].action, NodeLog.PROJECT_CREATED)
 
+    def test_creates_project_from_template(self):
+        template_from = ProjectFactory(creator=self.user_one, is_public=True)
+        template_component = ProjectFactory(creator=self.user_one, is_public=True, parent=template_from)
+        templated_project_title = 'Templated Project'
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': templated_project_title,
+                        'category': self.category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+
+        res = self.app.post_json_api(self.url, templated_project_data, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        json_data = res.json['data']
+
+        new_project_id = json_data['id']
+        new_project = Node.load(new_project_id)
+        assert_equal(new_project.title, templated_project_title)
+        assert_equal(new_project.description, None)
+        assert_false(new_project.is_public)
+        assert_equal(len(new_project.nodes), len(template_from.nodes))
+        assert_equal(new_project.nodes[0].title, template_component.title)
+
+
     def test_creates_project_creates_project_and_sanitizes_html(self):
         title = '<em>Cool</em> <strong>Project</strong>'
         description = 'An <script>alert("even cooler")</script> project'
@@ -708,9 +737,9 @@ class TestNodeBulkCreate(ApiTestCase):
                            ["This field may not be blank.", "This field may not be blank."])
 
     def test_bulk_create_limits(self):
-        node_create_list = {'data': [self.public_project] * 11}
+        node_create_list = {'data': [self.public_project] * 101}
         res = self.app.post_json_api(self.url, node_create_list, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
         res = self.app.get(self.url, auth=self.user_one.auth)
@@ -1071,9 +1100,9 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
     def test_bulk_update_limits(self):
-        node_update_list = {'data': [self.public_payload['data'][0]] * 11}
+        node_update_list = {'data': [self.public_payload['data'][0]] * 101}
         res = self.app.put_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_update_no_title_or_category(self):
@@ -1291,9 +1320,9 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
 
     def test_bulk_partial_update_limits(self):
-        node_update_list = {'data': [self.public_payload['data'][0]] * 11 }
+        node_update_list = {'data': [self.public_payload['data'][0]] * 101 }
         res = self.app.patch_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_partial_update_privacy_has_no_effect_on_tags(self):
@@ -1598,11 +1627,11 @@ class TestNodeBulkDelete(ApiTestCase):
         assert_equal(res.status_code, 200)
 
     def test_bulk_delete_limits(self):
-        new_payload = {'data': [{'id': self.private_project_user_one._id, 'type':'nodes'}] * 11 }
+        new_payload = {'data': [{'id': self.private_project_user_one._id, 'type':'nodes'}] * 101 }
         res = self.app.delete_json_api(self.url, new_payload,
                                        auth=self.user_one.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_invalid_payload_one_not_found(self):
