@@ -4,6 +4,7 @@ import sys
 import urlparse
 
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import database
 from framework.transactions.context import TokuTransaction
@@ -70,9 +71,9 @@ def migrate_to_external_account(user_settings_document):
 
     new = False
     try:
-        external_account = ExternalAccount.find(Q('provider_id', 'eq', user_info.id))[0]
+        external_account = ExternalAccount.find_one(Q('provider_id', 'eq', user_info.id))
         logger.info('Duplicate account use found: s3usersettings {0} with id {1}'.format(user_settings_document['_id'], user._id))
-    except IndexError:
+    except NoResultsFound:
         new = True
         external_account = ExternalAccount(
             provider=PROVIDER,
@@ -317,7 +318,6 @@ def migrate(dry_run=True):
 
 def main():
     dry_run = False
-    remove_old = True
     if '--dry' in sys.argv:
         dry_run = True
     if not dry_run:
