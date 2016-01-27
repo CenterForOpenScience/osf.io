@@ -3,11 +3,11 @@ import mock
 from boto.s3.connection import *  # noqa
 
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import UserFactory, ProjectFactory
+from tests.factories import ProjectFactory
 
 from framework.auth import Auth
 from website.addons.base.testing import models
-from website.addons.s3.model import S3NodeSettings, S3UserSettings
+from website.addons.s3.model import S3NodeSettings
 from website.addons.s3.tests.factories import (
     S3UserSettingsFactory,
     S3NodeSettingsFactory,

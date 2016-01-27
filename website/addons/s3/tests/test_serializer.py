@@ -12,11 +12,7 @@ from tests.base import OsfTestCase
 
 
 class TestS3Serializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
-    required_settings = ('userIsOwner', 'nodeHasAuth', 'urls', 'userHasAuth',)
-    required_settings_authorized = ('ownerName', )
-
     addon_short_name = 's3'
-
     Serializer = S3Serializer
     ExternalAccountFactory = S3AccountFactory
     client = None

@@ -6,12 +6,10 @@ from nose.tools import *  # noqa
 from boto.exception import S3ResponseError
 
 from framework.auth import Auth
-from tests.base import OsfTestCase, get_default_metaschema
+from tests.base import get_default_metaschema
 from tests.factories import ProjectFactory, AuthUserFactory
 
 from website.addons.base import testing
-from website.addons.s3.provider import S3Provider
-from website.addons.s3.settings import BUCKET_LOCATIONS
 from website.addons.s3.tests.utils import S3AddonTestCase
 from website.addons.s3.utils import validate_bucket_name, validate_bucket_location
 from website.util import api_url_for
@@ -158,7 +156,6 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
     @mock.patch('website.addons.s3.views.utils.get_bucket_names')
     def test_folder_list(self, mock_names):
         mock_names.return_value = ['bucket1', 'bucket2']
-        # pass
         super(TestS3Views, self).test_folder_list()
 
     def test_set_config(self):
