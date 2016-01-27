@@ -21,7 +21,7 @@ from .permissions import ReadOnlyOrCurrentUser
 
 
 class UserMixin(object):
-    """Mixin with convenience methods for retrieving the current node based on the
+    """Mixin with convenience methods for retrieving the current user based on the
     current URL. By default, fetches the user based on the user_id kwarg.
     """
 
@@ -292,9 +292,16 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        user = self.get_user()
+        current_user = self.request.user
+        queried_user = self.get_user()
+        if isinstance(current_user, AnonymousUser) or current_user._id != queried_user._id:
+            permissions_query = Q('is_public', 'eq', True)
+        else:
+            permissions_query = Q('contributors', 'contains', current_user._id)
+
         return (
-            Q('contributors', 'contains', user._id) &
+            permissions_query &
+            Q('contributors', 'contains', queried_user._id) &
             Q('is_folder', 'ne', True) &
             Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True) &
@@ -304,7 +311,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     # overrides ListAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
-        nodes = Node.find(self.get_default_odm_query() & query)
+        nodes = Node.find(query)
         return nodes
 
 
