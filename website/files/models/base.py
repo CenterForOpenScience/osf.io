@@ -67,7 +67,7 @@ class TrashedFileNode(StoredObject):
         """
         return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
 
-    def restore(self):
+    def restore(self, recursive=True, parent=None):
         """Recreate a StoredFileNode from the data in this object
         Will re-point all guids and finally remove itself
         :raises KeyExistsException:
@@ -76,7 +76,14 @@ class TrashedFileNode(StoredObject):
         data.pop('deleted_on')
         data.pop('deleted_by')
         restored = FileNode.resolve_class(self.provider, int(self.is_file))(**data)
+        if parent:
+            restored.parent = parent
         restored.save()
+
+        if recursive:
+            for child in TrashedFileNode.find(Q('parent', 'eq', self)):
+                child.restore(recursive=recursive, parent=restored)
+
         TrashedFileNode.remove_one(self)
         return restored
 
