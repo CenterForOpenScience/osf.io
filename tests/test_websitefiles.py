@@ -355,14 +355,14 @@ class TestFileNodeObj(FilesTestCase):
                     materialized_path='{}/{}'.format(parent.materialized_path, 'name{}'.format(i)),
                 ).wrapped()
                 fn.save()
-                random.randint(0,5) == 1
+                random.randint(0, 5) == 1
                 if is_folder:
                     build_tree(acc, fn)
                 acc.append(fn)
-                is_folder = random.randint(0,5) == 1
+                is_folder = random.randint(0, 5) == 1
             return acc
 
-        level1 = models.StoredFileNode(
+        parent = models.StoredFileNode(
             path='afolder',
             name='folder_name',
             is_file=False,
@@ -370,16 +370,44 @@ class TestFileNodeObj(FilesTestCase):
             provider='test',
             materialized_path='/long/path/to/folder_name',
         ).wrapped()
-        level1.save()
-        children = build_tree(parent=level1, atleastone=True)
-        print(children)
-        before = [level1.to_storage()] + [child.to_storage() for child in children]
-        trashed = level1.delete()
-        for data in before:
+        parent.save()
+
+        branch = models.StoredFileNode(
+            path='afolder',
+            name='folder_name',
+            is_file=False,
+            node=self.node,
+            provider='test',
+            parent=parent._id,
+            materialized_path='/long/path/to/folder_name',
+        ).wrapped()
+        branch.save()
+
+        round1 = build_tree(parent=branch, atleastone=True)
+        round2 = build_tree(parent=parent, atleastone=True)
+
+        stay_deleted = [branch.to_storage()] + [child.to_storage() for child in round1]
+        get_restored = [parent.to_storage()] + [child.to_storage() for child in round2]
+
+        branch.delete()
+
+        for data in stay_deleted:
             assert_true(models.TrashedFileNode.load(data['_id']))
             assert_is(models.StoredFileNode.load(data['_id']), None)
+
+        trashed = parent.delete()
+
+        for data in get_restored:
+            assert_true(models.TrashedFileNode.load(data['_id']))
+            assert_is(models.StoredFileNode.load(data['_id']), None)
+
         trashed.restore()
-        for data in before:
+
+        for data in stay_deleted:
+            assert_true(models.TrashedFileNode.load(data['_id']))
+            assert_is(models.StoredFileNode.load(data['_id']), None)
+
+        for data in get_restored:
             assert_is(models.TrashedFileNode.load(data['_id']), None)
             assert_equals(models.StoredFileNode.load(data['_id']).to_storage(), data)
 
