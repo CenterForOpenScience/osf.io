@@ -2036,7 +2036,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # correct URLs to that content.
         forked = original.clone()
 
-        forked.logs = self.logs
         forked.tags = self.tags
 
         # Recursively fork child nodes
@@ -2081,6 +2080,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=False
         )
 
+        forked.save()
+
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
@@ -2093,7 +2094,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=False,
         )
 
-        forked.save()
+
 
         # Clone each log from the original node for this fork.
         logs = original.logs
