@@ -595,7 +595,9 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         isAdmin: nodeTree.node.is_admin,
         visibleContributors: nodeTree.node.visible_contributors,
         adminContributors: adminContributors,
-        registeredContributors: registeredContributors
+        registeredContributors: registeredContributors,
+        canWrite: nodeTree.node.can_write,
+        changed: false
     };
 
     if (nodeTree.children) {

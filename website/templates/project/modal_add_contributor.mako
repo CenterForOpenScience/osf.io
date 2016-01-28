@@ -202,9 +202,9 @@
 
                     <div>
                         Select:&nbsp;
-                        <a class="text-bigger" data-bind="click:selectAll">Make all public</a>
+                        <a class="text-bigger" data-bind="click:selectAllNodes">Select all</a>
                         &nbsp;|&nbsp;
-                        <a class="text-bigger" data-bind="click:selectNone">Make all private</a>
+                        <a class="text-bigger" data-bind="click:selectNoNodes">Select none</a>
                     </div>
                     <div class="tb-row-titles">
                         <div style="width: 100%" data-tb-th-col="0" class="tb-th">

@@ -12,7 +12,7 @@ var oop = require('js/oop');
 var $osf = require('js/osfHelpers');
 var osfLanguage = require('js/osfLanguage');
 var Paginator = require('js/paginator');
-var AddContributorsTreebeard = require('js/addContributorsTreebeard');
+var NodeSelectTreebeard = require('js/nodeSelectTreebeard');
 var m = require('mithril');
 
 var NODE_OFFSET = 25;
@@ -59,7 +59,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
 
         self.hasChildren = ko.observable(false);
 
-
         //list of permission objects for select.
         self.permissionList = [
             {value: 'read', text: 'Read'},
@@ -82,6 +81,14 @@ var AddContributorViewModel = oop.extend(Paginator, {
         });
         self.contributors = ko.observableArray([]);
         self.selection = ko.observableArray();
+        self.contributorIDsToAdd = ko.computed(function() {
+            var contributorIDs = [];
+            for (var i = 0; i < self.selection().length; i++) {
+                contributorIDs.push(self.selection()[i].id);
+            }
+            return contributorIDs;
+        });
+
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
         self.totalPages = ko.observable(0);
@@ -128,6 +135,22 @@ var AddContributorViewModel = oop.extend(Paginator, {
         this.page('whom');
     },
     selectWhich: function() {
+        var self = this;
+        var nodesStateLocal = self.nodesState();
+        for (var key in nodesStateLocal) {
+            var node = nodesStateLocal[key];
+            var canWrite = nodesStateLocal[key].canWrite;
+            if (canWrite) {
+                canWrite = false;
+                for (var i = 0; i < self.contributorIDsToAdd().length; i++) {
+                    if (node.contributors.indexOf(self.contributorIDsToAdd()[i]) < 0) {
+                        canWrite = true;
+                    }
+                }
+            }
+            nodesStateLocal[key].canWrite = canWrite;
+        }
+        self.nodesState(nodesStateLocal);
         this.page('which');
     },
     selectTreebeard: function() {
@@ -318,18 +341,18 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         return false;
     },
-    selectAll: function() {
+    selectAllNodes: function() {
         var self = this;
-        var nodesState = ko.toJS(self.nodesState());
-        for (var node in nodesState) {
-            if (nodesState[node].canWrite) {
-                nodesState[node].changed = true;
+        var nodesStateLocal = ko.toJS(self.nodesState());
+        for (var key in nodesStateLocal) {
+            if (nodesStateLocal[key].canWrite) {
+                nodesStateLocal[key].changed = true;
             }
         }
-        self.nodesState(nodesState);
+        self.nodesState(nodesStateLocal);
         m.redraw(true);
     },
-    selectNone: function() {
+    selectNoNodes: function() {
         var self = this;
         var nodesState = ko.toJS(self.nodesState());
         for (var node in nodesState) {
@@ -478,7 +501,7 @@ ContribAdder.prototype.init = function() {
     self.viewModel.getContributors();
     self.viewModel.getEditableChildren();
     self.viewModel.fetchNodeTree().done(function(response) {
-        new AddContributorsTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
+        new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
     });
     ko.applyBindings(self.viewModel, self.$element[0]);
     // Clear popovers on dismiss start

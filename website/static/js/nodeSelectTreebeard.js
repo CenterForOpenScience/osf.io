@@ -4,7 +4,6 @@ var $ = require('jquery');
 var m = require('mithril');
 var ko = require('knockout');
 var Treebeard = require('treebeard');
-var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 
@@ -39,11 +38,12 @@ function openAncestors (tb, item) {
     }
 }
 
-function AddContributorsTreebeard(divID, data, nodesState) {
+function NodeSelectTreebeard(divID, data, nodesState) {
     /**
      * nodesChanged and nodesState are knockout variables.  nodesChanged will keep track of the nodes that have
      *  changed state.  nodeState is all the nodes in their current state.
      * */
+    var nodesStateLocal = ko.toJS(nodesState());
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: divID,
         filesData: data,
@@ -66,12 +66,10 @@ function AddContributorsTreebeard(divID, data, nodesState) {
                 }
             ];
         },
-        resolveRows: function addContributorsResolveRows(item){
+        resolveRows: function nodeSelectResolveRows(item){
             var tb = this;
             var columns = [];
             var id = item.data.node.id;
-            var nodesStateLocal = ko.toJS(nodesState());
-
             columns.push(
                 {
                     data : 'action',
@@ -79,12 +77,11 @@ function AddContributorsTreebeard(divID, data, nodesState) {
                     filter : false,
                     custom : function () {
                         return m('input[type=checkbox]', {
-                            disabled : !item.data.node.can_write,
+                            disabled : !nodesStateLocal[id].canWrite,
                             onclick : function() {
                                 item.data.node.changed = !item.data.node.changed;
                                 item.open = true;
                                 nodesStateLocal[id].changed = !nodesStateLocal[id].changed;
-                                nodesState(nodesStateLocal);
                                 tb.updateFolder(null, item);
                             },
                             checked: nodesState()[id].changed
@@ -98,15 +95,21 @@ function AddContributorsTreebeard(divID, data, nodesState) {
                     sortInclude: false,
                     hideColumnTitles: false,
                     custom: function () {
-                        return m('span', item.data.node.title);
+                        if (nodesStateLocal[id].canWrite) {
+                            return m('span', item.data.node.title);
+                        }
+                        else {
+                            return m('span', {class: 'text-muted'}, item.data.node.title);
+                        }
                     }
                 }
             );
             return columns;
         }
     });
+    nodesState(nodesStateLocal);
     var grid = new Treebeard(tbOptions);
     expandOnLoad.call(grid.tbController);
 }
-module.exports = AddContributorsTreebeard;
+module.exports = NodeSelectTreebeard;
 
