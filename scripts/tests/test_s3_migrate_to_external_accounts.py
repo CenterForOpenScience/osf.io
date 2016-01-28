@@ -165,11 +165,11 @@ class TestS3Migration(OsfTestCase):
         migration.migrate(dry_run=False)
         assert_equal(
             S3UserSettings.find().count(),
-            6
+            len(self.linked_user_settings + self.unlinked_user_settings)
         )
         assert_equal(
             S3NodeSettings.find().count(),
-            4
+            len(self.node_settings_documents + self.node_settings_no_encrypt)
         )
         for user_settings in S3UserSettings.find():
             assert_is_not_none(user_settings.owner)
