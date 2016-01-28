@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}
-    <title>Node</title>
+    <title>User</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <form action="{% url 'nodes:node' %}" method="post">
+            <form action="{% url 'users:user' %}" method="post">
                 {% csrf_token %}
                 {{ form.errors }}
                 <div class="form-group">
