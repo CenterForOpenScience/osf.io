@@ -558,6 +558,7 @@ class NodeLog(StoredObject):
         node = Node.find(Q('_id', 'eq', node_id))[0]
         log_clone = original_log.clone()
         log_clone.node = node
+        log_clone.original_node = original_log.original_node
         log_clone.user = original_log.user
         log_clone.save()
         return log_clone
