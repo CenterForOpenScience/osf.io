@@ -15,11 +15,11 @@ from framework.transactions.context import TokuTransaction
 logger = logging.getLogger(__name__)
 
 
-def get_original_node(log):
+def lookup_node(node_id):
     """
     Retrieves original node on nodelog
     """
-    return models.Node.find(Q('_id', 'eq', log._backrefs['logged']['node']['logs'][0]))[0]
+    return models.Node.find(Q('_id', 'eq', node_id))[0]
 
 
 def main(dry=True):
@@ -31,8 +31,9 @@ def main(dry=True):
     for log in node_logs:
         count += 1
         with TokuTransaction():
-            log.original_node = get_original_node(log)
-            log.node = get_original_node(log)
+            original_node = lookup_node(log.params['node'])
+            log.original_node = original_node
+            log.node = lookup_node(log._backrefs['logged']['node']['logs'][0])
             if not dry:
                 try:
                     log.save()
@@ -43,17 +44,16 @@ def main(dry=True):
                     errored_logs.append(log)
 
             errored_clones = []
-            for node in log._backrefs['logged']['node']['logs']:
-                if node != log.original_node._id:
-                    clone = log.clone_node_log(node)
-                    clone.original_node = get_original_node(log)
-                    try:
-                        clone.save()
-                        logger.info('Log {} cloned for node {}. New log is {}'.format(log._id, node, clone._id))
-                    except KeyError as error:
-                        logger.error('Could not copy node log due to error')
-                        logger.exception(error)
-                        errored_clones.append([log, clone])
+            for node in log._backrefs['logged']['node']['logs'][1:]:
+                clone = log.clone_node_log(node)
+                clone.original_node = original_node
+                try:
+                    clone.save()
+                    logger.info('Log {} cloned for node {}. New log is {}'.format(log._id, node, clone._id))
+                except KeyError as error:
+                    logger.error('Could not copy node log due to error')
+                    logger.exception(error)
+                    errored_clones.append([log, clone])
 
 
 if __name__ == '__main__':

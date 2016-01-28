@@ -2437,7 +2437,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             foreign_user=foreign_user,
             params=params,
             node=self,
-            original_node=self
+            original_node=params['node']
         )
 
         if log_date:
