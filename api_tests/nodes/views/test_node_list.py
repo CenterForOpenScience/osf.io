@@ -1748,4 +1748,102 @@ class TestNodeBulkDeleteSkipUneditable(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 
+class TestNodeListPagination(ApiTestCase):
 
+    def setUp(self):
+        super(TestNodeListPagination, self).setUp()
+        self.user_one = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.user_three = AuthUserFactory()
+        self.user_four = AuthUserFactory()
+        self.user_five = AuthUserFactory()
+        self.user_six = AuthUserFactory()
+        self.user_seven = AuthUserFactory()
+        self.user_eight = AuthUserFactory()
+        self.user_nine = AuthUserFactory()
+        self.user_ten = AuthUserFactory()
+        self.user_eleven = AuthUserFactory()
+
+        self.users = [
+            self.user_one,
+            self.user_two,
+            self.user_three,
+            self.user_four,
+            self.user_five,
+            self.user_six,
+            self.user_seven,
+            self.user_eight,
+            self.user_nine,
+            self.user_ten,
+            self.user_eleven,
+        ]
+
+        # Ordered by date modified: oldest first
+        self.project_eleven = ProjectFactory(title="Project Eleven", is_public=True, creator=self.user_one)
+        self.project_ten = ProjectFactory(title="Project Ten", is_public=True, creator=self.user_one)
+        self.project_nine = ProjectFactory(title="Project Nine", is_public=True, creator=self.user_one)
+        self.project_eight = ProjectFactory(title="Project Eight", is_public=True, creator=self.user_one)
+        self.project_seven = ProjectFactory(title="Project Seven", is_public=True, creator=self.user_one)
+        self.project_six = ProjectFactory(title="Project Six", is_public=True, creator=self.user_one)
+        self.project_five = ProjectFactory(title="Project Five", is_public=True, creator=self.user_one)
+        self.project_four = ProjectFactory(title="Project Four", is_public=True, creator=self.user_one)        
+        self.project_three = ProjectFactory(title="Project Three", is_public=True, creator=self.user_one)
+        self.project_two = ProjectFactory(title="Project Two",  is_public=True, creator=self.user_one)
+        self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user_one)
+
+        self.projects = [
+            self.project_one,
+            self.project_two,
+            self.project_three,
+            self.project_four,
+            self.project_five,
+            self.project_six,
+            self.project_seven,
+            self.project_eight,
+            self.project_nine,
+            self.project_ten,
+            self.project_eleven,
+        ]
+
+        self.url = '/{}nodes/'.format(API_BASE)
+
+    def tearDown(self):
+        super(TestNodeListPagination, self).tearDown()
+        Node.remove()
+
+    def test_default_pagination_size(self):
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        pids = [e['id'] for e in res.json['data']]
+        for project in self.projects[:9]:
+            assert_in(project._id, pids)
+        assert_not_in(self.project_eleven._id, pids)
+        assert_equal(res.json['links']['meta']['per_page'], 10)
+
+    def test_max_page_size_enforced(self):
+        url = '{}?page[size]=1000'.format(self.url)
+        res = self.app.get(url, auth=self.user_one.auth)
+        pids = [e['id'] for e in res.json['data']]
+        for project in self.projects:
+            assert_in(project._id, pids)
+        assert_equal(res.json['links']['meta']['per_page'], 100)
+
+    def test_embed_page_size_not_affected(self):
+        for user in self.users[1:]:
+            self.project_one.add_contributor(user, auth=Auth(self.user_one), save=True)
+
+        url = '{}?page[size]=1000&embed=contributors'.format(self.url)
+        res = self.app.get(url, auth=self.user_one.auth)
+        pids = [e['id'] for e in res.json['data']]
+        for project in self.projects:
+            assert_in(project._id, pids)
+        assert_equal(res.json['links']['meta']['per_page'], 100)
+
+        uids = [e['id'] for e in res.json['data'][0]['embeds']['contributors']['data']]
+        for user in self.users[:9]:
+            assert_in(user._id, uids)
+        assert_not_in(self.user_eleven._id, uids)
+        assert_equal(res.json['data'][0]['embeds']['contributors']['links']['meta']['per_page'], 10)
+
+
+
+        
