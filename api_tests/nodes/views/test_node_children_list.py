@@ -114,7 +114,7 @@ class TestNodeChildrenList(ApiTestCase):
         retraction = RetractedRegistrationFactory(registration=registration, user=self.user)
         url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
 
 class TestNodeChildrenListFiltering(ApiTestCase):
@@ -252,7 +252,7 @@ class TestNodeChildCreate(ApiTestCase):
                 }
             }
         }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
     def test_creates_child_no_type(self):
         child = {
@@ -331,10 +331,10 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_bulk_creates_children_limits(self):
-        res = self.app.post_json_api(self.url, {'data': [self.child] * 11},
+        res = self.app.post_json_api(self.url, {'data': [self.child] * 101},
                                      auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_creates_children_logged_out_user(self):
@@ -443,7 +443,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                 }
             }]
         }, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
         self.project.reload()
         assert_equal(len(self.project.nodes), 0)

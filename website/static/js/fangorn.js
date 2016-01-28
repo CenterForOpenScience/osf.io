@@ -498,7 +498,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             message = textStatus;
         } else {
             message = 'Please refresh the page or ' +
-                'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }
 
@@ -747,6 +747,9 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     treebeard.redraw();
 }
 
+function _fangornDropzoneRemovedFile(treebeard, file, message, xhr) {
+    addFileStatus(treebeard, file, false, 'Upload Canceled.', '');
+}
 /**
  * runs when Dropzone's error hook runs. Notifies user with error.
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
@@ -765,13 +768,17 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         msgText = 'Cannot upload directories, applications, or packages.';
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
-    } else if (xhr && xhr.status === 0){
+    } else if (xhr && xhr.status === 0) {
         msgText = 'Unable to reach the provider, please try again later. If the ' +
-                'problem persists, please contact support@osf.io.';
+            'problem persists, please contact support@osf.io.';
     } else {
         //Osfstorage and most providers store message in {Object}message.{string}message,
         //but some, like Dataverse, have it in {string} message.
-        msgText = message ? (message.message || message) : DEFAULT_ERROR_MESSAGE;
+        if (message){
+            msgText = message.message ? message.message : (typeof message === 'string' ? message : DEFAULT_ERROR_MESSAGE);
+        } else {
+            msgText = DEFAULT_ERROR_MESSAGE;
+        }
     }
     var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
@@ -787,8 +794,11 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
+    console.log(file);
     treebeard.options.uploadInProgress = false;
-    addFileStatus(treebeard, file, false, msgText, '');
+    if (msgText !== 'Upload canceled.') {
+        addFileStatus(treebeard, file, false, msgText, '');
+    }
 }
 
 /**
@@ -1176,7 +1186,7 @@ function _fangornTitleColumn(item, col) {
             };
         }
         return m(
-            'span', 
+            'span',
             attrs,
             item.data.name
         );
@@ -1431,7 +1441,7 @@ function _renameEvent () {
 
 var toolbarModes = {
     'DEFAULT' : 'bar',
-    'SEARCH' : 'search',
+    'FILTER' : 'filter',
     'ADDFOLDER' : 'addFolder',
     'RENAME' : 'rename',
     'ADDPROJECT' : 'addProject'
@@ -1645,7 +1655,7 @@ var FGItemButtons = {
 
 var dismissToolbar = function(){
     var tb = this;
-    if (tb.toolbarMode() === toolbarModes.SEARCH){
+    if (tb.toolbarMode() === toolbarModes.FILTER){
         tb.resetFilter();
     }
     tb.toolbarMode(toolbarModes.DEFAULT);
@@ -1678,7 +1688,7 @@ var FGToolbar = {
                 onclick: ctrl.dismissToolbar,
                 icon : 'fa fa-times'
             }, '');
-        templates[toolbarModes.SEARCH] =  [
+        templates[toolbarModes.FILTER] =  [
             m('.col-xs-10', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
                 ]),
@@ -1794,11 +1804,11 @@ var FGToolbar = {
         generalButtons.push(
             m.component(FGButton, {
                 onclick: function(event){
-                    ctrl.mode(toolbarModes.SEARCH);
+                    ctrl.mode(toolbarModes.FILTER);
                 },
                 icon: 'fa fa-search',
                 className : 'text-primary'
-            }, 'Search'));
+            }, 'Filter'));
             if (ctrl.tb.options.placement !== 'fileview') {
                 generalButtons.push(m.component(FGButton, {
                     onclick: function(event){
@@ -1913,7 +1923,7 @@ function openParentFolders (item) {
     var tb = this;
     var scrollToItem = false;
     filterRowsNotInParent.call(tb, tb.multiselected());
-    if (tb.toolbarMode() === 'search') {
+    if (tb.toolbarMode() === 'filter') {
         dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
@@ -2312,7 +2322,7 @@ tbOptions = {
         reapplyTooltips();
     },
     onmultiselect : _fangornMultiselect,
-    filterPlaceholder : 'Search',
+    filterPlaceholder : 'Filter',
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
     dropzone : {                                           // All dropzone options.
@@ -2340,6 +2350,7 @@ tbOptions = {
         sending : _fangornSending,
         complete : _fangornComplete,
         success : _fangornDropzoneSuccess,
+        removedfile: _fangornDropzoneRemovedFile,
         error : _fangornDropzoneError,
         dragover : _fangornDragOver,
         addedfile : _fangornAddedFile,

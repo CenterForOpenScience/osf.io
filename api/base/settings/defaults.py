@@ -53,7 +53,7 @@ RAVEN_CONFIG = {
 }
 
 BULK_SETTINGS = {
-    'DEFAULT_BULK_LIMIT': 10
+    'DEFAULT_BULK_LIMIT': 100
 }
 
 REST_FRAMEWORK = {
@@ -169,3 +169,7 @@ DEBUG_TRANSACTIONS = DEBUG
 
 JWT_SECRET = 'osf_api_cas_login_jwt_secret_32b'
 JWE_SECRET = 'osf_api_cas_login_jwe_secret_32b'
+
+ENABLE_VARNISH = False
+ENABLE_ESI = False
+VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work

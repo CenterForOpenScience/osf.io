@@ -34,9 +34,15 @@ def get_or_create_user(fullname, address):
         return user, True
 
 class InstitutionSerializer(JSONAPISerializer):
+
+    filterable_fields = frozenset([
+        'id',
+        'name'
+    ])
+
     name = ser.CharField(required=False)
     id = ser.CharField(required=False, source='_id')
-    logopath = ser.CharField(source='logo_path')
+    logo_path = ser.CharField()
     links = LinksField({'self': 'get_api_url',
                         'html': 'get_absolute_url', })
 

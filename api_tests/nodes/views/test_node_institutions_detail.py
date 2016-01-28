@@ -1,7 +1,7 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests.factories import InstitutionFactory, NodeFactory
+from tests.factories import InstitutionFactory, NodeFactory, AuthUserFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -12,7 +12,8 @@ class TestNodeInstitutionDetail(ApiTestCase):
         self.node = NodeFactory(is_public=True)
         self.node.primary_institution = self.institution
         self.node.save()
-        self.node2 = NodeFactory()
+        self.user = AuthUserFactory()
+        self.node2 = NodeFactory(creator=self.user)
 
     def test_return_institution(self):
         url = '/{0}nodes/{1}/institution/'.format(API_BASE, self.node._id)
@@ -24,6 +25,9 @@ class TestNodeInstitutionDetail(ApiTestCase):
 
     def test_return_no_institution(self):
         url = '/{0}nodes/{1}/institution/'.format(API_BASE, self.node2._id)
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(
+                url, auth=self.user.auth,
+                expect_errors=True
+        )
 
-        assert_equal(res.status_code, 401)
+        assert_equal(res.status_code, 404)

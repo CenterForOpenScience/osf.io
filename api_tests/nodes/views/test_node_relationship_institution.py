@@ -132,8 +132,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'], None)
+        assert_equal(res.status_code, 204)
         node.reload()
         assert_equal(node.primary_institution, None)
 
@@ -184,8 +183,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'], None)
+        assert_equal(res.status_code, 204)
         node.reload()
         assert_equal(node.primary_institution, None)
 

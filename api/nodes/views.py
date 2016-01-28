@@ -1,9 +1,11 @@
 import requests
 
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
-from rest_framework.status import is_server_error
+from rest_framework.status import is_server_error, HTTP_204_NO_CONTENT
+from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -11,8 +13,8 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
-from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
+from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
+from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
@@ -38,16 +40,16 @@ from api.nodes.permissions import (
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
-    ExcludeRetractions
+    ExcludeRetractions,
 )
 from api.base.exceptions import ServiceUnavailableError
 from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.files.models import FileNode
-from website.files.models import OsfStorageFileNode
 from website.models import Node, Pointer, Comment, Institution, NodeLog
+from website.files.models import OsfStorageFileNode, StoredFileNode, FileNode
+from website.files.models.dropbox import DropboxFile
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
 
@@ -68,7 +70,7 @@ class NodeMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder:
+        if node.is_folder or node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -99,7 +101,9 @@ class WaterButlerMixin(object):
         node = self.get_node(check_object_permissions=False)
         path = self.kwargs[self.path_lookup_url_kwarg]
         provider = self.kwargs[self.provider_lookup_url_kwarg]
+        return self.get_file_object(node, path, provider)
 
+    def get_file_object(self, node, path, provider, check_object_permissions=True):
         if provider == 'osfstorage':
             # Kinda like /me for a user
             # The one odd case where path is not really path
@@ -112,8 +116,8 @@ class WaterButlerMixin(object):
                     Q('_id', 'eq', path.strip('/')) &
                     Q('is_file', 'eq', not path.endswith('/'))
                 )
-
-            self.check_object_permissions(self.request, obj)
+            if check_object_permissions:
+                self.check_object_permissions(self.request, obj)
 
             return obj
 
@@ -139,7 +143,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -189,11 +193,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                          "data": {
                            "type": "nodes", # required
                            "attributes": {
-                             "title":       {title},          # required
-                             "category":    {category},       # required
-                             "description": {description},    # optional
-                             "tags":        [{tag1}, {tag2}], # optional
-                             "public":      true|false        # optional
+                             "title":         {title},          # required
+                             "category":      {category},       # required
+                             "description":   {description},    # optional
+                             "tags":          [{tag1}, {tag2}], # optional
+                             "public":        true|false        # optional
+                             "template_from": {node_id}         # optional
                            }
                          }
                        }
@@ -240,7 +245,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
+            Q('is_folder', 'ne', True) &
+            Q('is_registration', 'ne', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
@@ -250,14 +256,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         query = base_query & permission_query
         return query
 
-    def filter_non_retracted_nodes(self, query):
-        nodes = Node.find(query)
-        # Refetching because this method needs to return a queryset instead of a
-        # list comprehension for subsequent filtering on ordering.
-        non_retracted_list = [node._id for node in nodes if not node.is_retracted]
-        non_retracted_nodes = Node.find(Q('_id', 'in', non_retracted_list))
-        return non_retracted_nodes
-
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
@@ -265,14 +263,26 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
-            nodes = self.filter_non_retracted_nodes(query)
+            nodes = Node.find(query)
+
+            # If skip_uneditable=True in query_params, skip nodes for which the user
+            # does not have EDIT permissions.
+            if is_truthy(self.request.query_params.get('skip_uneditable', False)):
+                has_permission = []
+                for node in nodes:
+                    if node.can_edit(auth):
+                        has_permission.append(node)
+
+                query = Q('_id', 'in', [node._id for node in has_permission])
+                return Node.find(query)
+
             for node in nodes:
                 if not node.can_edit(auth):
                     raise PermissionDenied
             return nodes
         else:
             query = self.get_query_from_request()
-            return self.filter_non_retracted_nodes(query)
+            return Node.find(query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
@@ -297,10 +307,28 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     # overrides BulkDestroyJSONAPIView
     def allow_bulk_destroy_resources(self, user, resource_list):
         """User must have admin permissions to delete nodes."""
-        for node in resource_list:
-            if not node.has_permission(user, ADMIN):
-                return False
-        return True
+        if is_truthy(self.request.query_params.get('skip_uneditable', False)):
+            return any([node.has_permission(user, ADMIN) for node in resource_list])
+        return all([node.has_permission(user, ADMIN) for node in resource_list])
+
+    def bulk_destroy_skip_uneditable(self, resource_object_list, user, object_type):
+        """
+        If skip_uneditable=True in query_params, skip the resources for which the user does not have
+        admin permissions and delete the remaining resources
+        """
+        allowed = []
+        skipped = []
+
+        if not is_truthy(self.request.query_params.get('skip_uneditable', False)):
+            return None
+
+        for resource in resource_object_list:
+            if resource.has_permission(user, ADMIN):
+                allowed.append(resource)
+            else:
+                skipped.append({'id': resource._id, 'type': object_type})
+
+        return {'skipped': skipped, 'allowed': allowed}
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -312,7 +340,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         instance.save()
 
 
-class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
     """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -1150,22 +1178,31 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     found [here](/v2/#storage-providers).
 
         name          type               description
-        ---------------------------------------------------------------------------------
-        name          string             name of the file or folder; use for display
-        kind          string             "file" or "folder"
-        path          url path           unique path for this entity, used in "move" actions
-        size          integer            size of file in bytes, null for folders
-        provider      string             storage provider for this file. "osfstorage" if stored on the OSF.  Other
-                                         examples include "s3" for Amazon S3, "googledrive" for Google Drive, "box"
-                                         for Box.com.
-        last_touched  iso8601 timestamp  last time the metadata for the file was retrieved. only applies to non-OSF
-                                         storage providers.
-        date_modified iso8601 timestamp  timestamp of when this file was last updated
-        extra         object             may contain additional data beyond what's described here, depending on
-                                         the provider
-          hashes      object
-            md5       string             md5 hash of file, null for folders
-            sha256    string             SHA-256 hash of file, null for folders
+        ---------------------------------------------------------------------------------------------------
+        name              string             name of the file or folder; used for display
+        kind              string             "file" or "folder"
+        path              string             same as for corresponding WaterButler entity
+        materialized_path string             the unix-style path to the file relative to the provider root
+        size              integer            size of file in bytes, null for folders
+        provider          string             storage provider for this file. "osfstorage" if stored on the
+                                             OSF.  other examples include "s3" for Amazon S3, "googledrive"
+                                             for Google Drive, "box" for Box.com.
+        last_touched      iso8601 timestamp  last time the metadata for the file was retrieved. only
+                                             applies to non-OSF storage providers.
+        date_modified     iso8601 timestamp  timestamp of when this file was last updated*
+        date_created      iso8601 timestamp  timestamp of when this file was created*
+        extra             object             may contain additional data beyond what's described here,
+                                             depending on the provider
+          hashes          object
+            md5           string             md5 hash of file, null for folders
+            sha256        string             SHA-256 hash of file, null for folders
+
+    * A note on timestamps: for files stored in osfstorage, `date_created` refers to the time the file was
+    first uploaded to osfstorage, and `date_modified` is the time the file was last updated while in osfstorage.
+    Other providers may or may not provide this information, but if they do it will correspond to the provider's
+    semantics for created/modified times.  These timestamps may also be stale; metadata retrieved via the File Detail
+    endpoint is cached.  The `last_touched` field describes the last time the metadata was retrieved from the external
+    provider.  To force a metadata update, access the parent folder via its Node Files List endpoint.
 
     ##Links
 
@@ -1774,6 +1811,9 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         date_modified  iso8601 timestamp  timestamp when the comment was last updated
         modified       boolean            has this comment been edited?
         deleted        boolean            is this comment deleted?
+        is_abuse       boolean            has this comment been reported by the current user?
+        has_children   boolean            does this comment have replies?
+        can_edit       boolean            can the current user edit this comment?
 
     ##Links
 
@@ -1852,9 +1892,46 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('target', 'eq', self.get_node())
+        return Q('node', 'eq', self.get_node()) & Q('root_target', 'ne', None)
 
     def get_queryset(self):
+        commented_files = []
+        comments = Comment.find(self.get_query_from_request())
+        for comment in comments:
+            # Deleted root targets still appear as tuples in the database,
+            # but need to be None in order for the query to be correct.
+            if comment.root_target is None:
+                comment.root_target = None
+                comment.save()
+
+            if isinstance(comment.root_target, StoredFileNode) and comment.root_target not in commented_files:
+                commented_files.append(comment.root_target)
+
+        for root_target in commented_files:
+            if root_target.provider == 'dropbox':
+                root_target = DropboxFile.load(root_target._id)
+
+            if root_target.provider == 'osfstorage':
+                try:
+                    StoredFileNode.find(
+                        Q('node', 'eq', self.get_node()._id) &
+                        Q('_id', 'eq', root_target._id) &
+                        Q('is_file', 'eq', True)
+                    )
+                except NoResultsFound:
+                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
+                    del root_target.node.commented_files[root_target._id]
+
+            else:
+                url = waterbutler_api_url_for(self.get_node()._id, root_target.provider, root_target.path, meta=True)
+                waterbutler_request = requests.get(
+                    url,
+                    cookies=self.request.COOKIES,
+                    headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
+                )
+                if waterbutler_request.status_code == 404:
+                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
+
         return Comment.find(self.get_query_from_request())
 
     def get_serializer_class(self):
@@ -1952,7 +2029,7 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
                            null
                          }
                        }
-        Success:       200
+        Success:       204
 
     This requires admin permission on the node.
     """
@@ -1964,7 +2041,7 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     serializer_class = NodeInstitutionRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
 
     view_category = 'nodes'
     view_name = 'node-relationships-institution'
@@ -1972,3 +2049,16 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_node()
+
+    def update(self, request, *args, **kwargs):
+        # same as drf's update method from the update mixin, with the addition of
+        # returning a 204 when successfully deletes relationship with PUT/PATCH
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        inst = request.data.get('id', None)
+        if not inst:
+            return Response(status=HTTP_204_NO_CONTENT)
+        return Response(serializer.data)

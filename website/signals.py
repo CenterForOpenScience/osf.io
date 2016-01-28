@@ -8,6 +8,7 @@ from website.conferences import signals as conference
 ALL_SIGNALS = [
     auth.contributor_removed,
     auth.node_deleted,
+    project.comment_added,
     project.unreg_contributor_added,
     project.contributor_added,
     project.privacy_set_public,

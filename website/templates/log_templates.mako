@@ -215,18 +215,40 @@ from
 <script type="text/html" id="comment_added">
 added a comment
 to
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="comment_updated">
 updated a comment
 on
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="comment_removed">
 deleted a comment
 on
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="comment_restored">
+restored a comment
+on
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
@@ -294,21 +316,27 @@ on
 </script>
 
 <script type="text/html" id="citation_added">
-  added a citation <em>({{ params.citation.name }})</em>
+added a citation ({{ params.citation.name }})
+to
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
 <script type="text/html" id="citation_edited">
 {{#if params.citation.new_name}}
-updated a citation name from <em>{{ params.citation.name }}</em> to <em>{{ params.citation.new_name }}</em>
+updated a citation name from {{ params.citation.name }} to <strong>{{ params.citation.new_name }}</strong>
   {{#if params.citation.new_text}}
     and edited its text
   {{/if}}
 {{/if}}
 {{#ifnot params.citation.new_name}}
-edited the text of a citation <em>({{ params.citation.name }})</em>
+edited the text of a citation ({{ params.citation.name }})
 {{/ifnot}}
+on
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
 <script type="text/html" id="citation_removed">
-removed the <em>{{ params.citation.name }}</em> citation
+removed a citation ({{ params.citation.name }})
+from
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
