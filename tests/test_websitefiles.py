@@ -300,7 +300,18 @@ class TestFileNodeObj(FilesTestCase):
         assert_equal(models.StoredFileNode.load(fn._id), None)
 
     def test_restore_file(self):
+        root = models.StoredFileNode(
+            path='root',
+            name='rootfolder',
+            is_file=False,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to',
+        ).wrapped()
+        root.save()
+
         fn = models.StoredFileNode(
+            parent=root._id,
             path='afile',
             name='name',
             is_file=True,
@@ -319,7 +330,18 @@ class TestFileNodeObj(FilesTestCase):
         assert_equal(models.TrashedFileNode.load(trashed._id), None)
 
     def test_restore_folder(self):
+        root = models.StoredFileNode(
+            path='root',
+            name='rootfolder',
+            is_file=False,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/',
+        ).wrapped()
+        root.save()
+
         fn = models.StoredFileNode(
+            parent=root._id,
             path='afolder',
             name='folder_name',
             is_file=False,
@@ -362,7 +384,18 @@ class TestFileNodeObj(FilesTestCase):
                 is_folder = random.randint(0, 5) == 1
             return acc
 
+        root = models.StoredFileNode(
+            path='root',
+            name='rootfolder',
+            is_file=False,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/',
+        ).wrapped()
+        root.save()
+
         parent = models.StoredFileNode(
+            parent=root._id,
             path='afolder',
             name='folder_name',
             is_file=False,

@@ -75,9 +75,14 @@ class TrashedFileNode(StoredObject):
         data = self.to_storage()
         data.pop('deleted_on')
         data.pop('deleted_by')
-        restored = FileNode.resolve_class(self.provider, int(self.is_file))(**data)
         if parent:
-            restored.parent = parent
+            data['parent'] = parent._id
+        elif data['parent']:
+            # parent is an AbstractForeignField, so it gets stored as tuple
+            data['parent'] = data['parent'][0]
+        restored = FileNode.resolve_class(self.provider, int(self.is_file))(**data)
+        if not restored.parent:
+            raise ValueError('No parent to restore to')
         restored.save()
 
         if recursive:
