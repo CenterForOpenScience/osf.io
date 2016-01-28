@@ -2225,8 +2225,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=False,
         )
 
-
-
         # Clone each log from the original node for this fork.
         logs = original.logs
         for log in logs:
