@@ -10,6 +10,7 @@ from rest_framework.utils.urls import (
     replace_query_param, remove_query_param
 )
 from api.base.serializers import is_anonymized
+from api.base.settings import MAX_PAGE_SIZE
 
 class JSONAPIPagination(pagination.PageNumberPagination):
     """
@@ -20,7 +21,10 @@ class JSONAPIPagination(pagination.PageNumberPagination):
     """
 
     page_size_query_param = 'page[size]'
-    max_page_size = 100
+
+    def __init__(self, max_page_size=None, **kwargs):
+        super(JSONAPIPagination, self).__init__(**kwargs)
+        self.max_page_size = max_page_size or MAX_PAGE_SIZE
 
     def page_number_query(self, url, page_number):
         """
