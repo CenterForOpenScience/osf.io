@@ -63,16 +63,6 @@ class SpamDetail(TemplateView):
         return kwargs
 
 
-
-@login_required
-def spam_detail(request, spam_id):
-    context = {
-        'comment': serialize_comment(Comment.load(spam_id)),
-        'page_number': request.GET.get('page', 1),
-    }
-    return render(request, 'spam/comment.html', context)
-
-
 @login_required
 def email(request, spam_id):
     context = {
