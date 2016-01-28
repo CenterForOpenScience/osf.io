@@ -37,7 +37,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from website.models import Node, Pointer, WatchConfig, PrivateLink
+from website.models import Node, Pointer, WatchConfig, PrivateLink, NodeLog
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
@@ -882,13 +882,8 @@ def _get_user_activity(node, auth, rescale_ratio):
     # Counters
     total_count = len(node.logs)
 
-    # Note: It's typically much faster to find logs of a given node
-    # attached to a given user using node.logs.find(...) than by
-    # loading the logs into Python and checking each one. However,
-    # using deep caching might be even faster down the road.
-
     if auth.user:
-        ua_count = node.logs.find(Q('user', 'eq', auth.user)).count()
+        ua_count = NodeLog.find(Q('node', 'eq', node._id) & Q('user', 'eq', auth.user)).count()
     else:
         ua_count = 0
 
