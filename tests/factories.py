@@ -26,12 +26,14 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
+from website.files.models import StoredFileNode
 from website.oauth.models import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,
     ExternalAccount,
     ExternalProvider
 )
+from website.models import Institution
 from website.project.model import (
     Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig, AlternativeCitation,
@@ -488,6 +490,13 @@ class CommentFactory(ModularOdmFactory):
             content=content,
             *args, **kwargs
         )
+        if isinstance(target, target_class):
+            instance.root_target = target.root_target
+        else:
+            instance.root_target = target
+            if isinstance(instance.root_target, StoredFileNode):
+                file_id = instance.root_target._id
+                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
         return instance
 
     @classmethod
@@ -503,7 +512,40 @@ class CommentFactory(ModularOdmFactory):
             content=content,
             *args, **kwargs
         )
+        if isinstance(target, target_class):
+            instance.root_target = target.root_target
+        else:
+            instance.root_target = target
+            if isinstance(instance.root_target, StoredFileNode):
+                file_id = instance.root_target._id
+                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
+                instance.node.save()
         instance.save()
+        return instance
+
+
+class InstitutionFactory(ModularOdmFactory):
+    FACTORY_FOR = Institution
+    _id = Sequence(lambda n: "S{}".format(n))
+    name = Sequence(lambda n: "School{}".format(n))
+
+    @classmethod
+    def _create(cls, target_class, _id, name):
+        instance = target_class(
+            _id=_id,
+            name=name,
+            logo_name='logo.img',
+        )
+        instance.save()
+        return instance
+
+    @classmethod
+    def _build(cls, target_class, _id, name):
+        instance = target_class(
+            _id=_id,
+            name=name,
+            logo_name='logo.img',
+        )
         return instance
 
 

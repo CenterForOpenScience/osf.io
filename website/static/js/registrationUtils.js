@@ -897,14 +897,11 @@ RegistrationEditor.prototype.init = function(draft) {
         if (!self.draft()) {
             return null;
         }
-        return self.draft().updated;
-    });
-    self.lastSaved = ko.computed(function() {
-        var t = self.lastSaveTime();
-        if (t) {
-            return t.toGMTString();
-        } else {
-            return 'never';
+        if (self.draft().updated) {
+            return self.draft().updated;
+        }
+        else {
+            return 'never';            
         }
     });
 
