@@ -60,6 +60,7 @@ var institutionsViewModel = function() {
     ko.punches.enableAll();
     var self = this;
     self.primaryInstitution = ko.observable('None');
+    self.institutionHref = ko.observable('');
     self.availableInstitutions = ko.observable();
     $.ajax({
         url: ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/?embed=institutions',
@@ -75,8 +76,9 @@ var institutionsViewModel = function() {
     }).done(function(response) {
         if (response.data.attributes){
             self.primaryInstitution(response.data.attributes.name);
+            self.institutionHref(response.data.links.html);
         }
-    });
+    }).fail(function(){});
     self.submitInst = function() {
         var inst = $('input[name=primaryInst]:checked', '#selectedInst').val();
         $osf.ajaxJSON(
@@ -85,13 +87,29 @@ var institutionsViewModel = function() {
             {
                 'isCors': true,
                 'data': {
-                     'data': inst !== 'None' ? {'type': 'institutions', 'id': inst} : null
+                     'data': {'type': 'institutions', 'id': inst}
                 },
                 fields: {xhrFields: {withCredentials: true}}
             }
         ).done(function (response) {
-                $osf.growl('It worked!');
-                self.primaryInstitution(inst);
+            window.location.reload();
+        }).fail(function (response) {
+            $osf.growl('Error!');
+        });
+    };
+    self.clearInst = function() {
+        $osf.ajaxJSON(
+            'PUT',
+            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/',
+            {
+                'isCors': true,
+                'data': {
+                     'data': null
+                },
+                fields: {xhrFields: {withCredentials: true}}
+            }
+        ).done(function (response) {
+            window.location.reload();
         }).fail(function (response) {
             $osf.growl('Error!');
         });
@@ -102,7 +120,7 @@ $(document).ready(function() {
     var self = this;
     self.instViewModel = new institutionsViewModel();
     // Apply KO bindings for Project Settings
-    $osf.applyBindings(self.instViewModel, '#Institutions');
+    $osf.applyBindings(self.instViewModel, '#institutionSettings');
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
     for (var i = 0; i < keys.length; i++) {
