@@ -31,9 +31,7 @@ function ViewModel(url) {
     self.account_url = '/api/v1/settings/s3/accounts/';
     self.accounts = ko.observableArray();
 
-    // Flashed messages
-    self.message = ko.observable('');
-    self.messageClass = ko.observable('text-info');
+    ChangeMessageMixin.call(self);
 
     /** Reset all fields from S3 credentials input modal */
     self.clearModal = function() {
@@ -151,6 +149,7 @@ function ViewModel(url) {
         self.changeMessage('','');
     };
 
+    self.updateAccounts();
 }
 
 $.extend(ViewModel.prototype, ChangeMessageMixin.prototype);
