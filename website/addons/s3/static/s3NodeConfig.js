@@ -48,6 +48,7 @@ var ViewModel = function(selector, settings) {
     self.creatingCredentials = ko.observable(false);
 
     self.message = ko.observable('');
+    self.node_message = ko.observable('');
     self.messageClass = ko.observable('text-info');
 
     self.showSelect = ko.observable(false);
@@ -143,7 +144,7 @@ ViewModel.prototype.selectBucket = function() {
             .done(function (response) {
                 self.updateFromData(response);
                 self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
-                    self.urls().files + '">Files page</a> to view your content.', 'text-success');
+                    self.urls().files + '">Files page</a> to view your content.', 'text-success', null, true);
                 self.loading(false);
                 ret.resolve(response);
             })
@@ -152,7 +153,7 @@ ViewModel.prototype.selectBucket = function() {
                 var message = 'Could not change S3 bucket at this time. ' +
                     'Please refresh the page. If the problem persists, email ' +
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
-                self.changeMessage(message, 'text-danger');
+                self.changeMessage(message, 'text-danger', null, true);
                 Raven.captureMessage('Could not set S3 bucket', {
                     url: self.urls().setBucket,
                     textStatus: status,
@@ -173,12 +174,12 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
         dataType: 'json'
     }).done(function(response) {
         self.updateFromData(response);
-        self.changeMessage('Disconnected S3.', 'text-warning', 3000);
+        self.changeMessage('Disconnected S3.', 'text-warning', 3000, true);
     }).fail(function(xhr, status, error) {
         var message = 'Could not disconnect S3 at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
             '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-danger');
+        self.changeMessage(message, 'text-danger', null, true);
         Raven.captureMessage('Could not remove S3 authorization.', {
             url: self.urls().deauthorize,
             textStatus: status,
@@ -211,13 +212,13 @@ ViewModel.prototype._importAuthConfirm = function() {
     return $osf.putJSON(
         self.urls().import_auth, {}
     ).done(function(response) {
-        self.changeMessage('Successfully imported S3 credentials.', 'text-success');
+        self.changeMessage('Successfully imported S3 credentials.', 'text-success', null, true);
         self.updateFromData(response);
     }).fail(function(xhr, status, error) {
         var message = 'Could not import S3 credentials at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
             '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-danger');
+        self.changeMessage(message, 'text-danger', null, true);
         Raven.captureMessage('Could not import S3 credentials', {
             url: self.urls().importAuth,
             textStatus: status,
@@ -293,7 +294,7 @@ ViewModel.prototype.importAuth = function() {
                 }
             }).fail(function(xhr, textStatus, error) {
                 self.messageClass('text-danger');
-                self.message('Could not GET S3 accounts for user.');
+                self.node_message('Could not GET S3 accounts for user.');
             });
 };
 
@@ -308,8 +309,22 @@ ViewModel.prototype.clearModal = function() {
 
 ViewModel.prototype.sendAuth = function() {
     var self = this;
-    self.creatingCredentials(true);
+    if( !self.accessKey() && !self.secretKey() ){
+        self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');
+        return;
+    }
 
+    if (!self.accessKey() ){
+        self.changeMessage('Please enter an API access key.', 'text-danger');
+        return;
+    }
+
+    if (!self.secretKey() ){
+        self.changeMessage('Please enter an API secret key.', 'text-danger');
+        return;
+    }
+    self.creatingCredentials(true);
+        
     return $osf.postJSON(
         self.urls().create, {
             secret_key: self.secretKey(),
@@ -319,7 +334,7 @@ ViewModel.prototype.sendAuth = function() {
         self.clearModal();
         $modal.modal('hide');
         self.creatingCredentials(false);
-        self.changeMessage('Successfully added S3 credentials.', 'text-success');
+        self.changeMessage('Successfully added S3 credentials.', 'text-success', null, true);
         self.updateFromData(response);
         self.importAuth();
     }).fail(function(xhr, status, error) {
@@ -355,7 +370,7 @@ ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
         self.showSelect(true);
         var msg = 'Successfully created bucket "' + bucketName + '". You can now select it from the drop down list.';
         var msgType = 'text-success';
-        self.changeMessage(msg, msgType);
+        self.changeMessage(msg, msgType, null, true);
     }).fail(function(xhr) {
         var resp = JSON.parse(xhr.responseText);
         var message = resp.message;
@@ -483,7 +498,7 @@ ViewModel.prototype.fetchBucketList = function() {
             var message = 'Could not retrieve list of S3 buckets at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-danger');
+            self.changeMessage(message, 'text-danger', null, null);
             Raven.captureMessage('Could not GET s3 bucket list', {
                 url: self.urls().bucketList,
                 textStatus: status,
@@ -521,7 +536,7 @@ ViewModel.prototype.updateFromData = function(data) {
                     'this time. The S3 addon credentials may no longer be valid.' +
                     ' Contact ' + self.ownerName() + ' to verify.';
             }
-            self.changeMessage(message, 'text-danger');
+            self.changeMessage(message, 'text-danger', null, true);
         }
         ret.resolve(settings);
     };
@@ -553,7 +568,7 @@ ViewModel.prototype.fetchFromServer = function() {
         var message = 'Could not retrieve S3 settings at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-danger');
+        self.changeMessage(message, 'text-danger', null, true);
         Raven.captureMessage('Could not GET s3 settings', {
             url: self.url,
             textStatus: status,
@@ -565,15 +580,20 @@ ViewModel.prototype.fetchFromServer = function() {
 };
 
 /** Change the flashed message. */
-ViewModel.prototype.changeMessage = function(text, css, timeout) {
+ViewModel.prototype.changeMessage = function(text, css, timeout, node) {
     var self = this;
-    self.message(text);
+    if (node) {
+        self.node_message(text);
+    } else {
+        self.message(text);
+    }
     var cssClass = css || 'text-info';
     self.messageClass(cssClass);
     if (timeout) {
         // Reset message after timeout period
         setTimeout(function() {
             self.message('');
+            self.node_message('');
             self.messageClass('text-info');
         }, timeout);
     }
