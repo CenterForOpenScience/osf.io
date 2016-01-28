@@ -8,7 +8,7 @@ from website.models import Node, NodeLog
 from website.util import permissions
 from website.util.sanitize import strip_html
 
-from api.base.settings.defaults import API_BASE
+from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 
 from tests.base import ApiTestCase
 from tests.factories import (
@@ -1820,30 +1820,26 @@ class TestNodeListPagination(ApiTestCase):
         assert_equal(res.json['links']['meta']['per_page'], 10)
 
     def test_max_page_size_enforced(self):
-        url = '{}?page[size]=1000'.format(self.url)
+        url = '{}?page[size]={}'.format(self.url, MAX_PAGE_SIZE+1)
         res = self.app.get(url, auth=self.user_one.auth)
         pids = [e['id'] for e in res.json['data']]
         for project in self.projects:
             assert_in(project._id, pids)
-        assert_equal(res.json['links']['meta']['per_page'], 100)
+        assert_equal(res.json['links']['meta']['per_page'], MAX_PAGE_SIZE)
 
     def test_embed_page_size_not_affected(self):
         for user in self.users[1:]:
             self.project_one.add_contributor(user, auth=Auth(self.user_one), save=True)
 
-        url = '{}?page[size]=1000&embed=contributors'.format(self.url)
+        url = '{}?page[size]={}&embed=contributors'.format(self.url, MAX_PAGE_SIZE+1)
         res = self.app.get(url, auth=self.user_one.auth)
         pids = [e['id'] for e in res.json['data']]
         for project in self.projects:
             assert_in(project._id, pids)
-        assert_equal(res.json['links']['meta']['per_page'], 100)
+        assert_equal(res.json['links']['meta']['per_page'], MAX_PAGE_SIZE)
 
         uids = [e['id'] for e in res.json['data'][0]['embeds']['contributors']['data']]
         for user in self.users[:9]:
             assert_in(user._id, uids)
         assert_not_in(self.user_eleven._id, uids)
         assert_equal(res.json['data'][0]['embeds']['contributors']['links']['meta']['per_page'], 10)
-
-
-
-        
