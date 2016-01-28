@@ -525,6 +525,8 @@ describe('s3NodeConfigViewModel', () => {
             var expected = endpoints[0].response;
             it('makes a POST request to create auth and updates settings on success', (done) => {
                 var vm = new s3NodeConfigVM('', {url: '/api/v1/12345/s3/settings/' });
+                vm.accessKey('key-0');
+                vm.secretKey('secret-0');
                 vm.updateFromData()
                     .always(function() {
                         var promise = vm.sendAuth();
