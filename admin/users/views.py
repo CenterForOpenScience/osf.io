@@ -3,7 +3,6 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseNotFound
 from django.shortcuts import render
 
-from modularodm import Q
 from website.project.model import User
 
 from .serializers import serialize_user
@@ -36,7 +35,6 @@ class UserFormView(FormView):
         }
         return render(request, self.template_name, context)
 
-    # def post(self, request, *args, **kwargs):
     def form_valid(self, form):
         self.guid = form.cleaned_data.get('guid').strip()
         return super(UserFormView, self).form_valid(form)
