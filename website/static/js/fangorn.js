@@ -1340,6 +1340,7 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
+var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4'];
 function expandStateLoad(item) {
     var tb = this,
         i;
@@ -1348,7 +1349,7 @@ function expandStateLoad(item) {
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
-        if (window.contextVars && window.contextVars.node && window.contextVars.node.id === 'ezcuj') {
+        if (window.contextVars && window.contextVars.node && NO_AUTO_EXPAND_PROJECTS.indexOf(window.contextVars.node.id) > -1) {
             tb.updateFolder(null, item.children[0]);
         } else {
             for (i = 0; i < item.children.length; i++) {
