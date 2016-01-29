@@ -353,7 +353,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
         for (var node in nodesState) {
             if (nodesState[node].canWrite) {
                 nodesState[node].changed = false;
-
             }
         }
         self.nodesState(nodesState);
