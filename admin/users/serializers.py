@@ -15,4 +15,6 @@ def serialize_simple_node(node):
     return {
         'id': node._id,
         'title': node.title,
+        'public': node.is_public,
+        'number_contributors': len(node.contributors),
     }

@@ -48,6 +48,8 @@
                     <tr>
                         <th>GUID</th>
                         <th>Name</th>
+                        <th>Public</th>
+                        <th># of Contributors</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -55,6 +57,8 @@
                     <tr>
                         <td>{{ node.id }}</td>
                         <td>{{ node.title }}</td>
+                        <td>{{ node.public }}</td>
+                        <td>{{ node.number_contributors }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
