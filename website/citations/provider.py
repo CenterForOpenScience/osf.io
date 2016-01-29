@@ -10,11 +10,12 @@ class CitationsProvider(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, provider_name):
-        self.provider_name = provider_name
-
     @abc.abstractproperty
     def serializer(self):
+        pass
+
+    @abc.abstractproperty
+    def provider_name(self):
         pass
 
     def check_credentials(self, node_addon):
@@ -44,7 +45,28 @@ class CitationsProvider(object):
 
     def set_config(self, node_addon, user, external_list_id, external_list_name, auth):
         # Ensure request has all required information
-        node_addon.set_target_folder(external_list_id, external_list_name, auth)
+        # Tell the user's addon settings that this node is connecting
+        node_addon.user_settings.grant_oauth_access(
+            node=node_addon.owner,
+            external_account=node_addon.external_account,
+            metadata={'folder': external_list_id}
+        )
+        node_addon.user_settings.save()
+
+        # update this instance
+        node_addon.list_id = external_list_id
+        node_addon.save()
+
+        node_addon.owner.add_log(
+            '{0}_folder_selected'.format(self.provider_name),
+            params={
+                'project': node_addon.owner.parent_id,
+                'node': node_addon.owner._id,
+                'folder_id': external_list_id,
+                'folder_name': external_list_name,
+            },
+            auth=auth,
+        )
 
     def add_user_auth(self, node_addon, user, external_account_id):
 
@@ -80,6 +102,7 @@ class CitationsProvider(object):
         ret = node_addon.config.to_json()
         ret.update({
             'complete': node_addon.complete,
+            'list_id': node_addon.list_id,
         })
         return ret
 
@@ -98,10 +121,8 @@ class CitationsProvider(object):
     def _folder_to_dict(self, data):
         pass
 
-    @abc.abstractmethod
-    def _folder_id(self):
-
-        return None
+    def _folder_id(self, node_addon):
+        return node_addon.list_id
 
     def citation_list(self, node_addon, user, list_id, show='all'):
 
