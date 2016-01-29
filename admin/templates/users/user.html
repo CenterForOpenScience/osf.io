@@ -21,17 +21,17 @@
 
         <hr>
 
-        {% if user %}
+        {% if guid_object %}
             <div class="row">
                 <h3>User information</h3>
             </div>
             <div class="row">
-                <strong>Name:</strong> {{ user.name }}
+                <strong>Name:</strong> {{ guid_object.name }}
             </div>
             <div class="row">
                 <strong>Emails:</strong>
                 <ul>
-                {% for email in user.emails %}
+                {% for email in guid_object.emails %}
                     <li>
                         {% if forloop.first %}
                             <strong>Primary: </strong>
@@ -51,7 +51,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for node in user.nodes %}
+                {% for node in guid_object.nodes %}
                     <tr>
                         <td>{{ node.id }}</td>
                         <td>{{ node.title }}</td>
