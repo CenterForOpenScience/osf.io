@@ -28,36 +28,41 @@ def logout(request):
     return redirect('auth:login')
 
 
-#Permission restriction based on staff (only staff can register new users)
+# Permission restriction based on staff (only staff can register new users). Use is_staff boolean?
 def register(request):
-    # Creates User, takes selected permissions and assigns it to user, then saves resetform for email invitation
+    if request.user.is_staff:
+        if request.method == 'POST':
+            form = CustomUserRegistrationForm(request.POST)
+            if form.is_valid():
+                email = form.cleaned_data['email']
+                password = form.cleaned_data['password1']
+                new_user = MyUser.objects.create_user(email=email, password=password)
+                new_user.first_name = form.cleaned_data['first_name']
+                new_user.last_name = form.cleaned_data['last_name']
+                group_perms = form.cleaned_data['group_perms']
 
-    if request.method == 'POST':
-        form = CustomUserRegistrationForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            password = form.cleaned_data['password1']
-            user = MyUser.objects.create_user(email=email, password=password)
-            user.first_name = form.cleaned_data['first_name']
-            user.last_name = form.cleaned_data['last_name']
-            user.save()
+                for group in group_perms:
+                    new_user.groups.add(group)
 
-            reset_form = PasswordResetForm({'email': user.email}, request.POST)
-            assert reset_form.is_valid()
-            reset_form.save(
-                subject_template_name='common_auth/emails/account_creation_subject.txt',
-                email_template_name='common_auth/emails/invitation_email.html',
-                request=request
-            )
-            messages.success(request, 'Registration successful') # add email reference here
-            return redirect('auth:login')
+                new_user.save()
+                reset_form = PasswordResetForm({'email': new_user.email}, request.POST)
+                assert reset_form.is_valid()
+                reset_form.save(
+                    subject_template_name='common_auth/emails/account_creation_subject.txt',
+                    email_template_name='common_auth/emails/invitation_email.html',
+                    request=request
+                )
+                messages.success(request, 'Registration successful')  # add email reference here
+                return redirect('auth:login')
+            else:
+                print(form.errors)
+                context = {'form': form}
+                return render(request, 'register.html', context)
         else:
-            print(form.errors)
-            context = {'form': form}
+            reg_form = CustomUserRegistrationForm()
+            context = {'form': reg_form}
             return render(request, 'register.html', context)
     else:
-        # User visiting page, not submitting post req. Display forms
-        reg_form = CustomUserRegistrationForm()
-        #perm_form = PermissionForm()
-        context = {'form': reg_form} #, 'form2': perm_form}
-        return render(request, 'register.html', context)
+        # Best way to inform user: pop-up alert or display message after redirect?
+        messages.error(request, 'You do not have permission to access the registration page.')
+        return redirect('auth:login')

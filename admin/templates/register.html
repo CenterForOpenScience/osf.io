@@ -28,7 +28,16 @@
       <p class="login-box-msg">Register a new account</p>
       <form action="" method="post">
         {% csrf_token %}
-         <div class="form-group">
+
+        {% if form.non_field_errors %}
+        <ul>
+        {% for error in form.non_field_errors %}
+        <li class="errorclass">{{ error }}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+
+        <div class="form-group">
             <label for="email">Email:</label>
             <p>{{ form.email }}</p>
             {% if form.email.errors %}<span class="text-danger"> {{ form.email.errors }}</span>{% endif %}
@@ -47,26 +56,26 @@
             <label for="password1">Password:</label>
             <p>{{ form.password1 }}</p>
             {% if form.password1.errors %}<span class="text-danger"> {{ form.password1.errors }}</span>{% endif %}
-          </div>
-       <div class="form-group">
+        </div>
+        <div class="form-group">
           <label for="password2">Confirm Password:</label>
           <p>{{ form.password2 }}</p>
           {% if form.password2.errors %}<span class="text-danger"> {{ form.password2.errors }}</span>{% endif %}
-      </div>
+        </div>
+        <div class="form-group">
+          <label for="perms">Select account Permissions:</label>
+          <p>{{ form.group_perms }}</p>
+          {% if form.group_perms.errors %}<span class="text-danger"> {{ form.group_perms.errors }}</span>{% endif %}
+        </div>
 
-        <!-- include widget for displaying multi-checkbox permission list -->
-
-
-
-
-          <div class="row">
-            <div class="col-xs-4">
-              <button type="submit" class="btn btn-primary btn-block btn-flat">Register</button>
-            </div><!-- /.col -->
-          </div>
+        <div class="row">
+          <div class="col-xs-4">
+            <button type="submit" class="btn btn-primary btn-block btn-flat">Register</button>
+          </div><!-- /.col -->
+        </div>
       </form>
 
-      <a href="{% url 'auth:login' %}" class="text-center">I already have an account</a>
+      <a href="{% url 'auth:login' %}" class="text-center">Return to login page</a>
     </div><!-- /.form-box -->
   </div><!-- /.register-box -->
 

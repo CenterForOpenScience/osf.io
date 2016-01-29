@@ -31,7 +31,13 @@
         <p class="login-box-msg">Sign in to start your session</p>
         <form action="" method="post">
           {% csrf_token %}
-          {% if form.non_field_errors %} <span class="text-danger"> {{ form.non_field_errors | striptags }} </span> {% endif %}
+          {% if form.non_field_errors %}
+          <ul>
+          {% for error in form.non_field_errors %}
+          <li class="errorclass">{{ error }}</li>
+          {% endfor %}
+          </ul>
+          {% endif %}
           <div class="form-group">
             <label for="username">Email:</label>
             <p>{{ form.email }}</p>
