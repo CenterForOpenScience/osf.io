@@ -5,8 +5,11 @@ from rest_framework import generics
 from rest_framework.mixins import ListModelMixin
 
 from api.users.serializers import UserSerializer
+
 from website import settings
-from .utils import absolute_reverse
+from django.conf import settings as django_settings
+from .utils import absolute_reverse, is_truthy
+
 from .requests import EmbeddedRequest
 
 
@@ -69,8 +72,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
         for embed in embeds:
             embed_field = fields_check.get(embed)
             embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
+
         context.update({
-            'embed': embeds_partials
+            'enable_esi': is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)),
+            'embed': embeds_partials,
         })
         return context
 

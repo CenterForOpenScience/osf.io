@@ -6,7 +6,6 @@ from api.base.serializers import (
     RestrictedDictSerializer,
     LinksField,
 )
-from api.base.utils import absolute_reverse
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -88,9 +87,4 @@ class NodeLogSerializer(JSONAPISerializer):
     )
 
     def get_absolute_url(self, obj):
-        return absolute_reverse(
-            'logs:log-detail',
-            kwargs={
-                'log_id': obj._id,
-            }
-        )
+        return obj.absolute_url

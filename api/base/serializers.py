@@ -4,6 +4,7 @@ import collections
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from django.core.urlresolvers import resolve, reverse
+from django.http.request import QueryDict
 from rest_framework.fields import SkipField
 
 from framework.auth import core as auth_core
@@ -91,6 +92,13 @@ class HideIfRegistration(ser.Field):
         else:
             self.field.parent = self.field.root
         return self.field.to_representation(value)
+
+    def to_esi_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_esi_representation(value)
 
 
 class HideIfRetraction(HideIfRegistration):
@@ -280,11 +288,20 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             related_view_kwargs={'node_id': '<parent_node._id>'},
             filter_key='parent_node'
         )
+
+    Field can include optional filters:
+
+    Example:
+    replies = RelationshipField(
+        self_view='nodes:node-comments',
+        self_view_kwargs={'node_id': '<node._id>'},
+        filter={'target': '<pk>'})
+    )
     """
     json_api_link = True  # serializes to a links object
 
     def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-                 self_meta=None, related_meta=None, always_embed=False, filter_key=None, **kwargs):
+                 self_meta=None, related_meta=None, always_embed=False, filter=None, filter_key=None, **kwargs):
         related_view = related_view
         self_view = self_view
         related_kwargs = related_view_kwargs
@@ -294,6 +311,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.related_meta = related_meta
         self.self_meta = self_meta
         self.always_embed = always_embed
+        self.filter = filter
         self.filter_key = filter_key
 
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
@@ -331,7 +349,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         """
         meta = {}
         for key in meta_data or {}:
-            if key == 'count':
+            if key == 'count' or key == 'unread':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
                 if utils.is_truthy(show_related_counts):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
@@ -392,11 +410,29 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 if kwargs is None:
                     urls[view_name] = {}
                 else:
-                    urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
-
+                    url = self.reverse(view, kwargs=kwargs, request=request, format=format)
+                    if self.filter:
+                        url = '{}?filter{}'.format(url, self.format_filter(obj))
+                    urls[view_name] = url
         if not urls['self'] and not urls['related']:
             urls = None
         return urls
+
+    def to_esi_representation(self, value):
+        relationships = super(RelationshipField, self).to_representation(value)
+        if relationships is not None:
+            for type, href in relationships.items():
+                if href and not href == '{}':
+                    return '<esi:include src="{}?format=jsonapi"/>'.format(href)
+        else:
+            raise SkipField
+
+    def format_filter(self, obj):
+        qd = QueryDict(mutable=True)
+        filter_fields = self.filter.keys()
+        for field_name in filter_fields:
+            qd.update({'[{}]'.format(field_name): self.lookup_attribute(obj, self.filter[field_name])})
+        return qd.urlencode(safe=['[', ']'])
 
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
@@ -411,6 +447,14 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
             ret = format_relationship_links(related_url, self_url, related_meta, self_meta)
         return ret
+
+
+class FileCommentRelationshipField(RelationshipField):
+
+    def get_url(self, obj, view_name, request, format):
+        if obj.kind == 'folder':
+            raise SkipField
+        return super(FileCommentRelationshipField, self).get_url(obj, view_name, request, format)
 
 
 class TargetField(ser.Field):
@@ -458,6 +502,12 @@ class TargetField(ser.Field):
                 kwargs=kwargs
             )
         )
+
+    def to_esi_representation(self, value):
+        url = value.get_absolute_url()
+        if url:
+            return '<esi:include src="{}?format=jsonapi"/>'.format(url)
+        return self.to_representation(value)
 
     def to_representation(self, value):
         """
@@ -741,7 +791,7 @@ class JSONAPISerializer(ser.Serializer):
         ])
 
         embeds = self.context.get('embed', {})
-
+        enable_esi = self.context.get('enable_esi', False)
         is_anonymous = is_anonymized(self.context['request'])
         to_be_removed = []
         if is_anonymous and hasattr(self, 'non_anonymized_fields'):
@@ -771,8 +821,14 @@ class JSONAPISerializer(ser.Serializer):
                 if attribute is None:
                     continue
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
+                    if enable_esi:
+                        try:
+                            result = field.to_esi_representation(attribute)
+                        except SkipField:
+                            continue
+                    else:
+                        result = self.context['embed'][field.field_name](obj)
 
-                    result = self.context['embed'][field.field_name](obj)
                     if result:
                         data['embeds'][field.field_name] = result
                 else:
@@ -820,7 +876,7 @@ class JSONAPISerializer(ser.Serializer):
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
-            self._validated_data = website_utils.rapply(self.validated_data, strip_html)
+            self._validated_data = self.sanitize_data()
 
         self._validated_data.pop('type', None)
         self._validated_data.pop('target_type', None)
@@ -829,6 +885,29 @@ class JSONAPISerializer(ser.Serializer):
             self._validated_data.pop('_id', None)
 
         return ret
+
+    def sanitize_data(self):
+        return website_utils.rapply(self.validated_data, strip_html)
+
+class JSONAPIRelationshipSerializer(ser.Serializer):
+    """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
+    Provides a simplified serialization of the relationship, allowing for simple update request
+    bodies.
+    """
+    id = ser.CharField(required=False, allow_null=True)
+    type = TypeField(required=False, allow_null=True)
+
+    def to_representation(self, obj):
+        meta = getattr(self, 'Meta', None)
+        type_ = getattr(meta, 'type_', None)
+        assert type_ is not None, 'Must define Meta.type_'
+        relation_id_field = self.fields['id']
+        attribute = relation_id_field.get_attribute(obj)
+        relationship = relation_id_field.to_representation(attribute)
+
+        data = {'type': type_, 'id': relationship} if relationship else None
+
+        return data
 
 
 def DevOnly(field):
@@ -857,3 +936,20 @@ class RestrictedDictSerializer(ser.Serializer):
             else:
                 data[field.field_name] = field.to_representation(attribute)
         return data
+
+
+def relationship_diff(current_items, new_items):
+    """
+    To be used in POST and PUT/PATCH relationship requests, as, by JSON API specs,
+    in update requests, the 'remove' items' relationships would be deleted, and the
+    'add' would be added, while for create requests, only the 'add' would be added.
+
+    :param current_items: The current items in the relationship
+    :param new_items: The items passed in the request
+    :return:
+    """
+
+    return {
+        'add': {k: new_items[k] for k in (set(new_items.keys()) - set(current_items.keys()))},
+        'remove': {k: current_items[k] for k in (set(current_items.keys()) - set(new_items.keys()))}
+    }

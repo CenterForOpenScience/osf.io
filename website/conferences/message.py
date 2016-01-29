@@ -109,15 +109,24 @@ class ConferenceMessage(object):
 
     @cached_property
     def sender_name(self):
-        name = ANGLE_BRACKETS_REGEX.sub('', self.sender)
-        name = name.strip().replace('"', '')
+        if '<' in self.sender:
+            # sender format: "some name" <email@domain.tld>
+            name = ANGLE_BRACKETS_REGEX.sub('', self.sender)
+            name = name.strip().replace('"', '')
+        else:
+            # sender format: email@domain.tld
+            name = self.sender
         return unicode(HumanName(name))
 
     @cached_property
     def sender_email(self):
         match = ANGLE_BRACKETS_REGEX.search(self.sender)
         if match:
+            # sender format: "some name" <email@domain.tld>
             return match.groups()[0]
+        elif '@' in self.sender:
+            # sender format: email@domain.tld
+            return self.sender
         raise ConferenceError('Could not extract sender email')
 
     @cached_property

@@ -8,8 +8,9 @@ from django.core.urlresolvers import resolve, reverse
 from website import settings
 from framework.auth.core import User
 from website.files.models import FileNode
+from website.project.model import Comment
 from api.base.utils import absolute_reverse
-from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links
+from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links, FileCommentRelationshipField
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
 
@@ -113,6 +114,11 @@ class FileSerializer(JSONAPISerializer):
         related_view_kwargs={'file_id': '<_id>'},
         kind='file'
     )
+    comments = FileCommentRelationshipField(related_view='nodes:node-comments',
+                                            related_view_kwargs={'node_id': '<node._id>'},
+                                            related_meta={'unread': 'get_unread_comments_count'},
+                                            filter={'target': '<_id>'})
+
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
@@ -167,6 +173,12 @@ class FileSerializer(JSONAPISerializer):
             'sha256': metadata.get('sha256', None),
         }
         return extras
+
+    def get_unread_comments_count(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return 0
+        return Comment.find_n_unread(user=user, node=obj.node, page='files', root_id=obj._id)
 
     def user_id(self, obj):
         # NOTE: obj is the user here, the meta field for

@@ -78,6 +78,8 @@
             isContributor: ${ user.get('is_contributor', False) | sjson, n },
             fullname: ${ user['fullname'] | sjson, n },
             isAdmin: ${ user.get('is_admin', False) | sjson, n},
+            canComment: ${ user['can_comment'] | sjson, n},
+            canEdit: ${ user['can_edit'] | sjson, n},
             gravatarUrl: ${user_gravatar | sjson, n}
         },
         node: {
@@ -91,6 +93,7 @@
                 update: ${ node['update_url'] | sjson, n }
             },
             isPublic: ${ node.get('is_public', False) | sjson, n },
+            isRegistration: ${ node.get('is_registration', False) | sjson, n },
             isRetracted: ${ node.get('is_retracted', False) | sjson, n },
             piwikSiteID: ${ node.get('piwik_site_id', None) | sjson, n },
             piwikHost: ${ piwik_host | sjson, n },
@@ -100,7 +103,7 @@
             parentRegisterUrl: ${parent_registration_url | sjson, n },
             parentExists: ${ parent_exists | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
-            registrationMetaData: ${ node['registered_meta'] | sjson, n }
+            registrationMetaData: ${ node['registered_meta'] | sjson, n },
         }
     });
 
