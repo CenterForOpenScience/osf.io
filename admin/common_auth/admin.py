@@ -1,15 +1,15 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Permission
-from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.forms import PasswordResetForm, UserCreationForm
+
 from .models import MyUser
-from forms import CustomUserRegistrationForm
 
 class PermissionAdmin(admin.ModelAdmin):
     search_fields = ['name', 'codename']
 
 class CustomUserAdmin(UserAdmin):
-    add_form = CustomUserRegistrationForm
+    add_form = UserCreationForm
     list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed']
     fieldsets = (
         (None, {'fields': ('email', 'password',)}),
