@@ -4,6 +4,8 @@ from nose.tools import *  # noqa
 
 from website.project.decorators import must_be_valid_project
 
+from website.project.model import Sanction
+
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, NodeFactory, RetractionFactory
 
@@ -64,7 +66,7 @@ class TestValidProject(OsfTestCase):
     def test_valid_project_as_factory_allow_retractions_is_retracted(self):
         self.project.is_registration = True
         self.project.retraction = self.retraction
-        self.retraction.state = 'active'
+        self.retraction.state = Sanction.UNAPPROVED
         self.retraction.save()
         res = as_factory_allow_retractions(pid=self.project._id)
         assert_equal(res['node'], self.project)

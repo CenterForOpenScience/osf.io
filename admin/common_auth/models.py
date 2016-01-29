@@ -1,6 +1,9 @@
 from datetime import datetime
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
+
+from website.models import User as OsfUserModel
+
 
 class MyUserManager(BaseUserManager):
     def create_user(self, email, password=None):
@@ -25,6 +28,10 @@ class MyUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+    def prereg_users(self):
+        return self.filter(groups__name='prereg_group')
+
+
 class MyUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         verbose_name='email address',
@@ -39,20 +46,20 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=datetime.now)
     confirmed = models.BooleanField(default=False)
+    osf_id = models.CharField(default=False, max_length=10, blank=True)
 
     objects = MyUserManager()
 
     USERNAME_FIELD = 'email'
 
     def get_full_name(self):
-        # The user is identified by their email address
-        return self.email
+        return ("{0} {1}".format(self.first_name, self.last_name)).strip() or self.email
 
     def get_short_name(self):
         # The user is identified by their email address
         return self.email
 
-    def __str__(self):
+    def __unicode__(self):
         return self.email
 
     class Meta:
@@ -63,3 +70,15 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     # def is_staff(self):
     #     "Is the user a member of staff?"
     #     return self.is_admin
+
+    @property
+    def osf_user(self):
+        if not self.osf_id:
+            raise RuntimeError('This user does not have an associated Osf User')
+        return OsfUserModel.load(self.osf_id)
+
+    def is_in_group(self, group):
+        return self.groups.filter(name=group).exists()
+
+    def group_names(self):
+        return self.groups.all().values_list('name', flat=True)

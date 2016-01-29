@@ -144,7 +144,8 @@
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
                 cookieName: ${ cookie_name | sjson, n },
-                apiV2Prefix: ${ api_v2_base | sjson, n }
+                apiV2Prefix: ${ api_v2_base | sjson, n },
+                registerUrl: ${ api_url_for('register_user') | sjson, n}
             });
         </script>
 
@@ -260,7 +261,11 @@
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
         <script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
     % endif
-
+    <!-- JQuery 3 for IE Patching -->
+    <script type="text/javascript" src="/static/vendor/jquery-compat-git/jquery-compat-git.js"></script>
+    <script type="text/javascript">
+        var $3 = jQuery.noConflict(true);
+    </script>
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import mock
+import blinker
 import unittest
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -396,3 +397,25 @@ class TestProjectUtils(OsfTestCase):
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations(7)]
         assert_equal(len(regs), 7)
+
+
+class TestSignalUtils(unittest.TestCase):
+
+    def setUp(self):
+        self.signals = blinker.Namespace()
+        self.signal_ = self.signals.signal('signal-')
+        self.mock_listener = mock.MagicMock()
+
+    def listener(self, signal):
+        self.mock_listener()
+
+    def test_signal(self):
+        self.signal_.connect(self.listener)
+        self.signal_.send()
+        self.mock_listener.assert_called()
+
+    def test_temporary_disconnect(self):
+        self.signal_.connect(self.listener)
+        with util.disconnected_from(self.signal_, self.listener):
+            self.signal_.send()
+        self.mock_listener.assert_not_called()

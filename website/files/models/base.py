@@ -12,6 +12,7 @@ from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
 
+from api.base.utils import absolute_reverse
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
@@ -57,6 +58,7 @@ class TrashedFileNode(StoredObject):
     checkout = fields.AbstractForeignField('User')
     deleted_by = fields.AbstractForeignField('User')
     deleted_on = fields.DateTimeField(auto_now_add=True)
+    tags = fields.ForeignField('Tag', list=True)
 
     @property
     def deep_url(self):
@@ -65,7 +67,7 @@ class TrashedFileNode(StoredObject):
         """
         return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
 
-    def restore(self):
+    def restore(self, recursive=True, parent=None):
         """Recreate a StoredFileNode from the data in this object
         Will re-point all guids and finally remove itself
         :raises KeyExistsException:
@@ -73,8 +75,20 @@ class TrashedFileNode(StoredObject):
         data = self.to_storage()
         data.pop('deleted_on')
         data.pop('deleted_by')
+        if parent:
+            data['parent'] = parent._id
+        elif data['parent']:
+            # parent is an AbstractForeignField, so it gets stored as tuple
+            data['parent'] = data['parent'][0]
         restored = FileNode.resolve_class(self.provider, int(self.is_file))(**data)
+        if not restored.parent:
+            raise ValueError('No parent to restore to')
         restored.save()
+
+        if recursive:
+            for child in TrashedFileNode.find(Q('parent', 'eq', self)):
+                child.restore(recursive=recursive, parent=restored)
+
         TrashedFileNode.remove_one(self)
         return restored
 
@@ -91,7 +105,16 @@ class StoredFileNode(StoredObject):
         'unique': False,
         'key_or_list': [
             ('path', pymongo.ASCENDING),
-            ('node', pymongo.ASCENDING)
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING)
+        ]
+    }, {
+        'unique': False,
+        'key_or_list': [
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING)
         ]
     }]
 
@@ -120,6 +143,9 @@ class StoredFileNode(StoredObject):
     # Should only be used for OsfStorage
     checkout = fields.AbstractForeignField('User')
 
+    #Tags for a file, currently only used for osfStorage
+    tags = fields.ForeignField('Tag', list=True)
+
     # For Django compatibility
     @property
     def pk(self):
@@ -134,6 +160,14 @@ class StoredFileNode(StoredObject):
     @property
     def deep_url(self):
         return self.wrapped().deep_url
+
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
     def wrapped(self):
         """Wrap self in a FileNode subclass
@@ -263,6 +297,14 @@ class FileNode(object):
         return StoredFileNode.find_one(cls._filter(qs)).wrapped()
 
     @classmethod
+    def files_checked_out(cls, user):
+        """
+        :param user: The user with checkedout files
+        :return: A queryset of all FileNodes checked out by user
+        """
+        return cls.find(Q('checkout', 'eq', user))
+
+    @classmethod
     def load(cls, _id):
         """A proxy for StoredFileNode.load requires the wrapped version of the found value
         to be an instance of cls.
@@ -332,7 +374,7 @@ class FileNode(object):
         Implemented top level so that child class may override it
         and just call super.save rather than self.stored_object.save
         """
-        self.stored_object.save()
+        return self.stored_object.save()
 
     def serialize(self, **kwargs):
         return {
@@ -357,6 +399,9 @@ class FileNode(object):
         """
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
+        if self._id in self.node.commented_files:
+            del self.node.commented_files[self._id]
+        self.node.save()
         StoredFileNode.remove_one(self.stored_object)
         return trashed
 
@@ -366,8 +411,7 @@ class FileNode(object):
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
         self.parent = destination_parent.stored_object
-        self._update_node(save=True)
-        # Trust _update_node to save us
+        self._update_node(save=True)  # Trust _update_node to save us
 
         return self
 
@@ -497,6 +541,7 @@ class File(FileNode):
         headers = {}
         if auth_header:
             headers['Authorization'] = auth_header
+
         resp = requests.get(
             self.generate_waterbutler_url(revision=revision, meta=True, **kwargs),
             headers=headers,
@@ -569,6 +614,7 @@ class File(FileNode):
                 modified=None,
                 contentType=None,
                 downloads=self.get_download_count(),
+                checkout=self.checkout._id if self.checkout else None,
             )
 
         version = self.versions[-1]
@@ -576,6 +622,7 @@ class File(FileNode):
             super(File, self).serialize(),
             size=version.size,
             downloads=self.get_download_count(),
+            checkout=self.checkout._id if self.checkout else None,
             version=version.identifier if self.versions else None,
             contentType=version.content_type if self.versions else None,
             modified=version.date_modified.isoformat() if version.date_modified else None,

@@ -1,19 +1,23 @@
 import furl
+import pytz
 from modularodm import Q
 
 from rest_framework import serializers as ser
+from django.core.urlresolvers import resolve, reverse
 
 from website import settings
 from framework.auth.core import User
 from website.files.models import FileNode
+from website.project.model import Comment
 from api.base.utils import absolute_reverse
-from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
-from api.base.serializers import JSONAPIHyperlinkedIdentityField
+from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links, FileCommentRelationshipField
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
-class CheckoutField(JSONAPIHyperlinkedIdentityField):
+
+class CheckoutField(ser.HyperlinkedRelatedField):
 
     default_error_messages = {'invalid_data': 'Checkout must be either the current user or null'}
+    json_api_link = True  # serializes to a links object
 
     def __init__(self, **kwargs):
         kwargs['queryset'] = True
@@ -22,18 +26,32 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
         kwargs['lookup_field'] = 'pk'
         kwargs['lookup_url_kwarg'] = 'user_id'
 
-        self.meta = None
+        self.meta = {'id': 'user_id'}
         self.link_type = 'related'
+        self.always_embed = kwargs.pop('always_embed', False)
 
-        super(ser.HyperlinkedIdentityField, self).__init__('users:user-detail', **kwargs)
+        super(CheckoutField, self).__init__('users:user-detail', **kwargs)
+
+    def resolve(self, resource):
+        """
+        Resolves the view when embedding.
+        """
+        embed_value = resource.stored_object.checkout.pk
+        kwargs = {self.lookup_url_kwarg: embed_value}
+        return resolve(
+            reverse(
+                self.view_name,
+                kwargs=kwargs
+            )
+        )
 
     def get_queryset(self):
         return User.find(Q('_id', 'eq', self.context['request'].user._id))
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:
-            return None
-        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+            return {}
+        return super(CheckoutField, self).get_url(obj, view_name, request, format)
 
     def to_internal_value(self, data):
         if data is None:
@@ -47,6 +65,17 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
         except StopIteration:
             self.fail('invalid_data')
 
+    def to_representation(self, value):
+
+        url = super(CheckoutField, self).to_representation(value)
+
+        rel_meta = None
+        if value:
+            rel_meta = {'id': value._id}
+
+        ret = format_relationship_links(related_link=url, rel_meta=rel_meta)
+        return ret
+
 
 class FileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -55,6 +84,7 @@ class FileSerializer(JSONAPISerializer):
         'node',
         'kind',
         'path',
+        'materialized_path',
         'size',
         'provider',
         'last_touched',
@@ -67,10 +97,27 @@ class FileSerializer(JSONAPISerializer):
     path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
     size = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
+    materialized_path = ser.CharField(
+        read_only=True, help_text='The Unix-style path of this object relative to the provider root')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
+    date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
+    date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
+    extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
 
-    files = NodeFileHyperLink(kind='folder', link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
-    versions = NodeFileHyperLink(kind='file', link_type='related', view_name='files:file-versions', kwargs=(('file_id', '_id'), ))
+    files = NodeFileHyperLinkField(
+        related_view='nodes:node-files',
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder'
+    )
+    versions = NodeFileHyperLinkField(
+        related_view='files:file-versions',
+        related_view_kwargs={'file_id': '<_id>'},
+        kind='file'
+    )
+    comments = FileCommentRelationshipField(related_view='nodes:node-comments',
+                                            related_view_kwargs={'node_id': '<node._id>'},
+                                            related_meta={'unread': 'get_unread_comments_count'},
+                                            filter={'target': '<_id>'})
 
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
@@ -78,7 +125,7 @@ class FileSerializer(JSONAPISerializer):
         'upload': WaterbutlerLink(),
         'delete': WaterbutlerLink(),
         'download': WaterbutlerLink(must_be_file=True),
-        'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder')
+        'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder'),
     })
 
     class Meta:
@@ -87,6 +134,57 @@ class FileSerializer(JSONAPISerializer):
     def get_size(self, obj):
         if obj.versions:
             return obj.versions[-1].size
+        return None
+
+    def get_date_modified(self, obj):
+        mod_dt = None
+        if obj.provider == 'osfstorage' and obj.versions:
+            # Each time an osfstorage file is added or uploaded, a new version object is created with its
+            # date_created equal to the time of the update.  The date_modified is the modified date
+            # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
+            # so prefer to use the date_created of the latest version.
+            mod_dt = obj.versions[-1].date_created
+        elif obj.provider != 'osfstorage' and obj.history:
+            mod_dt = obj.history[-1].get('modified', None)
+
+        return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
+
+    def get_date_created(self, obj):
+        creat_dt = None
+        if obj.provider == 'osfstorage' and obj.versions:
+            creat_dt = obj.versions[0].date_created
+        elif obj.provider != 'osfstorage' and obj.history:
+            # Non-osfstorage files don't store a created date, so instead get the modified date of the
+            # earliest entry in the file history.
+            creat_dt = obj.history[0].get('modified', None)
+
+        return creat_dt and creat_dt.replace(tzinfo=pytz.utc)
+
+    def get_extra(self, obj):
+        metadata = {}
+        if obj.provider == 'osfstorage' and obj.versions:
+            metadata = obj.versions[-1].metadata
+        elif obj.provider != 'osfstorage' and obj.history:
+            metadata = obj.history[-1].get('extra', {})
+
+        extras = {}
+        extras['hashes'] = {  # mimic waterbutler response
+            'md5': metadata.get('md5', None),
+            'sha256': metadata.get('sha256', None),
+        }
+        return extras
+
+    def get_unread_comments_count(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return 0
+        return Comment.find_n_unread(user=user, node=obj.node, page='files', root_id=obj._id)
+
+    def user_id(self, obj):
+        # NOTE: obj is the user here, the meta field for
+        # Hyperlinks is weird
+        if obj:
+            return obj._id
         return None
 
     def update(self, instance, validated_data):

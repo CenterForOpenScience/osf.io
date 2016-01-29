@@ -1,17 +1,21 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
+from rest_framework.exceptions import ValidationError
+from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.models import Node, User
+from website.models import Node, User, Comment, Institution
 from website.exceptions import NodeStateError
+from website.files.models.base import File
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
-from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
-from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField, JSONAPIListField
+from api.base.utils import get_object_or_error, absolute_reverse
+from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
+                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
+                                  HideIfRegistration)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -30,13 +34,39 @@ class NodeSerializer(JSONAPISerializer):
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
     filterable_fields = frozenset([
+        'id',
         'title',
         'description',
         'public',
-        'registration',
         'tags',
         'category',
+        'date_created',
+        'date_modified',
+        'registration',
+        'root',
+        'parent'
     ])
+
+    non_anonymized_fields = [
+        'id',
+        'title',
+        'description',
+        'category',
+        'date_created',
+        'date_modified',
+        'registration',
+        'tags',
+        'public',
+        'links',
+        'children',
+        'comments',
+        'contributors',
+        'files',
+        'node_links',
+        'parent',
+        'root',
+        'logs',
+    ]
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
@@ -51,9 +81,18 @@ class NodeSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     fork = ser.BooleanField(read_only=True, source='is_fork')
-    collection = ser.BooleanField(read_only=True, source='is_folder')
+    collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
+    template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
+                                  help_text='Specify a node id for a node you would like to use as a template for the '
+                                            'new node. Templating is like forking, except that you do not copy the '
+                                            'files, only the project structure. Some information is changed on the top '
+                                            'level project by submitting the appropriate fields in the request body, '
+                                            'and some information will not change. By default, the description will '
+                                            'be cleared and the project will be made private.')
+    current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
+                                                                   'for the current user on this node.')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
@@ -61,36 +100,79 @@ class NodeSerializer(JSONAPISerializer):
                                         'to everyone. Private nodes require explicit read '
                                         'permission. Write and admin access are the same for '
                                         'public and private nodes. Administrators on a parent '
-                                        'node have implicit read permissions for all child nodes',
-                              )
+                                        'node have implicit read permissions for all child nodes')
 
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
-    children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
-                                                lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
-
-    contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
-                                                    lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
-
-    files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
-                                             link_type='related')
-
-    node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
-
-    parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
-                                              lookup_url_kwarg='node_id')
-
-    registrations = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
-                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}))
-
-    forked_from = JSONAPIHyperlinkedIdentityField(
-        view_name='nodes:node-detail',
-        lookup_field='forked_from_id',
-        link_type='related',
-        lookup_url_kwarg='node_id'
+    children = RelationshipField(
+        related_view='nodes:node-children',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_node_count'},
     )
+
+    comments = RelationshipField(
+        related_view='nodes:node-comments',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'unread': 'get_unread_comments_count'})
+
+    contributors = RelationshipField(
+        related_view='nodes:node-contributors',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_contrib_count'},
+    )
+
+    files = RelationshipField(
+        related_view='nodes:node-providers',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
+
+    forked_from = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<forked_from_id>'}
+    )
+
+    node_links = DevOnly(RelationshipField(
+        related_view='nodes:node-pointers',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_pointers_count'},
+    ))
+
+    parent = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<parent_node._id>'},
+        filter_key='parent_node'
+    )
+
+    registrations = DevOnly(HideIfRegistration(RelationshipField(
+        related_view='nodes:node-registrations',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_registration_count'}
+    )))
+
+    primary_institution = RelationshipField(
+        related_view='nodes:node-institution-detail',
+        related_view_kwargs={'node_id': '<pk>'},
+        self_view='nodes:node-relationships-institution',
+        self_view_kwargs={'node_id': '<pk>'}
+    )
+
+    root = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<root._id>'}
+    )
+
+    logs = RelationshipField(
+        related_view='nodes:node-logs',
+        related_view_kwargs={'node_id': '<pk>'},
+    )
+
+    def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return ["read"]
+        else:
+            return obj.get_permissions(user=user)
 
     class Meta:
         type_ = 'nodes'
@@ -124,8 +206,39 @@ class NodeSerializer(JSONAPISerializer):
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
 
+    def get_unread_comments_count(self, obj):
+        user = self.get_user_auth(self.context['request']).user
+        node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
+        file_comments = self.get_unread_file_comments(obj)
+
+        return {
+            'total': node_comments + file_comments,
+            'node': node_comments,
+            'files': file_comments
+        }
+
+    def get_unread_file_comments(self, obj):
+        user = self.get_user_auth(self.context['request']).user
+        n_unread = 0
+        commented_files = File.find(Q('_id', 'in', obj.commented_files.keys()))
+        for file_obj in commented_files:
+            if obj.get_addon(file_obj.provider):
+                try:
+                    self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider, check_object_permissions=False)
+                except (exceptions.NotFound, exceptions.PermissionDenied):
+                    continue
+                n_unread += Comment.find_n_unread(user, obj, page='files', root_id=file_obj._id)
+        return n_unread
+
     def create(self, validated_data):
-        node = Node(**validated_data)
+        if 'template_from' in validated_data:
+            template_from = validated_data.pop('template_from')
+            template_node = Node.load(key=template_from)
+            validated_data.pop('creator')
+            changed_data = {template_from: validated_data}
+            node = template_node.use_as_template(auth=self.get_user_auth(self.context['request']), changes=changed_data)
+        else:
+            node = Node(**validated_data)
         try:
             node.save()
         except ValidationValueError as e:
@@ -138,13 +251,15 @@ class NodeSerializer(JSONAPISerializer):
         """
         assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
-        tags = validated_data.get('tags')
-        if tags is not None:
+        old_tags = set([tag._id for tag in node.tags])
+        if 'tags' in validated_data:
+            current_tags = set(validated_data.get('tags'))
             del validated_data['tags']
-            current_tags = set(tags)
+        elif self.partial:
+            current_tags = set(old_tags)
         else:
             current_tags = set()
-        old_tags = set([tag._id for tag in node.tags])
+
         for new_tag in (current_tags - old_tags):
             node.add_tag(new_tag, auth=auth)
         for deleted_tag in (old_tags - current_tags):
@@ -167,53 +282,38 @@ class NodeDetailSerializer(NodeSerializer):
     """
     id = IDField(source='_id', required=True)
 
+
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
+    non_anonymized_fields = ['bibliographic', 'permission']
     filterable_fields = frozenset([
-        'full_name',
-        'given_name',
-        'middle_names',
-        'family_name',
         'id',
         'bibliographic',
-        'permissions'
+        'permission'
     ])
 
     id = IDField(source='_id', required=True)
     type = TypeField()
 
-    full_name = ser.CharField(source='fullname', read_only=True, help_text='Display name used in the general user interface')
-    given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    date_registered = ser.DateTimeField(read_only=True)
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
-
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
-    links = LinksField(add_dev_only_items({
-        'html': 'absolute_url',
+    links = LinksField({
         'self': 'get_absolute_url'
-    }, {
-        'profile_image': 'profile_image_url',
-    }))
-    nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
-                                             link_type='related')
+    })
 
-    def profile_image_url(self, user):
-        size = self.context['request'].query_params.get('profile_image_size')
-        return user.profile_image_url(size=size)
+    users = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<pk>'},
+        always_embed=True
+    )
 
     class Meta:
         type_ = 'contributors'
-
-    def absolute_url(self, obj):
-        return obj.absolute_url
 
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
@@ -224,6 +324,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
                 'user_id': obj._id
             }
         )
+
+
+class NodeContributorsCreateSerializer(NodeContributorsSerializer):
+    """
+    Overrides NodeContributorsSerializer to add target_type field
+    """
+    target_type = TargetTypeField(target_type='users')
 
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
@@ -246,6 +353,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
+
     def update(self, instance, validated_data):
         contributor = instance
         auth = Auth(self.context['request'].user)
@@ -263,69 +371,60 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         return contributor
 
 
-class NodeRegistrationSerializer(NodeSerializer):
-
-    retracted = ser.BooleanField(source='is_retracted', read_only=True,
-        help_text='Whether this registration has been retracted.')
-    date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-
-    registered_by = JSONAPIHyperlinkedIdentityField(
-        view_name='users:user-detail',
-        lookup_field='registered_user_id',
-        link_type='related',
-        lookup_url_kwarg='user_id'
-    )
-
-    registered_from = JSONAPIHyperlinkedIdentityField(
-        view_name='nodes:node-detail',
-        lookup_field='registered_from_id',
-        link_type='related',
-        lookup_url_kwarg='node_id'
-    )
-
-    # TODO: Finish me
-
-    # TODO: Override create?
-
-    def update(self, *args, **kwargs):
-        raise exceptions.ValidationError('Registrations cannot be modified.')
-
-
 class NodeLinksSerializer(JSONAPISerializer):
 
-    id = IDField(source='_id', read_only=True)
+    id = IDField(source='_id')
     type = TypeField()
-    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
+    target_type = TargetTypeField(target_type='nodes')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
     # include this field in the future.
     # title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
     #                                                                      'points to')
 
+    target_node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<pk>'},
+        always_embed=True
+
+    )
     class Meta:
         type_ = 'node_links'
 
     links = LinksField({
-        'html': 'get_absolute_url',
+        'self': 'get_absolute_url'
     })
 
     def get_absolute_url(self, obj):
-        pointer_node = Node.load(obj.node._id)
-        return pointer_node.absolute_url
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'nodes:node-pointer-detail',
+            kwargs={
+                'node_id': node_id,
+                'node_link_id': obj._id
+            }
+        )
 
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
         auth = Auth(user)
         node = self.context['view'].get_node()
-        pointer_node = Node.load(validated_data['node']['_id'])
-        if not pointer_node:
-            raise exceptions.NotFound('Node not found.')
+        target_node_id = validated_data['_id']
+        pointer_node = Node.load(target_node_id)
+        if not pointer_node or pointer_node.is_folder:
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/node_links/data/id'},
+                detail='Target Node \'{}\' not found.'.format(target_node_id)
+            )
         try:
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
         except ValueError:
-            raise exceptions.ValidationError('Node link to node {} already in list'.format(pointer_node._id))
+            raise InvalidModelValueError(
+                source={'pointer': '/data/relationships/node_links/data/id'},
+                detail='Target Node \'{}\' already pointed to by \'{}\'.'.format(target_node_id, node._id)
+            )
 
     def update(self, instance, validated_data):
         pass
@@ -339,7 +438,12 @@ class NodeProviderSerializer(JSONAPISerializer):
     path = ser.CharField(read_only=True)
     node = ser.CharField(source='node_id', read_only=True)
     provider = ser.CharField(read_only=True)
-    files = NodeFileHyperLink(kind='folder', read_only=True, link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
+    files = NodeFileHyperLinkField(
+        related_view='nodes:node-files',
+        related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder',
+        never_embed=True
+    )
     links = LinksField({
         'upload': WaterbutlerLink(),
         'new_folder': WaterbutlerLink(kind='folder')
@@ -351,3 +455,93 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
+
+class NodeInstitutionRelationshipSerializer(ser.Serializer):
+    id = ser.CharField(source='institution_id', required=False, allow_null=True)
+    type = TypeField(required=False, allow_null=True)
+
+    links = LinksField({
+        'self': 'get_self_link',
+        'related': 'get_related_link',
+    })
+
+    class Meta:
+        type_ = 'institutions'
+
+    def get_self_link(self, obj):
+        return obj.institution_relationship_url()
+
+    def get_related_link(self, obj):
+        return obj.institution_url()
+
+    def update(self, instance, validated_data):
+        node = instance
+        user = self.context['request'].user
+
+        inst = validated_data.get('institution_id', None)
+        if inst:
+            inst = Institution.load(inst)
+            if not inst:
+                raise exceptions.NotFound
+            if not inst.auth(user):
+                raise exceptions.PermissionDenied
+        node.primary_institution = inst
+        node.save()
+        return node
+
+    def to_representation(self, obj):
+        data = {}
+        meta = getattr(self, 'Meta', None)
+        type_ = getattr(meta, 'type_', None)
+        assert type_ is not None, 'Must define Meta.type_'
+        relation_id_field = self.fields['id']
+        attribute = relation_id_field.get_attribute(obj)
+        relationship = relation_id_field.to_representation(attribute)
+
+        data['data'] = {'type': type_, 'id': relationship} if relationship else None
+        data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
+
+        return data
+
+
+class NodeAlternativeCitationSerializer(JSONAPISerializer):
+
+    id = IDField(source="_id", read_only=True)
+    type = TypeField()
+    name = ser.CharField(required=True)
+    text = ser.CharField(required=True)
+
+    class Meta:
+        type_ = 'citations'
+
+    def create(self, validated_data):
+        errors = self.error_checker(validated_data)
+        if len(errors) > 0:
+            raise ValidationError(detail=errors)
+        node = self.context['view'].get_node()
+        auth = Auth(self.context['request']._user)
+        citation = node.add_citation(auth, save=True, **validated_data)
+        return citation
+
+    def update(self, instance, validated_data):
+        errors = self.error_checker(validated_data)
+        if len(errors) > 0:
+            raise ValidationError(detail=errors)
+        node = self.context['view'].get_node()
+        auth = Auth(self.context['request']._user)
+        instance = node.edit_citation(auth, instance, save=True, **validated_data)
+        return instance
+
+    def error_checker(self, data):
+        errors = []
+        name = data.get('name', None)
+        text = data.get('text', None)
+        citations = self.context['view'].get_node().alternative_citations
+        if not (self.instance and self.instance.name == name) and citations.find(Q('name', 'eq', name)).count() > 0:
+            errors.append("There is already a citation named '{}'".format(name))
+        if not (self.instance and self.instance.text == text):
+            matching_citations = citations.find(Q('text', 'eq', text))
+            if matching_citations.count() > 0:
+                names = "', '".join([str(citation.name) for citation in matching_citations])
+                errors.append("Citation matches '{}'".format(names))
+        return errors

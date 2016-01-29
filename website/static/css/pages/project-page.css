@@ -31,12 +31,6 @@
     margin: 0;
 }
 
-/* Project Navigation */
-#projectSubnav .navbar-collapse {
-    padding-left: 0;
-    padding-right: 0;
-}
-
 .node-title {
     line-height: 44px;
     border-bottom: none;
@@ -64,6 +58,14 @@
         padding-left: 30px;
         padding-right: 30px;
     }
+    .osf-project-navbar li #commentsLink {
+        font-size: 15px;
+        padding: 12px 30px;
+    }
+    .osf-project-navbar li #commentsLink:hover {
+        background-color: #DADADA;
+        text-decoration: none;
+    }
     .osf-project-navbar a.project-title {
     }
     .project-nav {
@@ -83,7 +85,7 @@
 }
 
 @media (min-width: 768px) {
-   .osf-project-navbar li>a {
+    .osf-project-navbar li>a {
         padding-left: 7px;
         padding-right: 7px;
     }
@@ -133,4 +135,10 @@
 /* Disable word-break in project addon-settings table */
 .table-addon-terms td:first-child {
     word-break: normal;
+}
+
+/* Project Description */
+
+span#nodeDescriptionEditable{
+    white-space:pre-line;
 }

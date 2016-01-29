@@ -10,7 +10,7 @@ from modularodm.exceptions import ValidationValueError
 
 import framework.auth
 
-from framework.auth import cas
+from framework.auth import cas, campaigns
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
@@ -108,14 +108,16 @@ def forgot_password_get(auth, *args, **kwargs):
 # Log in
 ###############################################################################
 
-# TODO: Rewrite async
 @collect_auth
 def auth_login(auth, **kwargs):
     """If GET request, show login page. If POST, attempt to log user in if
     login form passsed; else send forgot password email.
 
     """
+    campaign = request.args.get('campaign')
     next_url = request.args.get('next')
+    if campaign:
+        next_url = campaigns.campaign_url_for(campaign)
     if auth.logged_in:
         if not request.args.get('logout'):
             if next_url:
@@ -130,17 +132,18 @@ def auth_login(auth, **kwargs):
     if status_message == 'expired':
         status.push_status_message('The private link you used is expired.')
 
-    code = http.OK
     if next_url:
         status.push_status_message(language.MUST_LOGIN)
-        # Don't raise error if user is being logged out
-        if not request.args.get('logout'):
-            code = http.UNAUTHORIZED
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
     # allows for next to be followed or a redirect to the dashboard.
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
-    login_url = cas.get_login_url(redirect_url, auto=True)
-    return {'login_url': login_url}, code
+
+    data = {}
+    if campaign and campaign in campaigns.CAMPAIGNS:
+        data['campaign'] = campaign
+    data['login_url'] = cas.get_login_url(redirect_url, auto=True)
+
+    return data, http.OK
 
 
 def auth_logout(redirect_url=None):
@@ -172,8 +175,14 @@ def confirm_email_get(token, auth=None, **kwargs):
     if user is None:
         raise HTTPError(http.NOT_FOUND)
 
-    if auth and auth.user and auth.user in (user, user.merged_by):
+    if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
         if not is_merge:
+            # determine if the user registered through a campaign
+            campaign = campaigns.campaign_for_user(user)
+            if campaign:
+                return redirect(
+                    campaigns.campaign_url_for(campaign)
+                )
             status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
             # Go to dashboard
             return redirect(web_url_for('dashboard'))
@@ -230,9 +239,18 @@ def send_confirm_email(user, email):
     except NoResultsFound:
         merge_target = None
 
+    campaign = campaigns.campaign_for_user(user)
+    # Choose the appropriate email template to use
+    if merge_target:
+        mail_template = mails.CONFIRM_MERGE
+    elif campaign:
+        mail_template = campaigns.email_template_for_campaign(campaign)
+    else:
+        mail_template = mails.CONFIRM_EMAIL
+
     mails.send_mail(
         email,
-        mails.CONFIRM_MERGE if merge_target else mails.CONFIRM_EMAIL,
+        mail_template,
         'plain',
         user=user,
         confirmation_url=confirmation_url,
@@ -248,6 +266,7 @@ def register_user(**kwargs):
     :param-json str email2:
     :param-json str password:
     :param-json str fullName:
+    :param-json str campaign:
     :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already
         exists
 
@@ -263,10 +282,15 @@ def register_user(**kwargs):
         full_name = request.json['fullName']
         full_name = strip_html(full_name)
 
+        campaign = json_data.get('campaign')
+        if campaign and campaign not in campaigns.CAMPAIGNS:
+            campaign = None
+
         user = framework.auth.register_unconfirmed(
             request.json['email1'],
             request.json['password'],
             full_name,
+            campaign=campaign,
         )
         framework.auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):

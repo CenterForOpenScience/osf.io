@@ -17,7 +17,7 @@ def connect_s3(access_key=None, secret_key=None, user_settings=None):
     """
     if user_settings is not None:
         access_key, secret_key = user_settings.access_key, user_settings.secret_key
-    connection = S3Connection(access_key, secret_key)
+    connection = S3Connection(access_key, secret_key, calling_format=OrdinaryCallingFormat())
     return connection
 
 
@@ -37,8 +37,16 @@ def validate_bucket_location(location):
 
 
 def validate_bucket_name(name):
-    validate_name = re.compile('^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$')
-    return bool(validate_name.match(name))
+    """Make sure the bucket name conforms to Amazon's expectations as described at:
+    http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html#bucketnamingrules
+    The laxer rules for US East (N. Virginia) are not supported.
+    """
+    label = '[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])?'
+    validate_name = re.compile('^' + label + '(?:\\.' + label + ')*$')
+    is_ip_address = re.compile('^[0-9]+(?:\.[0-9]+){3}$')
+    return (
+        len(name) >= 3 and len(name) <= 63 and bool(validate_name.match(name)) and not bool(is_ip_address.match(name))
+    )
 
 
 def create_bucket(user_settings, bucket_name, location=''):

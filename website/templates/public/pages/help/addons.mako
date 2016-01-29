@@ -9,7 +9,7 @@
 <div class="row">
     <div class="col-md-12">
         <div class="col-md-12">
-            <h3 class="text-center m-t-xl f-w-lg">Storage Options</h3>
+            <h3 class="text-center m-t-xl f-w-lg">Storage options</h3>
         </div>
         <%include file="/public/pages/help/addons/dropbox.mako"/>
         <%include file="/public/pages/help/addons/github.mako"/>
@@ -20,7 +20,7 @@
         <%include file="/public/pages/help/addons/drive.mako"/>
 
         <div class="col-md-12">
-            <h3 class= "text-center m-t-xl f-w-lg">Citation Managers</h3>
+            <h3 class= "text-center m-t-xl f-w-lg">Citation managers</h3>
         </div>
         <%include file="/public/pages/help/addons/mendeley.mako"/>
         <%include file="/public/pages/help/addons/zotero.mako"/>

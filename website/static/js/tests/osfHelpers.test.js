@@ -415,4 +415,77 @@ describe('osfHelpers', () => {
             assert.calledOnce(bootboxStub);
         });
     });
+
+    describe('iterObject', () => {
+        var get = function(obj, key) {
+            return obj[key];
+        };
+
+        it('maps an object to an array {key: KEY, value: VALUE} pairs', () => {
+            var obj = {
+                foo: 'bar',
+                cat: 'dog'
+            };
+            var keys = Object.keys(obj);
+            var values = keys.map(get.bind(null, obj));
+            var iterable = $osf.iterObject(obj);
+            for(var i = 0; i < iterable.length; i++) {
+                var item = iterable[i];
+                assert.include(keys, item.key);
+                assert.include(values, item.value);
+                assert.equal(item.value, get(obj, keys[i]));
+            }
+        });
+    });
+
+    describe('indexOf', () => {
+        it('returns a positive integer index if it finds a matching item', () => {
+            var list = [];
+            for(var i = 0; i < 5; i++){
+                list.push({
+                    foo: 'bar' + i
+                });
+            }
+            var idx = Math.floor(Math.random() * 5);
+            var search = function(item) {
+                return item.foo === 'bar' + idx;
+            };
+            var found = $osf.indexOf(list, search);
+            assert.equal(idx, found);
+        });
+        it('returns -1 if no item is matched', () => {
+            var list = [];
+            for(var i = 0; i < 5; i++){
+                list.push({
+                    foo: 'bar' + i
+                });
+            }
+            var search = function(item) {
+                return item.foo === 42;
+            };
+            var found = $osf.indexOf(list, search);
+            assert.equal(-1, found);
+        });
+    });
+    
+    describe('any', () => {
+        it('returns true if any of the values in an array are truthy', () => {
+            var TRUTHY = [true, {}, [], 42, 'foo', new Date()];
+            $.each(TRUTHY, function(_, item) {
+                assert.isTrue(
+                    $osf.any([false, item, false])
+                );
+            });
+        });
+        it('returns false if none of the values in an array are truthy', () => {
+            assert.isFalse(
+                $osf.any([false, null, undefined, 0, NaN, ''])
+            );
+        });
+        it('returns false if the array is empty', () => {
+            assert.isFalse(
+                $osf.any([])
+            );            
+        });
+    });
 });

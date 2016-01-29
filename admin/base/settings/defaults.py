@@ -7,17 +7,16 @@ from urlparse import urlparse
 from website import settings as osf_settings
 from django.contrib import messages
 
+# import local  # Build own local.py (used with postgres)
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # from the OSF settings
-BUILT_TEMPLATES = osf_settings.BUILT_TEMPLATES
-CORE_TEMPLATES = osf_settings.CORE_TEMPLATES
-ADDONS_REQUESTED = osf_settings.ADDONS_REQUESTED
-ADDON_PATH = osf_settings.ADDON_PATH
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = osf_settings.SECRET_KEY
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = osf_settings.DEBUG_MODE
@@ -60,10 +59,11 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'admin.common_auth',
+    'admin.base',
+    'admin.pre_reg',
     'admin.spam',
 
     # 3rd party
-    'django_extensions',
     'raven.contrib.django.raven_compat',
     'webpack_loader',
 )
@@ -90,7 +90,7 @@ MIDDLEWARE_CLASSES = (
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    #'api.base.middleware.TokuTransactionsMiddleware',
+    'api.base.middleware.TokuTransactionsMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -123,6 +123,18 @@ TEMPLATES = [
         }
     }]
 
+# Database
+# Postgres:
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': local.POSTGRES_NAME,
+#         'USER': local.POSTGRES_USER,
+#         'PASSWORD': local.POSTGRES_PASSWORD,
+#         'HOST': local.POSTGRES_HOST,
+#         'PORT': '',
+#     }
+# }
 # Postgres settings in local.py
 
 DATABASES = {
@@ -131,6 +143,7 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'admin.base.wsgi.application'

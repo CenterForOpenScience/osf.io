@@ -2,6 +2,7 @@
 """Contains helper functions for generating correctly
 formatted hgrid list/folders.
 """
+import logging
 import datetime
 
 import hurry.filesize
@@ -17,6 +18,8 @@ from website.settings import (
     ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
 )
 
+
+logger = logging.getLogger(__name__)
 
 FOLDER = 'folder'
 FILE = 'file'
@@ -176,47 +179,61 @@ class NodeProjectCollector(object):
         return rv
 
     def collect_all_projects_smart_folder(self):
-        contributed = self.auth.user.node__contributed
-        all_my_projects = contributed.find(
-            Q('category', 'eq', 'project') &
-            Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', False) &
-            Q('is_folder', 'eq', False) &
-            # parent is not in the nodes list
-            Q('__backrefs.parent.node.nodes', 'eq', None)
+        from website.project.model import Node
+        all_my_projects = Node.find_for_user(
+            self.auth.user,
+            (
+                Q('category', 'eq', 'project') &
+                Q('is_deleted', 'eq', False) &
+                Q('is_registration', 'eq', False) &
+                Q('is_folder', 'eq', False) &
+                # parent is not in the nodes list
+                Q('__backrefs.parent.node.nodes', 'eq', None)
+            )
         )
-        comps = contributed.find(
-            # components only
-            Q('category', 'ne', 'project') &
-            # parent is not in the nodes list
-            Q('__backrefs.parent.node.nodes', 'nin', all_my_projects.get_keys()) &
-            # exclude deleted nodes
-            Q('is_deleted', 'eq', False) &
-            # exclude registrations
-            Q('is_registration', 'eq', False)
+        comps = Node.find_for_user(
+            self.auth.user,
+            (
+                # components only
+                Q('category', 'ne', 'project') &
+                # parent is not in the nodes list
+                Q('__backrefs.parent.node.nodes', 'nin', all_my_projects.get_keys()) &
+                # exclude deleted nodes
+                Q('is_deleted', 'eq', False) &
+                # exclude registrations
+                Q('is_registration', 'eq', False)
+            )
+
         )
         children_count = all_my_projects.count() + comps.count()
         return self.make_smart_folder(ALL_MY_PROJECTS_NAME, ALL_MY_PROJECTS_ID, children_count)
 
     def collect_all_registrations_smart_folder(self):
-        contributed = self.auth.user.node__contributed
-        all_my_registrations = contributed.find(
-            Q('category', 'eq', 'project') &
-            Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', True) &
-            Q('is_folder', 'eq', False) &
-            # parent is not in the nodes list
-            Q('__backrefs.parent.node.nodes', 'eq', None)
+        from website.project.model import Node
+        all_my_registrations = Node.find_for_user(
+            self.auth.user,
+            (
+                Q('category', 'eq', 'project') &
+                Q('is_deleted', 'eq', False) &
+                Q('is_registration', 'eq', True) &
+                Q('is_folder', 'eq', False) &
+                # parent is not in the nodes list
+                Q('__backrefs.parent.node.nodes', 'eq', None)
+            )
         )
-        comps = contributed.find(
-            # components only
-            Q('category', 'ne', 'project') &
-            # parent is not in the nodes list
-            Q('__backrefs.parent.node.nodes', 'nin', all_my_registrations.get_keys()) &
-            # exclude deleted nodes
-            Q('is_deleted', 'eq', False) &
-            # exclude registrations
-            Q('is_registration', 'eq', True)
+        comps = Node.find_for_user(
+            self.auth.user,
+            (
+                # components only
+                Q('category', 'ne', 'project') &
+                # parent is not in the nodes list
+                Q('__backrefs.parent.node.nodes', 'nin', all_my_registrations.get_keys()) &
+                # exclude deleted nodes
+                Q('is_deleted', 'eq', False) &
+                # exclude registrations
+                Q('is_registration', 'eq', True)
+            )
+
         )
         children_count = all_my_registrations.count() + comps.count()
         return self.make_smart_folder(ALL_MY_REGISTRATIONS_NAME, ALL_MY_REGISTRATIONS_ID, children_count)
@@ -490,7 +507,14 @@ class NodeFileCollector(object):
                 # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
                 try:
                     temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
-                except Exception:
+                except Exception as e:
+                    logger.warn(
+                        getattr(
+                            e,
+                            'data',
+                            "Unexpected error when fetching file contents for {0}.".format(addon.config.full_name)
+                        )
+                    )
                     sentry.log_exception()
                     rv.append({
                         KIND: FOLDER,

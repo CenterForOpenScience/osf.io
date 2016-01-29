@@ -3,6 +3,7 @@ import json
 
 import celery
 from celery.utils.log import get_task_logger
+from modularodm import Q
 
 from framework.tasks import app as celery_app
 from framework.tasks.utils import logged
@@ -13,6 +14,7 @@ from website.archiver import (
     ARCHIVER_FAILURE,
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_NETWORK_ERROR,
+    ARCHIVER_FILE_NOT_FOUND,
     ARCHIVER_UNCAUGHT_ERROR,
     NO_ARCHIVE_LIMIT,
     AggregateStatResult,
@@ -22,6 +24,7 @@ from website.archiver.model import ArchiveJob
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
+from website.project.model import Node, MetaSchema, DraftRegistration
 from website import settings
 from website.app import init_addons, do_set_backends
 
@@ -51,6 +54,17 @@ class ArchiverStateError(Exception):
         self.info = info
 
 
+class ArchivedFileNotFound(Exception):
+
+    def __init__(self, registration, missing_files, *args, **kwargs):
+        super(ArchivedFileNotFound, self).__init__(*args, **kwargs)
+
+        self.draft_registration = DraftRegistration.find_one(
+            Q('registered_node', 'eq', registration)
+        )
+        self.missing_files = missing_files
+
+
 class ArchiverTask(celery.Task):
     abstract = True
     max_retries = 0
@@ -75,6 +89,12 @@ class ArchiverTask(celery.Task):
         elif isinstance(exc, HTTPError):
             dst.archive_status = ARCHIVER_NETWORK_ERROR
             errors = dst.archive_job.target_info()
+        elif isinstance(exc, ArchivedFileNotFound):
+            dst.archive_status = ARCHIVER_FILE_NOT_FOUND
+            errors = {
+                'missing_files': exc.missing_files,
+                'draft': exc.draft_registration
+            }
         else:
             dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
             errors = [einfo]
@@ -266,3 +286,104 @@ def archive(job_pk):
             )
         ]
     )
+
+def find_registration_file(value, node):
+    orig_sha256 = value['extra']['sha256']
+    orig_name = value['extra']['selectedFileName']
+    orig_node = value['extra']['nodeId']
+    file_map = utils.get_file_map(node)
+    for sha256, value, node_id in file_map:
+        registered_from_id = Node.load(node_id).registered_from._id
+        if sha256 == orig_sha256 and registered_from_id == orig_node and orig_name == value['name']:
+            return value, node_id
+    return None, None
+
+def find_question(schema, qid):
+    for page in schema['pages']:
+        questions = {
+            q['qid']: q
+            for q in page['questions']
+        }
+        if qid in questions:
+            return questions[qid]
+
+VIEW_FILE_URL_TEMPLATE = '/project/{node_id}/files/osfstorage/{path}/'
+
+@celery_app.task(base=ArchiverTask, name="archiver.archive_success")
+@logged('archive_success')
+def archive_success(dst_pk, job_pk):
+    """Archiver's final callback. For the time being the use case for this task
+    is to rewrite references to files selected in a registration schema (the Prereg
+    Challenge being the first to expose this feature). The created references point
+    to files on the registered_from Node (needed for previewing schema data), and
+    must be re-associated with the corresponding files in the newly created registration.
+
+    :param str dst_pk: primary key of registration Node
+
+    note:: At first glance this task makes redundant calls to utils.get_file_map (which
+    returns a generator yielding  (<sha256>, <file_metadata>) pairs) on the dst Node. Two
+    notes about utils.get_file_map: 1) this function memoizes previous results to reduce
+    overhead and 2) this function returns a generator that lazily fetches the file metadata
+    of child Nodes (it is possible for a selected file to belong to a child Node) using a
+    non-recursive DFS. Combined this allows for a relatively effient implementation with
+    seemingly redundant calls.
+    """
+    create_app_context()
+    dst = Node.load(dst_pk)
+    # The filePicker extension addded with the Prereg Challenge registration schema
+    # allows users to select files in OSFStorage as their response to some schema
+    # questions. These files are references to files on the unregistered Node, and
+    # consequently we must migrate those file paths after archiver has run. Using
+    # sha256 hashes is a convenient way to identify files post-archival.
+    prereg_schema = MetaSchema.find_one(
+        Q('name', 'eq', 'Prereg Challenge') &
+        Q('schema_version', 'eq', 2)
+    )
+    missing_files = []
+    if prereg_schema in dst.registered_schema:
+        prereg_metadata = dst.registered_meta[prereg_schema._id]
+        updated_metadata = {}
+        for key, question in prereg_metadata.items():
+            if isinstance(question['value'], dict):
+                for subkey, subvalue in question['value'].items():
+                    registration_file = None
+                    if subvalue.get('extra', {}).get('sha256'):
+                        registration_file, node_id = find_registration_file(subvalue, dst)
+                        if not registration_file:
+                            missing_files.append({
+                                'file_name': subvalue['extra']['selectedFileName'],
+                                'question_title': find_question(prereg_schema.schema, key)['title']
+                            })
+                            continue
+                        subvalue['extra'].update({
+                            'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
+                        })
+                    question['value'][subkey] = subvalue
+            else:
+                if question.get('extra', {}).get('sha256'):
+                    registration_file, node_id = find_registration_file(question, dst)
+                    if not registration_file:
+                        missing_files.append({
+                            'file_name': question['extra']['selectedFileName'],
+                            'question_title': find_question(prereg_schema.schema, key)['title']
+                        })
+                        continue
+                    question['extra'].update({
+                        'viewUrl': VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, path=registration_file['path'].lstrip('/'))
+                    })
+            updated_metadata[key] = question
+
+        if missing_files:
+            raise ArchivedFileNotFound(
+                registration=dst,
+                missing_files=missing_files
+            )
+
+        prereg_metadata.update(updated_metadata)
+        dst.registered_meta[prereg_schema._id] = prereg_metadata
+        dst.save()
+
+    job = ArchiveJob.load(job_pk)
+    job.sent = True
+    job.save()
+    dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))

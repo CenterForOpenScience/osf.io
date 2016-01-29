@@ -7,7 +7,6 @@ import logging
 import unittest
 import functools
 import datetime as dt
-from flask import g
 from json import dumps
 
 import blinker
@@ -20,9 +19,11 @@ from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
+from django.test import TestCase as DjangoTestCase
 
 
-from api.base.wsgi import application as django_app
+from api.base.wsgi import application as api_django_app
+from admin.base.wsgi import application as admin_django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
@@ -30,9 +31,11 @@ from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
+from framework.tasks.handlers import celery_before_request
 
 from website.project.model import (
-    Node, NodeLog, Tag, WatchConfig,
+    Node, NodeLog, Tag, WatchConfig, MetaSchema,
+    ensure_schemas,
 )
 from website import settings
 
@@ -44,6 +47,15 @@ from website.project.signals import contributor_added
 from website.app import init_app
 from website.addons.base import AddonConfig
 from website.project.views.contributor import notify_added_contributor
+
+
+def get_default_metaschema():
+    """This needs to be a method so it gets called after the test database is set up"""
+    try:
+        return MetaSchema.find()[0]
+    except IndexError:
+        ensure_schemas()
+        return MetaSchema.find()[0]
 
 # Just a simple app without routing set up or backends
 test_app = init_app(
@@ -159,7 +171,7 @@ class AppTestCase(unittest.TestCase):
         self.context = test_app.test_request_context()
         self.context.push()
         with self.context:
-            g._celery_tasks = []
+            celery_before_request()
         for signal in self.DISCONNECTED_SIGNALS:
             for receiver in self.DISCONNECTED_SIGNALS[signal]:
                 signal.disconnect(receiver)
@@ -173,16 +185,31 @@ class AppTestCase(unittest.TestCase):
                 signal.connect(receiver)
 
 
-class ApiAppTestCase(unittest.TestCase):
-    """Base `TestCase` for OSF API tests that require the WSGI app (but no database).
+class JSONAPIWrapper(object):
     """
+    Creates wrapper with stated content_type.
+    """
+    def make_wrapper(self, url, method, content_type, params=NoDefault, **kw):
+        """
+        Helper method for generating wrapper method.
+        """
 
-    def setUp(self):
-        super(ApiAppTestCase, self).setUp()
-        self.app = TestAppJSONAPI(django_app)
+        if params is not NoDefault:
+            params = dumps(params, cls=self.JSONEncoder)
+        kw.update(
+            params=params,
+            content_type=content_type,
+            upload_files=None,
+        )
+        wrapper = self._gen_request(method, url, **kw)
+
+        subst = dict(lmethod=method.lower(), method=method)
+        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
+
+        return wrapper
 
 
-class TestAppJSONAPI(TestApp):
+class TestAppJSONAPI(TestApp, JSONAPIWrapper):
     """
     Extends TestApp to add json_api_methods(post, put, patch, and delete)
     which put content_type 'application/vnd.api+json' in header. Adheres to
@@ -196,26 +223,31 @@ class TestAppJSONAPI(TestApp):
 
     def json_api_method(method):
 
-        def wrapper(self, url, params=NoDefault, **kw):
+        def wrapper(self, url, params=NoDefault, bulk=False, **kw):
             content_type = 'application/vnd.api+json'
-            if params is not NoDefault:
-                params = dumps(params, cls=self.JSONEncoder)
-            kw.update(
-                params=params,
-                content_type=content_type,
-                upload_files=None,
-            )
-            return self._gen_request(method, url, **kw)
-
-        subst = dict(lmethod=method.lower(), method=method)
-        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
-
+            if bulk:
+                content_type = 'application/vnd.api+json; ext=bulk'
+            return JSONAPIWrapper.make_wrapper(self, url, method, content_type , params, **kw)
         return wrapper
 
     post_json_api = json_api_method('POST')
     put_json_api = json_api_method('PUT')
     patch_json_api = json_api_method('PATCH')
     delete_json_api = json_api_method('DELETE')
+
+
+class ApiAppTestCase(unittest.TestCase):
+    """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
+    """
+    def setUp(self):
+        super(ApiAppTestCase, self).setUp()
+        self.app = TestAppJSONAPI(api_django_app)
+
+
+class AdminAppTestCase(DjangoTestCase):
+    def setUp(self):
+        super(AdminAppTestCase, self).setUp()
+        self.app = TestApp(admin_django_app)
 
 
 class UploadTestCase(unittest.TestCase):
@@ -292,8 +324,13 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
-    pass
+    def setUp(self):
+        super(ApiTestCase, self).setUp()
+        settings.USE_EMAIL = False
 
+
+class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
+    pass
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):

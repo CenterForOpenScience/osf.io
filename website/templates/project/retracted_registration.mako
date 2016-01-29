@@ -25,12 +25,15 @@
                     <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
                 % endif
-                % if node['is_registration'] and node['registered_meta']:
-                    <br />Registration Supplement:
-                    % for meta in node['registered_meta']:
-                        ${meta['name_clean']}
-                    % endfor
-                % endif
+                <p>
+                  Registration Supplement:
+                  % for meta_schema in node.get('registered_schemas', []):
+                  <span> ${meta_schema['schema_name']}</span>
+                  % if len(node['registered_schemas']) > 1:
+                  ,
+                  % endif
+                  % endfor
+                </p>
                 <br />
                 Date Created: <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                 | Date Registered:  <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>

@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
+
 from framework.sessions import session, create_session, Session
 from modularodm import Q
 from framework import bcrypt
+from framework.auth import signals
 from framework.auth.exceptions import DuplicateEmailError
 
 from .core import User, Auth
@@ -39,6 +42,8 @@ def authenticate(user, access_token, response):
         'auth_user_fullname': user.fullname,
         'auth_user_access_token': access_token,
     })
+    user.date_last_login = datetime.utcnow()
+    user.save()
     response = create_session(response, data=data)
     return response
 
@@ -53,13 +58,18 @@ def logout():
     return True
 
 
-def register_unconfirmed(username, password, fullname):
+def register_unconfirmed(username, password, fullname, campaign=None):
     user = get_user(email=username)
     if not user:
-        user = User.create_unconfirmed(username=username,
+        user = User.create_unconfirmed(
+            username=username,
             password=password,
-            fullname=fullname)
+            fullname=fullname,
+            campaign=campaign,
+        )
         user.save()
+        signals.unconfirmed_user_created.send(user)
+
     elif not user.is_registered:  # User is in db but not registered
         user.add_unconfirmed_email(username)
         user.set_password(password)

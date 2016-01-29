@@ -365,16 +365,6 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-    'PsiChiRepository': {
-        'name': 'Psi Chi Repository',
-        'info_url': None,
-        'logo_url': None,
-        'active': True,
-        'admins': [],
-        'public_projects': True,
-        'poster': True,
-        'talk': True,
-    },
     'R2RC': {
         'name': 'Right to Research Coalition',
         'info_url': None,
@@ -477,15 +467,15 @@ MEETING_DATA = {
     },
     'CNI2015': {
         'name': 'Coalition for Networked Information (CNI) Fall Membership Meeting 2015',
-        'info_url': 'https://www.cni.org/events/membership-meetings/upcoming-meeting/fall-2015/',
+        'info_url': 'https://wp.me/P1LncT-64s',
         'logo_url': None,
         'active': True,
         'admins': [],
         'public_projects': True,
-        'poster': True,
+        'poster': False,
         'talk': True,
     },
-        'SWPA2016': {
+    'SWPA2016': {
         'name': 'Southwestern Psychological Association Convention 2016',
         'info_url': 'https://www.swpsych.org/conv_dates.php',
         'logo_url': 'http://s28.postimg.org/xbwyqqvx9/SWPAlogo4.jpg',
@@ -495,13 +485,159 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'ESIP2016W': {
+        'name': 'Earth Science Information Partners Winter Meeting 2016',
+        'info_url': 'http://commons.esipfed.org/2016WinterMeeting',
+        'logo_url': 'http://s30.postimg.org/m2uz2g4pt/ESIP.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'MiamiBrainhack15': {
+        'name': 'University of Miami Brainhack 2015',
+        'info_url': 'http://brainhack.org/americas/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'PsiChiRepository': {
+        'name': 'Psi Chi',
+        'info_url': 'http://www.psichi.org/?ResearchAdvisory#.VmBpeOMrI1g',
+        'logo_url': 'http://s11.postimg.org/4g2451vcz/Psi_Chi_Logo.png',
+        'admins': [
+            'research.director@psichi.org',
+        ],
+        'field_names': {
+            'submission1': 'measures',
+            'submission2': 'materials',
+            'submission1_plural': 'measures/scales',
+            'submission2_plural': 'study materials',
+            'meeting_title_type': 'Repository',
+            'add_submission': 'materials',
+            'mail_subject': 'Title',
+            'mail_message_body': 'Measure or material short description',
+            'mail_attachment': 'Your measure/scale or material file(s)'
+        },
+    },
+    'GI2015': {
+        'name': 'Genome Informatics 2015',
+        'info_url': 'https://meetings.cshl.edu/meetings.aspx?meet=info&year=15',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'MADSSCi2016': {
+        'name': 'Mid-Atlantic Directors and Staff of Scientific Cores & Southeastern Association of Shared Services 2016',
+        'info_url': 'http://madssci.abrf.org',
+        'logo_url': 'http://madssci.abrf.org/sites/default/files/madssci-logo-bk.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'SMM2015': {
+        'name': 'The Society for Marine Mammalogy',
+        'info_url': 'https://www.marinemammalscience.org/conference/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'TESS': {
+        'name': 'Time-sharing Experiments for the Social Sciences',
+        'info_url': 'http://www.tessexperiments.org',
+        'logo_url': None,
+        'active': False,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': False,
+        'field_names': {
+            'submission1': 'poster',
+            'submission2': 'study',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'studies',
+            'meeting_title_type': 'Studies',
+            'add_submission': 'studies',
+        }
+    },
+    'ASCERM2016': {
+        'name': 'ASCE Rocky Mountain Student Conference 2016',
+        'info_url': 'http://luninuxos.com/asce/',
+        'logo_url': 'http://s2.postimg.org/eaduh2ovt/2016_ASCE_Rocky_Mtn_banner.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+    },
+        'ARCA2016': {
+        'name': '5th Applied Research Conference in Africa',
+        'info_url': 'http://www.arcaconference.org/',
+        'logo_url': 'http://www.arcaconference.org/images/ARCA_LOGO_NEW.JPG',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+    },
+        'CURCONF2016': {
+        'name': 'CUR Biennial Conference 2016',
+        'info_url': 'http://www.cur.org/conferences_and_events/biennial2016/',
+        'logo_url': 'http://s11.postimg.org/itsmubimq/Conference_logo_eps.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+        'CATALISE2016': {
+        'name': 'Criteria and Terminology Applied to Language Impairments: Synthesising the Evidence (CATALISE) 2016',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'Emergy2016': {
+        'name': '9th Biennial Emergy Research Conference',
+        'info_url': 'http://www.cep.ees.ufl.edu/emergy/conferences/ERC09_2016/index.shtml',
+        'logo_url': 'http://s12.postimg.org/uf9ioqmct/emergy.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'aps2016': {
+        'name': '28th APS Annual Convention',
+        'info_url': 'http://www.psychologicalscience.org/convention',
+        'logo_url': 'http://www.psychologicalscience.org/redesign/wp-content/uploads/2015/03/APS_2016_Banner_990x157.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
-
 
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
         meeting = meeting.strip()
-        admin_emails = attrs.pop('admins')
+        admin_emails = attrs.pop('admins', [])
         admin_objs = []
         for email in admin_emails:
             try:
@@ -517,7 +653,12 @@ def populate_conferences():
         except ModularOdmException:
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
-                setattr(conf, key, value)
+                if isinstance(value, dict):
+                    current = getattr(conf, key)
+                    current.update(value)
+                    setattr(conf, key, current)
+                else:
+                    setattr(conf, key, value)
             conf.admins = admin_objs
             changed_fields = conf.save()
             if changed_fields:

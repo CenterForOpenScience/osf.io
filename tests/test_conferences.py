@@ -337,6 +337,7 @@ class TestMessage(ContextTestCase):
         names = [
             (' Fred', 'Fred'),
             (u'Me‰¨ü', u'Me‰¨ü'),
+            (u'fred@queen.com', u'fred@queen.com'),
             (u'Fred <fred@queen.com>', u'Fred'),
             (u'"Fred" <fred@queen.com>', u'Fred'),
         ]
@@ -368,6 +369,27 @@ class TestMessage(ContextTestCase):
             assert_equal(msg.conference_name, 'conf')
             assert_equal(msg.conference_category, 'talk')
 
+    def test_alternate_route_valid(self):
+        conf = ConferenceFactory.build(endpoint='chocolate', active=True)
+        conf.name = 'Chocolate Conference'
+        conf.field_names['submission2'] = 'data'
+        conf.save()
+        recipient = '{0}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
+        with self.make_context(data={'recipient': recipient}):
+            self.app.app.preprocess_request()
+            msg = message.ConferenceMessage()
+            assert_equal(msg.conference_name, 'chocolate')
+            assert_equal(msg.conference_category, 'data')
+        conf.__class__.remove_one(conf)
+
+    def test_alternate_route_invalid(self):
+        recipient = '{0}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
+        with self.make_context(data={'recipient': recipient}):
+            self.app.app.preprocess_request()
+            msg = message.ConferenceMessage()
+            with assert_raises(message.ConferenceError):
+                msg.route
+
     def test_attachments_count_zero(self):
         with self.make_context(data={'attachment-count': '0'}):
             msg = message.ConferenceMessage()
@@ -397,6 +419,24 @@ class TestConferenceEmailViews(OsfTestCase):
         assert_equal(res.status_code, 302)
         res = res.follow()
         assert_equal(res.request.path, '/meetings/')
+
+    def test_conference_submissions(self):
+        Node.remove()
+        conference1 = ConferenceFactory()
+        conference2 = ConferenceFactory()
+        # Create conference nodes
+        create_fake_conference_nodes(
+            3,
+            conference1.endpoint,
+        )
+        create_fake_conference_nodes(
+            2,
+            conference2.endpoint,
+        )
+
+        url = api_url_for('conference_submissions')
+        res = self.app.get(url)
+        assert_equal(len(res.json['submissions']), 5)
 
     def test_conference_plain_returns_200(self):
         conference = ConferenceFactory()
@@ -471,6 +511,11 @@ class TestConferenceModel(OsfTestCase):
         with assert_raises(ValidationError):
             ConferenceFactory(endpoint='spsp2014', name=None).save()
 
+    def test_default_field_names(self):
+        conf = ConferenceFactory(endpoint='cookie', name='Cookies Conference')
+        conf.save()
+        assert_equal(conf.field_names['submission1'], 'poster')
+        assert_equal(conf.field_names['mail_subject'], 'Presentation title')
 
 class TestConferenceIntegration(ContextTestCase):
 
@@ -563,3 +608,52 @@ class TestConferenceIntegration(ContextTestCase):
             call_kwargs['presentations_url'],
             web_url_for('conference_view', _absolute=True),
         )
+
+    @mock.patch('website.conferences.views.send_mail')
+    @mock.patch('website.conferences.utils.upload_attachments')
+    def test_integration_wo_full_name(self, mock_upload, mock_send_mail):
+        username = 'no_full_name@test.com'
+        title = 'no full name only email'
+        conference = ConferenceFactory()
+        body = 'dragon on my back'
+        content = 'dragon attack'
+        recipient = '{0}{1}-poster@osf.io'.format(
+            'test-' if settings.DEV_MODE else '',
+            conference.endpoint,
+        )
+        self.app.post(
+            api_url_for('meeting_hook'),
+            {
+                'X-Mailgun-Sscore': 0,
+                'timestamp': '123',
+                'token': 'secret',
+                'signature': hmac.new(
+                    key=settings.MAILGUN_API_KEY,
+                    msg='{}{}'.format('123', 'secret'),
+                    digestmod=hashlib.sha256,
+                ).hexdigest(),
+                'attachment-count': '1',
+                'X-Mailgun-Sscore': 0,
+                'from': username,
+                'recipient': recipient,
+                'subject': title,
+                'stripped-text': body,
+            },
+            upload_files=[
+                ('attachment-1', 'attachment-1', content),
+            ],
+        )
+        assert_true(mock_upload.called)
+        users = User.find(Q('username', 'eq', username))
+        assert_equal(users.count(), 1)
+        nodes = Node.find(Q('title', 'eq', title))
+        assert_equal(nodes.count(), 1)
+        node = nodes[0]
+        assert_equal(node.get_wiki_page('home').content, body)
+        assert_true(mock_send_mail.called)
+        call_args, call_kwargs = mock_send_mail.call_args
+        assert_absolute(call_kwargs['conf_view_url'])
+        assert_absolute(call_kwargs['set_password_url'])
+        assert_absolute(call_kwargs['profile_url'])
+        assert_absolute(call_kwargs['file_url'])
+        assert_absolute(call_kwargs['node_url'])

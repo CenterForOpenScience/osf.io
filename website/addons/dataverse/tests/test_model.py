@@ -1,6 +1,7 @@
 from nose.tools import *  # noqa
 import mock
 
+from tests.base import get_default_metaschema
 from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
 from framework.exceptions import PermissionsError
@@ -246,9 +247,8 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
-            schema=None,
+            schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
-            template='Template1',
-            data='hodor'
+            data='hodor',
         )
         assert_false(registration.has_addon('dataverse'))

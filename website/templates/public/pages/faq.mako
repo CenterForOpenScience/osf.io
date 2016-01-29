@@ -13,8 +13,8 @@
                 <ul class="nav nav-stacked nav-pills " style="min-width: 210px">
                     <li><a class="active" href="#about">About</a></li>
                     <li><a href="#using">Using the OSF</a></li>
-                    <li><a href="#security">Privacy and Security</a></li>
-                    <li><a href="#common">Common Issues</a></li>
+                    <li><a href="#security">Privacy and security</a></li>
+                    <li><a href="#common">Common issues</a></li>
                 </ul>
             </div>
         </div>
@@ -25,7 +25,8 @@
                 <h1 class="text-center">Frequently Asked Questions</h1>
             </div>
 
-            <div id="about" class="anchor row">
+            <div>
+            <span id="about" class="anchor"></span>
                 <h2 class="text-center">About</h2>
                     <h4 class="m-t-lg f-w-lg">How much does the OSF service cost?</h4>
                         <p>It's free!</p>
@@ -52,7 +53,8 @@
                     <h4 class="m-t-lg f-w-lg">How can I contact the OSF team if I have a question that the FAQ or Getting Started pages don’t answer?</h4>
                         <p>Send us an <a href="mailto:support@osf.io">email</a> and we'll be happy to help you.</p>
             </div>
-            <div id="using" class="anchor row">
+            <div>
+            <span id="using" class="anchor"></span>
                 <h2 class="text-center">Using the OSF</h2>
 
                     <h4 class="m-t-lg f-w-lg">How can I get started on using the OSF?</h4>
@@ -76,15 +78,16 @@
                         <p>Registering is an optional feature of the OSF.</p>
 
                     <h4 class="m-t-lg f-w-lg">What is the cap on data per user?</h4>
-                        <p>There is a limit on the size of individual files uploaded to the OSF. This limit is 128 MB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</p>
+                    <p>There is a limit on the size of individual files uploaded to the OSF. This limit is 5 GB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</p>
 
                     <h4 class="m-t-lg f-w-lg">How do I get a DOI or ARK for my project?</h4>
                         <p>DOIs and ARKs are available for <b>public registrations</b> of projects. To get a DOI or ARK for your project, first create a registration of your project, and make sure the registration is public. Then click the "Create DOI / ARK" link, located in the block of text below the project title. A DOI and ARK will be automatically created. </p>
 
             </div>
 
-            <div id="security" class="anchor row">
-                <h2 class="text-center">Privacy and Security</h2>
+            <div>
+            <span id="security" class="anchor"></span>
+                <h2 class="text-center">Privacy and security</h2>
                     <h4 class="m-t-lg f-w-lg">What if I don't want to make anything available publicly in the OSF?</h4>
                         <p>
                             The OSF is designed to support both private and public workflows. You can
@@ -112,7 +115,7 @@
                         <p>You should refer to your institutional policies regarding specific security requirements for your research.</p>
 
                     <h4 class="m-t-lg f-w-lg">How can I license my data/code/etc.?</h4>
-                        <p>If you’d like to attach a license to your materials hosted on the OSF, you can put this information in your project’s wiki or upload a README file. Typically, users wish to license their materials using Creative Commons licenses. Information about Creative Commons licenses can be found <a href="https://creativecommons.org/licenses/">here.</a> </p>
+                        <p>To apply a license to your OSF project, visit the project's overview page and select one from the "License picker," below the project's description. You can select from a variety of commonly used licenses or upload your own.</p>
 
 
                     <h4 class="m-t-lg f-w-lg">How does the OSF store and backup files that I upload to the site?</h4>
@@ -125,8 +128,9 @@
 
             </div>
 
-            <div id="common" class="anchor row">
-                <h2 class="text-center">Common Issues</h2>
+            <div>
+            <span id="common" class="anchor"></span>
+                <h2 class="text-center">Common issues</h2>
                     <h4 class="m-t-lg f-w-lg">What do I do if I lost my email confirmation for OSF registration, or I never received it?</h4>
                         <p>Log into the OSF with the email address and password of the account you created, and there will be a link to resend the confirmation email.</p>
 

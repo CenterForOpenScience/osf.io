@@ -110,15 +110,11 @@ def index(auth):
 
 
 def find_dashboard(user):
-    dashboard_folder = user.node__contributed.find(
-        Q('is_dashboard', 'eq', True)
-    )
+    dashboard_folder = Node.find_for_user(user, subquery=Q('is_dashboard', 'eq', True))
 
     if dashboard_folder.count() == 0:
         new_dashboard(user)
-        dashboard_folder = user.node__contributed.find(
-            Q('is_dashboard', 'eq', True)
-        )
+        dashboard_folder = Node.find_for_user(user, Q('is_dashboard', 'eq', True))
     return dashboard_folder[0]
 
 
@@ -149,12 +145,15 @@ def get_all_projects_smart_folder(auth, **kwargs):
     # TODO: Unit tests
     user = auth.user
 
-    contributed = user.node__contributed
-    nodes = contributed.find(
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False)
-    ).sort('-title')
+    contributed = Node.find_for_user(
+        user,
+        subquery=(
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False) &
+            Q('is_folder', 'eq', False)
+        )
+    )
+    nodes = contributed.sort('title')
 
     keys = nodes.get_keys()
     return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.parent_id not in keys]
@@ -163,14 +162,16 @@ def get_all_projects_smart_folder(auth, **kwargs):
 def get_all_registrations_smart_folder(auth, **kwargs):
     # TODO: Unit tests
     user = auth.user
-    contributed = user.node__contributed
 
-    nodes = contributed.find(
-
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', True) &
-        Q('is_folder', 'eq', False)
-    ).sort('-title')
+    contributed = Node.find_for_user(
+        user,
+        subquery=(
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', True) &
+            Q('is_folder', 'eq', False)
+        )
+    )
+    nodes = contributed.sort('-title')
 
     # Note(hrybacki): is_retracted and is_pending_embargo are property methods
     # and cannot be directly queried
@@ -191,23 +192,27 @@ def get_dashboard_nodes(auth):
     """
     user = auth.user
 
-    contributed = user.node__contributed  # nodes user contributed to
-
-    nodes = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False)
+    nodes = Node.find_for_user(
+        user,
+        subquery=(
+            Q('category', 'eq', 'project') &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False) &
+            Q('is_folder', 'eq', False)
+        )
     )
 
     if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
-        comps = contributed.find(
-            # components only
-            Q('category', 'ne', 'project') &
-            # exclude deleted nodes
-            Q('is_deleted', 'eq', False) &
-            # exclude registrations
-            Q('is_registration', 'eq', False)
+        comps = Node.find_for_user(  # NOTE - this used to be a find on nodes above. Does this mess it up?
+            user,
+            (
+                # components only
+                Q('category', 'ne', 'project') &
+                # exclude deleted nodes
+                Q('is_deleted', 'eq', False) &
+                # exclude registrations
+                Q('is_registration', 'eq', False)
+            )
         )
     else:
         comps = []
@@ -234,7 +239,6 @@ def dashboard(auth):
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': dashboard_id,
             }
-
 
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):

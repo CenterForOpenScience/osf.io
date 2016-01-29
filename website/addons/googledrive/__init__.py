@@ -6,12 +6,11 @@ from website.addons.googledrive import routes, model, views
 MODELS = [
     model.GoogleDriveUserSettings,
     model.GoogleDriveNodeSettings,
-    model.GoogleDriveOAuthSettings,
 ]
 USER_SETTINGS_MODEL = model.GoogleDriveUserSettings
 NODE_SETTINGS_MODEL = model.GoogleDriveNodeSettings
 
-ROUTES = [routes.auth_routes, routes.api_routes]
+ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'googledrive'
 FULL_NAME = 'Google Drive'
@@ -39,4 +38,4 @@ GET_HGRID_DATA = views.hgrid.googledrive_addon_folder
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = None  # use default nodes settings templates
-USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'googledrive_user_settings.mako')
+USER_SETTINGS_TEMPLATE = None  # use default user settings templates

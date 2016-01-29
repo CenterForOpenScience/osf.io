@@ -11,6 +11,7 @@ import functools
 
 import six
 
+from modularodm import Q
 from elasticsearch import (
     Elasticsearch,
     RequestError,
@@ -20,6 +21,8 @@ from elasticsearch import (
 )
 
 from framework import sentry
+from framework.tasks import app as celery_app
+from framework.mongo.utils import paginated
 
 from website import settings
 from website.filters import gravatar
@@ -28,6 +31,7 @@ from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
 from website.views import validate_page_num
+from website.project.licenses import serialize_node_license_record
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +42,8 @@ ALIASES = {
     'component': 'Components',
     'registration': 'Registrations',
     'user': 'Users',
-    'total': 'Total'
+    'total': 'Total',
+    'file': 'Files',
 }
 
 # Prevent tokenizing and stop word removal.
@@ -84,6 +89,28 @@ def requires_search(func):
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
         raise exceptions.SearchUnavailableError("Failed to connect to elasticsearch")
     return wrapped
+
+
+@requires_search
+def get_aggregations(query, doc_type):
+    query['aggregations'] = {
+        'licenses': {
+            'terms': {
+                'field': 'license.id'
+            }
+        }
+    }
+
+    res = es.search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
+    ret = {
+        doc_type: {
+            item['key']: item['doc_count']
+            for item in agg['buckets']
+        }
+        for doc_type, agg in res['aggregations'].iteritems()
+    }
+    ret['total'] = res['hits']['total']
+    return ret
 
 
 @requires_search
@@ -133,16 +160,24 @@ def search(query, index=None, doc_type='_all'):
     """
     index = index or INDEX
     tag_query = copy.deepcopy(query)
+    aggs_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
     for key in ['from', 'size', 'sort']:
         try:
             del tag_query[key]
+            del aggs_query[key]
             del count_query[key]
         except KeyError:
             pass
 
     tags = get_tags(tag_query, index)
+    try:
+        del aggs_query['query']['filtered']['filter']
+        del count_query['query']['filtered']['filter']
+    except KeyError:
+        pass
+    aggregations = get_aggregations(aggs_query, doc_type=doc_type)
     counts = get_counts(count_query, index)
 
     # Run the real query and get the results
@@ -152,6 +187,7 @@ def search(query, index=None, doc_type='_all'):
     return_value = {
         'results': format_results(results),
         'counts': counts,
+        'aggs': aggregations,
         'tags': tags,
         'typeAliases': ALIASES
     }
@@ -163,11 +199,14 @@ def format_results(results):
     for result in results:
         if result.get('category') == 'user':
             result['url'] = '/profile/' + result['id']
+        elif result.get('category') == 'file':
+            parent_info = load_parent(result.get('parent_id'))
+            result['parent_url'] = parent_info.get('url') if parent_info else None
+            result['parent_title'] = parent_info.get('title') if parent_info else None
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         ret.append(result)
     return ret
-
 
 def format_result(result, parent_id=None):
     parent_info = load_parent(parent_id)
@@ -192,6 +231,7 @@ def format_result(result, parent_id=None):
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
         'n_wikis': len(result['wikis']),
+        'license': result.get('license'),
     }
 
     return formatted_result
@@ -226,6 +266,13 @@ def get_doctype_from_node(node):
     else:
         return node.category
 
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_node_async(self, node_id, index=None, bulk=False):
+    node = Node.load(node_id)
+    try:
+        update_node(node=node, index=index, bulk=bulk)
+    except Exception as exc:
+        self.retry(exc=exc)
 
 @requires_search
 def update_node(node, index=None, bulk=False):
@@ -244,6 +291,11 @@ def update_node(node, index=None, bulk=False):
         except IndexError:
             # Skip orphaned components
             return
+
+    from website.files.models.osfstorage import OsfStorageFile
+    for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
+        update_file(file_, index=index)
+
     if node.is_deleted or not node.is_public or node.archiving:
         delete_doc(elastic_document_id, node)
     else:
@@ -280,6 +332,7 @@ def update_node(node, index=None, bulk=False):
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
+            'license': serialize_node_license_record(node.license),
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         if not node.is_retracted:
@@ -294,8 +347,7 @@ def update_node(node, index=None, bulk=False):
         else:
             es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
-
-def bulk_update_nodes(serialize, nodes, index=INDEX):
+def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects
 
     :param function Node-> dict serialize:
@@ -303,8 +355,10 @@ def bulk_update_nodes(serialize, nodes, index=INDEX):
     :param str index: Index of the nodes
     :return:
     """
+    index = index or INDEX
     actions = []
     for node in nodes:
+        logger.info('Updating node {}'.format(node._id))
         serialized = serialize(node)
         if serialized:
             actions.append({
@@ -334,6 +388,7 @@ bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contri
 
 @requires_search
 def update_user(user, index=None):
+
     index = index or INDEX
     if not user.is_active:
         try:
@@ -378,6 +433,49 @@ def update_user(user, index=None):
 
     es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
 
+@requires_search
+def update_file(file_, index=None, delete=False):
+
+    index = index or INDEX
+
+    if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
+        es.delete(
+            index=index,
+            doc_type='file',
+            id=file_._id,
+            refresh=True,
+            ignore=[404]
+        )
+        return
+
+    # We build URLs manually here so that this function can be
+    # run outside of a Flask request context (e.g. in a celery task)
+    file_deep_url = '/{node_id}/files/{provider}{path}/'.format(
+        node_id=file_.node._id,
+        provider=file_.provider,
+        path=file_.path,
+    )
+    node_url = '/{node_id}/'.format(node_id=file_.node._id)
+
+    file_doc = {
+        'id': file_._id,
+        'deep_url': file_deep_url,
+        'tags': [tag._id for tag in file_.tags],
+        'name': file_.name,
+        'category': 'file',
+        'node_url': node_url,
+        'node_title': file_.node.title,
+        'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
+        'is_registration': file_.node.is_registration,
+    }
+
+    es.index(
+        index=index,
+        doc_type='file',
+        body=file_doc,
+        id=file_._id,
+        refresh=True
+    )
 
 @requires_search
 def delete_all():
@@ -395,7 +493,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user']
+    document_types = ['project', 'component', 'registration', 'user', 'file']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
@@ -404,6 +502,12 @@ def create_index(index=None):
         mapping = {
             'properties': {
                 'tags': NOT_ANALYZED_PROPERTY,
+                'license': {
+                    'properties': {
+                        'id': NOT_ANALYZED_PROPERTY,
+                        'name': NOT_ANALYZED_PROPERTY,
+                    }
+                }
             }
         }
         if type_ in project_like_types:

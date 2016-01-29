@@ -112,7 +112,6 @@ class TestNodeSerializers(OsfTestCase):
         components = _get_children(admin_project, Auth(user))
         assert_equal(len(components), 1)
 
-
     def test_get_summary_private_fork_should_include_is_fork(self):
         user = UserFactory()
         # non-contributor cannot see private fork of public project

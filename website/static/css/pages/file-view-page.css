@@ -78,3 +78,9 @@
 #file-navigation .tb-table[style] {
     width: auto !important;
 }
+
+/* Style for file name */
+#file-ext {
+	white-space: nowrap;
+	display: inline-block;
+}

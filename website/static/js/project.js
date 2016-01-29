@@ -293,7 +293,7 @@ $(document).ready(function() {
     });
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
-        window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
+        window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
     });
 
 
@@ -308,7 +308,7 @@ $(document).ready(function() {
     // Adds active class to current menu item
     $(function () {
         var path = window.location.pathname;
-        $('.project-nav a').each(function () {
+        $('.project-nav a:not(#commentsLink)').each(function () {
             var href = $(this).attr('href');
             if (path === href ||
                (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
@@ -316,6 +316,14 @@ $(document).ready(function() {
                 $(this).closest('li').addClass('active');
             }
         });
+
+        // If not viewing the project or file detail page, remove the Comments Link
+        var excluded = ['files', 'wiki', 'analytics', 'registrations', 'forks', 'contributors', 'settings'];
+        for (var i=0; i < excluded.length; i++) {
+            if (path.indexOf(excluded[i]) > -1) {
+                $('.project-nav #commentsLink').remove();
+            }
+        }
     });
 });
 

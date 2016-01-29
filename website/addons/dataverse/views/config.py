@@ -35,7 +35,7 @@ def dataverse_add_user_account(auth, **kwargs):
     api_token = request.json.get('api_token')
 
     # Verify that credentials are valid
-    client.connect_or_401(host, api_token)
+    client.connect_or_error(host, api_token)
 
     # Note: `DataverseSerializer` expects display_name to be a URL
     try:

@@ -27,7 +27,6 @@
                                                 <a data-bind="click: $parent.filter.bind($data)">{{ display }}<span class="badge pull-right">{{count}}</span></a>
                                             </li>
                                         <!-- /ko -->
-
                                 </ul>
                             </div>
                         </div>
@@ -71,6 +70,23 @@
                         </div>
                         <br />
                         <!-- /ko -->
+                        <div class="row" class="hidden-xs" data-bind="if: showLicenses" class="row">
+                            <div class="col-md-12">
+                                <h4> Filter by license:</h4>
+                                <span data-bind="if: licenses">
+                                <ul class="nav nav-pills nav-stacked"
+                                    data-bind="foreach: {data: licenses, as: 'license'}">
+                                  <li data-bind="css: {'active': license.active(), 'disabled': !license.count()}">
+                                    <a data-bind="click: license.toggleActive">
+                                      <span style="display: inline-block; max-width: 85%;">{{license.name}}</span>
+                                      <span data-bind="text: license.count" class="badge pull-right"></span>
+                                    </a>
+                                  </li>
+                                </ul>
+                                </span>
+                            </div>
+                        </div>
+                        <br />
                     </div>
                     <!-- /ko -->
                     <div class="col-md-9">
@@ -91,11 +107,8 @@
                             <li data-bind="css: {disabled: !nextPageExists()}">
                                 <a href="#" data-bind="click: pageNext"> Next Page</a>
                             </li>
-
                         </ul>
                         <!-- /ko -->
-
-
                         <div class="buffer"></div>
                     </div><!--col-->
                 </div><!--row-->
@@ -131,6 +144,15 @@
         <button class="btn btn-primary pull-right" data-bind="click: $parents[1].claim.bind($data, _id)">Curate This</button>
         <br>
         <!-- /ko -->
+    </script>
+    <script type="text/html" id="file">
+        <h4><a href="{{ deep_url }}">{{ name }}</a> (<span data-bind="if: is_registration">Registration </span>File)</h4>
+        <h5>
+            <!-- ko if: parent_url --> From: <a data-bind="attr.href: parent_url">{{ parent_title }} /</a> <!-- /ko -->
+            <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title">{{ parent_title }} /</span> <!-- /ko -->
+            <a data-bind="attr.href: node_url">{{ node_title }}</a>
+        </h5>
+        <!-- ko if: tags.length > 0 --> <div data-bind="template: 'tag-cloud'"></div> <!-- /ko -->
     </script>
     <script type="text/html" id="user">
 
@@ -187,6 +209,16 @@
                     <li data-bind="visible: social.researcherId">
                         <a data-bind="attr.href: social.researcherId">
                             <i class="fa social-icons" data-toggle="tooltip" title="ResearcherID">R</i>
+                        </a>
+                    </li>
+                    <li data-bind="visible: social.researchGate">
+                        <a data-bind="attr.href: social.researchGate">
+                            <img class="social-icons" src="/static/img/researchgate.jpg" style="PADDING-BOTTOM: 7px" data-toggle="tooltip" title="ResearchGate"></i>
+                        </a>
+                    </li>
+                    <li data-bind="visible: social.academiaInstitution + social.academiaProfileID">
+                        <a data-bind="attr.href: social.academiaInstitution + social.academiaProfileID">
+                            <i class="fa social-icons" data-toggle="tooltip" title="Academia">A</i>
                         </a>
                     </li>
                 </ul>

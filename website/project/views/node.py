@@ -14,36 +14,40 @@ from framework.mongo import StoredObject
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import from_mongo, get_or_http_error
+from framework.mongo.utils import get_or_http_error
 
 from website import language
 
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
-from website.project import clean_template_name, new_node, new_private_link
+from website.project import new_node, new_private_link
 from website.project.decorators import (
+    must_be_contributor_or_public_but_not_anonymized,
     must_be_contributor_or_public,
     must_be_contributor,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
+    http_error_if_disk_saving_mode
 )
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
-from website.models import Node, Pointer, WatchConfig, PrivateLink
+from website.project.metadata.utils import serialize_meta_schemas
+from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
 from website.project import new_folder
+from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
 
-r_strip_html = lambda collection: rapply(collection, strip_html)
 
+r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
 
 @must_be_valid_project
@@ -247,12 +251,8 @@ def project_before_template(auth, node, **kwargs):
 
 @must_be_logged_in
 @must_be_valid_project
+@http_error_if_disk_saving_mode
 def node_fork_page(auth, node, **kwargs):
-    if settings.DISK_SAVING_MODE:
-        raise HTTPError(
-            http.METHOD_NOT_ALLOWED,
-            redirect_url=node.url
-        )
     try:
         fork = node.fork_node(auth)
     except PermissionsError:
@@ -260,17 +260,21 @@ def node_fork_page(auth, node, **kwargs):
             http.FORBIDDEN,
             redirect_url=node.url
         )
+    message = '{} has been successfully forked.'.format(
+        node.project_or_component.capitalize()
+    )
+    status.push_status_message(message, kind='success', trust=False)
     return fork.url
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_be_contributor_or_public_but_not_anonymized
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_be_contributor_or_public_but_not_anonymized
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
@@ -302,8 +306,13 @@ def node_setting(auth, node, **kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name != 'wiki'
     ], key=lambda addon: addon.full_name.lower())
+
+    for addon in settings.ADDONS_AVAILABLE:
+        if 'node' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name == 'wiki':
+            ret['wiki'] = addon
+            break
 
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
@@ -371,9 +380,9 @@ def configure_comments(node, **kwargs):
 @must_be_contributor_or_public
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
-
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
+
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
     ret['addon_widget_js'] = list(collect_addon_js(
@@ -468,10 +477,6 @@ def project_statistics_redirect(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 def project_before_set_public(node, **kwargs):
     prompt = node.callback('before_make_public')
-    anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
-    if anonymous_link_warning:
-        prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
-                      'contributors after a project or component is made public.')
 
     return {
         'prompts': prompt
@@ -577,20 +582,20 @@ def update_node(auth, node, **kwargs):
     data = r_strip_html(request.get_json())
     try:
         updated_field_names = node.update(data, auth=auth)
-        # Need to cast tags to a string to make them JSON-serialiable
-        updated_fields_dict = {
-            key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
-            for key in updated_field_names
-            if key != 'logs'
-        }
-        return {
-            'updated_fields': updated_fields_dict
-        }
     except NodeUpdateError as e:
         raise HTTPError(400, data=dict(
             message_short="Failed to update attribute '{0}'".format(e.key),
             message_long=e.reason
         ))
+    # Need to cast tags to a string to make them JSON-serialiable
+    updated_fields_dict = {
+        key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
+        for key in updated_field_names
+        if key != 'logs' and key != 'date_modified'
+    }
+    node.save()
+    return {'updated_fields': updated_fields_dict}
+
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -612,7 +617,7 @@ def component_remove(auth, node, **kwargs):
         )
     node.save()
 
-    message = '{} deleted'.format(
+    message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
     status.push_status_message(message, kind='success', trust=False)
@@ -694,6 +699,7 @@ def _should_show_wiki_widget(node, user):
     else:
         return has_wiki
 
+
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
@@ -727,6 +733,7 @@ def _view_project(node, auth, primary=False):
             'category_short': node.category,
             'node_type': node.project_or_component,
             'description': node.description or '',
+            'license': serialize_node_license_record(node.license),
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
@@ -749,14 +756,9 @@ def _view_project(node, auth, primary=False):
             'is_pending_embargo': node.is_pending_embargo,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
-            'root_id': node.root._id,
-            'registered_meta': [
-                {
-                    'name_no_ext': from_mongo(meta),
-                    'name_clean': clean_template_name(meta),
-                }
-                for meta in node.registered_meta or []
-            ],
+            'root_id': node.root._id if node.root else None,
+            'registered_meta': node.registered_meta,
+            'registered_schemas': serialize_meta_schemas(node.registered_schema),
             'registration_count': len(node.node__registrations),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
@@ -771,12 +773,14 @@ def _view_project(node, auth, primary=False):
             'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
             'comment_level': node.comment_level,
-            'has_comments': bool(getattr(node, 'commented', [])),
-            'has_children': bool(getattr(node, 'commented', False)),
+            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
+            'has_children': bool(Comment.find(Q('node', 'eq', node))),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
+            'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
+            'has_draft_registrations': node.has_active_draft_registrations,
         },
         'parent_node': {
             'exists': parent is not None,
@@ -797,7 +801,7 @@ def _view_project(node, auth, primary=False):
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
-            'has_read_permissions': node.has_permission(user, 'read'),
+            'has_read_permissions': node.has_permission(user, READ),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
@@ -815,7 +819,7 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'node_categories': Node.CATEGORY_MAP,
+        'node_categories': Node.CATEGORY_MAP
     }
     return data
 
@@ -836,7 +840,7 @@ def _get_children(node, auth, indent=0):
     children = []
 
     for child in node.nodes_primary:
-        if not child.is_deleted and child.has_permission(auth.user, 'admin'):
+        if not child.is_deleted and child.has_permission(auth.user, ADMIN):
             children.append({
                 'id': child._primary_key,
                 'title': child.title,
@@ -1009,6 +1013,62 @@ def get_children(auth, node, **kwargs):
     return _render_nodes(nodes, auth)
 
 
+def node_child_tree(user, node_ids):
+    """ Format data to test for node privacy settings for use in treebeard.
+    """
+    items = []
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        assert node, '{} is not a valid Node.'.format(node_id)
+
+        can_read = node.has_permission(user, 'read')
+        can_read_children = node.has_permission_on_children(user, 'read')
+        if not can_read and not can_read_children:
+            continue
+        children = []
+        # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
+        # user is contributor on a component of the project/node
+        can_write = node.has_permission(user, 'admin')
+        children.extend(node_child_tree(
+            user,
+            [
+                n._id
+                for n in node.nodes
+                if n.primary and
+                not n.is_deleted
+            ]
+        ))
+        item = {
+            'node': {
+                'id': node_id,
+                'url': node.url if can_read else '',
+                'title': node.title if can_read else 'Private Project',
+                'is_public': node.is_public,
+                'can_write': can_write
+            },
+            'user_id': user._id,
+            'children': children,
+            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'view': can_read,
+            }
+        }
+
+        items.append(item)
+
+    return items
+
+
+@must_be_logged_in
+@must_be_valid_project
+def get_node_tree(auth, **kwargs):
+    node = kwargs.get('node') or kwargs['project']
+    tree = node_child_tree(auth.user, [node._id])
+    return tree
+
+
 @must_be_contributor_or_public
 def get_folder_pointers(auth, node, **kwargs):
     if not node.is_folder:
@@ -1048,8 +1108,6 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     nodes = [Node.load(node_id) for node_id in node_ids]
 
-    has_public_node = any(node.is_public for node in nodes)
-
     try:
         new_link = new_private_link(
             name=name, user=auth.user, nodes=nodes, anonymous=anonymous
@@ -1058,13 +1116,6 @@ def project_generate_private_link_post(auth, node, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long=e.message)
-        )
-
-    if anonymous and has_public_node:
-        status.push_status_message(
-            'Anonymized view-only links <b>DO NOT</b> '
-            'anonymize contributors of public projects or components.',
-            trust=True
         )
 
     return new_link
@@ -1378,6 +1429,7 @@ def abbrev_authors(node):
 
 def serialize_pointer(pointer, auth):
     node = get_pointer_parent(pointer)
+
     if node.can_view(auth):
         return {
             'id': node._id,

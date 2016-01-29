@@ -11,6 +11,7 @@ var profile = require('../profile');
 sinon.assert.expose(assert, {prefix: ''});
 
 describe('profile', () => {
+    sinon.collection.restore();
     describe('ViewModels', () => {
 
         var nameURLs = {

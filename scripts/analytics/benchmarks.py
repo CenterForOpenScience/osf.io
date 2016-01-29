@@ -15,7 +15,7 @@ from website import settings
 from website.app import init_app
 from website.files.models import OsfStorageFile
 from website.files.models import TrashedFileNode
-from website.models import User, Node, PrivateLink
+from website.models import User, Node, PrivateLink, NodeLog
 from website.addons.dropbox.model import DropboxUserSettings
 
 from scripts.analytics import profile, tabulate_emails, tabulate_logs
@@ -66,9 +66,12 @@ def count_user_nodes(users=None):
     users = users or get_active_users()
     return [
         len(
-            user.node__contributed.find(
-                Q('is_deleted', 'eq', False) &
-                Q('is_folder', 'ne', True)
+            Node.find_for_user(
+                user,
+                (
+                    Q('is_deleted', 'eq', False) &
+                    Q('is_folder', 'ne', True)
+                )
             )
         )
         for user in users
@@ -77,8 +80,10 @@ def count_user_nodes(users=None):
 
 def count_user_logs(user, query=None):
     if query:
-        return len(user.nodelog__created.find(query))
-    return len(user.nodelog__created)
+        query &= Q('user', 'eq', user._id)
+    else:
+        query = Q('user', 'eq', user._id)
+    return NodeLog.find(query).count()
 
 
 def count_users_logs(users=None, query=None):

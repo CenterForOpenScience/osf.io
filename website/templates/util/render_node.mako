@@ -19,15 +19,15 @@
             % endif
                 <span class="project-statuses-lg">
                   % if summary['is_pending_registration']:
-                    <span class="label label-info"><strong>Pending Registration</strong></span> |
+                    <span class="label label-info"><strong>Pending registration</strong></span> |
                   % elif summary['is_retracted']:
                     <span class="label label-danger"><strong>Retracted</strong></span> |
                   % elif summary['is_pending_retraction']:
-                    <span class="label label-info"><strong>Pending Retraction</strong></span> |
+                    <span class="label label-info"><strong>Pending retraction</strong></span> |
                   % elif summary['embargo_end_date']:
                     <span class="label label-info"><strong>Embargoed</strong></span> |
                   % elif summary['is_pending_embargo']:
-                    <span class="label label-info"><strong>Pending Embargo</strong></span> |
+                    <span class="label label-info"><strong>Pending embargo</strong></span> |
                   % endif
                   % if summary['archiving']:
                     <span class="label label-primary"><strong>Archiving</strong></span> |
@@ -105,7 +105,7 @@
             % if summary['is_retracted']:
                 <h4>Recent activity information has been retracted.</h4>
             % else:
-                Recent Activity
+                Recent activity
                 <!-- ko stopBinding: true -->
                     <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
                         <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
