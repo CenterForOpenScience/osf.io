@@ -2230,6 +2230,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for log in logs:
             log.clone_node_log(forked._id)
 
+        forked.reload()
+
         # After fork callback
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
