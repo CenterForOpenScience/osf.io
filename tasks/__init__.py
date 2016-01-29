@@ -9,28 +9,20 @@ import code
 import platform
 import subprocess
 import logging
+from time import sleep
 
-from invoke import task, run
+import invoke
+from invoke import run, Collection
 
 from website import settings
+from admin import tasks as admin_tasks
+from utils import pip_install, bin_prefix
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+# gets the root path for all the scripts that rely on it
+HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
-
-
-def get_bin_path():
-    """Get parent path of current python binary.
-    """
-    return os.path.dirname(sys.executable)
-
-
-def bin_prefix(cmd):
-    """Prefix command with current binary path.
-    """
-    return os.path.join(get_bin_path(), cmd)
-
 
 try:
     __import__('rednose')
@@ -38,6 +30,24 @@ except ImportError:
     TEST_CMD = 'nosetests'
 else:
     TEST_CMD = 'nosetests --rednose'
+
+ns = Collection()
+ns.add_collection(Collection.from_module(admin_tasks), name='admin')
+
+
+def task(*args, **kwargs):
+    """Behaves the same way as invoke.task. Adds the task
+    to the root namespace.
+    """
+    if len(args) == 1 and callable(args[0]):
+        new_task = invoke.task(args[0])
+        ns.add_task(new_task)
+        return new_task
+    def decorator(f):
+        new_task = invoke.task(f, *args, **kwargs)
+        ns.add_task(new_task)
+        return new_task
+    return decorator
 
 
 @task
@@ -57,11 +67,22 @@ def server(host=None, port=5000, debug=True, live=False):
 
 
 @task
-def apiserver(port=8000, live=False):
+def apiserver(port=8000, wait=True):
     """Run the API server."""
-    cmd = 'python manage.py runserver {} --nothreading'.format(port)
-    if live:
-        cmd += ' livereload'
+    env = {"DJANGO_SETTINGS_MODULE": "api.base.settings"}
+    cmd = '{}={} exec  {} manage.py runserver {} --nothreading'.format(env.keys()[0], env[env.keys()[0]], sys.executable, port)
+    if wait:
+        return run(cmd, echo=True, pty=True)
+    from subprocess import Popen
+
+    return Popen(cmd, shell=True, env=env)
+
+
+@task
+def adminserver(port=8001):
+    """Run the Admin server."""
+    env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
+    cmd = '{} python manage.py runserver {} --nothreading'.format(env, port)
     run(cmd, echo=True, pty=True)
 
 
@@ -396,16 +417,6 @@ def flake():
     run('flake8 .', echo=True)
 
 
-def pip_install(req_file):
-    """Return the proper 'pip install' command for installing the dependencies
-    defined in ``req_file``.
-    """
-    cmd = bin_prefix('pip install --exists-action w --upgrade -r {} '.format(req_file))
-    if WHEELHOUSE_PATH:
-        cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
-    return cmd
-
-
 @task(aliases=['req'])
 def requirements(addons=False, release=False, dev=False, metrics=False):
     """Install python dependencies.
@@ -453,6 +464,15 @@ def test_api():
     test_module(module="api_tests/")
 
 @task
+def test_varnish():
+    """Run the Varnish test suite."""
+    proc = apiserver(wait=False)
+    sleep(5)
+    test_module(module="api/caching/tests/test_caching.py")
+    proc.kill()
+
+
+@task
 def test_addons():
     """Run all the tests in the addons directory.
     """
@@ -496,6 +516,10 @@ def test_travis_else():
     test_addons()
     test_api()
     karma(single=True, browsers='PhantomJS')
+
+@task
+def test_travis_varnish():
+    test_varnish()
 
 @task
 def karma(single=False, sauce=False, browsers=None):
@@ -627,7 +651,6 @@ def copy_settings(addons=False):
     if addons:
         copy_addon_settings()
 
-
 @task
 def packages():
     brew_commands = [
@@ -650,13 +673,6 @@ def packages():
         # TODO: Write a script similar to brew bundle for Ubuntu
         # e.g., run('sudo apt-get install [list of packages]')
         pass
-
-
-@task
-def npm_bower():
-    print('Installing bower')
-    run('npm install -g bower', echo=True)
-
 
 @task(aliases=['bower'])
 def bower_install():
@@ -890,7 +906,6 @@ def assets(dev=False, watch=False):
     # on prod
     webpack(clean=False, watch=watch, dev=dev)
 
-
 @task
 def generate_self_signed(domain):
     """Generate self-signed SSL key and certificate.
@@ -900,7 +915,6 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
-
 
 @task
 def update_citation_styles():

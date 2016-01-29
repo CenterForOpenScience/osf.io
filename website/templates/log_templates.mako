@@ -215,18 +215,40 @@ from
 <script type="text/html" id="comment_added">
 added a comment
 to
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="comment_updated">
 updated a comment
 on
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="comment_removed">
 deleted a comment
 on
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="comment_restored">
+restored a comment
+on
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 

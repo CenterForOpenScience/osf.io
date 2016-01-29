@@ -31,6 +31,9 @@ elasticsearch==1.3.0
 google-api-python-client==1.2
 python-crontab==1.9.2
 Babel==1.3
+# Support SSL SNI on Python < 2.7.9
+# (http://docs.python-requests.org/en/latest/community/faq/#what-are-hostname-doesn-t-match-errors)
+ndg-httpsclient==0.3.0
 # Development version of modular-odm
 git+https://github.com/CenterForOpenScience/modular-odm.git@develop
 
@@ -52,3 +55,6 @@ django-rest-swagger==0.3.2
 djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
 pyjwe==0.1.6
+
+# Admin requirements
+django-webpack-loader==0.2.3

@@ -1023,9 +1023,9 @@ class TestCollectionBulkCreate(ApiTestCase):
                            ["This field may not be blank.", "This field may not be blank."])
 
     def test_bulk_create_limits(self):
-        node_create_list = {'data': [self.collection] * 11}
+        node_create_list = {'data': [self.collection] * 101}
         res = self.app.post_json_api(self.url, node_create_list, auth=self.user_one.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
         res = self.app.get(self.url, auth=self.user_one.auth)
@@ -1262,9 +1262,9 @@ class TestCollectionBulkUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
     def test_bulk_update_limits(self):
-        node_update_list = {'data': [self.collection_payload['data'][0]] * 11}
+        node_update_list = {'data': [self.collection_payload['data'][0]] * 101}
         res = self.app.put_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_update_no_title(self):
@@ -1375,11 +1375,11 @@ class TestNodeBulkDelete(ApiTestCase):
         assert_equal(res.status_code, 200)
 
     def test_bulk_delete_limits(self):
-        new_payload = {'data': [{'id': self.collection_three._id, 'type': 'nodes'}] * 11}
+        new_payload = {'data': [{'id': self.collection_three._id, 'type': 'nodes'}] * 101}
         res = self.app.delete_json_api(self.url, new_payload,
                                        auth=self.user_one.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_invalid_payload_one_not_found(self):
@@ -1460,10 +1460,10 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_bulk_creates_pointers_limits(self):
-        payload = {'data': [self.collection_payload['data'][0]] * 11}
+        payload = {'data': [self.collection_payload['data'][0]] * 101}
         res = self.app.post_json_api(self.collection_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
         res = self.app.get(self.collection_url, auth=self.user.auth)
@@ -1617,10 +1617,10 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_bulk_delete_pointer_limits(self):
-        res = self.app.delete_json_api(self.collection_two_url, {'data': [self.collection_two_payload['data'][0]] * 11},
+        res = self.app.delete_json_api(self.collection_two_url, {'data': [self.collection_two_payload['data'][0]] * 101},
                                        auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_dict_inside_data(self):
@@ -1714,3 +1714,305 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
         errors = res.json['errors']
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], 'Node link does not belong to the requested node.')
+
+class TestCollectionRelationshipNodeLinks(ApiTestCase):
+
+    def setUp(self):
+        super(TestCollectionRelationshipNodeLinks, self).setUp()
+        self.user = AuthUserFactory()
+        self.user2 = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.collection = FolderFactory(creator=self.user)
+        self.admin_node = NodeFactory(creator=self.user)
+        self.contributor_node = NodeFactory(creator=self.user2)
+        self.contributor_node.add_contributor(self.user, auth=Auth(self.user2))
+        self.contributor_node.save()
+        self.other_node = NodeFactory()
+        self.linked_node = NodeFactory(creator=self.user)
+        self.collection.add_pointer(self.linked_node, auth=self.auth)
+        self.public_collection = FolderFactory(is_public=True, creator=self.user2)
+        self.public_collection.add_pointer(self.linked_node, auth=Auth(self.user2))
+        self.public_node = NodeFactory(is_public=True)
+        self.url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.collection._id)
+        self.public_url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.public_collection._id)
+
+    def payload(self, node_ids=None):
+        node_ids = node_ids or [self.admin_node._id]
+        env_linked_nodes = [{"type": "linked_nodes", "id": node_id} for node_id in node_ids]
+        return {"data": env_linked_nodes}
+
+    def test_get_relationship_linked_nodes(self):
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+
+        assert_in(self.collection.linked_nodes_self_url, res.json['links']['self'])
+        assert_in(self.collection.linked_nodes_related_url, res.json['links']['html'])
+        assert_equal(res.json['data'][0]['id'], self.linked_node._id)
+
+    def test_get_public_relationship_linked_nodes_logged_out(self):
+        res = self.app.get(self.public_url)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['id'], self.linked_node._id)
+
+    def test_get_private_relationship_linked_nodes_logged_out(self):
+        res = self.app.get(self.url, expect_errors=True)
+
+        assert_equal(res.status_code, 401)
+
+    def test_post_contributing_node(self):
+        res = self.app.post_json_api(
+            self.url, self.payload([self.contributor_node._id]),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 201)
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_in(self.contributor_node._id, ids)
+        assert_in(self.linked_node._id, ids)
+
+    def test_post_public_node(self):
+        res = self.app.post_json_api(
+            self.url, self.payload([self.public_node._id]),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 201)
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_in(self.public_node._id, ids)
+        assert_in(self.linked_node._id, ids)
+
+    def test_post_private_node(self):
+        res = self.app.post_json_api(
+            self.url, self.payload([self.other_node._id]),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_not_in(self.other_node._id, ids)
+        assert_in(self.linked_node._id, ids)
+
+    def test_post_mixed_nodes(self):
+        res = self.app.post_json_api(
+            self.url, self.payload([self.other_node._id, self.contributor_node._id]),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_not_in(self.other_node._id, ids)
+        assert_not_in(self.contributor_node._id, ids)
+        assert_in(self.linked_node._id, ids)
+
+    def test_put_contributing_node(self):
+        res = self.app.put_json_api(
+            self.url, self.payload([self.contributor_node._id]),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_in(self.contributor_node._id, ids)
+        assert_not_in(self.linked_node._id, ids)
+
+    def test_put_private_node(self):
+        res = self.app.put_json_api(
+            self.url, self.payload([self.other_node._id]),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_not_in(self.other_node._id, ids)
+        assert_in(self.linked_node._id, ids)
+
+    def test_put_mixed_nodes(self):
+        res = self.app.put_json_api(
+            self.url, self.payload([self.other_node._id, self.contributor_node._id]),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_not_in(self.other_node._id, ids)
+        assert_not_in(self.contributor_node._id, ids)
+        assert_in(self.linked_node._id, ids)
+
+    def test_delete_with_put_empty_array(self):
+        self.collection.add_pointer(self.admin_node, auth=self.auth)
+        payload = self.payload()
+        payload['data'].pop()
+        res = self.app.put_json_api(
+            self.url, payload,
+            auth=self.user.auth
+        )
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'], payload['data'])
+
+    def test_delete_one(self):
+        self.collection.add_pointer(self.admin_node, auth=self.auth)
+        res = self.app.delete_json_api(
+            self.url, self.payload([self.linked_node._id]),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 204)
+
+        res = self.app.get(self.url, auth=self.user.auth)
+
+        ids = [data['id'] for data in res.json['data']]
+        assert_in(self.admin_node._id, ids)
+        assert_not_in(self.linked_node._id, ids)
+
+    def test_delete_multiple(self):
+        self.collection.add_pointer(self.admin_node, auth=self.auth)
+        res = self.app.delete_json_api(
+            self.url, self.payload([self.linked_node._id, self.admin_node._id]),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 204)
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(res.json['data'], [])
+
+
+    def test_access_other_collection(self):
+        other_collection = FolderFactory(creator=self.user2)
+        url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, other_collection._id)
+        res = self.app.get(
+            url, auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+    def test_node_doesnt_exist(self):
+        res = self.app.post_json_api(
+            self.url, self.payload(['aquarela']),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 404)
+
+    def test_type_mistyped(self):
+        res = self.app.post_json_api(
+            self.url,
+            {
+                'data': [{'type': 'not_linked_nodes', 'id': self.contributor_node._id}]
+            },
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 409)
+
+    def test_creates_public_linked_node_relationship_logged_out(self):
+        res = self.app.post_json_api(
+                self.public_url, self.payload([self.public_node._id]),
+                expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+
+    def test_creates_public_linked_node_relationship_logged_in(self):
+        res = self.app.post_json_api(
+                self.public_url, self.payload([self.public_node._id]),
+                auth=self.user.auth, expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+    def test_creates_private_linked_node_relationship_logged_out(self):
+        res = self.app.post_json_api(
+                self.url, self.payload([self.other_node._id]),
+                expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+
+    def test_put_public_nodes_relationships_logged_out(self):
+        res = self.app.put_json_api(
+                self.public_url, self.payload([self.public_node._id]),
+                expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+
+    def test_put_public_nodes_relationships_logged_in(self):
+        res = self.app.put_json_api(
+                self.public_url, self.payload([self.linked_node._id]),
+                auth=self.user.auth, expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+    def test_delete_public_nodes_relationships_logged_out(self):
+        res = self.app.delete_json_api(
+            self.public_url, self.payload([self.public_node._id]),
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+
+    def test_delete_public_nodes_relationships_logged_in(self):
+        res = self.app.delete_json_api(
+                self.public_url, self.payload([self.linked_node._id]),
+                auth=self.user.auth, expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
+    def test_node_links_and_relationship_represent_same_nodes(self):
+        self.collection.add_pointer(self.admin_node, auth=self.auth)
+        self.collection.add_pointer(self.contributor_node, auth=self.auth)
+        res_relationship = self.app.get(
+            self.url, auth=self.user.auth
+        )
+        res_node_links = self.app.get(
+            '/{}collections/{}/node_links/'.format(API_BASE, self.collection._id),
+            auth=self.user.auth
+        )
+        node_links_id = [data['embeds']['target_node']['data']['id'] for data in res_node_links.json['data']]
+        relationship_id = [data['id'] for data in res_relationship.json['data']]
+
+        assert_equal(set(node_links_id), set(relationship_id))
+
+    def test_attempt_to_add_collection_to_collection(self):
+        other_collection = NodeFactory(creator=self.user, is_folder=True)
+        res = self.app.post_json_api(
+            self.url, self.payload([other_collection._id]),
+            auth=self.user.auth, expect_errors=True
+        )
+
+        assert_equal(res.status_code, 404)
