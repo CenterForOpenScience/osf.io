@@ -40,8 +40,9 @@ function openAncestors (tb, item) {
 
 function NodeSelectTreebeard(divID, data, nodesState) {
     /**
-     * nodesChanged and nodesState are knockout variables.  nodesChanged will keep track of the nodes that have
-     *  changed state.  nodeState is all the nodes in their current state.
+     *  nodesState is a knockout variable that syncs the mithril checkbox list with information on the view.  The
+     *  changed boolean parameter is used to sync the checkbox with changes, the canWrite boolean parameter is used
+     *  to disable the checkbox
      * */
     var nodesStateLocal = ko.toJS(nodesState());
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {

@@ -46,6 +46,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         //state of current nodes
         self.nodesToChange = ko.observableArray();
         self.nodesState = ko.observableArray();
+        //nodesState is passed to nodesSelectTreebeard which can update it and key off needed action.
         self.nodesState.subscribe(function(newValue) {
             var nodesToChange = [];
             for (var key in newValue) {
@@ -76,9 +77,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
         });
         self.query = ko.observable();
         self.results = ko.observableArray([]);
-        self.results.subscribe(function(newValue) {
-            m.redraw(true);
-        });
         self.contributors = ko.observableArray([]);
         self.selection = ko.observableArray();
         self.contributorIDsToAdd = ko.computed(function() {
@@ -152,9 +150,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
         }
         self.nodesState(nodesStateLocal);
         this.page('which');
-    },
-    selectTreebeard: function() {
-        this.page('treebeard');
     },
     gotoInvite: function() {
         var self = this;
@@ -436,7 +431,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         // Update error message
         this.inviteError(response.message);
     },
-        /**
+    /**
      * get node tree for treebeard from API V1
      */
     fetchNodeTree: function() {
@@ -462,6 +457,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             var nodeParent = response[0].node.id;
             //parent node is changed by default
             nodesStateLocal[nodeParent].changed = true;
+            nodesStateLocal[nodeParent].canWrite = false;
             self.nodesState(nodesStateLocal);
         }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');

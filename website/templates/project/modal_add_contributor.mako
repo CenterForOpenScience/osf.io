@@ -9,8 +9,6 @@
             <div class="modal-body">
 
                 <!-- Whom to add -->
-{{ko.toJSON($data)}}
-
                 <div data-bind="if: page() == 'whom'">
                     <!-- Find contributors -->
                     <form class='form' data-bind="submit: startSearch">
@@ -26,18 +24,18 @@
                                 </div>
                             </div>
                         </div>
+                    <hr />
                         <div class="row search-contributor-links">
                             <div class="col-md-12">
                                 <div>
                                     <!-- ko if:parentId -->
-                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                        <a class="f-w-lg" data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
                                     <!-- /ko -->
                                 </div>
                             </div>
                         </div>
                     </form>
 
-                    <hr />
 
                     <!-- Choose which to add -->
                     <div class="row">
