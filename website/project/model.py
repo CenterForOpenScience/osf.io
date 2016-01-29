@@ -1864,7 +1864,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def get_aggregate_logs_queryset(self, auth):
         query = self.get_aggregate_logs_query(auth)
-        return NodeLog.find(query).sort('-_id')
+        return NodeLog.find(query).sort('-date')
 
     @property
     def nodes_pointer(self):
