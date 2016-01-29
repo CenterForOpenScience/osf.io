@@ -1,5 +1,6 @@
 from django.conf.urls import include, url, patterns
 from django.contrib import admin
+from django.core.urlresolvers import reverse_lazy
 from settings import ADMIN_BASE
 
 from . import views
@@ -20,10 +21,10 @@ urlpatterns = [
                          url(r'^password_reset_done/$', 'django.contrib.auth.views.password_reset_done', name='password_reset_done'),
                          url(r'^accounts/password_change/$',
                             'django.contrib.auth.views.password_change',
-                            {'post_change_redirect': '/admin/accounts/password_change/done/'},
+                            {'post_change_redirect': reverse_lazy('password_change_done')},
                             name="password_change"),
                          url(r'^accounts/password_change/done/$',
-                            'django.contrib.auth.views.password_change_done', {'template_name': 'registration/password_change_done.html'}),
+                            'django.contrib.auth.views.password_change_done', {'template_name': 'registration/password_change_done.html'}, name='password_change_done'),
                          )
                 )
         )
