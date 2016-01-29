@@ -22,16 +22,17 @@
         <hr>
 
         {% if guid_object %}
+        {% with user=guid_object %}
             <div class="row">
                 <h3>User information</h3>
             </div>
             <div class="row">
-                <strong>Name:</strong> {{ guid_object.name }}
+                <strong>Name:</strong> {{ user.name }}
             </div>
             <div class="row">
                 <strong>Emails:</strong>
                 <ul>
-                {% for email in guid_object.emails %}
+                {% for email in user.emails %}
                     <li>
                         {% if forloop.first %}
                             <strong>Primary: </strong>
@@ -40,6 +41,9 @@
                     </li>
                 {% endfor %}
                 </ul>
+            </div>
+            <div class="row">
+                <strong>Last logged in:</strong> {{ user.last_login }}
             </div>
             <div class="row">
                 <strong>Nodes</strong>
@@ -53,7 +57,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for node in guid_object.nodes %}
+                {% for node in user.nodes %}
                     <tr>
                         <td>
                             <a href="{% url 'nodes:node' %}?guid={{ node.id }}">
@@ -68,6 +72,7 @@
                 </tbody>
                 </table>
             </div>
+        {% endwith %}
         {% endif %}
     </div>
 {% endblock content %}

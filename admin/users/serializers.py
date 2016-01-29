@@ -1,6 +1,7 @@
 """
 Serialize user
 """
+# from admin.nodes.serializers import serialize_simple_user
 
 
 def serialize_user(user):
@@ -8,6 +9,7 @@ def serialize_user(user):
         'name': user.fullname,
         'nodes': map(serialize_simple_node, user.contributor_to),
         'emails': user.emails,
+        'last_login': user.date_last_login,
     }
 
 
