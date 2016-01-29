@@ -52,7 +52,7 @@ class TestCallbacks(OsfTestCase):
 
         super(TestCallbacks, self).setUp()
 
-        self.project = ProjectFactory.build()
+        self.project = ProjectFactory.create()
         self.consolidated_auth = Auth(user=self.project.creator)
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
