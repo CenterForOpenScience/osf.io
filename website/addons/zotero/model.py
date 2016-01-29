@@ -5,11 +5,10 @@ from pyzotero import zotero, zotero_errors
 
 from framework.exceptions import HTTPError
 
-from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
-from website.addons.citations.utils import serialize_folder
-from website.addons.zotero import serializer
+from website.addons.zotero.serializer import ZoteroSerializer
 from website.addons.zotero import settings
+from website.citations.models import AddonCitationsNodeSettings
 from website.oauth.models import ExternalProvider
 
 # TODO: Don't cap at 200 responses. We can only fetch 100 citations at a time. With lots
@@ -71,11 +70,7 @@ class Zotero(ExternalProvider):
         #       to Mendeley too, though that limit is 500.
         collections = client.collections(limit=100)
 
-        all_documents = serialize_folder(
-            'All Documents',
-            id='ROOT',
-            parent_id='__'
-        )
+        all_documents = ZoteroSerializer.serialized_root_folder
 
         serialized_folders = [
             extract_folder(each)
@@ -137,120 +132,23 @@ class Zotero(ExternalProvider):
 
 class ZoteroUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Zotero
-    serializer = serializer.ZoteroSerializer
+    serializer = ZoteroSerializer
 
 
-class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
+class ZoteroNodeSettings(AddonCitationsNodeSettings):
+    provider_name = 'zotero'
     oauth_provider = Zotero
-    serializer = serializer.ZoteroSerializer
+    serializer = ZoteroSerializer
 
-    zotero_list_id = fields.StringField()
-
+    list_id = fields.StringField()
     _api = None
 
     @property
-    def api(self):
-        """authenticated ExternalProvider instance"""
-        if self._api is None:
-            self._api = Zotero()
-            self._api.account = self.external_account
-        return self._api
-
-    @property
-    def complete(self):
-        return self.has_auth and self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-            metadata={'folder': self.zotero_list_id},
-        )
-
-    @property
-    def selected_folder_name(self):
-        if self.zotero_list_id is None:
+    def fetch_folder_name(self):
+        if self.list_id is None:
             return ''
-        elif self.zotero_list_id != 'ROOT':
-            folder = self.api._folder_metadata(self.zotero_list_id)
+        elif self.list_id != 'ROOT':
+            folder = self.api._folder_metadata(self.list_id)
             return folder['data'].get('name')
         else:
             return 'All Documents'
-
-    @property
-    def root_folder(self):
-        root = serialize_folder(
-            'All Documents',
-            id='ROOT',
-            parent_id='__'
-        )
-        root['kind'] = 'folder'
-        return root
-
-    @property
-    def provider_name(self):
-        return 'zotero'
-
-    @property
-    def folder_id(self):
-        return self.zotero_list_id
-
-    @property
-    def folder_name(self):
-        return self.selected_folder_name
-
-    @property
-    def folder_path(self):
-        return self.selected_folder_name
-
-    def set_auth(self, *args, **kwargs):
-        self.zotero_list_id = None
-        return super(ZoteroNodeSettings, self).set_auth(*args, **kwargs)
-
-    def clear_auth(self):
-        self.zotero_list_id = None
-        return super(ZoteroNodeSettings, self).clear_auth()
-
-    def deauthorize(self, auth=None, add_log=True):
-        """Remove user authorization from this node and log the event."""
-        if add_log:
-            self.owner.add_log(
-                'zotero_node_deauthorized',
-                params={
-                    'project': self.owner.parent_id,
-                    'node': self.owner._id,
-                },
-                auth=auth,
-            )
-
-        self.clear_auth()
-
-        self.save()
-
-    def set_target_folder(self, zotero_list_id, zotero_list_name, auth):
-        """Configure this addon to point to a Zotero folder
-
-        :param str zotero_list_id:
-        :param ExternalAccount external_account:
-        :param User user:
-        """
-
-        # Tell the user's addon settings that this node is connecting
-        self.user_settings.grant_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-            metadata={'folder': zotero_list_id}
-        )
-        self.user_settings.save()
-
-        # update this instance
-        self.zotero_list_id = zotero_list_id
-        self.save()
-
-        self.owner.add_log(
-            'zotero_folder_selected',
-            params={
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-                'folder_id': zotero_list_id,
-                'folder_name': zotero_list_name,
-            },
-            auth=auth,
-        )
