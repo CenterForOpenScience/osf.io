@@ -22,15 +22,104 @@
         <hr>
 
         {% if guid_object %}
+        {% with node=guid_object %}
             <div class="row">
                 <h3>Node information</h3>
             </div>
             <div class="row">
-                <strong>GUID:</strong>{{ guid_object.id }}
+            <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>GUID</td>
+                    <td>{{ node.id }}</td>
+                </tr>
+                <tr>
+                    <td>Title</td>
+                    <td>{{ node.title }}</td>
+                </tr>
+                <tr>
+                    <td>Public</td>
+                    <td>{{ node.public }}</td>
+                </tr>
+                <tr>
+                    <td>Parent</td>
+                    <td>
+                        {% if not node.parent %}
+                            {{ node.parent }}
+                        {% else %}
+                        <a href="{% url 'nodes:node' %}?guid={{ node.parent }}">
+                            {{ node.parent }}
+                        </a>
+                        {% endif %}
+                    </td>
+
+                </tr>
+                <tr>
+                    <td>Contributors</td>
+                    <td>
+                        <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <td>User id</td>
+                                <td>Name</td>
+                                <td>Permissions</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for user in node.contributors %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'users:user' %}?guid={{ user.id }}">
+                                        {{ user.id }}
+                                    </a>
+                                </td>
+                                <td>{{ user.name }}</td>
+                                <td>{{ user.permission }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Child nodes</td>
+                    <td>
+                        <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <td>Node id</td>
+                                <td>Title</td>
+                                <td>Public</td>
+                                <td># of Contributors</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for child in node.children %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'nodes:node' %}?guid={{ child.id }}">
+                                        {{ child.id }}
+                                    </a>
+                                </td>
+                                <td>{{ child.title }}</td>
+                                <td>{{ child.public }}</td>
+                                <td>{{ child.number_contributors }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+            </table>
             </div>
-            <div class="row">
-                <strong>Title:</strong>{{ guid_object.title }}
-            </div>
+        {% endwith %}
         {% endif %}
     </div>
 {% endblock content %}
