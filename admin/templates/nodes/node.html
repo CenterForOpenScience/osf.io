@@ -8,7 +8,9 @@
         <div class="row">
             <form action="{% url 'nodes:node' %}" method="post">
                 {% csrf_token %}
-                {{ form.errors }}
+                {% if form.errors %}
+                    <div class="alert alert-danger">{{ form.errors }}</div>
+                {% endif %}
                 <div class="form-group">
                     <label for="guid">Node GUID:</label>
                     {{ form.guid }}
@@ -16,5 +18,19 @@
                 <input type="submit" class="btn btn-primary" value="Submit" />
             </form>
         </div>
+
+        <hr>
+
+        {% if guid_object %}
+            <div class="row">
+                <h3>Node information</h3>
+            </div>
+            <div class="row">
+                <strong>GUID:</strong>{{ guid_object.id }}
+            </div>
+            <div class="row">
+                <strong>Title:</strong>{{ guid_object.title }}
+            </div>
+        {% endif %}
     </div>
 {% endblock content %}

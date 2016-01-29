@@ -55,7 +55,11 @@
                 <tbody>
                 {% for node in guid_object.nodes %}
                     <tr>
-                        <td>{{ node.id }}</td>
+                        <td>
+                            <a href="{% url 'nodes:node' %}?guid={{ node.id }}">
+                                {{ node.id }}
+                            </a>
+                        </td>
                         <td>{{ node.title }}</td>
                         <td>{{ node.public }}</td>
                         <td>{{ node.number_contributors }}</td>
