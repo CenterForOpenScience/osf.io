@@ -349,13 +349,14 @@ var AddContributorViewModel = oop.extend(Paginator, {
     },
     selectNoNodes: function() {
         var self = this;
-        var nodesState = ko.toJS(self.nodesState());
-        for (var node in nodesState) {
-            if (nodesState[node].canWrite) {
-                nodesState[node].changed = false;
+        var nodesStateLocal = ko.toJS(self.nodesState());
+        for (var key in nodesStateLocal) {
+            if (nodesStateLocal[key].canWrite && nodesStateLocal[key].changed) {
+                nodesStateLocal[key].changed = false;
             }
+            m.redraw(true);
         }
-        self.nodesState(nodesState);
+        self.nodesState(nodesStateLocal);
         m.redraw(true);
     },
     submit: function() {
