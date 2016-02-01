@@ -623,8 +623,8 @@ var Collections  = {
             };
             var promise = m.request({method : 'PATCH', url : url, config : xhrconfig, data : data});
             promise.then(function(result){
-                self.collectionMenuObject().item.label = title;
-                m.redraw(true);
+                var updatedCollMenuObj = $.extend(true, {}, self.collectionMenuObject(), {item: {label: title}});
+                self.collectionMenuObject(updatedCollMenuObj);
             });
             self.dismissModal();
             self.validation(false);
