@@ -651,12 +651,12 @@ class TestProjectViews(OsfTestCase):
     def test_get_logs(self, *mock_commands):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(
-                NodeLogFactory(
-                    user=self.user1,
-                    action='file_added',
-                    params={'node': self.project._id}
-                )
+            NodeLogFactory.create(
+                user=self.user1,
+                action='file_added',
+                params={'node': self.project._id},
+                node=self.project,
+                original_node=self.project
             )
         self.project.save()
         url = self.project.api_url_for('get_logs')
@@ -712,12 +712,12 @@ class TestProjectViews(OsfTestCase):
     def test_get_logs_with_count_param(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(
-                NodeLogFactory(
-                    user=self.user1,
-                    action='file_added',
-                    params={'node': self.project._id}
-                )
+            NodeLogFactory.create(
+                user=self.user1,
+                action='file_added',
+                params={'node': self.project._id},
+                node=self.project,
+                original_node=self.project
             )
         self.project.save()
         url = self.project.api_url_for('get_logs')
@@ -731,12 +731,12 @@ class TestProjectViews(OsfTestCase):
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(
-                NodeLogFactory(
-                    user=self.user1,
-                    action='file_added',
-                    params={'node': self.project._id}
-                )
+            NodeLogFactory.create(
+                user=self.user1,
+                action='file_added',
+                params={'node': self.project._id},
+                node=self.project,
+                original_node=self.project
             )
         self.project.save()
         url = self.project.api_url_for('get_logs')
@@ -750,16 +750,17 @@ class TestProjectViews(OsfTestCase):
     def test_get_more_logs(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(
-                NodeLogFactory(
-                    user=self.user1,
-                    action="file_added",
-                    params={"node": self.project._id}
-                )
+            NodeLogFactory.create(
+                user=self.user1,
+                action='file_added',
+                params={'node': self.project._id},
+                node=self.project,
+                original_node=self.project
             )
         self.project.save()
         url = self.project.api_url_for('get_logs')
         res = self.app.get(url, {"page": 1}, auth=self.auth)
+        print res
         assert_equal(len(res.json['logs']), 4)
         #1 project create log, 1 add contributor log, then 12 generated logs
         assert_equal(res.json['total'], 12 + 2)
@@ -2616,21 +2617,13 @@ class TestWatchViews(OsfTestCase):
         project = ProjectFactory()
         # Add some logs
         for _ in range(12):
-            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
-        project.save()
-        watch_cfg = WatchConfigFactory(node=project)
-        self.user.watch(watch_cfg)
-        self.user.save()
-        url = "/api/v1/watched/logs/"
-        res = self.app.get(url, auth=self.auth)
-        assert_equal(len(res.json['logs']), 10)
-        assert_equal(res.json['logs'][0]['action'], 'file_added')
-
-    def test_get_watched_logs(self):
-        project = ProjectFactory()
-        # Add some logs
-        for _ in range(12):
-            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+            NodeLogFactory.create(
+                user=self.user,
+                action='file_added',
+                params={'node': project._id},
+                node=project,
+                original_node=project
+            )
         project.save()
         watch_cfg = WatchConfigFactory(node=project)
         self.user.watch(watch_cfg)
@@ -2648,7 +2641,13 @@ class TestWatchViews(OsfTestCase):
         project = ProjectFactory()
         # Add some logs
         for _ in range(12):
-            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+            NodeLogFactory.create(
+                user=self.user,
+                action='file_added',
+                params={'node': project._id},
+                node=project,
+                original_node=project
+            )
         project.save()
         watch_cfg = WatchConfigFactory(node=project)
         self.user.watch(watch_cfg)
@@ -3778,7 +3777,7 @@ class TestReorderComponents(OsfTestCase):
         self.creator = AuthUserFactory()
         self.contrib = AuthUserFactory()
         # Project is public
-        self.project = ProjectFactory.build(creator=self.creator, is_public=True)
+        self.project = ProjectFactory.create(creator=self.creator, is_public=True)
         self.project.add_contributor(self.contrib, auth=Auth(self.creator))
 
         # subcomponent that only creator can see
