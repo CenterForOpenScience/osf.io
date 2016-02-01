@@ -979,7 +979,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def logs(self):
         """ List of logs associated with this node"""
-        return list(NodeLog.find(Q('node', 'eq', self._id)))
+        return list(NodeLog.find(Q('node', 'eq', self._id)).sort('date'))
 
     @property
     def license(self):
