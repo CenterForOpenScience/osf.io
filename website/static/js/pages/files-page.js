@@ -25,8 +25,8 @@ var showResults = function(result_paths, tb){
     tb.refreshRange(0);
 };
 
-var queryElasticSearch = function(query, tb){
-    var data = {"q": query, "pid": "ykcxq"};
+var queryElasticSearch = function(query, node_id, tb){
+    var data = {"q": query, "pid": node_id};
     $.getJSON("/api/v1/project_files", data, function(paths){ showResults(paths, tb)});
 };
 
@@ -43,7 +43,7 @@ var fileFilter = function(tb){
         if (!tb.visibleTop) {
             index = 0;
         }
-        queryElasticSearch(filter, tb);
+        queryElasticSearch(filter, tb.flatData[0].row.nodeID, tb);
     }
 };
 
