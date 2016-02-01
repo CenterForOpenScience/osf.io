@@ -6,6 +6,9 @@ var ko = require('knockout');
 var $osf = require('js/osfHelpers');
 ko.punches.enableAll();
 
+var FileBrowser = require('js/fileBrowser.js').FileBrowser;
+var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
+
 var InstitutionViewModel = function() {
     var self = this;
     self.id = window.contextVars.institution.id;
@@ -29,4 +32,8 @@ $(document).ready(function() {
     var self = this;
     self.viewModel = new InstitutionViewModel();
     $osf.applyBindings(self.viewModel, '#inst');
+    m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {wrapperSelector : '#fileBrowser'}));
+
+    // Add active class to navigation for my projects page
+    $('#osfNavMyProjects').addClass('active');
 });
