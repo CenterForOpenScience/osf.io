@@ -4,7 +4,8 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
-from rest_framework.status import is_server_error
+from rest_framework.status import is_server_error, HTTP_204_NO_CONTENT
+from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -12,6 +13,7 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
@@ -25,10 +27,13 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
+    NodeInstitutionRelationshipSerializer,
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
 )
+
 from api.registrations.serializers import RegistrationSerializer
+from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
@@ -42,9 +47,9 @@ from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
+from website.models import Node, Pointer, Comment, Institution, NodeLog
 from website.files.models import OsfStorageFileNode, StoredFileNode, FileNode
 from website.files.models.dropbox import DropboxFile
-from website.models import Node, Pointer, Comment, NodeLog
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
 
@@ -1949,3 +1954,111 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['user'] = self.request.user
         serializer.validated_data['node'] = node
         serializer.save()
+
+class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """ Detail of the one primary_institution a node has, if any. Returns NotFound
+    if the node does not have a primary_instituion.
+
+    ##Attributes
+
+    OSF Institutions have the "institutions" `type`.
+
+        name           type               description
+        -------------------------------------------------------------------------
+        name           string             title of the institution
+        id             string             unique identifier in the OSF
+        logo_path      string             a path to the institution's static logo
+
+
+
+    #This Request/Response
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        AdminOrPublic
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = InstitutionSerializer
+
+    model = Institution
+    view_category = 'nodes'
+    view_name = 'node-institution-detail'
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        if not node.primary_institution:
+            raise NotFound
+        return node.primary_institution
+
+
+class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
+    """ Relationship Endpoint for Node -> Instituion Relationship
+
+    Used to set the primary_institution of a node to an institution
+
+    ##Actions
+
+    ###Create
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "institutions",   # required
+                           "id": <institution_id>   # required
+                         }
+                       }
+        Success:       200
+
+    This requires both admin permission on the node, and for the user that is
+    making the request to be affiliated with the institution (`User.affiliated_institutions`)
+
+    ###Destroy
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           null
+                         }
+                       }
+        Success:       204
+
+    This requires admin permission on the node.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        AdminOrPublic
+    )
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    serializer_class = NodeInstitutionRelationshipSerializer
+    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
+
+    view_category = 'nodes'
+    view_name = 'node-relationships-institution'
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        return self.get_node()
+
+    def update(self, request, *args, **kwargs):
+        # same as drf's update method from the update mixin, with the addition of
+        # returning a 204 when successfully deletes relationship with PUT/PATCH
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        inst = request.data.get('id', None)
+        if not inst:
+            return Response(status=HTTP_204_NO_CONTENT)
+        return Response(serializer.data)

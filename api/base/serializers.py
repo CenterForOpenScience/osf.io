@@ -93,6 +93,13 @@ class HideIfRegistration(ser.Field):
             self.field.parent = self.field.root
         return self.field.to_representation(value)
 
+    def to_esi_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_esi_representation(value)
+
 
 class HideIfRetraction(HideIfRegistration):
     """
@@ -411,6 +418,15 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             urls = None
         return urls
 
+    def to_esi_representation(self, value):
+        relationships = super(RelationshipField, self).to_representation(value)
+        if relationships is not None:
+            for type, href in relationships.items():
+                if href and not href == '{}':
+                    return '<esi:include src="{}?format=jsonapi"/>'.format(href)
+        else:
+            raise SkipField
+
     def format_filter(self, obj):
         qd = QueryDict(mutable=True)
         filter_fields = self.filter.keys()
@@ -486,6 +502,12 @@ class TargetField(ser.Field):
                 kwargs=kwargs
             )
         )
+
+    def to_esi_representation(self, value):
+        url = value.get_absolute_url()
+        if url:
+            return '<esi:include src="{}?format=jsonapi"/>'.format(url)
+        return self.to_representation(value)
 
     def to_representation(self, value):
         """
@@ -769,7 +791,7 @@ class JSONAPISerializer(ser.Serializer):
         ])
 
         embeds = self.context.get('embed', {})
-
+        enable_esi = self.context.get('enable_esi', False)
         is_anonymous = is_anonymized(self.context['request'])
         to_be_removed = []
         if is_anonymous and hasattr(self, 'non_anonymized_fields'):
@@ -799,8 +821,14 @@ class JSONAPISerializer(ser.Serializer):
                 if attribute is None:
                     continue
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
+                    if enable_esi:
+                        try:
+                            result = field.to_esi_representation(attribute)
+                        except SkipField:
+                            continue
+                    else:
+                        result = self.context['embed'][field.field_name](obj)
 
-                    result = self.context['embed'][field.field_name](obj)
                     if result:
                         data['embeds'][field.field_name] = result
                 else:
@@ -866,14 +894,13 @@ class JSONAPIRelationshipSerializer(ser.Serializer):
     Provides a simplified serialization of the relationship, allowing for simple update request
     bodies.
     """
-    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    id = ser.CharField(required=False, allow_null=True)
     type = TypeField(required=False, allow_null=True)
 
     def to_representation(self, obj):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
-
         relation_id_field = self.fields['id']
         attribute = relation_id_field.get_attribute(obj)
         relationship = relation_id_field.to_representation(attribute)

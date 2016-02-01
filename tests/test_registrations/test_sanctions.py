@@ -141,7 +141,10 @@ class TestSanction(SanctionsTestCase):
     @mock.patch.object(SanctionTestClass, '_notify_non_authorizer')
     def test_ask(self, mock_notify_non_authorizer, mock_notify_authorizer):
         other_user = factories.UserFactory()
-        group = [other_user, self.user]
+        group = [
+            (other_user, factories.ProjectFactory()),
+            (self.user, factories.ProjectFactory()),
+        ]
         self.sanction.ask(group)
         assert_true(mock_notify_non_authorizer.called_once_with(other_user))
         assert_true(mock_notify_authorizer.called_once_with(self.user))
@@ -174,7 +177,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     @mock.patch.object(EmailApprovableSanctionTestClass, '_email_template_context')
     def test_notify_authorizer(self, mock_get_email_template_context, mock_send_approval_email):
         mock_get_email_template_context.return_value = 'context'
-        self.sanction._notify_authorizer(self.user)
+        self.sanction._notify_authorizer(self.user, self.sanction._get_registration())
         assert_true(mock_get_email_template_context.called_once_with(self.user, True))
         assert_true(mock_send_approval_email.called_once_with(self.user, 'authorizer', 'context'))
 
@@ -183,7 +186,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     def test_notify_non_authorizer(self, mock_get_email_template_context, mock_send_approval_email):
         mock_get_email_template_context.return_value = 'context'
         other_user = factories.UserFactory()
-        self.sanction._notify_non_authorizer(other_user)
+        self.sanction._notify_non_authorizer(other_user, self.sanction._get_registration())
         assert_true(mock_get_email_template_context.called_once_with(other_user, False))
         assert_true(mock_send_approval_email.called_once_with(other_user, 'non-authorizer', 'context'))
 
@@ -192,33 +195,33 @@ class TestEmailApprovableSanction(SanctionsTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test__notify_authorizer(self, mock_send):
-        self.sanction._notify_authorizer(self.user)
+        self.sanction._notify_authorizer(self.user, self.sanction._get_registration())
         assert_true(mock_send.called)
         args, kwargs = mock_send.call_args
         assert_true(self.user.username in args)
 
     @mock.patch('website.mails.send_mail')
     def test__notify_non_authorizer(self, mock_send):
-        self.sanction._notify_non_authorizer(self.user)
+        self.sanction._notify_non_authorizer(self.user, self.sanction._get_registration())
         assert_true(mock_send.called)
         args, kwargs = mock_send.call_args
         assert_true(self.user.username in args)
 
     @mock.patch('website.mails.send_mail')
     def test_ask(self, mock_send):
-        group = [self.user]
+        group = [(self.user, factories.ProjectFactory())]
         for i in range(5):
-            u = factories.UserFactory()
-            group.append(u)
+            u, n = factories.UserFactory(), factories.ProjectFactory()
+            group.append((u, n))
         self.sanction.ask(group)
-        authorizer = group.pop(0)
+        authorizer = group.pop(0)[0]
         mock_send.assert_any_call(
             authorizer.username,
             self.sanction.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
             user=authorizer,
             **{}
         )
-        for user in group:
+        for user, _ in group:
             mock_send.assert_any_call(
                 user.username,
                 self.sanction.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,

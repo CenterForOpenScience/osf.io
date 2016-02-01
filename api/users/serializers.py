@@ -67,6 +67,11 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<pk>'},
     )
 
+    institutions = RelationshipField(
+        related_view='users:user-institutions',
+        related_view_kwargs={'user_id': '<pk>'},
+    )
+
     class Meta:
         type_ = 'users'
 
