@@ -151,6 +151,7 @@
     text-align: center;
     padding-top: 15px;
     color: #666;
+    cursor: pointer;
 }
 
 .fb-information .tag:hover {
