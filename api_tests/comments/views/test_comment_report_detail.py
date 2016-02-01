@@ -1,4 +1,5 @@
 from nose.tools import *  # flake8: noqa
+from datetime import datetime
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -28,7 +29,12 @@ class TestReportDetailView(ApiTestCase):
         self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.contributor)
-        self.comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
+        self.comment.reports = {self.user._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         self.comment.save()
         self.private_url = '/{}comments/{}/reports/{}/'.format(API_BASE, self.comment._id, self.user._id)
 
@@ -36,7 +42,12 @@ class TestReportDetailView(ApiTestCase):
         self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_project, user=self.contributor)
-        self.public_comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
+        self.public_comment.reports = {self.user._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         self.public_comment.save()
         self.public_url = '/{}comments/{}/reports/{}/'.format(API_BASE, self.public_comment._id, self.user._id)
 
@@ -86,7 +97,12 @@ class TestReportDetailView(ApiTestCase):
     def test_public_node_logged_in_non_contributor_reporter_can_view_report_detail(self):
         project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory.build(node=project, user=project.creator)
-        comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.non_contributor._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.non_contributor._id)
         res = self.app.get(url, auth=self.non_contributor.auth)
@@ -140,7 +156,12 @@ class TestReportDetailView(ApiTestCase):
     def test_public_node_logged_in_non_contributor_reporter_can_update_report_detail(self):
         project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory.build(node=project, user=project.creator)
-        comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.non_contributor._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.non_contributor._id)
         payload = {
@@ -160,7 +181,12 @@ class TestReportDetailView(ApiTestCase):
     def test_private_node_reporting_contributor_can_delete_report_detail(self):
         self._set_up_private_project_comment_reports()
         comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.contributor)
-        comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.user._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.user._id)
         res = self.app.delete_json_api(url, auth=self.user.auth)
@@ -184,7 +210,12 @@ class TestReportDetailView(ApiTestCase):
     def test_public_node_reporting_contributor_can_delete_detail(self):
         self._set_up_public_project_comment_reports()
         comment = CommentFactory.build(node=self.public_project, target=self.public_project, user=self.contributor)
-        comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.user._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.user._id)
         res = self.app.delete_json_api(url, auth=self.user.auth)
@@ -209,7 +240,12 @@ class TestReportDetailView(ApiTestCase):
     def test_public_node_logged_in_non_contributor_reporter_can_delete_report_detail(self):
         project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory.build(node=project, user=project.creator)
-        comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.non_contributor._id:  {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.non_contributor._id)
         res = self.app.delete_json_api(url, auth=self.non_contributor.auth)
@@ -239,7 +275,12 @@ class TestFileCommentReportDetailView(ApiTestCase):
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.file = test_utils.create_test_file(self.private_project, self.user)
         self.comment = CommentFactory.build(node=self.private_project, target=self.file, user=self.contributor)
-        self.comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
+        self.comment.reports = {self.user._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         self.comment.save()
         self.private_url = '/{}comments/{}/reports/{}/'.format(API_BASE, self.comment._id, self.user._id)
 
@@ -248,7 +289,12 @@ class TestFileCommentReportDetailView(ApiTestCase):
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
         self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_file, user=self.contributor)
-        self.public_comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
+        self.public_comment.reports = {self.user._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         self.public_comment.save()
         self.public_url = '/{}comments/{}/reports/{}/'.format(API_BASE, self.public_comment._id, self.user._id)
 
@@ -299,7 +345,12 @@ class TestFileCommentReportDetailView(ApiTestCase):
         project = ProjectFactory(is_public=True, comment_level='public')
         test_file = test_utils.create_test_file(project, self.user)
         comment = CommentFactory.build(node=project, target=test_file, user=project.creator)
-        comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.non_contributor._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.non_contributor._id)
         res = self.app.get(url, auth=self.non_contributor.auth)
@@ -354,7 +405,12 @@ class TestFileCommentReportDetailView(ApiTestCase):
         project = ProjectFactory(is_public=True, comment_level='public')
         test_file = test_utils.create_test_file(project, self.user)
         comment = CommentFactory.build(node=project, target=test_file, user=project.creator)
-        comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.non_contributor._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.non_contributor._id)
         payload = {
@@ -374,7 +430,12 @@ class TestFileCommentReportDetailView(ApiTestCase):
     def test_private_node_reporting_contributor_can_delete_report_detail(self):
         self._set_up_private_project_file_comment_reports()
         comment = CommentFactory.build(node=self.private_project, target=self.file, user=self.contributor)
-        comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.user._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.user._id)
         res = self.app.delete_json_api(url, auth=self.user.auth)
@@ -398,7 +459,12 @@ class TestFileCommentReportDetailView(ApiTestCase):
     def test_public_node_reporting_contributor_can_delete_detail(self):
         self._set_up_public_project_file_comment_reports()
         comment = CommentFactory.build(node=self.public_project, target=self.public_file, user=self.contributor)
-        comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.user._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.user._id)
         res = self.app.delete_json_api(url, auth=self.user.auth)
@@ -424,7 +490,12 @@ class TestFileCommentReportDetailView(ApiTestCase):
         project = ProjectFactory(is_public=True, comment_level='public')
         test_file = test_utils.create_test_file(project, self.user)
         comment = CommentFactory.build(node=project, target=test_file, user=project.creator)
-        comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
+        comment.reports = {self.non_contributor._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.non_contributor._id)
         res = self.app.delete_json_api(url, auth=self.non_contributor.auth)

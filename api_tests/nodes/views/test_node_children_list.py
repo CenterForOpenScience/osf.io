@@ -331,10 +331,10 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_bulk_creates_children_limits(self):
-        res = self.app.post_json_api(self.url, {'data': [self.child] * 11},
+        res = self.app.post_json_api(self.url, {'data': [self.child] * 101},
                                      auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_creates_children_logged_out_user(self):
