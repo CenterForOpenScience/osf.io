@@ -50,6 +50,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodesState.subscribe(function(newValue) {
             var nodesToChange = [];
             for (var key in newValue) {
+                newValue[key].changed = newValue[key].checked !== self.nodesOriginal[key].checked;
                 if (newValue[key].changed) {
                     nodesToChange.push(key);
                 }
@@ -137,16 +138,21 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var nodesStateLocal = self.nodesState();
         for (var key in nodesStateLocal) {
             var node = nodesStateLocal[key];
-            var canWrite = nodesStateLocal[key].canWrite;
-            if (canWrite) {
-                canWrite = false;
+            var enabled = nodesStateLocal[key].canWrite;
+            var checked = false;
+            if (enabled) {
                 for (var i = 0; i < self.contributorIDsToAdd().length; i++) {
                     if (node.contributors.indexOf(self.contributorIDsToAdd()[i]) < 0) {
-                        canWrite = true;
+                        enabled = true;
+                    }
+                    else {
+                        checked = true;
+                        enabled = false;
                     }
                 }
             }
-            nodesStateLocal[key].canWrite = canWrite;
+            nodesStateLocal[key].enabled = enabled;
+            nodesStateLocal[key].checked = checked;
         }
         self.nodesState(nodesStateLocal);
         this.page('which');
@@ -340,8 +346,8 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         var nodesStateLocal = ko.toJS(self.nodesState());
         for (var key in nodesStateLocal) {
-            if (nodesStateLocal[key].canWrite) {
-                nodesStateLocal[key].changed = true;
+            if (nodesStateLocal[key].enabled) {
+                nodesStateLocal[key].checked = true;
             }
         }
         self.nodesState(nodesStateLocal);
@@ -351,8 +357,8 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         var nodesStateLocal = ko.toJS(self.nodesState());
         for (var key in nodesStateLocal) {
-            if (nodesStateLocal[key].canWrite && nodesStateLocal[key].changed) {
-                nodesStateLocal[key].changed = false;
+            if (nodesStateLocal[key].enabled && nodesStateLocal[key].checked) {
+                nodesStateLocal[key].checked = false;
             }
             m.redraw(true);
         }
@@ -456,7 +462,8 @@ var AddContributorViewModel = oop.extend(Paginator, {
             var nodesStateLocal = $.extend(true, {}, self.nodesOriginal);
             var nodeParent = response[0].node.id;
             //parent node is changed by default
-            nodesStateLocal[nodeParent].changed = true;
+            nodesStateLocal[nodeParent].checked = true;
+            //parent node cannot be changed
             nodesStateLocal[nodeParent].canWrite = false;
             self.nodesState(nodesStateLocal);
         }).fail(function(xhr, status, error) {

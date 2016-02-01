@@ -78,14 +78,14 @@ function NodeSelectTreebeard(divID, data, nodesState) {
                     filter : false,
                     custom : function () {
                         return m('input[type=checkbox]', {
-                            disabled : !nodesStateLocal[id].canWrite,
+                            disabled : !nodesStateLocal[id].enabled,
                             onclick : function() {
-                                item.data.node.changed = !item.data.node.changed;
+                                item.data.node.checked = !item.data.node.checked;
                                 item.open = true;
-                                nodesStateLocal[id].changed = !nodesStateLocal[id].changed;
+                                nodesStateLocal[id].checked = !nodesStateLocal[id].checked;
                                 tb.updateFolder(null, item);
                             },
-                            checked: nodesState()[id].changed
+                            checked: nodesState()[id].checked
                         });
                     }
                 },
@@ -96,7 +96,7 @@ function NodeSelectTreebeard(divID, data, nodesState) {
                     sortInclude: false,
                     hideColumnTitles: false,
                     custom: function () {
-                        if (nodesStateLocal[id].canWrite) {
+                        if (nodesStateLocal[id].enabled) {
                             return m('span', item.data.node.title);
                         }
                         else {
