@@ -1,6 +1,7 @@
 import abc
 import httplib as http
 
+from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.exceptions import PermissionsError
 
@@ -154,12 +155,13 @@ class CitationsProvider(object):
 
     def remove_user_auth(self, node_addon, user):
 
-        node_addon.clear_auth()
+        node_addon.deauthorize(auth=Auth(user))
         node_addon.reload()
         result = self.serializer(
             node_settings=node_addon,
             user_settings=user.get_addon(self.provider_name),
         ).serialized_node_settings
+
         return {'result': result}
 
     def widget(self, node_addon):
