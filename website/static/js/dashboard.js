@@ -44,19 +44,16 @@ function _formatDataforPO(item) {
     return item;
 }
 
-var LinkObject = function _LinkObject (type, data, label, index) {
+var LinkObject = function _LinkObject (type, data, label) {
     if (type === undefined || data === undefined || label === undefined) {
         throw new Error('LinkObject expects type, data and label to be defined.');
     }
-    if (index !== undefined && ( typeof index !== 'number' || index <= 0)){
-        throw new Error('Index needs to be a number starting from 0; instead "' + index + '" was given.');
-    }
+
     var self = this;
     self.id = getUID();
     self.type = type;
     self.data = data;
     self.label = label;
-    self.index = index;  // For breadcrumbs to cut off when clicking parent level
     self.generateLink = function () {
         if (self.type === 'collection'){
                 return $osf.apiV2Url(self.data.path, {
