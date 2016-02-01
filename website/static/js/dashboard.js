@@ -143,12 +143,6 @@ var Dashboard = {
         self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
-        self.handlePOUpdate = function() {
-            self.reload(false);
-        };
-        self.shouldPOUpdate = function() {
-            self.reload() === true;
-        };
         self.nonLoadTemplate = m.prop(m('.db-non-load-template.m-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
 
         // VIEW STATES
@@ -439,7 +433,7 @@ var Dashboard = {
                         }
                     }, m('.fa.fa-bars')) : '',
                     m('span.m-r-md.hidden-xs', projectCount === 1 ? projectCount + ' Project' : projectCount + ' Projects'),
-                    m('#poFilter.m-r-xs')
+                    m('.db-poFilter.m-r-xs')
                 ])
             ]),
             ctrl.showSidebar() ?
@@ -472,10 +466,9 @@ var Dashboard = {
                         updateSelected : ctrl.updateSelected,
                         updateFilesData : ctrl.updateFilesData,
                         LinkObject : LinkObject,
-                        dragContainment : args.wrapperSelector,
+                        wrapperSelector : args.wrapperSelector,
                         allProjects : ctrl.allProjects,
-                        shouldUpdate: ctrl.shouldPOUpdate,
-                        onUpdate: ctrl.handlePOUpdate
+                        reload : ctrl.reload
                     })
                 )
             ]),

@@ -384,14 +384,12 @@ var ProjectOrganizer = {
                     updateSelected : args.updateSelected,
                     updateFilesData : args.updateFilesData,
                     filesData: args.filesData().data,
-                    wrapperSelector : args.wrapperSelector,
-                    dragContainment : args.dragContainment
+                    dragContainment : args.wrapperSelector
                 },
                 tbOptions
             );
             var tb = new Treebeard(poOptions, true);
             m.redraw.strategy('all');
-            args.onUpdate.call(self);
             return tb;
         };
         allProjectsCache = args.allProjects;
@@ -399,8 +397,9 @@ var ProjectOrganizer = {
     },
     view : function (ctrl, args) {
         var tb = ctrl.tb;
-        if (args.shouldUpdate()) {
-            tb = ctrl.updateTb();
+        if (args.reload()) {
+            tb = ctrl.updateTB();
+            args.reload(false);
         }
         return m('.fb-project-organizer#projectOrganizer', tb );
     }
