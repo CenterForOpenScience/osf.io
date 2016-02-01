@@ -2442,10 +2442,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         if log_date:
             log.date = log_date
-
-        self.date_modified = log.date.replace(tzinfo=None)
-
         log.save()
+
+        self.date_modified = self.logs[-1].date.replace(tzinfo=None)
+
         if save:
             self.save()
         if user:
