@@ -1779,7 +1779,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         self.user = AuthUserFactory()
         self.user2 = AuthUserFactory()
         self.auth = Auth(self.user)
-        self.collection = FolderFactory(creator=self.user)
+        self.collection = CollectionFactory(creator=self.user)
         self.admin_node = NodeFactory(creator=self.user)
         self.contributor_node = NodeFactory(creator=self.user2)
         self.contributor_node.add_contributor(self.user, auth=Auth(self.user2))
@@ -1787,7 +1787,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         self.other_node = NodeFactory()
         self.linked_node = NodeFactory(creator=self.user)
         self.collection.add_pointer(self.linked_node, auth=self.auth)
-        self.public_collection = FolderFactory(is_public=True, creator=self.user2)
+        self.public_collection = CollectionFactory(is_public=True, creator=self.user2)
         self.public_collection.add_pointer(self.linked_node, auth=Auth(self.user2))
         self.public_node = NodeFactory(is_public=True)
         self.url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, self.collection._id)
@@ -1964,7 +1964,7 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
 
     def test_access_other_collection(self):
-        other_collection = FolderFactory(creator=self.user2)
+        other_collection = CollectionFactory(creator=self.user2)
         url = '/{}collections/{}/relationships/linked_nodes/'.format(API_BASE, other_collection._id)
         res = self.app.get(
             url, auth=self.user.auth,

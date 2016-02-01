@@ -54,13 +54,13 @@ class TestUserLogs(ApiTestCase):
         log = NodeLogFactory(action='wiki_updated', params={'node': self.node._id})
         log2 = NodeLogFactory(action='comment_added', params={'node': self.other_node._id})
         res = self.app.get(
-            self.log_url + '?aggregate=1',
+            self.log_url + '?aggregates=1',
             auth=self.user.auth
         )
 
         assert_equal(res.status_code, 200)
 
-        aggregates = res.json['links']['meta']['aggregates']
+        aggregates = res.json['meta']['aggregates']
         assert_equal(aggregates['nodes'], 2)
         assert_equal(aggregates['comments'], 1)
         assert_equal(aggregates['wiki'], 1)
