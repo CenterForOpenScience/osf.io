@@ -20,7 +20,6 @@ from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
@@ -64,6 +63,7 @@ from website.project.licenses import (
     NodeLicenseRecord,
 )
 from website.project import signals as project_signals
+from website.project.spam.model import SpamMixin
 from website.prereg import utils as prereg_utils
 
 logger = logging.getLogger(__name__)
@@ -157,120 +157,6 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
-def validate_reports(value, *args, **kwargs):
-    for key, val in value.iteritems():
-        if not User.load(key):
-            raise ValidationValueError('Keys must be user IDs')
-        if not isinstance(val, dict):
-            raise ValidationTypeError('Values must be dictionaries')
-        if (
-            'category' not in val or
-            'text' not in val or
-            'date' not in val or
-            'retracted' not in val
-        ):
-            raise ValidationValueError(
-                ('Values must include `date`, `category`, ',
-                 '`text`, `retracted` keys')
-            )
-
-
-class SpamMixin(StoredObject):
-    """Mixin to add to objects that can be marked as spam.
-    """
-
-    _meta = {
-        'abstract': True
-    }
-
-    UNKNOWN = 0
-    FLAGGED = 1
-    SPAM = 2
-    HAM = 4
-
-    spam_status = fields.IntegerField(default=UNKNOWN, index=True)
-
-    # Reports is a list of reports
-    # Each report is a dictionary including:
-    #  - user: Reporting user
-    #  - date: date reported
-    #  - retracted: if a report has been retracted
-    #  - category: What type of spam does the reporter believe this is
-    #  - message: Comment on the comment
-    reports = fields.DictionaryField(
-        default=dict, validate=validate_reports
-    )
-
-    def flag_spam(self, save=False):
-        # If ham and unedited then tell user that they should read it again
-        if self.spam_status == self.UNKNOWN:
-            self.spam_status = self.FLAGGED
-        if save:
-            self.save()
-
-    def remove_flag(self, save=False):
-        if self.spam_status != self.FLAGGED:
-            return
-        for report in self.reports.values():
-            if not report.get('retracted', True):
-                return
-        self.spam_status = self.UNKNOWN
-        if save:
-            self.save()
-
-    def confirm_ham(self, save=False):
-        self.spam_status = self.HAM
-        if save:
-            self.save()
-
-    def confirm_spam(self, save=False):
-        self.spam_status = self.SPAM
-        if save:
-            self.save()
-
-    @property
-    def is_spam(self):
-        return self.spam_status == self.SPAM
-
-    def report_abuse(self, user, save=False, **kwargs):
-        """Report object is spam or other abuse of OSF
-
-        :param user: User submitting report
-        :param date: Date report submitted
-        :param save: Save changes
-        :param kwargs: Should include category and message
-        :raises ValueError: if user is reporting self
-        """
-        if user == self.user:
-            raise ValueError('User cannot report self.')
-        self.flag_spam()
-        report = {'date': datetime.datetime.utcnow(), 'retracted': False}
-        report.update(kwargs)
-        if 'text' not in report:
-            report['text'] = None
-        self.reports[user._id] = report
-        if save:
-            self.save()
-
-    def retract_report(self, user, save=False):
-        """Retract last report by user
-
-        Only marks the last report as retracted because there could be
-        history in how the object is edited that requires a user
-        to flag or retract even if object is marked as HAM.
-        :param user: User retracting
-        :param save: Save changes
-        """
-        if user._id in self.reports:
-            if not self.reports[user._id]['retracted']:
-                self.reports[user._id]['retracted'] = True
-                self.remove_flag()
-        else:
-            raise ValueError('User has not reported this content')
-        if save:
-            self.save()
-
-
 class Comment(GuidStoredObject, SpamMixin):
 
     __guid_min_length__ = 12
@@ -296,12 +182,6 @@ class Comment(GuidStoredObject, SpamMixin):
     page = fields.StringField()
     content = fields.StringField(required=True,
                                  validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
-
-    # Dictionary field mapping user IDs to dictionaries of report details:
-    # {
-    #   'icpnw': {'category': 'hate', 'text': 'offensive'},
-    #   'cdi38': {'category': 'spam', 'text': 'godwins law'},
-    # }
 
     # For Django compatibility
     @property

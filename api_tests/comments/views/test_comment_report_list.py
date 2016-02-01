@@ -206,9 +206,6 @@ class TestCommentReportsView(ApiTestCase):
         self._set_up_private_project_comment_reports()
         comment = CommentFactory(node=self.private_project, user=self.contributor)
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
-
-        get_res = self.app.get(url, auth=self.user.auth)
-
         res = self.app.post_json_api(url, self.payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user._id)
