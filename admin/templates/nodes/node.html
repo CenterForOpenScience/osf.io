@@ -80,7 +80,7 @@
                                     </a>
                                 </td>
                                 <td>{{ user.name }}</td>
-                                <td>{{ user.permission }}</td>
+                                <td>{{ user.permission|capfirst }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
