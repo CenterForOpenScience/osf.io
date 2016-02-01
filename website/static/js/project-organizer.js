@@ -300,14 +300,13 @@ var tbOptions = {
     },
     sortDepth : 0,
     onload : function () {
-
         var tb = this,
             rowDiv = tb.select('.tb-row');
         rowDiv.first().trigger('click');
         $('.gridWrapper').on('mouseout', function () {
             tb.select('.tb-row').removeClass('po-hover');
         });
-        m.render(document.getElementById('poFilter'), tb.options.filterTemplate.call(this));
+        m.render($(tb.options.dragContainment + ' .db-poFilter').get(0), tb.options.filterTemplate.call(this));
     },
     ontogglefolder : function (item, event) {
         if (!item.open) {

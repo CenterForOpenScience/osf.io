@@ -39,7 +39,6 @@ var AddProject = {
         self.categoryList = [];
         self.loadCategories = function _loadCategories () {
             m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig}).then(function _success(results){
-                console.log(results);
                 if(results.actions.POST.category){
                     self.categoryList = results.actions.POST.category.choices;
                     self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
@@ -84,13 +83,11 @@ var AddProject = {
                 };
             var success = function _success (result) {
                 self.viewState('success');
-                console.log('success', result);
                 self.goToProjectLink(result.data.links.html);
                 self.saveResult(result);
             };
             var error = function _error (result) {
                 self.viewState('error');
-                console.log('error', result);
             };
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);

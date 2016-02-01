@@ -38,7 +38,7 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
 };
 
 $(document).ready(function() {
-    m.mount(document.getElementById('fileBrowser'), m.component(Dashboard, {wrapperSelector : '#fileBrowser'}));
+    m.mount(document.getElementById('dashboard'), m.component(Dashboard, {wrapperSelector : '#dashboard'}));
     // TODO: new data does not have timezone information
     //ensureUserTimezone(result.timezone, result.locale, result.id);
 

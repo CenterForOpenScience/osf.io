@@ -17,7 +17,7 @@
 </div>
 
 
-  <div id="fileBrowser" class="fileBrowser clearfix" >
+  <div id="dashboard" class="fileBrowser clearfix" >
     <div class="spinner-loading-wrapper">
        <div class="logo-spin logo-lg"></div>
        <p class="m-t-sm fg-load-message"> Loading projects...  </p>
