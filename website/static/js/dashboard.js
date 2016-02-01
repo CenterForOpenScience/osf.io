@@ -141,7 +141,7 @@ var Dashboard = {
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.nonLoadTemplate = m.prop(m('.db-non-load-template.m-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
-
+        self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
         // VIEW STATES
         self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(true); // Show the links with collections etc. used in narrow views
@@ -172,11 +172,15 @@ var Dashboard = {
         self.activityLogs = m.prop();
         self.showMoreActivityLogs = m.prop(null);
         self.getLogs = function _getLogs (nodeId, link, addToExistingList) {
+            var cachedResults;
+            if(!addToExistingList){
+                self.activityLogs([]); // Empty logs from other projects while load is happening;
+                self.showMoreActivityLogs(null);
+            }
             var url = link || $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
-            self.activityLogs([]); // Empty old logs first;
-            self.showMoreActivityLogs(null);
-            promise.then(function _getLogsThen (result){
+
+            function _processResults (result){
+                self.logUrlCache[url] = result;
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
                     if(addToExistingList){
@@ -187,8 +191,17 @@ var Dashboard = {
                     self.activityLogs(result.data);  // Set activity log data
                 }
                 self.showMoreActivityLogs(result.links.next); // Set view for show more button
-            });
-            return promise;
+            }
+
+            if(self.logUrlCache[url]){
+                cachedResults = self.logUrlCache[url];
+                _processResults(cachedResults);
+            } else {
+                var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+                promise.then(_processResults);
+                return promise;
+            }
+
         };
         // separate concerns, wrap getlogs here to get logs for the selected item
         self.getCurrentLogs = function _getCurrentLogs ( ){
