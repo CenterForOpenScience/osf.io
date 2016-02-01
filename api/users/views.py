@@ -435,7 +435,32 @@ class UserRegistrations(UserNodes):
         return query
 
 class UserLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, UserMixin):
+    """ Logs from nodes a user is currently associated with.
+    This returns all logs from every node the user is currently associated with. This means
+    this might return logs from other users, and might not return all logs associated with
+    this particular user (if that user is no longer contributing to a node).
 
+    ##Attributes
+    <!--- Copied Attributes from LogList -->
+
+    OSF Log entities have the "logs" `type`.
+
+        name           type                   description
+        ----------------------------------------------------------------------------
+        date           iso8601 timestamp      timestamp of Log creation
+        action         string                 Log action
+
+    ##Query Params
+    <!--- Copied Query Params from LogList -->
+
+    Logs may be filtered by their `action` and `date`.
+
+    Also, this can take in `aggregates=true` as a param, which then will include in the meta
+    field a count of how many of each type of 4 types of actions would be returned (regardless
+    of pagination). Those types are files, comments, wiki, and nodes, each associated with a
+    subset of log actions. It will also return the last loggable action within the logs returned.
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         CurrentUser,
