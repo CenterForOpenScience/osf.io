@@ -357,7 +357,7 @@ var tbOptions = {
                 style: 'display:inline;',
                 onkeyup: function(event){
                     if ($(this).val().length === 1){
-                        tb.updateFolder(allProjectsCache().data, tb.treeData);
+                        tb.updateFolder(allProjectsCache(), tb.treeData);
                     }
                     tb.filter(event);
                 },
@@ -382,7 +382,7 @@ var ProjectOrganizer = {
                 {
                     updateSelected : args.updateSelected,
                     updateFilesData : args.updateFilesData,
-                    filesData: args.filesData().data,
+                    filesData: args.filesData(),
                     dragContainment : args.wrapperSelector
                 },
                 tbOptions

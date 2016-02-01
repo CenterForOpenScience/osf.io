@@ -42,11 +42,13 @@ $(document).ready(function() {
     // TODO: new data does not have timezone information
     //ensureUserTimezone(result.timezone, result.locale, result.id);
 
+    // Appears in 10 second if the spinner is still there.
     setTimeout(function(){
         if($('#dashboard .spinner-loading-wrapper').length > 0) {
-            $('#dashboard').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist contact us at support@cos.io.</div>')
+            $('#dashboard').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist contact us at support@cos.io.</div>');
         }
     }, 10000);
+
     // Add active class to navigation for my projects page
     $('#osfNavMyProjects').addClass('active');
 });

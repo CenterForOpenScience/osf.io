@@ -270,9 +270,9 @@ var Dashboard = {
         };
         self.updateListSuccess = function _updateListSuccess (value) {
             if(self.loadingNodePages){
-                self.data().data = self.data().data.concat(value.data);
+                self.data(self.data().concat(value.data));
             } else {
-                self.data(value);
+                self.data(value.data);
             }
             if(!value.data[0]){ // If we have projects
                 var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
@@ -315,7 +315,7 @@ var Dashboard = {
                 self.loadingNodePages = false;
             }
             if(self.loadingAllNodes) {
-                self.data().data = _makeTree(self.data().data);
+                self.data(_makeTree(self.data()));
                 self.allProjects(self.data());
                 self.generateFiltersList();
                 self.loadingAllNodes = false;
@@ -332,14 +332,14 @@ var Dashboard = {
                     onclick : self.updateFilter.bind(null, self.systemCollections[0])
                 },' Reload \'All My Projects\''))
             ]));
-            self.data().data = [];
+            self.data([]);
             self.refreshView(false);
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
         };
         self.generateFiltersList = function _generateFilterList () {
             self.users = {};
             self.tags = {};
-            self.data().data.map(function _generateFiltersListMap(item){
+            self.data().map(function _generateFiltersListMap(item){
                 var contributors = item.embeds.contributors.data ? item.embeds.contributors.data : [];
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
@@ -408,7 +408,7 @@ var Dashboard = {
         var infoPanel = '';
         var poStyle = 'width : 72%'; // Other percentages are set in CSS in file-browser.css These are here because they change
         var sidebarButtonClass = 'btn-default';
-        var projectCount = ctrl.data().data.length;
+        var projectCount = ctrl.data().length;
         if (ctrl.showInfo() && !mobile){
             infoPanel = m('.db-infobar', m.component(Information, ctrl));
             poStyle = 'width : 47%';
@@ -461,7 +461,7 @@ var Dashboard = {
             ]) : '',
             mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
                 ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
-                ctrl.data().data.length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, {
+                ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, {
                         filesData : ctrl.data,
                         updateSelected : ctrl.updateSelected,
                         updateFilesData : ctrl.updateFilesData,
