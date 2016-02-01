@@ -195,6 +195,7 @@ var Dashboard = {
             if(self.selected().length === 1){
                 var id = self.selected()[0].data.id;
                 var promise = self.getLogs(id);
+                return promise;
             }
         };
 
@@ -770,7 +771,7 @@ var Collections  = {
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                             m('span[aria-hidden="true"]','×')
                         ]),
-                        m('h3.modal-title#addCollLabel', 'Add New Collection')
+                        m('h3.modal-title', 'Add New Collection')
                     ]),
                     body : m('.modal-body', [
                         m('p', 'Collections are groups of projects that help you organize your work. After you create your collection you can add projects by dragging and dropping projects to the collection. '),
@@ -814,7 +815,7 @@ var Collections  = {
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                             m('span[aria-hidden="true"]','×')
                         ]),
-                        m('h3.modal-title#renameCollLabel', 'Rename Collection')
+                        m('h3.modal-title', 'Rename Collection')
                     ]),
                     body: m('.modal-body', [
                         m('.form-inline', [
@@ -853,7 +854,7 @@ var Collections  = {
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                             m('span[aria-hidden="true"]','×')
                         ]),
-                        m('h3.modal-title#removeCollLabel', 'Delete Collection "' + ctrl.collectionMenuObject().item.label + '"?')
+                        m('h3.modal-title', 'Delete Collection "' + ctrl.collectionMenuObject().item.label + '"?')
                     ]),
                     body: m('.modal-body', [
                         m('p', 'This will delete your collection but your projects will not be deleted.'),
