@@ -18,29 +18,13 @@ from website.addons.mendeley.tests.factories import (
 )
 
 from framework.exceptions import HTTPError
+from website.addons.base.testing.utils import MockNode
 from website.addons.mendeley.provider import MendeleyCitationsProvider
 from website.addons.mendeley.serializer import MendeleySerializer
 
 from utils import mock_responses
 
 API_URL = 'https://api.mendeley.com'
-
-class MockNode(object):
-
-    addon = None
-
-    @property
-    def is_deleted(self):
-        return False
-
-    @property
-    def is_public(self):
-        return True
-
-    def get_addon(self, name):
-        if name == 'mendeley':
-            return self.addon
-        return None
 
 class MockFolder(object):
     def __init__(self, **kwargs):
@@ -61,7 +45,7 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.node_addon.set_auth(external_account=self.account, user=self.user)
         self.provider = MendeleyCitationsProvider()
         #self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
-        self.node = MockNode()
+        self.node = MockNode(name='mendeley')
         self.node.addon = self.node_addon
         self.id_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_id')
         self.secret_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_secret')

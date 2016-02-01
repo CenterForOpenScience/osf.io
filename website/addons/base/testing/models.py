@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import abc
+import datetime
 
 import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
 from website.addons.base.testing.utils import MockFolder
@@ -393,8 +395,8 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_is_none(self.node_settings.user_settings)
         assert_is_none(self.node_settings.folder_id)
 
-class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMixin):
 
+class OAuthCitationsTestSuiteMixinBase(OAuthAddonModelTestSuiteMixinBase):
     @abc.abstractproperty
     def ProviderClass(self):
         pass
@@ -402,6 +404,9 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMi
     @abc.abstractproperty
     def OAuthProviderClass(self):
         pass
+
+
+class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMixin, OAuthCitationsTestSuiteMixinBase):
 
     def setUp(self):
         super(OAuthCitationsNodeSettingsTestSuiteMixin, self).setUp()
@@ -431,8 +436,6 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMi
     def test_selected_folder_name(self):
         # Mock the return from api call to get the folder's name
         mock_folder = MockFolder()
-        mock_folder.name = 'Fake Folder'
-        mock_folder['data'] = {'name': 'Fake Folder'}
 
         self.node_settings.mendeley_list_id = 'fake-list-id'
 
@@ -526,3 +529,58 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMi
         assert_equal(log.action, '{}_folder_selected'.format(self.short_name))
         assert_equal(log.params['folder_id'], folder_id)
         assert_equal(log.params['folder_name'], folder_name)
+
+
+class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
+
+    @abc.abstractproperty
+    def ApiExceptionClass(self):
+        pass
+
+    def setUp(self):
+        super(CitationAddonProviderTestSuiteMixin, self).setUp()
+        self.provider = self.OAuthProviderClass()
+
+    @abc.abstractmethod
+    def test_handle_callback(self):
+        pass
+
+    def test_citation_lists(self):
+        mock_client = mock.Mock()
+        mock_folders = [MockFolder()]
+        mock_list = mock.Mock()
+        mock_list.items = mock_folders
+        mock_client.folders.list.return_value = mock_list
+        mock_client.collections.return_value = mock_folders
+        self.provider._client = mock_client
+        mock_account = mock.Mock()
+        self.provider.account = mock_account
+        res = self.provider.citation_lists(self.ProviderClass()._extract_folder)
+        assert_equal(res[1]['name'], mock_folders[0].name)
+        assert_equal(res[1]['id'], mock_folders[0].json['id'])
+
+    def test_client_not_cached(self):
+        # The first call to .client returns a new client
+        with mock.patch.object(self.OAuthProviderClass, '_get_client') as mock_get_client:
+            mock_account = mock.Mock()
+            mock_account.expires_at = datetime.datetime.now()
+            self.provider.account = mock_account
+            self.provider.client
+            mock_get_client.assert_called
+            assert_true(mock_get_client.called)
+
+    def test_client_cached(self):
+        # Repeated calls to .client returns the same client
+        with mock.patch.object(self.OAuthProviderClass, '_get_client') as mock_get_client:
+            self.provider._client = mock.Mock()
+            res = self.provider.client
+            assert_equal(res, self.provider._client)
+            assert_false(mock_get_client.called)
+
+    def test_has_access(self):
+        mock_client = mock.Mock()
+        mock_client.folders.list.return_value = self.ApiExceptionClass({'status_code': 403, 'text': 'Mocked 403 ApiException'})
+        mock_client.collections.return_value = self.ApiExceptionClass({'status_code': 403, 'text': 'Mocked 403 ApiException'})
+        self.provider._client = mock_client
+        self.provider._client
+        assert_raises(HTTPError(403))

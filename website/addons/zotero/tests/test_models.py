@@ -22,11 +22,14 @@ from framework.exceptions import HTTPError
 from website.addons.zotero import model
 
 
-class ZoteroProviderTestCase(OsfTestCase):
+class ZoteroProviderTestCase(models.CitationAddonProviderTestSuiteMixin, OsfTestCase):
 
-    def setUp(self):
-        super(ZoteroProviderTestCase, self).setUp()
-        self.provider = model.Zotero()
+    short_name = 'zotero'
+    full_name = 'Zotero'
+    ExternalAccountFactory = ZoteroAccountFactory
+    ProviderClass = ZoteroCitationsProvider
+    OAuthProviderClass = model.Zotero
+    ApiExceptionClass = UserNotAuthorised
 
     def test_handle_callback(self):
         mock_response = {
@@ -39,31 +42,6 @@ class ZoteroProviderTestCase(OsfTestCase):
         assert_equal(res.get('display_name'), 'Fake User Name')
         assert_equal(res.get('provider_id'), 'Fake User ID')
 
-    def test_citation_lists(self):
-        mock_client = mock.Mock()
-        mock_folders = [
-            {
-                'data': {
-                    'name': 'Fake Folder',
-                    'key': 'Fake Key',
-                }
-            }
-        ]
-
-        mock_client.collections.return_value = mock_folders
-        self.provider._client = mock_client
-        mock_account = mock.Mock()
-        self.provider.account = mock_account
-
-        res = self.provider.citation_lists(ZoteroCitationsProvider()._extract_folder)
-        assert_equal(
-            res[1]['name'],
-            'Fake Folder'
-        )
-        assert_equal(
-            res[1]['id'],
-            'Fake Key'
-        )
 
 class ZoteroNodeSettingsTestCase(models.OAuthCitationsNodeSettingsTestSuiteMixin, OsfTestCase):
     short_name = 'zotero'
@@ -75,6 +53,7 @@ class ZoteroNodeSettingsTestCase(models.OAuthCitationsNodeSettingsTestSuiteMixin
     NodeSettingsFactory = ZoteroNodeSettingsFactory
     NodeSettingsClass = model.ZoteroNodeSettings
     UserSettingsFactory = ZoteroUserSettingsFactory
+
 
 class ZoteroUserSettingsTestCase(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
     short_name = 'zotero'

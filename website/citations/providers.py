@@ -4,7 +4,72 @@ import httplib as http
 from framework.exceptions import HTTPError
 from framework.exceptions import PermissionsError
 
-from website.oauth.models import ExternalAccount
+from website.oauth.models import ExternalAccount, ExternalProvider
+
+
+class CitationsOauthProvider(ExternalProvider):
+
+    _client = None
+
+    @abc.abstractproperty
+    def serializer(self):
+        pass
+
+    @abc.abstractmethod
+    def _get_client(self):
+        pass
+
+    @abc.abstractmethod
+    def _get_folders(self):
+        pass
+
+    @abc.abstractmethod
+    def _verify_client_validity(self):
+        pass
+
+    @abc.abstractmethod
+    def _folder_metadata(self, folder_id):
+        pass
+
+    @abc.abstractmethod
+    def _citations_for_folder(self, folder_id):
+        pass
+
+    @abc.abstractmethod
+    def _citations_for_user(self, folder_id):
+        pass
+
+    @property
+    def client(self):
+        """An API session with <provider_name>"""
+        if not self._client:
+            self._client = self._get_client()
+            self._verify_client_validity()
+
+        return self._client
+
+    def citation_lists(self, extract_folder):
+        """List of CitationList objects, derived from Mendeley folders"""
+
+        folders = self._get_folders()
+        # TODO: Verify OAuth access to each folder
+        all_documents = self.serializer.serialized_root_folder
+
+        serialized_folders = [
+            extract_folder(each)
+            for each in folders
+        ]
+        return [all_documents] + serialized_folders
+
+    def get_list(self, list_id=None):
+        """Get a single CitationList
+        :param str list_id: ID for a folder. Optional.
+        :return CitationList: CitationList for the folder, or for all documents
+        """
+        if not list_id or list_id == 'ROOT':
+            return self._citations_for_user()
+
+        return self._citations_for_folder(list_id)
 
 class CitationsProvider(object):
 

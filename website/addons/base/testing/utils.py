@@ -22,4 +22,8 @@ class MockNode(object):
         return None
 
 class MockFolder(dict, object):
-    pass
+
+    def __init__(self):
+        self.name = 'Fake Folder'
+        self.json = {'id': 'Fake Key', 'parent_id': 'cba321'}
+        self['data'] = {'name': 'Fake Folder', 'key': 'Fake Key'}

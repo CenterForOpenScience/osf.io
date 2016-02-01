@@ -20,29 +20,13 @@ from website.addons.zotero.tests.factories import (
 from framework.exceptions import HTTPError
 
 from pyzotero.zotero_errors import UserNotAuthorised, MissingCredentials
+from website.addons.base.testing.utils import MockNode
 from website.addons.zotero.provider import ZoteroCitationsProvider
 from website.addons.zotero.serializer import ZoteroSerializer
 
 from utils import mock_responses
 
 API_URL = 'https://api.zotero.org'
-
-class MockNode(object):
-
-    addon = None
-
-    @property
-    def is_deleted(self):
-        return False
-
-    @property
-    def is_public(self):
-        return True
-
-    def get_addon(self, name):
-        if name == 'zotero':
-            return self.addon
-        return None
 
 class ZoteroViewsTestCase(OsfTestCase):
 
@@ -58,7 +42,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         self.node_addon.set_auth(external_account=self.account, user=self.user)
         self.provider = ZoteroCitationsProvider()
         #self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
-        self.node = MockNode()
+        self.node = MockNode(name='zotero')
         self.node.addon = self.node_addon
         self.id_patcher = mock.patch('website.addons.zotero.model.Zotero.client_id')
         self.secret_patcher = mock.patch('website.addons.zotero.model.Zotero.client_secret')

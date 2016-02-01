@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from website.citations.provider import CitationsProvider
+from website.citations.providers import CitationsProvider
 from website.addons.mendeley.serializer import MendeleySerializer
 
 class MendeleyCitationsProvider(CitationsProvider):
