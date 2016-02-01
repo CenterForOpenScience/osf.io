@@ -3126,12 +3126,19 @@ class TestProject(OsfTestCase):
     def test_get_recent_logs(self):
         # Add some logs
         for _ in range(5):
-            self.project.logs.append(NodeLogFactory())
+            NodeLogFactory.create(
+                user=self.user,
+                action='file_added',
+                params={'node': self.project._id},
+                node=self.project,
+                original_node=self.project
+            )
         # Expected logs appears
         assert_equal(
             self.project.get_recent_logs(3),
-            list(reversed(self.project.logs)[:3])
+            list(reversed(self.project.logs))[:3]
         )
+
         assert_equal(
             self.project.get_recent_logs(),
             list(reversed(self.project.logs))
