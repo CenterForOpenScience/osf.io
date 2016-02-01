@@ -7,7 +7,6 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import Institution, Node, User
 
-from api.base import settings
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
@@ -188,11 +187,13 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
         return User.find(query)
 
 class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
-    permission_classes = ()
-    required_read_scopes = []
-    required_write_scopes = []
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
     parser_classes = (InstitutionAuthParser,)
     serializer_class = InstitutionAuthSerializer
     view_category = 'institutions'
     view_name = 'institution-auth'
-
