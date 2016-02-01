@@ -4,7 +4,6 @@ import httplib
 import jwe
 import jwt
 from rest_framework.parsers import BaseParser
-from rest_framework.exceptions import ParseError
 
 from api.base import settings
 from framework.exceptions import HTTPError

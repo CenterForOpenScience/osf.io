@@ -88,4 +88,3 @@ class InstitutionAuthSerializer(ser.Serializer):
         user.save()
 
         return user
-
