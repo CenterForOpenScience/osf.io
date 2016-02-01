@@ -23,12 +23,10 @@ class TestWatching(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         # add some log objects
         self.consolidate_auth = Auth(user=self.user)
-        # Clear project logs
-        self.project.logs = []
         self.project.save()
         # A log added 100 days ago
         self.project.add_log(
-            'project_created',
+            'tag_added',
             params={'project': self.project._primary_key},
             auth=self.consolidate_auth,
             log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
@@ -79,7 +77,7 @@ class TestWatching(OsfTestCase):
         self._watch_project(self.project)
         since = dt.datetime.utcnow().replace(tzinfo=utc) - dt.timedelta(days=101)
         log_ids = list(self.user.get_recent_log_ids(since=since))
-        assert_equal(len(log_ids), 2)
+        assert_equal(len(log_ids), 3)
 
     def test_get_daily_digest_log_ids(self):
         self._watch_project(self.project)
