@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import abc
 
+import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
 
 from website.addons.base import exceptions
+from website.addons.base.testing.utils import MockFolder
 
 from tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
@@ -390,3 +392,137 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node_settings.reload()
         assert_is_none(self.node_settings.user_settings)
         assert_is_none(self.node_settings.folder_id)
+
+class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMixin):
+
+    @abc.abstractproperty
+    def ProviderClass(self):
+        pass
+
+    @abc.abstractproperty
+    def OAuthProviderClass(self):
+        pass
+
+    def setUp(self):
+        super(OAuthCitationsNodeSettingsTestSuiteMixin, self).setUp()
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
+        )
+        self.user_settings.save()
+
+    def test_fetch_folder_name_root(self):
+        self.node_settings.list_id = 'ROOT'
+
+        assert_equal(
+            self.node_settings.fetch_folder_name,
+            "All Documents"
+        )
+
+    def test_selected_folder_name_empty(self):
+        self.node_settings.list_id = None
+
+        assert_equal(
+            self.node_settings.fetch_folder_name,
+            ''
+        )
+
+    def test_selected_folder_name(self):
+        # Mock the return from api call to get the folder's name
+        mock_folder = MockFolder()
+        mock_folder.name = 'Fake Folder'
+        mock_folder['data'] = {'name': 'Fake Folder'}
+
+        self.node_settings.mendeley_list_id = 'fake-list-id'
+
+        name = None
+
+        with mock.patch.object(self.OAuthProviderClass, '_folder_metadata', return_value=mock_folder):
+            name = self.node_settings.fetch_folder_name
+
+        assert_equal(
+            name,
+            'Fake Folder'
+        )
+
+    def test_api_not_cached(self):
+        # The first call to .api returns a new object
+        with mock.patch.object(self.NodeSettingsClass, 'oauth_provider') as mock_api:
+            api = self.node_settings.api
+            mock_api.assert_called_once()
+            assert_equal(api, mock_api())
+
+    def test_api_cached(self):
+        # Repeated calls to .api returns the same object
+        with mock.patch.object(self.NodeSettingsClass, 'oauth_provider') as mock_api:
+            self.node_settings._api = 'testapi'
+            api = self.node_settings.api
+            assert_false(mock_api.called)
+            assert_equal(api, 'testapi')
+
+    ############# Overrides ##############
+    # `pass` due to lack of waterbutler- #
+    # related events for citation addons #
+    ######################################
+
+    def _node_settings_class_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'list_id': 'fake_folder_id',
+            'owner': self.node
+        }
+
+    def test_serialize_credentials(self):
+        pass
+
+    def test_serialize_credentials_not_authorized(self):
+        pass
+
+    def test_serialize_settings(self):
+        pass
+
+    def test_serialize_settings_not_configured(self):
+        pass
+
+    def test_create_log(self):
+        pass
+
+    def test_set_folder(self):
+        folder_id = 'fake-folder-id'
+        folder_name = 'fake-folder-name'
+
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        assert_is_none(self.node_settings.list_id)
+
+        provider = self.ProviderClass()
+
+        provider.set_config(
+            self.node_settings,
+            self.user,
+            folder_id,
+            folder_name,
+            auth=Auth(user=self.user),
+        )
+
+        # instance was updated
+        assert_equal(
+            self.node_settings.list_id,
+            'fake-folder-id',
+        )
+
+        # user_settings was updated
+        # TODO: the call to grant_oauth_access should be mocked
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account,
+                metadata={'folder': 'fake-folder-id'}
+            )
+        )
+
+        log = self.node.logs[-1]
+        assert_equal(log.action, '{}_folder_selected'.format(self.short_name))
+        assert_equal(log.params['folder_id'], folder_id)
+        assert_equal(log.params['folder_name'], folder_name)
