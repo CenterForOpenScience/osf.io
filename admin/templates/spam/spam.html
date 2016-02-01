@@ -7,7 +7,31 @@
 {% endblock title %}
 {% block content %}
     <h2>List of Spam</h2>
-    {% include "util/pagination.html" with items=page %}
+    <div class="container-fluid">
+        <div class="row">
+            {% if status != '1' %}
+                <div class="col-md-1">
+                <a href="{% url 'spam:spam' %}?status=1"
+                   class="btn btn-warning">Flagged</a>
+                </div>
+            {% endif %}
+            {% if status != '2' %}
+                <div class="col-md-1">
+                <a href="{% url 'spam:spam' %}?status=2"
+                   class="btn btn-danger">Spam</a>
+                </div>
+            {% endif %}
+            {% if status != '4' %}
+                <div class="col-md-1">
+                <a href="{% url 'spam:spam' %}?status=4"
+                   class="btn btn-success">Ham</a>
+                </div>
+            {% endif %}
+            <div class="col-md-2">
+                {% include "util/pagination.html" with items=page %}
+            </div>
+        </div>
+    </div>
     <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>

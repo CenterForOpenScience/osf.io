@@ -13,7 +13,7 @@ def serialize_comment(comment, full=False):
         'has_children': bool(getattr(comment, 'commented', [])),
         'modified': comment.modified,
         'is_deleted': comment.is_deleted,
-        # 'spam_status': comment.spam_status,  # TODO: merge in spam mixin
+        'spam_status': comment.spam_status,
         'reports': reports,
         'node': comment.node,
         'category': reports[0]['category'],
