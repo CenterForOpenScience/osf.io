@@ -17,6 +17,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.logs.serializers import NodeLogSerializer
+from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query
 
@@ -310,6 +311,27 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
         query = self.get_query_from_request()
         nodes = Node.find(query)
         return nodes
+
+
+class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = InstitutionSerializer
+    view_category = 'users'
+    view_name = 'user-institutions'
+
+    def get_default_odm_query(self):
+        return None
+
+    def get_queryset(self):
+        user = self.get_user()
+        return user.affiliated_institutions
 
 
 class UserRegistrations(UserNodes):

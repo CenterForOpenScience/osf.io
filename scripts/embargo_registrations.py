@@ -75,8 +75,9 @@ def main(dry_run=True):
 
                 with TokuTransaction():
                     try:
-                        parent_registration.set_privacy('public')
                         embargo.state = models.Embargo.COMPLETED
+                        for node in parent_registration.node_and_primary_descendants():
+                            node.set_privacy('public', auth=None, save=True)
                         parent_registration.registered_from.add_log(
                             action=NodeLog.EMBARGO_COMPLETED,
                             params={

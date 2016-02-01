@@ -4,6 +4,7 @@
 'use strict';
 
 var $ = require('jquery');
+var $3 = $;
 var ko = require('knockout');
 var Raven = require('raven-js');
 var $osf = require('./osfHelpers');
@@ -23,7 +24,8 @@ var MESSAGES = {
     confirmWarning: {
         nodesPublic: 'The following projects and components will be made <b>public</b>.',
         nodesPrivate: 'The following projects and components will be made <b>private</b>.',
-        nodesNotChangedWarning: 'No nodes were changed.'
+        nodesNotChangedWarning: 'No nodes were changed.',
+        tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.'
     }
 };
 
@@ -56,7 +58,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
  */
 function patchNodesPrivacy(nodes) {
     var nodesV2Url = window.contextVars.apiV2Prefix + 'nodes/';
-    var nodesPatch = nodes.splice(0,10).map(function (node) {
+    var nodesPatch = nodes.map(function (node) {
         return {
             'type': 'nodes',
             'id': node.id,
@@ -65,7 +67,8 @@ function patchNodesPrivacy(nodes) {
             }
         };
     });
-    return $.ajax({
+    //s3 is a very recent version of jQuery that fixes a known bug when used in internet explorer
+    return $3.ajax({
         url: nodesV2Url,
         type: 'PATCH',
         dataType: 'json',
@@ -76,11 +79,6 @@ function patchNodesPrivacy(nodes) {
         data: JSON.stringify({
             data: nodesPatch
         })
-    }).done(function (response) {
-        if (nodes.length === 0) {
-            return;
-        }
-        return patchNodesPrivacy(nodes);
     });
 }
 
@@ -195,23 +193,29 @@ var NodesPrivacyViewModel = function(parentIsPublic) {
 
     self.confirmChanges =  function() {
         var nodesState = ko.toJS(self.nodesState());
-        //patchNodesPrivacy(nodesState);
         nodesState = Object.keys(nodesState).map(function(key) {
             return nodesState[key];
         });
         var nodesChanged = nodesState.filter(function(node) {
             return node.changed;
         });
-        patchNodesPrivacy(nodesChanged).then(function () {
-            window.location.reload();
-        }).fail(function(xhr, status, error) {
-            $osf.growl('Error', 'Unable to update project privacy');
-            Raven.captureMessage('Could not PATCH project settings.', {
-                url: window.contextVars.apiV2Prefix + 'nodes/', status: status, error: error
+        //The API's bulk limit is 100 nodes.  We catch the exception in nodes_privacy.mako.
+        if (nodesChanged.length <= 100) {
+            $osf.block('Updating Privacy');
+            patchNodesPrivacy(nodesChanged).then(function () {
+                $osf.unblock();
+                self.nodesChangedPublic([]);
+                self.nodesChangedPrivate([]);
+                self.page(self.WARNING);
+                window.location.reload();
+            }).fail(function () {
+                $osf.unblock();
+                $osf.growl('Error', 'Unable to update project privacy');
+                Raven.captureMessage('Could not PATCH project settings.');
+                self.clear();
+                window.location.reload();
             });
-            self.clear();
-            window.location.reload();
-        });
+        }
     };
 
     self.clear = function() {
