@@ -789,6 +789,7 @@ var Collections  = {
                                         }
                                         ctrl.newCollectionName(val);
                                     },
+                                    placeholder : 'e.g.  My Replications',
                                     value : ctrl.newCollectionName()
                                 }),
                                 m('span.help-block', ctrl.validationError())
