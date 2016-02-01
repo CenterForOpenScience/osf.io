@@ -1837,14 +1837,13 @@ var Range = ace.require('ace/range').Range;
     };
 
     commandProto.addLinkDef = function (chunk, linkDef) {
-        
+
         var refNumber = 0; // The current reference number
         var defsToAdd = {}; //
         // Start with a clean slate by removing all previous link definitions.
         chunk.before = this.stripLinkDefs(chunk.before, defsToAdd);
         chunk.selection = this.stripLinkDefs(chunk.selection, defsToAdd);
         chunk.after = this.stripLinkDefs(chunk.after, defsToAdd);
-       
         
         var defs = "";
         var regex = /(\[)((?:\[[^\]]*\]|[^\[\]])*)(\][ ]?(?:\n[ ]*)?\[)(\d+)(\])/g;
@@ -1941,7 +1940,7 @@ var Range = ace.require('ace/range').Range;
             chunk.selection = chunk.startTag + chunk.selection + chunk.endTag;
             chunk.startTag = chunk.endTag = "";
                         
-            if (/\n\n/.test(chunk.selection)) {     // THIS DOESNT HAPPEN!!! BUT WHAT DOES IT MEAN???
+            if (/\n\n/.test(chunk.selection)) {
                 this.addLinkDef(chunk, null);
                 return;
             }
@@ -1977,9 +1976,9 @@ var Range = ace.require('ace/range').Range;
                     chunk.selection = (" " + chunk.selection).replace(/([^\\](?:\\\\)*)(?=[[\]])/g, "$1\\").substr(1);
                             
                     var linkDef;
-                    if (!num) { //NOT NUM
+                    if (!num) {
                         linkDef = "  [999]: " + properlyEncoded(link);
-                        num = that.addLinkDef(chunk, linkDef);      //follow to addLinkDef to fix!!!
+                        num = that.addLinkDef(chunk, linkDef);
                     }
                     else {
                         linkDef = "  [" + num + "]: " + properlyEncoded(link);
@@ -1989,6 +1988,7 @@ var Range = ace.require('ace/range').Range;
                         }
                     }
                     if (!chunk.selection && !multiple) {
+                        
                         chunk.startTag = isImage ? "![" : "[";
                         chunk.endTag = "][" + num + "]";
                         if (isImage) {
