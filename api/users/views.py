@@ -22,7 +22,7 @@ from api.base.utils import default_node_list_query
 
 from .serializers import UserSerializer, UserDetailSerializer
 from .permissions import ReadOnlyOrCurrentUser, CurrentUser
-from .pagination import UserNodeLogPagination
+from .pagination import UserLogPagination
 
 
 class UserMixin(object):
@@ -412,7 +412,7 @@ class UserRegistrations(UserNodes):
         query = query & permission_query
         return query
 
-class UserNodeLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, UserMixin):
+class UserLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, UserMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -421,12 +421,12 @@ class UserNodeLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, 
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeLogSerializer
-    pagination_class = UserNodeLogPagination
+    pagination_class = UserLogPagination
     view_category = 'users'
-    view_name = 'node_logs'
+    view_name = 'user-logs'
 
     ordering = ('-date', )
 

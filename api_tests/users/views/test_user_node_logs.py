@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import urlparse
 from nose.tools import *  # flake8: noqa
 
 from framework.auth import Auth
@@ -12,9 +11,9 @@ from tests.factories import NodeLogFactory
 from api.base.settings.defaults import API_BASE
 
 
-class TestUserNodeLogs(ApiTestCase):
+class TestUserLogs(ApiTestCase):
     def setUp(self):
-        super(TestUserNodeLogs, self).setUp()
+        super(TestUserLogs, self).setUp()
         self.user = AuthUserFactory()
         self.other_user = AuthUserFactory()
         self.node = NodeFactory(creator=self.user)
@@ -24,7 +23,7 @@ class TestUserNodeLogs(ApiTestCase):
         # Logs require paths here as the aggregate query assumes that a file log has a path param
         self.log = NodeLogFactory(action='osf_storage_file_added', params={'node': self.node._id, 'path': 'a_path'})
         self.log2 = NodeLogFactory(action='osf_storage_file_added', params={'node': self.other_node._id, 'path': 'another_path'})
-        self.log_url = '/{0}users/{1}/node_logs/'.format(API_BASE, self.user._id)
+        self.log_url = '/{0}users/{1}/logs/'.format(API_BASE, self.user._id)
 
     def test_retrieve_all_logs(self):
         res = self.app.get(
@@ -44,7 +43,7 @@ class TestUserNodeLogs(ApiTestCase):
         user = AuthUserFactory()
 
         res = self.app.get(
-            '/{0}users/{1}/node_logs/'.format(API_BASE, user._id),
+            '/{0}users/{1}/logs/'.format(API_BASE, user._id),
             auth=user.auth,
             expect_errors=True
         )
@@ -84,7 +83,7 @@ class TestUserNodeLogs(ApiTestCase):
 
     def test_no_auth(self):
         res = self.app.get(
-            '/{0}users/{1}/node_logs/'.format(API_BASE, self.user._id),
+            '/{0}users/{1}/logs/'.format(API_BASE, self.user._id),
             expect_errors=True
         )
 
@@ -92,7 +91,7 @@ class TestUserNodeLogs(ApiTestCase):
 
     def test_wrong_auth(self):
         res = self.app.get(
-            '/{0}users/{1}/node_logs/'.format(API_BASE, self.user._id),
+            '/{0}users/{1}/logs/'.format(API_BASE, self.user._id),
             auth=self.other_user.auth,
             expect_errors=True,
         )

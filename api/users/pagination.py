@@ -3,7 +3,7 @@ from collections import OrderedDict
 from api.base.pagination import JSONAPIPagination
 
 
-class UserNodeLogPagination(JSONAPIPagination):
+class UserLogPagination(JSONAPIPagination):
 
     node_log_aggregates = None
 

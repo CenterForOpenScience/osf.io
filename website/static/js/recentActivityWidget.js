@@ -55,7 +55,7 @@ var LogWrap = {
                 query['filter[date][lte]'] = self.dateEnd.toISOString();
                 query['filter[date][gte]'] = self.dateBegin.toISOString();
             }
-            var url = $osf.apiV2Url('users/' + self.userId + '/node_logs/', { query : query});
+            var url = $osf.apiV2Url('users/' + self.userId + '/logs/', { query : query});
             var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: (update ? true : false)});
             promise.then(function(result){
                 self.loading = false;
