@@ -1,6 +1,6 @@
 
 var logActions = {
-    'dataverse_file_added' : '${user} added file ${filename} to Dataverse dataset {$dataset} in ${node}',
+    'dataverse_file_added' : '${user} added file ${filename} to Dataverse dataset ${dataset} in ${node}',
     'dataverse_file_removed' : '${user} removed file ${filename} from Dataverse dataset ${dataset} in ${node}',
     'dataverse_dataset_linked' : '${user} linked Dataverse dataset ${dataset} to ${node}',
     'dataverse_study_linked' : '${user} linked Dataverse dataset ${study} to ${node}',

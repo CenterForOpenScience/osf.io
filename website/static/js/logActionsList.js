@@ -13,7 +13,7 @@ var logActions = {
     'made_public':  '${user} made ${node} public', // case: made_public_no_user
     'made_private':     '${user} made ${node} private',
     'tag_added':    '${user} tagged ${node} as ${tag}',
-    'tag_removed':  '${user} removed {$tag} from ${node}',
+    'tag_removed':  '${user} removed ${tag} from ${node}',
     'edit_title':   '${user} changed the title from ${title_original} to ${title_new}',
     'edit_description': '${user} edited description of ${node}',
     'updated_fields':   '${user} changed the ${updated_fields} for ${node}', // i.e change category
