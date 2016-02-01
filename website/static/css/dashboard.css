@@ -1,6 +1,6 @@
 
 /* Main Wrapper */
-.fileBrowser {
+.dashboard {
     width: 100%;
     font-family: "Open Sans", 'Helvetica Neue', sans-serif;
     border-bottom: 1px solid #eee;
@@ -9,32 +9,32 @@
 
 /* Header with breadcrumbs and buttons */
 
-.fb-header {
+.db-header {
     background-color: #f8f8f8;
     margin-right: 0px !important;
     margin-left: 0px !important;
     box-shadow: 0 3px 3px -3px #ccc;
     position: relative;
 }
-.fb-breadcrumbs {
+.db-breadcrumbs {
     display : inline-block;
     padding: 7px;
     margin-left:-20px;
 }
-.fb-breadcrumbs ul, .fb-collections ul, .fb-filters ul {
+.db-breadcrumbs ul, .db-collections ul, .db-filters ul {
     padding: 0;
     list-style: none;
     margin: 0;
 }
-.fb-breadcrumbs ul li {
+.db-breadcrumbs ul li {
     display: inline;
     padding: 0 3px;
 }
-.fb-breadcrumbs>ul>li>.fa {
+.db-breadcrumbs>ul>li>.fa {
     margin-left: 5px;
     color: #999999;
 }
-.fb-buttonRow {
+.db-buttonRow {
     display: inline-block;
     padding: 6px;
 }
@@ -51,7 +51,7 @@
 
 
 /* Sidebar with Collections and filters*/
-.fb-sidebar {
+.db-sidebar {
     width: 25%;
     display: block;
     height: 535px;
@@ -61,21 +61,21 @@
     overflow-y: auto;
 }
 
-.fb-collections ul li , .fb-filters ul li {
+.db-collections ul li , .db-filters ul li {
     padding: 3px 0;
     border-left: 3px solid #FFFFFF;
     position: relative;
 }
-.fb-collections h4 , .fb-filters h4 {
+.db-collections h4 , .db-filters h4 {
     border-bottom: 1px solid #eee;
     padding-bottom: 5px;
 }
-.fb-collections ul li.active, .fb-filters ul li.active {
+.db-collections ul li.active, .db-filters ul li.active {
     background-color: #f8f8f8;
     border-left: 3px solid #337AB7;
 }
 
-.fb-collections ul>li, .fb-filters ul>li {
+.db-collections ul>li, .db-filters ul>li {
     padding: 5px;
 }
 .collectionMenu {
@@ -108,13 +108,13 @@
     font-size:18px;
     cursor: pointer;
 }
-.fb-sidebar h5>.fa {
+.db-sidebar h5>.fa {
     color: #999;
     margin-right: 5px;
 }
 /* Main column with Projects */
 
-.fb-main {
+.db-main {
     float: left;
     padding: 0 0 1px 0;
     /* width is set as inline style in file-browser.js because it changes based on information panel visibility */
@@ -123,7 +123,7 @@
 }
 
 /* Information Panel */
-.fb-infobar {
+.db-infobar {
     background-color: #fafafa;
     height: 535px;
     width: 25%;
@@ -132,17 +132,17 @@
     border-left: 1px solid #eee;
 
 }
-.fb-info-multi {
+.db-info-multi {
     padding-top: 10px;
     border-bottom: 1px solid #eee;
 }
-.fb-info-remove {
+.db-info-remove {
     background: #FFF;
     text-align: right;
     font-size: 13px;
 }
 
-.fb-info-toggle {
+.db-info-toggle {
     display: block;
     height: 535px;
     width: 3%;
@@ -154,7 +154,7 @@
     cursor: pointer;
 }
 
-.fb-information .tag:hover {
+.db-information .tag:hover {
     text-decoration: none;
 }
 
@@ -164,7 +164,7 @@
     position: relative;
 }
 
-.fb-overlay {
+.db-overlay {
     width: 100%;
     height: 100%;
     position: absolute;
@@ -174,34 +174,34 @@
     z-index: 1;
 }
 
-.fb-dismiss {
+.db-dismiss {
     height: 45px;
     padding: 10px 2px;
 }
 
-.fb-error {
+.db-error {
     width: 100%;
     text-align: center;
 }
 
-.fb-error .fa {
+.db-error .fa {
     font-size: 34px;
     color: #ccc;
 }
 /* Logs */
 
-.fb-activity-item {
+.db-activity-item {
     font-size: 13px;
     padding: 5px 10px;
     background: #FFF;
     margin-bottom: 3px;
     border-bottom: 1px solid #eee;
 }
-.fb-log-avatar img {
+.db-log-avatar img {
     width: 16px;
     height: 16px;
 }
-.fb-log-avatar {
+.db-log-avatar {
     display: inline-block;
 }
 
@@ -264,20 +264,20 @@
 }
 
 @media only screen and (min-width : 767px) and (max-width : 991px) {
-    .fb-infobar .nav-tabs>li>a {
+    .db-infobar .nav-tabs>li>a {
         padding: 10px 3px;
     }
 }
 
 @media only screen and (min-width : 767px) {
-    .fb-buttonRow {
+    .db-buttonRow {
         text-align:right;
     }
 }
 
 
 @media only screen and (max-width : 767px) {
-    .fb-sidebar, .fb-infobar {
+    .db-sidebar, .db-infobar {
         position: absolute;
         width: 100%;
     }

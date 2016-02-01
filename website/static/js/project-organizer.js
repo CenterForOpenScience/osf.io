@@ -391,6 +391,7 @@ var ProjectOrganizer = {
             );
             var tb = new Treebeard(poOptions, true);
             m.redraw.strategy('all');
+            args.onUpdate.call(self);
             return tb;
         };
         allProjectsCache = args.allProjects;
@@ -398,9 +399,8 @@ var ProjectOrganizer = {
     },
     view : function (ctrl, args) {
         var tb = ctrl.tb;
-        if (args.reload()) {
-            tb = ctrl.updateTB();
-            args.reload(false);
+        if (args.shouldUpdate()) {
+            tb = ctrl.updateTb();
         }
         return m('.fb-project-organizer#projectOrganizer', tb );
     }

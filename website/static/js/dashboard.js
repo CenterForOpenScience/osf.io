@@ -137,13 +137,19 @@ function buildCollectionNodeData (id) {
  * Initialize File Browser. Prepeares an option object within FileBrowser
  * @constructor
  */
-var FileBrowser = {
+var Dashboard = {
     controller : function (options) {
         var self = this;
         self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
-        self.nonLoadTemplate = m.prop(m('.fb-non-load-template.m-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
+        self.handlePOUpdate = function() {
+            self.reload(false);
+        };
+        self.shouldPOUpdate = function() {
+            self.reload() === true;
+        };
+        self.nonLoadTemplate = m.prop(m('.db-non-load-template.m-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
 
         // VIEW STATES
         self.showInfo = m.prop(true); // Show the info panel
@@ -278,17 +284,17 @@ var FileBrowser = {
                 var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
-                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
+                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not created any projects yet.'));
                     } else if (lastcrumb.data.systemCollection === 'registrations'){
-                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
+                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not made any registrations yet.'));
                     } else {
-                        self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box',
+                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
                             'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
                     }
                 } else {
-                    self.nonLoadTemplate(m('.fb-non-load-template.m-md.p-md.osf-box.text-center', [
+                    self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
                         'This project has no subcomponents.',
                         m.component(AddProject, {
                             buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new Subcomponent'),
@@ -325,7 +331,7 @@ var FileBrowser = {
             self.refreshView(false);
         };
         self.updateListError = function _updateListError (result){
-            self.nonLoadTemplate(m('.fb-error.text-danger.m-t-lg', [
+            self.nonLoadTemplate(m('.db-error.text-danger.m-t-lg', [
                 m('p', m('i.fa.fa-exclamation-circle')),
                 m('p','Projects for this selection couldn\'t load.'),
                 m('p', m('.btn.btn-default', {
@@ -410,7 +416,7 @@ var FileBrowser = {
         var sidebarButtonClass = 'btn-default';
         var projectCount = ctrl.data().data.length;
         if (ctrl.showInfo() && !mobile){
-            infoPanel = m('.fb-infobar', m.component(Information, ctrl));
+            infoPanel = m('.db-infobar', m.component(Information, ctrl));
             poStyle = 'width : 47%';
         }
         if(ctrl.showSidebar()){
@@ -423,9 +429,9 @@ var FileBrowser = {
         }
 
         return [
-            m('.fb-header.row', [
+            m('.db-header.row', [
                 m('.col-xs-12.col-sm-6', m.component(Breadcrumbs,ctrl)),
-                m('.fb-buttonRow.col-xs-12.col-sm-6', [
+                m('.db-buttonRow.col-xs-12.col-sm-6', [
                     mobile ? m('button.btn.btn-sm.m-r-sm', {
                         'class' : sidebarButtonClass,
                         onclick : function () {
@@ -437,8 +443,8 @@ var FileBrowser = {
                 ])
             ]),
             ctrl.showSidebar() ?
-            m('.fb-sidebar', { config : ctrl.sidebarInit}, [
-                mobile ? [ m('.fb-dismiss', m('button.close[aria-label="Close"]', {
+            m('.db-sidebar', { config : ctrl.sidebarInit}, [
+                mobile ? [ m('.db-dismiss', m('button.close[aria-label="Close"]', {
                     onclick : function () {
                         ctrl.showSidebar(false);
                     }
@@ -459,20 +465,21 @@ var FileBrowser = {
                     tagFilters : ctrl.tagFilters
                 })
             ]) : '',
-            mobile && ctrl.showSidebar() ? '' : m('.fb-main', { style : poStyle },[
+            mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
                 ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
                 ctrl.data().data.length === 0 ? ctrl.nonLoadTemplate() : m('#poOrganizer',  m.component( ProjectOrganizer, {
                         filesData : ctrl.data,
                         updateSelected : ctrl.updateSelected,
                         updateFilesData : ctrl.updateFilesData,
                         LinkObject : LinkObject,
-                        reload : ctrl.reload,
                         dragContainment : args.wrapperSelector,
-                        allProjects : ctrl.allProjects
+                        allProjects : ctrl.allProjects,
+                        shouldUpdate: ctrl.shouldPOUpdate,
+                        onUpdate: ctrl.handlePOUpdate
                     })
                 )
             ]),
-            mobile ? '' : m('.fb-info-toggle',{
+            mobile ? '' : m('.db-info-toggle',{
                     onclick : function _showInfoOnclick(){
                         ctrl.showInfo(!ctrl.showInfo());
                     }
@@ -624,7 +631,7 @@ var Collections  = {
             return promise;
         };
         self.applyDroppable = function _applyDroppable ( ){
-            $('.fb-collections ul>li').droppable({
+            $('.db-collections ul>li').droppable({
                 hoverClass: 'bg-color-hover',
                 drop: function( event, ui ) {
                     var collection = self.collections()[$(this).attr('data-index')];
@@ -764,9 +771,9 @@ var Collections  = {
                 ]) : ''
             ])
         ];
-        return m('.fb-collections', [
+        return m('.db-collections', [
             collectionListTemplate,
-            m('.fb-collections-modals', [
+            m('.db-collections-modals', [
                 m.component(mC.modal, {
                     id: 'addColl',
                     header : m('.modal-header', [
@@ -902,7 +909,7 @@ var Breadcrumbs = {
         var mobile = window.innerWidth < 767; // true if mobile view
         var items = args.breadcrumbs();
         if (mobile && items.length > 1) {
-            return m('.fb-breadcrumbs', [
+            return m('.db-breadcrumbs', [
                 m('ul', [
                     m('li', [
                         m('.btn.btn-link[data-toggle="modal"][data-target="#parentsModal"]', '...'),
@@ -920,7 +927,7 @@ var Breadcrumbs = {
                                 m('h4', 'Parent Projects'),
                                 args.breadcrumbs().map(function(item, index, array){
                                     if(index === array.length-1){
-                                        return m('.fb-parent-row.btn', {
+                                        return m('.db-parent-row.btn', {
                                             style : 'margin-left:' + (index*20) + 'px;',
                                         },  [
                                             m('i.fa.fa-angle-right.m-r-xs'),
@@ -929,7 +936,7 @@ var Breadcrumbs = {
                                     }
                                     item.index = index; // Add index to update breadcrumbs
                                     item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
-                                    return m('.fb-parent-row',
+                                    return m('.db-parent-row',
                                         m('span.btn.btn-link', {
                                             style : 'margin-left:' + (index*20) + 'px;',
                                             onclick : function() {
@@ -948,7 +955,7 @@ var Breadcrumbs = {
                 )
             ]);
         }
-        return m('.fb-breadcrumbs', m('ul', [
+        return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
                     var label = item.type === 'node' ? ' Add Component' : ' Add Project';
@@ -1046,7 +1053,7 @@ var Filters = {
             }
             return list;
         };
-        return m('.fb-filters.m-t-lg',
+        return m('.db-filters.m-t-lg',
             [
                 m('h5', [
                     'Contributors',
@@ -1077,7 +1084,7 @@ var Information = {
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
             template = m('.p-sm', [
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.fb-info-remove.p-xs.text-danger', { onclick : args.removeProjectFromCollections }, 'Remove from collection') : '',
+                filter.type === 'collection' && !filter.data.systemCollection ? m('.db-info-remove.p-xs.text-danger', { onclick : args.removeProjectFromCollections }, 'Remove from collection') : '',
                 m('h3', m('a', { href : item.links.html}, item.attributes.title)),
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
@@ -1086,7 +1093,7 @@ var Information = {
                     ]),
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
-                            m('p.fb-info-meta.text-muted', [
+                            m('p.db-info-meta.text-muted', [
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('', 'Category: ' + item.attributes.category),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
@@ -1117,30 +1124,30 @@ var Information = {
         }
         if (args.selected().length > 1) {
             template = m('.p-sm', [ '', args.selected().map(function(item){
-                return m('.fb-info-multi', [
+                return m('.db-info-multi', [
                     m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
-                    m('p.fb-info-meta.text-muted', [
+                    m('p.db-info-meta.text-muted', [
                         m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
                         m('span', ', Last Modified on ' + item.data.date.local)
                     ]),
                 ]);
             })]);
         }
-        return m('.fb-information', template);
+        return m('.db-information', template);
     }
 };
 
 
 var ActivityLogs = {
     view : function (ctrl, args) {
-        return m('.fb-activity-list.m-t-md', [
+        return m('.db-activity-list.m-t-md', [
             args.activityLogs() ? args.activityLogs().map(function(item){
-                return m('.fb-activity-item', [
-                    m('', [ m('.fb-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})), m.component(LogText,item)]),
+                return m('.db-activity-item', [
+                    m('', [ m('.db-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})), m.component(LogText,item)]),
                     m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : '',
-            m('.fb-activity-nav.text-center', [
+            m('.db-activity-nav.text-center', [
                 args.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){ args.getLogs(null, args.showMoreActivityLogs(), true); }}, [ 'Show more', m('i.fa.fa-caret-down.m-l-xs')]) : '',
             ])
 
@@ -1155,7 +1162,7 @@ var ActivityLogs = {
 
 var Modals = {
     view : function(ctrl, args) {
-        return m('.fb-Modals', [
+        return m('.db-fbModals', [
             m('#infoModal.modal.fade[tabindex=-1][role="dialog"][aria-hidden="true"]',
                 m('.modal-dialog',
                     m('.modal-content', [
@@ -1172,4 +1179,4 @@ var Modals = {
     }
 };
 
-module.exports = { FileBrowser : FileBrowser, LinkObject: LinkObject };
+module.exports = { Dashboard : Dashboard, LinkObject: LinkObject };
