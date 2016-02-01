@@ -656,4 +656,6 @@ def project_file_search(query, node_id, index=None):
             }
         }
     }
-    return es.search(index=index, doc_type='file', body=query)['hits']['hits']
+    results = es.search(index=index, doc_type='file', body=query)['hits']['hits']
+    results = [d['_source']['id']for d in results]
+    return results

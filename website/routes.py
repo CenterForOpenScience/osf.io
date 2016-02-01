@@ -707,13 +707,12 @@ def make_url_map(app):
     # API
 
     process_rules(app, [
-
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
         Rule('/share/search/', ['get', 'post'], search_views.search_share, json_renderer),
         Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
         Rule('/share/providers/', 'get', search_views.search_share_providers, json_renderer),
-
+        Rule('/project_files/', 'get', search_views.search_project_files, json_renderer),
     ], prefix='/api/v1')
 
     # Project
