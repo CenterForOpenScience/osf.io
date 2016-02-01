@@ -214,8 +214,8 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     bootbox.alert({
                                 title: 'Confirmation email sent',
                                 message: '<em>' + addrText + '</em>' + ' was added to your account.' +
-                                ' You will receive a confirmation email at ' + '<em>' + addrText + '</em>' +
-                                '. Please log out of this account and check your email to confirm this action.'
+                                ' You will receive a confirmation email at ' + '<em>' + addrText + '</em>.' +
+                                ' Please log out of this account and check your email to confirm this action.'
                             });
                 }
             }.bind(this)).fail(function(){
