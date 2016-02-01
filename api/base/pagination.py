@@ -21,10 +21,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
     """
 
     page_size_query_param = 'page[size]'
-
-    def __init__(self, max_page_size=None, **kwargs):
-        super(JSONAPIPagination, self).__init__(**kwargs)
-        self.max_page_size = max_page_size or MAX_PAGE_SIZE
+    max_page_size = MAX_PAGE_SIZE
 
     def page_number_query(self, url, page_number):
         """
