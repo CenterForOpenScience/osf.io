@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from datetime import datetime
-import mock
 from nose.tools import *  # noqa PEP8 asserts
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
@@ -8,8 +7,6 @@ from framework.auth import Auth
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, CommentFactory
-
-from website.project.model import SpamMixin
 
 
 class TestSpamMixin(OsfTestCase):
@@ -19,12 +16,12 @@ class TestSpamMixin(OsfTestCase):
         self.comment = CommentFactory()
         self.auth = Auth(user=self.comment.user)
 
-    @mock.patch('website.project.model.SpamMixin.flag_spam')
-    def test_report_abuse(self, mock_flag_spam):
+    def test_report_abuse(self):
         user = UserFactory()
         time = datetime.utcnow()
         self.comment.report_abuse(
                 user, date=time, category='spam', text='ads', save=True)
+        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
         equivalent = dict(
             date=time,
             category='spam',
@@ -33,26 +30,25 @@ class TestSpamMixin(OsfTestCase):
         )
         assert_in(user._id, self.comment.reports)
         assert_equal(self.comment.reports[user._id], equivalent)
-        assert_equal(len(mock_flag_spam.mock_calls), 1)
 
-    @mock.patch('website.project.model.SpamMixin.flag_spam')
-    def test_report_abuse_own_comment(self, mock_flag_spam):
+    def test_report_abuse_own_comment(self):
         with assert_raises(ValueError):
             self.comment.report_abuse(
                 self.comment.user,
                 category='spam', text='ads',
                 save=True
             )
-        assert_equal(len(mock_flag_spam.mock_calls), 0)
+        assert_equal(self.comment.spam_status, self.comment.UNKNOWN)
 
-    @mock.patch('website.project.model.SpamMixin.remove_flag')
-    def test_retract_report(self, mock_remove_flag):
+    def test_retract_report(self):
         user = UserFactory()
         time = datetime.utcnow()
         self.comment.report_abuse(
                 user, date=time, category='spam', text='ads', save=True
         )
+        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
         self.comment.retract_report(user, save=True)
+        assert_equal(self.comment.spam_status, self.comment.UNKNOWN)
         equivalent = {
             'date': time,
             'category': 'spam',
@@ -61,10 +57,8 @@ class TestSpamMixin(OsfTestCase):
         }
         assert_in(user._id, self.comment.reports)
         assert_equal(self.comment.reports[user._id], equivalent)
-        assert_equal(len(mock_remove_flag.mock_calls), 1)
 
-    @mock.patch('website.project.model.SpamMixin.remove_flag')
-    def test_retract_report_not_reporter(self, mock_remove_flag):
+    def test_retract_report_not_reporter(self):
         reporter = UserFactory()
         non_reporter = UserFactory()
         self.comment.report_abuse(
@@ -72,7 +66,7 @@ class TestSpamMixin(OsfTestCase):
         )
         with assert_raises(ValueError):
             self.comment.retract_report(non_reporter, save=True)
-        assert_equal(len(mock_remove_flag.mock_calls), 0)
+        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
 
     def test_retract_one_report_of_many(self):
         user_1 = UserFactory()
@@ -81,6 +75,7 @@ class TestSpamMixin(OsfTestCase):
         self.comment.report_abuse(
                 user_1, date=time, category='spam', text='ads', save=True
         )
+        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
         self.comment.report_abuse(
                 user_2, date=time, category='spam', text='all', save=True
         )
@@ -93,7 +88,7 @@ class TestSpamMixin(OsfTestCase):
         }
         assert_in(user_1._id, self.comment.reports)
         assert_equal(self.comment.reports[user_1._id], equivalent)
-        assert_equal(self.comment.spam_status, 1)
+        assert_equal(self.comment.spam_status, self.comment.FLAGGED)
 
     def test_flag_spam(self):
         self.comment.flag_spam(save=True)
