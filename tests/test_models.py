@@ -3860,7 +3860,12 @@ class TestRegisterNode(OsfTestCase):
 
     def test_logs(self):
         # Registered node has all logs except for registration approval initiated
-        assert_equal(self.registration.logs, self.project.logs[:-1])
+        assert_equal(len(self.project.logs) - 1, len(self.registration.logs))
+        assert_equal(len(self.registration.logs), 1)
+        assert_equal(self.registration.logs[0].action, 'project_created')
+        assert_equal(len(self.project.logs), 2)
+        assert_equal(self.project.logs[0].action, 'project_created')
+        assert_equal(self.project.logs[1].action, 'registration_initiated')
 
     def test_tags(self):
         assert_equal(self.registration.tags, self.project.tags)
