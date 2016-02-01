@@ -1,5 +1,6 @@
 [run]
 include =
+    api/*
     website/*
     framework/*
 omit =

@@ -160,6 +160,7 @@ class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
 
+    PUSH_CONTEXT = True
     DISCONNECTED_SIGNALS = {
         # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests
         contributor_added: [notify_added_contributor]
@@ -168,6 +169,8 @@ class AppTestCase(unittest.TestCase):
     def setUp(self):
         super(AppTestCase, self).setUp()
         self.app = TestApp(test_app)
+        if not self.PUSH_CONTEXT:
+            return
         self.context = test_app.test_request_context()
         self.context.push()
         with self.context:
@@ -178,6 +181,8 @@ class AppTestCase(unittest.TestCase):
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()
+        if not self.PUSH_CONTEXT:
+            return
         with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
             self.context.pop()
         for signal in self.DISCONNECTED_SIGNALS:
