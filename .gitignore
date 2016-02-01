@@ -103,3 +103,6 @@ celery_beat.py.db
 #
 # GUIDS
 scripts/guid_blacklist.txt
+
+# Generated JS
+website/static/js/_allLogTexts.js
