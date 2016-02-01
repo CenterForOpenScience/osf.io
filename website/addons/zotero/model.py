@@ -144,11 +144,6 @@ class ZoteroNodeSettings(AddonCitationsNodeSettings):
     _api = None
 
     @property
-    def fetch_folder_name(self):
-        if self.list_id is None:
-            return ''
-        elif self.list_id != 'ROOT':
-            folder = self.api._folder_metadata(self.list_id)
-            return folder['data'].get('name')
-        else:
-            return 'All Documents'
+    def _fetch_folder_name(self):
+        folder = self.api._folder_metadata(self.list_id)
+        return folder['data'].get('name')

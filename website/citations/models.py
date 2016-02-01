@@ -4,10 +4,23 @@ import datetime
 
 from modularodm import fields
 
+from framework.auth import Auth
 from framework.mongo import StoredObject
 from website.addons.base import AddonOAuthNodeSettingsBase
 
 class AddonCitationsNodeSettings(AddonOAuthNodeSettingsBase):
+
+    def serialize_waterbutler_settings(self, *args, **kwargs):
+        # required by superclass, not actually used
+        pass
+
+    def serialize_waterbutler_credentials(self, *args, **kwargs):
+        # required by superclass, not actually used
+        pass
+
+    def create_waterbutler_log(self, *args, **kwargs):
+        # required by superclass, not actually used
+        pass
 
     @property
     def api(self):
@@ -40,9 +53,17 @@ class AddonCitationsNodeSettings(AddonOAuthNodeSettingsBase):
     def folder_path(self):
         return self.fetch_folder_name
 
-    def clear_auth(self):
+    @property
+    def fetch_folder_name(self):
+        if self.list_id is None:
+            return ''
+        elif self.list_id == 'ROOT':
+            return 'All Documents'
+        else:
+            return self._fetch_folder_name
+
+    def clear_settings(self):
         self.list_id = None
-        return super(AddonCitationsNodeSettings, self).clear_auth()
 
     def set_auth(self, *args, **kwargs):
         self.list_id = None
@@ -60,6 +81,16 @@ class AddonCitationsNodeSettings(AddonOAuthNodeSettingsBase):
                 auth=auth,
             )
 
+        self.clear_settings()
+        self.clear_auth()
+        self.save()
+
+    def after_delete(self, node=None, user=None):
+        self.deauthorize(Auth(user=user), add_log=True)
+        self.save()
+
+    def on_delete(self):
+        self.deauthorize(add_log=False)
         self.clear_auth()
         self.save()
 

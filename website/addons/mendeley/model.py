@@ -281,11 +281,6 @@ class MendeleyNodeSettings(AddonCitationsNodeSettings):
     _api = None
 
     @property
-    def fetch_folder_name(self):
-        if self.list_id is None:
-            return ''
-        elif self.list_id == 'ROOT':
-            return 'All Documents'
-        else:
-            folder = self.api._folder_metadata(self.list_id)
-            return folder.name
+    def _fetch_folder_name(self):
+        folder = self.api._folder_metadata(self.list_id)
+        return folder.name
