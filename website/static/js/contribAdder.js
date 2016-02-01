@@ -91,7 +91,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
         self.totalPages = ko.observable(0);
-        self.nodes = ko.observableArray([]);
 
         self.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
@@ -222,18 +221,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
             });
             self.contributors(contributors);
         });
-    },
-    getEditableChildren: function() {
-        var self = this;
-        return $.getJSON(
-            self.nodeApiUrl + 'get_editable_children/', {},
-            function(result) {
-                $.each(result.children || [], function(idx, child) {
-                    child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
-                });
-                self.nodes(result.children);
-            }
-        );
     },
     importFromParent: function() {
         var self = this;
