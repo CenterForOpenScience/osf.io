@@ -610,7 +610,7 @@ class TestNodeCreate(ApiTestCase):
             }
         }
         res = self.app.post_json_api(self.url, templated_project_data, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 403)
 
     def test_creates_project_creates_project_and_sanitizes_html(self):
         title = '<em>Cool</em> <strong>Project</strong>'
