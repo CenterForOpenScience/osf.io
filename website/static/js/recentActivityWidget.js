@@ -49,7 +49,7 @@ var LogWrap = {
                 query['filter[action]'] = self.eventFilter;
             }
             if (reset || init) {
-                query.aggregate = 1;
+                query.aggregates = 1;
             }
             if (!init) {
                 query['filter[date][lte]'] = self.dateEnd.toISOString();
