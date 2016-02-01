@@ -289,11 +289,11 @@ var Dashboard = {
                         'This project has no subcomponents.',
                         m.component(AddProject, {
                             buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new Subcomponent'),
-                            parentID : self.breadcrumbs()[self.breadcrumbs().length-1].data.id,
+                            parentID : lastcrumb.data.id,
                             modalID : 'addSubcomponent',
                             stayCallback : function _stayCallback_inPanel() {
                                 self.allProjectsLoaded(false);
-                                self.updateList(self.breadcrumbs()[self.breadcrumbs().length-1]);
+                                self.updateList(lastcrumb);
                             }
                         })
                     ]));
