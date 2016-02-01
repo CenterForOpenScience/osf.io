@@ -16,7 +16,7 @@ class TestCommentDetailView(ApiTestCase):
         self.non_contributor = AuthUserFactory()
 
     def _set_up_private_project_with_comment(self):
-        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
+        self.private_project = ProjectFactory.create(is_public=False, creator=self.user)
         self.private_project.add_contributor(self.contributor, save=True)
         self.comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
         self.private_url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
@@ -32,7 +32,7 @@ class TestCommentDetailView(ApiTestCase):
         }
 
     def _set_up_public_project_with_comment(self):
-        self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
+        self.public_project = ProjectFactory.create(is_public=True, creator=self.user)
         self.public_project.add_contributor(self.contributor, save=True)
         self.public_comment = CommentFactory(node=self.public_project, target=self.public_project, user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
@@ -525,7 +525,7 @@ class TestFileCommentDetailView(ApiTestCase):
         }
 
     def _set_up_private_project_with_file_comment(self):
-        self.private_project = ProjectFactory.build(is_public=False, creator=self.user, comment_level='private')
+        self.private_project = ProjectFactory.create(is_public=False, creator=self.user, comment_level='private')
         self.private_project.add_contributor(self.contributor, save=True)
         self.file = test_utils.create_test_file(self.private_project, self.user)
         self.comment = CommentFactory(node=self.private_project, target=self.file, user=self.user)
@@ -533,7 +533,7 @@ class TestFileCommentDetailView(ApiTestCase):
         self.payload = self._set_up_payload(self.comment._id)
 
     def _set_up_public_project_with_file_comment(self):
-        self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level='private')
+        self.public_project = ProjectFactory.create(is_public=True, creator=self.user, comment_level='private')
         self.public_project.add_contributor(self.contributor, save=True)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
         self.public_comment = CommentFactory(node=self.public_project, target=self.public_file, user=self.user)
