@@ -579,6 +579,10 @@ var Collections  = {
                 if(result.links.next){
                     loadCollections(result.links.next);
                 }
+            }, function(){
+                var message = 'Collections could not be loaded.';
+                $osf.growl(message, 'Please reload the page.');
+                Raven.captureMessage(message, { url: url });
             });
             promise.then(self.calculateTotalPages());
         };
