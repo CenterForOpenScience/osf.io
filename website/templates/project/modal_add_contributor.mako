@@ -257,8 +257,8 @@
                 </span>
 
                 <span data-bind="if:selection().length && page() == 'whom'">
-                    <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Add</a>
-                    <a class="btn btn-primary" data-bind="visible:nodes().length, click:selectWhich">Next</a>
+                    <a class="btn btn-success" data-bind="visible:!hasChildren(), click:submit">Add</a>
+                    <a class="btn btn-primary" data-bind="visible: hasChildren, click:selectWhich">Next</a>
                 </span>
 
                 <span data-bind="if: page() == 'which'">

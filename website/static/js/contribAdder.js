@@ -48,6 +48,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodesState = ko.observableArray();
         //nodesState is passed to nodesSelectTreebeard which can update it and key off needed action.
         self.nodesState.subscribe(function(newValue) {
+            //The subscribe causes treebeard changes to change which nodes will be affected
             var nodesToChange = [];
             for (var key in newValue) {
                 newValue[key].changed = newValue[key].checked !== self.nodesOriginal[key].checked;
@@ -91,6 +92,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
         self.totalPages = ko.observable(0);
+        self.nodesToChange = ko.observableArray();
 
         self.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
@@ -133,12 +135,13 @@ var AddContributorViewModel = oop.extend(Paginator, {
         this.page('whom');
     },
     selectWhich: function() {
+        //when the next button is hit by the user, the nodes to change and disable are decided
         var self = this;
         var nodesStateLocal = self.nodesState();
         for (var key in nodesStateLocal) {
             var node = nodesStateLocal[key];
             var enabled = nodesStateLocal[key].canWrite;
-            var checked = false;
+            var checked =  nodesStateLocal[key].checked;
             if (enabled) {
                 for (var i = 0; i < self.contributorIDsToAdd().length; i++) {
                     if (node.contributors.indexOf(self.contributorIDsToAdd()[i]) < 0) {
@@ -330,22 +333,28 @@ var AddContributorViewModel = oop.extend(Paginator, {
         return false;
     },
     selectAllNodes: function() {
+        //select all nodes to add a contributor to.  THe changed variable is set here for timing between
+        // treebeard and knockout
         var self = this;
         var nodesStateLocal = ko.toJS(self.nodesState());
         for (var key in nodesStateLocal) {
             if (nodesStateLocal[key].enabled) {
                 nodesStateLocal[key].checked = true;
+                nodesStateLocal[key].changed = nodesStateLocal[key].checked !== self.nodesOriginal[key].checked;
             }
         }
         self.nodesState(nodesStateLocal);
         m.redraw(true);
     },
     selectNoNodes: function() {
+        //select no nodes to add a contributor to.  THe changed variable is set here for timing between
+        // treebeard and knockout
         var self = this;
         var nodesStateLocal = ko.toJS(self.nodesState());
         for (var key in nodesStateLocal) {
             if (nodesStateLocal[key].enabled && nodesStateLocal[key].checked) {
                 nodesStateLocal[key].checked = false;
+                nodesStateLocal[key].changed = nodesStateLocal[key].checked !== self.nodesOriginal[key].checked;
             }
             m.redraw(true);
         }
@@ -489,7 +498,6 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, option
 ContribAdder.prototype.init = function() {
     var self = this;
     self.viewModel.getContributors();
-    self.viewModel.getEditableChildren();
     self.viewModel.fetchNodeTree().done(function(response) {
         new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
     });

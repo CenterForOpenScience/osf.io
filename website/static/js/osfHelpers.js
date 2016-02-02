@@ -597,7 +597,9 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         adminContributors: adminContributors,
         registeredContributors: registeredContributors,
         canWrite: nodeTree.node.can_write,
-        changed: false
+        changed: false,
+        checked: false,
+        enabled: true
     };
 
     if (nodeTree.children) {

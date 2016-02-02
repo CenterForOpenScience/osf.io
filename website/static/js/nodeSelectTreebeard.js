@@ -44,7 +44,6 @@ function NodeSelectTreebeard(divID, data, nodesState) {
      *  changed boolean parameter is used to sync the checkbox with changes, the canWrite boolean parameter is used
      *  to disable the checkbox
      * */
-    var nodesStateLocal = ko.toJS(nodesState());
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: divID,
         filesData: data,
@@ -71,6 +70,7 @@ function NodeSelectTreebeard(divID, data, nodesState) {
             var tb = this;
             var columns = [];
             var id = item.data.node.id;
+            var nodesStateLocal = ko.toJS(nodesState());
             columns.push(
                 {
                     data : 'action',
@@ -83,6 +83,7 @@ function NodeSelectTreebeard(divID, data, nodesState) {
                                 item.data.node.checked = !item.data.node.checked;
                                 item.open = true;
                                 nodesStateLocal[id].checked = !nodesStateLocal[id].checked;
+                                nodesState(nodesStateLocal);
                                 tb.updateFolder(null, item);
                             },
                             checked: nodesState()[id].checked
@@ -108,7 +109,6 @@ function NodeSelectTreebeard(divID, data, nodesState) {
             return columns;
         }
     });
-    nodesState(nodesStateLocal);
     var grid = new Treebeard(tbOptions);
     expandOnLoad.call(grid.tbController);
 }
