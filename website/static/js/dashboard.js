@@ -714,7 +714,7 @@ var Collections  = {
                     selectedCSS = '';
                 }
                 if (!item.data.systemCollection && !item.data.node.attributes.bookmarks) {
-                    submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
+                    submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs.pointer', {
                         'data-index' : i,
                         onclick : openCollectionMenu
                     });
