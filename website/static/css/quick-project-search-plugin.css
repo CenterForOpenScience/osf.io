@@ -41,6 +41,11 @@
     .sm-new-and-noteworthy {
         display: none;
     }
+
+    .noteworthy-spacing {
+        margin-top: 10px;
+    }
+
 }
 
 @media screen and (min-width: 768px) {
@@ -49,6 +54,11 @@
     }
     .xs-new-and-noteworthy {
         display: none
+    }
+    .noteworthy-spacing {
+        margin-left: 1px;
+        margin-right: 1px;
+        margin-top: 10px;
     }
 }
 

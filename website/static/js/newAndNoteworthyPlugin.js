@@ -125,7 +125,7 @@ var newAndNoteworthy = {
     },
     view : function(ctrl) {
         function nodeDisplay(node) {
-            return m('div', {'class': 'row node-styling m-v-xs m-h-xs', onclick: function(){{ctrl.nodeDirect(node);}}},
+            return m('div', {'class': 'row node-styling noteworthy-spacing', onclick: function(){{ctrl.nodeDirect(node);}}},
                 m('div', {'class': 'col-sm-12'},
                     m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this);}}, m('em', ctrl.getTitle(node))),
                     m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this);}},  ctrl.getDescription(node)),
@@ -177,10 +177,10 @@ var newAndNoteworthy = {
                 m('div', {'class': 'col-sm-1'}),
                 m('div', {'class': 'col-sm-11'}, m('h3', 'Discover Public Projects'))),
 
-            m('div', {'class': 'row xs-new-and-noteworthy'}, m('div', {'class':'col-sm-10 col-sm-offset-1'},
-                m('div', {'class': 'col-sm-6'}, [m('h4', 'New and Noteworthy')]), newAndNoteworthyProjectsTemplateXSScreen(),
-                m('div', {'class': 'col-sm-6'}, [m('h4', 'Most Popular')], popularProjectsTemplateXSScreen ())
-            )),
+            m('div', {'class': 'row xs-new-and-noteworthy'},
+                m('div', {'class': 'col-sm-6 col-xs-12'}, m('h4', 'New and Noteworthy'), newAndNoteworthyProjectsTemplateXSScreen()),
+                m('div', {'class': 'col-sm-6 col-xs-12'}, m('h4', 'Most Popular'), popularProjectsTemplateXSScreen ())
+            ),
             populateNodesSmallScreen(),
             m('div', {'class': 'row'},
                 m('div', {'class': 'col-sm-1'}),
