@@ -35,7 +35,7 @@ var meetingsAndConferences = {
                 ctrl.findAMeeting();
             }}, 'Create a Meeting');
         }
-        return m('div', {'class': 'container conferences-and-meetings m-v-md'}, [
+        return m('div', {'class': 'container conferences-and-meetings m-v-sm p-v-sm'}, [
             m('div', {'class': 'row m-v-sm'},
                 m('div', {'class': 'col-sm-5'},
                     m('div', {'class': 'row'},
@@ -53,12 +53,11 @@ var meetingsAndConferences = {
                 ),
                 m('div', {'class': 'col-sm-7'},
                     m('div', {'class': 'row'}),
-                    m('div', {'class': 'row'},
-                        m('div', {'class': 'col-sm-1'}),
-                        m('div', {'class': 'col-sm-5'}, findAMeetingButton()),
-                        m('div', {'class': 'col-sm-5'}, createAMeetingButton()),
-                        m('div', {'class': 'col-sm-1'})
-                    ))
+                            m('div', {'class': 'col-sm-1 col-xs-0'}),
+                            m('div', {'class': 'col-sm-5 col-xs-6'}, findAMeetingButton()),
+                            m('div', {'class': 'col-sm-5 col-xs-6'}, createAMeetingButton()),
+                            m('div', {'class': 'col-sm-1 col-xs-0'})
+                )
             )
         ]);
     }
