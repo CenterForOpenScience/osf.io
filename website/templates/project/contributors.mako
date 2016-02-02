@@ -59,6 +59,7 @@
                 </a>
             <!-- /ko -->
         </h3>
+
         % if 'admin' in user['permissions'] and not node['is_registration']:
             <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
         % endif
@@ -343,7 +344,7 @@
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: (contributor.canEdit() || canRemove) -->
                         <button href="#removeContributor" class="btn btn-danger btn-sm m-l-md"
-                           data-bind="click: remove,  tooltip: {title: 'Remove contributor'}"
+                           data-bind="click: remove"
                            data-toggle="modal">Remove</button>
                 <!-- /ko -->
             </div>

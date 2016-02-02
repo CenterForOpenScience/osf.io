@@ -314,8 +314,8 @@ def project_remove_contributor(auth, **kwargs):
         or if no admin users would remain after changes were applied
 
     """
-    contributor_id = request.json.get('contributorID')
-    node_ids = request.json.get('nodeIDs')
+    contributor_id = request.get_json()['contributorID']
+    node_ids = request.get_json()['nodeIDs']
     contributor = User.load(contributor_id)
     if contributor is None:
         raise HTTPError(http.BAD_REQUEST, data={'message_long': 'Contributor not found.'})

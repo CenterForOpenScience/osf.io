@@ -569,11 +569,11 @@ function humanFileSize(bytes, si) {
     return bytes.toFixed(1) + ' ' + units[u];
 }
 
+/**
+ * take treebeard tree structure of nodes and get a dictionary of parent node and all its
+ * children
+ */
 function getNodesOriginal(nodeTree, nodesOriginal) {
-    /**
-     * take treebeard tree structure of nodes and get a dictionary of parent node and all its
-     * children
-     */
     var i;
     var j;
     var adminContributors = [];

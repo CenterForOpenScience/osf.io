@@ -2582,7 +2582,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
 
         # Node must have at least one registered admin user
-        admins = self.get_admin_contributors(self.contributors)
+        admins = self.get_admin_contributors()
         if not admins:
             return False
 
@@ -2742,7 +2742,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 else:
                     to_remove.append(user)
 
-            admins = self.get_admin_contributors(users)
+            admins = self.get_admin_contributors()
             if users is None or not admins:
                 raise ValueError(
                     'Must have at least one registered admin contributor'
@@ -3297,15 +3297,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     else:
                         yield (contrib, node)
 
-    def get_admin_contributors(self, users):
-        """Return a set of all admin contributors for this node and admin
-        contributors on descendant nodes. Excludes contributors on node links and
+    def get_admin_contributors(self):
+        """Return a set of all admin contributors for this node. Excludes contributors on node links and
         inactive users.
         """
-        return [
-            user for user in users
+        return (
+            user for user in self.contributors
             if self.has_permission(user, 'admin') and
-            user.is_registered]
+            user.is_active)
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME
