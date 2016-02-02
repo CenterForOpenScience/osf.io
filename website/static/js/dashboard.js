@@ -882,7 +882,7 @@ var Collections  = {
                         m('.form-inline', [
                             m('.form-group', [
                                 m('label[for="addCollInput]', 'Rename to: '),
-                                m('input[type="text"].form-control.m-l-sm#renameCollInput',{
+                                m('input[type="text"].form-control.m-l-sm',{
                                     onkeyup: function(ev){
                                         var val = $(this).val();
                                         ctrl.validateName(val);
