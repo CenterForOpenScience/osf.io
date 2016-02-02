@@ -1,13 +1,22 @@
 from __future__ import absolute_import
 import datetime as dt
+from collections import OrderedDict
 from nose.tools import *  # noqa PEP8 asserts
 from modularodm.exceptions import ValidationValueError, ValidationTypeError, ValidationError
+from modularodm import Q
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website.addons.osfstorage import settings as osfstorage_settings
+from website.files.models.box import BoxFile
+from website.files.models.dropbox import DropboxFile
+from website.files.models.github import GithubFile
+from website.files.models.googledrive import GoogleDriveFile
+from website.files.models.osfstorage import OsfStorageFile
+from website.files.models.s3 import S3File
 from website.project.model import Comment, NodeLog
 from website.project.signals import comment_added
+from website.project.views.comment import update_comment_root_target_file
 from website import settings
 
 from tests.base import (
@@ -16,7 +25,7 @@ from tests.base import (
     capture_signals
 )
 from tests.factories import (
-    UserFactory, ProjectFactory, AuthUserFactory, CommentFactory,
+    UserFactory, ProjectFactory, AuthUserFactory, CommentFactory, NodeFactory
 )
 
 
@@ -321,3 +330,325 @@ class TestCommentModel(OsfTestCase):
         comment = CommentFactory(node=project, user=project.creator, is_deleted=True)
         n_unread = Comment.find_n_unread(user=user, node=project)
         assert_equal(n_unread, 0)
+
+
+class FileCommentMoveRenameTestMixin(OsfTestCase):
+
+    @property
+    def provider(self):
+        raise NotImplementedError
+
+    @property
+    def ProviderFile(self):
+        raise NotImplementedError
+
+    def _format_path(self, path, folder=None):
+        return path
+
+    def setUp(self):
+        super(FileCommentMoveRenameTestMixin, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon(self.provider, auth=Auth(self.user))
+        self.project.save()
+        self.project_settings = self.project.get_addon(self.provider)
+        self.project_settings.folder = 'Folder1'
+        self.project_settings.save()
+
+        self.component = NodeFactory(parent=self.project, creator=self.user)
+        self.component.add_addon(self.provider, auth=Auth(self.user))
+        self.component.save()
+        self.component_settings = self.component.get_addon(self.provider)
+        self.component_settings.folder = 'Folder2'
+        self.component_settings.save()
+
+    def _create_source_payload(self, path, node, provider):
+        return OrderedDict([('materialized', path.strip('/')),
+                            ('name', path.split('/')[-1]),
+                            ('nid', node._id),
+                            ('path', path),
+                            ('provider', provider),
+                            ('url', '/project/{}/files/{}/{}/'.format(node._id, provider, path.strip('/'))),
+                            ('node', {'url': '/{}/'.format(node._id), '_id': node._id, 'title': node.title}),
+                            ('addon', provider)])
+
+    def _create_destination_payload(self, path, node, provider):
+        return OrderedDict([('contentType', ''),
+                            ('etag', 'abcdefghijklmnop'),
+                            ('extra', OrderedDict([('revisionId', '12345678910')])),
+                            ('kind', 'file'),
+                            ('materialized', path.strip('/')),
+                            ('modified', 'Tue, 02 Feb 2016 17:55:48 +0000'),
+                            ('name', path.split('/')[-1]),
+                            ('nid', node._id),
+                            ('path', path),
+                            ('provider', provider),
+                            ('size', 1000),
+                            ('url', '/project/{}/files/{}/{}/'.format(node._id, provider, path.strip('/'))),
+                            ('node', {'url': '/{}/'.format(node._id), '_id': node._id, 'title': node.title}),
+                            ('addon', provider)])
+
+    def _create_payload(self, action, user, source, destination):
+        return OrderedDict([('action', action),
+                            ('auth', OrderedDict([('email', user.username), ('id', user._id), ('name', user.fullname)])),
+                            ('destination', self._create_destination_payload(destination['path'], destination['node'], destination['provider'])),
+                            ('source', self._create_source_payload(source['path'], source['node'], source['provider'])),
+                            ('time', 100000000),
+                            ('node', source['node']),
+                            ('project', None)])
+
+    def _create_file_with_comment(self, node, path, folder=None):
+        self.file = self.ProviderFile.create(
+            is_file=True,
+            node=node,
+            path=self._format_path(path, folder),
+            name=path.strip('/'),
+            materialized_path=path.strip('/'))
+        self.file.save()
+        self.comment = CommentFactory(user=self.user, node=node, target=self.file)
+
+    def test_comments_move_on_file_rename(self):
+        source = {
+            'path': '/file.txt',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/file_renamed.txt',
+            'node': self.project,
+            'provider': self.provider
+        }
+        self._create_file_with_comment(node=source['node'], path=source['path'], folder=self.project_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
+        self.file.reload()
+        assert_equal(self.file.stored_object.path, self._format_path(destination.get('path'), self.project_settings.folder))
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+    def test_comments_move_on_folder_rename(self):
+        source = {
+            'path': '/subfolder1/',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/subfolder2/',
+            'node': self.project,
+            'provider': self.provider
+        }
+        file_name = 'file.txt'
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), folder=self.project_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
+        self.file.reload()
+        assert_equal(self.file.stored_object.path, self._format_path('{}{}'.format(destination['path'], file_name), self.project_settings.folder))
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+    def test_comments_move_on_subfolder_file_when_parent_folder_is_renamed(self):
+        source = {
+            'path': '/subfolder1/',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/subfolder2/',
+            'node': self.project,
+            'provider': self.provider
+        }
+        file_path = 'sub-subfolder/file.txt'
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_path), folder=self.project_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
+        self.file.reload()
+        assert_equal(self.file.stored_object.path, self._format_path('{}{}'.format(destination['path'], file_path), self.project_settings.folder))
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+    def test_comments_move_when_file_moved_to_subfolder(self):
+        source = {
+            'path': '/file.txt',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/subfolder/file.txt',
+            'node': self.project,
+            'provider': self.provider
+        }
+        self._create_file_with_comment(node=source['node'], path=source['path'], folder=self.project_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
+        self.file.reload()
+        assert_equal(self.file.stored_object.path, self._format_path(destination.get('path'), self.project_settings.folder))
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+    def test_comments_move_when_file_moved_from_subfolder_to_root(self):
+        source = {
+            'path': '/subfolder/file.txt',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/file.txt',
+            'node': self.project,
+            'provider': self.provider
+        }
+        self._create_file_with_comment(node=source['node'], path=source['path'], folder=self.project_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
+        self.file.reload()
+        assert_equal(self.file.stored_object.path, self._format_path(destination.get('path'), self.project_settings.folder))
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+    def test_comments_move_when_file_moved_from_project_to_component(self):
+        source = {
+            'path': '/file.txt',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/file.txt',
+            'node': self.component,
+            'provider': self.provider
+        }
+        self._create_file_with_comment(node=source['node'], path=source['path'], folder=self.project_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
+        self.file.reload()
+
+        assert_equal(self.file.stored_object.path, self._format_path(destination.get('path'), self.component_settings.folder))
+        assert_equal(self.file.stored_object.node._id, destination.get('node')._id)
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+    def test_comments_move_when_file_moved_from_component_to_project(self):
+        source = {
+            'path': '/file.txt',
+            'node': self.component,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/file.txt',
+            'node': self.project,
+            'provider': self.provider
+        }
+        self._create_file_with_comment(node=source['node'], path=source['path'], folder=self.component_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
+        self.file.reload()
+
+        assert_equal(self.file.stored_object.path, self._format_path(destination.get('path'), self.project_settings.folder))
+        assert_equal(self.file.stored_object.node._id, destination.get('node')._id)
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+    def test_comments_move_when_folder_moved_to_subfolder(self):
+        source = {
+            'path': '/subfolder/',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/subfolder2/subfolder/',
+            'node': self.project,
+            'provider': self.provider
+        }
+        file_name = 'file.txt'
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), folder=self.project_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
+        self.file.reload()
+        assert_equal(self.file.stored_object.path, self._format_path('{}{}'.format(destination['path'], file_name), self.project_settings.folder))
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+    def test_comments_move_when_folder_moved_from_subfolder_to_root(self):
+        source = {
+            'path': '/subfolder2/subfolder/',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/subfolder/',
+            'node': self.project,
+            'provider': self.provider
+        }
+        file_name = 'file.txt'
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), folder=self.project_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
+        self.file.reload()
+        assert_equal(self.file.stored_object.path, self._format_path('{}{}'.format(destination['path'], file_name), self.project_settings.folder))
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+    def test_comments_move_when_folder_moved_from_project_to_component(self):
+        source = {
+            'path': '/subfolder/',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/subfolder/',
+            'node': self.component,
+            'provider': self.provider
+        }
+        file_name = 'file.txt'
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), folder=self.project_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
+        self.file.reload()
+        assert_equal(self.file.stored_object.path, self._format_path('{}{}'.format(destination['path'], file_name), self.component_settings.folder))
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+    def test_comments_move_when_folder_moved_from_component_to_project(self):
+        source = {
+            'path': '/subfolder/',
+            'node': self.component,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/subfolder/',
+            'node': self.project,
+            'provider': self.provider
+        }
+        file_name = 'file.txt'
+        self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name), folder=self.component_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
+        self.file.reload()
+        assert_equal(self.file.stored_object.path, self._format_path('{}{}'.format(destination['path'], file_name), self.project_settings.folder))
+        file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
+        assert_equal(file_comments.count(), 1)
+
+
+class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
+
+    provider = 'dropbox'
+    ProviderFile = DropboxFile
+
+    def _format_path(self, path, folder=None):
+        return '/{}{}'.format(folder, path)
+
+
+class TestGoogleDriveFileCommentMoveRename(FileCommentMoveRenameTestMixin):
+
+    provider = 'googledrive'
+    ProviderFile = GoogleDriveFile
+
+
+class TestGithubFileCommentMoveRename(FileCommentMoveRenameTestMixin):
+
+    provider = 'github'
+    ProviderFile = GithubFile
+
+
+class TestS3FileCommentMoveRename(FileCommentMoveRenameTestMixin):
+
+    provider = 's3'
+    ProviderFile = S3File
