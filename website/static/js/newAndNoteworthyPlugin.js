@@ -103,7 +103,7 @@ var newAndNoteworthy = {
             if (description){
                 return description;
             }
-            return m('p');
+            return m('p', {class: 'blank-line'});
         };
 
          // Onclick, directs user to project page

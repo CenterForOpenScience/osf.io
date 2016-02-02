@@ -65,3 +65,7 @@ label {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.blank-line {
+    margin-bottom: 15px;
+}
