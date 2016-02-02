@@ -167,7 +167,7 @@ var newAndNoteworthy = {
         }
 
         function findMoreProjectsButton () {
-            return m('button', {type:'button', 'class':'btn btn-default m-v-md', onclick: function(){
+            return m('button', {type:'button', 'class':'btn btn-default m-v-lg', onclick: function(){
                 ctrl.redirectToSearch();
             }}, 'Find more projects with advanced search');
         }
