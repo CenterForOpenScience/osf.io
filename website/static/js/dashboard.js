@@ -654,6 +654,9 @@ var Collections  = {
             promise.then(function(result){
                 var updatedCollMenuObj = $.extend(true, {}, self.collectionMenuObject(), {item: {label: title}});
                 self.collectionMenuObject(updatedCollMenuObj);
+            }, function(){
+                var name = self.collectionMenuObject().item.label;
+                $osf.growl('"' + name + '" could not be renamed.', 'Please try again');
             });
             self.dismissModal();
             self.validation(false);
