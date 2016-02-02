@@ -81,7 +81,8 @@
                   <div class="form-group"><input id="email" class="form-control" type="email" data-bind="value: username" name="username" placeholder="Email" aria-label="Username"></div>
                   <div class="form-group"><input name="password" id="password" class="form-control" type="password" placeholder="Password" data-bind="value: password" aria-label="Password"></div>
                   <div class="form-group"><button type="submit" id="btnLogin" class="btn btn-block btn-primary">Login</button></div>
-                 <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot password?</a></div>
+                  <div class="text-center m-b-sm"> <a href="/login/?campaign=institution">Login through your Institution  <i class="fa fa-arrow-right"></i></a></div>
+                  <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot password?</a></div>
                </form>
             </ul>
           </div>
