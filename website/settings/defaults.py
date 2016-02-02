@@ -97,12 +97,6 @@ MAIL_PASSWORD = ''  # Set this in local.py
 # OR, if using Sendgrid's API
 SENDGRID_API_KEY = None
 
-
-# Mandrill
-MANDRILL_USERNAME = None
-MANDRILL_PASSWORD = None
-MANDRILL_MAIL_SERVER = None
-
 # Mailchimp
 MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure

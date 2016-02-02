@@ -6,7 +6,7 @@ import mock
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import sendgrid
 
-from framework.email.tasks import send_email, send_with_sendgrid
+from framework.email.tasks import send_email, _send_with_sendgrid
 from website import settings
 from tests.base import fake
 
@@ -36,7 +36,7 @@ class TestEmail(unittest.TestCase):
         category1, category2 = fake.word(), fake.word()
         subject = fake.bs()
         message = fake.text()
-        ret = send_with_sendgrid(
+        ret = _send_with_sendgrid(
             from_addr=from_addr,
             to_addr=to_addr,
             subject=subject,
@@ -65,7 +65,7 @@ class TestEmail(unittest.TestCase):
         from_addr, to_addr = fake.email(), fake.email()
         subject = fake.bs()
         message = fake.text()
-        ret = send_with_sendgrid(
+        ret = _send_with_sendgrid(
             from_addr=from_addr,
             to_addr=to_addr,
             subject=subject,

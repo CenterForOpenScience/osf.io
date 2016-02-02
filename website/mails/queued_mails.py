@@ -97,8 +97,8 @@ def queue_mail(to_addr, mail, send_at, user, **context):
 #    'template': the mako template used for email_type,
 #    'subject': subject used for the actual email,
 #    'categories': categories to attach to the email using Sendgrid's SMTPAPI.
-#    'presend': function undes presends that can modify mail.data and decides whether the email should be sent,
-#               by returning a boolean.
+#    'presend': predicate function that determines whether an email should be sent. May also
+#               modify mail.data.
 #}
 
 NO_ADDON = {

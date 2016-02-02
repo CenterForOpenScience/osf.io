@@ -74,8 +74,7 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
-            username=None, password=None, mail_server=None, callback=None,
-            **context):
+            username=None, password=None, callback=None, **context):
     """Send an email from the OSF.
     Example: ::
 
@@ -112,7 +111,6 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         login=login,
         username=username,
         password=password,
-        mail_server=mail_server,
         categories=mail.categories,
     )
 

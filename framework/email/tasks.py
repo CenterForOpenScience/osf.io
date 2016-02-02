@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 @app.task
 def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True,
-                username=None, password=None, mail_server=None, categories=None):
+                username=None, password=None, categories=None):
     """Send email to specified destination.
     Email is sent from the email specified in FROM_EMAIL settings in the
     settings module.
@@ -33,7 +33,7 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
     if not settings.USE_EMAIL:
         return
     if settings.SENDGRID_API_KEY:
-        return send_with_sendgrid(
+        return _send_with_sendgrid(
             from_addr=from_addr,
             to_addr=to_addr,
             subject=subject,
@@ -42,35 +42,47 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
             categories=categories
         )
     else:
-        username = username or settings.MAIL_USERNAME
-        password = password or settings.MAIL_PASSWORD
-        mail_server = mail_server or settings.MAIL_SERVER
-
-        if login and (username is None or password is None):
-            logger.error('Mail username and password not set; skipping send.')
-            return
-
-        msg = MIMEText(message, mimetype, _charset='utf-8')
-        msg['Subject'] = subject
-        msg['From'] = from_addr
-        msg['To'] = to_addr
-
-        s = smtplib.SMTP(mail_server)
-        s.ehlo()
-        if ttls:
-            s.starttls()
-            s.ehlo()
-        if login:
-            s.login(username, password)
-        s.sendmail(
+        return _send_with_smtp(
             from_addr=from_addr,
-            to_addrs=[to_addr],
-            msg=msg.as_string()
+            to_addr=to_addr,
+            subject=subject,
+            message=message,
+            mimetype=mimetype,
+            ttls=ttls,
+            login=login,
+            username=username,
+            password=password
         )
-        s.quit()
-        return True
 
-def send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, client=None):
+def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True, username=None, password=None):
+    username = username or settings.MAIL_USERNAME
+    password = password or settings.MAIL_PASSWORD
+
+    if login and (username is None or password is None):
+        logger.error('Mail username and password not set; skipping send.')
+        return
+
+    msg = MIMEText(message, mimetype, _charset='utf-8')
+    msg['Subject'] = subject
+    msg['From'] = from_addr
+    msg['To'] = to_addr
+
+    s = smtplib.SMTP(settings.MAIL_SERVER)
+    s.ehlo()
+    if ttls:
+        s.starttls()
+        s.ehlo()
+    if login:
+        s.login(username, password)
+    s.sendmail(
+        from_addr=from_addr,
+        to_addrs=[to_addr],
+        msg=msg.as_string()
+    )
+    s.quit()
+    return True
+
+def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, client=None):
     client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
     mail = sendgrid.Mail()
     mail.set_from(from_addr)
