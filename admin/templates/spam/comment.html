@@ -22,7 +22,11 @@
         <form action="{% url 'spam:detail' comment.id %}?page={{ page_number }}"
               method="post" class="form-inline">
             {% csrf_token %}
-            {{ form }}
+            {% if form.errors %}
+                <div class="alert alert-danger">{{ form.errors }}</div>
+            {% endif %}
+            <label for="{{ form.confirm.id_for_label }}">Confirm:</label>
+            {{ form.confirm }}
             <input class="btn btn-danger" type="submit" value="Submit">
         </form>
         </div>

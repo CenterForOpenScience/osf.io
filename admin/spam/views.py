@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView, FormView
 from django.utils.decorators import method_decorator
 from django.core.urlresolvers import reverse
+from django.views.defaults import page_not_found
 
 from modularodm import Q
 from website.project.model import Comment
@@ -59,7 +60,10 @@ class SpamDetail(FormView):
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
+        try:
+            context = self.get_context_data(**kwargs)
+        except AttributeError:
+            return page_not_found(request)  # TODO: 1.9 update to have exception with node/user 404.html will be added
         self.page = request.GET.get('page', 1)
         context['page_number'] = self.page
         context['form'] = self.get_form()
@@ -67,16 +71,27 @@ class SpamDetail(FormView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
+        try:
+            context = self.get_context_data(**kwargs)
+        except AttributeError:
+            return page_not_found(request)  # TODO: 1.9 update to have exception
         self.page = request.GET.get('page', 1)
         context['page_number'] = self.page
-        return super(SpamDetail, self).post(request, *args, **kwargs)
+        context['form'] = self.get_form()
+        if context['form'].is_valid():
+            return self.form_valid(context['form'])
+        else:
+            return render(request, self.template_name, context=context)
+        # return super(SpamDetail, self).post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         self.spam_id = kwargs['spam_id']
         self.item = Comment.load(self.spam_id)
         kwargs = super(SpamDetail, self).get_context_data(**kwargs)
-        kwargs['comment'] = serialize_comment(self.item)
+        try:
+            kwargs['comment'] = serialize_comment(self.item)
+        except AttributeError:
+            raise
         return kwargs
 
     def form_valid(self, form):
