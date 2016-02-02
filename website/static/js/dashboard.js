@@ -540,7 +540,7 @@ var Collections  = {
             }
         };
         self.pageSize = m.prop(5);
-        self.validation = m.prop(false);
+        self.isValid = m.prop(false);
         self.validationError = m.prop('');
         self.showCollectionMenu = m.prop(false); // Show hide ellipsis menu for collections
         self.collectionMenuObject = m.prop({item : {label:null}, x : 0, y : 0}); // Collection object to complete actions on menu
@@ -663,7 +663,7 @@ var Collections  = {
                 Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
             });
             self.dismissModal();
-            self.validation(false);
+            self.isValid(false);
             return promise;
         };
         self.applyDroppable = function _applyDroppable ( ){
@@ -709,14 +709,14 @@ var Collections  = {
         };
         self.validateName = function _validateName (val){
             if (val === 'Bookmarks') {
-                self.validation(false);
-                self.validationError('Your collection name can\'t be "Bookmarks", because bookmarks feature requires this name. Please select any other name. ');
+                self.isValid(false);
+                self.validationError('"Bookmarks" is a reserved collection name. Please use another name.');
             } else {
                 self.validationError('');
                 if(val.length > 0) {
-                    self.validation(true);
+                    self.isValid(true);
                 } else {
-                    self.validation(false);
+                    self.isValid(false);
                 }
             }
         };
