@@ -5,6 +5,7 @@ Django settings for the admin project.
 import os
 from urlparse import urlparse
 from website import settings as osf_settings
+from django.contrib import messages
 
 # import local  # Build own local.py (used with postgres)
 
