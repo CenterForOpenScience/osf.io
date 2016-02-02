@@ -2,7 +2,6 @@
  * UI and function to quick search projects
  */
 
-var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
@@ -29,7 +28,7 @@ var quickSearchProject = {
         self.fieldSort = m.prop(); // For xs screen, either alpha or date
         self.directionSort = m.prop(); // For xs screen, either Asc or Desc
 
-        // Load first ten nodes
+        // Load up to first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig});
         promise.then(function(result) {
@@ -156,12 +155,21 @@ var quickSearchProject = {
             return new $osf.FormattableDate(node.attributes.date_modified).local;
         };
 
+        // Shortcut for sorting ascending
+        self.sortAscending = function (A, B) {
+            return (A < B) ? -1 : (A > B) ? 1 : 0;
+        };
+
+        // Shortcut for sorting descending
+        self.sortDescending = function (A, B) {
+            return (A > B) ? -1 : (A < B) ? 1 : 0;
+        };
 
         self.sortAlphabeticalAscending = function () {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
-                return (A < B) ? -1 : (A > B) ? 1 : 0;
+                return self.sortAscending(A, B);
             });
             self.sortState('alphaAsc');
         };
@@ -170,7 +178,7 @@ var quickSearchProject = {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.title.toUpperCase();
                 var B = b.attributes.title.toUpperCase();
-                return (A > B) ? -1 : (A < B) ? 1 : 0;
+                return self.sortDescending(A, B);
             });
             self.sortState('alphaDesc');
         };
@@ -179,7 +187,7 @@ var quickSearchProject = {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
-                return (A < B) ? -1 : (A > B) ? 1 : 0;
+                return self.sortAscending(A, B);
             });
             self.sortState('dateAsc');
         };
@@ -188,7 +196,7 @@ var quickSearchProject = {
             self.nodes().sort(function(a,b){
                 var A = a.attributes.date_modified;
                 var B = b.attributes.date_modified;
-                return (A > B) ? -1 : (A < B) ? 1 : 0;
+                return self.sortDescending(A, B);
             });
             self.sortState('dateDesc');
         };
@@ -239,22 +247,12 @@ var quickSearchProject = {
 
         // Colors sort asc/desc buttons either selected or not-selected
         self.colorSortButtons = function (sort) {
-            if (self.sortState() === sort) {
-                return 'selected';
-            }
-            else {
-                return 'not-selected';
-            }
+            return self.sortState() === sort ? 'selected' : 'not-selected';
         };
 
         // Colors asc/desc buttons on XS screen
         self.colorSortButtonsXS = function (sort) {
-            if (self.preSelectDirection() === sort) {
-                return 'selected';
-            }
-            else {
-                return 'not-selected';
-            }
+            return self.preSelectDirection() === sort ? 'selected' : 'not-selected';
         };
 
         // Filtering on title
@@ -409,7 +407,6 @@ var quickSearchProject = {
         }
 
         function displayNodes() {
-            console.log(ctrl.eligibleNodes().length, ctrl.countDisplayed(), ctrl.sortState(), ctrl.loadingComplete());
             if (ctrl.eligibleNodes().length ===0 && ctrl.filter() != null) {
                 return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-10 col-sm-offset-1'},
                     m('div', {'class': 'row'}, [
