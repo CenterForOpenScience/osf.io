@@ -631,7 +631,9 @@ var Collections  = {
                 }
             }, function(){
                 var name = self.collectionMenuObject().item.label;
-                $osf.growl('"' + name + '" could not be deleted.', 'Please try again');
+                var message = '"' + name + '" could not be deleted.';
+                $osf.growl(message, 'Please try again');
+                Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
             });
             self.dismissModal();
             self.calculateTotalPages();
@@ -656,7 +658,9 @@ var Collections  = {
                 self.collectionMenuObject(updatedCollMenuObj);
             }, function(){
                 var name = self.collectionMenuObject().item.label;
-                $osf.growl('"' + name + '" could not be renamed.', 'Please try again');
+                var message = '"' + name + '" could not be renamed.';
+                $osf.growl(message, 'Please try again');
+                Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
             });
             self.dismissModal();
             self.validation(false);
