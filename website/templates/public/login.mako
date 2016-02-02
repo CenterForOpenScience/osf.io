@@ -19,9 +19,11 @@
     <h3>OSF for Institutions </h3>
     <hr>
     <p>
-      Please login to the Open Science Framework with your institution credentials. This will create an OSF account if one is not
-        already associated with the email provided, and authenticate you as a member of that institution. To sign up using an
-        institution's domain without being authenticated, create a free account here.
+      How about: If your institution has partnered with the Open Science Framework, please
+        select its name below and sign in with your institutional credentials. This action
+        will create an OSF account (if you don’t already have one) and affiliate your account
+        with that institution.
+    To sign up for an OSF without being affilated with an institution, create a free account here.
     </p>
 </div>
 %endif
