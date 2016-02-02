@@ -18,7 +18,7 @@ var AddProject = {
     controller : function (options) {
         var self = this;
         self.defaults = {
-            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Add new Project'),
+            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Add new project'),
             parentID : null,
             modalID : 'addProjectModal',
             stayCallback :null, // Function to call when user decides to stay after project creation
@@ -93,7 +93,7 @@ var AddProject = {
                     m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                         m('span[aria-hidden="true"]','×'),
                     ]),
-                    m('h3.modal-title', 'Add New Project')
+                    m('h3.modal-title', 'Add new project')
                 ]),
                 m('.modal-body', [
                     m('.text-left', [
@@ -173,8 +173,8 @@ var AddProject = {
                                 ctrl.reset();
                                 ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
                             }
-                        },  'Keep Working Here'),
-                        m('a.btn.btn-success', { href : ctrl.goToProjectLink() },'Go to New Project')
+                        },  'Keep working here'),
+                        m('a.btn.btn-success', { href : ctrl.goToProjectLink() },'Go to new project')
                     ])
                 )
             ]),

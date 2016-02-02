@@ -361,7 +361,7 @@ var Dashboard = {
                 m('p','Projects for this selection couldn\'t load.'),
                 m('p', m('.btn.btn-default', {
                     onclick : self.updateFilter.bind(null, self.systemCollections[0])
-                },' Reload \'All My Projects\''))
+                },' Reload \'All my projects\''))
             ]));
             self.data([]);
             self.refreshView(false);
@@ -812,7 +812,7 @@ var Collections  = {
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                             m('span[aria-hidden="true"]','×')
                         ]),
-                        m('h3.modal-title', 'Add New Collection')
+                        m('h3.modal-title', 'Add new collection')
                     ]),
                     body : m('.modal-body', [
                         m('p', 'Collections are groups of projects that help you organize your work. After you create your collection you can add projects by dragging and dropping projects to the collection. '),
@@ -857,7 +857,7 @@ var Collections  = {
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                             m('span[aria-hidden="true"]','×')
                         ]),
-                        m('h3.modal-title', 'Rename Collection')
+                        m('h3.modal-title', 'Rename collection')
                     ]),
                     body: m('.modal-body', [
                         m('.form-inline', [
@@ -896,7 +896,7 @@ var Collections  = {
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                             m('span[aria-hidden="true"]','×')
                         ]),
-                        m('h3.modal-title', 'Delete Collection "' + ctrl.collectionMenuObject().item.label + '"?')
+                        m('h3.modal-title', 'Delete collection "' + ctrl.collectionMenuObject().item.label + '"?')
                     ]),
                     body: m('.modal-body', [
                         m('p', 'This will delete your collection but your projects will not be deleted.'),
@@ -957,7 +957,7 @@ var Breadcrumbs = {
                                 m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                                     m('span[aria-hidden="true"]','×'),
                                 ]),
-                                m('h4', 'Parent Projects'),
+                                m('h4', 'Parent projects'),
                                 args.breadcrumbs().map(function(item, index, array){
                                     if(index === array.length-1){
                                         return m('.db-parent-row.btn', {
