@@ -67,7 +67,7 @@
         }
       </style>
   
-            <div class="" id="anonymous-mode">You are viewing the OSF through an anonymous view-only link. To return to the normal view click <a href="/?view_only=None">here</a></div>
+            <div class="" id="anonymous-mode">You are viewing the OSF through an anonymous view-only link. Keep this link safe. To return to the normal view click <a href="/?view_only=None">here</a></div>
     % endif
 
 
