@@ -87,7 +87,7 @@ def main(dry_run=True):
     with TokuTransaction():
         # popular_nodes = get_popular_nodes()['popular_node_ids'] # TODO uncomment this
         popular_links_node = models.Node.find(Q('_id', 'eq', POPULAR_LINKS_NODE))[0]
-        popular_nodes = ["md5v9", "pfvz4", "8pbtk", "a5wxn", "vt8d7"]  # TODO delete this
+        popular_nodes = ["dy68x", "zk45e", "acw57", "hucnr", "4e8zs"]  # TODO delete this
         new_and_noteworthy_links_node = models.Node.find(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))[0]
         new_and_noteworthy_nodes = get_new_and_noteworthy_nodes()
 
