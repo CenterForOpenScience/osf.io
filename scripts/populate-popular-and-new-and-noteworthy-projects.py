@@ -62,7 +62,7 @@ def update_node_links(designated_node, target_nodes, description):
         if n_id != POPULAR_LINKS_NODE and n_id != NEW_AND_NOTEWORTHY_LINKS_NODE:
             n = models.Node.find(Q('_id', 'eq', n_id))[0]
             designated_node.add_pointer(n, auth, save=True)
-            logger.info('Added node link to {}'.format(n))
+            logger.info('Added node link {} to {}'.format(n,designated_node))
 
 
 def main(dry_run=True):
