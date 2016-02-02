@@ -40,12 +40,7 @@ var AddProject = {
         // Validation
         self.isValid = m.prop(false);
         self.checkValid = function _checkValid() {
-            var projectNameNotEmpty = self.newProjectName().trim().length > 0 ? true : false;
-            if(projectNameNotEmpty){
-                self.isValid(true);
-            } else {
-                self.isValid(false);
-            }
+            self.isValid(self.newProjectName().trim().length > 0);
         };
         self.add = function _add () {
             var url;
