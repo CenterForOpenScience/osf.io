@@ -661,7 +661,13 @@ var Collections  = {
                             url : collection.data.node.links.self + 'node_links/', //collection.data.node.relationships.linked_nodes.links.related.href,
                             config : xhrconfig,
                             data : dataArray[index]
-                        }).then(doNext, doNext); // In case of success or error. It doesn't look like mithril has a general .done method
+                        }).then(function(){
+                            doNext();
+                        }, function(){
+                            var name = args.selected()[index] ? args.selected()[index].data.name : 'Project ';
+                            $osf.growl('"' + name + '" could not be added to Collection.', 'Please try again');
+                            doNext();
+                        }); // In case of success or error. It doesn't look like mithril has a general .done method
                     }
                     if(dataArray.length > 0){
                         saveNodetoCollection(0);
