@@ -15,6 +15,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
+from api.base.utils import default_node_list_query
 
 from .serializers import UserSerializer, UserDetailSerializer
 from .permissions import ReadOnlyOrCurrentUser
@@ -268,10 +269,10 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
     <!--- Copied Query Params from NodeList -->
 
-    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
-    `root`, and `parent`.  Most are string fields and will be filtered using simple substring matching.  `public`
-    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
-    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 
@@ -292,21 +293,16 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
+        user = self.get_user()
         current_user = self.request.user
-        queried_user = self.get_user()
-        if isinstance(current_user, AnonymousUser) or current_user._id != queried_user._id:
-            permissions_query = Q('is_public', 'eq', True)
-        else:
-            permissions_query = Q('contributors', 'contains', current_user._id)
 
-        return (
-            permissions_query &
-            Q('contributors', 'contains', queried_user._id) &
-            Q('is_folder', 'ne', True) &
-            Q('is_collection', 'ne', True) &
-            Q('is_deleted', 'ne', True) &
-            Q('is_registration', 'ne', True)
-        )
+        query = (Q('contributors', 'eq', user) & default_node_list_query())
+
+        permission_query = Q('is_public', 'eq', True)
+        if not current_user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
+        query = (query & permission_query)
+        return query
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -400,9 +396,16 @@ class UserRegistrations(UserNodes):
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
-        return (
-            Q('contributors', 'eq', user) &
+        current_user = self.request.user
+
+        query = (
             Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True) &
-            Q('is_registration', 'eq', True)
+            Q('is_registration', 'eq', True) &
+            Q('contributors', 'eq', user._id)
         )
+        permission_query = Q('is_public', 'eq', True)
+        if not current_user.is_anonymous():
+            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
+        query = query & permission_query
+        return query

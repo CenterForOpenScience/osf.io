@@ -46,6 +46,7 @@ from website.files.models import OsfStorageFileNode
 from website.models import Node, Pointer, Comment, NodeLog
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
+from api.base.utils import default_node_list_query
 
 
 class NodeMixin(object):
@@ -241,7 +242,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -867,10 +868,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return (
-            Q('is_deleted', 'ne', True) &
-            Q('is_collection', 'ne', True)
-        )
+        return default_node_list_query()
 
     # overrides ListBulkCreateJSONAPIView
     def get_queryset(self):
