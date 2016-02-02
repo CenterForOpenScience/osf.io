@@ -26,7 +26,7 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
 
         if source.get('path').endswith('/'):
             if event_type == 'addon_file_moved' or (event_type == 'addon_file_renamed' and not (source['provider'] == 'osfstorage' or source['provider'] == 'box')):
-                folder_contents = destination['children']
+                folder_contents = destination.get('children', [destination])
                 update_file_records(folder_contents, source, source_node, destination, destination_node)
 
         else:
