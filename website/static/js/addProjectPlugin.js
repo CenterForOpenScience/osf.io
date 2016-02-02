@@ -125,7 +125,7 @@ var AddProject = {
                                 value : ctrl.newProjectName()
                             })
                         ]),
-                        m('.text-muted', { onclick : function(){
+                        m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
                         }},[
                             ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
