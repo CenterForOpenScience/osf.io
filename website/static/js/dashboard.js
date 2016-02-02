@@ -150,6 +150,7 @@ var Dashboard = {
         self.allProjects = m.prop([]);
         self.loadingNodePages = false; // Since API returns pages of items, this state shows whether filebrowser is still loading the next pages.
         self.loadingAllNodes = false; // True if we are loading all nodes
+        self.categoryList = [];
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = [
@@ -167,6 +168,23 @@ var Dashboard = {
 
         // Placeholder for node data
         self.data = m.prop([]);
+
+        self.loadCategories = function _loadCategories () {
+            var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig});
+            promise.then(function _success(results){
+                if(results.actions.POST.category){
+                    self.categoryList = results.actions.POST.category.choices;
+                    self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
+                        if(a.value < b.value) return -1;
+                        if(a.value > b.value) return 1;
+                        return 0;
+                    });
+                }
+            }, function _error(results){
+                console.error('Error loading category names:', results);
+            });
+            return promise;
+        };
 
         // Activity Logs
         self.activityLogs = m.prop();
@@ -306,6 +324,7 @@ var Dashboard = {
                             buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new Subcomponent'),
                             parentID : lastcrumb.data.id,
                             modalID : 'addSubcomponent',
+                            categoryList : self.categoryList,
                             stayCallback : function _stayCallback_inPanel() {
                                 self.allProjectsLoaded(false);
                                 self.updateList(lastcrumb);
@@ -411,7 +430,9 @@ var Dashboard = {
         };
 
         self.init = function _init_fileBrowser() {
-            self.updateList(self.systemCollections[0]);
+            self.loadCategories().then(function(){
+                self.updateList(self.systemCollections[0]);
+            });
         };
         self.init();
     },
@@ -975,6 +996,7 @@ var Breadcrumbs = {
                         buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), label]),
                         parentID : args.breadcrumbs()[args.breadcrumbs().length-1].data.id,
                         modalID : 'addProject',
+                        categoryList : args.categoryList,
                         stayCallback : function () {
                             args.allProjectsLoaded(false);
                             args.updateList(args.breadcrumbs()[args.breadcrumbs().length-1]);
