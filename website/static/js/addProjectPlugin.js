@@ -24,7 +24,7 @@ var AddProject = {
             stayCallback :null // Function to call when user decides to stay after project creation
         };
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
-        self.options = $.extend(self.defaults, options);
+        self.options = $.extend({}, self.defaults, options);
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
