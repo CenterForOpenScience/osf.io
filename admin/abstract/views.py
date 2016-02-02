@@ -1,6 +1,6 @@
 from django.views.generic import FormView
-from django.http import HttpResponseNotFound
 from django.shortcuts import render
+from django.views.defaults import page_not_found
 
 
 class GuidFormView(FormView):
@@ -20,11 +20,10 @@ class GuidFormView(FormView):
         if self.guid is not None:
             try:
                 guid_object = self.get_guid_object()
-            except (AttributeError, TypeError):
-                return HttpResponseNotFound(
-                    '<h1>{} ({}) not found.</h1>'.format(self.object_type,
-                                                         self.guid)
-                )
+            except AttributeError:
+                error_str = u'{} ({}) not found.'.format(
+                    self.object_type, self.guid)
+                return page_not_found(request, AttributeError(error_str))
         else:
             guid_object = None
         form = self.get_form()

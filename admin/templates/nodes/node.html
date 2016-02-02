@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load user_extras %}
+{% load node_extras %}
 {% block title %}
     <title>Node</title>
 {% endblock title %}
@@ -53,7 +55,7 @@
                         {% if not node.parent %}
                             {{ node.parent }}
                         {% else %}
-                        <a href="{% url 'nodes:node' %}?guid={{ node.parent }}">
+                        <a href="{{ node.parent | reverse_node }}">
                             {{ node.parent }}
                         </a>
                         {% endif %}
@@ -75,7 +77,7 @@
                         {% for user in node.contributors %}
                             <tr>
                                 <td>
-                                    <a href="{% url 'users:user' %}?guid={{ user.id }}">
+                                    <a href="{{ user.id | reverse_user }}">
                                         {{ user.id }}
                                     </a>
                                 </td>
@@ -103,7 +105,7 @@
                         {% for child in node.children %}
                             <tr>
                                 <td>
-                                    <a href="{% url 'nodes:node' %}?guid={{ child.id }}">
+                                    <a href="{{ child.id | reverse_node }}">
                                         {{ child.id }}
                                     </a>
                                 </td>

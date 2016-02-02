@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load node_extras %}
 {% block title %}
     <title>User</title>
 {% endblock title %}
@@ -60,7 +61,7 @@
                 {% for node in user.nodes %}
                     <tr>
                         <td>
-                            <a href="{% url 'nodes:node' %}?guid={{ node.id }}">
+                            <a href="{{ node.id | reverse_node }}">
                                 {{ node.id }}
                             </a>
                         </td>
