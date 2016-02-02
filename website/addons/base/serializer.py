@@ -216,19 +216,6 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
         return result
 
     @property
-    def user_is_owner(self):
-        if self.user_settings is None:
-            return False
-
-        user_accounts = self.user_settings.external_accounts
-        return bool(
-            (
-                self.node_settings.has_auth and
-                (self.node_settings.external_account in user_accounts)
-            ) or len(user_accounts)
-        )
-
-    @property
     def credentials_owner(self):
         return self.node_settings.user_settings.owner
 
