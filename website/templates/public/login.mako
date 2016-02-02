@@ -19,7 +19,7 @@
     <h3>OSF for Institutions </h3>
     <hr>
     <p>
-      How about: If your institution has partnered with the Open Science Framework, please
+      If your institution has partnered with the Open Science Framework, please
         select its name below and sign in with your institutional credentials. This action
         will create an OSF account (if you don’t already have one) and affiliate your account
         with that institution.
