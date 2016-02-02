@@ -8,7 +8,9 @@ from framework.exceptions import PermissionsError
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.project.model import Comment, NodeLog
 from website.project.signals import comment_added
+from website.util import permissions
 from website import settings
+
 
 from tests.base import (
     OsfTestCase,
@@ -188,7 +190,7 @@ class TestCommentModel(OsfTestCase):
         project = ProjectFactory()
         user = UserFactory()
         project.set_privacy('private')
-        project.add_contributor(user, 'read')
+        project.add_contributor(user, permissions=[permissions.READ])
         project.save()
 
         assert_true(project.can_comment(Auth(user=user)))
