@@ -47,6 +47,23 @@ def get_new_and_noteworthy_nodes():
     sorted_node_ids = [node[0] for node in sort_by_log_count]
     return sorted_node_ids[:25]
 
+def is_eligible_node(node):
+    """
+    Check to ensure that node is not the POPULAR or NEW_AND_NOTEWORTHY LINKS_NODE.
+    Ensures QA members are not contributors
+    """
+    if node._id == POPULAR_LINKS_NODE or node._id == NEW_AND_NOTEWORTHY_LINKS_NODE:
+        return False
+
+    qa_user_ids = ['nxygz', 'x952z', 'tgak8', 'gaexu', 'rgc49', 'nsx26', 'j52af', 'rbk3c', 'xyubm', 'bje5z', 'twkqb', 'mvzr6', 'dihba']
+
+    for contrib in node.contributors:
+        if contrib._id in qa_user_ids:
+            logger.warn('Node {} skipped because a QA member, {}, is a contributor.'.format(node._id, contrib._id))
+            return False
+
+    return True
+
 
 def update_node_links(designated_node, target_nodes, description):
     """ Takes designated node, removes current node links and replaces them with node links to target nodes """
@@ -59,11 +76,10 @@ def update_node_links(designated_node, target_nodes, description):
         designated_node.rm_pointer(pointer, auth)
 
     for n_id in target_nodes:
-        if n_id != POPULAR_LINKS_NODE and n_id != NEW_AND_NOTEWORTHY_LINKS_NODE:
-            n = models.Node.find(Q('_id', 'eq', n_id))[0]
+        n = models.Node.find(Q('_id', 'eq', n_id))[0]
+        if is_eligible_node(n):
             designated_node.add_pointer(n, auth, save=True)
-            logger.info('Added node link {} to {}'.format(n,designated_node))
-
+            logger.info('Added node link {} to {}'.format(n, designated_node))
 
 def main(dry_run=True):
     init_app(routes=False)
