@@ -248,7 +248,8 @@ var Dashboard = {
                 }).then(function _removeProjectFromCollectionsSuccess(result){
                     console.log(result);
                 }, function _removeProjectFromCollectionsFail(result){
-                    console.log(result);
+                    var name = item.data.name || 'Project ';
+                    $osf.growl('"' + name + '" could not be removed from Collection.', 'Please try again.');
                 });
             });
         };
