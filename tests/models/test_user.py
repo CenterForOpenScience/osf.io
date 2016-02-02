@@ -120,6 +120,16 @@ class TestUser(base.OsfTestCase):
         with assert_raises(exceptions.InvalidTokenError):
             self.user._get_unconfirmed_email_for_token(token1)
 
+    def test_contributed_property(self):
+        projects_contributed_to = project.model.Node.find(Q('contributors', 'contains', self.user._id))
+        assert_equal(list(self.user.contributed), list(projects_contributed_to))
+
+    def test_created_property(self):
+        # make sure there's at least one project
+        factories.ProjectFactory(creator=self.user)
+        projects_created_by_user = project.model.Node.find(Q('creator', 'eq', self.user._id))
+        assert_equal(list(self.user.created), list(projects_created_by_user))
+
 
 class TestUserMerging(base.OsfTestCase):
     ADDONS_UNDER_TEST = {
@@ -314,6 +324,7 @@ class TestUserMerging(base.OsfTestCase):
             'username',
             'mailing_lists',
             'verification_key',
+            'affiliated_institutions',
             'contributor_added_email_records'
         ]
 
@@ -433,8 +444,8 @@ class TestUserMerging(base.OsfTestCase):
 
         self.user.merge_user(self.unregistered)
 
+        self.project_with_unreg_contrib.reload()
         assert_true(self.user.is_invited)
-
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')

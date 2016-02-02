@@ -24,7 +24,7 @@ def do_migration(records, dry=False):
 
 def migrate_project_contributed(user):
     count = 0
-    for node_id in user.node__contributed:
+    for node_id in user.contributed:
         node = Node.load(node_id)
         if node._primary_key in user.unclaimed_records:
             del user.unclaimed_records[node._primary_key]

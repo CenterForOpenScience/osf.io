@@ -49,6 +49,7 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
 
     return ret
 
+
 def is_anonymized(request):
     is_anonymous = False
     private_key = request.query_params.get('view_only', None)
@@ -60,10 +61,6 @@ def is_anonymized(request):
         if link is not None:
             is_anonymous = link.anonymous
     return is_anonymous
-
-
-class DoNotRelateWhenAnonymous(object):
-    pass
 
 
 class HideIfRegistration(ser.Field):
@@ -95,6 +92,13 @@ class HideIfRegistration(ser.Field):
         else:
             self.field.parent = self.field.root
         return self.field.to_representation(value)
+
+    def to_esi_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_esi_representation(value)
 
 
 class HideIfRetraction(HideIfRegistration):
@@ -245,35 +249,45 @@ class AuthorizedCharField(ser.CharField):
 class RelationshipField(ser.HyperlinkedIdentityField):
     """
     RelationshipField that permits the return of both self and related links, along with optional
-    meta information.
+    meta information. ::
 
-    Example:
-    children = RelationshipField(
-        related_view='nodes:node-children',
-        related_view_kwargs={'node_id': '<pk>'},
-        self_view='nodes:node-node-children-relationship',
-        self_view_kwargs={'node_id': '<pk>'},
-        related_meta={'count': 'get_node_count'}
-    )
+        children = RelationshipField(
+            related_view='nodes:node-children',
+            related_view_kwargs={'node_id': '<pk>'},
+            self_view='nodes:node-node-children-relationship',
+            self_view_kwargs={'node_id': '<pk>'},
+            related_meta={'count': 'get_node_count'}
+        )
 
     The lookup field must be surrounded in angular brackets to find the attribute on the target. Otherwise, the lookup
-    field will be returned verbatim.
+    field will be returned verbatim. ::
 
-    Example:
-     wiki_home = RelationshipField(
-        related_view='addon:addon-detail',
-        related_view_kwargs={'node_id': '<_id>', 'provider': 'wiki'},
-    )
+        wiki_home = RelationshipField(
+            related_view='addon:addon-detail',
+            related_view_kwargs={'node_id': '<_id>', 'provider': 'wiki'},
+        )
+
     '_id' is enclosed in angular brackets, but 'wiki' is not. 'id' will be looked up on the target, but 'wiki' will not.
      The serialized result would be '/nodes/abc12/addons/wiki'.
 
-    Field can handle nested attributes:
+    Field can handle nested attributes: ::
 
-    Example:
-    wiki_home = RelationshipField(
-        related_view='wiki:wiki-detail',
-        related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
-    )
+        wiki_home = RelationshipField(
+            related_view='wiki:wiki-detail',
+            related_view_kwargs={'node_id': '<_id>', 'wiki_id': '<wiki_pages_current.home>'}
+        )
+
+    Field can handle a filter_key, which operates as the source field (but
+    is named differently to not interfere with HyperLinkedIdentifyField's source
+
+    The ``filter_key`` argument defines the Mongo key (or ODM field name) to filter on
+    when using the ``FilterMixin`` on a view. ::
+
+        parent = RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<parent_node._id>'},
+            filter_key='parent_node'
+        )
 
     Field can include optional filters:
 
@@ -287,7 +301,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     json_api_link = True  # serializes to a links object
 
     def __init__(self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-                 self_meta=None, related_meta=None, always_embed=False, filter=None, **kwargs):
+                 self_meta=None, related_meta=None, always_embed=False, filter=None, filter_key=None, **kwargs):
         related_view = related_view
         self_view = self_view
         related_kwargs = related_view_kwargs
@@ -298,6 +312,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self.self_meta = self_meta
         self.always_embed = always_embed
         self.filter = filter
+        self.filter_key = filter_key
 
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
@@ -403,6 +418,15 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             urls = None
         return urls
 
+    def to_esi_representation(self, value):
+        relationships = super(RelationshipField, self).to_representation(value)
+        if relationships is not None:
+            for type, href in relationships.items():
+                if href and not href == '{}':
+                    return '<esi:include src="{}?format=jsonapi"/>'.format(href)
+        else:
+            raise SkipField
+
     def format_filter(self, obj):
         qd = QueryDict(mutable=True)
         filter_fields = self.filter.keys()
@@ -478,6 +502,12 @@ class TargetField(ser.Field):
                 kwargs=kwargs
             )
         )
+
+    def to_esi_representation(self, value):
+        url = value.get_absolute_url()
+        if url:
+            return '<esi:include src="{}?format=jsonapi"/>'.format(url)
+        return self.to_representation(value)
 
     def to_representation(self, value):
         """
@@ -637,30 +667,46 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
     def to_representation(self, data):
         # Don't envelope when serializing collection
-        return [
+        errors = {}
+        bulk_skip_uneditable = utils.is_truthy(self.context['request'].query_params.get('skip_uneditable', False))
+
+        if isinstance(data, collections.Mapping):
+            errors = data.get('errors', None)
+            data = data.get('data', None)
+
+        ret = [
             self.child.to_representation(item, envelope=None) for item in data
         ]
 
+        if errors and bulk_skip_uneditable:
+            ret.append({'errors': errors})
+
+        return ret
+
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
-
         # if PATCH request, the child serializer's partial attribute needs to be True
         if self.context['request'].method == 'PATCH':
             self.child.partial = True
 
-        if len(instance) != len(validated_data):
-            raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
+        bulk_skip_uneditable = utils.is_truthy(self.context['request'].query_params.get('skip_uneditable', False))
+        if not bulk_skip_uneditable:
+            if len(instance) != len(validated_data):
+                raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
 
         id_lookup = self.child.fields['id'].source
         instance_mapping = {getattr(item, id_lookup): item for item in instance}
         data_mapping = {item.get(id_lookup): item for item in validated_data}
 
-        ret = []
+        ret = {'data': []}
 
-        for resource_id, data in data_mapping.items():
-            resource = instance_mapping.get(resource_id, None)
-            ret.append(self.child.update(resource, data))
+        for resource_id, resource in instance_mapping.items():
+            data = data_mapping.pop(resource_id, None)
+            ret['data'].append(self.child.update(resource, data))
 
+        # If skip_uneditable in request, add validated_data for nodes in which the user did not have edit permissions to errors
+        if data_mapping and bulk_skip_uneditable:
+            ret.update({'errors': data_mapping.values()})
         return ret
 
     # overrides ListSerializer
@@ -702,6 +748,13 @@ class JSONAPISerializer(ser.Serializer):
     Self/html links must be nested under "links".
     """
 
+    # Don't serialize relationships that use these views
+    # when viewing thru an anonymous VOL
+    views_to_hide_if_anonymous = [
+        'users:user-detail',
+        'nodes:node-registrations',
+    ]
+
     # overrides Serializer
     @classmethod
     def many_init(cls, *args, **kwargs):
@@ -738,7 +791,7 @@ class JSONAPISerializer(ser.Serializer):
         ])
 
         embeds = self.context.get('embed', {})
-
+        enable_esi = self.context.get('enable_esi', False)
         is_anonymous = is_anonymized(self.context['request'])
         to_be_removed = []
         if is_anonymous and hasattr(self, 'non_anonymized_fields'):
@@ -768,15 +821,21 @@ class JSONAPISerializer(ser.Serializer):
                 if attribute is None:
                     continue
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
+                    if enable_esi:
+                        try:
+                            result = field.to_esi_representation(attribute)
+                        except SkipField:
+                            continue
+                    else:
+                        result = self.context['embed'][field.field_name](obj)
 
-                    result = self.context['embed'][field.field_name](obj)
                     if result:
                         data['embeds'][field.field_name] = result
                 else:
                     try:
                         if not (is_anonymous and
-                                hasattr(field, 'view_name') and not
-                                isinstance(field.root, DoNotRelateWhenAnonymous)):
+                                hasattr(field, 'view_name') and
+                                field.view_name in self.views_to_hide_if_anonymous):
                             data['relationships'][field.field_name] = field.to_representation(attribute)
                     except SkipField:
                         continue
@@ -800,6 +859,8 @@ class JSONAPISerializer(ser.Serializer):
 
         if envelope:
             ret[envelope] = data
+            if is_anonymous:
+                ret['meta'] = {'anonymous': True}
         else:
             ret = data
         return ret
@@ -828,6 +889,27 @@ class JSONAPISerializer(ser.Serializer):
     def sanitize_data(self):
         return website_utils.rapply(self.validated_data, strip_html)
 
+class JSONAPIRelationshipSerializer(ser.Serializer):
+    """Base Relationship serializer. Requires that a `type_` option is set on `class Meta`.
+    Provides a simplified serialization of the relationship, allowing for simple update request
+    bodies.
+    """
+    id = ser.CharField(required=False, allow_null=True)
+    type = TypeField(required=False, allow_null=True)
+
+    def to_representation(self, obj):
+        meta = getattr(self, 'Meta', None)
+        type_ = getattr(meta, 'type_', None)
+        assert type_ is not None, 'Must define Meta.type_'
+        relation_id_field = self.fields['id']
+        attribute = relation_id_field.get_attribute(obj)
+        relationship = relation_id_field.to_representation(attribute)
+
+        data = {'type': type_, 'id': relationship} if relationship else None
+
+        return data
+
+
 def DevOnly(field):
     """Make a field only active in ``DEV_MODE``. ::
 
@@ -854,3 +936,20 @@ class RestrictedDictSerializer(ser.Serializer):
             else:
                 data[field.field_name] = field.to_representation(attribute)
         return data
+
+
+def relationship_diff(current_items, new_items):
+    """
+    To be used in POST and PUT/PATCH relationship requests, as, by JSON API specs,
+    in update requests, the 'remove' items' relationships would be deleted, and the
+    'add' would be added, while for create requests, only the 'add' would be added.
+
+    :param current_items: The current items in the relationship
+    :param new_items: The items passed in the request
+    :return:
+    """
+
+    return {
+        'add': {k: new_items[k] for k in (set(new_items.keys()) - set(current_items.keys()))},
+        'remove': {k: current_items[k] for k in (set(current_items.keys()) - set(new_items.keys()))}
+    }

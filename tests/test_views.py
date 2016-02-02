@@ -12,6 +12,7 @@ import math
 import time
 
 from nose.tools import *  # noqa PEP8 asserts
+
 from tests.test_features import requires_search
 from modularodm import Q
 from modularodm.exceptions import ValidationError
@@ -349,12 +350,12 @@ class TestProjectViews(OsfTestCase):
 
     def test_new_user_gets_dashboard_on_dashboard_path(self):
         my_user = AuthUserFactory()
-        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        dashboard = Node.find_for_user(my_user, subquery=Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 0)
         url = api_url_for('get_dashboard')
         self.app.get(url, auth=my_user.auth)
         my_user.reload()
-        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        dashboard = Node.find_for_user(my_user, subquery=Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 1)
 
     def test_add_contributor_post(self):

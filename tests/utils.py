@@ -5,7 +5,7 @@ import datetime
 
 from django.http import HttpRequest
 from nose import SkipTest
-from nose.tools import assert_equal, assert_not_equal
+from nose.tools import assert_equal, assert_not_equal, assert_in
 
 from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS
@@ -146,7 +146,6 @@ def make_drf_request(*args, **kwargs):
     http_request.META['SERVER_PORT'] = 8000
     # A DRF Request wraps a Django HttpRequest
     return Request(http_request, *args, **kwargs)
-
 
 class MockAuth(object):
 

@@ -134,7 +134,7 @@
         % endif
 
         % if  node['embargo_end_date']:
-            <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['embargo_end_date'] }, passes or an admin manually makes it public.</div>
+            <div class="alert alert-danger">This ${node['node_type']} is currently embargoed. It will remain private until its embargo date, ${ node['embargo_end_date'] }.</div>
         % endif
 
     % endif  ## End registration undismissable labels

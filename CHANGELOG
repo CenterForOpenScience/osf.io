@@ -6,7 +6,7 @@ Changelog
 ===================
 
 - Added date_modified field to Node (no longer a property).
-- Add Researchgate links to user profiles.
+- Add ResearchGate links to user profiles.
 - Add Academia.edu links to user profiles.
 - Components may be categorized as "Software".
 - Reorganize wiki configuration on project settings page.
@@ -24,7 +24,7 @@ Migrations
 - python -m scripts.migration.migrate_date_modified_for_existing_nodes
 - python -m scripts.migration.migrate_root_and_parent_on_node
 
-0.62.0 (unreleased)
+0.62.0 (2016-01-25)
 ===================
 
 - File commenting.
@@ -53,6 +53,12 @@ Migrations
 - APIv2: Bulk extension support for collections endpoints.
 - APIv2: Require target_id and type to be passed when creating comments.
 - APIv2: Allow filtering on relationships, e.g. filtering by a comment's target with ?filter[target]=<target_id>
+
+Migrations
+----------
+
+- python -m scripts.dropbox.migrate_to_external_accounts
+- python -m scripts.prereg.migrate_metadata_for_uploaders
 
 0.59.0 (2015-12-02)
 ===================

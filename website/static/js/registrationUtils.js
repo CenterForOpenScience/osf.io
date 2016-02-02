@@ -77,7 +77,7 @@ function Comment(data) {
         }
     });
 
-    self.seenBy = ko.observableArray([self.user.id]);
+    self.seenBy = ko.observableArray(data.seenBy || [self.user.id]);
 
     /**
      * Returns true if the current user is the comment owner
@@ -140,7 +140,9 @@ Comment.prototype.delete = function(save) {
 Comment.prototype.viewComment = function(user) {
     if (this.seenBy.indexOf(user.id) === -1) {
         this.seenBy.push(user.id);
+        return true;
     }
+    return false;
 };
 
 /**
@@ -396,9 +398,11 @@ var Page = function(schemaPage, schemaData) {
 Page.prototype.viewComments = function() {
     var self = this;
     var comments = self.comments();
+    var viewed = false;
     $.each(comments, function(index, comment) {
-        comment.viewComment($osf.currentUser());
+        viewed = comment.viewComment($osf.currentUser()) || viewed;
     });
+    return viewed;
 };
 Page.prototype.getUnseenComments = function() {
     var self = this;
@@ -800,7 +804,9 @@ var RegistrationEditor = function(urls, editorId, preview) {
         page.comments.subscribe(function() {
             self.dirtyCount(self.dirtyCount() + 1);
         });
-        page.viewComments();
+        if(page.viewComments()) {
+            self.save();
+        }
     });
 
     self.hasValidationInfo = ko.computed(function() {
@@ -891,14 +897,11 @@ RegistrationEditor.prototype.init = function(draft) {
         if (!self.draft()) {
             return null;
         }
-        return self.draft().updated;
-    });
-    self.lastSaved = ko.computed(function() {
-        var t = self.lastSaveTime();
-        if (t) {
-            return t.toGMTString();
-        } else {
-            return 'never';
+        if (self.draft().updated) {
+            return self.draft().updated;
+        }
+        else {
+            return 'never';            
         }
     });
 
@@ -1235,7 +1238,7 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     self.loadingSchemas.subscribe(function(loading) {
         if (!loading) {
             createButton.removeClass('disabled');
-            createButton.text('New Registration');
+            createButton.text('New registration');
         }
     });
     self.loadingDrafts = ko.observable(true);
@@ -1273,7 +1276,7 @@ RegistrationManager.prototype.init = function() {
         });
         $osf.growl('Error loading registration templates', language.loadMetaSchemaFail);
     });
-    
+
     if ($osf.currentUser().isAdmin) {
         var getDraftRegistrations = self.getDraftRegistrations();
         getDraftRegistrations.done(function(response) {
@@ -1318,6 +1321,7 @@ RegistrationManager.prototype.init = function() {
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
 
+    var url = self.urls.delete.replace('{draft_pk}', draft.pk);
     bootbox.dialog({
         title: 'Please confirm',
         message: 'Are you sure you want to delete this draft registration?',
@@ -1332,12 +1336,19 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
                 className: 'btn-danger',
                 callback: function() {
                     $.ajax({
-                        url: self.urls.delete.replace('{draft_pk}', draft.pk),
+                        url: url,
                         method: 'DELETE'
                     }).then(function() {
                         self.drafts.remove(function(item) {
                             return item.pk === draft.pk;
                         });
+                    }).fail(function(xhr, status, err) {
+                        Raven.captureMessage('Could not submit draft registration', {
+                            url: url,
+                            textStatus: status,
+                            error: err
+                        });
+                        $osf.growl('Error deleting draft', language.deleteDraftFail);
                     });
                 }
             }

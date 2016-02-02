@@ -17,7 +17,7 @@ def get_active_users(extra=None):
         Q('password', 'ne', None) &
         Q('merged_by', 'eq', None) &
         Q('date_confirmed', 'ne', None) &
-        Q('date_disabled', ' eq', None)
+        Q('date_disabled', 'eq', None)
     )
     query = query & extra if extra else query
     return User.find(query)
