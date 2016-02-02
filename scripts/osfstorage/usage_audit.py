@@ -5,14 +5,18 @@ User usage is defined as the total usage of all projects they have > READ access
 Project usage is defined as the total usage of it and all its children
 total usage is defined as the sum of the size of all verions associated with X via OsfStorageFileNode and OsfStorageTrashedFileNode
 """
+
 import os
-import sys
 import json
 import logging
 import functools
+
 from collections import defaultdict
 
+from framework.tasks import app as celery_app
+
 from modularodm import Q
+
 from website import mails
 from website.app import init_app
 from website.project.model import Node
@@ -95,9 +99,10 @@ def main(send_email=False):
         logger.info('No offending projects or users found')
 
 
-if __name__ == '__main__':
+@celery_app.task(name='scripts.osfstorage.usage_audit')
+def run_main(*arg):
     scripts_utils.add_file_logger(logger, __file__)
-    if len(sys.argv) > 1 and sys.argv[1] == 'whitelist':
-        add_to_white_list(sys.argv[2:])
+    if len(arg) > 0 and arg[0] == 'whitelist':
+        add_to_white_list(arg[1:])
     else:
-        main(send_email='send_mail' in sys.argv)
+        main(send_email='send_mail' in arg)

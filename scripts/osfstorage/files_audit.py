@@ -12,13 +12,19 @@ from __future__ import division
 
 import os
 import math
+import thread
 import logging
 
 import pyrax
 import progressbar
+
 from modularodm import Q
+
 from boto.glacier.layer2 import Layer2
+
 from pyrax.exceptions import NoSuchObject
+
+from framework.tasks import app as celery_app
 
 from website.app import init_app
 from website.files import models
@@ -32,6 +38,7 @@ container_primary = None
 container_parity = None
 vault = None
 audit_temp_path = None
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -127,11 +134,19 @@ def main(nworkers, worker_id, dry_run):
     progress_bar.finish()
 
 
-if __name__ == '__main__':
-    import sys
-    nworkers = int(sys.argv[1])
-    worker_id = int(sys.argv[2])
-    dry_run = 'dry' in sys.argv
+@celery_app.task(name='scripts.osfstorage.files_audit')
+def run_mains(num_of_workers, dry_run):
+    try:
+        thread.start_new_thread(run_main, (num_of_workers, 0, dry_run,))
+        thread.start_new_thread(run_main, (num_of_workers, 1, dry_run,))
+        thread.start_new_thread(run_main, (num_of_workers, 2, dry_run,))
+        thread.start_new_thread(run_main, (num_of_workers, 3, dry_run,))
+    except:
+        # need to add specific exception handler
+        pass
+
+
+def run_main(num_of_workers, worker_id, dry_run):
 
     # Set up storage backends
     init_app(set_backends=True, routes=False)
@@ -162,7 +177,8 @@ if __name__ == '__main__':
                 os.makedirs(audit_temp_path)
             except OSError:
                 pass
-            main(nworkers, worker_id, dry_run=dry_run)
+        main(num_of_workers, worker_id, dry_run)
+
     except Exception as err:
         logger.error('=== Unexpected Error ===')
         logger.exception(err)

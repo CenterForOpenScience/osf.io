@@ -115,3 +115,7 @@ admin/webpack-stats.json
 # bower
 admin/static/vendor/
 admin/db.sqlite3
+
+# Celery
+./celerybeat-schedule
+./celerybeat.pid

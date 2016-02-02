@@ -286,6 +286,16 @@ BROKER_URL = 'amqp://'
 # Default RabbitMQ backend
 CELERY_RESULT_BACKEND = 'amqp://'
 
+# Default arguments for tasks
+DRY_RUN = False  # for most tasks, set to False
+JOB_ID = None   # for task scripts.osfstorage.glacier_audit, set to None
+DAYS = None    # for task scripts.refresh_box, set to None
+NUM_OF_WORKERS = 4  # for task scripts.osfstorage.files_audit, set to 4
+
+# Note:
+#   CELERY_IMPORTS import .py files that were run by cron-initiated shellsripts before
+#   CELERYBEAT_SCHEDULE does the scheduling job that were configured by cron.py before
+
 #  Modules to import when celery launches
 CELERY_IMPORTS = (
     'framework.tasks',
@@ -296,7 +306,17 @@ CELERY_IMPORTS = (
     'website.notifications.tasks',
     'website.archiver.tasks',
     'website.search.search',
-    'api.caching.tasks'
+    'api.caching.tasks',
+    'scripts.refresh_box_tokens',
+    'scripts.retract_registrations',
+    'scripts.embargo_registrations',
+    'scripts.approve_registrations',
+    'scripts.osfstorage.glacier_inventory',
+    'scripts.osfstorage.glacier_audit',
+    'scripts.triggered_mails',
+    'scripts.send_queued_mails',
+    'scripts.osfstorage.usage_audit',
+    'scripts.osfstorage.files_audit'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
@@ -317,7 +337,58 @@ else:
             'schedule': crontab(minute=0, hour=0),
             'args': ('email_digest',),
         },
+        'refresh_box': {
+            'task': 'scripts.refresh_box_tokens',
+            'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
+            'args': (DAYS, DRY_RUN,),
+        },
+        'retract_registrations': {
+            'task': 'scripts.retract_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'args': (DRY_RUN,),
+        },
+        'embargo_registrations': {
+            'task': 'scripts.embargo_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'args': (DRY_RUN,),
+        },
+        'approve_registrations': {
+            'task': 'scripts.approve_registrations',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'args': (DRY_RUN,),
+        },
+        'glacier_inventory': {
+            'task': 'scripts.osfstorage.glacier_inventory',
+            'schedule': crontab(minute=0, hour= 0, day_of_week=0),  # Sunday 12:00 a.m.
+            'args': (),
+        },
+        'glacier_audit': {
+            'task': 'scripts.osfstorage.glacier_audit',
+            'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
+            'args': (JOB_ID, DRY_RUN),
+        },
+        'triggered_mails': {
+            'task': 'scripts.triggered_mails',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'args': (DRY_RUN,)
+        },
+        'send_queued_mails': {
+            'task': 'scripts.send_queued_mails',
+            'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
+            'args': (DRY_RUN,)
+        },
+        'usage_audit': {
+            'task': 'scripts.osfstorage.usage_audit',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'args': ('send_mail',)
+        },
+        'files_audit': {
+            'task': 'scripts.osfstorage.files_audit',
+            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+            'args': (NUM_OF_WORKERS, DRY_RUN,)
+        }
     }
+
 
 WATERBUTLER_JWE_SALT = 'yusaltydough'
 WATERBUTLER_JWE_SECRET = 'CirclesAre4Squares'
