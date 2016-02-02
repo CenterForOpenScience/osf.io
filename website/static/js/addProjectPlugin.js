@@ -56,7 +56,7 @@ var AddProject = {
                         'type': 'nodes',
                         'attributes': {
                             'title': self.newProjectName(),
-                            'category': self.newProjectCategory,
+                            'category': self.newProjectCategory(),
                             'description' : self.newProjectDesc()
                         }
                     }

@@ -371,7 +371,7 @@ var Dashboard = {
             self.users = {};
             self.tags = {};
             self.data().map(function _generateFiltersListMap(item){
-                var contributors = item.embeds.contributors.data ? item.embeds.contributors.data : [];
+                var contributors = item.embeds.contributors.data || [];
                 for(var i = 0; i < contributors.length; i++) {
                     var u = contributors[i];
                     if(self.users[u.id] === undefined) {
@@ -384,7 +384,7 @@ var Dashboard = {
                     }
                 }
 
-                var tags = item.attributes.tags ? item.attributes.tags : [];
+                var tags = item.attributes.tags || [];
                 for(var j = 0; j < tags.length; j++) {
                     var t = tags[j];
                     if(self.tags[t] === undefined) {
@@ -423,7 +423,7 @@ var Dashboard = {
                 });
             }
             self.breadcrumbs().push(linkObject);
-        }.bind(self);
+        };
 
         self.sidebarInit = function _sidebarInit (element, isInit) {
             $('[data-toggle="tooltip"]').tooltip();
@@ -629,6 +629,9 @@ var Collections  = {
                         break;
                     }
                 }
+            }, function(){
+                var name = self.collectionMenuObject().item.label;
+                $osf.growl('"' + name + '" could not be deleted.', 'Please try again');
             });
             self.dismissModal();
             self.calculateTotalPages();
