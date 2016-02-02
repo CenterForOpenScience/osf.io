@@ -11,6 +11,8 @@ var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
 
+var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
+
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
 }
@@ -437,7 +439,7 @@ var Dashboard = {
         self.init();
     },
     view : function (ctrl, args) {
-        var mobile = window.innerWidth < 767; // true if mobile view
+        var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
         var infoPanel = '';
         var poStyle = 'width : 72%'; // Other percentages are set in CSS in file-browser.css These are here because they change
         var sidebarButtonClass = 'btn-default';
@@ -551,7 +553,7 @@ var Collections  = {
             var offset = $(event.target).offset();
             var x = offset.left;
             var y = offset.top;
-            if (event.view.innerWidth < 767){
+            if (event.view.innerWidth < MOBILE_WIDTH){
                 x = x-105; // width of this menu plus padding
                 y = y-270; // fixed height from collections parent to top with adjustments for this menu div
             }
@@ -958,7 +960,7 @@ var MicroPagination = {
 
 var Breadcrumbs = {
     view : function (ctrl, args) {
-        var mobile = window.innerWidth < 767; // true if mobile view
+        var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
         var items = args.breadcrumbs();
         if (mobile && items.length > 1) {
             return m('.db-breadcrumbs', [
