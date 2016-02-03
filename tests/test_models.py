@@ -4028,40 +4028,6 @@ class TestNodeLog(OsfTestCase):
         unparsed = self.log.tz_date
         assert_equal(parsed, unparsed)
 
-    def test_resolve_node_same_as_self_node(self):
-        project = ProjectFactory()
-        assert_equal(
-            project.logs[-1].resolve_node(project),
-            project,
-        )
-
-    def test_resolve_node_in_nodes_list(self):
-        component = NodeFactory()
-        assert_equal(
-            component.logs[-1].resolve_node(component.parent_node),
-            component,
-        )
-
-    def test_resolve_node_fork_of_self_node(self):
-        project = ProjectFactory()
-        fork = project.fork_node(auth=Auth(project.creator))
-        assert_equal(
-            fork.logs[-1].resolve_node(fork),
-            fork,
-        )
-
-    def test_resolve_node_fork_of_self_in_nodes_list(self):
-        user = UserFactory()
-        component = ProjectFactory(creator=user)
-        project = ProjectFactory(creator=user)
-        project.nodes.append(component)
-        project.save()
-        forked_project = project.fork_node(auth=Auth(user=user))
-        assert_equal(
-            forked_project.nodes[0].logs[-1].resolve_node(forked_project),
-            forked_project.nodes[0],
-        )
-
     def test_can_view(self):
         project = ProjectFactory(is_public=False)
 
