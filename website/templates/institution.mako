@@ -8,14 +8,14 @@
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
 <div class="dashboard-header">
-    <div class="row">
-        <div class="col-xs-4"></div>
-        <div class="col-xs-1"><img style="margin: 20px" class="img-circle" height="110" width="110" src=${ logo_path }></div>
-        <div class="col-xs-3" style="margin: 20px">
+    <div class="row" style="text-align: center">
+        <div class="col-sm-2"></div>
+        <div class="col-sm-3"><img class="img-circle" height="110" width="110" src=${ logo_path }></div>
+        <div class="col-sm-3">
             <h2>${ name }</h2>
-            <h2><small class="hidden-xs">Institution projects</small></h2>
+            <h4><small class="hidden-sm">This is an institution. This is a small blurb about this institution. Cool, right?</small></h4>
         </div>
-        <div class="col-xs-4"></div>
+        <div class="col-sm-2"></div>
     </div>
 </div>
 
