@@ -55,7 +55,7 @@ var LogWrap = {
                 query['filter[date][lte]'] = self.dateEnd.toISOString();
                 query['filter[date][gte]'] = self.dateBegin.toISOString();
             }
-            var url = $osf.apiV2Url('users/' + self.userId + '/logs/', { query : query});
+            var url = $osf.apiV2Url('users/me/logs/', { query : query });
             var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: (update ? true : false)});
             promise.then(function(result){
                 self.loading = false;
@@ -65,7 +65,7 @@ var LogWrap = {
                 if (init) {
                     self.lastDay = moment.utc(result.data[0].attributes.date);
                     self.dateEnd = self.lastDay;
-                    var firstDay = moment.utc(result.links.meta.last_log_date);
+                    var firstDay = moment.utc(result.meta.last_log_date);
                     self.firstDay = ((firstDay >= self.sixMonthsAgo) ? firstDay : self.sixMonthsAgo).startOf('month');
                     var dateBegin = moment.utc(result.data[0].attributes.date).subtract(1, 'months');
                     self.dateBegin = ((dateBegin > self.firstDay) ? dateBegin : self.firstDay).startOf('day');
@@ -87,7 +87,7 @@ var LogWrap = {
                 }
                 if (reset){
                     self.totalEvents = result.links.meta.total;
-                    self.eventNumbers = result.links.meta.aggregates;
+                    self.eventNumbers = result.meta.aggregates;
                     self.cache = [];
                 }
                 if (!init) {
@@ -152,11 +152,7 @@ var LogWrap = {
                 $('#rARightButton').css('height', $('#rALogs').height());
             }
         };
-        self.makeSliderProgress =  function(){
-            return '<div id="rAFilleBar" class="progress" style="height: 11px">' +
-                        '<div class="progress-bar"></div>' +
-                '</div>';
-        };
+        self.sliderProgress = '<div id="rAFilleBar" class="progress" style="height: 11px"><div class="progress-bar"></div></div>';
         self.addSlider = function(ele, isInitialized){
             var begin = (Number(self.firstDay.format('x'))/self.div | 0);
             var end = (Number(self.today.format('x'))/self.div | 0);
@@ -215,12 +211,12 @@ var LogWrap = {
                 });
                 self.getLogs(false, true);
                 var bar = $('#rASlider').find('.ui-slider-range');
-                bar.append(self.makeSliderProgress());
+                bar.append(self.sliderProgress);
                 self.makeLine(canvas);
             }
             else {
                 //$('#rASlider').slider('option', 'values', values);
-                $('#rAFilleBar').replaceWith(self.makeSliderProgress());
+                $('#rAFilleBar').replaceWith(self.sliderProgress);
                 self.makeLine(canvas);
             }
         };
