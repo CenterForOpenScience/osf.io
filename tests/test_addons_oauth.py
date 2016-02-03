@@ -294,6 +294,23 @@ class TestUserSettings(OsfTestCase):
             }
         )
 
+    @mock.patch('tests.test_addons_oauth.MockUserSettings.revoke_remote_oauth_access')
+    @mock.patch('framework.auth.core._get_current_user')
+    def test_revoke_remote_access_called(self, mock_decorator, mock_revoke):
+        mock_decorator.return_value = self.user
+        self.user_settings.delete()
+        assert_equal(mock_revoke.call_count, 1)
+
+    @mock.patch('tests.test_addons_oauth.MockUserSettings.revoke_remote_oauth_access')
+    @mock.patch('framework.auth.core._get_current_user')
+    def test_revoke_remote_access_not_called(self, mock_decorator, mock_revoke):
+        mock_decorator.return_value = self.user
+        user2 = AuthUserFactory()
+        user2.external_accounts.append(self.external_account)
+        user2.save()
+        self.user_settings.delete()
+        assert_equal(mock_revoke.call_count, 0)
+
     def test_on_delete(self):
         node_settings = self.project.get_or_add_addon(
             MockUserSettings.oauth_provider.short_name,
