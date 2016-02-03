@@ -7,6 +7,7 @@ var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
+var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
 var mC = require('js/mithrilComponents');
@@ -274,7 +275,9 @@ var Dashboard = {
             });
         };
         // GETTING THE NODES
-        self.updateList = function _updateList (linkObject, success, error){
+        self.updateList = function _updateList (linkObject){
+            var success;
+            var error;
             if(linkObject.data.systemCollection === 'nodes' && self.allProjectsLoaded()){
                 self.data(self.allProjects());
                 self.reload(true);
@@ -283,15 +286,11 @@ var Dashboard = {
             }
             self.refreshView(true);
             m.redraw();
-            if (success === undefined){
-                success = self.updateListSuccess;
-            }
+            success = self.updateListSuccess;
             if(linkObject.data.systemCollection === 'nodes'){
                 self.loadingAllNodes = true;
             }
-            if (error === undefined){
-                error = self.updateListError;
-            }
+            error = self.updateListError;
             var url = linkObject.link;
             if (typeof url !== 'string'){
                 throw new Error('Url argument for updateList needs to be string');
@@ -704,9 +703,7 @@ var Collections  = {
                             url : collection.data.node.links.self + 'node_links/', //collection.data.node.relationships.linked_nodes.links.related.href,
                             config : xhrconfig,
                             data : dataArray[index]
-                        }).then(function(){
-                            doNext();
-                        }, function(){
+                        }).then(doNext, function(){
                             var name = args.selected()[index] ? args.selected()[index].data.name : 'Project ';
                             $osf.growl('"' + name + '" could not be added to Collection.', 'Please try again');
                             doNext();

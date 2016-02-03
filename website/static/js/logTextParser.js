@@ -4,7 +4,7 @@
  * Remeber to embed nodes, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-var logActions = require('js/_allLogTexts.js');
+var logActions = require('json!js/_allLogTexts.json');
 var $ = require('jquery');  // jQuery
 
 /**

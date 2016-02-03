@@ -85,7 +85,7 @@ var entry = {
 };
 
 // Collect log text from addons
-var mainLogs = require(staticPath('js/logActionsList.js'));
+var mainLogs = require(staticPath('js/logActionsList.json'));
 var addonLog;
 
 // Collect adddons endpoints. If an addon's static folder has
@@ -103,7 +103,7 @@ addons.addons.forEach(function(addonName) {
         }
     });
     var logTextPath = path.join(__dirname, 'website', 'addons',
-        addonName, 'static', addonName + 'LogActionList.js');
+        addonName, 'static', addonName + 'LogActionList.json');
     if(fs.existsSync(logTextPath)){
         addonLog = require(logTextPath);
         for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
@@ -112,14 +112,16 @@ addons.addons.forEach(function(addonName) {
 // This function is needed because jshint doesn't like double quotes
 function objToString (obj) {
     var str = '';
+    var comma = '';
     for (var p in obj) {
         if (obj.hasOwnProperty(p)) {
-            str += '    \'' + p + '\' : ' + '\'' + obj[p] + '\',\n';
+            str += comma + '    "' + p + '" : ' + '"' + obj[p] + '"\n';
         }
+        comma = ',';
     }
     return str;
 }
-fs.writeFileSync(staticPath('js/_allLogTexts.js'), 'var logActions = {\n' + objToString(mainLogs) + '}; \n module.exports = logActions;');
+fs.writeFileSync(staticPath('js/_allLogTexts.json'), '{\n' + objToString(mainLogs) + '}');
 
 var resolve = {
     extensions: ['', '.es6.js', '.js', '.min.js'],
