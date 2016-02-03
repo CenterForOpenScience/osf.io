@@ -743,12 +743,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 ('is_deleted', pymongo.ASCENDING),
             ]
         },
-        {
-            'unique': False,
-            'key_or_list': [
-                ('contributors', 1),
-            ]
-        }
     ]
 
     # Node fields that trigger an update to Solr on save
