@@ -6,6 +6,7 @@
 invoke==0.9.0
 Werkzeug==0.10.4
 Flask==0.10.1
+gevent==1.0.2
 Mako==1.0.0
 Markdown==2.4.1
 Pygments==1.6
