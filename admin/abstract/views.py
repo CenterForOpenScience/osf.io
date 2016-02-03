@@ -16,32 +16,28 @@ class GuidFormView(FormView):
         super(GuidFormView, self).__init__()
 
     def get(self, request, *args, **kwargs):
-        self.guid = request.GET.get('guid', None)
+        try:
+            return super(GuidFormView, self).get(request, args, kwargs)
+        except AttributeError:
+            return page_not_found(self.request)
+
+    def get_context_data(self, **kwargs):
+        self.guid = self.request.GET.get('guid', None)
         if self.guid is not None:
             try:
                 guid_object = self.get_guid_object()
             except AttributeError:
-                error_str = u'{} ({}) not found.'.format(
-                    self.object_type, self.guid)
-                return page_not_found(request, AttributeError(error_str))
+                raise
         else:
             guid_object = None
-        form = self.get_form()
-        context = {
-            'guid_object': guid_object,
-            'form': form,
-        }
-        return render(request, self.template_name, context)
+        kwargs.setdefault('view', self)
+        kwargs.setdefault('form', self.get_form())
+        kwargs.setdefault('guid_object', guid_object)
+        return kwargs
 
     def form_valid(self, form):
         self.guid = form.cleaned_data.get('guid').strip()
         return super(GuidFormView, self).form_valid(form)
-
-    def get_initial(self):
-        self.initial = {
-            'guid': self.guid,
-        }
-        return super(GuidFormView, self).get_initial()
 
     @property
     def success_url(self):
