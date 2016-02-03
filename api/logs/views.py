@@ -11,7 +11,7 @@ from api.base.views import JSONAPIBaseView
 
 
 class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """Details about a given log. *Read-only*.
+    """Details about a given Node Log. *Read-only*.
 
      On the front end, logs show record and show actions done on the OSF. The complete list of loggable actions (in the format {identifier}: {description}) is as follows:
 
@@ -73,7 +73,7 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     ---
     * 'node_created': A Node is created (_deprecated_)
     * 'node_forked': A Node is forked (_deprecated_)
-    * 'node_removed': A Node is dele (_deprecated_)
+    * 'node_removed': A Node is deleted (_deprecated_)
 
    ##Log Attributes
 
