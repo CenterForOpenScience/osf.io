@@ -433,6 +433,24 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'TESS': {
+        'name': 'Time-sharing Experiments for the Social Sciences',
+        'info_url': 'http://www.tessexperiments.org',
+        'logo_url': None,
+        'active': False,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': False,
+        'field_names': {
+            'submission1': 'poster',
+            'submission2': 'study',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'studies',
+            'meeting_title_type': 'Studies',
+            'add_submission': 'studies',
+        }
+    },
 }
 
 
