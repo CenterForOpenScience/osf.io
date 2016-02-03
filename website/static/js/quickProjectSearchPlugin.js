@@ -48,9 +48,6 @@ var quickSearchProject = {
 
         // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
-            if (self.pendingNodes()) {
-                m.redraw();
-            }
             if (self.next()) {
                 var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
                 nextPromise.then(function(result){
