@@ -8,7 +8,7 @@ from modularodm.exceptions import NoResultsFound
 from framework.auth.decorators import must_be_logged_in
 
 from website.addons.base.signals import file_updated
-from website.files.models import FileNode, StoredFileNode, TrashedFileNode
+from website.files.models import FileNode, TrashedFileNode
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify
 from website.models import Comment
@@ -24,10 +24,20 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
         source_node = Node.load(source['node']['_id'])
         destination_node = node
 
+        if event_type == 'addon_file_renamed' and (source['provider'] == 'osfstorage' or source['provider'] == 'box'):
+            return
+
+        if event_type == 'addon_file_moved' and (source['provider'] == destination['provider'] == ('osfstorage' or 'box')) \
+                and source_node == destination_node:
+            return
+
         if source.get('path').endswith('/'):
-            if event_type == 'addon_file_moved' or (event_type == 'addon_file_renamed' and not (source['provider'] == 'osfstorage' or source['provider'] == 'box')):
+            if source['provider'] == 'osfstorage':
+                folder = FileNode.load(source.get('path').strip('/'))
+                update_osffolder_contents(folder.children, source_node, destination_node)
+            else:
                 folder_contents = destination.get('children', [destination])
-                update_file_records(folder_contents, source, source_node, destination, destination_node)
+                update_folder_contents(folder_contents, source, source_node, destination, destination_node)
 
         else:
             if source.get('provider') == 'osfstorage':
@@ -39,27 +49,43 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
                     old_file = FileNode.load(source.get('path').strip('/'))
             else:
                 old_file = FileNode.resolve_class(source.get('provider'), FileNode.FILE).get_or_create(source_node, source.get('path'))
-            data = dict(destination)  # convert OrderedDict to dict
-            data['extra'] = dict(destination['extra'])
-            new_path = old_file.stored_object.path.replace(source['path'], destination['path'])
-            old_file.update(revision=None, data=data)
+
+            new_path = ''
+            if destination['provider'] != 'osfstorage':
+                data = dict(destination)  # convert OrderedDict to dict
+                data['extra'] = dict(destination['extra'])
+                old_file.update(revision=None, data=data)
+                new_path = old_file.stored_object.path.replace(source['path'], destination['path'])
 
             has_comments = Comment.find(Q('root_target', 'eq', old_file._id)).count()
             if has_comments and source_node._id != destination_node._id:
                 old_file.node = destination_node
                 update_comment_node(old_file, source_node, destination_node)
-                new_path = new_path.replace(source_node.get_addon(source['provider']).folder, destination_node.get_addon(destination['provider']).folder)
+                if destination['provider'] != 'osfstorage':
+                    new_path = new_path.replace(source_node.get_addon(source['provider']).folder, destination_node.get_addon(destination['provider']).folder)
 
-            old_file.path = new_path
+            if new_path:
+                old_file.path = new_path
             old_file.save()
 
 
-def update_file_records(folder_contents, source, source_node, destination, destination_node):
+def update_osffolder_contents(folder_contents, source_node, destination_node):
+    for item in folder_contents:
+        if item.kind == 'folder':
+            folder = FileNode.load(item.path.strip('/'))
+            update_osffolder_contents(folder.children, source_node, destination_node)
+        else:
+            item.node = destination_node
+            item.save()
+            update_comment_node(item, source_node, destination_node)
+
+
+def update_folder_contents(folder_contents, source, source_node, destination, destination_node):
     for item in folder_contents:
         old_path = item['materialized'].replace(destination['materialized'], source['materialized'])
         if item['kind'] == 'folder':
             subfolder_contents = get_folder_contents(source['provider'], source_node, old_path)
-            update_subfolder_files(subfolder_contents, source, source_node, destination, destination_node)
+            update_subfolder_contents(subfolder_contents, source, source_node, destination, destination_node)
         else:
             try:
                 file_obj = FileNode.find_one(Q('provider', 'eq', source['provider']) &
@@ -80,7 +106,7 @@ def update_file_records(folder_contents, source, source_node, destination, desti
             file_obj.save()
 
 
-def update_subfolder_files(folder_contents, source, source_node, destination, destination_node):
+def update_subfolder_contents(folder_contents, source, source_node, destination, destination_node):
     for file_obj in folder_contents:
         if file_obj.kind == 'file':
             new_path = file_obj.stored_object.path.replace(source['path'], destination['path'])
