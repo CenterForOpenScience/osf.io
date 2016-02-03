@@ -457,9 +457,12 @@ MEETING_DATA = {
 # NOTE: admins field is ignored
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
+        custom_fields = attrs.pop('field_names', {})
+
         conf = Conference(
             endpoint=meeting, **attrs
         )
+        conf.field_names.update(custom_fields)
         try:
             conf.save()
         except ModularOdmException:

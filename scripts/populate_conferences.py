@@ -645,9 +645,13 @@ def populate_conferences():
                 admin_objs.append(user)
             except ModularOdmException:
                 raise RuntimeError('Username {0!r} is not registered.'.format(email))
+
+        custom_fields = attrs.pop('field_names', {})
+
         conf = Conference(
             endpoint=meeting, admins=admin_objs, **attrs
         )
+        conf.field_names.update(custom_fields)
         try:
             conf.save()
         except ModularOdmException:
