@@ -397,14 +397,17 @@ var Dashboard = {
             });
 
             // Add to lists with numbers
+            self.nameFilters = [];
             for (var user in self.users){
                 var u2 = self.users[user];
                 self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : true }}, u2.data.embeds.users.data.attributes.full_name));
             }
+            self.tagFilters = [];
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
                 self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : true }}, tag));
             }
+
         };
 
         // BREADCRUMBS
@@ -841,7 +844,7 @@ var Collections  = {
                                     onkeyup: function (ev){
                                         var val = $(this).val();
                                         ctrl.validateName(val);
-                                        if(ctrl.validation()){
+                                        if(ctrl.isValid()){
                                             if(ev.which === 13){
                                                 ctrl.addCollection();
                                             }
@@ -861,11 +864,11 @@ var Collections  = {
                                 onclick : function(){
                                     ctrl.dismissModal();
                                     ctrl.newCollectionName('');
-                                    ctrl.validation(false);
+                                    ctrl.isValid(false);
 
                                 }
                             }, 'Cancel'),
-                        ctrl.validation() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
+                        ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.addCollection },'Add')
                             : m('button[type="button"].btn.btn-success[disabled]', 'Add')
                     ])
                 }),
@@ -885,7 +888,7 @@ var Collections  = {
                                     onkeyup: function(ev){
                                         var val = $(this).val();
                                         ctrl.validateName(val);
-                                        if(ctrl.validation()) {
+                                        if(ctrl.isValid()) {
                                             if (ev.which === 13) { // if enter is pressed
                                                 ctrl.renameCollection();
                                             }
@@ -901,10 +904,10 @@ var Collections  = {
                     footer : m('.modal-footer', [
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {
                             onclick : function(){
-                                ctrl.validation(false);
+                                ctrl.isValid(false);
                             }
                         },'Cancel'),
-                        ctrl.validation() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.renameCollection },'Rename')
+                        ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.renameCollection },'Rename')
                             : m('button[type="button"].btn.btn-success[disabled]', 'Rename')
                     ])
                 }),
