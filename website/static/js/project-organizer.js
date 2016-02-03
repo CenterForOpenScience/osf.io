@@ -61,7 +61,7 @@ function _poContributors(item) {
         } else if(givenName){
             name = givenName;
         } else {
-            name = 'A Contributor';
+            name = 'A contributor';
         }
         var comma;
         if (index === 0) {
@@ -101,7 +101,7 @@ function _poResolveRows(item) {
     var mobile = window.innerWidth < 767; // true if mobile view
     var tb = this;
     var folderIcons = tb.filterOn ? false : true;
-    var default_columns = [];
+    var defaultColumns = [];
 
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
@@ -109,7 +109,7 @@ function _poResolveRows(item) {
         item.css = '';
     }
 
-    default_columns.push({
+    defaultColumns.push({
         data : 'name',  // Data field name
         folderIcons : folderIcons,
         filter : true,
@@ -118,7 +118,7 @@ function _poResolveRows(item) {
     });
 
     if (!mobile) {
-        default_columns.push({
+        defaultColumns.push({
             data : 'contributors',
             filter : true,
             custom : _poContributors
@@ -128,7 +128,7 @@ function _poResolveRows(item) {
             custom : _poModified
         });
     } else {
-        default_columns.push({
+        defaultColumns.push({
             data : 'name',
             filter : false,
             custom : function (row){
@@ -138,7 +138,7 @@ function _poResolveRows(item) {
         });
     }
 
-    return default_columns;
+    return defaultColumns;
 }
 
 /**
