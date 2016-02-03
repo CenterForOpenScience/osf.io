@@ -545,15 +545,12 @@ class NodeLog(StoredObject):
     def pk(self):
         return self._id
 
-    # @property
-    # def node(self):
-    #     """Return the :class:`Node` associated with this log."""
-    #     return (
-    #         Node.load(self.params.get('node')) or
-    #         Node.load(self.params.get('project'))
-    #     )
-
     def clone_node_log(self, node_id):
+        """
+        When a node is forked or registered, all logs on the node need to be cloned for the fork or registration.
+        :param node_id:
+        :return: cloned log
+        """
         original_log = self.load(self._primary_key)
         node = Node.find(Q('_id', 'eq', node_id))[0]
         log_clone = original_log.clone()
@@ -887,7 +884,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     contributors = fields.ForeignField('user', list=True)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
-    # logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
 
     # Tags for internal use
