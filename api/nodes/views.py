@@ -1734,9 +1734,9 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
 
     ##Relationships
 
-    ###Nodes
+    ###Node
 
-    A list of all Nodes this Log is added to.
+    The node this log belongs to.
 
     ###User
 
