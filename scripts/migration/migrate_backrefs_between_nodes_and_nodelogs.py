@@ -44,6 +44,7 @@ def main(dry=True):
                     errored_logs.append(log)
 
             errored_clones = []
+            logger.warn('Cloning log {} for nodes in backrefs'.format(log._id))
             for node in log._backrefs['logged']['node']['logs'][1:]:
                 clone = log.clone_node_log(node)
                 clone.original_node = original_node
