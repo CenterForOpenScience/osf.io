@@ -578,6 +578,7 @@ class TestConferenceIntegration(ContextTestCase):
         assert_absolute(call_kwargs['profile_url'])
         assert_absolute(call_kwargs['file_url'])
         assert_absolute(call_kwargs['node_url'])
+        assert_in(username, users[0].emails)
 
     @mock.patch('website.conferences.views.send_mail')
     def test_integration_inactive(self, mock_send_mail):
