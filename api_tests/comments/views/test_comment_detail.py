@@ -381,7 +381,7 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_non_contributor_commenter_can_delete_comment(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         comment = CommentFactory(node=project, target=project, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.delete_json_api(url, auth=self.non_contributor.auth)
@@ -679,7 +679,7 @@ class TestFileCommentDetailView(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_public_node_non_contributor_commenter_can_update_file_comment(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
+        project = ProjectFactory(is_public=True)
         test_file = test_utils.create_test_file(project, project.creator)
         comment = CommentFactory(node=project, target=test_file, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
