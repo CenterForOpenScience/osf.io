@@ -747,6 +747,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'unique': False,
             'key_or_list': [
                 ('contributors', 1),
+                ('contributors.$', 1)
             ]
         }
     ]
