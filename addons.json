@@ -26,6 +26,13 @@
         "wiki": "full"
     },
     "addons_commentable": [
-        "osfstorage"
+        "osfstorage",
+        "box",
+        "dropbox",
+        "github",
+        "googledrive",
+        "s3",
+        "dataverse",
+        "figshare"
     ]
 }

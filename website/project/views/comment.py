@@ -3,11 +3,12 @@ import pytz
 from datetime import datetime
 from flask import request
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from framework.auth.decorators import must_be_logged_in
 
 from website.addons.base.signals import file_updated
-from website.files.models import FileNode
+from website.files.models import FileNode, StoredFileNode, TrashedFileNode
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify
 from website.models import Comment
@@ -15,27 +16,97 @@ from website.project.decorators import must_be_contributor_or_public
 from website.project.model import Node
 from website.project.signals import comment_added
 
-
 @file_updated.connect
 def update_comment_root_target_file(self, node, event_type, payload, user=None):
-    if event_type == 'addon_file_moved':
+    if event_type == 'addon_file_moved' or event_type == 'addon_file_renamed':
         source = payload['source']
         destination = payload['destination']
         source_node = Node.load(source['node']['_id'])
         destination_node = node
 
-        if (source.get('provider') == destination.get('provider') == 'osfstorage') and source_node._id != destination_node._id:
-            old_file = FileNode.load(source.get('path').strip('/'))
-            new_file = FileNode.resolve_class(destination.get('provider'), FileNode.FILE).get_or_create(destination_node, destination.get('path'))
+        if source.get('path').endswith('/'):
+            if event_type == 'addon_file_moved' or (event_type == 'addon_file_renamed' and not (source['provider'] == 'osfstorage' or source['provider'] == 'box')):
+                folder_contents = destination['children']
+                update_file_records(folder_contents, source, source_node, destination, destination_node)
 
-            Comment.update(Q('root_target', 'eq', old_file._id), data={'node': destination_node})
+        else:
+            if source.get('provider') == 'osfstorage':
+                try:
+                    old_file = TrashedFileNode.find_one(Q('provider', 'eq', source.get('provider')) &
+                                                        Q('node', 'eq', source_node) &
+                                                        Q('path', 'eq', source.get('path')))
+                except NoResultsFound:
+                    old_file = FileNode.load(source.get('path').strip('/'))
+            else:
+                old_file = FileNode.resolve_class(source.get('provider'), FileNode.FILE).get_or_create(source_node, source.get('path'))
+            data = dict(destination)  # convert OrderedDict to dict
+            data['extra'] = dict(destination['extra'])
+            new_path = old_file.stored_object.path.replace(source['path'], destination['path'])
+            old_file.update(revision=None, data=data)
 
-            # update node record of commented files
-            if old_file._id in source_node.commented_files:
-                destination_node.commented_files[new_file._id] = source_node.commented_files[old_file._id]
-                del source_node.commented_files[old_file._id]
-                source_node.save()
-                destination_node.save()
+            has_comments = Comment.find(Q('root_target', 'eq', old_file._id)).count()
+            if has_comments and source_node._id != destination_node._id:
+                old_file.node = destination_node
+                update_comment_node(old_file, source_node, destination_node)
+                new_path = new_path.replace(source_node.get_addon(source['provider']).folder, destination_node.get_addon(destination['provider']).folder)
+
+            old_file.path = new_path
+            old_file.save()
+
+
+def update_file_records(folder_contents, source, source_node, destination, destination_node):
+    for item in folder_contents:
+        old_path = item['materialized'].replace(destination['materialized'], source['materialized'])
+        if item['kind'] == 'folder':
+            subfolder_contents = get_folder_contents(source['provider'], source_node, old_path)
+            update_subfolder_files(subfolder_contents, source, source_node, destination, destination_node)
+        else:
+            try:
+                file_obj = FileNode.find_one(Q('provider', 'eq', source['provider']) &
+                                             Q('node', 'eq', source_node) &
+                                             Q('materialized_path', 'startswith', old_path))
+            except NoResultsFound:
+                continue  # something screwed up
+
+            new_path = file_obj.stored_object.path.replace(source['path'], destination['path'])
+            if source_node != destination_node:
+                file_obj.node = destination_node
+                update_comment_node(file_obj, source_node, destination_node)
+                new_path = new_path.replace(source_node.get_addon(source['provider']).folder, destination_node.get_addon(destination['provider']).folder)
+            data = dict(item)  # convert OrderedDict to dict
+            data['extra'] = dict(item['extra'])
+            file_obj.update(revision=None, data=data)
+            file_obj.path = new_path
+            file_obj.save()
+
+
+def update_subfolder_files(folder_contents, source, source_node, destination, destination_node):
+    for file_obj in folder_contents:
+        if file_obj.kind == 'file':
+            new_path = file_obj.stored_object.path.replace(source['path'], destination['path'])
+            if source_node != destination_node:
+                file_obj.node = destination_node
+                update_comment_node(file_obj, source_node, destination_node)
+                new_path = new_path.replace(source_node.get_addon(source['provider']).folder, destination_node.get_addon(destination['provider']).folder)
+            if source['provider'] != destination['provider']:
+                file_obj.provider = destination['provider']
+            file_obj.path = new_path
+            file_obj.save()
+
+
+def get_folder_contents(provider, node, materialized_path):
+    return FileNode.find(Q('provider', 'eq', provider) &
+                         Q('node', 'eq', node) &
+                         Q('materialized_path', 'startswith', materialized_path))
+
+
+def update_comment_node(root_target, source_node, destination_node):
+    Comment.update(Q('root_target', 'eq', root_target._id), data={'node': destination_node})
+    destination_node.commented_files[root_target._id] = source_node.commented_files[root_target._id]
+    del source_node.commented_files[root_target._id]
+    source_node.save()
+    destination_node.save()
+
 
 @comment_added.connect
 def send_comment_added_notification(comment, auth):
