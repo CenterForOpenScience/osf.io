@@ -40,3 +40,15 @@ class NodeFormViewTest(AdminTestCase):
         assert_is_instance(res['form'], NodeForm)
         assert_is_instance(res['view'], NodeFormView)
         assert_is_instance(res['guid_object'], dict)
+
+    def test_success_url_implemented(self):
+        node = NodeFactory()
+        guid = node._id
+        request = RequestFactory().get('/fake-path/?guid={}'.format(guid))
+        view = NodeFormView()
+        view = setup_view(view, request)
+        view.get_context_data()
+        assert_equal(view.success_url, u'/admin/nodes/?guid={}'.format(guid))
+
+    def test_get_guid_object_implemented(self):
+        pass
