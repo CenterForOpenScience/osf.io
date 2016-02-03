@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+{% load filters %}
+
+{% block top_includes %}
+  {% load static %}
+  <link type="text/css" rel="stylesheet" href="{% static 'css/prereg.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  {% for draft in drafts %}
+  <div class="row osf-box osx-box-round prereg-draft" style="padding-top: 10px; padding-bottom: 10px;">
+    <div class="col-md-4">
+      <!-- Approval state -->
+      <h4>
+        {% if draft.is_pending_approval %}
+        <span
+           class="prereg-draft-state prereg-draft-state-pending label label-lg label-warning">Pending Approval</span>
+        {% elif draft.is_approved %}
+        <span
+           class="prereg-draft-state prereg-draft-state-approved label label-lg label-success">Approved</span>
+        {% elif draft.is_rejected %}
+        <span
+           class="prereg-draft-state prereg-draft-state-rejected label label-lg label-danger">Rejected</span>
+        {% endif %}
+      </h4>
+      <!-- Info -->
+      <h3> {{ draft.title }} </h3>
+      <span class="text-muted"> Applicant </span> <strong> {{ draft.initiator.full_name }}</strong>
+      submitted on <strong>{{ draft.submitted | date:"N dS" }}</strong> at <strong>{{draft.submitted | date:"g:i a" }}</strong>
+      <br />
+      <a href="mailto:{{ draft.initiator.username }}">{{ draft.initiator.username }} </a>
+      <br />
+      <span>Embargo release:
+          {% if draft.embargo == IMMEDIATE %}
+              <strong>{{ draft.embargo | capfirst }}</strong>
+          {% else %}
+              <strong>{{ draft.embargo | date:"N dS Y" }}</strong> at <strong>{{draft.embargo | date:"g:i a" }}</strong>
+          {%  endif %}
+      </span>
+    </div>
+    <div class="col-md-6 form">
+      <form class="prereg-draft-form" action="{% url 'pre_reg:update_draft' draft.pk %}">
+      <!-- Form -->
+      {% for field in draft.form %}
+      <div class="form-group">
+        {{ field.label_tag }}
+        {{ field }}
+      </div>
+      {% endfor %}
+    </form>
+    </div>
+    <div class="col-md-2">
+      <br />
+      <span class="btn-group form-inline">
+        <fieldset {{ draft.is_pending_approval|yesno:',disabled' }}>
+        <form action="{% url 'pre_reg:approve_draft' draft.pk %}" method="POST" style="display: inline">
+          <input type="hidden" name="page" value="{{ page.number }}">
+          <input type="submit" style="margin-right: 5px"
+                 class="btn btn-warning prereg-draft-approve"
+                 value="Approve"/>
+        </form>
+        <form action="{% url 'pre_reg:reject_draft' draft.pk %}" method="POST" style="display: inline">
+          <input type="hidden" name="page" value="{{ page.number }}">
+          <input type="submit"
+                 class="btn btn-danger prereg-draft-reject"
+                 value="Reject"/>
+        </form>
+        </fieldset>
+      </span>
+      <br />
+      <br />
+      <hr />
+      <br />
+      <span class="btn-group">
+        <a style="margin-right: 5px" target="_blank"
+           href="{% url 'pre_reg:view_draft' draft.pk %}" class="btn btn-default">View Draft</a>
+        <button class="btn btn-primary prereg-draft-save">Save</button>
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<div class="pagination pull-right">
+  <span class="step-links">
+    {% if page.has_previous %}
+    <a class="btn btn-default" href="?page=1">first</a>
+    <a class="btn btn-primary" href="?page={{ page.previous_page_number }}">previous</a>
+    {% endif %}
+
+    <span style="margin: 5px" class="current">
+      Page {{ page.number }} of {{ page.paginator.num_pages }}.
+    </span>
+
+    {% if page.has_next %}
+    <a class="btn btn-primary" href="?page={{ page.next_page_number }}">next</a>
+    <a class="btn btn-default" href="?page={{ page.paginator.num_pages }}">last</a>
+ {% endif %}
+  </span>
+</div>
+{% endblock %}
+{% block bottom_js %}
+  {% render_bundle 'prereg-admin-page' %}
+{% endblock %}

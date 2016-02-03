@@ -5,8 +5,11 @@ from rest_framework import generics
 from rest_framework.mixins import ListModelMixin
 
 from api.users.serializers import UserSerializer
+
 from website import settings
-from .utils import absolute_reverse
+from django.conf import settings as django_settings
+from .utils import absolute_reverse, is_truthy
+
 from .requests import EmbeddedRequest
 
 
@@ -69,8 +72,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
         for embed in embeds:
             embed_field = fields_check.get(embed)
             embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
+
         context.update({
-            'embed': embeds_partials
+            'enable_esi': is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)),
+            'embed': embeds_partials,
         })
         return context
 
@@ -140,6 +145,10 @@ def root(request, format=None):
     You can request multiple resources by filtering on id and placing comma-separated values in your query parameter.
 
         /nodes/?filter[id]=aegu6,me23a
+
+    You can filter with case-sensitivity or case-insensitivity by using `contains` and `icontains`, respectively.
+
+        /nodes/?filter[tags][icontains]=help
 
     ###Embedding
 
@@ -401,6 +410,7 @@ def root(request, format=None):
     }
     if settings.DEV_MODE:
         return_val["links"]["collections"] = absolute_reverse('collections:collection-list')
+        return_val["links"]["registrations"] = absolute_reverse('registrations:registration-list')
 
     return Response(return_val)
 

@@ -12,6 +12,7 @@ from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
 
+from api.base.utils import absolute_reverse
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
@@ -66,7 +67,7 @@ class TrashedFileNode(StoredObject):
         """
         return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
 
-    def restore(self):
+    def restore(self, recursive=True, parent=None):
         """Recreate a StoredFileNode from the data in this object
         Will re-point all guids and finally remove itself
         :raises KeyExistsException:
@@ -74,8 +75,20 @@ class TrashedFileNode(StoredObject):
         data = self.to_storage()
         data.pop('deleted_on')
         data.pop('deleted_by')
+        if parent:
+            data['parent'] = parent._id
+        elif data['parent']:
+            # parent is an AbstractForeignField, so it gets stored as tuple
+            data['parent'] = data['parent'][0]
         restored = FileNode.resolve_class(self.provider, int(self.is_file))(**data)
+        if not restored.parent:
+            raise ValueError('No parent to restore to')
         restored.save()
+
+        if recursive:
+            for child in TrashedFileNode.find(Q('parent', 'eq', self)):
+                child.restore(recursive=recursive, parent=restored)
+
         TrashedFileNode.remove_one(self)
         return restored
 
@@ -147,6 +160,14 @@ class StoredFileNode(StoredObject):
     @property
     def deep_url(self):
         return self.wrapped().deep_url
+
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('files:file-detail', kwargs={'file_id': self._id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
     def wrapped(self):
         """Wrap self in a FileNode subclass
@@ -378,6 +399,9 @@ class FileNode(object):
         """
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
+        if self._id in self.node.commented_files:
+            del self.node.commented_files[self._id]
+        self.node.save()
         StoredFileNode.remove_one(self.stored_object)
         return trashed
 
@@ -387,8 +411,7 @@ class FileNode(object):
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
         self.parent = destination_parent.stored_object
-        self._update_node(save=True)
-        # Trust _update_node to save us
+        self._update_node(save=True)  # Trust _update_node to save us
 
         return self
 
@@ -518,6 +541,7 @@ class File(FileNode):
         headers = {}
         if auth_header:
             headers['Authorization'] = auth_header
+
         resp = requests.get(
             self.generate_waterbutler_url(revision=revision, meta=True, **kwargs),
             headers=headers,

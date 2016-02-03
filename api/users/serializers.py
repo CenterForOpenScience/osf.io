@@ -7,12 +7,12 @@ from api.base.serializers import AllowMissing
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, DoNotRelateWhenAnonymous
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
 from api.base.utils import add_dev_only_items
 
 
-class UserSerializer(DoNotRelateWhenAnonymous, JSONAPISerializer):
+class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'full_name',
         'given_name',
@@ -46,7 +46,13 @@ class UserSerializer(DoNotRelateWhenAnonymous, JSONAPISerializer):
     orcid = DevOnly(AllowMissing(ser.CharField(required=False, source='social.orcid',
                                                          allow_blank=True, help_text='ORCID'), required=False, source='social.orcid'))
     researcherId = DevOnly(AllowMissing(ser.CharField(required=False, source='social.researcherId',
-                                                                allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId'))
+                                                      allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId'))
+    researchGate = DevOnly(AllowMissing(ser.CharField(required=False, source='social.researchGate',
+                                                      allow_blank=True, help_text='ResearchGate Account'), required=False, source='social.researchGate'))
+    academiaInstitution = DevOnly(AllowMissing(ser.CharField(required=False, source='social.academiaInstitution',
+                                                      allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution'))
+    academiaProfileID = DevOnly(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
+                                                      allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID'))
 
     links = LinksField(
         add_dev_only_items({
@@ -58,6 +64,15 @@ class UserSerializer(DoNotRelateWhenAnonymous, JSONAPISerializer):
 
     nodes = RelationshipField(
         related_view='users:user-nodes',
+        related_view_kwargs={'user_id': '<pk>'},
+    )
+
+    registrations = DevOnly(RelationshipField(
+        related_view='users:user-registrations',
+        related_view_kwargs={'user_id': '<pk>'},
+    ))
+    institutions = RelationshipField(
+        related_view='users:user-institutions',
         related_view_kwargs={'user_id': '<pk>'},
     )
 

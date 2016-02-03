@@ -9,4 +9,5 @@ Each submission must pass this review process in which the statistical methods o
 Prereg Challenge administrators and reviewers review the submitted study design and analysis descriptions, and determine whether all question fields are answered with enough detail to fully pre-specify the design and analysis plan, and follow the eligibility requirements. See https://osf.io/h4ga8/ to learn more about the guidelines that reviewers use when evaluating your submitted plans.
 
 Sincerely,
+
 The team at the Center for Open Science

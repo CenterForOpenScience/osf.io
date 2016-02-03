@@ -32,10 +32,17 @@ from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.signals import contributor_added
 from website.project.model import (
-    Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
+    Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo, MetaSchema, DraftRegistration
 )
-from website.util.permissions import CREATOR_PERMISSIONS, ADMIN, READ, WRITE, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from website.util.permissions import (
+    CREATOR_PERMISSIONS,
+    ADMIN,
+    READ,
+    WRITE,
+    DEFAULT_CONTRIBUTOR_PERMISSIONS,
+    expand_permissions,
+)
 from website.util import web_url_for, api_url_for
 from website.addons.wiki.exceptions import (
     NameEmptyError,
@@ -312,7 +319,7 @@ class TestUser(OsfTestCase):
         project.save()
         self.user.merge_user(user2)
         self.user.save()
-
+        project.reload()
         assert_true('admin' in project.permissions[self.user._id])
         assert_true(self.user._id in project.visible_contributor_ids)
         assert_false(project.is_contributor(user2))
@@ -699,7 +706,7 @@ class TestUser(OsfTestCase):
         assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
         projects = [
             node
-            for node in user.node__contributed
+            for node in user.contributed
             if node.category == 'project'
             and not node.is_registration
             and not node.is_deleted
@@ -779,13 +786,14 @@ class TestUser(OsfTestCase):
         project.add_contributor(contributor=user2, auth=self.auth)
         project.save()
 
-        project_keys = set(self.user.node__contributed._to_primary_keys())
-        projects = set(self.user.node__contributed)
+        project_keys = set([node._id for node in self.user.contributed])
+        projects = set(self.user.contributed)
+        user2_project_keys = set([node._id for node in user2.contributed])
 
         assert_equal(self.user.get_projects_in_common(user2, primary_keys=True),
-                     project_keys.intersection(user2.node__contributed._to_primary_keys()))
+                     project_keys.intersection(user2_project_keys))
         assert_equal(self.user.get_projects_in_common(user2, primary_keys=False),
-                     projects.intersection(user2.node__contributed))
+                     projects.intersection(user2.contributed))
 
     def test_n_projects_in_common(self):
         user2 = UserFactory()
@@ -953,7 +961,7 @@ class TestMergingUsers(OsfTestCase):
 
         self._merge_dupe()
 
-        assert_not_in(dashnode, self.master.node__contributed)
+        assert_not_in(dashnode, self.master. contributed)
 
     def test_dupe_is_merged(self):
         self._merge_dupe()
@@ -992,12 +1000,14 @@ class TestMergingUsers(OsfTestCase):
         project.add_contributor(self.dupe)
         project.save()
         self._merge_dupe()
+        project.reload()
         assert_true(project.is_contributor(self.master))
         assert_false(project.is_contributor(self.dupe))
 
     def test_inherits_projects_created_by_dupe(self):
         project = ProjectFactory(creator=self.dupe)
         self._merge_dupe()
+        project.reload()
         assert_equal(project.creator, self.master)
 
     def test_adding_merged_user_as_contributor_adds_master(self):
@@ -1014,6 +1024,7 @@ class TestMergingUsers(OsfTestCase):
         project.add_contributor(contributor=self.dupe)
         project.save()
         self._merge_dupe()  # perform the merge
+        project.reload()
         assert_true(project.is_contributor(self.master))
         assert_false(project.is_contributor(self.dupe))
         assert_equal(len(project.contributors), 2) # creator and master
@@ -1069,14 +1080,6 @@ class TestApiOAuth2Application(OsfTestCase):
 
     def test_new_app_is_not_flagged_as_deleted(self):
         assert_true(self.api_app.is_active)
-
-    def test_user_backref_updates_when_app_created(self):
-        u = UserFactory()
-        api_app = ApiOAuth2ApplicationFactory(owner=u)
-        api_app.save()
-
-        backrefs = u.apioauth2application__created
-        assert_greater(len(backrefs), 0)
 
     def test_cant_edit_creation_date(self):
         with assert_raises(AttributeError):
@@ -2097,6 +2100,88 @@ class TestNodeTraversals(OsfTestCase):
         reg = RegistrationFactory(project=proj)
         reg.delete_registration_tree(save=True)
         assert_false(proj.node__registrations)
+
+    def test_get_active_contributors_recursive_with_duplicate_users(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        grandchild = ProjectFactory(creator=self.user, parent=child)
+
+        contributors = list(parent.get_active_contributors_recursive())
+        assert_equal(len(contributors), 4)
+        user_ids = [user._id for user, node in contributors]
+
+        assert_in(self.user._id, user_ids)
+        assert_in(self.viewer._id, user_ids)
+        assert_in(child_non_admin._id, user_ids)
+
+        node_ids = [node._id for user, node in contributors]
+        assert_in(parent._id, node_ids)
+        assert_in(grandchild._id, node_ids)
+
+    def test_get_active_contributors_recursive_with_no_duplicate_users(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
+
+        contributors = list(parent.get_active_contributors_recursive(unique_users=True))
+        assert_equal(len(contributors), 3)
+        user_ids = [user._id for user, node in contributors]
+
+        assert_in(self.user._id, user_ids)
+        assert_in(self.viewer._id, user_ids)
+        assert_in(child_non_admin._id, user_ids)
+
+        node_ids = [node._id for user, node in contributors]
+        assert_in(parent._id, node_ids)
+
+    def test_get_admin_contributors_recursive_with_duplicate_users(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        child.save()
+
+        grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
+
+        admins = list(parent.get_admin_contributors_recursive())
+        assert_equal(len(admins), 3)
+        admin_ids = [user._id for user, node in admins]
+        assert_in(self.user._id, admin_ids)
+        assert_in(self.viewer._id, admin_ids)
+
+        node_ids = [node._id for user, node in admins]
+        assert_in(parent._id, node_ids)
+
+    def test_get_admin_contributors_recursive_no_duplicates(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        child.save()
+
+        grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
+
+        admins = list(parent.get_admin_contributors_recursive(unique_users=True))
+        assert_equal(len(admins), 2)
+        admin_ids = [user._id for user, node in admins]
+        assert_in(self.user._id, admin_ids)
+        assert_in(self.viewer._id, admin_ids)
 
     def test_get_descendants_recursive(self):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
@@ -4299,133 +4384,6 @@ class TestProjectWithAddons(OsfTestCase):
         p = ProjectWithAddonFactory(addon='s3')
         assert_true(p.get_addon('s3'))
         assert_true(p.creator.get_addon('s3'))
-
-
-class TestComments(OsfTestCase):
-
-    def setUp(self):
-        super(TestComments, self).setUp()
-        self.comment = CommentFactory()
-        self.auth = Auth(user=self.comment.user)
-
-    def test_create(self):
-        comment = Comment.create(
-            auth=self.auth,
-            user=self.comment.user,
-            node=self.comment.node,
-            target=self.comment.target,
-            is_public=True,
-        )
-        assert_equal(comment.user, self.comment.user)
-        assert_equal(comment.node, self.comment.node)
-        assert_equal(comment.target, self.comment.target)
-        assert_equal(len(comment.node.logs), 2)
-        assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
-
-    def test_edit(self):
-        self.comment.edit(
-            auth=self.auth,
-            content='edited'
-        )
-        assert_equal(self.comment.content, 'edited')
-        assert_true(self.comment.modified)
-        assert_equal(len(self.comment.node.logs), 2)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
-
-    def test_delete(self):
-        self.comment.delete(auth=self.auth)
-        assert_equal(self.comment.is_deleted, True)
-        assert_equal(len(self.comment.node.logs), 2)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
-
-    def test_undelete(self):
-        self.comment.delete(auth=self.auth)
-        self.comment.undelete(auth=self.auth)
-        assert_equal(self.comment.is_deleted, False)
-        assert_equal(len(self.comment.node.logs), 3)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
-
-    def test_report_abuse(self):
-        user = UserFactory()
-        self.comment.report_abuse(user, category='spam', text='ads', save=True)
-        assert_in(user._id, self.comment.reports)
-        assert_equal(
-            self.comment.reports[user._id],
-            {'category': 'spam', 'text': 'ads'}
-        )
-
-    def test_report_abuse_own_comment(self):
-        with assert_raises(ValueError):
-            self.comment.report_abuse(
-                self.comment.user, category='spam', text='ads', save=True
-            )
-
-    def test_unreport_abuse(self):
-        user = UserFactory()
-        self.comment.report_abuse(user, category='spam', text='ads', save=True)
-        self.comment.unreport_abuse(user, save=True)
-        assert_not_in(user._id, self.comment.reports)
-
-    def test_unreport_abuse_not_reporter(self):
-        reporter = UserFactory()
-        non_reporter = UserFactory()
-        self.comment.report_abuse(reporter, category='spam', text='ads', save=True)
-        with assert_raises(ValueError):
-            self.comment.unreport_abuse(non_reporter, save=True)
-        assert_in(reporter._id, self.comment.reports)
-
-    def test_validate_reports_bad_key(self):
-        self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
-        with assert_raises(ValidationValueError):
-            self.comment.save()
-
-    def test_validate_reports_bad_type(self):
-        self.comment.reports[self.comment.user._id] = 'not a dict'
-        with assert_raises(ValidationTypeError):
-            self.comment.save()
-
-    def test_validate_reports_bad_value(self):
-        self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
-        with assert_raises(ValidationValueError):
-            self.comment.save()
-
-    def test_read_permission_contributor_can_comment(self):
-        project = ProjectFactory()
-        user = UserFactory()
-        project.set_privacy('private')
-        project.add_contributor(user, 'read')
-        project.save()
-
-        assert_true(project.can_comment(Auth(user=user)))
-
-    def test_get_content_for_not_deleted_comment(self):
-        project = ProjectFactory(is_public=True)
-        comment = CommentFactory(node=project)
-        content = comment.get_content(auth=Auth(comment.user))
-        assert_equal(content, comment.content)
-
-    def test_get_content_returns_deleted_content_to_commenter(self):
-        comment = CommentFactory(is_deleted=True)
-        content = comment.get_content(auth=Auth(comment.user))
-        assert_equal(content, comment.content)
-
-    def test_get_content_does_not_return_deleted_content_to_non_commenter(self):
-        user = AuthUserFactory()
-        comment = CommentFactory(is_deleted=True)
-        content = comment.get_content(auth=Auth(user))
-        assert_is_none(content)
-
-    def test_get_content_public_project_does_not_return_deleted_content_to_logged_out_user(self):
-        project = ProjectFactory(is_public=True)
-        comment = CommentFactory(node=project, is_deleted=True)
-        content = comment.get_content(auth=None)
-        assert_is_none(content)
-
-    def test_get_content_private_project_throws_permissions_error_for_logged_out_users(self):
-        project = ProjectFactory(is_public=False)
-        comment = CommentFactory(node=project, is_deleted=True)
-        with assert_raises(PermissionsError):
-            comment.get_content(auth=None)
 
 
 class TestPrivateLink(OsfTestCase):
