@@ -706,9 +706,15 @@ var Collections  = {
                             url : collection.data.node.links.self + 'node_links/', //collection.data.node.relationships.linked_nodes.links.related.href,
                             config : xhrconfig,
                             data : dataArray[index]
-                        }).then(doNext, function(){
+                        }).then(doNext, function(result){
+                            var details = '';
+                            if (result.errors.length > 0) {
+                                result.errors.forEach(function(error){
+                                    details += error.detail;
+                                });
+                            }
                             var name = args.selected()[index] ? args.selected()[index].data.name : 'Project ';
-                            $osf.growl('"' + name + '" could not be added to Collection.', 'Please try again');
+                            $osf.growl('"' + name + '" could not be added to Collection.', details);
                             doNext();
                         }); // In case of success or error. It doesn't look like mithril has a general .done method
                     }
