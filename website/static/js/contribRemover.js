@@ -12,6 +12,17 @@ var oop = require('./oop');
 var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
 
+function removeNodesContributors(contributor, nodes) {
+
+    var removeUrl = window.contextVars.node.urls.api + 'contributor/remove/';
+    return $osf.postJSON(
+        removeUrl, {
+            contributorID: contributor,
+            nodeIDs: nodes
+        });
+}
+
+
 var RemoveContributorViewModel = oop.extend(Paginator, {
     constructor: function(title, nodeId, userName, userId, contribShouter, pageChangedShouter) {
         this.super.constructor.call(this);
@@ -48,7 +59,8 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         });
         self.userName = ko.observable(userName);
         self.deleteAll = ko.observable(false);
-        self.nodesOriginal = {};
+        var nodesOriginal = {};
+        self.nodesOriginal = ko.observable();
         self.loadingSubmit = ko.observable(false);
 
         /*
@@ -59,10 +71,11 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
          */
         self.canRemoveNodes = ko.computed(function() {
             var canRemoveNodes = {};
+            var nodesOriginalLocal = ko.toJS(self.nodesOriginal());
             if (self.contributorToRemove()) {
                 var contributorId = self.contributorToRemove().id;
-                for (var key in self.nodesOriginal) {
-                    var node = self.nodesOriginal[key];
+                for (var key in nodesOriginalLocal) {
+                    var node = nodesOriginalLocal[key];
                     var contributorOnNode = false;
                     //User cannot modify the node without admin permissions.
                     if (node.isAdmin || self.removeSelf) {
@@ -144,9 +157,9 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.titlesToRemove = ko.computed(function() {
             var titlesToRemove = [];
-            for (var key in self.nodesOriginal) {
-                if (self.nodesOriginal.hasOwnProperty(key) && self.canRemoveNodes()[key]) {
-                    var node = self.nodesOriginal[key];
+            for (var key in self.nodesOriginal()) {
+                if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveNodes()[key]) {
+                    var node = self.nodesOriginal()[key];
                     var contributors = node.contributors;
                     for (var i = 0; i < contributors.length; i++) {
                         if (contributors[i].id === self.contributorToRemove().id) {
@@ -161,9 +174,9 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.titlesToKeep = ko.computed(function() {
             var titlesToKeep = [];
-            for (var key in self.nodesOriginal) {
-                if (self.nodesOriginal.hasOwnProperty(key) && !self.canRemoveNodes()[key]) {
-                    var node = self.nodesOriginal[key];
+            for (var key in self.nodesOriginal()) {
+                if (self.nodesOriginal().hasOwnProperty(key) && !self.canRemoveNodes()[key]) {
+                    var node = self.nodesOriginal()[key];
                     var contributors = node.contributors;
                     for (var i = 0; i < contributors.length; i++) {
                         if (contributors[i].id === self.contributorToRemove().id) {
@@ -178,9 +191,9 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.nodeIDsToRemove = ko.computed(function() {
             var nodeIDsToRemove = [];
-            for (var key in self.nodesOriginal) {
-                if (self.nodesOriginal.hasOwnProperty(key) && self.canRemoveNodes()[key]) {
-                    var node = self.nodesOriginal[key];
+            for (var key in self.nodesOriginal()) {
+                if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveNodes()[key]) {
+                    var node = self.nodesOriginal()[key];
                     var contributors = node.contributors;
                     for (var i = 0; i < contributors.length; i++) {
                         if (contributors[i].id === self.contributorToRemove().id) {
@@ -198,7 +211,8 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             type: 'GET',
             dataType: 'json'
         }).done(function(response) {
-            self.nodesOriginal = $osf.getNodesOriginal(response[0], self.nodesOriginal);
+            nodesOriginal = $osf.getNodesOriginal(response[0], nodesOriginal);
+            self.nodesOriginal(nodesOriginal);
         }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve projects and components');
             Raven.captureMessage('Unable to retrieve projects and components', {
@@ -216,26 +230,19 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
     },
     submit: function() {
         var self = this;
-        var removeUrl = window.contextVars.node.urls.api + 'contributor/remove/';
-        $osf.postJSON(
-            removeUrl, {
-                contributorID: self.contributorToRemove().id,
-                nodeIDs: self.nodeIDsToRemove()
-            }
-        ).done(function(response) {
-            // TODO: Don't reload the page here; instead use code below
+        var response = removeNodesContributors(self.contributorToRemove().id, self.nodeIDsToRemove()).then(function () {
             if (response.redirectUrl) {
                 window.location.href = response.redirectUrl;
             } else {
                 window.location.reload();
-            }
-        }).fail(function (xhr, status, error) {
+            }        }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to delete Contributor');
             Raven.captureMessage('Could not DELETE Contributor.' + error, {
-                url: removeUrl, status: status, error: error
+                url: window.contextVars.node.urls.api + 'contributor/remove/', status: status, error: error
             });
+            self.clear();
+            window.location.reload();
         });
-
     },
     deleteAllNodes: function() {
         var self = this;
