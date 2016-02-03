@@ -734,14 +734,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     #: Whether this is a pointer or not
     primary = True
 
-    __indices__ = [{
-        'unique': False,
-        'key_or_list': [
-            ('tags.$', pymongo.ASCENDING),
-            ('is_public', pymongo.ASCENDING),
-            ('is_deleted', pymongo.ASCENDING),
-        ]
-    }]
+    __indices__ = [
+        {
+            'unique': False,
+            'key_or_list': [
+                ('tags.$', pymongo.ASCENDING),
+                ('is_public', pymongo.ASCENDING),
+                ('is_deleted', pymongo.ASCENDING),
+            ]
+        },
+        {
+            'unique': False,
+            'key_or_list': [
+                ('contributors', 1),
+            ]
+        }
+    ]
 
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
