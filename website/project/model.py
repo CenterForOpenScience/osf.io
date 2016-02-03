@@ -530,7 +530,9 @@ class NodeLog(StoredObject):
             return self.tz_date.isoformat()
 
     def can_view(self, node, auth):
-        node_to_check = self.node
+        node_to_check = node
+        if self.node != node_to_check:
+            return False
         if node_to_check:
             return node_to_check.can_view(auth)
         return False
