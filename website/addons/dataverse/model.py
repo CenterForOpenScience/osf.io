@@ -13,9 +13,26 @@ from website.addons.base import StorageAddonBase
 
 from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse.serializer import DataverseSerializer
-from website.addons.dataverse.provider import DataverseProvider
 from website.addons.dataverse.utils import DataverseNodeLogger
 
+
+class DataverseProvider(object):
+    """An alternative to `ExternalProvider` not tied to OAuth"""
+
+    name = 'Dataverse'
+    short_name = 'dataverse'
+    serializer = DataverseSerializer
+
+    def __init__(self, account=None):
+        super(DataverseProvider, self).__init__()
+        # provide an unauthenticated session by default
+        self.account = account
+
+    def __repr__(self):
+        return '<{name}: {status}>'.format(
+            name=self.__class__.__name__,
+            status=self.account.provider_id if self.account else 'anonymous'
+        )
 
 class AddonDataverseUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = DataverseProvider
@@ -38,8 +55,8 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def dataset_id(self):
-        if self._dataset_id is None:
-            connection = connect_from_settings_or_401(self.user_settings)
+        if self._dataset_id is None and (self.dataverse_alias and self.dataset_doi):
+            connection = connect_from_settings_or_401(self)
             dataverse = connection.get_dataverse(self.dataverse_alias)
             dataset = dataverse.get_dataset_by_doi(self.dataset_doi)
             self._dataset_id = dataset.id
@@ -69,9 +86,30 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             auth=auth
         )
 
+    def set_folder(self, dataverse, dataset, auth=None):
+        self.dataverse_alias = dataverse.alias
+        self.dataverse = dataverse.title
+
+        self.dataset_doi = dataset.doi
+        self._dataset_id = dataset.id
+        self.dataset = dataset.title
+
+        self.save()
+
+        if auth:
+            self.owner.add_log(
+                action='dataverse_dataset_linked',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._primary_key,
+                    'dataset': dataset.title,
+                },
+                auth=auth,
+            )
+
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
         try:
-            super(AddonOAuthNodeSettingsBase, self)._get_fileobj_child_metadata()
+            return super(AddonDataverseNodeSettings, self)._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
         except HTTPError as e:
             # The Dataverse API returns a 404 if the dataset has no published files
             if e.code == http.NOT_FOUND and version == 'latest-published':
@@ -109,6 +147,8 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return {'token': self.external_account.oauth_secret}
 
     def serialize_waterbutler_settings(self):
+        if not self.folder_id:
+            raise exceptions.AddonError("Dataverse is not configured")
         return {
             'host': self.external_account.oauth_key,
             'doi': self.dataset_doi,
@@ -138,6 +178,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 
-    def on_delete(self, node, user):
-        self.deauthorize(Auth(user=user), add_log=True)
+    def on_delete(self):
+        self.deauthorize(add_log=False)
         self.save()

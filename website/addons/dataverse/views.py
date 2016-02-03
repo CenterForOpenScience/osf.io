@@ -13,11 +13,15 @@ from framework.exceptions import HTTPError
 
 from website.addons.base import generic_views
 from website.addons.dataverse import client
-from website.addons.dataverse.provider import DataverseProvider
+from website.addons.dataverse.model import DataverseProvider
 from website.addons.dataverse.settings import DEFAULT_HOSTS
 from website.addons.dataverse.serializer import DataverseSerializer
 from website.oauth.models import ExternalAccount
-from website.project import decorators
+from website.project.decorators import (
+    must_have_addon, must_be_addon_authorizer,
+    must_have_permission, must_not_be_registration,
+    must_be_contributor_or_public
+)
 from website.util import rubeus, api_url_for
 from website.util.sanitize import assert_clean
 
@@ -115,9 +119,10 @@ def dataverse_add_user_account(auth, **kwargs):
 
     return {}
 
-@decorators.must_have_permission('write')
-@decorators.must_have_addon('dataverse', 'user')
-@decorators.must_have_addon('dataverse', 'node')
+@must_have_permission('write')
+@must_have_addon(SHORT_NAME, 'user')
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_addon_authorizer(SHORT_NAME)
 def dataverse_set_config(node_addon, auth, **kwargs):
     """Saves selected Dataverse and dataset to node settings"""
 
@@ -143,32 +148,14 @@ def dataverse_set_config(node_addon, auth, **kwargs):
     dataverse = client.get_dataverse(connection, alias)
     dataset = client.get_dataset(dataverse, doi)
 
-    node_addon.dataverse_alias = dataverse.alias
-    node_addon.dataverse = dataverse.title
-
-    node_addon.dataset_doi = dataset.doi
-    node_addon.dataset_id = dataset.id
-    node_addon.dataset = dataset.title
-
-    node = node_addon.owner
-    node.add_log(
-        action='dataverse_dataset_linked',
-        params={
-            'project': node.parent_id,
-            'node': node._primary_key,
-            'dataset': dataset.title,
-        },
-        auth=auth,
-    )
-
-    node_addon.save()
+    node_addon.set_folder(dataverse, dataset, auth)
 
     return {'dataverse': dataverse.title, 'dataset': dataset.title}, http.OK
 
 
-@decorators.must_have_permission('write')
-@decorators.must_have_addon(SHORT_NAME, 'user')
-@decorators.must_have_addon(SHORT_NAME, 'node')
+@must_have_permission('write')
+@must_have_addon(SHORT_NAME, 'user')
+@must_have_addon(SHORT_NAME, 'node')
 def dataverse_get_datasets(node_addon, **kwargs):
     """Get list of datasets from provided Dataverse alias"""
     alias = request.json.get('alias')
@@ -185,9 +172,10 @@ def dataverse_get_datasets(node_addon, **kwargs):
 ## Crud ##
 
 
-@decorators.must_have_permission('write')
-@decorators.must_not_be_registration
-@decorators.must_have_addon('dataverse', 'node')
+@must_have_permission('write')
+@must_not_be_registration
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_addon_authorizer(SHORT_NAME)
 def dataverse_publish_dataset(node_addon, auth, **kwargs):
     node = node_addon.owner
     publish_both = request.json.get('publish_both', False)
@@ -284,15 +272,15 @@ def _dataverse_root_folder(node_addon, auth, **kwargs):
     )]
 
 
-@decorators.must_be_contributor_or_public
-@decorators.must_have_addon('dataverse', 'node')
+@must_be_contributor_or_public
+@must_have_addon(SHORT_NAME, 'node')
 def dataverse_root_folder(node_addon, auth, **kwargs):
     return _dataverse_root_folder(node_addon, auth=auth)
 
 ## Widget ##
 
-@decorators.must_be_contributor_or_public
-@decorators.must_have_addon('dataverse', 'node')
+@must_be_contributor_or_public
+@must_have_addon(SHORT_NAME, 'node')
 def dataverse_widget(node_addon, **kwargs):
 
     node = node_addon.owner
@@ -307,8 +295,8 @@ def dataverse_widget(node_addon, **kwargs):
     return ret, http.OK
 
 
-@decorators.must_be_contributor_or_public
-@decorators.must_have_addon('dataverse', 'node')
+@must_be_contributor_or_public
+@must_have_addon(SHORT_NAME, 'node')
 def dataverse_get_widget_contents(node_addon, **kwargs):
 
     data = {
