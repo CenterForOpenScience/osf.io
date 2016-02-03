@@ -57,5 +57,4 @@ pyjwt==1.4.0
 pyjwe==0.1.6
 
 # Admin requirements
-Django==1.9
 django-webpack-loader==0.2.3

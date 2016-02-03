@@ -464,6 +464,11 @@ def test_api():
     test_module(module="api_tests/")
 
 @task
+def test_admin():
+    """Run the Admin test suite."""
+    test_module(module="admin_tests/")
+
+@task
 def test_varnish():
     """Run the Varnish test suite."""
     proc = apiserver(wait=False)
@@ -494,6 +499,7 @@ def test(all=False, syntax=False):
 
     test_osf()
     test_api()
+    test_admin()
 
     if all:
         test_addons()
@@ -515,6 +521,7 @@ def test_travis_else():
     """
     test_addons()
     test_api()
+    test_admin()
     karma(single=True, browsers='PhantomJS')
 
 @task

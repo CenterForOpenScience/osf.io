@@ -1,5 +1,4 @@
 from django.views.generic import FormView
-from django.shortcuts import render
 from django.views.defaults import page_not_found
 
 
