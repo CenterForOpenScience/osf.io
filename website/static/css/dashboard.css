@@ -136,11 +136,6 @@
     padding-top: 10px;
     border-bottom: 1px solid #eee;
 }
-.db-info-remove {
-    background: #FFF;
-    text-align: right;
-    font-size: 13px;
-}
 
 .db-info-toggle {
     display: block;

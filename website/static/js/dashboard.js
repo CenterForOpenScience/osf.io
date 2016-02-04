@@ -279,6 +279,8 @@ var Dashboard = {
                 data : data
             }).then(function _removeProjectFromCollectionsSuccess(result){
                 console.log(result);
+                self.currentLink = null; // To bypass the check when updating file list
+                self.updateFilter(self.activeFilter());
             }, function _removeProjectFromCollectionsFail(result){
                 var message = 'Some projects';
                 if(data.data.length === 1) {
@@ -1160,7 +1162,6 @@ var Information = {
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
             template = m('.p-sm', [
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.db-info-remove.p-xs.text-danger', { onclick : args.removeProjectFromCollections }, 'Remove from collection') : '',
                 m('h3', m('a', { href : item.links.html}, item.attributes.title)),
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
@@ -1195,19 +1196,23 @@ var Information = {
                             m.component(ActivityLogs, args)
                         ])
                     ])
-                ])
+                ]),
+                filter.type === 'collection' && !filter.data.systemCollection ? m('.btn.btn-default.btn-sm.btn.p-xs.text-danger', { onclick : args.removeProjectFromCollections }, 'Remove from collection') : '',
             ]);
         }
         if (args.selected().length > 1) {
-            template = m('.p-sm', [ '', args.selected().map(function(item){
-                return m('.db-info-multi', [
-                    m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
-                    m('p.db-info-meta.text-muted', [
-                        m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
-                        m('span', ', Last Modified on ' + item.data.date.local)
-                    ]),
-                ]);
-            })]);
+            template = m('.p-sm', [
+                filter.type === 'collection' && !filter.data.systemCollection ? m('.btn.btn-default.btn-sm.p-xs.text-danger', { onclick : args.removeProjectFromCollections }, 'Remove selected from collection') : '',
+                args.selected().map(function(item){
+                    return m('.db-info-multi', [
+                        m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
+                        m('p.db-info-meta.text-muted', [
+                            m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
+                            m('span', ', Last Modified on ' + item.data.date.local)
+                        ]),
+                    ]);
+                })
+            ]);
         }
         return m('.db-information', template);
     }
