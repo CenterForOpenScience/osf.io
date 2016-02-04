@@ -581,6 +581,37 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(len(new_project.nodes), len(template_from.nodes))
         assert_equal(new_project.nodes[0].title, template_component.title)
 
+    def test_404_on_create_from_template_of_nonexistent_project(self):
+        template_from_id = 'thisisnotavalidguid'
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': 'No title',
+                        'category': 'project',
+                        'template_from': template_from_id,
+                    }
+            }
+        }
+        res = self.app.post_json_api(self.url, templated_project_data, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_403_on_create_from_template_of_unauthorized_project(self):
+        template_from = ProjectFactory(creator=self.user_two, is_public=True)
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': 'No permission',
+                        'category': 'project',
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+        res = self.app.post_json_api(self.url, templated_project_data, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_creates_project_creates_project_and_sanitizes_html(self):
         title = '<em>Cool</em> <strong>Project</strong>'
