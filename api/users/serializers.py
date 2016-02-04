@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from modularodm.exceptions import ValidationValueError
 
 from api.base.exceptions import InvalidModelValueError
-from api.base.serializers import AllowMissing
+from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer
 from website.models import User
 
 from api.base.serializers import (
@@ -108,7 +108,8 @@ class UserDetailSerializer(UserSerializer):
     id = IDField(source='_id', required=True)
 
 
-class RelatedInstitution(ser.Serializer):
+class RelatedInstitution(JSONAPIRelationshipSerializer):
+    id = ser.CharField(required=False, allow_null=True, source='_id')
     class Meta:
         type_ = 'institutions'
 
@@ -120,12 +121,10 @@ class UserInstitutionsRelationshipSerializer(ser.Serializer):
                         'html': 'get_related_url'})
 
     def get_self_url(self, obj):
-        #return obj['self'].linked_nodes_self_url
-        return 'poo'
+        return obj['self'].institutions_self_url
 
     def get_related_url(self, obj):
-        #return obj['self'].linked_nodes_related_url
-        return 'poo'
+        return obj['self'].institutions_related_url
 
     class Meta:
         type_ = 'institutions'

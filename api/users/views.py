@@ -20,7 +20,7 @@ from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 
 from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
-from .permissions import ReadOnlyOrCurrentUser
+from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
 
 
 class UserMixin(object):
@@ -432,7 +432,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ReadOnlyOrCurrentUser
+        ReadOnlyOrCurrentUserRelationship
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
@@ -445,7 +445,13 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     view_name = 'user-institutions-relationship'
 
     def get_object(self):
-        return None
+        user = self.get_user(check_permissions=False)
+        obj = {
+            'data': user.affiliated_institutions,
+            'self': user
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     def perform_destroy(self, instance):
         pass
