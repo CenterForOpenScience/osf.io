@@ -75,4 +75,3 @@ class GuidFormView(FormView):
     @property
     def success_url(self):
         raise NotImplementedError
-
