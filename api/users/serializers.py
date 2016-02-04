@@ -70,6 +70,8 @@ class UserSerializer(JSONAPISerializer):
     institutions = RelationshipField(
         related_view='users:user-institutions',
         related_view_kwargs={'user_id': '<pk>'},
+        self_view='users:user-institutions-relationship',
+        self_view_kwargs={'user_id': '<pk>'}
     )
 
     class Meta:
@@ -104,3 +106,26 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class RelatedInstitution(ser.Serializer):
+    class Meta:
+        type_ = 'institutions'
+
+
+class UserInstitutionsRelationshipSerializer(ser.Serializer):
+
+    data = ser.ListField(child=RelatedInstitution())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        #return obj['self'].linked_nodes_self_url
+        return 'poo'
+
+    def get_related_url(self, obj):
+        #return obj['self'].linked_nodes_related_url
+        return 'poo'
+
+    class Meta:
+        type_ = 'institutions'

@@ -14,11 +14,12 @@ from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
+from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.nodes.serializers import NodeSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 
-from .serializers import UserSerializer, UserDetailSerializer
+from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
 from .permissions import ReadOnlyOrCurrentUser
 
 
@@ -425,3 +426,27 @@ class UserRegistrations(UserNodes):
             Q('is_deleted', 'ne', True) &
             Q('is_registration', 'eq', True)
         )
+
+
+class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUser
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserInstitutionsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'users'
+    view_name = 'user-institutions-relationship'
+
+    def get_object(self):
+        return None
+
+    def perform_destroy(self, instance):
+        pass
+
