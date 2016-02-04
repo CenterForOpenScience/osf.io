@@ -353,8 +353,8 @@ def create_waterbutler_log(payload, **kwargs):
                     action=payload['action'],
                     source_node=source_node,
                     destination_node=destination_node,
-                    source_path=payload['source']['path'],
-                    destination_path=payload['source']['path'],
+                    source_path=payload['source']['materialized'],
+                    destination_path=payload['source']['materialized'],
                     source_addon=payload['source']['addon'],
                     destination_addon=payload['destination']['addon'],
                 )
