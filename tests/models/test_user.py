@@ -303,6 +303,7 @@ class TestUserMerging(base.OsfTestCase):
             'date_confirmed',
             'date_disabled',
             'date_last_login',
+            'date_last_request',
             'date_registered',
             'family_name',
             'fullname',
