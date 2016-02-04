@@ -1,5 +1,7 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from rest_framework import status
+from rest_framework.response import Response
 
 from modularodm import Q
 
@@ -14,8 +16,9 @@ from api.base.utils import get_object_or_error
 from api.nodes.serializers import NodeSerializer
 from api.users.serializers import UserSerializer
 
-from .parsers import InstitutionAuthParser
-from .serializers import InstitutionSerializer, InstitutionAuthSerializer
+from .authentication import InstitutionAuthentication
+from .serializers import InstitutionSerializer
+
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -186,14 +189,11 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
         query = self.get_query_from_request()
         return User.find(query)
 
+
 class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.NULL]
-    parser_classes = (InstitutionAuthParser,)
-    serializer_class = InstitutionAuthSerializer
+    authentication_classes = (InstitutionAuthentication, )
     view_category = 'institutions'
     view_name = 'institution-auth'
+
+    def post(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_204_NO_CONTENT)
