@@ -562,7 +562,7 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
         'poster': False,
-        'talk': False,
+        'talk': True,
         'field_names': {
             'submission1': 'poster',
             'submission2': 'study',
