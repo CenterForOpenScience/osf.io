@@ -17,18 +17,18 @@ var LogWrap = {
         var self = this;
         self.userId = args.userId;
         self.activityLogs = m.prop();
-        self.eventFilter = false;
+        self.eventFilter = false; //holds the currently selected action category filter to include in request
         self.dateEnd = moment.utc();
         self.dateBegin = moment.utc();
         self.today = moment.utc();
         self.sixMonthsAgo = moment.utc().subtract(6, 'months');
-        self.page = 1;
-        self.cache = [];
-        self.loading = false;
-        self.div = 8.64e+7;
+        self.page = 1; //page currently shown on log container, related to queried page by ` page : ((self.page/2) | 0) + 1 `
+        self.cache = []; //to store already requested with the current parameters
+        self.loading = false; //keeps track of whether the log container should show the loading icon
+        self.div = 8.64e+7; //milliseconds in day, for conversion with the slider bar
         self.canvasHeight = 40;
-        self.totalEvents = 0;
-        self.eventNumbers = {};
+        self.totalEvents = 0; //initialization of count of all logs returned (total)
+        self.eventNumbers = {}; //initialization of dict for aggregate counts (number of 'file' events, etc)
 
         self.getLogs = function(init, reset, update) {
             if (!(init || reset || update)  && self.cache[self.page - 1]){
@@ -57,6 +57,7 @@ var LogWrap = {
             }
             var url = $osf.apiV2Url('users/me/logs/', { query : query });
             var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: (update ? true : false)});
+            debugger;
             promise.then(function(result){
                 self.loading = false;
                 result.data.map(function(log){
@@ -69,8 +70,8 @@ var LogWrap = {
                     self.firstDay = ((firstDay >= self.sixMonthsAgo) ? firstDay : self.sixMonthsAgo).startOf('month');
                     var dateBegin = moment.utc(result.data[0].attributes.date).subtract(1, 'months');
                     self.dateBegin = ((dateBegin > self.firstDay) ? dateBegin : self.firstDay).startOf('day');
-                    if ((self.today - self.firstDay)/2629746000 < 1){
-                        self.div = self.div/4;
+                    if ((self.today - self.firstDay)/2629746000 < 1){ //check if the slider will be less than a month
+                        self.div = self.div/4; //then set division to be for a 1/4 day instead of a day
                         self.formatFloat = 'Do h a';
                         self.steps = 14;
                         self.formatPip = 'MMM Do';
