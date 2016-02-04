@@ -454,5 +454,11 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         return obj
 
     def perform_destroy(self, instance):
-        pass
+        data = self.request.data['data']
+        user = self.request.user
+        current_institutions = {inst._id for inst in user.affiliated_institutions}
+        for val in data:
+            if val['id'] in current_institutions:
+                user.remove_inst(val['id'])
+
 

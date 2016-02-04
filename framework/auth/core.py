@@ -1366,7 +1366,15 @@ class User(GuidStoredObject, AddonModelMixin):
             return True
         return False
 
+    def remove_inst(self, inst_id):
+        inst = Institution.load(inst_id)
+        if inst:
+            self.affiliated_institutions.remove(inst)
+            return True
+        return False
+
     affiliated_institutions = fields.ForeignField('institution', list=True)
+
 
     def get_node_comment_timestamps(self, node, page, file_id=None):
         """ Returns the timestamp for when comments were last viewed on a node or
