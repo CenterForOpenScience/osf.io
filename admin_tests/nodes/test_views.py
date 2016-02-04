@@ -6,7 +6,7 @@ from tests.factories import NodeFactory
 from admin_tests.utilities import setup_view
 
 from admin.nodes.views import NodeFormView
-from admin.nodes.forms import NodeForm
+from admin.base.forms import GuidForm
 
 
 class NodeFormViewTest(AdminTestCase):
@@ -26,7 +26,7 @@ class NodeFormViewTest(AdminTestCase):
         view = NodeFormView()
         view = setup_view(view, request)
         res = view.get_context_data()
-        assert_is_instance(res['form'], NodeForm)
+        assert_is_instance(res['form'], GuidForm)
         assert_is_instance(res['view'], NodeFormView)
         assert_is_none(res['guid_object'])
 
@@ -37,7 +37,7 @@ class NodeFormViewTest(AdminTestCase):
         view = NodeFormView()
         view = setup_view(view, request)
         res = view.get_context_data()
-        assert_is_instance(res['form'], NodeForm)
+        assert_is_instance(res['form'], GuidForm)
         assert_is_instance(res['view'], NodeFormView)
         assert_is_instance(res['guid_object'], dict)
 
@@ -49,6 +49,3 @@ class NodeFormViewTest(AdminTestCase):
         view = setup_view(view, request)
         view.get_context_data()
         assert_equal(view.success_url, u'/admin/nodes/?guid={}'.format(guid))
-
-    def test_get_guid_object_implemented(self):
-        pass

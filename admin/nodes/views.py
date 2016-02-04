@@ -1,14 +1,11 @@
-from django.core.urlresolvers import reverse
-
 from website.project.model import Node
 
-from admin.abstract.views import GuidFormView
+from admin.base.views import GuidFormView
+from admin.nodes.templatetags.node_extras import reverse_node
 from .serializers import serialize_node
-from .forms import NodeForm
 
 
 class NodeFormView(GuidFormView):
-    form_class = NodeForm
     template_name = 'nodes/node.html'
     object_type = 'node'
 
@@ -17,4 +14,4 @@ class NodeFormView(GuidFormView):
 
     @property
     def success_url(self):
-        return reverse('nodes:node') + '?guid={}'.format(self.guid)
+        return reverse_node(self.guid)

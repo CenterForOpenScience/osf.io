@@ -1,14 +1,11 @@
-from django.core.urlresolvers import reverse
-
 from website.project.model import User
 
-from admin.abstract.views import GuidFormView
+from admin.base.views import GuidFormView
+from admin.users.templatetags.user_extras import reverse_user
 from .serializers import serialize_user
-from .forms import UserForm
 
 
 class UserFormView(GuidFormView):
-    form_class = UserForm
     template_name = 'users/user.html'
     object_type = 'user'
 
@@ -17,4 +14,4 @@ class UserFormView(GuidFormView):
 
     @property
     def success_url(self):
-        return reverse('users:user') + '?guid={}'.format(self.guid)
+        return reverse_user(self.guid)
