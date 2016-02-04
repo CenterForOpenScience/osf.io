@@ -6,16 +6,15 @@
 <title>OSFAdmin | Log in</title>
 {% endblock %}
 
-{% block top_includes %}
-  {% render_bundle 'vendor' %}
-{% endblock %}
-
 {% block content %}
-  <!-- hide navbar and sidebar -->
+  <!-- hide navbar, sidebar, and User account menu -->
   {% block navbar %}
   {% endblock %}
   {% block sidebar %}
   {% endblock %}
+  {% block user_account_menu %}
+  {% endblock %}
+
 
   <div class="login-page">
     <div class="login-box">
@@ -62,9 +61,5 @@
         </form>
       </div><!-- /.login-box-body -->
     </div><!-- /.login-box -->
-    <!-- Bootstrap 3.3.2 JS -->
-    {% render_bundle 'vendor' %}
-    <!-- AdminLTE App -->
-    {% render_bundle 'admin-base-page' %}
   </div>
 {% endblock %}

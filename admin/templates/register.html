@@ -1,25 +1,8 @@
+{% extends 'base.html' %}
 {% load render_bundle from webpack_loader %}
 {% load staticfiles %}
 
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>OSFAdmin | Log in</title>
-    <!-- Tell the browser to be responsive to screen width -->
-    <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
-    <!-- Bootstrap 3.3.4 -->
-    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
-    <!-- Font Awesome Icons -->
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
-    <!-- Theme style -->
-    <link href="{% static 'css/AdminLTE.min.css' %}" rel="stylesheet" type="text/css" />
-
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-
-  </head>
- <body class="register-page">
+{% block content %}
   <div class="register-box">
     <div class="register-logo">
       <b>OSF</b>Admin
@@ -78,10 +61,6 @@
       <a href="{% url 'auth:login' %}" class="text-center">Return to login page</a>
     </div><!-- /.form-box -->
   </div><!-- /.register-box -->
+{% endblock %}
 
-  <!-- Bootstrap 3.3.2 JS -->
-  {% render_bundle 'vendor' %}
-  <!-- AdminLTE App -->
-  {% render_bundle 'admin-base-page' %}
-  </body>
-</html>
+

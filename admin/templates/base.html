@@ -55,6 +55,7 @@
           <div class="navbar-custom-menu">
 
             <ul class="nav navbar-nav">
+             {% block user_account_menu %}
               <!-- User Account Menu -->
               <li class="dropdown user user-menu">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
@@ -67,6 +68,7 @@
               <li>
                 <a href="{% url 'auth:logout' %}" class="btn btn-danger btn-flat">Sign out</a>
               </li>
+              {% endblock %}
             </ul>
           </div>
         </nav>
@@ -85,7 +87,9 @@
             {% if 'prereg_group' in request.user.group_names %}
             <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
             {% endif %}
+            {% if request.user.is_staff %}
             <li><a href="{% url 'auth:register' %}"><span>User Registration</span></a></li>
+            {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>
         <!-- /.sidebar -->
@@ -114,13 +118,11 @@
 
     </div><!-- ./wrapper -->
 
-    <!-- Included JS -->
+    <!-- Included JS Note: issue: render_bundle autoescapes script tags in Django 1.9. Temporary fix: turn autoescape off. refactor? -->
+    {% autoescape off %}
     {% render_bundle 'vendor' %}
     {% render_bundle 'admin-base-page' %}
-
-    {% block bottom_js %}
-
-    {% endblock %}
+    {% endautoescape %}
 
   </body>
 </html>
