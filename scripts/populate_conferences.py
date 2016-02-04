@@ -632,6 +632,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'jssp2016': {
+        'name': 'Japanese Society of Social Psychology 2016',
+        'info_url': 'http://www.socialpsychology.jp/conf2016/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 def populate_conferences():

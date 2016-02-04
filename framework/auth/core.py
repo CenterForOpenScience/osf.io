@@ -1342,8 +1342,8 @@ class User(GuidStoredObject, AddonModelMixin):
         or just their primary keys
         """
         if primary_keys:
-            projects_contributed_to = set([node._id for node in self.contributed])
-            other_projects_primary_keys = set([node._id for node in other_user.contributed])
+            projects_contributed_to = set(self.contributed.get_keys())
+            other_projects_primary_keys = set(other_user.contributed.get_keys())
             return projects_contributed_to.intersection(other_projects_primary_keys)
         else:
             projects_contributed_to = set(self.contributed)
