@@ -29,6 +29,7 @@ var LogWrap = {
         self.canvasHeight = 40;
         self.totalEvents = 0; //initialization of count of all logs returned (total)
         self.eventNumbers = {}; //initialization of dict for aggregate counts (number of 'file' events, etc)
+        self.errorLoading = false;
 
         self.getLogs = function(init, reset, update) {
             if (!(init || reset || update)  && self.cache[self.page - 1]){
@@ -57,7 +58,6 @@ var LogWrap = {
             }
             var url = $osf.apiV2Url('users/me/logs/', { query : query });
             var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: (update ? true : false)});
-            debugger;
             promise.then(function(result){
                 self.loading = false;
                 result.data.map(function(log){
@@ -99,6 +99,9 @@ var LogWrap = {
                     }
                 }
                 self.lastPage = (result.links.meta.total / (result.links.meta.per_page/2) | 0) + 1;
+            }, function(){
+                self.errorLoading = true;
+                self.activityLogs([])
             });
             return promise;
         };
@@ -224,6 +227,9 @@ var LogWrap = {
     },
 
     view: function(ctrl, args){
+        if (ctrl.errorLoading){
+            return m('p', {style: {textAlign: 'center'}}, 'Error loading logs. Please refresh the page.')
+        }
 
         var fileEvents = ((ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.files ? 5 : 0);
         var commentEvents = ((ctrl.eventNumbers.comments/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.comments ? 5 : 0);
