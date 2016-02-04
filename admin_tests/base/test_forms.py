@@ -5,9 +5,9 @@ from tests.base import AdminTestCase
 from admin.base.forms import GuidForm
 
 
-class GuidFormTest(AdminTestCase):
+class TestGuidForm(AdminTestCase):
     def setUp(self):
-        super(GuidFormTest, self).setUp()
+        super(TestGuidForm, self).setUp()
 
     def test_valid_data(self):
         guid = '12345'

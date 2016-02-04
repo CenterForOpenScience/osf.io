@@ -9,9 +9,9 @@ from admin.nodes.views import NodeFormView
 from admin.base.forms import GuidForm
 
 
-class NodeFormViewTest(AdminTestCase):
+class TestNodeFormView(AdminTestCase):
     def setUp(self):
-        super(NodeFormViewTest, self).setUp()
+        super(TestNodeFormView, self).setUp()
 
     def test_context_data_not_existing_guid(self):
         guid = '12345'
