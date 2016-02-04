@@ -233,7 +233,7 @@ def conference_submissions(**kwargs):
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
-        for tag in Tag.find(Q('lower', 'eq', conf.endpoint)):
+        for tag in Tag.find(Q('lower', 'eq', conf.endpoint.lower())):
             for node in tag.node__tagged.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)):
                 projects.add(node)
 

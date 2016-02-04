@@ -1,3 +1,4 @@
+"""Add `lower` field to all tags so that Tags can be queried efficiently"""
 import sys
 import logging
 from website.models import Tag
@@ -12,8 +13,8 @@ logger = logging.getLogger(__name__)
 def do_migration():
     for t in Tag.find():
         logger.info('Migrating tag {!r}'.format(t))
-        assert t._id.lower() == t.lower
-        t.save()
+        t.lower = t._id.lower()
+        t.save(force=True)
 
 
 def main(dry=True):
