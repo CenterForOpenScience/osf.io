@@ -20,6 +20,7 @@ mailchimp==2.0.9
 nameparser==0.3.3
 py-bcrypt==0.4
 pymongo==2.5.1
+pytest==2.8.7
 python-dateutil==2.4.2
 python-gnupg==0.3.6
 pytz==2014.9

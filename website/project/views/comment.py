@@ -47,25 +47,29 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
                                                         Q('path', 'eq', source.get('path')))
                 except NoResultsFound:
                     old_file = FileNode.load(source.get('path').strip('/'))
+                else:
+                    old_file = old_file.restore()
             else:
                 old_file = FileNode.resolve_class(source.get('provider'), FileNode.FILE).get_or_create(source_node, source.get('path'))
 
-            new_path = ''
-            if destination['provider'] != 'osfstorage':
-                data = dict(destination)  # convert OrderedDict to dict
-                data['extra'] = dict(destination['extra'])
-                old_file.update(revision=None, data=data)
-                new_path = old_file.stored_object.path.replace(source['path'], destination['path'])
+            data = dict(destination)  # convert OrderedDict to dict
+            data['extra'] = dict(destination['extra'])
+            old_file.update(revision=None, data=data)
 
             has_comments = Comment.find(Q('root_target', 'eq', old_file._id)).count()
-            if has_comments and source_node._id != destination_node._id:
+            if source_node._id != destination_node._id:
                 old_file.node = destination_node
-                update_comment_node(old_file, source_node, destination_node)
-                if destination['provider'] != 'osfstorage':
-                    new_path = new_path.replace(source_node.get_addon(source['provider']).folder, destination_node.get_addon(destination['provider']).folder)
+                if has_comments:
+                    update_comment_node(old_file, source_node, destination_node)
 
-            if new_path:
-                old_file.path = new_path
+            if source['provider'] != destination['provider']:
+                old_file.stored_object.provider = destination['provider']
+
+            new_path = destination['path']
+            if destination['provider'] == 'dropbox':  # prepend root folder
+                new_path = '/{}/{}'.format(destination_node.get_addon(destination['provider']).folder, new_path.strip('/'))
+
+            old_file.stored_object.path = new_path
             old_file.save()
 
 
