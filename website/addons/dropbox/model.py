@@ -6,6 +6,7 @@ import logging
 from flask import request
 from modularodm import fields
 from dropbox.client import DropboxOAuth2Flow, DropboxClient
+from dropbox.rest import ErrorResponse
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -94,6 +95,17 @@ class DropboxUserSettings(AddonOAuthUserSettingsBase):
 
     oauth_provider = DropboxProvider
     serializer = DropboxSerializer
+
+    def revoke_remote_oauth_access(self, external_account):
+        """Overrides default behavior during external_account deactivation.
+
+        Tells DropBox to remove the grant for the OSF associated with this account.
+        """
+        client = DropboxClient(external_account.oauth_key)
+        try:
+            client.disable_access_token()
+        except ErrorResponse:
+            pass
 
 class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
