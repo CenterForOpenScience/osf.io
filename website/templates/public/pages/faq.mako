@@ -25,7 +25,8 @@
                 <h1 class="text-center">Frequently Asked Questions</h1>
             </div>
 
-            <div id="about" class="anchor row">
+            <div>
+            <span id="about" class="anchor"></span>
                 <h2 class="text-center">About</h2>
                     <h4 class="m-t-lg f-w-lg">How much does the OSF service cost?</h4>
                         <p>It's free!</p>
@@ -52,7 +53,8 @@
                     <h4 class="m-t-lg f-w-lg">How can I contact the OSF team if I have a question that the FAQ or Getting Started pages don’t answer?</h4>
                         <p>Send us an <a href="mailto:support@osf.io">email</a> and we'll be happy to help you.</p>
             </div>
-            <div id="using" class="anchor row">
+            <div>
+            <span id="using" class="anchor"></span>
                 <h2 class="text-center">Using the OSF</h2>
 
                     <h4 class="m-t-lg f-w-lg">How can I get started on using the OSF?</h4>
@@ -83,7 +85,8 @@
 
             </div>
 
-            <div id="security" class="anchor row">
+            <div>
+            <span id="security" class="anchor"></span>
                 <h2 class="text-center">Privacy and security</h2>
                     <h4 class="m-t-lg f-w-lg">What if I don't want to make anything available publicly in the OSF?</h4>
                         <p>
@@ -125,7 +128,8 @@
 
             </div>
 
-            <div id="common" class="anchor row">
+            <div>
+            <span id="common" class="anchor"></span>
                 <h2 class="text-center">Common issues</h2>
                     <h4 class="m-t-lg f-w-lg">What do I do if I lost my email confirmation for OSF registration, or I never received it?</h4>
                         <p>Log into the OSF with the email address and password of the account you created, and there will be a link to resend the confirmation email.</p>

@@ -42,8 +42,31 @@ class NodeSerializer(JSONAPISerializer):
         'category',
         'date_created',
         'date_modified',
-        'registration'
+        'registration',
+        'root',
+        'parent'
     ])
+
+    non_anonymized_fields = [
+        'id',
+        'title',
+        'description',
+        'category',
+        'date_created',
+        'date_modified',
+        'registration',
+        'tags',
+        'public',
+        'links',
+        'children',
+        'comments',
+        'contributors',
+        'files',
+        'node_links',
+        'parent',
+        'root',
+        'logs',
+    ]
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
@@ -61,6 +84,15 @@ class NodeSerializer(JSONAPISerializer):
     collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
+    template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
+                                  help_text='Specify a node id for a node you would like to use as a template for the '
+                                            'new node. Templating is like forking, except that you do not copy the '
+                                            'files, only the project structure. Some information is changed on the top '
+                                            'level project by submitting the appropriate fields in the request body, '
+                                            'and some information will not change. By default, the description will '
+                                            'be cleared and the project will be made private.')
+    current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
+                                                                   'for the current user on this node.')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
@@ -108,7 +140,8 @@ class NodeSerializer(JSONAPISerializer):
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<parent_id>'}
+        related_view_kwargs={'node_id': '<parent_node._id>'},
+        filter_key='parent_node'
     )
 
     registrations = DevOnly(HideIfRegistration(RelationshipField(
@@ -117,10 +150,22 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_registration_count'}
     )))
 
+    root = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<root._id>'}
+    )
+
     logs = RelationshipField(
         related_view='nodes:node-logs',
         related_view_kwargs={'node_id': '<pk>'},
     )
+
+    def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return ["read"]
+        else:
+            return obj.get_permissions(user=user)
 
     class Meta:
         type_ = 'nodes'
@@ -179,7 +224,21 @@ class NodeSerializer(JSONAPISerializer):
         return n_unread
 
     def create(self, validated_data):
-        node = Node(**validated_data)
+        if 'template_from' in validated_data:
+            request = self.context['request']
+            user = request.user
+            template_from = validated_data.pop('template_from')
+            template_node = Node.load(key=template_from)
+            if template_node is None:
+                raise exceptions.NotFound
+            if not template_node.has_permission(user, 'read', check_parent=False):
+                raise exceptions.PermissionDenied
+
+            validated_data.pop('creator')
+            changed_data = {template_from: validated_data}
+            node = template_node.use_as_template(auth=self.get_user_auth(request), changes=changed_data)
+        else:
+            node = Node(**validated_data)
         try:
             node.save()
         except ValidationValueError as e:

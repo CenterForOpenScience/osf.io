@@ -141,6 +141,10 @@ def root(request, format=None):
 
         /nodes/?filter[id]=aegu6,me23a
 
+    You can filter with case-sensitivity or case-insensitivity by using `contains` and `icontains`, respectively.
+
+        /nodes/?filter[tags][icontains]=help
+
     ###Embedding
 
     All related resources that appear in the `relationships` attribute are embeddable, meaning that

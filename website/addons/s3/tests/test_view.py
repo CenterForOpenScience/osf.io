@@ -397,6 +397,7 @@ class TestS3ViewsConfig(OsfTestCase):
         res = self.app.post(url, auth=unauthorized.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+
 class TestCreateBucket(OsfTestCase):
 
     def setUp(self):
@@ -423,19 +424,38 @@ class TestCreateBucket(OsfTestCase):
         self.node_settings.save()
 
     def test_bad_names(self):
-        assert_false(validate_bucket_name('bogus naMe'))
         assert_false(validate_bucket_name(''))
         assert_false(validate_bucket_name('no'))
+        assert_false(validate_bucket_name('a' * 64))
+        assert_false(validate_bucket_name(' leadingspace'))
+        assert_false(validate_bucket_name('trailingspace '))
+        assert_false(validate_bucket_name('bogus naMe'))
         assert_false(validate_bucket_name('.cantstartwithp'))
         assert_false(validate_bucket_name('or.endwith.'))
         assert_false(validate_bucket_name('..nodoubles'))
         assert_false(validate_bucket_name('no_unders_in'))
+        assert_false(validate_bucket_name('-leadinghyphen'))
+        assert_false(validate_bucket_name('trailinghyphen-'))
+        assert_false(validate_bucket_name('Mixedcase'))
+        assert_false(validate_bucket_name('empty..label'))
+        assert_false(validate_bucket_name('label-.trailinghyphen'))
+        assert_false(validate_bucket_name('label.-leadinghyphen'))
+        assert_false(validate_bucket_name('8.8.8.8'))
+        assert_false(validate_bucket_name('600.9000.0.28'))
+        assert_false(validate_bucket_name('no_underscore'))
+        assert_false(validate_bucket_name('_nounderscoreinfront'))
+        assert_false(validate_bucket_name('no-underscore-in-back_'))
+        assert_false(validate_bucket_name('no-underscore-in_the_middle_either'))
 
     def test_names(self):
         assert_true(validate_bucket_name('imagoodname'))
         assert_true(validate_bucket_name('still.passing'))
         assert_true(validate_bucket_name('can-have-dashes'))
         assert_true(validate_bucket_name('kinda.name.spaced'))
+        assert_true(validate_bucket_name('a-o.valid'))
+        assert_true(validate_bucket_name('11.12.m'))
+        assert_true(validate_bucket_name('a--------a'))
+        assert_true(validate_bucket_name('a' * 63))
 
     def test_bad_locations(self):
         assert_false(validate_bucket_location('Venus'))
@@ -444,8 +464,16 @@ class TestCreateBucket(OsfTestCase):
 
     def test_locations(self):
         assert_true(validate_bucket_location(''))
-        assert_true(validate_bucket_location('EU'))
+        assert_true(validate_bucket_location('eu-central-1'))
         assert_true(validate_bucket_location('us-west-1'))
+        assert_true(validate_bucket_location('us-west-2'))
+        assert_true(validate_bucket_location('ap-northeast-1'))
+        assert_true(validate_bucket_location('ap-northeast-2'))
+        assert_true(validate_bucket_location('ap-southeast-1'))
+        assert_true(validate_bucket_location('ap-southeast-2'))
+        assert_true(validate_bucket_location('sa-east-1'))
+        assert_true(validate_bucket_location('eu-west-1'))
+
 
     @mock.patch('website.addons.s3.views.crud.utils.create_bucket')
     @mock.patch('website.addons.s3.views.crud.utils.get_bucket_names')

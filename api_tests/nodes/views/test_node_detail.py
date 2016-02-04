@@ -40,6 +40,9 @@ class TestNodeDetail(ApiTestCase):
 
         self.public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
         self.public_component_url = '/{}nodes/{}/'.format(API_BASE, self.public_component._id)
+        self.read_permissions = ['read']
+        self.write_permissions = ['read', 'write']
+        self.admin_permissions = ['read', 'admin', 'write']
 
     def test_return_public_project_details_logged_out(self):
         res = self.app.get(self.public_url)
@@ -48,6 +51,7 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], self.public_project.title)
         assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
         assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.read_permissions)
 
     def test_return_public_project_details_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
@@ -56,19 +60,31 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], self.public_project.title)
         assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
         assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.admin_permissions)
 
     def test_return_private_project_details_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
-    def test_return_private_project_details_logged_in_contributor(self):
+    def test_return_private_project_details_logged_in_admin_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], self.private_project.title)
         assert_equal(res.json['data']['attributes']['description'], self.private_project.description)
         assert_equal(res.json['data']['attributes']['category'], self.private_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.admin_permissions)
+
+    def test_return_private_project_details_logged_in_write_contributor(self):
+        self.private_project.add_contributor(contributor=self.user_two, auth=Auth(self.user), save=True)
+        res = self.app.get(self.private_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.private_project.title)
+        assert_equal(res.json['data']['attributes']['description'], self.private_project.description)
+        assert_equal(res.json['data']['attributes']['category'], self.private_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.write_permissions)
 
     def test_return_private_project_details_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)

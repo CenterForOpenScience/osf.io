@@ -319,7 +319,7 @@
                     ##     <!-- /ko -->
                     ## % endif
                 </div>
-                <p><strong>More</strong></p>
+                <p><strong>Get more citations</strong></p>
                 <div id="citationStylePanel" class="citation-picker">
                     <input id="citationStyleInput" type="hidden" />
                 </div>
