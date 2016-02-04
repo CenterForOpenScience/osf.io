@@ -228,16 +228,6 @@
                 ${self.alert()}
             % endif
 
-        ## TEMPORARY maintenance alert
-        <div id="alert-container" class="m-t-md">
-        <div class='alert alert-block alert-info fade in'>
-            <p>The OSF will be down for maintenance between 10:00pm and 10:30pm (EST).
-                Thank you for your patience.
-            </p>
-        </div>
-        </div>
-        ## END TEMPORARY maintenance alert
-
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->
