@@ -190,7 +190,7 @@ var AddProject = {
         return  m('span', [
             ctrl.options.buttonTemplate,
             m('#' + ctrl.options.modalID + '.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addProject"][aria-hidden="true"]',
-                m('.modal-dialog',
+                m('.modal-dialog.text-left',
                     templates[ctrl.viewState()]
                 )
             )
