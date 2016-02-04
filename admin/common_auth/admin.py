@@ -10,40 +10,35 @@ class PermissionAdmin(admin.ModelAdmin):
     search_fields = ['name', 'codename']
 
 
-# class CustomUserAdmin(UserAdmin):
-# #<<<<<<< HEAD
-#     add_form = UserCreationForm
-#   #  list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed']
-# #=======
-#  #   add_form = CustomUserRegistrationForm
-#    # list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed', 'osf_id']
-# #>>>>>>> 7566faa8fadba4e0794bfad250efc8e3cba92752
-#     fieldsets = (
-#         (None, {'fields': ('email', 'password',)}),
-#         ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_joined', 'last_login', 'osf_id')}),
-#         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions',)}),
-#     )
-#     add_fieldsets = (
-#         (None, {'fields':
-#                 ('email', 'first_name', 'last_name', 'password1', 'password2'),
-#                 }),)
-#     search_fields = ('email', 'first_name', 'last_name',)
-#     ordering = ('last_name', 'first_name',)
-#     actions = ['send_email_invitation']
+class CustomUserAdmin(UserAdmin):
+    add_form = UserCreationForm
+    list_display = ['email', 'first_name', 'last_name', 'is_active', 'confirmed', 'osf_id']
+    fieldsets = (
+        (None, {'fields': ('email', 'password',)}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_joined', 'last_login', 'osf_id')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions',)}),
+    )
+    add_fieldsets = (
+        (None, {'fields':
+                ('email', 'first_name', 'last_name', 'password1', 'password2', 'osf_id'),
+                }),)
+    search_fields = ('email', 'first_name', 'last_name',)
+    ordering = ('last_name', 'first_name',)
+    actions = ['send_email_invitation']
 
-#     # TODO - include alternative messages for warning/failure
-#     def send_email_invitation(self, request, queryset):
-#         for user in queryset:
-#             reset_form = PasswordResetForm({'email': user.email}, request.POST)
-#             assert reset_form.is_valid()
-#             reset_form.save(
-#                 subject_template_name='common_auth/emails/account_creation_subject.txt',
-#                 email_template_name='common_auth/emails/invitation_email.html',
-#                 request=request
-#             )
+    # TODO - include alternative messages for warning/failure
+    def send_email_invitation(self, request, queryset):
+        for user in queryset:
+            reset_form = PasswordResetForm({'email': user.email}, request.POST)
+            assert reset_form.is_valid()
+            reset_form.save(
+                subject_template_name='common_auth/emails/account_creation_subject.txt',
+                email_template_name='common_auth/emails/invitation_email.html',
+                request=request
+            )
 
-#         self.message_user(request, 'Email invitation successfully sent')
-#     send_email_invitation.short_description = 'Send email invitation to selected users'
+        self.message_user(request, 'Email invitation successfully sent')
+    send_email_invitation.short_description = 'Send email invitation to selected users'
 
-# admin.site.register(MyUser, CustomUserAdmin)
+admin.site.register(MyUser, CustomUserAdmin)
 admin.site.register(Permission, PermissionAdmin)
