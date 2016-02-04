@@ -2213,6 +2213,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.primary_institution = self.primary_institution
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
 
