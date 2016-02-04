@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.63.0 (unreleased)
+0.63.0 (2016-02-02)
 ===================
 
 - Added date_modified field to Node (no longer a property).
