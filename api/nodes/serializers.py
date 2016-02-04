@@ -231,11 +231,18 @@ class NodeSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         if 'template_from' in validated_data:
+            request = self.context['request']
+            user = request.user
             template_from = validated_data.pop('template_from')
             template_node = Node.load(key=template_from)
+            if template_node is None:
+                raise exceptions.NotFound
+            if not template_node.has_permission(user, 'read', check_parent=False):
+                raise exceptions.PermissionDenied
+
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
-            node = template_node.use_as_template(auth=self.get_user_auth(self.context['request']), changes=changed_data)
+            node = template_node.use_as_template(auth=self.get_user_auth(request), changes=changed_data)
         else:
             node = Node(**validated_data)
         try:
