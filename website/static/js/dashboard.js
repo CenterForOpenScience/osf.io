@@ -24,7 +24,7 @@ function getUID() {
 
 var xhrconfig = function (xhr) {
     xhr.withCredentials = true;
-    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json');
+    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
     xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
 };
 
@@ -261,17 +261,32 @@ var Dashboard = {
         self.removeProjectFromCollections = function _removeProjectFromCollection () {
             // Removes selected items from collect
             var collection = self.activeFilter().data.node;
-            self.selected().map(function _removeProjectFromCollectionsMap (item){
-                m.request({
-                    method : 'DELETE',
-                    url : collection.links.self + 'node_links/' + item.data.id + '/',
-                    config : xhrconfig
-                }).then(function _removeProjectFromCollectionsSuccess(result){
-                    console.log(result);
-                }, function _removeProjectFromCollectionsFail(result){
-                    var name = item.data.name || 'Project ';
-                    $osf.growl('"' + name + '" could not be removed from Collection.', 'Please try again.');
-                });
+            var data = {
+                data : []
+            };
+
+            self.selected().forEach(function _removeProjectFromCollectionsMap (item){
+                var obj = {
+                    'type' : 'linked_nodes',
+                    'id' : item.data.id
+                };
+                data.data.push(obj);
+            });
+            m.request({
+                method : 'DELETE',
+                url : collection.links.self + 'relationship/' + 'linked_nodes/',  //collection.links.self + 'node_links/' + item.data.id + '/', //collection.links.self + relationship/ + linked_nodes/
+                config : xhrconfig,
+                data : data
+            }).then(function _removeProjectFromCollectionsSuccess(result){
+                console.log(result);
+            }, function _removeProjectFromCollectionsFail(result){
+                var message = 'Some projects';
+                if(data.data.length === 1) {
+                    message = self.selected()[0].data.name;
+                } else {
+                    message += ' could not be removed from the collection';
+                }
+                $osf.growl(message, 'Please try again.');
             });
         };
         // GETTING THE NODES
