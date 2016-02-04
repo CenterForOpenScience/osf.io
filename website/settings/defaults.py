@@ -292,10 +292,6 @@ JOB_ID = None   # for task scripts.osfstorage.glacier_audit, set to None
 DAYS = None    # for task scripts.refresh_box, set to None
 NUM_OF_WORKERS = 4  # for task scripts.osfstorage.files_audit, set to 4
 
-# Note:
-#   CELERY_IMPORTS import .py files that were run by cron-initiated shellsripts before
-#   CELERYBEAT_SCHEDULE does the scheduling job that were configured by cron.py before
-
 #  Modules to import when celery launches
 CELERY_IMPORTS = (
     'framework.tasks',
