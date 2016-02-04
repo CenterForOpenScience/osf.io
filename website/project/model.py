@@ -583,9 +583,13 @@ class NodeLog(StoredObject):
 class Tag(StoredObject):
 
     _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
+    lower = fields.StringField(index=True, validate=MaxLengthValidator(128))
+
+    def __init__(self, _id, lower=None, **kwargs):
+        super(Tag, self).__init__(_id=_id, lower=lower or _id.lower(), **kwargs)
 
     def __repr__(self):
-        return '<Tag() with id {self._id!r}>'.format(self=self)
+        return '<Tag({self.lower!r}) with id {self._id!r}>'.format(self=self)
 
     @property
     def url(self):
@@ -886,17 +890,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def __init__(self, *args, **kwargs):
 
-        tags = kwargs.pop('tags', [])
-
         super(Node, self).__init__(*args, **kwargs)
-
-        # Ensure when Node is created with tags through API, tags are added to Tag
-        if tags:
-            for tag in tags:
-                self.add_tag(tag, Auth(self.creator), save=False, log=False)
 
         if kwargs.get('_is_loaded', False):
             return
+
+        # Ensure when Node is created with tags through API, tags are added to Tag
+        tags = kwargs.pop('tags', [])
+        for tag in tags:
+            self.add_tag(tag, Auth(self.creator), save=False, log=False)
 
         if self.creator:
             self.contributors.append(self.creator)
