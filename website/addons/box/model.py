@@ -4,6 +4,7 @@ import logging
 from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
 from modularodm import fields
+import requests
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -58,6 +59,21 @@ class BoxUserSettings(AddonOAuthUserSettingsBase):
     """
     oauth_provider = Box
     serializer = BoxSerializer
+
+    def revoke_remote_oauth_access(self, external_account):
+        try:
+            # TODO: write client for box, stop using third-party lib
+            requests.request(
+                'POST',
+                settings.BOX_OAUTH_REVOKE_ENDPOINT,
+                params={
+                    'client_id': settings.BOX_KEY,
+                    'client_secret': settings.BOX_SECRET,
+                    'token': external_account.oauth_key,
+                }
+            )
+        except requests.HTTPError:
+            pass
 
 
 class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):

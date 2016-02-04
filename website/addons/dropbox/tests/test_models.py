@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from tests.base import OsfTestCase
@@ -31,6 +32,14 @@ class TestNodeSettings(testing.models.OAuthAddonNodeSettingsTestSuiteMixin, OsfT
         node_settings = DropboxNodeSettings(user_settings=self.user_settings)
         node_settings.save()
         assert_is_none(node_settings.folder)
+
+    @mock.patch(
+        'website.addons.dropbox.model.DropboxUserSettings.revoke_remote_oauth_access',
+        mock.PropertyMock()
+    )
+    def test_complete_has_auth_not_verified(self):
+        super(TestNodeSettings, self).test_complete_has_auth_not_verified()
+
 
 class TestUserSettings(testing.models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 

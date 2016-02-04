@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import threading
 
 import pymongo
 from flask import g
@@ -12,17 +13,51 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 
+class ClientPool(object):
+
+    @property
+    def thread_id(self):
+        return threading.current_thread().ident
+
+    def __init__(self, MAX_CLIENTS=100):
+        self._max_clients = MAX_CLIENTS
+        self._cache, self._local = [], {}
+        self._sem = threading.BoundedSemaphore(MAX_CLIENTS)
+
+    def acquire(self, _id=None):
+        _id = _id or self.thread_id
+
+        if _id not in self._local:
+            self._sem.acquire()
+            self._local[_id] = self._get_client()
+        return self._local[_id]
+
+    def release(self, _id=None):
+        self._cache.append(self._local.pop(_id or self.thread_id))
+        self._sem.release()
+
+    def transfer(self, to, from_):
+        self._local[to] = self._local.pop(from_ or self.thread_id)
+
+    def _get_client(self):
+        try:
+            return self._cache.pop(0)
+        except IndexError:
+            pass
+        logger.warning('Creating new client instance. {} instances initialized.'.format(self._max_clients - self._sem._Semaphore__value))
+        client = pymongo.MongoClient(settings.DB_HOST, settings.DB_PORT, max_pool_size=1)
+        db = client[settings.DB_NAME]
+
+        if settings.DB_USER and settings.DB_PASS:
+            db.authenticate(settings.DB_USER, settings.DB_PASS)
+        return client
+
+CLIENT_POOL = ClientPool()
+
 def get_mongo_client():
     """Create MongoDB client and authenticate database.
     """
-    client = pymongo.MongoClient(settings.DB_HOST, settings.DB_PORT)
-
-    db = client[settings.DB_NAME]
-
-    if settings.DB_USER and settings.DB_PASS:
-        db.authenticate(settings.DB_USER, settings.DB_PASS)
-
-    return client
+    return CLIENT_POOL.acquire()
 
 
 def connection_before_request():
@@ -34,11 +69,9 @@ def connection_before_request():
 def connection_teardown_request(error=None):
     """Close MongoDB client if attached to `g`.
     """
-    try:
-        g._mongo_client.close()
-    except AttributeError:
-        if not settings.DEBUG_MODE:
-            logger.error('MongoDB client not attached to request.')
+    if getattr(g, '_mongo_client', None):
+        CLIENT_POOL.release()
+        g._mongo_client = None
 
 
 handlers = {
@@ -55,10 +88,7 @@ def _get_current_client():
     """Getter for `client` proxy. Return default client if no client attached
     to `g` or no request context.
     """
-    try:
-        return g._mongo_client
-    except (AttributeError, RuntimeError):
-        return _mongo_client
+    return get_mongo_client()
 
 
 def _get_current_database():
