@@ -16,26 +16,15 @@ var xhrconfig = function(xhr) {
 
 
 var meetingsAndConferences = {
-    controller: function() {
-        var self = this;
-        self.findAMeeting = function(){
-            location.href = '/meetings/';
-        };
-    },
     view: function(ctrl) {
         function findAMeetingButton() {
-             return m('button', {type:'button', 'class':'btn btn-default btn-block m-v-xl', onclick: function(){
-                ctrl.findAMeeting();
-            }}, 'Find a Meeting');
-
+             return m('a.btn.btn-default.btn-block.m-v-xl', {type:'button', href:'/meetings/'}, 'Find a Meeting');
         }
 
         function createAMeetingButton() {
-             return m('button', {type:'button', 'class':'btn btn-default btn-block m-v-xl', onclick: function(){
-                ctrl.findAMeeting();
-            }}, 'Create a Meeting');
+             return m('a.btn.btn-default.btn-block.m-v-xl', {type:'button',  href:'/meetings/'}, 'Create a Meeting');
         }
-        return m('div', {'class': 'container conferences-and-meetings m-v-sm p-v-sm'}, [
+        return m('div.container.conferences-and-meetings.m-v-sm.p-v-sm',  [
             m('div', {'class': 'row m-v-sm'},
                 m('div', {'class': 'col-sm-5'},
                     m('div', {'class': 'row'},
@@ -53,10 +42,10 @@ var meetingsAndConferences = {
                 ),
                 m('div', {'class': 'col-sm-7'},
                     m('div', {'class': 'row'}),
-                            m('div', {'class': 'col-sm-1 col-xs-0'}),
+                            m('div', {'class': 'col-sm-1 hidden-xs'}),
                             m('div', {'class': 'col-sm-5 col-xs-6'}, findAMeetingButton()),
                             m('div', {'class': 'col-sm-5 col-xs-6'}, createAMeetingButton()),
-                            m('div', {'class': 'col-sm-1 col-xs-0'})
+                            m('div', {'class': 'col-sm-1 hidden-xs'})
                 )
             )
         ]);
