@@ -4,47 +4,40 @@ var $osf = require('js/osfHelpers');
 require('css/typeahead.css');
 require('typeahead.js');
 
-var MAX_RESULTS = 14;
+var MAX_RESULTS = 10;
 
 (function($) {
     $.fn.projectsSelect = function (options) {
-
-        // Default options
         var settings = $.extend({
             data : [],
             type : 'project',
             complete: null
         }, options);
-
-        var substringMatcher = function(strs) {
+        var substringMatcher = function(data) {
             return function findMatches(q, cb) {
-
-                // an array that will be populated with substring matches
-                var matches = [];
-
-                // regex used to determine if a string contains the substring `q`
-
-                var substrRegex = new RegExp(q, 'i');
+                var matches = []; // an array that will be populated with substring matches
+                var title; // Title string;
+                var substrRegex = new RegExp(q, 'i');// regex used to determine if a string contains the substring `q`
                 var count = 0;
-                // iterate through the pool of strings and for any string that
-                // contains the substring `q`, add it to the `matches` array
-                $.each(strs, function(i, str) {
-                    if (substrRegex.test(str.name)) {
+                $.each(data, function(i, str) {  // for any title that contains the substring `q`, add it to the `matches` array
+                    if (str.attributes){ // case for api v2 projects data structure
+                        title = str.attributes.title;
+                    } else if(str.node){ // Case for draft registrations api call data structure
+                        title = str.node.title;
+                    } else {
+                        title = '';
+                    }
+                    if (substrRegex.test(title)) {
                         count += 1;
                         // the typeahead jQuery plugin expects suggestions to a
                         // JavaScript object, refer to typeahead docs for more info
                         matches.push({ value: str });
-
                         //alex's hack to limit number of results
                         if(count > MAX_RESULTS){
                             return false;
                         }
-                        // above you can return name or a dict of name/node id,
                     }
-                    // add an event to the input box -- listens for keystrokes and if there is a keystroke then it should clearrr
-                    //
                 });
-
                 cb(matches);
             };
         };
