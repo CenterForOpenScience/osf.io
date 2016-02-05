@@ -5,7 +5,11 @@ import logging
 
 from modularodm import Q
 
-from website.archiver import ARCHIVER_UNCAUGHT_ERROR, ARCHIVER_FAILURE
+from website.archiver import (
+    ARCHIVER_UNCAUGHT_ERROR,
+    ARCHIVER_FAILURE,
+    ARCHIVER_INITIATED
+)
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA
 from website.archiver.utils import handle_archive_fail
 from website.archiver.model import ArchiveJob
@@ -21,7 +25,8 @@ def find_failed_registrations():
     expired_if_before = datetime.utcnow() - ARCHIVE_TIMEOUT_TIMEDELTA
     jobs = ArchiveJob.find(
         Q('sent', 'eq', False) &
-        Q('datetime_initiated', 'lt', expired_if_before)
+        Q('datetime_initiated', 'lt', expired_if_before) &
+        Q('status', 'eq', ARCHIVER_INITIATED)
     )
     return {node.root for node in [job.dst_node for job in jobs] if node}
 

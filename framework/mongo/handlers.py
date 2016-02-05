@@ -19,7 +19,7 @@ class ClientPool(object):
     def thread_id(self):
         return threading.current_thread().ident
 
-    def __init__(self, MAX_CLIENTS=15):
+    def __init__(self, MAX_CLIENTS=100):
         self._max_clients = MAX_CLIENTS
         self._cache, self._local = [], {}
         self._sem = threading.BoundedSemaphore(MAX_CLIENTS)
@@ -45,7 +45,7 @@ class ClientPool(object):
         except IndexError:
             pass
         logger.warning('Creating new client instance. {} instances initialized.'.format(self._max_clients - self._sem._Semaphore__value))
-        client = pymongo.MongoClient(settings.DB_HOST, settings.DB_PORT)
+        client = pymongo.MongoClient(settings.DB_HOST, settings.DB_PORT, max_pool_size=1)
         db = client[settings.DB_NAME]
 
         if settings.DB_USER and settings.DB_PASS:
