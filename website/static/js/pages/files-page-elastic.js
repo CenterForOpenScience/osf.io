@@ -59,7 +59,7 @@ var filterTemplate = function () {
         style: "width:100%;display:inline;",
         onkeyup: function (e){
             m.withAttr("value", tb.filterText)(e);
-            fileFilter(tb);
+            if (e.key === "Enter"){fileFilter(tb);}
         },
         value: tb.filterText()
     });

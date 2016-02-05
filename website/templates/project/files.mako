@@ -29,10 +29,8 @@
     % endfor
 
     % if node['is_public']:
-        <script>alert("it's public");</script>
         <script src=${"/static/public/js/files-page-elastic.js" | webpack_asset}></script>
     % else:
-        <script>alert("it's not public");</script>
         <script src=${"/static/public/js/files-page.js" | webpack_asset}></script>
     % endif
     <script type="text/javascript">

@@ -913,7 +913,6 @@ class TestSearchProjectFile(SearchTestCase):
 
         node_id = self.node_one._id
         results = elastic_search.project_file_search('sweet.txt', self.node_one._id, index=TEST_INDEX)
-        logging.debug(results[0]['_source'])
         assert_true(len(results) == 1)
 
     def test_filter_tags(self):
