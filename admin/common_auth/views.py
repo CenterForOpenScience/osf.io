@@ -27,7 +27,6 @@ def logout(request):
     logout_user(request)
     return redirect('auth:login')
 
-
 # Permission restriction based on staff (only staff can register new users). Use is_staff boolean?
 def register(request):
     if request.user.is_staff:
