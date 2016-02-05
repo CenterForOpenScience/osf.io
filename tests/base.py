@@ -335,8 +335,7 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
 
 
 class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
-    def setUp(self):
-        super(AdminTestCase, self).setUp()
+    pass
 
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py

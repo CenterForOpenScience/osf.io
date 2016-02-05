@@ -56,13 +56,12 @@ class GuidFormView(FormView):
 
     def get_context_data(self, **kwargs):
         self.guid = self.request.GET.get('guid', None)
+        guid_object = None
         if self.guid is not None:
             try:
                 guid_object = self.get_guid_object()
             except AttributeError:
                 raise
-        else:
-            guid_object = None
         kwargs.setdefault('view', self)
         kwargs.setdefault('form', self.get_form())
         kwargs.setdefault('guid_object', guid_object)
