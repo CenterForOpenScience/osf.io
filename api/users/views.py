@@ -289,7 +289,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     view_category = 'users'
     view_name = 'user-nodes'
 
-    ordering = ('-date_modified')
+    ordering = ('-date_modified',)
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
