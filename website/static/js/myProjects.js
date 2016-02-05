@@ -145,7 +145,7 @@ function buildCollectionNodeData (id) {
  * Initialize File Browser. Prepeares an option object within FileBrowser
  * @constructor
  */
-var Dashboard = {
+var MyProjects = {
     controller : function (options) {
         var self = this;
         self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
@@ -1270,7 +1270,7 @@ var Modals = {
 
 
 module.exports = {
-    Dashboard : Dashboard,
+    MyProjects : MyProjects,
     Collections : Collections,
     MicroPagination : MicroPagination,
     ActivityLogs : ActivityLogs,

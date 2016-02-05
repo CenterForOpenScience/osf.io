@@ -9,7 +9,7 @@ var $ = require('jquery');
 var jstz = require('jstimezonedetect');
 
 var $osf = require('js/osfHelpers');
-var Dashboard = require('js/dashboard.js').Dashboard;
+var Dashboard = require('js/myProjects.js').Dashboard;
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
