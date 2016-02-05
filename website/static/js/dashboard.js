@@ -469,7 +469,6 @@ var Dashboard = {
         var infoPanel = '';
         var poStyle = 'width : 72%'; // Other percentages are set in CSS in file-browser.css These are here because they change
         var sidebarButtonClass = 'btn-default';
-        var projectCount = ctrl.data().length;
         if (ctrl.showInfo() && !mobile){
             infoPanel = m('.db-infobar', m.component(Information, ctrl));
             poStyle = 'width : 47%';
@@ -493,7 +492,6 @@ var Dashboard = {
                             ctrl.showSidebar(!ctrl.showSidebar());
                         }
                     }, m('.fa.fa-bars')) : '',
-                    m('span.m-r-md.hidden-xs', projectCount === 1 ? projectCount + ' Project' : projectCount + ' Projects'),
                     m('.db-poFilter.m-r-xs')
                 ])
             ]),
