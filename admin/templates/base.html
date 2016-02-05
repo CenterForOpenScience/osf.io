@@ -88,7 +88,7 @@
             <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
             {% endif %}
             {% if request.user.is_staff %}
-            <li><a href="{% url 'auth:register' %}"><span>User Registration</span></a></li>
+            <li><a href="{% url 'auth:register' %}"><i class='fa fa-link'></i><span>Admin-User Registration</span></a></li>
             {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>
