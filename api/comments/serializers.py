@@ -68,11 +68,7 @@ class CommentSerializer(JSONAPISerializer):
         user = self.context['request'].user
         if user.is_anonymous():
             return False
-<<<<<<< HEAD
-        return user._id in obj.reports
-=======
         return user._id in obj.reports and not obj.reports[user._id].get('retracted', True)
->>>>>>> c20718048d5d34d779f87dfbfac2e2ad7845ce79
 
     def get_can_edit(self, obj):
         user = self.context['request'].user
@@ -213,11 +209,7 @@ class CommentReportSerializer(JSONAPISerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         comment = self.context['view'].get_comment()
-<<<<<<< HEAD
-        if user._id in comment.reports:
-=======
         if user._id in comment.reports and not comment.reports[user._id].get('retracted', True):
->>>>>>> c20718048d5d34d779f87dfbfac2e2ad7845ce79
             raise ValidationError('Comment already reported.')
         try:
             comment.report_abuse(user, save=True, **validated_data)
