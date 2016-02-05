@@ -28,7 +28,7 @@ describe('fileBrowser', function() {
             }, 'All My Projects');
             tag = new LinkObject('tag', { tag : 'something', query : { 'related_counts' : true }}, 'Something Else');
             name = new LinkObject('name', { id : '8q36f', query : { 'related_counts' : true }}, 'Caner Uguz');
-            node = new LinkObject('node', { uid : 'qwerty'}, 'Node Title');
+            node = new LinkObject('node', { id : 'qwerty'}, 'Node Title');
         });
 
         describe('#attributes', function () {
@@ -37,10 +37,6 @@ describe('fileBrowser', function() {
             });
             it('should throw error when no arguments passed', function () {
                 assert.throws(function(){ var missing = new LinkObject(); }, Error);
-            });
-            it('should throw error when index is not number and  > 0', function () {
-                assert.throws(function(){ var missing = new LinkObject('tag', { tag : 'something', query : { 'related_counts' : true }}, 'Something Else', 'index'); }, Error);
-                assert.throws(function(){ var missing = new LinkObject('tag', { tag : 'something', query : { 'related_counts' : true }}, 'Something Else', -1); }, Error);
             });
         });
 
@@ -55,7 +51,7 @@ describe('fileBrowser', function() {
                 assert.equal(name.link, 'users/8q36f/nodes/?related_counts=true&embed=contributors');
             });
             it('should return correct node link', function () {
-                assert.equal(node.link, 'nodes/qwerty/children/?related_counts=true&embed=contributors');
+                assert.equal(node.link, 'nodes/qwerty/children/?related_counts=true&page%5Bsize%5D=60&embed=contributors');
             });
         });
     });
