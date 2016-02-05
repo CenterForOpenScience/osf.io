@@ -21,29 +21,28 @@ var NewAndNoteworthy = {
         self.newAndNoteworthyNodes = m.prop([]);
         self.popularNodes = m.prop([]);
         self.contributorsMapping = {};
+        self.SHOW_TOTAL = 5;
 
         // Load new and noteworthy nodes
         var newAndNoteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.newAndNoteworthy + '/node_links/', {});
         var newAndNoteworthyPromise = m.request({method: 'GET', url: newAndNoteworthyUrl, config: xhrconfig});
         newAndNoteworthyPromise.then(function(result){
-            var numPopular = Math.min(result.data.length - 1, 4);
-            for (var l=0; l <= numPopular; l++) {
+            var numNEW = Math.min(result.data.length, self.SHOW_TOTAL);
+            for (var l=0; l < numNEW; l++) {
                 self.newAndNoteworthyNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
                   }
-            return newAndNoteworthyPromise;
         });
 
         // Load popular nodes
         var popularUrl = $osf.apiV2Url('nodes/' + window.contextVars.popular + '/node_links/', {});
         var popularPromise = m.request({method: 'GET', url: popularUrl, config: xhrconfig});
         popularPromise.then(function(result){
-            var numPopular = Math.min(result.data.length - 1, 4);
-            for (var l=0; l <= numPopular; l++) {
+            var numPopular = Math.min(result.data.length, self.SHOW_TOTAL);
+            for (var l=0; l < numPopular; l++) {
                 self.popularNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
                   }
-            return popularPromise;
         });
 
         // Additional API call to fetch node link contributors
@@ -117,7 +116,6 @@ var NewAndNoteworthy = {
 
         self.addToolTip = function(line) {
             var $line = $(line);
-            console.log(line.offsetWidth, line.scrollWidth);
             if (line.offsetWidth < line.scrollWidth && !$line.attr('title')) {
                 $line.attr('title', $line.text());
             }
