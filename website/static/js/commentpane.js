@@ -7,6 +7,7 @@
         minViewWidth: 150,
         toggleWidth: 1/3,
         maxWidthProp: 2/3,
+        smallScreenSize: 767,
         onClose: function() {},
         onOpen: function() {}
     };
@@ -15,10 +16,12 @@
         var self = this;
 
         var $pane = $(selector);
-        var $handle = $pane.find('.cp-handle');
+        var $handle = $('.cp-handle');
         var $sidebar = $pane.find('.cp-sidebar');
         var $bar = $pane.find('.cp-bar');
         var $toggleElm = $.merge($pane, $sidebar);
+
+        $handle.tooltip();
 
         options = $.extend({}, defaults, options);
         if (options.maxWidthProp < options.toggleWidth) {
@@ -44,16 +47,21 @@
             return $(document.body).width() * options.maxWidthProp;
         };
 
-        var toggle = function() {
+        self.toggle = function() {
             var width;
             if ($pane.width()) {
                 width = 0;
                 options.onClose.call(self);
             } else {
                 var bodyWidth = $(document.body).width();
-                width = options.toggleWidth * bodyWidth;
+                if (bodyWidth <= options.smallScreenSize) {
+                    width = options.maxWidthProp * bodyWidth;
+                } else {
+                    width = options.toggleWidth * bodyWidth;
+                }
                 options.onOpen.call(self);
             }
+            $handle.tooltip('hide');
             $toggleElm.animate(
                 {width: width},
                 options.animateTime
@@ -84,7 +92,12 @@
             });
 
             // Bind toggle handler
-            $handle.on('click', toggle);
+            $handle.on('click', self.toggle);
+            $('#projectSubnav .navbar-toggle').on('click', function() {
+                if ($pane.width()) {
+                    self.toggle();
+                }
+            });
 
             // Prevent comment pane from getting too big on resize
             $(window).on('resize', function() {

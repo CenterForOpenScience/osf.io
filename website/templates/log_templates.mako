@@ -4,9 +4,10 @@
 ## log templates. An addon's log templates are located in
 ## website/addons/<addon_name>/templates/log_templates.mako.
 
+## Embargo related logs
 <script type="text/html" id="embargo_approved">
-approved embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+approved embargoed registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="embargo_approved_no_user">
@@ -15,8 +16,8 @@ Embargo for
 </script>
 
 <script type="text/html" id="embargo_cancelled">
-cancelled embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+cancelled embargoed registration of
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="embargo_completed">
@@ -31,24 +32,47 @@ Embargo for
 
 <script type="text/html" id="embargo_initiated">
 initiated an embargoed registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
+## Retraction related logs
 <script type="text/html" id="retraction_approved">
-approved retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+approved retraction of registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
 <script type="text/html" id="retraction_cancelled">
-cancelled retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+cancelled retraction of registration of
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
-initiated retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+initiated retraction of registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
 </script>
 
+## Registration related Logs
+<script type="text/html" id="registration_initiated">
+initiated registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>
+</script>
+
+<script type="text/html" id="registration_cancelled">
+cancelled registration of
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+</script>
+
+<script type="text/html" id="registration_approved">
+approved registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle , attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="registration_approved_no_user">
+Registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> approved
+</script>
+
+## Project related logs
 <script type="text/html" id="project_created">
 created
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -61,7 +85,9 @@ deleted
 
 <script type="text/html" id="created_from">
 created
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> based on <a class="log-node-title-link overflow" data-bind="attr: {href: params.template_node.url}">another</a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+based on <a class="log-node-title-link overflow"
+data-bind="text: params.template_node.title || 'another', attr: {href: params.template_node.url}"></a>
 </script>
 
 <script type="text/html" id="node_created">
@@ -134,6 +160,10 @@ registered
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="project_registered_no_user">
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> registered
+</script>
+
 <script type="text/html" id="node_forked">
 created fork from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
@@ -141,6 +171,10 @@ created fork from
 
 <script type="text/html" id="edit_description">
 edited description of  <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="license_changed">
+updated the license of <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="updated_fields">
@@ -181,32 +215,54 @@ from
 <script type="text/html" id="comment_added">
 added a comment
 to
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="comment_updated">
 updated a comment
 on
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="comment_removed">
 deleted a comment
 on
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="comment_restored">
+restored a comment
+on
+{{#if params.file}}
+<a data-bind="attr: {href: params.file.url}, text: params.file.name"></a>
+in
+{{/if}}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="made_contributor_visible">
-made contributor
+made
 <span data-bind="html: displayContributors"></span>
-visible on
+a bibliographic contributor on
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
 <script type="text/html" id="made_contributor_invisible">
-made contributor
+made
 <span data-bind="html: displayContributors"></span>
-invisible on
+a non-bibliographic contributor on
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
@@ -240,10 +296,47 @@ invisible on
   {{/ifnot}}
 </script>
 
+<script type="text/html" id="addon_file_renamed">
+    renamed <span class="overflow">{{ params.source.materialized }}</span>
+  {{#if params.source.materialized.endsWith('/')}}
+  to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
+  {{/if}}
+  {{#ifnot params.source.materialized.endsWith('/')}}
+  to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
+  {{/ifnot}}
+    <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
 <script type="text/html" id="external_ids_added">
 created external identifiers
-<a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'doi:' + params.identifiers.doi"></a> and
-<a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'ark:' + params.identifiers.ark"></a>
+<span data-bind="text: 'doi:' + params.identifiers.doi"></span> and
+<span data-bind="text: 'ark:' + params.identifiers.ark"></span>
 on
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
+<script type="text/html" id="citation_added">
+added a citation ({{ params.citation.name }})
+to
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
+<script type="text/html" id="citation_edited">
+{{#if params.citation.new_name}}
+updated a citation name from {{ params.citation.name }} to <strong>{{ params.citation.new_name }}</strong>
+  {{#if params.citation.new_text}}
+    and edited its text
+  {{/if}}
+{{/if}}
+{{#ifnot params.citation.new_name}}
+edited the text of a citation ({{ params.citation.name }})
+{{/ifnot}}
+on
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
+<script type="text/html" id="citation_removed">
+removed a citation ({{ params.citation.name }})
+from
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>

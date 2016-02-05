@@ -1,137 +1,12 @@
 import mock
-from nose.tools import *
+from nose.tools import *  # noqa
 
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import ProjectFactory, AuthUserFactory
 
 from framework.auth import Auth
-from website.addons.figshare import model
-from website.addons.figshare import exceptions
 from website.addons.figshare import settings as figshare_settings
 
-
-class TestFileGuid(OsfTestCase):
-
-    def setUp(self):
-        super(OsfTestCase, self).setUp()
-        self.user = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('figshare', auth=Auth(self.user))
-        self.node_addon = self.project.get_addon('figshare')
-        self.node_addon.figshare_id = 8
-        self.node_addon.figshare_type = 'project'
-        self.node_addon.save()
-
-    def test_provider(self):
-        assert_equal(
-            'figshare',
-            model.FigShareGuidFile().provider
-        )
-
-    def test_path_doesnt_crash_without_addon(self):
-        guid = model.FigShareGuidFile(node=self.project, path='/baz/foo/bar')
-        self.project.delete_addon('figshare', Auth(self.user))
-
-        assert_is(self.project.get_addon('figshare'), None)
-
-        assert_true(guid.path)
-        assert_true(guid.waterbutler_path)
-
-    def test_path_doesnt_crash_nonconfig_addon(self):
-        guid = model.FigShareGuidFile(node=self.project, path='/baz/foo/bar')
-        self.node_addon.figshare_type = None
-        self.node_addon.figshare_id = None
-        self.node_addon.save()
-        self.node_addon.reload()
-
-        assert_true(guid.path)
-        assert_true(guid.waterbutler_path)
-
-    def test_mfr_test_path(self):
-        self.node_addon.figshare_type = 'fileset'
-        self.node_addon.save()
-        self.node_addon.reload()
-
-        guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
-        assert_equal(guid.waterbutler_path, '/2')
-
-    def test_correct_path_project(self):
-        guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
-        assert_equal(guid.waterbutler_path, '/4/2')
-
-    def test_unique_identifier(self):
-        guid = model.FigShareGuidFile(file_id=2, article_id=4)
-        assert_equal(guid.unique_identifier, '42')
-
-    def test_exception_from_response(self):
-        mock_response = mock.Mock()
-        mock_response.json.return_value = {
-            'data': {
-                'name': 'Morty',
-                'extra': {
-                    'status': 'drafts'
-                }
-            }
-        }
-        guid = model.FigShareGuidFile(file_id=2, article_id=4)
-
-        with assert_raises(exceptions.FigshareIsDraftError):
-            guid._exception_from_response(mock_response)
-
-        assert_equal(guid.name, 'Morty')
-
-    @mock.patch('website.addons.base.requests.get')
-    def test_enrich_raises(self, mock_get):
-        mock_response = mock.Mock(ok=True, status_code=200)
-        mock_get.return_value = mock_response
-        mock_response.json.return_value = {
-            'data': {
-                'name': 'Morty',
-                'extra': {
-                    'status': 'drafts'
-                }
-            }
-        }
-
-        guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
-
-        with assert_raises(exceptions.FigshareIsDraftError):
-            guid.enrich()
-
-        assert_equal(guid.name, 'Morty')
-
-    @mock.patch('website.addons.base.requests.get')
-    def test_enrich_works(self, mock_get):
-        mock_response = mock.Mock(ok=True, status_code=200)
-        mock_get.return_value = mock_response
-        mock_response.json.return_value = {
-            'data': {
-                'name': 'Morty',
-                'extra': {
-                    'status': 'Rick'
-                }
-            }
-        }
-
-        guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
-
-        guid.enrich()
-
-        assert_equal(guid.name, 'Morty')
-
-    def test_node_addon_get_or_create(self):
-        guid, _ = self.node_addon.find_or_create_file_guid('/4/2')
-        assert_equal(guid.waterbutler_path, '/4/2')
-        assert_equal(guid.file_id, '2')
-        assert_equal(guid.article_id, '4')
-
-    def test_node_addon_get_or_create_finds(self):
-        guid, created = self.node_addon.find_or_create_file_guid('/4/2')
-        assert_true(created)
-
-        other, other_created = self.node_addon.find_or_create_file_guid('/4/2')
-        assert_false(other_created)
-        assert_equal(guid, other)
 
 class TestNodeSettings(OsfTestCase):
     def setUp(self):
@@ -358,13 +233,12 @@ class TestCallbacks(OsfTestCase):
         assert_true(self.node_settings.figshare_type is None)
         assert_true(self.node_settings.figshare_title is None)
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     @mock.patch('website.addons.figshare.model.AddonFigShareNodeSettings.archive_errors')
     def test_does_not_get_copied_to_registrations(self, mock_errors, mock_archive):
         registration = self.project.register_node(
-            schema=None,
+            schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
-            template='Template1',
             data='hodor'
         )
         assert_false(registration.has_addon('figshare'))

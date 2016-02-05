@@ -72,6 +72,9 @@ var ViewModel = function(selector, settings) {
         return (self.bucketList().length > 0 || self.loadedBucketList()) && (!self.loading());
     });
 
+    self.saveButtonText = ko.pureComputed (function(){
+        return self.loading()? 'Saving': 'Save';
+    });
 };
 
 ViewModel.prototype.toggleSelect = function() {
@@ -89,14 +92,30 @@ ViewModel.prototype.updateBucketList = function(){
         });
 };
 
-var isValidBucketName = function(bucketName, allowPeriods) {
-    var isValidBucket;
-
-    if (allowPeriods === true) {
-        isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
-    } else {isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d-]{2,61}[^.]$/;}
-
-    return isValidBucket.exec(bucketName) == null;
+/**
+ * Tests if the given string is a valid Amazon S3 bucket name.  Supports two modes: strict and lax.
+ * Strict is for bucket creation and follows the guidelines at:
+ *
+ *   http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html#bucketnamingrules
+ *
+ * However, the US East (N. Virginia) region currently permits much laxer naming rules.  The S3
+ * docs claim this will be changed at some point, but to support our user's already existing
+ * buckets, we provide the lax mode checking.
+ *
+ * Strict checking is the default.
+ *
+ * @param {String} bucketName user-provided name of bucket to validate
+ * @param {Boolean} laxChecking whether to use the more permissive validation
+ */
+var isValidBucketName = function(bucketName, laxChecking) {
+    if (laxChecking === true) {
+        return /^[a-zA-Z0-9.\-_]{1,255}$/.test(bucketName);
+    }
+    var label = '[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])?';
+    var strictBucketName = new RegExp('^' + label + '(?:\\.' + label + ')*$');
+    var isIpAddress = /^[0-9]+(?:\.[0-9]+){3}$/;
+    return bucketName.length >= 3 && bucketName.length <= 63 &&
+        strictBucketName.test(bucketName) && !isIpAddress.test(bucketName);
 };
 
 ViewModel.prototype.selectBucket = function() {
@@ -104,14 +123,17 @@ ViewModel.prototype.selectBucket = function() {
 
     self.loading(true);
 
-    if (isValidBucketName(self.selectedBucket(), false)) {
+    var ret = $.Deferred();
+    if (!isValidBucketName(self.selectedBucket(), true)) {
         self.loading(false);
         bootbox.alert({
             title: 'Invalid bucket name',
-            message: 'Sorry, the S3 addon only supports bucket names without periods.'
+            message: 'Amazon S3 buckets can contain lowercase letters, numbers, and hyphens separated by' +
+            ' periods.  Please try another name.',
         });
+        ret.reject();
     } else {
-        return $osf.postJSON(
+        $osf.postJSON(
                 self.urls().set_bucket, {
                     's3_bucket': self.selectedBucket(),
                     'encrypt_uploads': self.encryptUploads()
@@ -122,6 +144,7 @@ ViewModel.prototype.selectBucket = function() {
                 self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
                     self.urls().files + '">Files page</a> to view your content.', 'text-success');
                 self.loading(false);
+                ret.resolve(response);
             })
             .fail(function (xhr, status, error) {
                 self.loading(false);
@@ -134,8 +157,10 @@ ViewModel.prototype.selectBucket = function() {
                     textStatus: status,
                     error: error
                 });
+                ret.reject();
             });
     }
+    return ret.promise();
 };
 
 ViewModel.prototype._deauthorizeNodeConfirm = function() {
@@ -294,8 +319,6 @@ ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
 ViewModel.prototype.openCreateBucket = function() {
     var self = this;
 
-    var isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
-
     // Generates html options for key-value pairs in BUCKET_LOCATION_MAP
     function generateBucketOptions(locations) {
         var options = '';
@@ -346,14 +369,15 @@ ViewModel.prototype.openCreateBucket = function() {
                     var bucketLocation = $('#bucketLocation').val();
 
                     if (!bucketName) {
-                        var errorMessage = $('bucketModalErrorMessage');
+                        var errorMessage = $('#bucketModalErrorMessage');
                         errorMessage.text('Bucket name cannot be empty');
                         errorMessage[0].classList.add('text-danger');
                         return false;
-                    } else if (isValidBucketName(bucketName, true)) {
+                    } else if (!isValidBucketName(bucketName, false)) {
                         bootbox.confirm({
                             title: 'Invalid bucket name',
-                            message: 'Sorry, that\'s not a valid bucket name. Try another name?',
+                            message: 'Amazon S3 buckets can contain lowercase letters, numbers, and hyphens separated by' +
+                            ' periods.  Please try another name.',
                             callback: function (result) {
                                 if (result) {
                                     self.openCreateBucket();
@@ -498,5 +522,6 @@ var S3Config = function(selector, settings) {
 
 module.exports = {
     S3NodeConfig: S3Config,
-    _S3NodeConfigViewModel: ViewModel
+    _S3NodeConfigViewModel: ViewModel,
+    _isValidBucketName: isValidBucketName
 };

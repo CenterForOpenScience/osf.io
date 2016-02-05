@@ -15,7 +15,7 @@ from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
 
 from website.app import init_app
-from website.addons.osfstorage import model
+from website.files import models
 
 from scripts import utils as scripts_utils
 from scripts.osfstorage import settings as storage_settings
@@ -64,10 +64,11 @@ def get_job(vault, job_id=None):
 
 
 def get_targets(date):
-    return model.OsfStorageFileVersion.find(
+    return models.FileVersion.find(
         Q('date_created', 'lt', date - DELTA_DATE) &
         Q('status', 'ne', 'cached') &
-        Q('metadata.archive', 'exists', True)
+        Q('metadata.archive', 'exists', True) &
+        Q('location', 'ne', None)
     )
 
 

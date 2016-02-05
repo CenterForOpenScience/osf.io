@@ -105,7 +105,9 @@ h6 {
     top: 0;
     left: 0;
 }
-
+.hero-brand {
+    font-weight: bold;
+}
 #hero-signup {
     background: rgba(255, 255, 255, 0.15);
     position: absolute;
@@ -471,12 +473,6 @@ footer {
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
 }
 
-@media (min-width: 992px) {
-    .container {
-        width: 1170px !important;
-    }
-}
-
 @media (min-width: 992px) and (max-width: 1199px) {
     .student-image .quote {
         min-height: 100px;
@@ -580,18 +576,6 @@ footer {
     }
     .student-image .main {
         font-size: 1.0em !important;
-    }
-    .sign-in .btn-group {
-        width: 90%;
-        padding-left: 5%;
-    }
-    .sign-in .btn {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    #formLogin {
-        padding: 0;
-        width: 100%;
     }
     .grey-pullout {
         padding-bottom: 90px;

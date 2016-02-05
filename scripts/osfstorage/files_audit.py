@@ -21,7 +21,7 @@ from boto.glacier.layer2 import Layer2
 from pyrax.exceptions import NoSuchObject
 
 from website.app import init_app
-from website.addons.osfstorage import model
+from website.files import models
 
 from scripts import utils as scripts_utils
 from scripts.osfstorage import utils as storage_utils
@@ -107,7 +107,7 @@ def ensure_backups(version, dry_run):
 
 
 def get_targets():
-    return model.OsfStorageFileVersion.find(
+    return models.FileVersion.find(
         Q('status', 'ne', 'cached') &
         Q('location.object', 'exists', True)
     )

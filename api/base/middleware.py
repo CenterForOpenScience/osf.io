@@ -1,9 +1,15 @@
 from pymongo.errors import OperationFailure
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
 
+from framework.tasks.handlers import (
+    celery_before_request,
+    celery_teardown_request
+)
 from framework.transactions import commands, messages, utils
 
 from .api_globals import api_globals
+
+from api.base import settings
 
 
 # TODO: Verify that a transaction is being created for every
@@ -38,12 +44,19 @@ class TokuTransactionsMiddleware(object):
         """Commit transaction if it exists, rolling back in an
         exception occurs.
         """
+
         try:
-            commands.commit()
+            if response.status_code >= 400:
+                commands.rollback()
+            else:
+                commands.commit()
         except OperationFailure as err:
             message = utils.get_error_message(err)
             if messages.NO_TRANSACTION_TO_COMMIT_ERROR not in message:
-                raise err
+                if settings.DEBUG_TRANSACTIONS:
+                    pass
+                else:
+                    raise err
         except Exception as err:
             try:
                 commands.rollback()
@@ -61,6 +74,7 @@ class DjangoGlobalMiddleware(object):
     """
     def process_request(self, request):
         api_globals.request = request
+        celery_before_request()
 
     def process_exception(self, request, exception):
         sentry_exception_handler(request=request)
@@ -68,5 +82,6 @@ class DjangoGlobalMiddleware(object):
         return None
 
     def process_response(self, request, response):
+        celery_teardown_request()
         api_globals.request = None
         return response

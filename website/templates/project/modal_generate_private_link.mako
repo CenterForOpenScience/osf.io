@@ -17,6 +17,9 @@
                                 class="form-control private-link-name"
                                 placeholder='Optional link name (e.g., For peer review, Sharing data, Share project)' />
                         </div>
+                        <div class="help-block">
+                            <p data-bind="html: message, attr: {class: messageClass}"></p>
+                        </div>
                     </div>
 
                     <hr />

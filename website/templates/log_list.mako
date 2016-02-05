@@ -17,7 +17,7 @@
 
         <div class="components panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Recent Activity </h3>
+                <h3 class="panel-title">Recent activity </h3>
                 <div class="pull-right">
                 </div>
             </div>
@@ -29,7 +29,7 @@
                 </p>
                 <span data-bind="if: loading()">
                     <div class="spinner-loading-wrapper">
-		                <div class="logo-spin logo-lg "><img src="/static/img/logo_spin.png" alt="loader"> </div>
+		                <div class="logo-spin logo-lg"></div>
 	                	<p class="m-t-sm text-center"> Loading logs...  </p>
 	                </div>
                 </span>
@@ -79,7 +79,7 @@
                     </ul>
                 </div>
 
-            </div> 
+            </div>
         </div>
 </div>
 </div><!-- end #logScope -->

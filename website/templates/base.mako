@@ -143,14 +143,9 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
-            % if access_token:
-                accessToken: ${ access_token | sjson, n },
-                userId: ${user_id | sjson, n},
-                authUrl: ${auth_url | sjson, n},
-                profileUrl: ${profile_url | sjson, n},
-            % endif
                 cookieName: ${ cookie_name | sjson, n },
-                apiV2Prefix: ${ api_v2_base | sjson, n }
+                apiV2Prefix: ${ api_v2_base | sjson, n },
+                registerUrl: ${ api_url_for('register_user') | sjson, n}
             });
         </script>
 
@@ -222,12 +217,17 @@
     <%include file="footer.mako"/>
 </%def>
 
+<%def name="alert()">
+    <%include file="alert.mako"/>
+</%def>
+
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
             % if status:
-                <%include file="alert.mako"/>
+                ${self.alert()}
             % endif
+
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->
@@ -261,7 +261,11 @@
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
         <script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
     % endif
-
+    <!-- JQuery 3 for IE Patching -->
+    <script type="text/javascript" src="/static/vendor/jquery-compat-git/jquery-compat-git.js"></script>
+    <script type="text/javascript">
+        var $3 = jQuery.noConflict(true);
+    </script>
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.

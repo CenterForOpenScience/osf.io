@@ -43,7 +43,7 @@ var Log = function(params) {
       */
     self.hasTemplate = ko.computed(function() {
         if (!self.user) {
-            $('script#' + self.action + '_no_user').length > 0;
+            return $('script#' + self.action + '_no_user').length > 0;
         } else {
             return $('script#' + self.action).length > 0;
         }
@@ -176,6 +176,7 @@ var createLogs = function(logData){
             nodeCategory: item.node.category,
             contributors: item.contributors,
             nodeUrl: item.node.url,
+            projectUrl: item.node.node_type === 'project' ? '/' + item.node.registered_from_id + '/' : item.node.url,
             userFullName: item.user.fullname,
             userURL: item.user.url,
             params: item.params,

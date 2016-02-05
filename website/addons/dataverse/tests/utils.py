@@ -86,9 +86,9 @@ def create_mock_dataverse(title='Example Dataverse 0'):
         create_mock_dataset('DVN/00003'),
     ]
 
-    def _get_dataset_by_doi(doi):
+    def _get_dataset_by_doi(doi, timeout=None):
         return next((
-            dataset for dataset in mock_dataverse.get_datasets()
+            dataset for dataset in mock_dataverse.get_datasets(timeout=timeout)
             if dataset.doi == doi), None
         )
 

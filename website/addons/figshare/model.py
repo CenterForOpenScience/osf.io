@@ -1,73 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import pymongo
 from modularodm import fields
 
 from framework.auth.decorators import Auth
 
 from website.models import NodeLog
-from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import StorageAddonBase
 
 from . import messages
 from .api import Figshare
-from . import exceptions as fig_exceptions
 from . import settings as figshare_settings
-
-
-class FigShareGuidFile(GuidFile):
-
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('article_id', pymongo.ASCENDING),
-                ('file_id', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-
-    article_id = fields.StringField(index=True)
-    file_id = fields.StringField(index=True)
-
-    @property
-    def waterbutler_path(self):
-        if getattr(self.node.get_addon('figshare'), 'figshare_type', None) == 'project':
-            return '/{}/{}'.format(self.article_id, self.file_id)
-
-        return '/' + str(self.file_id)
-
-    @property
-    def provider(self):
-        return 'figshare'
-
-    @property
-    def external_url(self):
-        extra = self._metadata_cache['extra']
-        if extra['status'] == 'public':
-            return self._metadata_cache['extra']['webView']
-        return None
-
-    def _exception_from_response(self, response):
-        try:
-            if response.json()['data']['extra']['status'] == 'drafts':
-                self._metadata_cache = response.json()['data']
-                raise fig_exceptions.FigshareIsDraftError(self)
-        except KeyError:
-            pass
-
-        super(FigShareGuidFile, self)._exception_from_response(response)
-
-    @property
-    def version_identifier(self):
-        return ''
-
-    @property
-    def unique_identifier(self):
-        return '{}{}'.format(self.article_id, self.file_id)
 
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
@@ -121,9 +65,11 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         api = Figshare.from_settings(self.user_settings)
         items = []
         if self.figshare_type in ('article', 'fileset'):
-            items = api.article(self, self.figshare_id)['items']
+            article = api.article(self, self.figshare_id)
+            items = article['items'] if article else []
         else:
-            items = api.project(self, self.figshare_id)['articles']
+            project = api.project(self, self.figshare_id)
+            items = project['articles'] if project else []
         private = any(
             [item for item in items if item['status'] != 'Public']
         )
@@ -133,21 +79,6 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 figshare_type=self.figshare_type,
                 figshare_title=self.figshare_title,
                 url=self.owner.web_url_for('collect_file_trees'))
-
-    def find_or_create_file_guid(self, path):
-        # path should be /aid/fid
-        # split return ['', aid, fid] or ['', fid]
-        split_path = path.split('/')
-        if len(split_path) == 3:
-            _, article_id, file_id = split_path
-        else:
-            _, file_id = split_path
-            article_id = self.figshare_id
-        return FigShareGuidFile.get_or_create(
-            node=self.owner,
-            file_id=file_id,
-            article_id=article_id,
-        )
 
     @property
     def api_url(self):

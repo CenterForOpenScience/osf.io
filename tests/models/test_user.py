@@ -7,7 +7,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from framework import auth
 from framework.auth import exceptions
 from framework.exceptions import PermissionsError
-from website import models
+from website import models, project
 from tests import base
 from tests.base import fake
 from tests import factories
@@ -120,9 +120,23 @@ class TestUser(base.OsfTestCase):
         with assert_raises(exceptions.InvalidTokenError):
             self.user._get_unconfirmed_email_for_token(token1)
 
+    def test_contributed_property(self):
+        projects_contributed_to = project.model.Node.find(Q('contributors', 'eq', self.user._id))
+        assert_equal(list(self.user.contributed), list(projects_contributed_to))
+
+    def test_created_property(self):
+        # make sure there's at least one project
+        factories.ProjectFactory(creator=self.user)
+        projects_created_by_user = project.model.Node.find(Q('creator', 'eq', self.user._id))
+        assert_equal(list(self.user.created), list(projects_created_by_user))
+
 
 class TestUserMerging(base.OsfTestCase):
     ADDONS_UNDER_TEST = {
+        'deletable': {
+            'user_settings': factories.MockAddonUserSettings,
+            'node_settings': factories.MockAddonNodeSettings,
+        },
         'unmergeable': {
             'user_settings': factories.MockAddonUserSettings,
             'node_settings': factories.MockAddonNodeSettings,
@@ -176,6 +190,13 @@ class TestUserMerging(base.OsfTestCase):
         self.user.add_addon('unmergeable')
 
         assert_false(self.user.can_be_merged)
+
+    def test_can_be_merged_delete_unmergable_addon(self):
+        self.user.add_addon('mergeable')
+        self.user.add_addon('deletable')
+        self.user.delete_addon('deletable')
+
+        assert_true(self.user.can_be_merged)
 
     def test_merge_unconfirmed_into_unmergeable(self):
         self.user.add_addon('unmergeable')
@@ -244,12 +265,12 @@ class TestUserMerging(base.OsfTestCase):
         self.user.external_accounts = [factories.ExternalAccountFactory()]
         other_user.external_accounts = [factories.ExternalAccountFactory()]
 
-        self.user.mailing_lists = {
+        self.user.mailchimp_mailing_lists = {
             'user': True,
             'shared_gt': True,
             'shared_lt': False,
         }
-        other_user.mailing_lists = {
+        other_user.mailchimp_mailing_lists = {
             'other': True,
             'shared_gt': False,
             'shared_lt': True,
@@ -301,7 +322,9 @@ class TestUserMerging(base.OsfTestCase):
             'suffix',
             'timezone',
             'username',
+            'mailing_lists',
             'verification_key',
+            'affiliated_institutions',
             'contributor_added_email_records'
         ]
 
@@ -324,11 +347,14 @@ class TestUserMerging(base.OsfTestCase):
                 self.user.external_accounts[0]._id,
                 other_user.external_accounts[0]._id,
             ],
-            'mailing_lists': {
+            'mailchimp_mailing_lists': {
                 'user': True,
                 'other': True,
                 'shared_gt': True,
                 'shared_lt': True,
+            },
+            'osf_mailing_lists': {
+                'Open Science Framework Help': True
             },
             'security_messages': {
                 'user': today,
@@ -358,7 +384,7 @@ class TestUserMerging(base.OsfTestCase):
         # mock mailchimp
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailing_lists)]}
+        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
 
         # perform the merge
         self.user.merge_user(other_user)
@@ -418,7 +444,15 @@ class TestUserMerging(base.OsfTestCase):
 
         self.user.merge_user(self.unregistered)
 
+        self.project_with_unreg_contrib.reload()
         assert_true(self.user.is_invited)
-
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
 
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_merge_doesnt_send_signal(self, mock_notify):
+        #Explictly reconnect signal as it is disconnected by default for test
+        project.signals.contributor_added.connect(project.views.contributor.notify_added_contributor)
+        other_user = factories.UserFactory()
+        self.user.merge_user(other_user)
+        assert_equal(other_user.merged_by._id, self.user._id)
+        mock_notify.assert_not_called()

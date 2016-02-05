@@ -1,19 +1,17 @@
 import os
 
-from website.addons.box import model, routes, utils
+from website.addons.box import model, routes, views
 
 
 MODELS = [
-    model.BoxFile,
     model.BoxUserSettings,
     model.BoxNodeSettings,
-    model.BoxOAuthSettings,
 ]
 
 USER_SETTINGS_MODEL = model.BoxUserSettings
 NODE_SETTINGS_MODEL = model.BoxNodeSettings
 
-ROUTES = [routes.auth_routes, routes.api_routes]
+ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'box'
 FULL_NAME = 'Box'
@@ -41,10 +39,10 @@ INCLUDE_CSS = {
 }
 
 HAS_HGRID_FILES = True
-GET_HGRID_DATA = utils.box_addon_folder
+GET_HGRID_DATA = views.box_root_folder
 
 MAX_FILE_SIZE = 250  # MB
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = None  # use default node settings template
-USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'box_user_settings.mako')
+USER_SETTINGS_TEMPLATE = None  # use default user settings template

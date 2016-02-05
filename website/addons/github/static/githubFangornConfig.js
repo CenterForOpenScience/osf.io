@@ -142,41 +142,8 @@ var _githubItemButtons = {
                     }, item.data.branches[i]));
                 }
             }
-            // If File and FileRead are not defined dropzone is not supported and neither is uploads
-            if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
-                buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
-                        },
-                        icon: 'fa fa-upload',
-                        className: 'text-success'
-                    }, 'Upload'),
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
-                        },
-                        icon: 'fa fa-plus',
-                        className: 'text-success'
-                    }, 'Create Folder')
-                );
-            }
             if (item.data.addonFullname) {
                 buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            window.location = item.data.urls.zip;
-                        },
-                        icon: 'fa fa-download',
-                        className: 'text-primary'
-                    }, 'Download'),
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            window.open(item.data.urls.repo, '_blank');
-                        },
-                        icon: 'fa fa-external-link',
-                        className: 'text-info'
-                    }, 'Open'),
                     m.component(Fangorn.Components.dropdown, {
                         'label': 'Branch: ',
                         onchange: function (event) {
@@ -187,7 +154,46 @@ var _githubItemButtons = {
                     }, branchArray)
                 );
             }
-        } else if (item.kind === 'file') {
+            if (tb.options.placement !== 'fileview') {
+                // If File and FileRead are not defined dropzone is not supported and neither is uploads
+                if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
+                            },
+                            icon: 'fa fa-upload',
+                            className: 'text-success'
+                        }, 'Upload'),
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
+                            },
+                            icon: 'fa fa-plus',
+                            className: 'text-success'
+                        }, 'Create Folder')
+                    );
+                }
+                if (item.data.addonFullname) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                window.location = item.data.urls.zip;
+                            },
+                            icon: 'fa fa-download',
+                            className: 'text-primary'
+                        }, 'Download'),
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                window.open(item.data.urls.repo, '_blank');
+                            },
+                            icon: 'fa fa-external-link',
+                            className: 'text-info'
+                        }, 'Open')
+                    );
+                }
+            }
+        } else if (item.kind === 'file' && tb.options.placement !== 'fileview') {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
@@ -228,7 +234,7 @@ var _githubItemButtons = {
             }
         }
 
-        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
+        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit && tb.options.placement !== 'fileview') {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function() {
@@ -260,7 +266,7 @@ function _fangornLazyLoadOnLoad (tree, event) {
         Fangorn.Utils.inheritFromParent(item, tree, ['branch']);
     });
     Fangorn.Utils.setCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
-    if(!event){
+    if(!event && tb.isMultiselected(tb.currentFileID)){
         Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
     }
 }
@@ -279,13 +285,23 @@ function gotoFile (item) {
         window.open(fileurl, '_self');
     }
 }
+
 function _fangornGithubTitle(item, col)  {
     var tb = this;
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
     }
+    
     if (item.data.addonFullname) {
+        var urlParams = $osf.urlParams();
+        
+        if (!item.data.branch) {
+            if (urlParams.branch && urlParams.branch != item.data.branch) {
+                item.data.branch = urlParams.branch;
+            }
+        }
         var branch = item.data.branch || item.data.defaultBranch;
+        
         return m('span',[
             m('github-name', item.data.name + ' (' + branch + ')')
         ]);
@@ -303,18 +319,11 @@ function _fangornGithubTitle(item, col)  {
     }
 }
 
-
 function _fangornColumns (item) {
     var tb = this;
     var selectClass = '';
     var node = item.parent().parent();
-    if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-        item.css = 'fangorn-selected';
-        tb.multiselected([item]);
-    }
-
     var columns = [];
-
     columns.push({
         data : 'name',
         folderIcons : true,

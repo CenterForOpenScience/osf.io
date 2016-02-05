@@ -1,7 +1,6 @@
 
 /**
 * A simple UI component to use with divs that need to be collapsed or expanded.
-* Requires html element to have an ID set and have display block rule, (preferably a div tag).
 *
 * Usage:
 *
@@ -38,9 +37,9 @@ ToggleHeight.prototype.init =  function () {
     var self = this;
     self.collapsed = true;
     self.showToggle = false;
-    self.gradientDiv = $('<div id="' + self.element.id + '-gradient" class="toggle-height-gradient" style="display:none"></div>').appendTo(self.element);
-    self.toggleDiv = $('<div id="' + self.element.id + '-toggle" class="toggle-height-toggle text-center" style="display:none"></div>').insertAfter(self.element);
-    $('#' + self.element.id + '-toggle.toggle-height-toggle').click(self.toggle.bind(this));
+    self.gradientDiv = $('<div class="toggle-height-gradient" style="display:none"></div>').appendTo(self.element);
+    self.toggleDiv = $('<div class="toggle-height-toggle text-center" style="display:none"></div>').insertAfter(self.element);
+    self.toggleDiv.click(self.toggle.bind(this));
     self.checkCollapse();
     $(window).resize(self.checkCollapse.bind(this));
 };

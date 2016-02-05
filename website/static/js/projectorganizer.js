@@ -187,7 +187,7 @@ function saveExpandState(item, callback) {
         expandUrl = item.apiURL + 'expand/';
         postAction = $osf.postJSON(expandUrl, {});
         postAction.done(function () {
-            item.expand = false;
+            item.expand = true;
             if (callback !== undefined) {
                 callback();
             }
@@ -257,11 +257,14 @@ function _poResolveRows(item) {
     }
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
+    } else {
+        item.css = '';
     }
+
     if (draggable) {
         css = 'po-draggable';
     }
-    item.css = '';
+
     default_columns = [{
         data : 'name',  // Data field name
         folderIcons : true,
@@ -986,7 +989,7 @@ function showLegend() {
     });
     var repr = function (item) {
         return [
-            m('span', {
+            m('span[style="width:18px"]', {
                 className: item.icon
             }),
             '  ',
@@ -1373,7 +1376,7 @@ var tbOptions = {
         rowDiv.first().trigger('click');
 
         $('.gridWrapper').on('mouseout', function () {
-            rowDiv.removeClass('po-hover');
+            tb.select('.tb-row').removeClass('po-hover');
         });
     },
     createcheck : function (item, parent) {

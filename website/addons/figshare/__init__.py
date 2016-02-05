@@ -5,7 +5,6 @@ from . import routes, views, model  # noqa
 MODELS = [
     model.AddonFigShareUserSettings,
     model.AddonFigShareNodeSettings,
-    model.FigShareGuidFile
 ]
 USER_SETTINGS_MODEL = model.AddonFigShareUserSettings
 NODE_SETTINGS_MODEL = model.AddonFigShareNodeSettings

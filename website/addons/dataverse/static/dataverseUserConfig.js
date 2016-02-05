@@ -9,6 +9,7 @@ ko.punches.enableAll();
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
+require('js/osfToggleHeight');
 
 var language = require('js/osfLanguage').Addons.dataverse;
 var osfHelpers = require('js/osfHelpers');
@@ -75,6 +76,7 @@ function ViewModel(url) {
                 externalAccount.dataverseUrl = account.host_url;
                 return externalAccount;
             }));
+            $('.addon-auth-table').osfToggleHeight({height: 140});
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
@@ -94,7 +96,19 @@ function ViewModel(url) {
             return;
         }
 
+        if ( !self.useCustomHost() && !self.apiToken() ){
+            self.changeMessage("Please enter an API token.", 'text-danger');
+            return;
+        }
+
+        if ( self.useCustomHost() && ( !self.customHost() || !self.apiToken() ) )  {
+            self.changeMessage("Please enter a Dataverse host and an API token.", 'text-danger');
+            return;
+        }
+
+
         var url = self.urls().create;
+
         return osfHelpers.postJSON(
             url,
             ko.toJS({
@@ -105,6 +119,7 @@ function ViewModel(url) {
             self.clearModal();
             $modal.modal('hide');
             self.updateAccounts();
+
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.changeMessage(errorMessage, 'text-danger');

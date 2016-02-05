@@ -13,6 +13,8 @@ from website.addons.github.api import GitHub
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {
     'add': 'Added {0}'.format(MESSAGE_BASE),
+    'move': 'Moved {0}'.format(MESSAGE_BASE),
+    'copy': 'Copied {0}'.format(MESSAGE_BASE),
     'update': 'Updated {0}'.format(MESSAGE_BASE),
     'delete': 'Deleted {0}'.format(MESSAGE_BASE),
 }

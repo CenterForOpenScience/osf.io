@@ -69,14 +69,6 @@ class ArchiveJob(StoredObject):
 
     target_addons = fields.ForeignField('archivetarget', list=True)
 
-    # This field is used for stashing embargo URLs while still in the app context
-    # Format: {
-    #     'view': <str> url,
-    #     'approve': <str> url,
-    #     'disapprove': <str> url,
-    # }
-    meta = fields.DictionaryField()
-
     def __repr__(self):
         return (
             '<{ClassName}(_id={self._id}, done={self.done}, '

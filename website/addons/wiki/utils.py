@@ -8,7 +8,7 @@ import requests
 
 from framework.mongo.utils import to_mongo_key
 
-from website import settings
+from website.models import Node
 from website.addons.wiki import settings as wiki_settings
 from website.addons.wiki.exceptions import InvalidVersionError
 
@@ -88,7 +88,7 @@ def migrate_uuid(node, wname):
 
 def share_db():
     """Generate db client for sharejs db"""
-    client = MongoClient(settings.DB_HOST, settings.DB_PORT)
+    client = MongoClient(wiki_settings.SHAREJS_DB_URL)
     return client[wiki_settings.SHAREJS_DB_NAME]
 
 
@@ -154,3 +154,63 @@ def format_wiki_version(version, num_versions, allow_preview):
         raise InvalidVersionError
 
     return version
+
+def serialize_wiki_settings(user, node_ids):
+    """ Format wiki data for project settings page
+
+    :param user: modular odm User object
+    :param node_ids: list of parent project ids
+    :return: treebeard-formatted data
+    """
+    items = []
+
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        assert node, '{} is not a valid Node.'.format(node_id)
+
+        can_read = node.has_permission(user, 'read')
+        include_wiki_settings = node.include_wiki_settings(user)
+
+        if not include_wiki_settings:
+            continue
+
+        children = []
+
+        if node.admin_public_wiki(user):
+            children.append({
+                'select': {
+                    'title': "permission",
+                    'permission':
+                        'public'
+                        if node.get_addon('wiki').is_publicly_editable
+                        else 'private'
+                },
+            })
+        children.extend(serialize_wiki_settings(
+            user,
+            [
+                n._id
+                for n in node.nodes
+                if n.primary and
+                not n.is_deleted
+            ]
+        ))
+
+        item = {
+            'node': {
+                'id': node_id,
+                'url': node.url if can_read else '',
+                'title': node.title if can_read else 'Private Project',
+            },
+            'children': children,
+            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'view': can_read,
+            },
+        }
+
+        items.append(item)
+
+    return items

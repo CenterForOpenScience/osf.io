@@ -25,25 +25,21 @@
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
-                        <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
+                        <li><a href="#configureNodeAnchor">${node['node_type'].capitalize()}</a></li>
 
-                        % if 'write' in user['permissions']:
-                            <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
+                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
-                            % if addon_enabled_settings:
-                                <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
-                            % endif
-
-                            <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
+                        % if addon_enabled_settings:
+                            <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                         % endif
+
+                        <li><a href="#configureWikiAnchor">Wiki</a></li>
 
                         % if 'admin' in user['permissions']:
-                            <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
+                            <li><a href="#configureCommentingAnchor">Commenting</a></li>
                         % endif
 
-                        % if 'admin' in user['permissions'] or (discussions['enabled'] and user['has_read_permissions']):
-                            <li><a href="#configureDiscussionsAnchor">Configure Email Discussions</a></li>
-                        % endif
+                        <li><a href="#configureNotificationsAnchor">Email Notifications</a></li>
 
                     % endif
 
@@ -71,43 +67,50 @@
                 <div class="panel panel-default">
                     <span id="configureNodeAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
-                    </div>
-                    <div id="nodeCategorySettings" class="panel-body">
-                        <h5>
-                            Category: <select data-bind="attr.disabled: disabled,
-                                                        options: categories,
-                                                        optionsValue: 'value',
-                                                        optionsText: 'label',
-                                                        value: selectedCategory"></select>
-                        </h5>
-                        <p data-bind="if: !disabled">
-                            <button data-bind="css: {disabled: !dirty()},
-                                               click: cancelUpdateCategory"
-                                    class="btn btn-default">Cancel</button>
-                            <button data-bind="css: {disabled: !dirty()},
-                                               click: updateCategory"
-                                    class="btn btn-primary">Change</button>
-                        </p>
-                        <span data-bind="css: messageClass, html: message"></span>
-
-                        <span data-bind="if: disabled" class="help-block">
-                            A top-level project's category cannot be changed
-                        </span>
+                        <h3 id="configureNode" class="panel-title">${node['node_type'].capitalize()}</h3>
                     </div>
 
+                    <div id="projectSettings" class="panel-body">
+                        <div class="form-group">
+                            <label>Category:</label>
+                            <select data-bind="attr.disabled: disabled,
+                                                         options: categoryOptions,
+                                                         optionsValue: 'value',
+                                                         optionsText: 'label',
+                                                         value: selectedCategory"></select>
+                            <span data-bind="if: disabled" class="help-block">
+                              A top-level project's category cannot be changed
+                            </span>
+                        </div>
+                        <div class="form-group">
+                            <label for="title">Title:</label>
+                            <input class="form-control" type="text" maxlength="200" placeholder="Required" data-bind="value: title,
+                                                                                                      valueUpdate: 'afterkeydown'">
+                            <span class="text-danger" data-bind="validationMessage: title"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description:</label>
+                            <textarea placeholder="Optional" data-bind="value: description,
+                                             valueUpdate: 'afterkeydown'",
+                            class="form-control resize-vertical"></textarea>
+                        </div>
+                           <button data-bind="click: cancelAll"
+                            class="btn btn-default">Cancel</button>
+                            <button data-bind="click: updateAll"
+                            class="btn btn-success">Save changes</button>
+                        <div class="help-block">
+                            <span data-bind="css: messageClass, html: message"></span>
+                        </div>
                     % if 'admin' in user['permissions']:
                         <hr />
-                        <div class="panel-body">
                             <div class="help-block">
                                 A project cannot be deleted if it has any components within it.
                                 To delete a parent project, you must first delete all child components
                                 by visiting their settings pages.
                             </div>
                             <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
-                        </div>
                     % endif
-
+                    </div>
                 </div>
 
             % endif
@@ -195,38 +198,69 @@
                 % endif
 
             % endif
+
         % endif  ## End Select Addons
 
-        % if user['has_read_permissions']:  ## Begin Configure Notifications
-
+        % if 'write' in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
-
                 <div class="panel panel-default">
-                    <span id="configureNotificationsAnchor" class="anchor"></span>
+                    <span id="configureWikiAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Notifications</h3>
+                        <h3 class="panel-title">Wiki</h3>
                     </div>
-                    <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
-                    </div>
-                    <form id="notificationSettings" class="osf-treebeard-minimal">
-                        <div id="grid">
-                            <div class="notifications-loading">
-                                <i class="fa fa-spinner notifications-spin"></i>
-                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+
+                <div class="panel-body">
+                    %if wiki:
+                        <form id="selectWikiForm">
+                            <div>
+                                <label>
+                                    <input
+                                            type="checkbox"
+                                            name="${wiki.short_name}"
+                                            class="wiki-select"
+                                            data-bind="checked: enabled"
+                                    />
+                                    Enable the wiki in <b>${node['title']}</b>.
+                                </label>
+
+                                <div data-bind="visible: enabled()" class="text-success" style="padding-left: 15px">
+                                    <p data-bind="text: wikiMessage"></p>
+                                </div>
+                                <div data-bind="visible: !enabled()" class="text-danger" style="padding-left: 15px">
+                                    <p data-bind="text: wikiMessage"></p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
-                        </div>
-                    </form>
+                        </form>
+                    %endif
+
+                        % if include_wiki_settings:
+                            <h3>Configure</h3>
+                            <div style="padding-left: 15px">
+                                %if  node['is_public']:
+                                    <p class="text">Control who can edit the wiki of <b>${node['title']}</b></p>
+                                %else:
+                                    <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
+                                %endif
+                            </div>
+
+                            <form id="wikiSettings" class="osf-treebeard-minimal">
+                                <div id="wgrid">
+                                    <div class="spinner-loading-wrapper">
+                                        <div class="logo-spin logo-lg"></div>
+                                        <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
+                                    </div>
+                                </div>
+                                <div class="help-block" style="padding-left: 15px">
+                                    <p id="configureWikiMessage"></p>
+                                </div>
+                            </form>
+                        % else:
+                            <p class="text">To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public and the wiki enabled.</p>
+                        %endif
+                    </div>
                 </div>
-
             %endif
-
-        % endif End Configure Notifications
-
-
+        %endif ## End Wiki Config
 
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting
 
@@ -235,7 +269,7 @@
                 <div class="panel panel-default">
                     <span id="configureCommentingAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Commenting</h3>
+                        <h3 class="panel-title">Commenting</h3>
                     </div>
 
                     <div class="panel-body">
@@ -271,19 +305,13 @@
 
         % endif  ## End Configure Commenting
 
-        % if 'admin' in user['permissions'] or (discussions['enabled'] and user['has_read_permissions']): ## Begin Configure Discussions
+        % if user['has_read_permissions']:  ## Begin Configure Email Notifications
 
             % if not node['is_registration']:
 
-                <div class="panel panel-default">
-                    <span id="configureDiscussionsAnchor" class="anchor"></span>
+                % if discussions['enabled']:  ## Begin Project Mailing Lists Settings
 
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Email Discussions</h3>
-                    </div>
-
-                    % if discussions['enabled']:
-                        <div class="help-block" style="padding-left: 15px">
+                    <div class="help-block" style="padding-left: 15px">
                             <p>Start an email discussions by sending an email to <a href="mailto: ${node['id']}@osf.io">${node['id']}@osf.io</a>.</p>
                             % if not discussions['user_subscribed']:
                                 <p class="text-danger">You currently do not receive email discussions for this ${node['node_type']}
@@ -313,18 +341,9 @@
                                     <p id="configureDiscussionsMessage"></p>
                                 </div>
                             </form>
-                            % if 'admin' in user['permissions']:
-                                <hr />
-                                <div class="help-block">
-                                    Disabling email discussions for this ${node['node_type']} will preserve
-                                    the subscription status of all members, but will ignore email communications and
-                                    recording through the list until it is enabled again.
-                                </div>
-                                <button id="disableDiscussions" class="btn btn-warning">Disable</button>
-                            % endif
-                        </div>
-                    % else:
-                        <div class="help-block" style="padding-left: 15px">
+                % else:
+
+                    <div class="help-block" style="padding-left: 15px">
                             <p>Email discussions are currently disabled for this ${node['node_type']}.</p>
                         </div>
                         <div class="panel-body">
@@ -334,11 +353,33 @@
                                 </div>
                             % endif
                         </div>
-                    % endif
+
+                % endif  ## End PML Settings
+
+                <div class="panel panel-default">  ## Begin Individual Email Notifications
+                    <span id="configureNotificationsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Email Notifications</h3>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                    </div>
+                    <form id="notificationSettings" class="osf-treebeard-minimal">
+                        <div id="grid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                            </div>
+                        </div>
+                        <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                        </div>
+                    </form>
                 </div>
 
-            % endif
-        % endif  ## End Configure Discussions
+            %endif
+
+        % endif ## End Configure Email Notifications
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
@@ -371,14 +412,13 @@
                                     registrations will be marked with a <strong>retracted</strong> tag.
                                 </div>
 
-                                %if not node['pending_retraction']:
+                                %if not node['is_pending_retraction']:
                                     <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
                                 % else:
                                     <p><strong>This registration is already pending a retraction.</strong></p>
                                 %endif
 
                             % endif
-
 
                         </div>
                     </div>
@@ -406,21 +446,22 @@
     <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
 % endfor
 
-
 <%def name="stylesheets()">
     ${parent.stylesheets()}
 
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
 </%def>
 
-
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script>
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
+      window.contextVars.node.description = ${node['description'] | sjson, n };
       window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
+      window.contextVars.wiki = window.contextVars.wiki || {};
+      window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>

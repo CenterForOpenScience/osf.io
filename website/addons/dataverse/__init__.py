@@ -1,11 +1,10 @@
 import os
 
-from .model import AddonDataverseUserSettings, AddonDataverseNodeSettings, \
-    DataverseFile
+from .model import AddonDataverseUserSettings, AddonDataverseNodeSettings
 from .routes import settings_routes, api_routes
 import views
 
-MODELS = [AddonDataverseNodeSettings, AddonDataverseUserSettings, DataverseFile]
+MODELS = [AddonDataverseNodeSettings, AddonDataverseUserSettings]
 USER_SETTINGS_MODEL = AddonDataverseUserSettings
 NODE_SETTINGS_MODEL = AddonDataverseNodeSettings
 

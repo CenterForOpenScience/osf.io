@@ -7,6 +7,7 @@ module.exports = {
         procedure: 'fa fa-cogs',
         instrumentation: 'fa fa-flask',
         data: 'fa fa-database',
+        software: 'fa fa-laptop',
         analysis: 'fa fa-bar-chart',
         communication: 'fa fa-comment',
         other: 'fa fa-th-large',
@@ -23,5 +24,6 @@ module.exports = {
     },
     info: 'fa fa-info-circle',
     smaller: 'iconmap-smaller',
-    clickable: 'iconmap-clickable'
+    clickable: 'iconmap-clickable',
+    private : 'fa fa-lock'
 };

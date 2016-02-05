@@ -17,11 +17,15 @@ FIG_PATH = os.path.join(settings.ANALYTICS_PATH, 'figs', 'addons')
 mkdirp(FIG_PATH)
 
 ADDONS = [
-    'github',
-    's3',
-    'figshare',
-    'dropbox',
+    'box',
     'dataverse',
+    'dropbox',
+    'figshare',
+    'github',
+    'googledrive',
+    'mendeley',
+    's3',
+    'zotero',
 ]
 
 

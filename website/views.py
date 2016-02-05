@@ -2,6 +2,7 @@
 import logging
 import itertools
 import math
+import urllib
 import httplib as http
 
 from modularodm import Q
@@ -15,7 +16,6 @@ from framework.routing import proxy_url
 from framework.exceptions import HTTPError
 from framework.auth.forms import SignInForm
 from framework.forms import utils as form_utils
-from framework.guid.model import GuidStoredObject
 from framework.auth.forms import RegistrationForm
 from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
@@ -110,15 +110,11 @@ def index(auth):
 
 
 def find_dashboard(user):
-    dashboard_folder = user.node__contributed.find(
-        Q('is_dashboard', 'eq', True)
-    )
+    dashboard_folder = Node.find_for_user(user, subquery=Q('is_dashboard', 'eq', True))
 
     if dashboard_folder.count() == 0:
         new_dashboard(user)
-        dashboard_folder = user.node__contributed.find(
-            Q('is_dashboard', 'eq', True)
-        )
+        dashboard_folder = Node.find_for_user(user, Q('is_dashboard', 'eq', True))
     return dashboard_folder[0]
 
 
@@ -149,12 +145,15 @@ def get_all_projects_smart_folder(auth, **kwargs):
     # TODO: Unit tests
     user = auth.user
 
-    contributed = user.node__contributed
-    nodes = contributed.find(
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False)
-    ).sort('-title')
+    contributed = Node.find_for_user(
+        user,
+        subquery=(
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False) &
+            Q('is_folder', 'eq', False)
+        )
+    )
+    nodes = contributed.sort('title')
 
     keys = nodes.get_keys()
     return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.parent_id not in keys]
@@ -163,18 +162,20 @@ def get_all_projects_smart_folder(auth, **kwargs):
 def get_all_registrations_smart_folder(auth, **kwargs):
     # TODO: Unit tests
     user = auth.user
-    contributed = user.node__contributed
 
-    nodes = contributed.find(
+    contributed = Node.find_for_user(
+        user,
+        subquery=(
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', True) &
+            Q('is_folder', 'eq', False)
+        )
+    )
+    nodes = contributed.sort('-title')
 
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', True) &
-        Q('is_folder', 'eq', False)
-    ).sort('-title')
-
-    # Note(hrybacki): is_retracted and pending_embargo are property methods
+    # Note(hrybacki): is_retracted and is_pending_embargo are property methods
     # and cannot be directly queried
-    nodes = filter(lambda node: not node.is_retracted and not node.pending_embargo, nodes)
+    nodes = filter(lambda node: not node.is_retracted and not node.is_pending_embargo, nodes)
     keys = [node._id for node in nodes]
     return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
 
@@ -191,23 +192,27 @@ def get_dashboard_nodes(auth):
     """
     user = auth.user
 
-    contributed = user.node__contributed  # nodes user contributed to
-
-    nodes = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False)
+    nodes = Node.find_for_user(
+        user,
+        subquery=(
+            Q('category', 'eq', 'project') &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False) &
+            Q('is_folder', 'eq', False)
+        )
     )
 
     if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
-        comps = contributed.find(
-            # components only
-            Q('category', 'ne', 'project') &
-            # exclude deleted nodes
-            Q('is_deleted', 'eq', False) &
-            # exclude registrations
-            Q('is_registration', 'eq', False)
+        comps = Node.find_for_user(  # NOTE - this used to be a find on nodes above. Does this mess it up?
+            user,
+            (
+                # components only
+                Q('category', 'ne', 'project') &
+                # exclude deleted nodes
+                Q('is_deleted', 'eq', False) &
+                # exclude registrations
+                Q('is_registration', 'eq', False)
+            )
         )
     else:
         comps = []
@@ -234,7 +239,6 @@ def dashboard(auth):
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': dashboard_id,
             }
-
 
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):
@@ -324,6 +328,8 @@ def _build_guid_url(base, suffix=None):
         each.strip('/') for each in [base, suffix]
         if each
     ])
+    if not isinstance(url, unicode):
+        url = url.decode('utf-8')
     return u'/{0}/'.format(url)
 
 
@@ -340,14 +346,14 @@ def resolve_guid(guid, suffix=None):
     guid_object = Guid.load(guid)
     if guid_object:
 
-        # verify that the object is a GuidStoredObject descendant. If a model
-        #   was once a descendant but that relationship has changed, it's
+        # verify that the object implements a GuidStoredObject-like interface. If a model
+        #   was once GuidStoredObject-like but that relationship has changed, it's
         #   possible to have referents that are instances of classes that don't
-        #   have a redirect_mode attribute or otherwise don't behave as
+        #   have a deep_url attribute or otherwise don't behave as
         #   expected.
-        if not isinstance(guid_object.referent, GuidStoredObject):
+        if not hasattr(guid_object.referent, 'deep_url'):
             sentry.log_message(
-                'Guid `{}` resolved to non-guid object'.format(guid)
+                'Guid `{}` resolved to an object with no deep_url'.format(guid)
             )
             raise HTTPError(http.NOT_FOUND)
         referent = guid_object.referent
@@ -356,7 +362,7 @@ def resolve_guid(guid, suffix=None):
             raise HTTPError(http.NOT_FOUND)
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
-        url = _build_guid_url(referent.deep_url, suffix)
+        url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists

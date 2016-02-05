@@ -1,3 +1,4 @@
+from datetime import datetime
 import httplib as http
 import logging
 import json
@@ -76,6 +77,14 @@ def _prepare_mock_500_error():
         content_type='application/json',
     )
 
+def _prepare_mock_401_error():
+    httpretty.register_uri(
+        httpretty.POST,
+        'https://mock2.com/callback',
+        body='{"error": "user denied access"}',
+        status=401,
+        content_type='application/json',
+    )
 
 class TestExternalAccount(OsfTestCase):
     # Test the ExternalAccount object and associated views.
@@ -444,6 +453,30 @@ class TestExternalProviderOAuth2(OsfTestCase):
             )
 
     @httpretty.activate
+    def test_user_denies_access(self):
+
+        # Create a 401 error
+        _prepare_mock_401_error()
+
+        user = UserFactory()
+        # Fake a request context for the callback
+        with self.app.app.test_request_context(
+                path="/oauth/callback/mock2/",
+                query_string="error=mock_error&code=mock_code&state=mock_state"
+        ):
+            # make sure the user is logged in
+            authenticate(user=user, access_token=None, response=None)
+
+            session.data['oauth_states'] = {
+                self.provider.short_name: {
+                    'state': 'mock_state',
+                },
+            }
+            session.save()
+
+            assert_false(self.provider.auth_callback(user=user))
+
+    @httpretty.activate
     def test_multiple_users_associated(self):
         # Create only one ExternalAccount for multiple OSF users
         #
@@ -502,3 +535,180 @@ class TestExternalProviderOAuth2(OsfTestCase):
             ExternalAccount.find().count(),
             1
         )
+
+    @httpretty.activate
+    def test_force_refresh_oauth_key(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=datetime.utcfromtimestamp(time.time() - 200)
+        )
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'access_token': 'refreshed_access_token',
+                'expires_in': 3600,
+                'refresh_token': 'refreshed_refresh_token'
+            })
+        )
+        
+        old_expiry = external_account.expires_at
+        self.provider.account = external_account
+        self.provider.refresh_oauth_key(force=True)
+        external_account.reload()
+
+        assert_equal(external_account.oauth_key, 'refreshed_access_token')
+        assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
+        assert_not_equal(external_account.expires_at, old_expiry)
+        assert_true(external_account.expires_at > old_expiry)
+
+    @httpretty.activate
+    def test_does_need_refresh(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=datetime.utcfromtimestamp(time.time() - 200),
+        )
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'access_token': 'refreshed_access_token',
+                'expires_in': 3600,
+                'refresh_token': 'refreshed_refresh_token'
+            })
+        )
+        
+        old_expiry = external_account.expires_at
+        self.provider.account = external_account
+        self.provider.refresh_oauth_key(force=False)
+        external_account.reload()
+
+        assert_equal(external_account.oauth_key, 'refreshed_access_token')
+        assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
+        assert_not_equal(external_account.expires_at, old_expiry)
+        assert_true(external_account.expires_at > old_expiry)
+
+    @httpretty.activate
+    def test_does_not_need_refresh(self):
+        self.provider.refresh_time = 1
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            refresh_token='old_refresh',
+            expires_at=datetime.utcfromtimestamp(time.time() + 200),
+        )
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'err_msg': 'Should not be hit'
+            }),
+            status=500
+        )
+
+        # .reload() has the side effect of rounding the microsends down to 3 significant figures 
+        # (e.g. DT(YMDHMS, 365420) becomes DT(YMDHMS, 365000)), 
+        # but must occur after possible refresh to reload tokens.
+        # Doing so before allows the `old_expiry == EA.expires_at` comparison to work.
+        external_account.reload()  
+        old_expiry = external_account.expires_at
+        self.provider.account = external_account
+        self.provider.refresh_oauth_key(force=False)
+        external_account.reload()
+
+        assert_equal(external_account.oauth_key, 'old_key')
+        assert_equal(external_account.refresh_token, 'old_refresh')
+        assert_equal(external_account.expires_at, old_expiry)
+
+    @httpretty.activate
+    def test_refresh_oauth_key_does_not_need_refresh(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=0  # causes `.needs_refresh()` to return False
+        )
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'err_msg': 'Should not be hit'
+            }),
+            status=500
+        )  
+        
+        self.provider.account = external_account
+        ret = self.provider.refresh_oauth_key(force=False)
+        assert_false(ret)
+
+    @httpretty.activate
+    def test_refresh_with_broken_provider(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=datetime.utcfromtimestamp(time.time() - 200)
+        )
+        self.provider.client_id = None
+        self.provider.client_secret = None
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'err_msg': 'Should not be hit'
+            }),
+            status=500
+        )  
+        
+        ret = self.provider.refresh_oauth_key(force=False)
+        assert_false(ret)
+
+    @httpretty.activate
+    def test_refresh_without_account_or_refresh_url(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=datetime.utcfromtimestamp(time.time() + 200)
+        )
+
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'err_msg': 'Should not be hit'
+            }),
+            status=500
+        )  
+        
+        ret = self.provider.refresh_oauth_key(force=False)
+        assert_false(ret)

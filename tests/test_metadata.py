@@ -23,7 +23,6 @@ class TestMetaData(OsfTestCase):
         )
 
         ensure_schemas()
-
         assert_equal(
             MetaSchema.find().count(),
             len(OSF_META_SCHEMAS)

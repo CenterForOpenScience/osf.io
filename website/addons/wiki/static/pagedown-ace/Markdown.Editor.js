@@ -1,7 +1,11 @@
-﻿// OSF Note: This file has been changed for UI reasons and to prevent
-// automatic rendering. This is only here for the toolbar
+﻿// OSF Note: This file has been changed for UI reasons, to prevent
+// automatic rendering, and to add a checkbox for toggling snippet
+// autocompletion. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
+var $ = require('jquery');
+var $osf = require('js/osfHelpers');
+var Range = ace.require('ace/range').Range;
 
 (function () {
 
@@ -12,6 +16,7 @@
         doc = window.document,
         re = window.RegExp,
         nav = window.navigator,
+        ctx = window.contextVars,
         SETTINGS = { lineLength: 72 },
 
     // Used to work around some browser bugs where we can't use feature testing.
@@ -210,7 +215,7 @@
             that.uiManager = uiManager;
         };
 
-    }
+    };
 
     // before: contains all the text in the input box BEFORE the selection.
     // after: contains all the text in the input box AFTER the selection.
@@ -779,7 +784,6 @@
             }
             */
 
-            var Range = ace.require('ace/range').Range;
             (function(range) {
                 stateObj.before = inputArea.session.getTextRange(new Range(0,0,range.start.row, range.start.column));
                 stateObj.selection = inputArea.session.getTextRange();
@@ -1645,13 +1649,34 @@
                 buttonRow.appendChild(button);
                 return button;
             };
+            var makeCheckBox = function (div_id, cb_id, XShift, text) {
+                var li = document.createElement("li");
+                li.id = div_id;
+                li.style.left = xPosition + "px";
+                xPosition += 25;
+                li.XShift = XShift;
+                var label = document.createElement("label");
+                label.style.fontWeight = "normal"; 
+                label.style.position =  "relative"; 
+                label.style.top = "-5px";
+                var cb = document.createElement("input");
+                cb.id = cb_id;
+                cb.type = "checkbox";
+                cb.checked = "";
+                var sp = document.createElement("small");
+                sp.innerHTML = " " + text.trim();
+                label.appendChild(cb);
+                label.appendChild(sp);
+                li.appendChild(label);
+                buttonRow.appendChild(li);
+            };
             var makeSpacer = function (num) {
                 var spacer = document.createElement("li");
                 spacer.className = "wmd-spacer wmd-spacer" + num;
                 spacer.id = "wmd-spacer" + num + postfix;
                 buttonRow.appendChild(spacer);
                 xPosition += 25;
-            }
+            };
 
             buttons.bold = makeButton("wmd-bold-button", getStringAndKey("bold"), "0px", bindCommand("doBold"));
             buttons.italic = makeButton("wmd-italic-button", getStringAndKey("italic"), "-20px", bindCommand("doItalic"));
@@ -1679,6 +1704,8 @@
 
             buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
+            makeSpacer(4);
+            makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
@@ -1886,8 +1913,7 @@
         });
     }
 
-    commandProto.doLinkOrImage = function (chunk, postProcessing, isImage) {
-
+    commandProto.doLinkOrImage = function (chunk, postProcessing, isImage, link, multiple, num) {
         chunk.trimWhitespace();
         chunk.findTags(/\s*!?\[/, /\][ ]?(?:\n[ ]*)?(\[.*?\])?/);
         var background;
@@ -1900,7 +1926,7 @@
 
         }
         else {
-            
+
             // We're moving start and end tag back into the selection, since (as we're in the else block) we're not
             // *removing* a link, but *adding* one, so whatever findTags() found is now back to being part of the
             // link text. linkEnteredCallback takes care of escaping any brackets.
@@ -1916,7 +1942,9 @@
             // Marks up the link and adds the ref.
             var linkEnteredCallback = function (link) {
 
-                background.parentNode.removeChild(background);
+                if (!!background) {
+                    background.parentNode.removeChild(background);
+                }
 
                 if (link !== null) {
                     // (                          $1
@@ -1938,14 +1966,23 @@
                     // would mean a zero-width match at the start. Since zero-width matches advance the string position,
                     // the first bracket could then not act as the "not a backslash" for the second.
                     chunk.selection = (" " + chunk.selection).replace(/([^\\](?:\\\\)*)(?=[[\]])/g, "$1\\").substr(1);
-                    
-                    var linkDef = " [999]: " + properlyEncoded(link);
 
-                    var num = that.addLinkDef(chunk, linkDef);
-                    chunk.startTag = isImage ? "![" : "[";
-                    chunk.endTag = "][" + num + "]";
+                    var linkDef;
+                    if (!num) {
+                        linkDef = "  [999]: " + properlyEncoded(link);
+                        num = that.addLinkDef(chunk, linkDef);
+                    }
+                    else {
+                        linkDef = "  [" + num + "]: " + properlyEncoded(link);
+                        that.addLinkDef(chunk, linkDef);
+                        if (!!multiple) {
+                            chunk.before += "![" + that.getString("imagedescription") + "][" + num + "]\n";
+                        }
+                    }
 
-                    if (!chunk.selection) {
+                    if (!chunk.selection && !multiple) {
+                        chunk.startTag = isImage ? "![" : "[";
+                        chunk.endTag = "][" + num + "]";
                         if (isImage) {
                             chunk.selection = that.getString("imagedescription");
                         }
@@ -1954,20 +1991,27 @@
                         }
                     }
                 }
-                postProcessing();
+                if (!!postProcessing) {
+                    postProcessing();
+                }
             };
 
-            background = ui.createBackground();
+            if (!link) {
+                background = ui.createBackground();
 
-            if (isImage) {
-                if (!this.hooks.insertImageDialog(linkEnteredCallback))
-                    ui.prompt(this.getString("imagedialog"), imageDefaultText, linkEnteredCallback);
+                if (isImage) {
+                    if (!this.hooks.insertImageDialog(linkEnteredCallback))
+                        ui.prompt(this.getString("imagedialog"), imageDefaultText, linkEnteredCallback);
+                }
+                else {
+                    if (!this.hooks.insertLinkDialog(linkEnteredCallback))
+                        ui.prompt(this.getString("linkdialog"), linkDefaultText, linkEnteredCallback);
+                }
+                return true;
             }
             else {
-                if (!this.hooks.insertLinkDialog(linkEnteredCallback))
-                    ui.prompt(this.getString("linkdialog"), linkDefaultText, linkEnteredCallback);
+                linkEnteredCallback(link);
             }
-            return true;
         }
     };
 

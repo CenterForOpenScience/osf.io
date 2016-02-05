@@ -1,8 +1,8 @@
 from flask import redirect
 
 from framework.auth import cas
+from framework.auth import decorators
 from framework.auth import views as auth_views
-from framework.auth.decorators import collect_auth
 
 from website.util import web_url_for
 
@@ -19,7 +19,7 @@ def enriched_profile():
                          redirect_to=web_url_for('profile_view', _absolute=True))
 
 
-@collect_auth
+@decorators.collect_auth
 def _landing_page(auth, title, content_path, redirect_to, **kwargs):
     if auth.logged_in:
         return redirect(kwargs.get('redirect_to', redirect_to))

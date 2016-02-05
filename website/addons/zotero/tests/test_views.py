@@ -17,7 +17,10 @@ from website.addons.zotero.tests.factories import (
     ZoteroNodeSettingsFactory
 )
 
-from website.addons.zotero import views
+from framework.exceptions import HTTPError
+
+from pyzotero.zotero_errors import UserNotAuthorised, MissingCredentials
+from website.addons.zotero.provider import ZoteroCitationsProvider
 from website.addons.zotero.serializer import ZoteroSerializer
 
 from utils import mock_responses
@@ -53,6 +56,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = ZoteroNodeSettingsFactory(owner=self.project)
         self.node_addon.set_auth(external_account=self.account, user=self.user)
+        self.provider = ZoteroCitationsProvider()
         #self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
         self.node = MockNode()
         self.node.addon = self.node_addon
@@ -67,8 +71,19 @@ class ZoteroViewsTestCase(OsfTestCase):
         self.id_patcher.stop()
         self.secret_patcher.stop()
 
-    def test_serialize_settings_authorizer(self):
+    @mock.patch('website.addons.zotero.model.Zotero.client', new_callable=mock.PropertyMock)
+    def test_zotero_check_credentials(self, mock_client):
+        mock_client.side_effect = HTTPError(403)
+        assert_false(self.provider.check_credentials(self.node_addon))
+
+        mock_client.side_effect = MissingCredentials
+        with assert_raises(MissingCredentials):
+            self.provider.check_credentials(self.node_addon)
+
+    @mock.patch('website.addons.zotero.views.ZoteroCitationsProvider.check_credentials')
+    def test_serialize_settings_authorizer(self, mock_check_credentials):
         #"""dict: a serialized version of user-specific addon settings"""
+        mock_check_credentials.return_value = True
         res = self.app.get(
             self.project.api_url_for('zotero_get_config'),
             auth=self.user.auth,
@@ -77,6 +92,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['nodeHasAuth'])
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
+        assert_true(result['validCredentials'])
         assert_equal(result['folder'], {'name': ''})
         assert_equal(result['ownerName'], self.user.fullname)
         assert_true(result['urls']['auth'])
@@ -86,8 +102,10 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['urls']['importAuth'])
         assert_true(result['urls']['settings'])
 
-    def test_serialize_settings_non_authorizer(self):
+    @mock.patch('website.addons.zotero.views.ZoteroCitationsProvider.check_credentials')
+    def test_serialize_settings_non_authorizer(self, mock_credentials):
         #"""dict: a serialized version of user-specific addon settings"""
+        mock_credentials.return_value = True
         non_authorizing_user = AuthUserFactory()
         self.project.add_contributor(non_authorizing_user, save=True)
         res = self.app.get(
@@ -98,6 +116,7 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['nodeHasAuth'])
         assert_false(result['userHasAuth'])
         assert_false(result['userIsOwner'])
+        assert_true(result['validCredentials'])
         assert_equal(result['folder'], {'name': ''})
         assert_equal(result['ownerName'], self.user.fullname)
         assert_true(result['urls']['auth'])
@@ -107,8 +126,10 @@ class ZoteroViewsTestCase(OsfTestCase):
         assert_true(result['urls']['importAuth'])
         assert_true(result['urls']['settings'])
 
-    def test_set_auth(self):
+    @mock.patch('website.addons.zotero.provider.ZoteroCitationsProvider.check_credentials')
+    def test_set_auth(self, mock_credentials):
 
+        mock_credentials.return_value = True
         res = self.app.put_json(
             self.project.api_url_for('zotero_add_user_auth'),
             {

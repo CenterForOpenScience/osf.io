@@ -4,6 +4,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+require('js/osfToggleHeight');
 
 var $osf = require('js/osfHelpers');
 var AddonPermissionsTable = require('js/addonPermissions');
@@ -112,6 +113,10 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
                                       window.contextVars.addonsWithNodes[addonName].fullName);
    }
 }
+
+$(document).ready(function(){
+    $('.addon-auth-table').osfToggleHeight({height: 140});
+});
 
 /* Before closing the page, Check whether the newly checked addon are updated or not */
 $(window).on('beforeunload',function() {

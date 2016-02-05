@@ -1,1 +1,1 @@
-from . import contributor, log, node, register, tag, file, comment, discussions  # noqa
+from . import contributor, log, node, register, tag, file, comment, discussions, drafts  # noqa

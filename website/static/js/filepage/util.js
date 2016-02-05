@@ -31,9 +31,7 @@ var Spinner = m.component({
     controller: function(){},
     view: function() {
         return m('.spinner-loading-wrapper', [
-            m('.logo-spin.text-center', [
-                m('img[src=/static/img/logo_spin.png][alt=loader]')
-            ]),
+            m('.logo-spin.logo-lg'),
             m('p.m-t-sm.fg-load-message', ' Loading... ')
         ]);
     }

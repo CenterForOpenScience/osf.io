@@ -26,10 +26,18 @@ ShareApp.ViewModel = function() {
     self.query = m.prop($osf.urlParams().q || '');
     self.sort = m.prop($osf.urlParams().sort || 'Relevance');
     self.showStats = false;
+    self.resultsLoading = m.prop(false);
+    self.rawNormedLoaded = m.prop(false);
     self.showFooter = (self.query() === '');
     self.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
     self.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
 
+    self.sortMap = {
+        'Date': 'providerUpdatedDateTime',
+        Relevance: null
+    };
+
+    /** Sort the SHARE provider list for display. **/
     self.sortProviders = function() {
         return $.map(Object.keys(self.ProviderMap), function(result, index){
             return self.ProviderMap[result];
@@ -45,16 +53,16 @@ ShareApp.view = function(ctrl) {
         m('.col-xs-12', [
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
-            ctrl.vm.results !== null ? renderSort(ctrl) : [],
-            m('.row.search-content', [
+            ctrl.vm.results !== null ? m.component(SortBox, {vm: ctrl.vm}): [],
+            ctrl.vm.results !== null ? m('.row.search-content', [
                m('.col-md-2.col-lg-3', [
-                    SideBar.view(ctrl.sideBarController)
+                    m.component(SideBar, {vm: ctrl.vm})
                 ]),
                 m('.col-md-10.col-lg-9', [
-                    Results.view(ctrl.resultsController)
+                    m.component(Results, {vm: ctrl.vm})
                 ])
-            ]),
-            Footer.view(ctrl.footerController),
+            ]) : [],
+            m.component(Footer, {vm: ctrl.vm})
         ])
     ]);
 };
@@ -71,7 +79,6 @@ ShareApp.controller = function() {
         requiredFilters: self.vm.requiredFilters
     }, 'OSF | SHARE', '?' + utils.buildURLParams(self.vm));
 
-
     m.request({
         method: 'get',
         background: false,
@@ -79,14 +86,22 @@ ShareApp.controller = function() {
     }).then(function(data) {
         self.vm.ProviderMap = data.providerMap;
 
-        self.sideBarController = new SideBar.controller(self.vm);
         self.statsController = new Stats.controller(self.vm);
-        self.resultsController = new Results.controller(self.vm);
         self.searchBarController = new SearchBar.controller(self.vm);
-        self.footerController = new Footer.controller(self.vm);
 
     });
 
+    m.request({
+        method: 'GET',
+        background: true,
+        url: '/api/v1/share/documents/status/'
+    }).then(function(data) {
+        self.vm.rawNormedLoaded(true);
+    }, function(err) {
+        // We expect this error response while the SHARE posgres API
+        // is waiting to be put into production. This error response would also happen
+        // if the external SHARE postgres API went down for some reason.
+    });
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
@@ -102,15 +117,38 @@ ShareApp.controller = function() {
     });
 };
 
-var renderSort = function(ctrl){
+var SortBox = {
+    view: function(ctrl, params) {
+        var vm = params.vm;
         return m('.btn-group.pull-right', [
             m('button.btn.btn-default.dropdown-toggle', {
                     'data-toggle': 'dropdown',
                     'aria-expanded': 'false'
-                }, ['Sort by: ' + ctrl.vm.sort() + ' ', m('span.caret')]
+                }, ['Sort by: ' + vm.sort() + ' ', m('span.caret')]
             ),
-                m('ul.dropdown-menu', {'role': 'menu'}, ctrl.sideBarController.renderSort())]);
-    };
+                m('ul.dropdown-menu', {'role': 'menu'},
+                    $.map(Object.keys(vm.sortMap), function(a) {
+                        return m.component(SortItem, {vm: vm, key: a});
+                    })
+                )
+        ]);
 
+    }
+};
+
+var SortItem = {
+    view: function(ctrl, params) {
+        var vm = params.vm;
+        var item = params.key;
+        return m('li',
+            m('a', {
+                onclick: function(event) {
+                    vm.sort(item);
+                    utils.search(vm);
+                }
+            }, item)
+        );
+    }
+};
 
 module.exports = ShareApp;

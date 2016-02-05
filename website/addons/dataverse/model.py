@@ -3,15 +3,13 @@ from time import sleep
 import requests
 import httplib as http
 
-import pymongo
 from modularodm import fields
 
-from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 
 from website.addons.base import (
-    AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile, exceptions,
+    AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, exceptions,
 )
 from website.addons.base import StorageAddonBase
 from website.util import waterbutler_url_for
@@ -19,50 +17,7 @@ from website.util import waterbutler_url_for
 from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse import serializer
 from website.addons.dataverse.provider import DataverseProvider
-
-
-class DataverseFile(GuidFile):
-
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('file_id', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-
-    file_id = fields.StringField(required=True, index=True)
-
-    @property
-    def waterbutler_path(self):
-        return '/' + self.file_id
-
-    @property
-    def provider(self):
-        return 'dataverse'
-
-    @property
-    def version_identifier(self):
-        return 'version'
-
-    @property
-    def unique_identifier(self):
-        return self.file_id
-
-    def enrich(self, save=True):
-        super(DataverseFile, self).enrich(save)
-
-        # Check permissions
-        user = _get_current_user()
-        if not user or not self.node.can_edit(user=user):
-            try:
-                # Users without edit permission can only see published files
-                if not self._metadata_cache['extra']['hasPublishedVersion']:
-                    raise exceptions.FileDoesntExistError
-            except (KeyError, IndexError):
-                pass
+from website.addons.dataverse.utils import DataverseNodeLogger
 
 
 class AddonDataverseUserSettings(AddonOAuthUserSettingsBase):
@@ -117,6 +72,25 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def complete(self):
         return bool(self.has_auth and self.dataset_doi is not None)
 
+    @property
+    def folder_id(self):
+        return self.dataset_id
+
+    @property
+    def folder_path(self):
+        pass
+
+    @property
+    def nodelogger(self):
+        # TODO: Use this for all log actions
+        auth = None
+        if self.user_settings:
+            auth = Auth(self.user_settings.owner)
+        return DataverseNodeLogger(
+            node=self.owner,
+            auth=auth
+        )
+
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
         kwargs = dict(
             provider=self.config.short_name,
@@ -144,10 +118,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         # TODO: better throttling?
         sleep(1.0 / 5.0)
         return res.json().get('data', [])
-
-    def find_or_create_file_guid(self, path):
-        file_id = path.strip('/') if path else ''
-        return DataverseFile.get_or_create(node=self.owner, file_id=file_id)
 
     def delete(self, save=True):
         self.deauthorize(add_log=False)
