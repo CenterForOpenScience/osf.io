@@ -22,10 +22,19 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+
+
     % for script in tree_js:
         <script type="text/javascript" src="${script | webpack_asset}"></script>
     % endfor
-    <script src=${"/static/public/js/files-page.js" | webpack_asset}></script>
+
+    % if node['is_public']:
+        <script>alert("it's public");</script>
+        <script src=${"/static/public/js/files-page-elastic.js" | webpack_asset}></script>
+    % else:
+        <script>alert("it's not public");</script>
+        <script src=${"/static/public/js/files-page.js" | webpack_asset}></script>
+    % endif
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
         % if 'write' in user['permissions'] and not node['is_registration']:
