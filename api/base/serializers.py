@@ -871,7 +871,7 @@ class JSONAPISerializer(ser.Serializer):
         After validation, scrub HTML from validated_data prior to saving (for create and update views)
 
         Exclude 'type' and '_id' from validated_data.
-
+-
         """
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 

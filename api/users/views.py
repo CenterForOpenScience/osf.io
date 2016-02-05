@@ -460,5 +460,6 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         for val in data:
             if val['id'] in current_institutions:
                 user.remove_inst(val['id'])
+        user.save()
 
 
