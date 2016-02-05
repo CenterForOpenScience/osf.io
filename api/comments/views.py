@@ -386,6 +386,6 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         user = self.request.user
         comment = self.get_comment()
         try:
-            comment.unreport_abuse(user, save=True)
+            comment.retract_report(user, save=True)
         except ValueError as error:
             raise ValidationError(error.message)
