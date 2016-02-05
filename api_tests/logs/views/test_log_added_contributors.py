@@ -51,7 +51,6 @@ class TestLogAddedContributors(LogsTestCase):
         res = self.app.get(self.private_log_contribs_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         json_data = res.json['data']
-        print self.node.logs[1]
         assert_equal(json_data[0]['id'], self.user._id)
 
     def test_log_detail_private_not_logged_in(self):
