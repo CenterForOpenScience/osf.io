@@ -80,10 +80,11 @@ var LinkObject = function _LinkObject (type, data, label) {
 };
 
 
-function _makeTree (flatData) {
+function _makeTree (flatData, lastcrumb) {
     var root = {id:0, children: [], data : {} };
     var node_list = { 0 : root};
     var parentID;
+    var crumbParent = lastcrumb ? lastcrumb.data.id : null;
     for (var i = 0; i < flatData.length; i++) {
         var n = _formatDataforPO(flatData[i]);
         if (!node_list[n.id]) { // If this node is not in the object list, add it
@@ -99,12 +100,11 @@ function _makeTree (flatData) {
         } else {
             parentID = null;
         }
-        if(parentID && !n.attributes.registration ) {
+        if(parentID && !n.attributes.registration && parentID !== crumbParent ) {
             if(!node_list[parentID]){
                 node_list[parentID] = { children : [] };
             }
             node_list[parentID].children.push(node_list[n.id]);
-
         } else {
             node_list[0].children.push(node_list[n.id]);
         }
@@ -363,7 +363,7 @@ var Dashboard = {
             } else {
                 self.loadingNodePages = false;
             }
-            self.data(_makeTree(self.data()));  // Do this regardless of what kind of source is loadin
+            self.data(_makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));  // Do this regardless of what kind of source is loadin
             if(self.loadingAllNodes) {
                 self.allProjects(self.data());
                 self.generateFiltersList();
