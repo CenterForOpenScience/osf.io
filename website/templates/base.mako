@@ -51,22 +51,7 @@
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
 
-    % if private_link_anonymous:
-      ## z-index set to 8 to not overlap with getting started with osf non-logged in user bottom-pop-up
-      ## bottom = 30px to not completely block copyright information
-      <style>
-        #anonymous-mode {
-            position:fixed;
-            bottom:30px; 
-            left:0;
-            z-index: 8;
-            width:100%;
-            text-align:center;
-            background-color: #f0ad4e;
-            padding:.5em;
-        }
-      </style>
-  
+    % if private_link_anonymous:  
             <div class="" id="anonymous-mode">You are viewing the OSF through an anonymous view-only link. Keep this link safe. To return to the normal view click <a href="/?view_only=None">here</a></div>
     % endif
 
