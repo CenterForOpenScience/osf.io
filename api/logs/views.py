@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 
-from website.models import NodeLog
+from website.models import NodeLog, Node
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -25,6 +25,23 @@ class LogMixin(object):
                 detail='No log matching that log_id could be found.'
             )
         return log
+
+
+    def check_log_permission(self, log):
+        '''
+        Cycles through nodes on log backrefs.  If user can view any of the nodes, the log can be viewed.
+        '''
+        auth_user = get_user_auth(self.request)
+        log_nodes = []
+
+        for node_id in log._backrefs['logged']['node']['logs']:
+            node = get_object_or_error(Node, node_id, display_name='node')
+            log_nodes.append(node)
+            if node.can_view(auth_user):
+                return True
+
+        self.check_object_permissions(self.request, log_nodes[0])
+        return False
 
 
 class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixin):
