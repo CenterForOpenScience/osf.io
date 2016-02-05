@@ -16,5 +16,5 @@ class NewNodeForm(Form):
         validators.Length(max=200, message=u'Title must contain fewer than 200 characters.')
     ], widget=BootstrapTextInput())
     description = TextAreaField('Description', widget=BootstrapTextArea())
-    category = TextAreaField('Category', widget=BootstrapTextArea())
-    inheritContributors = TextAreaField('Category', widget=BootstrapTextArea())
+    category = TextAreaField('Category', widget=BootstrapTextInput())
+    inheritContributors = TextAreaField('Inherit', widget=BootstrapTextInput())
