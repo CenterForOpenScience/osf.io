@@ -2,7 +2,13 @@
 Changelog
 *********
 
-0.63.0 (unreleased)
+0.64.0 (unreleased)
+===================
+
+- By default, any OSF user can comment on public projects.
+- Add UI to make multiple projects in a hierarchy public or private.
+
+0.63.0 (2016-02-02)
 ===================
 
 - Added date_modified field to Node (no longer a property).
