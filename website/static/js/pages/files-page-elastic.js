@@ -15,8 +15,8 @@ var showResults = function(result_paths, tb){
     tb.visibleIndexes = [];
     for (var i=0; i < tb.flatData.length; i++){
         var element = tb.flatData[i];
-        if (element.row.kind === "file"){
-            var path = element.row.path.replace("/", "");
+        if (element.row.kind === 'file'){
+            var path = element.row.path.replace('/', '');
             if (result_paths.indexOf(path) !== -1){
                 tb.visibleIndexes.push(i);
             }
@@ -26,8 +26,8 @@ var showResults = function(result_paths, tb){
 };
 
 var queryElasticSearch = function(query, node_id){
-    var data = {"q": query, "pid": node_id};
-    var response = $.getJSON("/api/v1/project_files", data);
+    var data = {'q': query, 'pid': node_id};
+    var response = $.getJSON('/api/v1/projrcy_files', data);
     return response;
 };
 
@@ -55,11 +55,11 @@ Replace the default filter template with one using elastic search.
 */
 var filterTemplate = function () {
     var tb = this;
-    return m("input.pull-right.form-control[placeholder='" + tb.options.filterPlaceholder + "'][type='text']", {
-        style: "width:100%;display:inline;",
+    return m('input.pull-right.form-control[placeholder=\'' + tb.options.filterPlaceholder + '\'][type=\'text\']', {
+        style: 'width:100%;display:inline;',
         onkeyup: function (e){
-            m.withAttr("value", tb.filterText)(e);
-            if (e.key === "Enter"){fileFilter(tb);}
+            m.withAttr('value', tb.filterText)(e);
+            if (e.key === 'Enter'){fileFilter(tb);}
         },
         value: tb.filterText()
     });
