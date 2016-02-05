@@ -6,6 +6,9 @@ from modularodm import Q
 from framework.auth.core import User
 
 from framework.auth.oauth_scopes import CoreScopes
+from api.nodes.permissions import (
+    ContributorOrPublic,
+)
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_user_auth, get_object_or_error
@@ -102,6 +105,7 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixi
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic
     )
 
     required_read_scopes = [CoreScopes.NODE_LOG_READ]
@@ -114,6 +118,7 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixi
 
     def get_queryset(self):
         log = self.get_log()
+        self.check_log_permission(log)
         auth_user = get_user_auth(self.request)
         return [
             node for node in log.node__logged
