@@ -450,6 +450,13 @@ var Dashboard = {
             $('[data-toggle="tooltip"]').tooltip();
         };
 
+        // Resets UI to show All my projects and update states
+        self.resetUi = function _resetUi(){
+            var linkObject = self.systemCollections[0];
+            self.updateBreadcrumbs(linkObject);
+            self.activeFilter(linkObject);
+        };
+
         self.init = function _init_fileBrowser() {
             self.loadCategories().then(function(){
                 self.updateList(self.systemCollections[0]);
@@ -522,7 +529,8 @@ var Dashboard = {
                         LinkObject : LinkObject,
                         wrapperSelector : args.wrapperSelector,
                         allProjects : ctrl.allProjects,
-                        reload : ctrl.reload
+                        reload : ctrl.reload,
+                        resetUi : ctrl.resetUi
                     })
                 )
             ]),
