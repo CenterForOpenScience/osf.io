@@ -32,11 +32,10 @@ class LogMixin(object):
             )
         return log
 
-
     def check_log_permission(self, log):
-        '''
+        """
         Cycles through nodes on log backrefs.  If user can view any of the nodes, the log can be viewed.
-        '''
+        """
         auth_user = get_user_auth(self.request)
         log_nodes = []
 
