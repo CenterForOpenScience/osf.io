@@ -12,6 +12,7 @@ require('css/addonsettings.css');
 
 var ctx = window.contextVars;
 
+
 // Initialize treebeard grid for notifications
 var ProjectNotifications = require('js/notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
@@ -53,9 +54,7 @@ if ($('#wgrid').length) {
         });
     });
 }
-
 $(document).ready(function() {
-
     // Apply KO bindings for Project Settings
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);

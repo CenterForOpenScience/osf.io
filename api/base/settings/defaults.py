@@ -56,6 +56,8 @@ BULK_SETTINGS = {
     'DEFAULT_BULK_LIMIT': 100
 }
 
+MAX_PAGE_SIZE = 100
+
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     # Order is important here because of a bug in rest_framework_swagger. For now,
