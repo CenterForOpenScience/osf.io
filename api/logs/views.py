@@ -252,6 +252,7 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
@@ -265,6 +266,7 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     # overrides ListAPIView
     def get_queryset(self):
         log = self.get_log()
+        self.check_log_permission(log)
         added_contrib_ids = log.params.get('contributors')
         if added_contrib_ids is None:
             return []
