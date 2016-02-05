@@ -15,7 +15,7 @@ var xhrconfig = function(xhr) {
 };
 
 
-var meetingsAndConferences = {
+var MeetingsAndConferences = {
     view: function(ctrl) {
         function findAMeetingButton() {
              return m('a.btn.btn-default.btn-block.m-v-xl', {type:'button', href:'/meetings/'}, 'Find a Meeting');
@@ -53,4 +53,4 @@ var meetingsAndConferences = {
 };
 
 
-module.exports = meetingsAndConferences;
+module.exports = MeetingsAndConferences;

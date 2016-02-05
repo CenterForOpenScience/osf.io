@@ -14,7 +14,7 @@ var xhrconfig = function(xhr) {
 };
 
 
-var quickSearchProject = {
+var QuickSearchProject = {
     controller: function() {
         var self = this;
         self.nodes = m.prop([]); // Master node list
@@ -499,6 +499,7 @@ var quickSearchProject = {
         }
     }
 };
-module.exports = quickSearchProject;
+module.exports = QuickSearchProject;
+
 
 

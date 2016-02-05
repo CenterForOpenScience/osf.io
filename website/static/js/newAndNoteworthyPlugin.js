@@ -15,7 +15,7 @@ var xhrconfig = function(xhr) {
 };
 
 
-var newAndNoteworthy = {
+var NewAndNoteworthy = {
     controller: function() {
         var self = this;
         self.newAndNoteworthyNodes = m.prop([]);
@@ -192,4 +192,5 @@ var newAndNoteworthy = {
     }
 };
 
-module.exports = newAndNoteworthy;
+module.exports = NewAndNoteworthy;
+
