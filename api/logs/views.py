@@ -126,7 +126,7 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixi
         ]
 
 
-class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     """List of nodes that a given log is associated with. *Read-only*.
 
     Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
@@ -182,10 +182,11 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_LOG_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeLogSerializer
     view_category = 'logs'
@@ -193,13 +194,8 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
-        log = get_object_or_error(
-            NodeLog,
-            self.kwargs['log_id'],
-            display_name='log'
-        )
-        # May raise a permission denied
-        self.check_object_permissions(self.request, log)
+        log = self.get_log()
+        self.check_log_permission(log)
         return log
 
     # overrides RetrieveUpdateDestroyAPIView
