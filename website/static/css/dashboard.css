@@ -152,6 +152,9 @@
 .db-information .tag:hover {
     text-decoration: none;
 }
+.db-information h3>a {
+    text-decoration: none;
+}
 
 .db-poFilter {
     display: inline-block;

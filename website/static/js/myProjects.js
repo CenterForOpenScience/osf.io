@@ -803,7 +803,7 @@ var Collections  = {
                 }
                 list.push(m('li', { className : selectedCSS, 'data-index' : index },
                     [
-                        m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label + childCount ),
+                        m('a[role="button"]', {onclick : args.updateFilter.bind(null, item) },  item.label + childCount ),
                         submenuTemplate
                     ]
                 ));
@@ -1111,7 +1111,7 @@ var Filters = {
                 item = args.nameFilters[i];
                 selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                 list.push(m('li' + selectedCSS,
-                    m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
+                    m('a[role="button"]', {onclick : args.updateFilter.bind(null, item)},
                         item.label + ' (' + item.data.count + ')'
                     )
                 ));
@@ -1132,7 +1132,7 @@ var Filters = {
                 item = args.tagFilters[i];
                 selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                 list.push(m('li' + selectedCSS,
-                    m('a', { href : '#', onclick : args.updateFilter.bind(null, item)},
+                    m('a[role="button"]', {onclick : args.updateFilter.bind(null, item)},
                         item.label + ' (' + item.data.count + ')'
                     )
                 ));
@@ -1170,6 +1170,7 @@ var Information = {
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
             template = m('.p-sm', [
+                filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', { onclick : args.removeProjectFromCollections }, 'Remove from collection')) : '',
                 m('h3', m('a', { href : item.links.html}, item.attributes.title)),
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
@@ -1204,13 +1205,12 @@ var Information = {
                             m.component(ActivityLogs, args)
                         ])
                     ])
-                ]),
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.btn.btn-default.btn-sm.btn.p-xs.text-danger', { onclick : args.removeProjectFromCollections }, 'Remove from collection') : '',
+                ])
             ]);
         }
         if (args.selected().length > 1) {
             template = m('.p-sm', [
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.btn.btn-default.btn-sm.p-xs.text-danger', { onclick : args.removeProjectFromCollections }, 'Remove selected from collection') : '',
+                filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', { onclick : args.removeProjectFromCollections }, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
                     return m('.db-info-multi', [
                         m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
