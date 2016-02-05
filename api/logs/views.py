@@ -31,7 +31,8 @@ class LogMixin(object):
 
     def check_log_permission(self, log):
         """
-        Cycles through nodes on log backrefs.  If user can view any of the nodes, the log can be viewed.
+        Cycles through nodes on log backrefs.  If user can view any of the nodes pertaining to the log, this means
+        the log itself can be viewed.
         """
         auth_user = get_user_auth(self.request)
         log_nodes = []
@@ -40,10 +41,8 @@ class LogMixin(object):
             node = get_object_or_error(Node, node_id, display_name='node')
             log_nodes.append(node)
             if node.can_view(auth_user):
-                return True
-
-        self.check_object_permissions(self.request, log_nodes[0])
-        return False
+                return
+        self.check_object_permissions(self.request, log_nodes[0]) # will raise 401 or 403, as appropriate
 
 
 class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixin):
