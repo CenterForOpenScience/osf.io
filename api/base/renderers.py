@@ -12,6 +12,11 @@ class JSONAPIRenderer(JSONRenderer):
         augmented_rendering = re.sub(r'"<esi:include src=\\"(.*?)\\"\/>"', r'<esi:include src="\1"/>', initial_rendering)
         return augmented_rendering
 
+
+class JSONRenderer(JSONAPIRenderer):
+    format = 'json'
+    media_type = 'application/json'
+
 class BrowsableAPIRendererNoForms(BrowsableAPIRenderer):
     """
     Renders browsable API but omits HTML forms

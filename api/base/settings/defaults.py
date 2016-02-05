@@ -65,7 +65,7 @@ REST_FRAMEWORK = {
     # https://github.com/marcgibbons/django-rest-swagger/issues/271 is resolved.
     'DEFAULT_RENDERER_CLASSES': (
         'api.base.renderers.JSONAPIRenderer',
-        'rest_framework.renderers.JSONRenderer',
+        'api.base.renderers.JSONRenderer',
         'api.base.renderers.BrowsableAPIRendererNoForms',
     ),
     'DEFAULT_PARSER_CLASSES': (
