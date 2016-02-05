@@ -53,7 +53,7 @@ def register(request):
                     request=request
                 )
                 messages.success(request, 'Registration successful')  # add email reference here
-                return redirect('auth:login')
+                return redirect('auth:register')
             else:
                 print(form.errors)
                 context = {'form': form}
