@@ -159,6 +159,7 @@
 .db-poFilter {
     display: inline-block;
     position: relative;
+    width:100%;
 }
 
 .db-overlay {

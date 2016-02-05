@@ -484,8 +484,8 @@ var Dashboard = {
 
         return [
             m('.db-header.row', [
-                m('.col-xs-12.col-sm-6', m.component(Breadcrumbs,ctrl)),
-                m('.db-buttonRow.col-xs-12.col-sm-6', [
+                m('.col-xs-12.col-sm-8.col-lg-9', m.component(Breadcrumbs,ctrl)),
+                m('.db-buttonRow.col-xs-12.col-sm-4.col-lg-3', [
                     mobile ? m('button.btn.btn-sm.m-r-sm', {
                         'class' : sidebarButtonClass,
                         onclick : function () {
@@ -591,10 +591,7 @@ var Collections  = {
             });
         };
         // Default system collections
-        self.collections = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
-        ]);
+        self.collections = m.prop([].concat(args.systemCollections));
         // Load collection list
         var loadCollections = function _loadCollections (url){
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
