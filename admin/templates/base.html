@@ -3,10 +3,10 @@
 
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="UTF-8">
     {% block title %}
-      <title>OSF Admin | Dashboard</title>
+        <title>OSF Admin | Dashboard</title>
     {% endblock %}
 
     <!-- Tell the browser to be responsive to screen width -->
@@ -34,87 +34,83 @@
     {% block top_includes %}
 
     {% endblock %}
-  </head>
-  <body class="skin-blue sidebar-mini">
+</head>
+<body class="skin-blue sidebar-mini">
     <div class="wrapper">
-
-      <!-- Main Header -->
-      {% block header %}
-      <header class="main-header">
-
-        <!-- Logo -->
-        <a href="{% url 'home' %}" class="logo">
-          <!-- mini logo for sidebar mini 50x50 pixels -->
-          <span class="logo-mini"><b>O</b>SF</span>
-          <!-- logo for regular state and mobile devices -->
-          <span class="logo-lg"><b>OSF</b>Admin</span>
-        </a>
-        <!-- Header Navbar -->
-        <nav class="navbar navbar-static-top" role="navigation">
-          <!-- Navbar Right Menu -->
-          <div class="navbar-custom-menu">
-
-            <ul class="nav navbar-nav">
-             {% block user_account_menu %}
-              <!-- User Account Menu -->
-              <li class="dropdown user user-menu">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                  <span class="hidden-xs">Logged in as {{ request.user.get_username }}</span>
-                </a>
-              </li>
-              <li>
-                <a href="{% url 'password_change' %}" class="btn btn-flat">Change password</a>
-              </li>
-              <li>
-                <a href="{% url 'auth:logout' %}" class="btn btn-danger btn-flat">Sign out</a>
-              </li>
-              {% endblock %}
-            </ul>
-          </div>
-        </nav>
+        <!-- Main Header -->
+        {% block header %}
+        <header class="main-header">
+            <!-- Logo -->
+            <a href="{% url 'home' %}" class="logo">
+                <!-- mini logo for sidebar mini 50x50 pixels -->
+                <span class="logo-mini"><b>O</b>SF</span>
+                <!-- logo for regular state and mobile devices -->
+                <span class="logo-lg"><b>OSF</b>Admin</span>
+            </a>
+            <!-- Header Navbar -->
+            <nav class="navbar navbar-static-top" role="navigation">
+                <!-- Navbar Right Menu -->
+                <div class="navbar-custom-menu">
+                    <ul class="nav navbar-nav">
+                        {% block user_account_menu %}
+                        <!-- User Account Menu -->
+                        <li class="dropdown user user-menu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                            <span class="hidden-xs">Logged in as {{ request.user.get_username }}</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'password_change' %}" class="btn btn-flat">Change password</a>
+                        </li>
+                        <li>
+                            <a href="{% url 'auth:logout' %}" class="btn btn-danger btn-flat">Sign out</a>
+                        </li>
+                        {% endblock %}
+                    </ul>
+                </div>
+            </nav>
+            {% endblock %}
+        </header>
+        {% block sidebar %}
+        <!-- Left side column. contains the logo and sidebar -->
+        <aside class="main-sidebar">
+            <!-- sidebar: style can be found in sidebar.less -->
+            <section class="sidebar">
+                <!-- Sidebar Menu -->
+                <ul class="sidebar-menu">
+                    <li class="header">Menu</li>
+                    <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
+                    {% if 'prereg_group' in request.user.group_names %}
+                    <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
+                    {% endif %}
+                    {% if request.user.is_staff %}
+                    <li><a href="{% url 'auth:register' %}"><i class='fa fa-link'></i><span>Admin-User Registration</span></a>
+                    </li>
+                    {% endif %}
+                </ul><!-- /.sidebar-menu -->
+            </section>
+            <!-- /.sidebar -->
+        </aside>
         {% endblock %}
-      </header>
-      {% block sidebar %}
-      <!-- Left side column. contains the logo and sidebar -->
-      <aside class="main-sidebar">
+        <!-- Content Wrapper. Contains page content -->
+        <div class="content-wrapper">
+            <!-- Content Header (Page header) -->
+            <!-- Main content -->
+            <section class="content">
+                {% block content %}
+                <h1>
+                Welcome to the OSF Admin Home Page
+                </h1>
+                <!-- Your Page Content Here -->
+                {% endblock %}
+            </section><!-- /.content -->
+        </div><!-- /.content-wrapper -->
 
-        <!-- sidebar: style can be found in sidebar.less -->
-        <section class="sidebar">
-          <!-- Sidebar Menu -->
-          <ul class="sidebar-menu">
-            <li class="header">Menu</li>
-            <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
-            {% if 'prereg_group' in request.user.group_names %}
-            <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
-            {% endif %}
-            {% if request.user.is_staff %}
-            <li><a href="{% url 'auth:register' %}"><i class='fa fa-link'></i><span>Admin-User Registration</span></a></li>
-            {% endif %}
-          </ul><!-- /.sidebar-menu -->
-        </section>
-        <!-- /.sidebar -->
-      </aside>
-      {% endblock %}
-      <!-- Content Wrapper. Contains page content -->
-      <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
-
-        <!-- Main content -->
-        <section class="content">
-          {% block content %}
-          <h1>
-           Welcome to the OSF Admin Home Page
-          </h1>
-          <!-- Your Page Content Here -->
-          {% endblock %}
-        </section><!-- /.content -->
-      </div><!-- /.content-wrapper -->
-
-      <!-- Main Footer -->
-      <footer class="main-footer">
-        <!-- Default to the left -->
-        <strong>Copyright &copy; 2015-2016 <a href="http://www.osf.io">osf.io</a>.</strong> All rights reserved.
-      </footer>
+        <!-- Main Footer -->
+        <footer class="main-footer">
+            <!-- Default to the left -->
+            <strong>Copyright &copy; 2015-2016 <a href="http://www.osf.io">osf.io</a>.</strong> All rights reserved.
+        </footer>
 
     </div><!-- ./wrapper -->
 
