@@ -562,7 +562,15 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
         'poster': False,
-        'talk': False,
+        'talk': True,
+        'field_names': {
+            'submission1': 'poster',
+            'submission2': 'study',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'studies',
+            'meeting_title_type': 'Studies',
+            'add_submission': 'studies',
+        }
     },
     'ASCERM2016': {
         'name': 'ASCE Rocky Mountain Student Conference 2016',
@@ -624,6 +632,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'jssp2016': {
+        'name': 'Japanese Society of Social Psychology 2016',
+        'info_url': 'http://www.socialpsychology.jp/conf2016/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 def populate_conferences():
@@ -637,15 +655,24 @@ def populate_conferences():
                 admin_objs.append(user)
             except ModularOdmException:
                 raise RuntimeError('Username {0!r} is not registered.'.format(email))
+
+        custom_fields = attrs.pop('field_names', {})
+
         conf = Conference(
             endpoint=meeting, admins=admin_objs, **attrs
         )
+        conf.field_names.update(custom_fields)
         try:
             conf.save()
         except ModularOdmException:
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
-                setattr(conf, key, value)
+                if isinstance(value, dict):
+                    current = getattr(conf, key)
+                    current.update(value)
+                    setattr(conf, key, current)
+                else:
+                    setattr(conf, key, value)
             conf.admins = admin_objs
             changed_fields = conf.save()
             if changed_fields:

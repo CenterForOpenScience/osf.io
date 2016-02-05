@@ -9,12 +9,15 @@ import bson
 import pytz
 import itsdangerous
 
+from django.core.urlresolvers import reverse
+
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
 from modularodm.validators import URLValidator
 
 import framework
+from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
 from framework import analytics
 from framework.auth import signals, utils
@@ -381,7 +384,12 @@ class User(GuidStoredObject, AddonModelMixin):
     # when comments for a node were last viewed
     comments_viewed_timestamp = fields.DictionaryField()
     # Format: {
-    #   'node_id': 'timestamp'
+    #   'node_id': {
+    #     'node': 'timestamp',
+    #     'files': {
+    #        'file_id': 'timestamp'
+    #     }
+    #   }
     # }
 
     # timezone for user's locale (e.g. 'America/New_York')
@@ -408,7 +416,7 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def contributed(self):
         from website.project.model import Node
-        return Node.find(Q('contributors', 'contains', self._id))
+        return Node.find(Q('contributors', 'eq', self._id))
 
     @property
     def email(self):
@@ -1334,8 +1342,8 @@ class User(GuidStoredObject, AddonModelMixin):
         or just their primary keys
         """
         if primary_keys:
-            projects_contributed_to = set([node._id for node in self.contributed])
-            other_projects_primary_keys = set([node._id for node in other_user.contributed])
+            projects_contributed_to = set(self.contributed.get_keys())
+            other_projects_primary_keys = set(other_user.contributed.get_keys())
             return projects_contributed_to.intersection(other_projects_primary_keys)
         else:
             projects_contributed_to = set(self.contributed)
@@ -1345,8 +1353,77 @@ class User(GuidStoredObject, AddonModelMixin):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
+    def has_inst_auth(self, inst):
+        if inst in self.affiliated_institutions:
+            return True
+        return False
+
+    affiliated_institutions = fields.ForeignField('institution', list=True)
+
+    def get_node_comment_timestamps(self, node, page, file_id=None):
+        """ Returns the timestamp for when comments were last viewed on a node or
+            a dictionary of timestamps for when comments were last viewed on files.
+        """
+        default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
+        timestamps = self.comments_viewed_timestamp.get(node._id, {})
+        if page == 'node':
+            page_timestamps = timestamps.get(page, default_timestamp)
+        elif page == 'files':
+            page_timestamps = timestamps.get(page, {})
+            if file_id:
+                page_timestamps = page_timestamps.get(file_id, default_timestamp)
+        return page_timestamps
+
 
 def _merge_into_reversed(*iterables):
     '''Merge multiple sorted inputs into a single output in reverse order.
     '''
     return sorted(itertools.chain(*iterables), reverse=True)
+
+
+class Institution(StoredObject):
+
+    _id = fields.StringField(index=True, unique=True, primary=True)
+    name = fields.StringField(required=True)
+    logo_name = fields.StringField(required=True)
+
+    @property
+    def pk(self):
+        return self._id
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def url(self):
+        return '/{}/'.format(self._id)
+
+    @property
+    def deep_url(self):
+        return '/institution/{}/'.format(self._id)
+
+    @property
+    def api_v2_url(self):
+        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def absolute_api_v2_url(self):
+        from api.base.utils import absolute_reverse
+        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def logo_path(self):
+        return '/static/img/institutions/{}/'.format(self.logo_name)
+
+    def get_api_url(self):
+        return self.absolute_api_v2_url
+
+    def get_absolute_url(self):
+        return self.absolute_url
+
+    def auth(self, user):
+        return user.has_inst_auth(self)
+
+    def view(self):
+        return 'Static paths for custom pages'
