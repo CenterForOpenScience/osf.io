@@ -25,9 +25,10 @@ var showResults = function(result_paths, tb){
     tb.refreshRange(0);
 };
 
-var queryElasticSearch = function(query, node_id, tb){
+var queryElasticSearch = function(query, node_id){
     var data = {"q": query, "pid": node_id};
-    $.getJSON("/api/v1/project_files", data, function(paths){showResults(paths, tb)});
+    var response = $.getJSON("/api/v1/project_files", data);
+    return response;
 };
 
 var fileFilter = function(tb){
@@ -44,7 +45,8 @@ var fileFilter = function(tb){
         if (!tb.visibleTop) {
             index = 0;
         }
-        queryElasticSearch(filter, tb.flatData[0].row.nodeID, tb);
+        var response = queryElasticSearch(filter, tb.flatData[0].row.nodeID);
+        response.done(function(paths){showResults(paths, tb);});
     }
 };
 
@@ -73,7 +75,6 @@ $(document).ready(function(){
             filesData: data.data,
             xhrconfig: $osf.setXHRAuthorization,
             filterTemplate: filterTemplate,
-            hiddenFilterRows : ['path'],
         });
     });
 });
