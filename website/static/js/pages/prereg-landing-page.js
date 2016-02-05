@@ -2,9 +2,10 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
-var ko = require('knockout');
+var m = require('mithril');
 require('js/qToggle');
 require('js/components/autocomplete');
+require('js/projectsSelect.js');
 
 $(function(){
     var getUser = $.ajax({
@@ -57,6 +58,7 @@ $(function(){
         var input = $(target).find('input').first().focus();
     });
 
+    // New projects
     $('#newProject, #newProjectXS').click( function() {
         var title = $(this).parent().find('.new-project-title').val();
         if (!title) {
@@ -72,13 +74,55 @@ $(function(){
         });
     });
 
+    // Existing Nodes
+    var allNodes = [];
+    function onSelectProject (event, data) {
+        var link = data.links.html + 'registrations/';
+        $('#existingProject .projectRegButton').removeClass('disabled').attr('href', link);
+        $('#existingProjectXS .projectRegButton').removeClass('disabled').attr('href', link);
+    }
+    // Get all projects with multiple calls to get all pages
+    function collectProjects (url) {
+        var promise = $.ajax({
+            method: 'GET',
+            url: url,
+            xhrFields: {
+                withCredentials: true
+            }
+        });
+        promise.done(function(result){
+            // loop through items and check for admin permission first
+            result.data.forEach(function(item){
+                item.formattedDate = new $osf.FormattableDate(item.attributes.date_modified);
+                allNodes.push(item);
+            });
+            if(result.links.next){
+                collectProjects(result.links.next);
+            }
+            else {
+                $('#projectSearch').projectsSelect({data : allNodes, complete : onSelectProject});
+                $('#projectSearchXS').projectsSelect({data : allNodes, complete : onSelectProject});
+            }
+        });
+        promise.fail(function(xhr, textStatus, error) {
+            Raven.captureMessage('Next page load failed for user nodes.', {
+                url: url, textStatus: textStatus, error: error
+            });
+        });
+    }
+    var nodeLink = $osf.apiV2Url('users/me/nodes/', { query : { 'page[size]' : 100}});
+    collectProjects(nodeLink);
 
+    function onSelectRegistrations (event, data) {
+        $('#existingPrereg .regDraftButton').removeClass('disabled').attr('href', data.url);
+        $('#existingPreregXS .regDraftButton').removeClass('disabled').attr('href', data.url);
+    }
 
-    // Activate autocomplete for draft registrations
+    // Existing Draft Registrations
     $.getJSON('/api/v1/prereg/draft_registrations/').then(function(response){
         if (response.draftRegistrations.length) {
-            $osf.applyBindings({}, '#existingPrereg');
-            $osf.applyBindings({}, '#existingPreregXS');
+            $('#regDraftSearch').projectsSelect({data : response.draftRegistrations, type : 'registration', complete : onSelectRegistrations});
+            $('#regDraftSearchXS').projectsSelect({data : response.draftRegistrations, type : 'registration', complete : onSelectRegistrations});
         }
     });
 });

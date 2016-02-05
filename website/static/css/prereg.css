@@ -114,3 +114,7 @@ height: 320px;
     background-color: #CCC;
     border-color: #BBB;
 }
+
+.twitter-typeahead {
+    width:100%;
+}

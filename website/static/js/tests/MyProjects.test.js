@@ -10,7 +10,7 @@ var $osf = require('js/osfHelpers');
 var fb = require('js/fileBrowser.js');
 var m = require('mithril');
 
-var FileBrowser = fb.FileBrowser;
+var Dashboard = fb.Dashboard;
 var LinkObject = fb.LinkObject;
 
 describe('fileBrowser', function() {
