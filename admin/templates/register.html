@@ -19,7 +19,6 @@
         {% endfor %}
         </ul>
         {% endif %}
-
         <div class="form-group">
             <label for="email">Email:</label>
             <p>{{ form.email }}</p>
@@ -50,15 +49,23 @@
           <p>{{ form.group_perms }}</p>
           {% if form.group_perms.errors %}<span class="text-danger"> {{ form.group_perms.errors }}</span>{% endif %}
         </div>
-
         <div class="row">
           <div class="col-xs-4">
             <button type="submit" class="btn btn-primary btn-block btn-flat">Register</button>
           </div><!-- /.col -->
         </div>
       </form>
-
       <a href="{% url 'auth:login' %}" class="text-center">Return to login page</a>
+        <div>
+          {% if messages %}
+            <ul class="login_page_messages">
+              {% for message in messages %}
+                   <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+                   </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
     </div><!-- /.form-box -->
   </div><!-- /.register-box -->
 {% endblock %}
