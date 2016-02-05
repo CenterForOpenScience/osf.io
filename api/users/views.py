@@ -15,7 +15,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.base.utils import default_node_list_query
+from api.base.utils import default_node_list_query, default_node_permission_query
 
 from .serializers import UserSerializer, UserDetailSerializer
 from .permissions import ReadOnlyOrCurrentUser
@@ -295,14 +295,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
         current_user = self.request.user
-
-        query = (Q('contributors', 'eq', user) & default_node_list_query())
-
-        permission_query = Q('is_public', 'eq', True)
-        if not current_user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
-        query = (query & permission_query)
-        return query
+        return Q('contributors', 'eq', user) & default_node_list_query() & default_node_permission_query(current_user)
 
     # overrides ListAPIView
     def get_queryset(self):
