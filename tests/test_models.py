@@ -59,7 +59,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory,
+    AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
     NodeLicenseRecordFactory
 )
 from tests.test_features import requires_piwik
