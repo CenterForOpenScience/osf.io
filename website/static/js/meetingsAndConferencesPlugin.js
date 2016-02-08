@@ -28,26 +28,26 @@ var MeetingsAndConferences = {
             m('div', {'class': 'row m-v-sm'},
                 m('div', {'class': 'col-sm-5'},
                     m('div', {'class': 'row'},
-                        m('div', {'class': 'col-sm-offset-1 col-xs-offset-1'},
-                            m('div', {'class': 'col-sm-11'}, m('h3', 'Hosting a Conference or Meeting?')),
+                        m('div', {'class': 'col-sm-offset-1'},
+                            m('div.conference-centering', {'class': 'col-sm-11 col-xs-12'}, m('h3', 'Hosting a Conference or Meeting?')),
                             m('div', {'class': 'col-sm-1'})
                         )
                     ),
                     m('div', {'class': 'row'},
-                        m('div', {'class': 'col-sm-offset-1 col-xs-offset-1'},
-                            m('div', {'class': 'col-sm-11'},  m('h6', 'Use the OSF meetings service to provide a central location for collection submissions!'), m('a', {href: '/meetings/'}, 'Learn more')),
+                        m('div', {'class': 'col-sm-offset-1'},
+                            m('div.conference-centering', {'class': 'col-sm-11 col-xs-12'},  m('h6', 'Use the OSF meetings service to provide a central location for collection submissions!'), m('a', {href: '/meetings/'}, 'Learn more')),
                             m('div', {'class': 'col-sm-1'})
                         )
                     )
                 ),
                 m('div', {'class': 'col-sm-7'},
-                    m('div', {'class': 'row'}),
-                            m('div', {'class': 'col-sm-1 hidden-xs'}),
+                    m('div', {'class': 'row'},
+                        m('div', {'class': 'col-sm-offset-1'},
                             m('div', {'class': 'col-sm-5 col-xs-6'}, findAMeetingButton()),
-                            m('div', {'class': 'col-sm-5 col-xs-6'}, createAMeetingButton()),
-                            m('div', {'class': 'col-sm-1 hidden-xs'})
+                            m('div', {'class': 'col-sm-5 col-xs-6'}, createAMeetingButton())
+                    )
                 )
-            )
+            ))
         ]);
     }
 };
