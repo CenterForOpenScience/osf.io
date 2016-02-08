@@ -14,7 +14,8 @@ from api.base.utils import get_object_or_error
 from api.nodes.serializers import NodeSerializer
 from api.users.serializers import UserSerializer
 
-from .serializers import InstitutionSerializer
+from .parsers import InstitutionAuthParser
+from .serializers import InstitutionSerializer, InstitutionAuthSerializer
 
 class InstitutionMixin(object):
     """Mixin with convenience method get_institution
@@ -184,3 +185,15 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     def get_queryset(self):
         query = self.get_query_from_request()
         return User.find(query)
+
+class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
+    parser_classes = (InstitutionAuthParser,)
+    serializer_class = InstitutionAuthSerializer
+    view_category = 'institutions'
+    view_name = 'institution-auth'
