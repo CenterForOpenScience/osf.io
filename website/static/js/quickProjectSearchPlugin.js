@@ -388,7 +388,7 @@ var QuickSearchProject = {
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div', {'class' : 'input-group'}, [
+                return m('div.m-v-sm', {'class' : 'input-group'}, [
                     m('span', {'class': 'input-group-addon'}, m('i', {'class': 'fa fa-search'})),
                     m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
                         ctrl.filter(search.target.value);
@@ -435,13 +435,12 @@ var QuickSearchProject = {
                 return m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
                     m('div', {'class': 'row node-sort-dropdown'}, [
                         m('div', {'class': 'col-sm-12 p-v-xs, f-w-xl'},
-                            m('label', [m('span', 'Order by: '),
+                            m('span', ascending(), descending()),
+                            m('label', [
                                 m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(dropdown){
                                     ctrl.fieldSort(dropdown.target.value);
                                     ctrl.sortFieldGivenDirection();
-                                }}, defaultSelected()),
-                                ascending(),
-                                descending()
+                                }}, defaultSelected())
                             ])
                         )]
                     ))
