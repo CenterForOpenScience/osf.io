@@ -27,8 +27,8 @@ var NewAndNoteworthy = {
         var newAndNoteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.newAndNoteworthy + '/node_links/', {});
         var newAndNoteworthyPromise = m.request({method: 'GET', url: newAndNoteworthyUrl, config: xhrconfig});
         newAndNoteworthyPromise.then(function(result){
-            var numNEW = Math.min(result.data.length, self.SHOW_TOTAL);
-            for (var l=0; l < numNEW; l++) {
+            var numNew = Math.min(result.data.length, self.SHOW_TOTAL);
+            for (var l = 0; l < numNew; l++) {
                 self.newAndNoteworthyNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
             }
@@ -39,7 +39,7 @@ var NewAndNoteworthy = {
         var popularPromise = m.request({method: 'GET', url: popularUrl, config: xhrconfig});
         popularPromise.then(function(result){
             var numPopular = Math.min(result.data.length, self.SHOW_TOTAL);
-            for (var l=0; l < numPopular; l++) {
+            for (var l = 0; l < numPopular; l++) {
                 self.popularNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
             }
@@ -134,11 +134,11 @@ var NewAndNoteworthy = {
 
         return m('div', {'class': 'container'}, [
             m('div', {'class': 'row'},
-                m('div', {'class': 'col-sm-1'}),
-                m('div', {'class': 'col-sm-11'}, m('h3', 'Discover Public Projects'))),
+                m('div', {'class': 'col-md-10 col-md-offset-1'},
+                    m('div', {'class': 'col-sm-12'}, m('h3', 'Discover Public Projects')))),
 
             m('div', {'class': 'row'},
-                m('div', {'class': 'col-sm-10 col-sm-offset-1'},
+                m('div', {'class': 'col-md-10 col-md-offset-1'},
                     m('div', {'class': 'col-sm-6 col-xs-12'}, m('h4', 'New and Noteworthy'), newAndNoteworthyProjectsTemplate()),
                     m('div', {'class': 'col-sm-6 col-xs-12'}, m('h4', 'Most Popular'), popularProjectsTemplate ())
             )),
