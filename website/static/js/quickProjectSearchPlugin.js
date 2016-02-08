@@ -37,7 +37,7 @@ var QuickSearchProject = {
                 self.nodes().push(node);
                 self.retrieveContributors(node);
             });
-            self.populateEligibleNodes(0, self.countDisplayed() - 1);
+            self.populateEligibleNodes(0, self.countDisplayed());
             self.next(result.links.next);
         });
         promise.then(
@@ -55,7 +55,7 @@ var QuickSearchProject = {
                         self.nodes().push(node);
                         self.retrieveContributors(node);
                     });
-                self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length - 1);
+                self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length);
                 self.next(result.links.next);
                 self.recursiveNodes(self.next());
                 });
@@ -68,7 +68,7 @@ var QuickSearchProject = {
 
         // Adds eligible node indices to array - used when no filter
         self.populateEligibleNodes = function (first, last) {
-            for (var n = first; n <= last; n++) {
+            for (var n = first; n < last; n++) {
                 self.eligibleNodes().push(n);
             }
         };
@@ -281,7 +281,7 @@ var QuickSearchProject = {
 
         // Filters nodes
         self.filterNodes = function (){
-            for (var n = 0;  n <= self.nodes().length - 1;  n++) {
+            for (var n = 0;  n < self.nodes().length;  n++) {
                 var node = self.nodes()[n];
                 if (self.titleMatch(node) || self.contributorMatch(node) || self.tagMatch(node)) {
                     self.eligibleNodes().push(n);
@@ -293,7 +293,7 @@ var QuickSearchProject = {
             self.eligibleNodes([]);
             // if backspace completely, previous nodes with prior sorting/count will be displayed
             if (self.filter() === '') {
-                self.populateEligibleNodes(0, self.nodes().length - 1);
+                self.populateEligibleNodes(0, self.nodes().length);
             }
             else {
                 self.filterNodes();
