@@ -293,6 +293,9 @@ div[data-growl="container"] {
         float: right;
         margin-right: 5px;
     }
+    .db-poFilter {
+        width: 80%;
+    }
 }
 @media only screen and (max-width : 320px) {
     #poFilter {
