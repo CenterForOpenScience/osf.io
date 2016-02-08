@@ -26,32 +26,26 @@ class LogsTestCase(ApiTestCase):
 
         self.action_set = NodeLog.actions
         self.node = ProjectFactory(is_public=False)
-        for i in range(len(self.action_set)):
-            self.node.add_log(
-                self.action_set[i],
-                {},
-                Auth(self.node.creator),
-                save=True
-            )
-        self.node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.node.creator), log=False, save=True)
-        self.node_log_url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
-        self.url = '/{}logs/'.format(API_BASE)
-        self.log = self.node.logs[0]
-        self.log_nodes_url = self.url + '{}/nodes/'.format(self.log._id)
-        self.private_log_detail = self.url + '{}/'.format(self.log._id)
 
-        self.public_node = ProjectFactory(is_public=True, creator=self.user)
-        for i in range(len(self.action_set)):
-            self.public_node.add_log(
-                self.action_set[i],
-                {},
-                Auth(self.public_node.creator),
-                save=True
-            )
+        self.node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.node.creator), log=True, save=True)
+
+        self.log = self.node.logs[0]
+        self.log_add_contributor = self.node.logs[1]
+
+        self.public_node = ProjectFactory(is_public=True)
+        self.public_node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.node.creator), log=True, save=True)
 
         self.public_log = self.public_node.logs[0]
+        self.public_log_add_contributor = self.public_node.logs[1]
+
+        self.node_log_url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
+        self.url = '/{}logs/'.format(API_BASE)
+        self.log_nodes_url = self.url + '{}/nodes/'.format(self.log._id)
+        self.private_log_detail = self.url + '{}/'.format(self.log._id)
         self.log_public_nodes_url = self.url + '{}/nodes/'.format(self.public_log._id)
         self.public_log_detail = self.url + '{}/'.format(self.public_log._id)
+        self.private_log_contribs_url = self.url + '{}/added_contributors/'.format(self.log_add_contributor._id)
+        self.public_log_contribs_url = self.url + '{}/added_contributors/'.format(self.public_log_add_contributor._id)
 
     def tearDown(self):
         NodeLog.remove()
