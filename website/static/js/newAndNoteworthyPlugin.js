@@ -144,10 +144,7 @@ var NewAndNoteworthy = {
             )),
 
             m('div', {'class': 'row'},
-                m('div', {'class': 'col-sm-1'}),
-                m('div.text-center', {'class': 'col-sm-10'}, findMoreProjectsButton()),
-                m('div', {'class': 'col-sm-1'})
-
+                m('div.text-center', {'class': 'col-sm-12'}, findMoreProjectsButton())
             )
         ]);
     }
