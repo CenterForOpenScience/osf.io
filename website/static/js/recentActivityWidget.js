@@ -26,6 +26,7 @@ var LogWrap = {
         self.cache = []; //to store already requested with the current parameters
         self.loading = false; //keeps track of whether the log container should show the loading icon
         self.div = 8.64e+7; //milliseconds in day, for conversion with the slider bar
+        self.monthDiv = 2629746000;  //milliseconds in a month
         self.canvasHeight = 40;
         self.totalEvents = 0; //initialization of count of all logs returned (total)
         self.eventNumbers = {}; //initialization of dict for aggregate counts (number of 'file' events, etc)
@@ -70,12 +71,12 @@ var LogWrap = {
                     self.firstDay = ((firstDay >= self.sixMonthsAgo) ? firstDay : self.sixMonthsAgo).startOf('month');
                     var dateBegin = moment.utc(result.data[0].attributes.date).subtract(1, 'months');
                     self.dateBegin = ((dateBegin > self.firstDay) ? dateBegin : self.firstDay).startOf('day');
-                    if ((self.today - self.firstDay)/2629746000 < 1){ //check if the slider will be less than a month
+                    if ((self.today - self.firstDay)/self.monthDiv < 1){ //check if the slider will be less than a month
                         self.div = self.div/4; //then set division to be for a 1/4 day instead of a day
                         self.formatFloat = 'Do h a';
                         self.steps = 14;
                         self.formatPip = 'MMM Do';
-                    } else if ((self.today - self.firstDay)/2629746000 < 3){
+                    } else if ((self.today - self.firstDay)/self.monthDiv < 3){
                         self.div = self.div/2;
                         self.formatFloat = 'MMM Do h';
                         self.steps = 28;
@@ -125,18 +126,19 @@ var LogWrap = {
             var ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             var progBar = $('#rAProgressBar');
+            var canvasElement = $('#rACanvas');
             var handle = $('.ui-slider-handle');
             var leftHandle = handle[0];
             var rightHandle = handle[1];
             ctx.beginPath();
             ctx.moveTo(leftHandle.offsetLeft + (handle.width()/2), 0);
-            ctx.lineTo(progBar.offset().left - $('#rACanvas').offset().left, self.canvasHeight);
+            ctx.lineTo(progBar.offset().left - canvasElement.offset().left, self.canvasHeight);
             ctx.strokeStyle = '#E0E0E0 ';
             ctx.lineWidth = 2;
             ctx.stroke();
             ctx.beginPath();
             ctx.moveTo(rightHandle.offsetLeft + (handle.width()/2), 0);
-            ctx.lineTo(progBar.offset().left + progBar[0].offsetWidth - $('#rACanvas').offset().left, self.canvasHeight);
+            ctx.lineTo(progBar.offset().left + progBar[0].offsetWidth - canvasElement.offset().left, self.canvasHeight);
             ctx.strokeStyle = '#E0E0E0 ';
             ctx.lineWidth = 2;
             ctx.stroke();
@@ -162,8 +164,9 @@ var LogWrap = {
             var end = (Number(self.today.format('x'))/self.div | 0);
             var values = [(Number(self.dateBegin.format('x'))/self.div | 0), (Number(self.dateEnd.format('x'))/self.div | 0)];
             var canvas = document.getElementById('rACanvas');
+            var sliderElement = $('#rASlider');
             if (!isInitialized) {
-                $('#rASlider').slider({
+                sliderElement.slider({
                     min: begin,
                     max: end,
                     range: true,
@@ -201,7 +204,7 @@ var LogWrap = {
                         self.getLogs(false, true);
                     }
                 });
-                $('#rASlider').slider('pips', {
+                sliderElement.slider('pips', {
                     last: false,
                     rest: 'label',
                     step: self.steps,
@@ -214,12 +217,11 @@ var LogWrap = {
                     }
                 });
                 self.getLogs(false, true);
-                var bar = $('#rASlider').find('.ui-slider-range');
+                var bar = sliderElement.find('.ui-slider-range');
                 bar.append(self.sliderProgress);
                 self.makeLine(canvas);
             }
             else {
-                //$('#rASlider').slider('option', 'values', values);
                 $('#rAFilleBar').replaceWith(self.sliderProgress);
                 self.makeLine(canvas);
             }
