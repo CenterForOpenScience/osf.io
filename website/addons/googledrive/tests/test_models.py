@@ -1,18 +1,10 @@
 # -*- coding: utf-8 -*-
-import time
-from datetime import datetime
+import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
-import mock
-from dateutil import relativedelta
-
 from framework.auth import Auth
-from framework.exceptions import PermissionsError
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory
-from website.addons.base import exceptions
 from website.addons.base.testing import models
-
 
 from website.addons.googledrive import model
 from website.addons.googledrive.client import GoogleAuthClient

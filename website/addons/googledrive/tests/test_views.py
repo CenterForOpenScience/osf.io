@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
-import httplib as http
-
 import mock
-
 from nose.tools import *  # noqa
-from framework.auth import Auth
-from website.util import api_url_for, web_url_for
-from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory
 
 from website.addons.base.testing import views
 from website.addons.googledrive.client import GoogleDriveClient
 from website.addons.googledrive.serializer import GoogleDriveSerializer
 from website.addons.googledrive.tests.utils import mock_folders as sample_folder_data
 from website.addons.googledrive.tests.utils import GoogleDriveAddonTestCase
-from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
+
 
 class TestAuthViews(GoogleDriveAddonTestCase, views.OAuthAddonAuthViewsTestCaseMixin):
     pass
