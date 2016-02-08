@@ -95,18 +95,18 @@ var NewAndNoteworthy = {
     },
     view : function(ctrl) {
         function nodeDisplay(node) {
-            var description = node.embeds.target_node.data.attributes.description
-            return m('div', {'class': 'row node-styling noteworthy-spacing', onclick: function(){
+            var description = node.embeds.target_node.data.attributes.description;
+
+            return m('div.node-styling.noteworthy-spacing', {'class': 'row', onclick: function(){
                 location.href = '/' + node.embeds.target_node.data.id;}
             },
                 m('div', {'class': 'col-sm-12'},
-                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this);}},
+                    m('h5.prevent-overflow', {onmouseover: function(){ctrl.addToolTip(this);}},
                         m('em', node.embeds.target_node.data.attributes.title)),
-                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this);}},
-                        description ?  description : m('p', {class: 'blank-line'})),
-                    m('h5', {'class': 'prevent-overflow'},
-                        m('span', {'class': 'f-w-xl'}, 'Contributors: '),
-                        m('span', ctrl.contribNameFormat(node, ctrl.contributorsMapping[node.id][1])))
+                    m('h5.prevent-overflow', {onmouseover: function(){ctrl.addToolTip(this);}},
+                        description ?  description : m('p', {'class': 'blank-line'})),
+                    m('h5.prevent-overflow', m('span', {'class': 'f-w-xl'}, 'Contributors: '),
+                            m('span', ctrl.contribNameFormat(node, ctrl.contributorsMapping[node.id][1])))
                 )
             );
         }
@@ -140,7 +140,7 @@ var NewAndNoteworthy = {
 
             m('div', {'class': 'row'},
                 m('div', {'class': 'col-sm-1'}),
-                m('div', {'class': 'col-sm-10 text-center'}, findMoreProjectsButton()),
+                m('div.text-center', {'class': 'col-sm-10'}, findMoreProjectsButton()),
                 m('div', {'class': 'col-sm-1'})
 
             )
