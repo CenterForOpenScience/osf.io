@@ -869,7 +869,7 @@ var MicroPagination = {
             args.currentPage() > 1 ? m('span.m-r-xs.arrow.left.live', { onclick : function(){
                     args.currentPage(args.currentPage() - 1);
                 }}, m('i.fa.fa-angle-left')) : m('span.m-r-xs.arrow.left', m('i.fa.fa-angle-left')),
-            m('span', args.currentPage() + '/' + args.totalPages()),
+            m('span', (args.totalPages() ? args.currentPage() : 0) + '/' + args.totalPages()),
             args.currentPage() < args.totalPages() ? m('span.m-l-xs.arrow.right.live', { onclick : function(){
                     args.currentPage(args.currentPage() + 1);
             }}, m('i.fa.fa-angle-right')) : m('span.m-l-xs.arrow.right', m('i.fa.fa-angle-right'))
