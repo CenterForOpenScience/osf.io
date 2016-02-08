@@ -5,6 +5,7 @@ import github3
 import cachecontrol
 from requests.adapters import HTTPAdapter
 
+from website.settings import DOMAIN
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError
 
@@ -124,7 +125,13 @@ class GitHubClient(object):
         :return dict: Hook info from GitHub: see see
             http://developer.github.com/v3/repos/hooks/#json-http
         """
-        return self.repo(user, repo).create_hook(name, config, events, active)
+        try:
+            hook = self.repo(user, repo).create_hook(name, config, events, active)
+        except github3.GitHubError:
+            # TODO Handle this case - if '20 hooks' in e.errors[0].get('message'):
+            return None
+        else:
+            return hook
 
     def delete_hook(self, user, repo, _id):
         """Delete a webhook.
@@ -145,7 +152,6 @@ class GitHubClient(object):
     ########
 
     def revoke_token(self):
-
         if self.access_token:
             return self.gh3.revoke_authorization(self.access_token)
 
