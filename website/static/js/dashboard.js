@@ -640,13 +640,14 @@ var Collections  = {
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
                 self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 args.sidebarInit();
+                self.newCollectionName('');
             }, function(){
                 var name = self.newCollectionName();
                 var message = '"' + name + '" collection could not be created.';
                 $osf.growl(message, 'Please try again');
                 Raven.captureMessage(message, { url: url, data : data });
+                self.newCollectionName('');
             });
-            self.newCollectionName('');
             self.dismissModal();
             self.calculateTotalPages();
             return promise;
