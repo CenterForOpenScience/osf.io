@@ -458,7 +458,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         data = self.request.data['data']
         user = self.request.user
         current_institutions = {inst._id for inst in user.affiliated_institutions}
-        
+
         # DELETEs normally dont get type checked
         # not the best way to do it, should be enforced everywhere, maybe write a test for it
         for val in data:
@@ -468,5 +468,3 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
             if val['id'] in current_institutions:
                 user.remove_inst(val['id'])
         user.save()
-
-
