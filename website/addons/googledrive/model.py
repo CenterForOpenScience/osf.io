@@ -96,7 +96,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def clear_settings(self):
         self.folder_id = None
         self.folder_path = None
-        self.user_settings = None
 
     def set_auth(self, *args, **kwargs):
         self.folder_id = None
