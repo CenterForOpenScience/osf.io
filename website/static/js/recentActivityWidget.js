@@ -16,7 +16,6 @@ var LogWrap = {
     controller: function(args){
         var self = this;
         self.wrapper = args.wrapper;
-        self.userId = args.userId;
         self.activityLogs = m.prop();
         self.eventFilter = false; //holds the currently selected action category filter to include in request
         self.dateEnd = moment.utc();
