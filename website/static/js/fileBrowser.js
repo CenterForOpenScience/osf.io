@@ -75,6 +75,7 @@ var LinkObject = function (type, data, label, index) {
         throw new Error('Link could not be generated from linkObject data');
     };
     self.link = self.generateLink();
+    console.log(self.link);
 };
 
 
@@ -97,15 +98,15 @@ function _makeTree (flatData) {
         } else {
             parentID = null;
         }
-        if(parentID && !n.attributes.registration ) {
+        /*if(parentID && !n.attributes.registration ) {
             if(!node_list[parentID]){
                 node_list[parentID] = { children : [] };
             }
             node_list[parentID].children.push(node_list[n.id]);
 
-        } else {
+        } else {*/
             node_list[0].children.push(node_list[n.id]);
-        }
+        //}
     }
     console.log(root, node_list);
     return root.children;
@@ -163,8 +164,7 @@ var FileBrowser = {
         };
 
         self.systemCollections = [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
+            new LinkObject('collection', { path : 'institutions/ND/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Projects'),
         ];
         // Initial Breadcrumb for All my projects
         self.breadcrumbs = m.prop([
@@ -537,8 +537,8 @@ var Collections  = {
         };
         // Default system collections
         self.collections = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
+            new LinkObject('collection', { path : 'institutions/ND/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : null }, systemCollection : 'nodes'}, 'All Projects'),
+            //new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
         ]);
         // Load collection list
         var loadCollections = function(url){

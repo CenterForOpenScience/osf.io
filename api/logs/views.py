@@ -30,7 +30,7 @@ class LogMixin(object):
         return log
 
 
-class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
     """List of nodes that a given log is associated with. *Read-only*.
 
     Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
