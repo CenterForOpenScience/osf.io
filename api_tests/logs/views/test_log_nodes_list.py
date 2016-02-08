@@ -64,25 +64,25 @@ class TestLogNodeList(LogsTestCase):
         res = self.app.get(self.url + '/abcdef/nodes/', expect_errors=True)
         assert_equal(res.status_code, http.NOT_FOUND)
 
-    def test_log_private_nodes_list_logged_out_user(self):
+    def test_log_private_nodes_list_logged_out_user_cannot_access_logs(self):
         res = self.app.get(self.log_nodes_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    def test_log_private_nodes_list_logged_in_contributor(self):
+    def test_log_private_nodes_list_logged_in_contributor_can_access_logs(self):
         res = self.app.get(self.log_nodes_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data'][0]['id'], self.node._id)
 
-    def test_log_private_nodes_list_logged_in_non_contributor(self):
+    def test_log_private_nodes_list_logged_in_non_contributor_cannot_access_logs(self):
         res = self.app.get(self.log_nodes_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_log_public_nodes_logged_in_contributor(self):
+    def test_log_public_nodes_logged_in_contributor_can_access_logs(self):
         res = self.app.get(self.log_public_nodes_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data'][0]['id'], self.public_node._id)
 
-    def test_log_public_nodes_logged_in_non_contributor(self):
+    def test_log_public_nodes_logged_in_non_contributor_can_access_logs(self):
         res = self.app.get(self.log_public_nodes_url, auth=self.user_two.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data'][0]['id'], self.public_node._id)
