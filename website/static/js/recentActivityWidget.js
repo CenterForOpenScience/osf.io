@@ -37,7 +37,7 @@ var LogWrap = {
         self.otherEvents = 0;
         self.errorLoading = false;
         self.select = function(selector) {
-            return $('#'+self.wrapper).find(selector)
+            return $('#'+self.wrapper).find(selector);
         };
 
         self.getLogs = function(init, reset, update) {
@@ -115,7 +115,7 @@ var LogWrap = {
                 self.lastPage = (result.links.meta.total / (result.links.meta.per_page/2) | 0) + 1;
             }, function(){
                 self.errorLoading = true;
-                self.activityLogs([])
+                self.activityLogs([]);
             });
             return promise;
         };
@@ -245,7 +245,7 @@ var LogWrap = {
 
     view: function(ctrl, args){
         if (ctrl.errorLoading){
-            return m('p', {style: {textAlign: 'center'}}, 'Error loading logs. Please refresh the page.')
+            return m('p', {style: {textAlign: 'center'}}, 'Error loading logs. Please refresh the page.');
         }
 
         var fileEvents = ctrl.fileEvents;
