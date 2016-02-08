@@ -88,11 +88,7 @@ var NewAndNoteworthy = {
 
         self.addToolTip = function(line) {
             var $line = $(line);
-            if (line.offsetWidth < line.scrollWidth && !$line.attr('title')) {
-                $line.tooltip({
-                    title: $line.text(),
-                    placement: 'top'
-                });
+            if (line.offsetWidth < line.scrollWidth) {
                 $line.tooltip('show');
             }
         };
@@ -100,18 +96,20 @@ var NewAndNoteworthy = {
     view : function(ctrl) {
         function nodeDisplay(node) {
             var description = node.embeds.target_node.data.attributes.description;
+            var title = node.embeds.target_node.data.attributes.title;
+            var contributors = ctrl.contribNameFormat(node, ctrl.contributorsMapping[node.id][1]);
 
             return m('div.node-styling.noteworthy-spacing', {'class': 'row', onclick: function(){
                 location.href = '/' + node.embeds.target_node.data.id;}
             },
                 m('div', {'class': 'col-sm-12'},
-                    m('h5.prevent-overflow', {onmouseover: function(){ctrl.addToolTip(this);}},
-                        m('em', node.embeds.target_node.data.attributes.title)),
-                    m('h5.prevent-overflow', {onmouseover: function(){ctrl.addToolTip(this);}},
+                    m('h5.prevent-overflow', {'data-title': title, 'data-location': 'top', onmouseover: function(){ctrl.addToolTip(this);}},
+                        m('em', title)),
+                    m('h5.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){ctrl.addToolTip(this);}},
                         description ?  description : m('div.blank-line')),
-                    m('h5.prevent-overflow',  {onmouseover: function(){ctrl.addToolTip(this);}},
+                    m('h5.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function(){ctrl.addToolTip(this);}},
                         m('span.f-w-xl', 'Contributors: '),
-                            m('span', ctrl.contribNameFormat(node, ctrl.contributorsMapping[node.id][1])))
+                            m('span', contributors ))
                 )
             );
         }
