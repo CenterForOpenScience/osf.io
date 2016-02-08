@@ -30,6 +30,11 @@ var LogWrap = {
         self.canvasHeight = 40;
         self.totalEvents = 0; //initialization of count of all logs returned (total)
         self.eventNumbers = {}; //initialization of dict for aggregate counts (number of 'file' events, etc)
+        self.commentEvents = 0;
+        self.fileEvents = 0;
+        self.wikiEvents = 0;
+        self.nodeEvents = 0;
+        self.otherEvents = 0;
         self.errorLoading = false;
         self.select = function(selector) {
             return $('#'+self.wrapper).find(selector)
@@ -93,6 +98,11 @@ var LogWrap = {
                 if (reset){
                     self.totalEvents = result.links.meta.total;
                     self.eventNumbers = result.meta.aggregates;
+                    self.fileEvents = ((self.eventNumbers.files/self.totalEvents)*100 | 0) + (self.eventNumbers.files ? 5 : 0);
+                    self.commentEvents = ((self.eventNumbers.comments/self.totalEvents)*100 | 0) + (self.eventNumbers.comments ? 5 : 0);
+                    self.wikiEvents = ((self.eventNumbers.wiki/self.totalEvents)*100 | 0) + (self.eventNumbers.wiki ? 5 : 0);
+                    self.nodeEvents = ((self.eventNumbers.nodes/self.totalEvents)*100 | 0) + (self.eventNumbers.nodes ? 5 : 0);
+                    self.otherEvents = 100 - (self.fileEvents + self.commentEvents + self.wikiEvents + self.nodeEvents);
                     self.cache = [];
                 }
                 if (!init) {
@@ -238,11 +248,11 @@ var LogWrap = {
             return m('p', {style: {textAlign: 'center'}}, 'Error loading logs. Please refresh the page.')
         }
 
-        var fileEvents = ((ctrl.eventNumbers.files/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.files ? 5 : 0);
-        var commentEvents = ((ctrl.eventNumbers.comments/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.comments ? 5 : 0);
-        var wikiEvents = ((ctrl.eventNumbers.wiki/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.wiki ? 5 : 0);
-        var nodeEvents = ((ctrl.eventNumbers.nodes/ctrl.totalEvents)*100 | 0) + (ctrl.eventNumbers.nodes ? 5 : 0);
-        var otherEvents = 100 - (fileEvents + commentEvents + wikiEvents + nodeEvents);
+        var fileEvents = ctrl.fileEvents;
+        var commentEvents = ctrl.commentEvents;
+        var wikiEvents = ctrl.wikiEvents;
+        var nodeEvents = ctrl.nodeEvents;
+        var otherEvents = ctrl.otherEvents;
         var filterLabels = function(){
             if (!ctrl.eventFilter){
                 if (otherEvents === 100) {
