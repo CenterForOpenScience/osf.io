@@ -9,6 +9,7 @@ from framework.forms import (
 # Forms
 ###############################################################################
 
+
 class NewNodeForm(Form):
     title = TextField('Title', [
         validators.Required(message=u'Title is required'),
@@ -16,5 +17,5 @@ class NewNodeForm(Form):
         validators.Length(max=200, message=u'Title must contain fewer than 200 characters.')
     ], widget=BootstrapTextInput())
     description = TextAreaField('Description', widget=BootstrapTextArea())
-    category = TextAreaField('Category', widget=BootstrapTextInput())
-    inheritContributors = TextAreaField('Inherit', widget=BootstrapTextInput())
+    category = TextField('Category', widget=BootstrapTextInput())
+    inheritContributors = TextField('Inherit', widget=BootstrapTextInput())
