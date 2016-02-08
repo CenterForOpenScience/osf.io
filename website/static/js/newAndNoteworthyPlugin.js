@@ -89,7 +89,11 @@ var NewAndNoteworthy = {
         self.addToolTip = function(line) {
             var $line = $(line);
             if (line.offsetWidth < line.scrollWidth && !$line.attr('title')) {
-                $line.attr('title', $line.text());
+                $line.tooltip({
+                    title: $line.text(),
+                    placement: 'top'
+                });
+                $line.tooltip('show');
             }
         };
     },
@@ -105,7 +109,8 @@ var NewAndNoteworthy = {
                         m('em', node.embeds.target_node.data.attributes.title)),
                     m('h5.prevent-overflow', {onmouseover: function(){ctrl.addToolTip(this);}},
                         description ?  description : m('p', {'class': 'blank-line'})),
-                    m('h5.prevent-overflow', m('span', {'class': 'f-w-xl'}, 'Contributors: '),
+                    m('h5.prevent-overflow',  {onmouseover: function(){ctrl.addToolTip(this);}},
+                        m('span', {'class': 'f-w-xl'}, 'Contributors: '),
                             m('span', ctrl.contribNameFormat(node, ctrl.contributorsMapping[node.id][1])))
                 )
             );
