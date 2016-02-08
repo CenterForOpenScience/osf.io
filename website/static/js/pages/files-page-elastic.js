@@ -19,7 +19,11 @@ var showResults = function(result_paths, tb){
     tb.visibleIndexes = [];
     for (var i=0; i < tb.flatData.length; i++){
         var element = tb.flatData[i];
-        if (element.row.kind === 'file'){
+        var item = tb.find(element.id);
+        if (tb.rowFilterResult(item)) {
+            tb.visibleIndexes.push(i);
+        }
+        else if (element.row.kind === 'file'){
             var path = element.row.path.replace('/', '');
             if (result_paths.indexOf(path) !== -1){
                 tb.visibleIndexes.push(i);
@@ -27,6 +31,7 @@ var showResults = function(result_paths, tb){
         }
     }
     tb.refreshRange(0);
+    m.redraw(true);
 };
 
 
