@@ -12,6 +12,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
+from admin.base.logs import update_admin_log
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import HTTPError
@@ -118,6 +119,8 @@ def approve_draft(request, draft_pk):
 
     user = request.user.osf_user
     draft.approve(user)
+    update_admin_log(
+        request.user.id, draft._id, 'Draft Registration', 'approved')
     return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 
@@ -134,6 +137,8 @@ def reject_draft(request, draft_pk):
 
     user = request.user.osf_user
     draft.reject(user)
+    update_admin_log(
+        request.user.id, draft._id, 'Draft Registration', 'rejected')
     return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 
@@ -160,11 +165,21 @@ def update_draft(request, draft_pk):
     else:
         schema_data = data.get('schema_data', {})
         data = deepcopy(draft.registration_metadata)
+        log_message = list()
         for key, value in data.items():
-            data[key]['comments'] = schema_data.get(key, {}).get('comments', [])
+            comment = schema_data.get(key, {}).get('comments', [])
+            data[key]['comments'] = comment
+            if comment != []:
+                log_message.append('{}: {}'.format(key, comment[0]['value']))
         try:
             draft.update_metadata(data)
             draft.save()
+            update_admin_log(
+                user_id=request.user.id,
+                object_id=draft._id,
+                object_repr='Draft Registration',
+                message='Comments: <p>{}</p>'.format('</p><p>'.join(log_message))
+            )
         except (NodeStateError):
             raise HTTPError(http.BAD_REQUEST)
     return JsonResponse(serializers.serialize_draft_registration(draft))
