@@ -24,7 +24,7 @@ var MeetingsAndConferences = {
         function createAMeetingButton() {
              return m('a.btn.btn-default.btn-block.m-v-xl', {type:'button',  href:'/meetings/'}, 'Create a Meeting');
         }
-        return m('div.container.conferences-and-meetings.m-v-sm.p-v-sm',  [
+        return m('div.container.conferences-and-meetings.p-v-sm',  [
             m('div', {'class': 'row m-v-sm'},
                 m('div', {'class': 'col-sm-5'},
                     m('div', {'class': 'row'},
