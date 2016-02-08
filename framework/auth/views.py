@@ -174,7 +174,15 @@ def confirm_email_get(token, auth=None, **kwargs):
 
     if user is None:
         raise HTTPError(http.NOT_FOUND)
-
+    redirect_url = request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
+    # logout testing
+    logout()
+    if 'reauth' in request.args:
+        cas_endpoint = cas.get_login_url(redirect_url)
+    else:
+        cas_endpoint = cas.get_logout_url(redirect_url)
+    resp = redirect(cas_endpoint)
+    resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
     if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
         if not is_merge:
             # determine if the user registered through a campaign
