@@ -141,7 +141,7 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
         inst_query = Q('primary_institution', 'eq', inst)
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
+            Q('is_collection', 'ne', True) &
             Q('is_registration', 'eq', False)
         )
         user = self.request.user

@@ -93,7 +93,7 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
             pointer_nodes = []
             for pointer in request.data.get('data', []):
                 node = Node.load(pointer['id'])
-                if not node or node.is_folder:
+                if not node or node.is_collection:
                     raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(pointer['id']))
                 pointer_nodes.append(node)
             has_pointer_auth = True

@@ -182,15 +182,7 @@ function _poColumnTitles() {
  * @private
  */
 function _poResolveToggle(item) {
-    var toggleMinus = m('i.fa.fa-minus'),
-        togglePlus = m('i.fa.fa-plus'),
-        childrenCount = item.data.relationships.children.links.related.meta.count;
-    if (childrenCount > 0) {
-        if (item.open) {
-            return toggleMinus;
-        }
-        return togglePlus;
-    }
+
     return '';
 }
 
