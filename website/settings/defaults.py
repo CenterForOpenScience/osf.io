@@ -192,6 +192,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     addon_settings = json.load(fp)
     ADDONS_REQUESTED = addon_settings['addons']
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
+    ADDONS_COMMENTABLE = addon_settings['addons_commentable']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -295,6 +296,7 @@ CELERY_IMPORTS = (
     'website.notifications.tasks',
     'website.archiver.tasks',
     'website.search.search',
+    'api.caching.tasks'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.

@@ -100,6 +100,18 @@ scripts/osfstorage/usage_whitelist.json
 # Celery dbs
 celerybeat-schedule.db
 celery_beat.py.db
-#
+
+# Diff (used during merge resolution)
+*.orig
+
 # GUIDS
 scripts/guid_blacklist.txt
+
+# Admin Specific
+#################
+admin/static/public/
+# web_loader stat file
+admin/webpack-stats.json
+# bower
+admin/static/vendor/
+admin/db.sqlite3

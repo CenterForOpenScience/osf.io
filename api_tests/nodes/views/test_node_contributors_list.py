@@ -870,10 +870,10 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         assert_equal(len(res.json['data']), 1)
 
     def test_node_contributor_bulk_create_limits(self):
-        node_contrib_create_list = {'data': [self.payload_one] * 11}
+        node_contrib_create_list = {'data': [self.payload_one] * 101}
         res = self.app.post_json_api(self.public_url, node_contrib_create_list,
                                      auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_node_contributor_bulk_create_no_type(self):
@@ -1099,9 +1099,9 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
 
     def test_bulk_update_contributors_limits(self):
-        contrib_update_list = {'data': [self.payload_one] * 11}
+        contrib_update_list = {'data': [self.payload_one] * 101}
         res = self.app.put_json_api(self.public_url, contrib_update_list, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_update_contributors_invalid_permissions(self):
@@ -1282,10 +1282,10 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
 
     def test_bulk_partial_update_contributors_limits(self):
-        contrib_update_list = {'data': [self.payload_one] * 11}
+        contrib_update_list = {'data': [self.payload_one] * 101}
         res = self.app.patch_json_api(self.public_url, contrib_update_list, auth=self.user.auth,
                                       expect_errors=True, bulk=True)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_partial_update_invalid_permissions(self):
@@ -1470,10 +1470,10 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         assert_equal(len(res.json['data']), 3)
 
     def test_bulk_delete_contributors_limits(self):
-        new_payload = {'data': [self.payload_one] * 11 }
+        new_payload = {'data': [self.payload_one] * 101 }
         res = self.app.delete_json_api(self.public_url, new_payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_contributors_no_payload(self):
