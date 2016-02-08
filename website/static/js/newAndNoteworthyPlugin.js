@@ -86,34 +86,6 @@ var NewAndNoteworthy = {
             }
         };
 
-        // Formats contrib names for display
-        self.getContributors = function (node) {
-            return self.contribNameFormat(node, self.contributorsMapping[node.id][1]);
-        };
-
-        // Grabs title for display
-        self.getTitle = function (node){
-            return node.embeds.target_node.data.attributes.title;
-        };
-
-        // Grabs description for display
-        self.getDescription = function(node){
-            var description = node.embeds.target_node.data.attributes.description;
-            if (description){
-                return description;
-            }
-            return m('p', {class: 'blank-line'});
-        };
-
-         // Onclick, directs user to project page
-        self.nodeDirect = function(node) {
-            location.href = '/' + node.embeds.target_node.data.id;
-        };
-
-        self.redirectToSearch = function() {
-            location.href = '/search';
-        };
-
         self.addToolTip = function(line) {
             var $line = $(line);
             if (line.offsetWidth < line.scrollWidth && !$line.attr('title')) {
@@ -123,11 +95,18 @@ var NewAndNoteworthy = {
     },
     view : function(ctrl) {
         function nodeDisplay(node) {
-            return m('div', {'class': 'row node-styling noteworthy-spacing', onclick: function(){{ctrl.nodeDirect(node);}}},
+            var description = node.embeds.target_node.data.attributes.description
+            return m('div', {'class': 'row node-styling noteworthy-spacing', onclick: function(){
+                location.href = '/' + node.embeds.target_node.data.id;}
+            },
                 m('div', {'class': 'col-sm-12'},
-                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this);}}, m('em', ctrl.getTitle(node))),
-                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this);}},  ctrl.getDescription(node)),
-                    m('h5', {'class': 'prevent-overflow'}, m('span', {'class': 'f-w-xl'}, 'Contributors: '), m('span',  ctrl.getContributors(node)))
+                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this);}},
+                        m('em', node.embeds.target_node.data.attributes.title)),
+                    m('h5', {'class': 'prevent-overflow', onmouseover: function(){ctrl.addToolTip(this);}},
+                        description ?  description : m('p', {class: 'blank-line'})),
+                    m('h5', {'class': 'prevent-overflow'},
+                        m('span', {'class': 'f-w-xl'}, 'Contributors: '),
+                        m('span', ctrl.contribNameFormat(node, ctrl.contributorsMapping[node.id][1])))
                 )
             );
         }
