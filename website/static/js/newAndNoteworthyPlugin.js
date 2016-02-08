@@ -108,9 +108,9 @@ var NewAndNoteworthy = {
                     m('h5.prevent-overflow', {onmouseover: function(){ctrl.addToolTip(this);}},
                         m('em', node.embeds.target_node.data.attributes.title)),
                     m('h5.prevent-overflow', {onmouseover: function(){ctrl.addToolTip(this);}},
-                        description ?  description : m('p', {'class': 'blank-line'})),
+                        description ?  description : m('div.blank-line')),
                     m('h5.prevent-overflow',  {onmouseover: function(){ctrl.addToolTip(this);}},
-                        m('span', {'class': 'f-w-xl'}, 'Contributors: '),
+                        m('span.f-w-xl', 'Contributors: '),
                             m('span', ctrl.contribNameFormat(node, ctrl.contributorsMapping[node.id][1])))
                 )
             );
