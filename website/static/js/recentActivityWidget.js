@@ -178,6 +178,7 @@ var LogWrap = {
                         self.page = 1;
                         self.dateBegin = moment.utc(ui.values[0]*self.div);
                         self.dateEnd = moment.utc(ui.values[1]*self.div);
+                        self.eventFilter = false;
                         self.getLogs(false, true);
                     },
                     start: function (event, ui){
@@ -204,6 +205,7 @@ var LogWrap = {
                         self.page = 1;
                         self.dateBegin = moment.utc(ui.values[0]*self.div);
                         self.dateEnd = moment.utc(ui.values[1]*self.div);
+                        self.eventFilter = false;
                         self.getLogs(false, true);
                     }
                 });
