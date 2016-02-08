@@ -15,6 +15,7 @@ var xhrconfig = function (xhr) {
 var LogWrap = {
     controller: function(args){
         var self = this;
+        self.wrapper = args.wrapper;
         self.userId = args.userId;
         self.activityLogs = m.prop();
         self.eventFilter = false; //holds the currently selected action category filter to include in request
@@ -31,6 +32,9 @@ var LogWrap = {
         self.totalEvents = 0; //initialization of count of all logs returned (total)
         self.eventNumbers = {}; //initialization of dict for aggregate counts (number of 'file' events, etc)
         self.errorLoading = false;
+        self.select = function(selector) {
+            return $('#'+self.wrapper).find(selector)
+        };
 
         self.getLogs = function(init, reset, update) {
             if (!(init || reset || update)  && self.cache[self.page - 1]){
@@ -125,8 +129,8 @@ var LogWrap = {
         self.makeLine = function(canvas){
             var ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            var progBar = $('#rAProgressBar');
-            var canvasElement = $('#rACanvas');
+            var progBar = self.select('#rAProgressBar');
+            var canvasElement = self.select('#rACanvas');
             var handle = $('.ui-slider-handle');
             var leftHandle = handle[0];
             var rightHandle = handle[1];
@@ -151,11 +155,11 @@ var LogWrap = {
             else { return '#5cb85c'; }
         };
         self.addButtons = function(ele, isInitialized) {
-            if ($('#rALeftButton')){
-                $('#rALeftButton').css('height', $('#rALogs').height());
+            if (self.select('#rALeftButton')){
+                self.select('#rALeftButton').css('height', self.select('#rALogs').height());
             }
-            if ($('#rARightButton')){
-                $('#rARightButton').css('height', $('#rALogs').height());
+            if (self.select('#rARightButton')){
+                self.select('#rARightButton').css('height', self.select('#rALogs').height());
             }
         };
         self.sliderProgress = '<div id="rAFilleBar" class="progress" style="height: 11px"><div class="progress-bar"></div></div>';
@@ -164,7 +168,7 @@ var LogWrap = {
             var end = (Number(self.today.format('x'))/self.div | 0);
             var values = [(Number(self.dateBegin.format('x'))/self.div | 0), (Number(self.dateEnd.format('x'))/self.div | 0)];
             var canvas = document.getElementById('rACanvas');
-            var sliderElement = $('#rASlider');
+            var sliderElement = self.select('#rASlider');
             if (!isInitialized) {
                 sliderElement.slider({
                     min: begin,
@@ -181,7 +185,7 @@ var LogWrap = {
                         self.eventFilter = false;
                         self.loading = true;
                         m.redraw();
-                        $('#rAFilleBar').replaceWith(
+                        self.select('#rAFilleBar').replaceWith(
                             '<div id="rAFilleBar" class="progress" style="height: 11px">' +
                                 '<div class="progress-bar progress-bar-success progress-bar-striped active" style="width:100%;"></div>' +
                             '</div>'
@@ -193,7 +197,7 @@ var LogWrap = {
                     change: function (event, ui){
                         self.loading = true;
                         m.redraw();
-                        $('#rAFilleBar').replaceWith(
+                        self.select('#rAFilleBar').replaceWith(
                             '<div id="rAFilleBar" class="progress" style="height: 11px">' +
                                 '<div class="progress-bar progress-bar-success progress-bar-striped active" style="width:100%;"></div>' +
                             '</div>'
@@ -222,7 +226,7 @@ var LogWrap = {
                 self.makeLine(canvas);
             }
             else {
-                $('#rAFilleBar').replaceWith(self.sliderProgress);
+                self.select('#rAFilleBar').replaceWith(self.sliderProgress);
                 self.makeLine(canvas);
             }
         };
@@ -260,7 +264,7 @@ var LogWrap = {
                 ]);
             }
         };
-        return m('.fb-activity-list.col-md-10.col-md-offset-1.m-t-xl', [
+        return m('.fb-activity-list.col-md-10.col-md-offset-1.m-t-xl#' + ctrl.wrapper, [
                 m('.time-slider-parent',
                     m('#rASlider',  {config: ctrl.addSlider})
                 ),
