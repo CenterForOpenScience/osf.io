@@ -27,6 +27,8 @@ class LogMixin(object):
             raise NotFound(
                 detail='No log matching that log_id could be found.'
             )
+
+        self.check_log_permission(log)
         return log
 
     def check_log_permission(self, log):
@@ -42,7 +44,7 @@ class LogMixin(object):
             log_nodes.append(node)
             if node.can_view(auth_user):
                 return
-        self.check_object_permissions(self.request, log_nodes[0]) # will raise 401 or 403, as appropriate
+        self.check_object_permissions(self.request, log_nodes[0])  # will raise 401 or 403, as appropriate
 
 
 class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixin):
@@ -113,7 +115,6 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixi
 
     def get_queryset(self):
         log = self.get_log()
-        self.check_log_permission(log)
         auth_user = get_user_auth(self.request)
         return [
             node for node in log.node__logged
@@ -190,7 +191,6 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         log = self.get_log()
-        self.check_log_permission(log)
         return log
 
     # overrides RetrieveUpdateDestroyAPIView
