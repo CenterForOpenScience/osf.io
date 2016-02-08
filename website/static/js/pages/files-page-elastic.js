@@ -5,12 +5,16 @@ var $osf = require('js/osfHelpers');
 var Fangorn = require('js/fangorn');
 var m = require('mithril');
 
+var ENTER_KEY = 13;
+
 // Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
 var nodeApiUrl = window.contextVars.node.urls.api;
 
+
+// Only display files with a path in a given array.
 var showResults = function(result_paths, tb){
     tb.visibleIndexes = [];
     for (var i=0; i < tb.flatData.length; i++){
@@ -25,12 +29,16 @@ var showResults = function(result_paths, tb){
     tb.refreshRange(0);
 };
 
+
+// Query elastic-search for a list of matching paths.
 var queryElasticSearch = function(query, node_id){
     var data = {'q': query, 'pid': node_id};
-    var response = $.getJSON('/api/v1/projrcy_files', data);
+    var response = $.getJSON('/api/v1/project_files', data);
     return response;
 };
 
+
+// Filter the files page using current query.
 var fileFilter = function(tb){
     var filter = tb.filterText().toLowerCase(),
         index = tb.visibleTop;
@@ -50,20 +58,20 @@ var fileFilter = function(tb){
     }
 };
 
-/*
-Replace the default filter template with one using elastic search.
-*/
+
+// Replace the default filter template with one using elastic search.
 var filterTemplate = function () {
     var tb = this;
     return m('input.pull-right.form-control[placeholder=\'' + tb.options.filterPlaceholder + '\'][type=\'text\']', {
         style: 'width:100%;display:inline;',
         onkeyup: function (e){
             m.withAttr('value', tb.filterText)(e);
-            if (e.key === 'Enter'){fileFilter(tb);}
+            if (e.keyCode === ENTER_KEY){fileFilter(tb);}
         },
         value: tb.filterText()
     });
 };
+
 
 $(document).ready(function(){
     $.ajax({

@@ -899,10 +899,10 @@ class TestSearchFiles(SearchTestCase):
         assert_equal(len(find), 0)
 
 
-class TestSearchProjectFile(SearchTestCase):
+class TestSearchProjectFiles(SearchTestCase):
 
     def setUp(self):
-        super(TestSearchProjectFile, self).setUp()
+        super(TestSearchProjectFiles, self).setUp()
         self.node_one = ProjectFactory(is_public=True, title='Food')
         self.osf_storage = self.node_one.get_addon('osfstorage')
         self.root = self.osf_storage.get_root()

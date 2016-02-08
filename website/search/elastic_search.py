@@ -636,26 +636,27 @@ def project_file_search(query, node_id, index=None):
 
     :param query: query text.
     :param node_id: id of project being searched.
-    :return: list of file dicts.
+    :return: list of file paths.
     """
     index = index or INDEX
+    node_id_filter = {'term': {'node_url': node_id}}
+    file_query = {
+        'bool': {
+            'should': [
+                {'prefix': {'name': query}},
+                {'prefix': {'tags': query}},
+            ]
+        }
+    }
+
     query = {
         'query': {
             'filtered': {
-                'query': {
-                    'bool': {
-                        'should': [
-                            {'prefix': {'name': query}},
-                            {'prefix': {'tags': query}},
-                        ]
-                    }
-                },
-                'filter': {
-                    'term': {'node_url': '{}'.format(node_id)}
-                }
+                'query': file_query,
+                'filter': node_id_filter
             }
         }
     }
     results = es.search(index=index, doc_type='file', body=query)['hits']['hits']
-    results = [d['_source']['id']for d in results]
-    return results
+    result_ids = [d['_source']['id'] for d in results]
+    return result_ids
