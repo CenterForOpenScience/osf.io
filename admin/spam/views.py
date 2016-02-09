@@ -1,7 +1,6 @@
 from django.shortcuts import render
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
-from django.views.generic import TemplateView, FormView, ListView
+from django.views.generic import FormView, ListView
 from django.utils.decorators import method_decorator
 from django.core.urlresolvers import reverse
 from django.views.defaults import page_not_found
