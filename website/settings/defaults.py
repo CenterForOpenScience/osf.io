@@ -88,14 +88,14 @@ USE_CDN_FOR_CLIENT_LIBS = True
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 SUPPORT_EMAIL = 'support@osf.io'
+
+# SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
-# Mandrill
-MANDRILL_USERNAME = None
-MANDRILL_PASSWORD = None
-MANDRILL_MAIL_SERVER = None
+# OR, if using Sendgrid's API
+SENDGRID_API_KEY = None
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
