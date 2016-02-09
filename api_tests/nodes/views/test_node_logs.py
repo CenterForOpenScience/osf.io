@@ -174,7 +174,7 @@ class TestNodeLogAddedContributors(ApiTestCase):
         added_contributors_url = json_data['relationships']['added_contributors']['links']['related']['href']
         assert_equal(urlparse.urlparse(added_contributors_url).path, url + 'added_contributors/')
 
-        res = self.app.get(added_contributors_url)
+        res = self.app.get(added_contributors_url, auth=self.user.auth)
         added_contributor_id = res.json['data'][0]['id']
         assert_equal(self.user._id, added_contributor_id)
 
@@ -187,5 +187,5 @@ class TestNodeLogAddedContributors(ApiTestCase):
         added_contributors_url = json_data['relationships']['added_contributors']['links']['related']['href']
         assert_equal(urlparse.urlparse(added_contributors_url).path, url + 'added_contributors/')
 
-        res = self.app.get(added_contributors_url)
+        res = self.app.get(added_contributors_url, auth=self.user.auth)
         assert_equal(res.json['data'], [])
