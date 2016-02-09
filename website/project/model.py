@@ -583,9 +583,13 @@ class NodeLog(StoredObject):
 class Tag(StoredObject):
 
     _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
+    lower = fields.StringField(index=True, validate=MaxLengthValidator(128))
+
+    def __init__(self, _id, lower=None, **kwargs):
+        super(Tag, self).__init__(_id=_id, lower=lower or _id.lower(), **kwargs)
 
     def __repr__(self):
-        return '<Tag() with id {self._id!r}>'.format(self=self)
+        return '<Tag({self.lower!r}) with id {self._id!r}>'.format(self=self)
 
     @property
     def url(self):
@@ -698,14 +702,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     #: Whether this is a pointer or not
     primary = True
 
-    __indices__ = [{
-        'unique': False,
-        'key_or_list': [
-            ('tags.$', pymongo.ASCENDING),
-            ('is_public', pymongo.ASCENDING),
-            ('is_deleted', pymongo.ASCENDING),
-        ]
-    }]
+    __indices__ = [
+        {
+            'unique': False,
+            'key_or_list': [
+                ('tags.$', pymongo.ASCENDING),
+                ('is_public', pymongo.ASCENDING),
+                ('is_deleted', pymongo.ASCENDING),
+            ]
+        },
+    ]
 
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
@@ -813,7 +819,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # One of 'public', 'private'
     # TODO: Add validator
-    comment_level = fields.StringField(default='private')
+    comment_level = fields.StringField(default='public')
 
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
@@ -884,17 +890,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def __init__(self, *args, **kwargs):
 
-        tags = kwargs.pop('tags', [])
-
         super(Node, self).__init__(*args, **kwargs)
-
-        # Ensure when Node is created with tags through API, tags are added to Tag
-        if tags:
-            for tag in tags:
-                self.add_tag(tag, Auth(self.creator), save=False, log=False)
 
         if kwargs.get('_is_loaded', False):
             return
+
+        # Ensure when Node is created with tags through API, tags are added to Tag
+        tags = kwargs.pop('tags', [])
+        for tag in tags:
+            self.add_tag(tag, Auth(self.creator), save=False, log=False)
 
         if self.creator:
             self.contributors.append(self.creator)
@@ -3039,9 +3043,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
                 elif self.is_pending_registration:
                     raise NodeStateError("An unapproved registration cannot be made public.")
-                if self.embargo_end_date and not self.is_pending_embargo:
-                    self.embargo.state = Embargo.REJECTED
-                    self.embargo.save()
+                elif self.embargo_end_date:
+                    raise NodeStateError("An embargoed registration cannot be made public.")
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
