@@ -11,13 +11,13 @@ from django.http import HttpResponseBadRequest
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
+from modularodm import Q
 
-from admin.base.logs import update_admin_log
+from admin.common_auth.logs import update_admin_log
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import HTTPError
 from framework.mongo.utils import get_or_http_error
-from modularodm import Q
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.project.model import MetaSchema, DraftRegistration

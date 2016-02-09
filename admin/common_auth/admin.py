@@ -1,12 +1,14 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import Permission
-from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.admin.models import LogEntry, DELETION
-from django.utils.html import escape
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
-from .models import MyUser
+from django.utils.html import escape
+
+from .logs import OSFLogEntry
 from forms import CustomUserRegistrationForm
+from .models import MyUser
 
 
 class PermissionAdmin(admin.ModelAdmin):
@@ -59,11 +61,10 @@ class LogEntryAdmin(admin.ModelAdmin):
 
     date_hierarchy = 'action_time'
 
-    readonly_fields = LogEntry._meta.get_all_field_names()
+    readonly_fields = OSFLogEntry._meta.get_all_field_names()
 
     list_filter = [
         'user',
-        'content_type',
         'action_flag'
     ]
 
@@ -76,11 +77,9 @@ class LogEntryAdmin(admin.ModelAdmin):
     list_display = [
         'action_time',
         'user',
-        'content_type',
         'object_link',
         'object_id',
-        'action_flag',
-        'change_message',
+        'message',
     ]
 
     def has_add_permission(self, request):
@@ -108,13 +107,9 @@ class LogEntryAdmin(admin.ModelAdmin):
     object_link.admin_order_field = 'object_repr'
     object_link.short_description = u'object'
 
-    def change_message(self, obj):
-        return obj.change_message
-    change_message.allow_tags = True
-
     def queryset(self, request):
         return super(LogEntryAdmin, self).queryset(request) \
             .prefetch_related('content_type')
 
 
-admin.site.register(LogEntry, LogEntryAdmin)
+admin.site.register(OSFLogEntry, LogEntryAdmin)

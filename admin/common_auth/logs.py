@@ -3,7 +3,7 @@ from django.contrib.admin.models import LogEntry, CHANGE
 
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=CHANGE):
     try:
-        LogEntry.objects.log_action(
+        OSFLogEntry.objects.log_action(
             user_id=user_id,
             content_type_id=None,
             object_id=object_id,
@@ -13,3 +13,9 @@ def update_admin_log(user_id, object_id, object_repr, message, action_flag=CHANG
         )
     except:
         print 'Failed to log changes to {}'.format(object_id)
+
+
+class OSFLogEntry(LogEntry):
+    def message(self):
+        return self.change_message
+    message.allow_tags = True
