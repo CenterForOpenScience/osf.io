@@ -93,7 +93,9 @@ $(function(){
             // loop through items and check for admin permission first
             result.data.forEach(function(item){
                 item.formattedDate = new $osf.FormattableDate(item.attributes.date_modified);
-                allNodes.push(item);
+                if(item.attributes.current_user_permissions.indexOf('admin') > -1){
+                    allNodes.push(item);
+                }
             });
             if(result.links.next){
                 collectProjects(result.links.next);
