@@ -4,9 +4,11 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth.models import Group
 from .models import MyUser
 
+
 class LoginForm(forms.Form):
     email = forms.CharField(label=(u'Email'), required=True)
     password = forms.CharField(label=(u'Password'), widget=forms.PasswordInput(render_value=False), required=True)
+
 
 class CustomUserRegistrationForm(UserCreationForm):
     group_perms = forms.ModelMultipleChoiceField(queryset=Group.objects.filter(name="prereg_group"), widget=FilteredSelectMultiple("verbose name", is_stacked=False))

@@ -6,6 +6,7 @@ from django.shortcuts import render, redirect
 from forms import LoginForm, CustomUserRegistrationForm
 from .models import MyUser
 
+
 def login(request):
     if request.user.is_authenticated():
         return redirect('home')
@@ -23,9 +24,11 @@ def login(request):
     context = {'form': form}
     return render(request, 'login.html', context)
 
+
 def logout(request):
     logout_user(request)
     return redirect('auth:login')
+
 
 # Permission restriction based on staff (only staff can register new users). Use is_staff boolean?
 def register(request):
