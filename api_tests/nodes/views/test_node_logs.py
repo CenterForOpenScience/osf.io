@@ -161,8 +161,11 @@ class TestNodeLogAssociatedContributors(ApiTestCase):
     def setUp(self):
         super(TestNodeLogAssociatedContributors, self).setUp()
         self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
         self.node = ProjectFactory(is_public=False)
         self.node.add_contributor(self.user, auth=Auth(self.node.creator), log=True, save=True)
+        self.node.add_contributor(self.user_two, auth=Auth(self.node.creator), log=True, save=True)
+        self.node.remove_contributors([self.user_two], auth=Auth(self.node.creator), log=True, save=True)
         self.url = '/{}logs/'.format(API_BASE)
 
     def test_log_returns_associated_contributors_relationship(self):
@@ -189,3 +192,18 @@ class TestNodeLogAssociatedContributors(ApiTestCase):
 
         res = self.app.get(associated_contributors_url, auth=self.user.auth)
         assert_equal(res.json['data'], [])
+
+    def test_log_removing_contributors_returns_associated_contributors_relationship(self):
+        log_id = self.node.logs[3]._id
+        url = self.url + '{}/'.format(log_id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        json_data = res.json['data']
+        assert_equal(json_data['attributes']['action'], 'contributor_removed')
+        associated_contributors_url = json_data['relationships']['associated_contributors']['links']['related']['href']
+        assert_equal(urlparse.urlparse(associated_contributors_url).path, url + 'associated_contributors/')
+
+        res = self.app.get(associated_contributors_url, auth=self.user.auth)
+        removed_contributor_id = res.json['data'][0]['id']
+        assert_equal(self.user_two._id, removed_contributor_id)
+
