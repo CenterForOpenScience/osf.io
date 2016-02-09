@@ -110,7 +110,7 @@
                     <a class="btn btn-primary" data-bind="click:confirmWarning">Continue</a>
                 </span>
 
-                <span data-bind="if: page() == CONFIRM">
+                <span data-bind="if: page() == CONFIRM && (nodesChangedPublic().length + nodesChangedPrivate().length <= 100)">
                     <a href="#" class="btn btn-primary" data-bind="click: confirmChanges, visible: nodesChanged()" data-dismiss="modal">Confirm</a>
                 </span>
 

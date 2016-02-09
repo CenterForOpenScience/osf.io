@@ -264,7 +264,7 @@
     <!-- JQuery 3 for IE Patching -->
     <script type="text/javascript" src="/static/vendor/jquery-compat-git/jquery-compat-git.js"></script>
     <script type="text/javascript">
-        var window.$3 = jQuery.noConflict(true);
+        var $3 = jQuery.noConflict(true);
     </script>
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
