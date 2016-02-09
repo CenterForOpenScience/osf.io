@@ -4,7 +4,7 @@ from rest_framework.exceptions import NotFound
 from modularodm import Q
 from framework.auth.core import User
 from framework.auth.oauth_scopes import CoreScopes
-nfrom website.models import NodeLog, Node
+from website.models import NodeLog, Node
 from api.nodes.permissions import (
     ContributorOrPublic,
 )
