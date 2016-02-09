@@ -39,6 +39,7 @@ INSTALLED_APPS = (
     'admin.base',
     'admin.pre_reg',
     'admin.spam',
+    'admin.conferences'
 
     # 3rd party
     'raven.contrib.django.raven_compat',
