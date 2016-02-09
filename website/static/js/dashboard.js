@@ -663,6 +663,7 @@ var Collections  = {
                         break;
                     }
                 }
+                self.calculateTotalPages();
             }, function(){
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be deleted.';
@@ -670,7 +671,6 @@ var Collections  = {
                 Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
             });
             self.dismissModal();
-            self.calculateTotalPages();
             return promise;
         };
         self.renameCollection = function _renameCollection() {
