@@ -8,7 +8,7 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <form action="{% url 'nodes:node' %}" method="post">
+            <form action="{% url 'nodes:node_blank' %}" method="post">
                 {% csrf_token %}
                 {% if form.errors %}
                     <div class="alert alert-danger">{{ form.errors }}</div>

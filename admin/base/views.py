@@ -55,7 +55,7 @@ class GuidFormView(FormView):
             return page_not_found(self.request)
 
     def get_context_data(self, **kwargs):
-        self.guid = self.request.GET.get('guid', None)
+        self.guid = self.kwargs.get('guid', None)
         guid_object = None
         if self.guid is not None:
             try:

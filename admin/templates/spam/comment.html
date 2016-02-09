@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load user_extras %}
 {% block title %}
     <title>Comment</title>
 {% endblock title %}
@@ -47,7 +48,9 @@
                     <strong>Author:</strong> {{ comment.author.fullname }}
                     <small>
                         (<a href="{{ comment.author.display_absolute_url }}">
-                            User's osf profile
+                            User's <b>osf</b> profile
+                        </a>) (<a href="{{ comment.author_id | reverse_user }}">
+                            User's profile
                         </a>)
                     </small>
                 </h4>

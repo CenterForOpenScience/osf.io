@@ -7,7 +7,7 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <form action="{% url 'users:user' %}" method="post">
+            <form action="{% url 'users:user_blank' %}" method="post">
                 {% csrf_token %}
                 {% if form.errors %}
                     <div class="alert alert-danger">{{ form.errors }}</div>
@@ -25,10 +25,24 @@
         {% if guid_object %}
         {% with user=guid_object %}
             <div class="row">
+                <h3>User links</h3>
+            </div>
+            <div class="row">
+                <a href="{% url 'spam:user_spam' user.id %}"
+                   class="btn btn-primary">
+                    Spam
+                </a>
+            </div>
+            <div class="row">
                 <h3>User information</h3>
             </div>
             <div class="row">
-                <strong>Name:</strong> {{ user.name }}
+                <div class="col-md-6">
+                    <strong>Name:</strong> {{ user.name }}
+                </div>
+                <div class="col-md-6">
+                    <strong>GUID:</strong> {{ user.id }}
+                </div>
             </div>
             <div class="row">
                 <strong>Emails:</strong>

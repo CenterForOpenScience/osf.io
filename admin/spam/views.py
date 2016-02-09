@@ -17,7 +17,6 @@ class SpamList(ListView):
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'date_created'
-    context_object_name = 'Spam'
 
     def __init__(self):
         self.status = str(Comment.FLAGGED)
@@ -41,6 +40,38 @@ class SpamList(ListView):
             'spam': map(serialize_comment, queryset),
             'page': page,
             'status': self.status,
+            'page_number': page.number
+        }
+
+
+class UserSpamList(SpamList):
+    template_name = 'users/spam.html'
+
+    def __init__(self):
+        self.user_id = None
+        super(UserSpamList, self).__init__()
+
+    def get_queryset(self):
+        self.status = self.request.GET.get('status', u'1')
+        self.user_id = self.kwargs.get('user_id', None)
+        query = (
+            Q('reports', 'ne', {}) &
+            Q('reports', 'ne', None) &
+            Q('user', 'eq', self.user_id) &
+            Q('spam_status', 'eq', int(self.status))
+        )
+        return Comment.find(query).sort(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        queryset = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(queryset)
+        paginator, page, queryset, is_paginated = self.paginate_queryset(
+            queryset, page_size)
+        return {
+            'spam': map(serialize_comment, queryset),
+            'page': page,
+            'status': self.status,
+            'user_id': self.user_id,
             'page_number': page.number
         }
 
