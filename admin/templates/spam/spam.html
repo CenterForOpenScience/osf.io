@@ -7,27 +7,29 @@
 {% endblock title %}
 {% block content %}
     <h2>List of Spam</h2>
+    <div class="btn-group">
     {% if status == '1' %}
         <a href="{% url 'spam:spam' %}?status=1&page={{ page_number }}"
-           class="btn btn-warning disabled">Flagged</a>
+           class="btn btn-primary active disabled">Flagged</a>
     {% else %}
         <a href="{% url 'spam:spam' %}?status=1&page={{ page_number }}"
-           class="btn btn-warning">Flagged</a>
+           class="btn btn-primary">Flagged</a>
     {% endif %}
     {% if status == '2' %}
         <a href="{% url 'spam:spam' %}?status=2&page={{ page_number }}"
-           class="btn btn-danger disabled">Spam</a>
+           class="btn btn-primary active disabled">Spam</a>
     {% else %}
         <a href="{% url 'spam:spam' %}?status=2&page={{ page_number }}"
-           class="btn btn-danger">Spam</a>
+           class="btn btn-primary">Spam</a>
     {% endif %}
     {% if status == '4' %}
         <a href="{% url 'spam:spam' %}?status=4&page={{ page_number }}"
-           class="btn btn-success disabled">Ham</a>
+           class="btn btn-primary active disabled">Ham</a>
     {% else %}
         <a href="{% url 'spam:spam' %}?status=4&page={{ page_number }}"
-           class="btn btn-success">Ham</a>
+           class="btn btn-primary">Ham</a>
     {% endif %}
+    </div>
     {% include "util/pagination.html" with items=page status=status %}
     <table class="table table-striped table-hover table-responsive">
     <thead>
