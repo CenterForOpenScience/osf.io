@@ -19,9 +19,7 @@ import pyrax
 import progressbar
 
 from modularodm import Q
-
 from boto.glacier.layer2 import Layer2
-
 from pyrax.exceptions import NoSuchObject
 
 from framework.tasks import app as celery_app
@@ -134,16 +132,24 @@ def main(nworkers, worker_id, dry_run):
     progress_bar.finish()
 
 
-@celery_app.task(name='scripts.osfstorage.files_audit')
-def run_mains(num_of_workers, dry_run):
-    try:
-        thread.start_new_thread(run_main, (num_of_workers, 0, dry_run,))
-        thread.start_new_thread(run_main, (num_of_workers, 1, dry_run,))
-        thread.start_new_thread(run_main, (num_of_workers, 2, dry_run,))
-        thread.start_new_thread(run_main, (num_of_workers, 3, dry_run,))
-    except:
-        # need to add specific exception handler
-        pass
+@celery_app.task(name='scripts.osfstorage.files_audit_0')
+def file_audit_1(num_of_workers=4, dry_run=True):
+    run_main(num_of_workers, 0, dry_run)
+
+
+@celery_app.task(name='scripts.osfstorage.files_audit_1')
+def file_audit_2(num_of_workers=4, dry_run=True):
+    run_main(num_of_workers, 1, dry_run)
+
+
+@celery_app.task(name='scripts.osfstorage.files_audit_2')
+def file_audit_3(num_of_workers=4, dry_run=True):
+    run_main(num_of_workers, 2, dry_run)
+
+
+@celery_app.task(name='scripts.osfstorage.files_audit_3')
+def file_audit_4(num_of_workers=4, dry_run=True):
+    run_main(num_of_workers, 3, dry_run)
 
 
 def run_main(num_of_workers, worker_id, dry_run):

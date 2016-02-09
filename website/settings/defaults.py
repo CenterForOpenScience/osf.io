@@ -286,12 +286,6 @@ BROKER_URL = 'amqp://'
 # Default RabbitMQ backend
 CELERY_RESULT_BACKEND = 'amqp://'
 
-# Default arguments for tasks
-DRY_RUN = False  # for most tasks, set to False
-JOB_ID = None   # for task scripts.osfstorage.glacier_audit, set to None
-DAYS = None    # for task scripts.refresh_box, set to None
-NUM_OF_WORKERS = 4  # for task scripts.osfstorage.files_audit, set to 4
-
 #  Modules to import when celery launches
 CELERY_IMPORTS = (
     'framework.tasks',
@@ -336,22 +330,22 @@ else:
         'refresh_box': {
             'task': 'scripts.refresh_box_tokens',
             'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
-            'args': (DAYS, DRY_RUN,),
+            'kwargs': {'dry_run': False},
         },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'args': (DRY_RUN,),
+            'kwargs': {'dry_run': False},
         },
         'embargo_registrations': {
             'task': 'scripts.embargo_registrations',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'args': (DRY_RUN,),
+            'kwargs': {'dry_run': False},
         },
         'approve_registrations': {
             'task': 'scripts.approve_registrations',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'args': (DRY_RUN,),
+            'kwargs': {'dry_run': False},
         },
         'glacier_inventory': {
             'task': 'scripts.osfstorage.glacier_inventory',
@@ -361,27 +355,42 @@ else:
         'glacier_audit': {
             'task': 'scripts.osfstorage.glacier_audit',
             'schedule': crontab(minute=0, hour=6, day_of_week=0),  # Sunday 6:00 a.m.
-            'args': (JOB_ID, DRY_RUN),
+            'kwargs': {'dry_run': False},
         },
         'triggered_mails': {
             'task': 'scripts.triggered_mails',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'args': (DRY_RUN,)
+            'kwargs': {'dry_run': False},
         },
         'send_queued_mails': {
             'task': 'scripts.send_queued_mails',
             'schedule': crontab(minute=0, hour=12),  # Daily 12 p.m.
-            'args': (DRY_RUN,)
+            'kwargs': {'dry_run': False},
         },
         'usage_audit': {
             'task': 'scripts.osfstorage.usage_audit',
             'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'args': ('send_mail',)
+            'kwargs': {'send_mail': True},
         },
-        'files_audit': {
-            'task': 'scripts.osfstorage.files_audit',
+        'files_audit_0': {
+            'task': 'scripts.osfstorage.files_audit_0',
             'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
-            'args': (NUM_OF_WORKERS, DRY_RUN,)
+            'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        },
+        'files_audit_1': {
+            'task': 'scripts.osfstorage.files_audit_1',
+            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+            'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        },
+        'files_audit_2': {
+            'task': 'scripts.osfstorage.files_audit_2',
+            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+            'kwargs': {'num_of_workers': 4, 'dry_run': False},
+        },
+        'files_audit_3': {
+            'task': 'scripts.osfstorage.files_audit_3',
+            'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
+            'kwargs': {'num_of_workers': 4, 'dry_run': False},
         }
     }
 

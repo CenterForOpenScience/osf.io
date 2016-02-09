@@ -18,7 +18,6 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    print('trigger_mail')
     for user in find_inactive_users_with_no_inactivity_email_sent_or_queued():
         if dry_run:
             logger.warn('Dry run mode')
@@ -50,7 +49,7 @@ def find_inactive_users_with_no_inactivity_email_sent_or_queued():
 
 
 @celery_app.task(name='scripts.triggered_mails')
-def run_main(dry_run):
+def run_main(dry_run=True):
     init_app(routes=False)
     if not dry_run:
         add_file_logger(logger, __file__)

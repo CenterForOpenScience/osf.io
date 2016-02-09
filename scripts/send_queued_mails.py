@@ -63,7 +63,7 @@ def pop_and_verify_mails_for_each_user(user_queue):
 
 
 @celery_app.task(name='scripts.send_queued_mails')
-def run_main(dry_run):
+def run_main(dry_run=True):
     init_app(routes=False)
     if not dry_run:
         add_file_logger(logger, __file__)

@@ -6,7 +6,6 @@ import logging
 import datetime
 
 from modularodm import Q
-
 from dateutil.relativedelta import relativedelta
 
 from framework.tasks import app as celery_app
@@ -47,7 +46,7 @@ def main(delta, dry_run):
 
 
 @celery_app.task(name='scripts.refresh_box_tokens')
-def run_main(days, dry_run):
+def run_main(days=None, dry_run=True):
     init_app(set_backends=True, routes=False)
     try:
         days = int(days)
