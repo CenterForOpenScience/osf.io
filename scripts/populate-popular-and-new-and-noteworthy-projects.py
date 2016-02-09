@@ -17,6 +17,9 @@ from website.settings.defaults import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LIN
 
 logger = logging.getLogger(__name__)
 
+# TODO change to production after code review
+BASE = 'LOCAL'  # options are LOCAL, STAGING, STAGING2, or PRODUCTION
+
 
 def retrieve_data(url):
     """ Fetch data and decode json """
@@ -25,19 +28,42 @@ def retrieve_data(url):
     return data
 
 
+def get_api_base_path():
+    """ Returns api base path depending on environment"""
+    if BASE == 'PRODUCTION':
+        base = 'https://osf.io/'
+    elif BASE == 'STAGING':
+        base = 'https://staging.osf.io/'
+    elif BASE == 'STAGING2':
+        base = 'https://staging2.osf.io/'
+    else:
+        base = 'http://127.0.0.1:5000/'
+    return base
+
+
+def get_apiv2_base_path():
+    """ Returns apiv2 base path depending on environment"""
+    if BASE == 'PRODUCTION':
+        base = 'https://api.osf.io/'
+    elif BASE == 'STAGING':
+        base = 'https://staging-api.osf.io/'
+    elif BASE == 'STAGING2':
+        base = 'https://staging2-api.osf.io/'
+    else:
+        base = 'http://127.0.0.1:8000/'
+    return base
+
+
 def get_popular_nodes():
     """ Fetch data from url that returns dict with a list of popular nodes from piwik """
-    # TODO Shouldn't hardcode URL - only works locally
-    discover_url = 'http://127.0.0.1:5000/api/v1/explore/activity/popular/raw/'
+    discover_url = get_api_base_path() + 'api/v1/explore/activity/popular/raw/'
     return retrieve_data(discover_url)
-
 
 def get_new_and_noteworthy_nodes():
     """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """
-    # TODO Shouldn't hardcode URL - only works locally
     today = datetime.datetime.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1)).isoformat()
-    discover_url = 'http://127.0.0.1:8000/v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(last_month)
+    discover_url = get_apiv2_base_path() + 'v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(last_month)
     data = retrieve_data(discover_url)['data']
     node_log_count_mapping = {}
     for new_node in data:
@@ -84,9 +110,8 @@ def main(dry_run=True):
     init_app(routes=False)
 
     with TokuTransaction():
-        # popular_nodes = get_popular_nodes()['popular_node_ids'] # TODO uncomment this
+        popular_nodes = get_popular_nodes()['popular_node_ids']
         popular_links_node = models.Node.find(Q('_id', 'eq', POPULAR_LINKS_NODE))[0]
-        popular_nodes = ["dy68x", "zk45e", "acw57", "hucnr", "4e8zs"]  # TODO delete this
         new_and_noteworthy_links_node = models.Node.find(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))[0]
         new_and_noteworthy_nodes = get_new_and_noteworthy_nodes()
 
