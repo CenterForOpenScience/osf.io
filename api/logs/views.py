@@ -269,4 +269,3 @@ class NodeLogAssociatedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFi
             return []
         associated_users = User.find(Q('_id', 'in', associated_contrib_ids))
         return associated_users
-
