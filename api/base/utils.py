@@ -135,4 +135,3 @@ def default_node_permission_query(user):
         permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
     return permission_query
-
