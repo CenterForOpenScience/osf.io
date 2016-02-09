@@ -68,7 +68,7 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
 
             new_path = destination['path']
             if destination['provider'] == 'dropbox':  # prepend root folder
-                new_path = '/{}/{}'.format(destination_node.get_addon(destination['provider']).folder_name, new_path.strip('/'))
+                new_path = '{}/{}'.format(destination_node.get_addon(destination['provider']).folder, new_path.strip('/'))
 
             old_file.stored_object.path = new_path
             old_file.save()

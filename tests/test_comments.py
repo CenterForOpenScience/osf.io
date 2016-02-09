@@ -1,8 +1,8 @@
 from __future__ import absolute_import
-import pytest
 import datetime as dt
 from collections import OrderedDict
 from nose.tools import *  # noqa PEP8 asserts
+from nose_parameterized import parameterized, param
 from modularodm.exceptions import ValidationValueError, ValidationTypeError, ValidationError
 from modularodm import Q
 
@@ -337,13 +337,10 @@ class TestCommentModel(OsfTestCase):
 class FileCommentMoveRenameTestMixin(OsfTestCase):
 
     path_is_file_id = False
+    destination_providers = []
 
     @property
     def provider(self):
-        raise NotImplementedError
-
-    @property
-    def provider_paths(self):
         raise NotImplementedError
 
     @property
@@ -357,6 +354,10 @@ class FileCommentMoveRenameTestMixin(OsfTestCase):
     def _format_path(self, path, folder=None, is_id=path_is_file_id):
         return path
 
+    @property
+    def destination_providers(self):
+        raise NotImplementedError
+
     def setUp(self):
         super(FileCommentMoveRenameTestMixin, self).setUp()
         self.user = UserFactory()
@@ -364,14 +365,14 @@ class FileCommentMoveRenameTestMixin(OsfTestCase):
         self.project.add_addon(self.provider, auth=Auth(self.user))
         self.project.save()
         self.project_settings = self.project.get_addon(self.provider)
-        self.project_settings.folder = 'Folder1'
+        self.project_settings.folder = '/Folder1'
         self.project_settings.save()
 
         self.component = NodeFactory(parent=self.project, creator=self.user)
         self.component.add_addon(self.provider, auth=Auth(self.user))
         self.component.save()
         self.component_settings = self.component.get_addon(self.provider)
-        self.component_settings.folder = 'Folder2'
+        self.component_settings.folder = '/Folder2'
         self.component_settings.save()
 
     def _create_source_payload(self, path, node, provider, file_id=None):
@@ -671,27 +672,33 @@ class FileCommentMoveRenameTestMixin(OsfTestCase):
         assert_equal(self.file._id, file_node._id)
         assert_equal(file_comments.count(), 1)
 
-    # @pytest.mark.parameterize("destination_provider, destination_path", provider_paths)
-    # def test_comments_move_when_file_moved_to_different_provider(self, destination_provider, destination_path):
-    #     source = {
-    #         'path': '/file.txt',
-    #         'node': self.project,
-    #         'provider': self.provider
-    #     }
-    #     destination = {
-    #         'path': destination_path,
-    #         'node': self.project,
-    #         'provider': destination_provider
-    #     }
-    #     self._create_file_with_comment(node=source['node'], path=source['path'], folder=self.project_settings.folder)
-    #     payload = self._create_payload('move', self.user, source, destination)
-    #     update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
-    #     self.file.reload()
-    #
-    #     assert_equal(self.file.stored_object.path, destination.get('path'))
-    #     assert_equal(self.file.stored_object.provider, destination_provider)
-    #     file_comments = Comment.find(Q('root_target', 'eq', self.file._id))
-    #     assert_equal(file_comments.count(), 1)
+    @parameterized.expand([('osfstorage', None), ('box', None), ('dropbox', '/file.txt'), ('github', '/file.txt'), ('googledrive', '/file.txt'), ('s3', '/file.txt'),])
+    def test_comments_move_when_file_moved_to_different_provider(self, destination_provider, expected_path):
+        self.project.add_addon(destination_provider, auth=Auth(self.user))
+        self.project.save()
+        self.project_settings = self.project.get_addon(destination_provider)
+        self.project_settings.folder = '/AddonFolder'
+        self.project_settings.save()
+
+        source = {
+            'path': '/file.txt',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': '/file.txt',
+            'node': self.project,
+            'provider': destination_provider
+        }
+        self._create_file_with_comment(node=source['node'], path=source['path'], folder=self.project_settings.folder)
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
+        self.file.reload()
+
+        file_node = FileNode.resolve_class(destination_provider, FileNode.FILE).get_or_create(destination['node'], (expected_path or self.file.path))
+        file_comments = Comment.find(Q('root_target', 'eq', file_node._id))
+        assert_equal(self.file._id, file_node._id)
+        assert_equal(file_comments.count(), 1)
 
 
 class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
@@ -699,6 +706,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
     path_is_file_id = True
     provider = 'osfstorage'
     ProviderFile = OsfStorageFile
+    destination_providers = ['box', 'dropbox', 'github', 'googledrive', 's3']
 
     @property
     def _path(self):
@@ -707,15 +715,6 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
     def _format_path(self, path, folder=None, is_id=path_is_file_id):
         super(TestOsfstorageFileCommentMoveRename, self)._format_path(path, is_id=self.path_is_file_id)
         return '/{}'.format(self.file._id)
-
-    def provider_paths(self):
-        return [
-            ('box', '/1234567890'),
-            ('dropbox', '/file.txt'),
-            ('github', '/file.txt'),
-            ('googledrive', '/file.txt'),
-            ('s3', '/file.txt'),
-        ]
 
     def _create_file_with_comment(self, node, path, folder=None):
         osfstorage = self.project.get_addon(self.provider)
@@ -736,15 +735,7 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'box'
     ProviderFile = BoxFile
-
-    def provider_paths(self):
-        return [
-            ('osfstorage', '/1234567890'),
-            ('dropbox', '/file.txt'),
-            ('github', '/file.txt'),
-            ('googledrive', '/file.txt'),
-            ('s3', '/file.txt'),
-        ]
+    destination_providers = ['osfstorage', 'dropbox', 'github', 'googledrive', 's3']
 
     def _format_path(self, path, folder=None, is_id=False):
         super(TestBoxFileCommentMoveRename, self)._format_path(path)
@@ -755,56 +746,31 @@ class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'dropbox'
     ProviderFile = DropboxFile
-
-    provider_paths = [
-        ('osfstorage', '/1234567890'),
-        ('box', '/1234567890'),
-        ('github', '/file.txt'),
-        ('googledrive', '/file.txt'),
-        ('s3', '/file.txt'),
-    ]
+    destination_providers = ['osfstorage', 'box', 'github', 'googledrive', 's3']
 
     def _format_path(self, path, folder=None, is_id=False):
         super(TestDropboxFileCommentMoveRename, self)._format_path(path, folder)
         if not folder:
             return path
-        return '/{}{}'.format(folder, path)
+        return '{}{}'.format(folder, path)
 
 
 class TestGoogleDriveFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'googledrive'
     ProviderFile = GoogleDriveFile
-    provider_paths = [
-        ('osfstorage', '/1234567890'),
-        ('box', '/1234567890'),
-        ('dropbox', '/file.txt'),
-        ('github', '/file.txt'),
-        ('s3', '/file.txt'),
-    ]
+    destination_providers = ['osfstorage', 'box', 'dropbox', 'github', 's3']
 
 
 class TestGithubFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'github'
     ProviderFile = GithubFile
-    provider_paths = [
-        ('osfstorage', '/1234567890'),
-        ('box', '/1234567890'),
-        ('dropbox', '/file.txt'),
-        ('googledrive', '/file.txt'),
-        ('s3', '/file.txt'),
-    ]
+    destination_providers = ['osfstorage', 'box', 'dropbox', 'googledrive', 's3']
 
 
 class TestS3FileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 's3'
     ProviderFile = S3File
-    provider_paths = [
-        ('osfstorage', '/1234567890'),
-        ('box', '/1234567890'),
-        ('dropbox', '/file.txt'),
-        ('github', '/file.txt'),
-        ('googledrive', '/file.txt'),
-    ]
+    destination_providers = ['osfstorage', 'box', 'dropbox', 'googledrive', 'github']
