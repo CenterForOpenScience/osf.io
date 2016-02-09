@@ -52,9 +52,10 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
             else:
                 old_file = FileNode.resolve_class(source.get('provider'), FileNode.FILE).get_or_create(source_node, source.get('path'))
 
-            data = dict(destination)  # convert OrderedDict to dict
-            data['extra'] = dict(destination['extra'])
-            old_file.update(revision=None, data=data)
+            if source['provider'] != 'osfstorage':
+                data = dict(destination)  # convert OrderedDict to dict
+                data['extra'] = dict(destination['extra'])
+                old_file.update(revision=None, data=data)
 
             has_comments = Comment.find(Q('root_target', 'eq', old_file._id)).count()
             if source_node._id != destination_node._id:
