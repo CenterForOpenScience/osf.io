@@ -312,7 +312,8 @@ CELERY_IMPORTS = (
     'scripts.triggered_mails',
     'scripts.send_queued_mails',
     'scripts.osfstorage.usage_audit',
-    'scripts.osfstorage.files_audit'
+    'scripts.osfstorage.files_audit',
+    'scripts.analytics.tasks'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
@@ -382,6 +383,12 @@ else:
             'task': 'scripts.osfstorage.files_audit',
             'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
             'args': (NUM_OF_WORKERS, DRY_RUN,)
+        },
+        'analytics': {
+            'task': 'scripts.analytics.tasks',
+            # 'schedule': crontab(minute=0, hour=0),  # Daily 2:00 a.m.
+            'schedule': crontab(minute='*/3'),  # Testing
+            'args': ()
         }
     }
 
