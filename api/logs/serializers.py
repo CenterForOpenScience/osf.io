@@ -77,7 +77,7 @@ class NodeLogSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<user._id>'},
     )
 
-    added_contributors = RelationshipField(
+    associated_contributors = RelationshipField(
         related_view='logs:log-added_contributors',
         related_view_kwargs={'log_id': '<pk>'},
     )

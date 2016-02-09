@@ -201,10 +201,10 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
         pass
 
 
-class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
-    """List of added contributors that a given log is associated with. *Read-only*.
+class NodeLogAssociatedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
+    """List of contributors that a given log is associated with. *Read-only*.
 
-    Paginated list of users that were added as contributors, associated with a log. Each resource contains the full
+    Paginated list of users that were associated with a contributor log action. Each resource contains the full
     representation of the user, meaning additional requests to an individual user's detail view are not necessary.
 
     ##User Attributes
@@ -264,8 +264,9 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     # overrides ListAPIView
     def get_queryset(self):
         log = self.get_log()
-        added_contrib_ids = log.params.get('contributors')
-        if added_contrib_ids is None:
+        associated_contrib_ids = log.params.get('contributors')
+        if associated_contrib_ids is None:
             return []
-        added_users = User.find(Q('_id', 'in', added_contrib_ids))
-        return added_users
+        associated_users = User.find(Q('_id', 'in', associated_contrib_ids))
+        return associated_users
+
