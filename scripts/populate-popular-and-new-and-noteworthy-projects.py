@@ -2,12 +2,11 @@
 This will update node links on POPULAR_LINKS_NODE and NEW_AND_NOTEWORTHY_LINKS_NODE.
 """
 import sys
-import json
-import urllib2
 import logging
 import datetime
 import dateutil
 import operator
+import requests
 from modularodm import Q
 from website.app import init_app
 from website import models
@@ -21,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 def retrieve_data(url):
     """ Fetch data and decode json """
-    response = urllib2.urlopen(url)
-    data = json.load(response)
+    response = requests.get(url)
+    data = response.json()
     return data
 
 
