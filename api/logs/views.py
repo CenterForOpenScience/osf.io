@@ -4,13 +4,13 @@ from rest_framework.exceptions import NotFound
 from modularodm import Q
 from framework.auth.core import User
 from framework.auth.oauth_scopes import CoreScopes
-from website.models import NodeLog, Node
+from website.models import NodeLog
 from api.nodes.permissions import (
     ContributorOrPublic,
 )
 
 from api.base.filters import ODMFilterMixin
-from api.base.utils import get_user_auth, get_object_or_error
+from api.base.utils import get_user_auth
 from api.base import permissions as base_permissions
 from api.users.serializers import UserSerializer
 from api.logs.serializers import NodeLogSerializer
