@@ -53,7 +53,7 @@ var ProjectViewModel = function(data) {
             'method': 'GET',
             'url': window.contextVars.apiV2Prefix + 'nodes/' + self._id + '/institution/',
         }).done(function (response) {
-            self.instLogoPath(response.data.attributes.logopath);
+            self.instLogoPath(response.data.attributes.logo_path);
         });
     }
 
