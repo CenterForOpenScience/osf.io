@@ -175,8 +175,6 @@ def confirm_email_get(token, auth=None, **kwargs):
     if user is None:
         raise HTTPError(http.NOT_FOUND)
     redirect_url = request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
-    # logout testing
-    logout()
     if 'reauth' in request.args:
         cas_endpoint = cas.get_login_url(redirect_url)
     else:

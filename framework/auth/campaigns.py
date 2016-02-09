@@ -12,6 +12,11 @@ CAMPAIGNS = ImmutableDict({
         'redirect_url': lambda: web_url_for('prereg_landing_page'),
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
     },
+    'merge_user': {
+        'system_tag': 'merge_user_login',
+        'redirect_url': 'http://windows.fun:5000/login/',
+        'confirmation_email_template': mails.CONFIRM_MERGE,
+    },
 })
 
 def system_tag_for_campaign(campaign):
