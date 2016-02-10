@@ -3,13 +3,13 @@ from rest_framework import serializers as ser
 from modularodm.exceptions import ValidationValueError
 
 from api.base.exceptions import InvalidModelValueError
-from api.base.serializers import AllowMissing
+from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer
 from website.models import User
 
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
-from api.base.utils import add_dev_only_items
+from api.base.utils import absolute_reverse
 
 
 class UserSerializer(JSONAPISerializer):
@@ -53,18 +53,25 @@ class UserSerializer(JSONAPISerializer):
                                                       allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution'))
     academiaProfileID = DevOnly(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
                                                       allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID'))
-
+    baiduScholar = DevOnly(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
+                                                           allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar'))
     links = LinksField(
-        add_dev_only_items({
+        {
             'html': 'absolute_url',
-        }, {
             'profile_image': 'profile_image_url',
-        })
+        }
     )
 
     nodes = RelationshipField(
         related_view='users:user-nodes',
         related_view_kwargs={'user_id': '<pk>'},
+    )
+
+    institutions = RelationshipField(
+        related_view='users:user-institutions',
+        related_view_kwargs={'user_id': '<pk>'},
+        self_view='users:user-institutions-relationship',
+        self_view_kwargs={'user_id': '<pk>'},
     )
 
     class Meta:
@@ -74,6 +81,9 @@ class UserSerializer(JSONAPISerializer):
         if obj is not None:
             return obj.absolute_url
         return None
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse('users:user-detail', kwargs={'user_id': obj._id})
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
@@ -99,3 +109,31 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class RelatedInstitution(JSONAPIRelationshipSerializer):
+    id = ser.CharField(required=False, allow_null=True, source='_id')
+    class Meta:
+        type_ = 'institutions'
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+
+class UserInstitutionsRelationshipSerializer(ser.Serializer):
+
+    data = ser.ListField(child=RelatedInstitution())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return absolute_reverse('users:user-institutions-relationship', kwargs={'user_id': obj['self']._id})
+
+    def get_related_url(self, obj):
+        return absolute_reverse('users:user-institutions', kwargs={'user_id': obj['self']._id})
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
+    class Meta:
+        type_ = 'institutions'

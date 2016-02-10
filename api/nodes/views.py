@@ -1,9 +1,11 @@
 import requests
 
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
-from rest_framework.status import is_server_error
+from rest_framework.status import HTTP_204_NO_CONTENT
+from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -11,6 +13,7 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
@@ -24,10 +27,14 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
+    NodeInstitutionRelationshipSerializer,
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
 )
+from api.nodes.utils import get_file_object
+
 from api.registrations.serializers import RegistrationSerializer
+from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
@@ -36,14 +43,13 @@ from api.nodes.permissions import (
     ReadOnlyIfRegistration,
     ExcludeRetractions,
 )
-from api.base.exceptions import ServiceUnavailableError
 from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.files.models import FileNode
-from website.files.models import OsfStorageFileNode
-from website.models import Node, Pointer, Comment, NodeLog
+from website.models import Node, Pointer, Comment, Institution, NodeLog
+from website.files.models import StoredFileNode, FileNode, TrashedFileNode
+from website.files.models.dropbox import DropboxFile
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
 
@@ -71,7 +77,6 @@ class NodeMixin(object):
             self.check_object_permissions(self.request, node)
         return node
 
-
 class WaterButlerMixin(object):
 
     path_lookup_url_kwarg = 'path'
@@ -95,47 +100,16 @@ class WaterButlerMixin(object):
         node = self.get_node(check_object_permissions=False)
         path = self.kwargs[self.path_lookup_url_kwarg]
         provider = self.kwargs[self.provider_lookup_url_kwarg]
+        return self.get_file_object(node, path, provider)
 
+    def get_file_object(self, node, path, provider, check_object_permissions=True):
+        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
         if provider == 'osfstorage':
-            # Kinda like /me for a user
-            # The one odd case where path is not really path
-            if path == '/':
-                obj = node.get_addon('osfstorage').get_root()
-            else:
-                obj = get_object_or_error(
-                    OsfStorageFileNode,
-                    Q('node', 'eq', node._id) &
-                    Q('_id', 'eq', path.strip('/')) &
-                    Q('is_file', 'eq', not path.endswith('/'))
-                )
+            if check_object_permissions:
+                self.check_object_permissions(self.request, obj)
+        return obj
 
-            self.check_object_permissions(self.request, obj)
-
-            return obj
-
-        url = waterbutler_api_url_for(node._id, provider, path, meta=True)
-        waterbutler_request = requests.get(
-            url,
-            cookies=self.request.COOKIES,
-            headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
-        )
-
-        if waterbutler_request.status_code == 401:
-            raise PermissionDenied
-
-        if waterbutler_request.status_code == 404:
-            raise NotFound
-
-        if is_server_error(waterbutler_request.status_code):
-            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
-
-        try:
-            return waterbutler_request.json()['data']
-        except KeyError:
-            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
-
-
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -243,7 +217,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -332,7 +306,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         instance.save()
 
 
-class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
     """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -1247,13 +1221,12 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
-        Success:      201 Created or 200 OK + new file representation
+        Success:      201 Created + new file representation
 
     To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
     request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
     response will contain a [WaterButler file entity](#file-entity) that describes the new file.  If a file with the
-    same name already exists in the folder, it will be considered a new version.  In this case, the response will be a
-    200 OK.
+    same name already exists in the folder, the server will return a 409 Conflict error response.
 
     ###Update Existing File (*file*)
 
@@ -1515,13 +1488,12 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
-        Success:      201 Created or 200 OK + new file representation
+        Success:      201 Created + new file representation
 
     To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
     request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
     response will contain a [WaterButler file entity](#file-entity) that describes the new file.  If a file with the
-    same name already exists in the folder, it will be considered a new version.  In this case, the response will be a
-    200 OK.
+    same name already exists in the folder, the server will return a 409 Conflict error response.
 
     ##Query Params
 
@@ -1555,6 +1527,24 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             if addon.config.has_hgrid_files
             and addon.complete
         ]
+
+class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeRetractions,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = NodeProviderSerializer
+    view_category = 'nodes'
+    view_name = 'node-provider-detail'
+
+    def get_object(self):
+        return NodeProvider(self.kwargs['provider'], Node.load(self.kwargs['node_id']))
 
 class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """List of alternative citations for a project.
@@ -1884,9 +1874,46 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return Q('target', 'eq', self.get_node())
+        return Q('node', 'eq', self.get_node()) & Q('root_target', 'ne', None)
 
     def get_queryset(self):
+        commented_files = []
+        comments = Comment.find(self.get_query_from_request())
+        for comment in comments:
+            # Deleted root targets still appear as tuples in the database,
+            # but need to be None in order for the query to be correct.
+            if isinstance(comment.root_target.referent, TrashedFileNode):
+                comment.root_target = None
+                comment.save()
+
+            elif isinstance(comment.root_target.referent, StoredFileNode) and comment.root_target.referent not in commented_files:
+                commented_files.append(comment.root_target)
+
+        for root_target in commented_files:
+            if root_target.referent.provider == 'dropbox':
+                root_target = DropboxFile.load(root_target._id)
+
+            if root_target.referent.provider == 'osfstorage':
+                try:
+                    StoredFileNode.find(
+                        Q('node', 'eq', self.get_node()._id) &
+                        Q('_id', 'eq', root_target.referent._id) &
+                        Q('is_file', 'eq', True)
+                    )
+                except NoResultsFound:
+                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
+                    del root_target.referent.node.commented_files[root_target._id]
+
+            else:
+                url = waterbutler_api_url_for(self.get_node()._id, root_target.referent.provider, root_target.referent.path, meta=True)
+                waterbutler_request = requests.get(
+                    url,
+                    cookies=self.request.COOKIES,
+                    headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
+                )
+                if waterbutler_request.status_code == 404:
+                    Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
+
         return Comment.find(self.get_query_from_request())
 
     def get_serializer_class(self):
@@ -1909,3 +1936,111 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['user'] = self.request.user
         serializer.validated_data['node'] = node
         serializer.save()
+
+class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """ Detail of the one primary_institution a node has, if any. Returns NotFound
+    if the node does not have a primary_institution.
+
+    ##Attributes
+
+    OSF Institutions have the "institutions" `type`.
+
+        name           type               description
+        -------------------------------------------------------------------------
+        name           string             title of the institution
+        id             string             unique identifier in the OSF
+        logo_path      string             a path to the institution's static logo
+
+
+
+    #This Request/Response
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        AdminOrPublic
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = InstitutionSerializer
+
+    model = Institution
+    view_category = 'nodes'
+    view_name = 'node-institution-detail'
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        if not node.primary_institution:
+            raise NotFound
+        return node.primary_institution
+
+
+class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
+    """ Relationship Endpoint for Node -> Institution Relationship
+
+    Used to set the primary_institution of a node to an institution
+
+    ##Actions
+
+    ###Create
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "institutions",   # required
+                           "id": <institution_id>   # required
+                         }
+                       }
+        Success:       200
+
+    This requires both admin permission on the node, and for the user that is
+    making the request to be affiliated with the institution (`User.affiliated_institutions`)
+
+    ###Destroy
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           null
+                         }
+                       }
+        Success:       204
+
+    This requires admin permission on the node.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        AdminOrPublic
+    )
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    serializer_class = NodeInstitutionRelationshipSerializer
+    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
+
+    view_category = 'nodes'
+    view_name = 'node-relationships-institution'
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        return self.get_node()
+
+    def update(self, request, *args, **kwargs):
+        # same as drf's update method from the update mixin, with the addition of
+        # returning a 204 when successfully deletes relationship with PUT/PATCH
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        inst = request.data.get('id', None)
+        if not inst:
+            return Response(status=HTTP_204_NO_CONTENT)
+        return Response(serializer.data)

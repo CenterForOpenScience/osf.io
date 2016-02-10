@@ -25,5 +25,8 @@
         "github": "partial",
         "s3": "partial",
         "wiki": "full"
-    }
+    },
+    "addons_commentable": [
+        "osfstorage"
+    ]
 }

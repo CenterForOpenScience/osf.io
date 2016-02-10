@@ -9,6 +9,7 @@ import code
 import platform
 import subprocess
 import logging
+from time import sleep
 
 import invoke
 from invoke import run, Collection
@@ -66,11 +67,15 @@ def server(host=None, port=5000, debug=True, live=False):
 
 
 @task
-def apiserver(port=8000):
+def apiserver(port=8000, wait=True):
     """Run the API server."""
-    env = 'DJANGO_SETTINGS_MODULE="api.base.settings"'
-    cmd = '{} python manage.py runserver {} --nothreading'.format(env, port)
-    run(cmd, echo=True, pty=True)
+    env = {"DJANGO_SETTINGS_MODULE": "api.base.settings"}
+    cmd = '{}={} exec  {} manage.py runserver {} --nothreading'.format(env.keys()[0], env[env.keys()[0]], sys.executable, port)
+    if wait:
+        return run(cmd, echo=True, pty=True)
+    from subprocess import Popen
+
+    return Popen(cmd, shell=True, env=env)
 
 
 @task
@@ -459,6 +464,27 @@ def test_api():
     test_module(module="api_tests/")
 
 @task
+def test_admin():
+    """Run the Admin test suite."""
+    # test_module(module="admin_tests/")
+    module = "admin_tests/"
+    verbosity = 0
+    module_fmt = ' '.join(module) if isinstance(module, list) else module
+    args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
+    env = 'DJANGO_SETTINGS_MODULE="admin.base.settings" '
+    # Use pty so the process buffers "correctly"
+    run(env + bin_prefix(TEST_CMD) + args, pty=True)
+
+@task
+def test_varnish():
+    """Run the Varnish test suite."""
+    proc = apiserver(wait=False)
+    sleep(5)
+    test_module(module="api/caching/tests/test_caching.py")
+    proc.kill()
+
+
+@task
 def test_addons():
     """Run all the tests in the addons directory.
     """
@@ -480,6 +506,7 @@ def test(all=False, syntax=False):
 
     test_osf()
     test_api()
+    test_admin()
 
     if all:
         test_addons()
@@ -501,7 +528,12 @@ def test_travis_else():
     """
     test_addons()
     test_api()
+    test_admin()
     karma(single=True, browsers='PhantomJS')
+
+@task
+def test_travis_varnish():
+    test_varnish()
 
 @task
 def karma(single=False, sauce=False, browsers=None):

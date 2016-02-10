@@ -4,14 +4,16 @@ import pytz
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
-from website.files.exceptions import FileNodeCheckedOutError
+from api_tests import utils as api_utils
+from framework.auth.core import Auth
 from website.addons.osfstorage import settings as osfstorage_settings
 
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     UserFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    CommentFactory
 )
 
 
@@ -26,22 +28,9 @@ def _dt_to_iso8601(value):
 class TestFileView(ApiTestCase):
     def setUp(self):
         super(TestFileView, self).setUp()
-
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
-
-        self.osfstorage = self.node.get_addon('osfstorage')
-
-        self.root_node = self.osfstorage.get_root()
-        self.file = self.root_node.append_file('test_file')
-        self.file.create_version(self.user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png'
-        }).save()
+        self.file = api_utils.create_test_file(self.node, self.user)
 
     def test_must_have_auth(self):
         res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), expect_errors=True)
@@ -76,6 +65,23 @@ class TestFileView(ApiTestCase):
                 },
             },
         })
+
+    def test_file_has_comments_link(self):
+        res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('comments', res.json['data']['relationships'].keys())
+        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.node._id, self.file._id)
+        url = res.json['data']['relationships']['comments']['links']['related']['href']
+        assert_in(expected_url, url)
+
+    def test_file_has_correct_unread_comments_count(self):
+        contributor = AuthUserFactory()
+        self.node.add_contributor(contributor, auth=Auth(self.user), save=True)
+        comment = CommentFactory(node=self.node, target=self.file.get_guid(), user=contributor, page='files')
+        res = self.app.get('/{}files/{}/?related_counts=True'.format(API_BASE, self.file._id), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
+        assert_equal(unread_comments, 1)
 
     def test_checkout(self):
         assert_equal(self.file.checkout, None)

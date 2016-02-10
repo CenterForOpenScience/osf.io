@@ -25,7 +25,7 @@ from website.project.licenses import ensure_licenses
 # This import is necessary to set up the archiver signal listeners
 from website.archiver import listeners  # noqa
 from website.mails import listeners  # noqa
-
+from api.caching import listeners  # noqa
 
 def build_js_config_files(settings):
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:

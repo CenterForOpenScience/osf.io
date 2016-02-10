@@ -1,6 +1,8 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from rest_framework.response import Response
 
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
@@ -11,6 +13,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.collections.serializers import (
     CollectionSerializer,
     CollectionDetailSerializer,
@@ -140,7 +143,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -635,3 +638,10 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
         for val in data:
             if val['id'] in current_pointers:
                 collection.rm_pointer(current_pointers[val['id']], auth)
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(CollectionLinkedNodesRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret

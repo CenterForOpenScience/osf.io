@@ -13,6 +13,8 @@ from framework.auth import Auth
 from framework.auth.core import User
 from framework.auth.signals import contributor_removed
 from framework.auth.signals import node_deleted
+from framework.guid.model import Guid
+
 from website.notifications.tasks import get_users_emails, send_users_email, group_by_node, remove_notifications
 from website.notifications import constants
 from website.notifications.model import NotificationDigest
@@ -989,6 +991,12 @@ class TestSendEmails(OsfTestCase):
             event_name='comments'
         )
         self.node_subscription.save()
+        self.user_subscription = factories.NotificationSubscriptionFactory(
+            _id=self.user._id + '_' + 'comment_replies',
+            owner=self.user,
+            event_name='comment_replies',
+            email_transactional=[self.user._id]
+        )
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_no_subscription(self, mock_store):
@@ -1038,6 +1046,13 @@ class TestSendEmails(OsfTestCase):
         emails.notify('comments', user=self.user, node=self.node, timestamp=time_now, target_user=self.project.creator)
         mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comment_replies',
                                       self.user, self.node, time_now, target_user=self.project.creator)
+
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_notify_sends_comment_reply_when_target_user_is_subscribed_via_user_settings(self, mock_store):
+        time_now = datetime.datetime.utcnow()
+        emails.notify('comment_replies', user=self.project.creator, node=self.node, timestamp=time_now, target_user=self.user)
+        mock_store.assert_called_with([self.user._id], 'email_transactional', 'comment_replies',
+                                      self.project.creator, self.node, time_now, target_user=self.user)
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply(self, mock_store):
@@ -1099,7 +1114,7 @@ class TestSendEmails(OsfTestCase):
             user=project.creator,
             node=project,
             content=content,
-            target=target,
+            target=Guid.load(target._id),
             is_public=True,
         )
         assert_true(mock_notify.called)

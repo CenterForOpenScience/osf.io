@@ -620,6 +620,7 @@ class TestAddonFileViews(OsfTestCase):
             'extra': '',
             'file_name': '',
             'materialized_path': '',
+            'file_id': '',
         })
         ret.update(rubeus.collect_addon_assets(self.project))
         return ret
