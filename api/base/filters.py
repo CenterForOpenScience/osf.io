@@ -369,7 +369,7 @@ class ListFilterMixin(FilterMixin):
         elif isinstance(field, ser.CharField):
             return_val = [
                 item for item in default_queryset
-                if params['value'] in getattr(item, field_name, {}).lower()
+                if params['value'].lower() in getattr(item, field_name, {}).lower()
             ]
         else:
             return_val = [

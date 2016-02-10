@@ -416,7 +416,7 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def contributed(self):
         from website.project.model import Node
-        return Node.find(Q('contributors', 'contains', self._id))
+        return Node.find(Q('contributors', 'eq', self._id))
 
     @property
     def email(self):
@@ -1004,11 +1004,14 @@ class User(GuidStoredObject, AddonModelMixin):
         from mailchimp emails.
         """
         from website import mailchimp_utils
-        mailchimp_utils.unsubscribe_mailchimp(
-            list_name=settings.MAILCHIMP_GENERAL_LIST,
-            user_id=self._id,
-            username=self.username
-        )
+        try:
+            mailchimp_utils.unsubscribe_mailchimp(
+                list_name=settings.MAILCHIMP_GENERAL_LIST,
+                user_id=self._id,
+                username=self.username
+            )
+        except mailchimp_utils.mailchimp.ListNotSubscribedError:
+            pass
         self.is_disabled = True
 
     @property
@@ -1342,8 +1345,8 @@ class User(GuidStoredObject, AddonModelMixin):
         or just their primary keys
         """
         if primary_keys:
-            projects_contributed_to = set([node._id for node in self.contributed])
-            other_projects_primary_keys = set([node._id for node in other_user.contributed])
+            projects_contributed_to = set(self.contributed.get_keys())
+            other_projects_primary_keys = set(other_user.contributed.get_keys())
             return projects_contributed_to.intersection(other_projects_primary_keys)
         else:
             projects_contributed_to = set(self.contributed)
