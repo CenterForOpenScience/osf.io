@@ -57,7 +57,6 @@ if ($('#wgrid').length) {
 
 
 var institutionsViewModel = function() {
-    ko.punches.enableAll();
     var self = this;
     self.primaryInstitution = ko.observable('None');
     self.institutionHref = ko.observable('');

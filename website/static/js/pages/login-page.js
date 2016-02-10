@@ -9,7 +9,6 @@ var $osf = require('js/osfHelpers');
 var SignUp = require('js/signUp');
 var LogInForm = require('js/signIn');
 
-ko.punches.enableAll();
 
 var registerUrl = window.contextVars.registerUrl;
 
