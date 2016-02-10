@@ -711,7 +711,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
-        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('index.mako')),
+        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako')),
 
         Rule(
             [
