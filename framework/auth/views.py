@@ -245,8 +245,10 @@ def send_confirm_email(user, email):
         mail_template = mails.CONFIRM_MERGE
     elif campaign:
         mail_template = campaigns.email_template_for_campaign(campaign)
-    else:
+    elif user.is_active:
         mail_template = mails.CONFIRM_EMAIL
+    else:
+        mail_template = mails.INITIAL_CONFIRM_EMAIL
 
     mails.send_mail(
         email,
