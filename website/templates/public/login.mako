@@ -23,13 +23,12 @@
         select its name below and sign in with your institutional credentials. This action
         will create an OSF account (if you don’t already have one) and affiliate your account
         with that institution.
-    To sign up for an OSF without being affilated with an institution, create a free account here.
     </p>
 </div>
 %endif
 <div class="row m-t-xl">
-    <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
-        %if campaign == "institution" and show_institutions:
+    %if campaign == "institution" and show_institutions:
+    <div class="col-sm-6 col-sm-offset-3">
         <h3 class="m-b-lg"> Login Through Institution</h3>
         <div id="inst">
             <div class="form-group">
@@ -45,10 +44,13 @@
                 <div class="text-center m-t-lg">
                     <p>To login normally click <a href="/login/">here</a>.</p>
                 </div>
+                <input type="hidden" id="campaign" value="${campaign or ''}" />
             </div>
         </div>
-        %endif
-        %if campaign != "institution" or not show_institutions:
+    </div>
+    %endif
+    %if campaign != "institution" or not show_institutions:
+    <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
         <form
             id="logInForm"
             class="form-horizontal"
@@ -97,7 +99,6 @@
                 </div>
             </div>
         </form>
-        %endif
     </div>
     <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
         <form data-bind="submit: submit" class="form-horizontal">
@@ -213,6 +214,7 @@
             </div>
         </form>
     </div>
+    %endif
 </div>
 
 </%def>
