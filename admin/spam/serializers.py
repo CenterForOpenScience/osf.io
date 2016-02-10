@@ -1,11 +1,11 @@
-from admin.base.settings import OSF_PATH
+from website.settings import DOMAIN as OSF_DOMAIN
 from website.project.model import User
 from furl import furl
 
 
 def serialize_comment(comment, full=False):
     reports = serialize_reports(comment.reports)
-    author_abs_url = furl(OSF_PATH)
+    author_abs_url = furl(OSF_DOMAIN)
     author_abs_url.path.add(comment.user.url)
 
     return {
