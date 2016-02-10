@@ -53,8 +53,7 @@ $(document).ready(function() {
     var self = this;
     self.campaign = $('#campaign').val();
     if (self.campaign === 'institution'){
-        self.viewModel = new InstitutionViewModel();
-        $osf.applyBindings(self.viewModel, '#inst');
+        $osf.applyBindings(new InstitutionViewModel(), '#inst');
     } else {
         new LogInForm.SignIn('#logInForm');
         new SignUp('#signUpScope', registerUrl, $('#campaign').val());

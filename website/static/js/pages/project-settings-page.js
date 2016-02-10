@@ -79,10 +79,11 @@ var InstitutionsViewModel = function() {
         }
     }).fail(function(){});
     self.submitInst = function() {
+        var url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/';
         var inst = $('input[name=primaryInst]:checked', '#selectedInst').val();
-        $osf.ajaxJSON(
+        return $osf.ajaxJSON(
             'PUT',
-            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/',
+            url,
             {
                 'isCors': true,
                 'data': {
@@ -94,12 +95,18 @@ var InstitutionsViewModel = function() {
             window.location.reload();
         }).fail(function (response) {
             $osf.growl('Unable to add institution to this node!');
+            Raven.captureMessage('Error creating comment', {
+                url: url,
+                status: status,
+                error: error
+            });
         });
     };
     self.clearInst = function() {
-        $osf.ajaxJSON(
+        var url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/';
+        return $osf.ajaxJSON(
             'PUT',
-            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/',
+            url,
             {
                 'isCors': true,
                 'data': {
@@ -109,8 +116,13 @@ var InstitutionsViewModel = function() {
             }
         ).done(function (response) {
             window.location.reload();
-        }).fail(function (response) {
+        }).fail(function (xhr, status, error) {
             $osf.growl('Unable to remove institution from this node!');
+            Raven.captureMessage('Error creating comment', {
+                url: url,
+                status: status,
+                error: error
+            });
         });
     };
 };
