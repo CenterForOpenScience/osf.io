@@ -71,12 +71,12 @@ var institutionsViewModel = function() {
     });
     $osf.ajaxJSON(
         'GET',
-        ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institution/',
+        ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/?embed=primary_institution',
         {isCors: true}
     ).done(function(response) {
-        if (response.data.attributes){
-            self.primaryInstitution(response.data.attributes.name);
-            self.institutionHref(response.data.links.html);
+        if (response.data.embeds.primary_institution.data){
+            self.primaryInstitution(response.data.embeds.primary_institution.data.attributes.name);
+            self.institutionHref(response.data.embeds.primary_institution.data.links.html);
         }
     }).fail(function(){});
     self.submitInst = function() {
