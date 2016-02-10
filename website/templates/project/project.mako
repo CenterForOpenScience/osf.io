@@ -123,7 +123,7 @@
                     </ol>
                 % endif
                 </div>
-                <a class="link-dashed" href="${node['url']settings/#configureInstitutionAnchor}" id="institution">Affiliated Institution:</a>
+                <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
                 <span class="text-muted"> ${node['institution']} </span>
                 % if node['is_fork']:
                     <p>

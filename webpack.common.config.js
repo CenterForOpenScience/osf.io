@@ -57,7 +57,6 @@ var entry = {
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'share-embed-page': staticPath('js/pages/share-embed-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
-    'institution-page': staticPath('js/pages/institution-page.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries

@@ -62,18 +62,18 @@ var institutionsViewModel = function() {
     self.primaryInstitution = ko.observable('None');
     self.institutionHref = ko.observable('');
     self.availableInstitutions = ko.observable();
-    $.ajax({
-        url: ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/?embed=institutions',
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
+    $osf.ajaxJSON(
+        'GET',
+        ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/?embed=institutions',
+        {isCors: true}
+    ).done(function(response) {
         self.availableInstitutions(response.data.embeds.institutions.data);
     });
-    $.ajax({
-        url: ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institution',
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
+    $osf.ajaxJSON(
+        'GET',
+        ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/institution/',
+        {isCors: true}
+    ).done(function(response) {
         if (response.data.attributes){
             self.primaryInstitution(response.data.attributes.name);
             self.institutionHref(response.data.links.html);
