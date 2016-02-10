@@ -327,9 +327,7 @@
                         % endif
                         % if node['institution']:
                             <div class="help-block">Your project is currently affiliated with: </div>
-                            <a data-bind="attr: {href: institutionHref}">
-                                <p data-bind="text: primaryInstitution"></p>
-                            </a>
+                            <p data-bind="text: primaryInstitution"></p>
                             <div class="help-block">
                                 Projects affiliated with institutions will show some institutional branding (such as logos), and if public, will be discoverable on OSF institutional landing pages.
                             </div>
