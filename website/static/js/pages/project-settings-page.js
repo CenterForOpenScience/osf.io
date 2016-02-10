@@ -56,7 +56,7 @@ if ($('#wgrid').length) {
 }
 
 
-var institutionsViewModel = function() {
+var InstitutionsViewModel = function() {
     var self = this;
     self.primaryInstitution = ko.observable('None');
     self.institutionHref = ko.observable('');
@@ -117,7 +117,7 @@ var institutionsViewModel = function() {
 
 $(document).ready(function() {
     var self = this;
-    self.instViewModel = new institutionsViewModel();
+    self.instViewModel = new InstitutionsViewModel();
     // Apply KO bindings for Project Settings
     $osf.applyBindings(self.instViewModel, '#institutionSettings');
     var categoryOptions = [];

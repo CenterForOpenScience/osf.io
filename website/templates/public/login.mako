@@ -30,8 +30,8 @@
         <h3 class="m-b-lg"> Login Through Institution</h3>
         <div id="inst">
             <div class="form-group">
-                <label for="selected_inst" class="control-label">Select Institution</label>
-                <select id="selected_inst" class="form-control" data-bind="options: inst_names"></select>
+                <label for="selectedInst" class="control-label">Select Institution</label>
+                <select id="selectedInst" class="form-control" data-bind="options: instNames"></select>
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-3 col-sm-9">
