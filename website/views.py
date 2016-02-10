@@ -26,7 +26,6 @@ from website.models import Guid
 from website.models import Node
 from website.util import sanitize
 from website.project import model
-from website.util import web_url_for
 from website.util import permissions
 from website.project import new_bookmark_collection
 
