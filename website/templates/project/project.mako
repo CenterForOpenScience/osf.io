@@ -123,6 +123,8 @@
                     </ol>
                 % endif
                 </div>
+                <a class="link-dashed" href="${node['url']settings/#configureInstitutionAnchor}" id="institution">Affiliated Institution:</a>
+                <span class="text-muted"> ${node['institution']} </span>
                 % if node['is_fork']:
                     <p>
                     Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
@@ -197,8 +199,7 @@
                       </license-picker>
                     </p>
                  % endif
-                <span id="institution">Affiliated Institution:</span>
-                <span class="text-muted"> ${node['institution']} </span>
+
             </div>
         </div>
 
