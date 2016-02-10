@@ -14,7 +14,7 @@
 </div>
 %endif
 
-%if campaign == "institution" and show_institutions:
+%if campaign == "institution" and enable_institutions:
 <div class="text-center m-t-lg">
     <h3>OSF for Institutions </h3>
     <hr>
@@ -25,7 +25,7 @@
 </div>
 %endif
 <div class="row m-t-xl">
-    %if campaign == "institution" and show_institutions:
+    %if campaign == "institution" and enable_institutions:
     <div class="col-sm-6 col-sm-offset-3 toggle-box toggle-box-active">
         <h3 class="m-b-lg"> Login Through Institution</h3>
         <div id="inst">
@@ -47,7 +47,7 @@
         </div>
     </div>
     %endif
-    %if campaign != "institution" or not show_institutions:
+    %if campaign != "institution" or not enable_institutions:
     <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
         <form
             id="logInForm"
