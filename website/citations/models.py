@@ -31,6 +31,7 @@ class AddonCitationsNodeSettings(AddonOAuthNodeSettingsBase):
 
     @property
     def complete(self):
+        """Boolean indication of addon completeness"""
         return bool(self.has_auth and self.user_settings.verify_oauth_access(
             node=self.owner,
             external_account=self.external_account,
@@ -39,6 +40,7 @@ class AddonCitationsNodeSettings(AddonOAuthNodeSettingsBase):
 
     @property
     def root_folder(self):
+        """Serialized representation of root folder"""
         return self.serializer.serialized_root_folder
 
     @property
@@ -55,6 +57,7 @@ class AddonCitationsNodeSettings(AddonOAuthNodeSettingsBase):
 
     @property
     def fetch_folder_name(self):
+        """Returns a displayable folder name"""
         if self.list_id is None:
             return ''
         elif self.list_id == 'ROOT':
@@ -63,9 +66,15 @@ class AddonCitationsNodeSettings(AddonOAuthNodeSettingsBase):
             return self._fetch_folder_name
 
     def clear_settings(self):
+        """Clears selected folder configuration"""
         self.list_id = None
 
     def set_auth(self, *args, **kwargs):
+        """Connect the node addon to a user's external account.
+
+        This method also adds the permission to use the account in the user's
+        addon settings.
+        """
         self.list_id = None
         return super(AddonCitationsNodeSettings, self).set_auth(*args, **kwargs)
 
@@ -87,12 +96,9 @@ class AddonCitationsNodeSettings(AddonOAuthNodeSettingsBase):
 
     def after_delete(self, node=None, user=None):
         self.deauthorize(Auth(user=user), add_log=True)
-        self.save()
 
     def on_delete(self):
         self.deauthorize(add_log=False)
-        self.clear_auth()
-        self.save()
 
 
 class CitationStyle(StoredObject):

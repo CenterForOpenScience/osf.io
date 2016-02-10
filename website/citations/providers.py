@@ -85,6 +85,7 @@ class CitationsProvider(object):
         pass
 
     def check_credentials(self, node_addon):
+        """Checkes validity of credentials"""
         valid = True
         if node_addon.api.account:
             try:
@@ -110,6 +111,7 @@ class CitationsProvider(object):
         }
 
     def set_config(self, node_addon, user, external_list_id, external_list_name, auth):
+        """ Changes folder associated with addon and logs event"""
         # Ensure request has all required information
         # Tell the user's addon settings that this node is connecting
         node_addon.user_settings.grant_oauth_access(
@@ -135,7 +137,8 @@ class CitationsProvider(object):
         )
 
     def add_user_auth(self, node_addon, user, external_account_id):
-
+        """Adds authorization to a node
+        if the user has authorization to grant"""
         external_account = ExternalAccount.load(external_account_id)
 
         if external_account not in user.external_accounts:
@@ -154,7 +157,7 @@ class CitationsProvider(object):
         return {'result': result}
 
     def remove_user_auth(self, node_addon, user):
-
+        """Removes authorization from a node """
         node_addon.deauthorize(auth=Auth(user))
         node_addon.reload()
         result = self.serializer(
@@ -165,7 +168,7 @@ class CitationsProvider(object):
         return {'result': result}
 
     def widget(self, node_addon):
-
+        """Serializes settting needed to build the widget"""
         ret = node_addon.config.to_json()
         ret.update({
             'complete': node_addon.complete,
@@ -174,15 +177,14 @@ class CitationsProvider(object):
         return ret
 
     def _extract_folder(self, folder):
+        """Returns serialization of citations folder """
         folder = self._folder_to_dict(folder)
-        ret = {
+        return {
             'name': folder['name'],
             'provider_list_id': folder['list_id'],
             'id': folder['id'],
+            'parent_list_id': folder.get('parent_id', None)
         }
-        if folder['parent_id']:
-            ret['parent_list_id'] = folder['parent_id']
-        return ret
 
     @abc.abstractmethod
     def _folder_to_dict(self, data):
@@ -192,7 +194,7 @@ class CitationsProvider(object):
         return node_addon.list_id
 
     def citation_list(self, node_addon, user, list_id, show='all'):
-
+        """Returns a list of citations"""
         attached_list_id = self._folder_id(node_addon)
         account_folders = node_addon.api.citation_lists(self._extract_folder)
 
