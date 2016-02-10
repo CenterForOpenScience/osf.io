@@ -3,6 +3,7 @@ from website.project.model import User
 from admin.base.views import GuidFormView
 from admin.users.templatetags.user_extras import reverse_user
 from .serializers import serialize_user
+from .models import AjaxTemplateMixin
 
 
 class UserFormView(GuidFormView):
@@ -15,3 +16,6 @@ class UserFormView(GuidFormView):
     @property
     def success_url(self):
         return reverse_user(self.guid)
+
+
+class TestFormView(Su)

@@ -1,0 +1,16 @@
+<div class="modal hide" id="notesModal">
+<form method="post" action="{{ nothing }}">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">x</button>
+        <h3>Notes for OSF User</h3>
+    </div>
+    <div class="modal-body">
+        {% csrf_token %}
+        {{ form }}
+    </div>
+    <div class="modal-footer">
+        <input class="btn btn-primary" type="submit" value="Save" />
+        <input name="cancel" class="btn" type="submit" value="Cancel" />
+    </div>
+</form>
+</div>
