@@ -67,6 +67,12 @@ var InstitutionsViewModel = function() {
         {isCors: true}
     ).done(function(response) {
         self.availableInstitutions(response.data.embeds.institutions.data);
+    }).fail(function (xhr, status, error) {
+        Raven.captureMessage('Error creating comment', {
+            url: url,
+            status: status,
+            error: error
+        });
     });
     $osf.ajaxJSON(
         'GET',
@@ -77,7 +83,13 @@ var InstitutionsViewModel = function() {
             self.primaryInstitution(response.data.embeds.primary_institution.data.attributes.name);
             self.institutionHref(response.data.embeds.primary_institution.data.links.html);
         }
-    }).fail(function(){});
+    }).fail(function (xhr, status, error) {
+        Raven.captureMessage('Error creating comment', {
+            url: url,
+            status: status,
+            error: error
+        });
+    });
     self.submitInst = function() {
         var url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/';
         var inst = $('input[name=primaryInst]:checked', '#selectedInst').val();
