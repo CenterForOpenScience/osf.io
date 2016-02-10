@@ -1,24 +1,26 @@
 # -*- coding: utf-8 -*-
-
 import mock
-from nose.tools import *  # noqa
+
+from mendeley.exception import MendeleyApiException
 
 from tests.base import OsfTestCase
-from website.addons.base.testing import models
+from website.addons.base.testing.models import (
+    CitationAddonProviderTestSuiteMixin,
+    OAuthAddonUserSettingTestSuiteMixin,
+    OAuthCitationsNodeSettingsTestSuiteMixin,
+)
+from website.addons.mendeley.model import (
+    Mendeley, MendeleyNodeSettings,
+)
+from website.addons.mendeley.provider import MendeleyCitationsProvider
 from website.addons.mendeley.tests.factories import (
     MendeleyAccountFactory,
     MendeleyUserSettingsFactory,
     MendeleyNodeSettingsFactory,
 )
-from website.addons.mendeley.provider import MendeleyCitationsProvider
 
 
-from mendeley.exception import MendeleyApiException
-
-from website.addons.mendeley.model import Mendeley, MendeleyNodeSettings
-
-
-class MendeleyProviderTestCase(models.CitationAddonProviderTestSuiteMixin, OsfTestCase):
+class MendeleyProviderTestCase(CitationAddonProviderTestSuiteMixin, OsfTestCase):
     short_name = 'mendeley'
     full_name = 'Mendeley'
     ExternalAccountFactory = MendeleyAccountFactory
@@ -34,10 +36,10 @@ class MendeleyProviderTestCase(models.CitationAddonProviderTestSuiteMixin, OsfTe
         mock_get_client.return_value = mock_client
         res = self.provider.handle_callback('testresponse')
         mock_get_client.assert_called_with(credentials='testresponse')
-        assert_equal(res.get('provider_id'), 'testid')
-        assert_equal(res.get('display_name'), 'testdisplay')
+        assert(res.get('provider_id') == 'testid')
+        assert(res.get('display_name') == 'testdisplay')
 
-class MendeleyNodeSettingsTestCase(models.OAuthCitationsNodeSettingsTestSuiteMixin, OsfTestCase):
+class MendeleyNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, OsfTestCase):
     short_name = 'mendeley'
     full_name = 'Mendeley'
     ExternalAccountFactory = MendeleyAccountFactory
@@ -48,7 +50,7 @@ class MendeleyNodeSettingsTestCase(models.OAuthCitationsNodeSettingsTestSuiteMix
     NodeSettingsClass = MendeleyNodeSettings
     UserSettingsFactory = MendeleyUserSettingsFactory
 
-class MendeleyUserSettingsTestCase(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
+class MendeleyUserSettingsTestCase(OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
     short_name = 'mendeley'
     full_name = 'Mendeley'
     ExternalAccountFactory = MendeleyAccountFactory
