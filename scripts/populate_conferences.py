@@ -642,6 +642,26 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'sepech2016': {
+        'name': 'XI SEPECH - Research Seminar in Human Sciences (Seminário de Pesquisa em Ciências Humanas)',
+        'info_url': 'http://www.uel.br/eventos/sepech/sepech2016/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'etmaal2016': {
+        'name': 'Etmaal van de Communicatiewetenschap 2016 - Media Psychology',
+        'info_url': 'https://etmaal2016.wordpress.com',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 def populate_conferences():
