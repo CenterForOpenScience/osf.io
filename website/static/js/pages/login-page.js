@@ -26,6 +26,7 @@ var activateToggleBox = function () {
 var InstitutionViewModel = function() {
     var self = this;
     self.instNames = ko.observableArray([]);
+    self.selectedInst = ko.observable();
     self.insts = {};
     $osf.ajaxJSON(
         'GET',
@@ -43,8 +44,7 @@ var InstitutionViewModel = function() {
     });
 
     self.instLogin = function(){
-        var key = $('#selectedInst').val();
-        window.location = self.insts[key];
+        window.location = self.insts[self.selectedInst()];
     };
 };
 

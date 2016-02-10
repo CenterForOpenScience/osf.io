@@ -31,7 +31,7 @@
         <div id="inst">
             <div class="form-group">
                 <label for="selectedInst" class="control-label">Select Institution</label>
-                <select id="selectedInst" class="form-control" data-bind="options: instNames"></select>
+                <select id="selectedInst" class="form-control" data-bind="value: selectedInst, options: instNames"></select>
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-3 col-sm-9">
