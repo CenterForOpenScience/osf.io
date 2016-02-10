@@ -93,7 +93,7 @@ var InstitutionsViewModel = function() {
             }
         ).done(function (response) {
             window.location.reload();
-        }).fail(function (response) {
+        }).fail(function (xhr, status, error) {
             $osf.growl('Unable to add institution to this node!');
             Raven.captureMessage('Error creating comment', {
                 url: url,
