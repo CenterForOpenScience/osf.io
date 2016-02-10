@@ -87,7 +87,7 @@ class Mendeley(CitationsOauthProvider):
         ]
         citations = {
             citation['id']: citation
-            for citation in self._citations_for_mendeley_user()
+            for citation in self._citations_for_user()
         }
         return map(lambda id: citations[id], document_ids)
 
