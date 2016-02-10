@@ -98,11 +98,6 @@ def _render_nodes(nodes, auth=None, show_path=False):
 
 @collect_auth
 def index(auth):
-    """Redirect to dashboard if user is logged in, else show homepage.
-
-    """
-    if auth.user:
-        return redirect(web_url_for('home'))
     return {}
 
 
