@@ -52,17 +52,23 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
             else:
                 old_file = FileNode.resolve_class(source.get('provider'), FileNode.FILE).get_or_create(source_node, source.get('path'))
 
+            data = dict(destination)  # convert OrderedDict to dict
+            data['extra'] = dict(destination['extra'])
+
             has_comments = Comment.find(Q('root_target', 'eq', old_file._id)).count()
             if has_comments:
-                if destination['provider'] == 'osfstorage':
-                    new_file = FileNode.load(destination['path'].strip('/'))
-                    if old_file._id != new_file._id:
-                        update_comment_target(old_file, new_file)
-
                 if source['provider'] != 'osfstorage':
-                    data = dict(destination)  # convert OrderedDict to dict
-                    data['extra'] = dict(destination['extra'])
-                    old_file.update(revision=None, data=data)
+                    if destination['provider'] == 'osfstorage':
+                        new_file = FileNode.load(destination['path'].strip('/'))
+                        update_comment_target(old_file, new_file)
+                    else:
+                        old_file.update(revision=None, data=data)
+                elif destination['provider'] != 'osfstorage':
+                    new_file = FileNode.resolve_class(destination.get('provider'), FileNode.FILE).get_or_create(destination_node, destination.get('path'))
+                    new_file.update(revision=None, data=data)
+                    new_file.stored_object.path = destination['path']
+                    new_file.save()
+                    update_comment_target(old_file, new_file)
 
                 if source_node._id != destination_node._id:
                     old_file.node = destination_node

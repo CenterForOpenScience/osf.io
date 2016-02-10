@@ -30,8 +30,6 @@ from tests.factories import (
     UserFactory, ProjectFactory, AuthUserFactory, CommentFactory, NodeFactory
 )
 
-PROVIDERS = [('box', None), ('dropbox', '/file.txt'), ('github', '/file.txt'), ('googledrive', '/file.txt'), ('s3', '/file.txt'),]
-
 
 class TestCommentViews(OsfTestCase):
 
@@ -340,7 +338,6 @@ class FileCommentMoveRenameTestMixin(OsfTestCase):
 
     path_is_file_id = False
     id_based_providers = ['osfstorage']
-    destination_providers = []
 
     @property
     def provider(self):
@@ -356,10 +353,6 @@ class FileCommentMoveRenameTestMixin(OsfTestCase):
 
     def _format_path(self, path, folder=None, is_id=path_is_file_id):
         return path
-
-    @property
-    def destination_providers(self):
-        raise NotImplementedError
 
     def setUp(self):
         super(FileCommentMoveRenameTestMixin, self).setUp()
@@ -678,8 +671,8 @@ class FileCommentMoveRenameTestMixin(OsfTestCase):
         assert_equal(self.file._id, file_node._id)
         assert_equal(file_comments.count(), 1)
 
-    @parameterized.expand([('box', None), ('dropbox', '/file.txt'), ('github', '/file.txt'), ('googledrive', '/file.txt'), ('s3', '/file.txt'),])
-    def test_comments_move_when_file_moved_to_different_provider(self, destination_provider, expected_path):
+    @parameterized.expand([('box', '/1234567890'), ('dropbox', '/file.txt'), ('github', '/file.txt'), ('googledrive', '/file.txt'), ('s3', '/file.txt'),])
+    def test_comments_move_when_file_moved_to_different_provider(self, destination_provider, destination_path):
         self.project.add_addon(destination_provider, auth=Auth(self.user))
         self.project.save()
         self.addon_settings = self.project.get_addon(destination_provider)
@@ -692,7 +685,7 @@ class FileCommentMoveRenameTestMixin(OsfTestCase):
             'provider': self.provider
         }
         destination = {
-            'path': '/file.txt',
+            'path': destination_path,
             'node': self.project,
             'provider': destination_provider
         }
@@ -701,7 +694,7 @@ class FileCommentMoveRenameTestMixin(OsfTestCase):
         update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.file.reload()
 
-        file_node = FileNode.resolve_class(destination_provider, FileNode.FILE).get_or_create(destination['node'], (expected_path or self.file.path))
+        file_node = FileNode.resolve_class(destination_provider, FileNode.FILE).get_or_create(destination['node'], (destination_path or self.file.path))
         file_comments = Comment.find(Q('root_target', 'eq', file_node._id))
         assert_equal(self.file._id, file_node._id)
         assert_equal(file_comments.count(), 1)
@@ -745,7 +738,6 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
     path_is_file_id = True
     provider = 'osfstorage'
     ProviderFile = OsfStorageFile
-    destination_providers = ['box', 'dropbox', 'github', 'googledrive', 's3']
 
     @property
     def _path(self):
@@ -774,11 +766,39 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         pass
 
 
+    @parameterized.expand([('box', '/1234567890'), ('dropbox', '/file.txt'), ('github', '/file.txt'), ('googledrive', '/file.txt'), ('s3', '/file.txt'),])
+    def test_comments_move_when_file_moved_to_different_provider(self, destination_provider, destination_path):
+        self.project.add_addon(destination_provider, auth=Auth(self.user))
+        self.project.save()
+        self.addon_settings = self.project.get_addon(destination_provider)
+        self.addon_settings.folder = '/AddonFolder'
+        self.addon_settings.save()
+
+        path = '{}{}'.format(self.addon_settings.folder, destination_path) if destination_provider == 'dropbox' else destination_path
+        source = {
+            'path': '/file.txt',
+            'node': self.project,
+            'provider': self.provider
+        }
+        destination = {
+            'path': destination_path,
+            'node': self.project,
+            'provider': destination_provider
+        }
+        self._create_file_with_comment(node=source['node'], path=source['path'])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id, destination_file_id=path)
+        update_comment_root_target_file(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
+        self.file.reload()
+
+        file_node = FileNode.resolve_class(destination_provider, FileNode.FILE).get_or_create(destination['node'], destination_path)
+        file_comments = Comment.find(Q('root_target', 'eq', file_node._id))
+        assert_equal(file_comments.count(), 1)
+
+
 class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'box'
     ProviderFile = BoxFile
-    destination_providers = ['osfstorage', 'dropbox', 'github', 'googledrive', 's3']
 
     def _format_path(self, path, folder=None, is_id=False):
         super(TestBoxFileCommentMoveRename, self)._format_path(path)
@@ -812,11 +832,11 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         assert_equal(self.file._id, file_node._id)
         assert_equal(file_comments.count(), 1)
 
+
 class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'dropbox'
     ProviderFile = DropboxFile
-    destination_providers = ['osfstorage', 'box', 'github', 'googledrive', 's3']
 
     def _format_path(self, path, folder=None, is_id=False):
         super(TestDropboxFileCommentMoveRename, self)._format_path(path, folder)
@@ -829,18 +849,15 @@ class TestGoogleDriveFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'googledrive'
     ProviderFile = GoogleDriveFile
-    destination_providers = ['osfstorage', 'box', 'dropbox', 'github', 's3']
 
 
 class TestGithubFileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 'github'
     ProviderFile = GithubFile
-    destination_providers = ['osfstorage', 'box', 'dropbox', 'googledrive', 's3']
 
 
 class TestS3FileCommentMoveRename(FileCommentMoveRenameTestMixin):
 
     provider = 's3'
     ProviderFile = S3File
-    destination_providers = ['osfstorage', 'box', 'dropbox', 'googledrive', 'github']
