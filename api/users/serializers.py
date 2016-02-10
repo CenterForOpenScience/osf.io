@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from modularodm.exceptions import ValidationValueError
 
 from api.base.exceptions import InvalidModelValueError
-from api.base.serializers import AllowMissing
+from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer
 from website.models import User
 
 from api.base.serializers import (
@@ -70,6 +70,8 @@ class UserSerializer(JSONAPISerializer):
     institutions = RelationshipField(
         related_view='users:user-institutions',
         related_view_kwargs={'user_id': '<pk>'},
+        self_view='users:user-institutions-relationship',
+        self_view_kwargs={'user_id': '<pk>'}
     )
 
     class Meta:
@@ -104,3 +106,25 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class RelatedInstitution(JSONAPIRelationshipSerializer):
+    id = ser.CharField(required=False, allow_null=True, source='_id')
+    class Meta:
+        type_ = 'institutions'
+
+
+class UserInstitutionsRelationshipSerializer(ser.Serializer):
+
+    data = ser.ListField(child=RelatedInstitution())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return obj['self'].institutions_self_url
+
+    def get_related_url(self, obj):
+        return obj['self'].institutions_related_url
+
+    class Meta:
+        type_ = 'institutions'

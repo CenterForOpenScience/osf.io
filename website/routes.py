@@ -75,6 +75,7 @@ def get_globals():
         'login_url': cas.get_login_url(request.url, auto=True),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
+        'show_institutions': not settings.INSTITUTION_HIDE_UI_FLAG,
     }
 
 
@@ -712,6 +713,12 @@ def make_url_map(app):
         Rule('/share/providers/', 'get', search_views.search_share_providers, json_renderer),
 
     ], prefix='/api/v1')
+
+    # Institution
+
+    process_rules(app, [
+        Rule('/institution/<id>/', 'get', profile_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
+    ])
 
     # Project
 
