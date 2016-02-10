@@ -13,10 +13,7 @@
                 title="Open Edit Dialog"></button>
             <button class="btn btn-danger btn-evernote" data-bind="click: $parent.openDeleteNoteDialog"
                 title="Open Delete Note Dialog"></button>
-          </p>
-          <p>
             <span data-bind="text: title"></span>
-            <span data-bind="text: guid"></span>
           </p>
         </div>
         <div id="evernote-notedisplay"></div>
