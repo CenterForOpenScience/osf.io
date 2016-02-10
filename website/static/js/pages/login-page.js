@@ -13,7 +13,6 @@ ko.punches.enableAll();
 
 var registerUrl = window.contextVars.registerUrl;
 
-new SignUp('#signUpScope', registerUrl, $('#campaign').val());
 
 var activateToggleBox = function () {
     var el = $(this);
@@ -59,6 +58,7 @@ $(document).ready(function() {
         $osf.applyBindings(self.viewModel, '#inst');
     } else {
         new LogInForm.SignIn('#logInForm');
+        new SignUp('#signUpScope', registerUrl, $('#campaign').val());
     }
 });
 
