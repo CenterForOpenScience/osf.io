@@ -71,7 +71,7 @@ var filterTemplate = function () {
         style: 'width:100%;display:inline;',
         onkeyup: function (e){
             m.withAttr('value', tb.filterText)(e);
-            if (e.keyCode === ENTER_KEY){fileFilter(tb);}
+            fileFilter(tb);
         },
         value: tb.filterText()
     });
