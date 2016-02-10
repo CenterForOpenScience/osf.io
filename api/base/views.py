@@ -76,7 +76,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         context.update({
             'enable_esi': (
                 is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
-                self.request.accepted_media_type in {'application/vnd.api+json', 'application/json'}
+                self.request.accepted_media_type in django_settings.ESI_MEDIA_TYPES
             ),
             'embed': embeds_partials,
         })
