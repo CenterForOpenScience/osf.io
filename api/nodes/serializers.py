@@ -492,8 +492,9 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
                 raise exceptions.NotFound
             if not inst.auth(user):
                 raise exceptions.PermissionDenied
-        node.primary_institution = inst
-        node.save()
+            node.add_primary_institution(inst=inst, user=user)
+            return node
+        node.remove_primary_institution(user)
         return node
 
     def to_representation(self, obj):

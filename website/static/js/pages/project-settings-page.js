@@ -94,7 +94,7 @@ var institutionsViewModel = function() {
         ).done(function (response) {
             window.location.reload();
         }).fail(function (response) {
-            $osf.growl('Error!');
+            $osf.growl('Unable to add institution to this node!');
         });
     };
     self.clearInst = function() {
@@ -111,7 +111,7 @@ var institutionsViewModel = function() {
         ).done(function (response) {
             window.location.reload();
         }).fail(function (response) {
-            $osf.growl('Error!');
+            $osf.growl('Unable to remove institution from this node!');
         });
     };
 };

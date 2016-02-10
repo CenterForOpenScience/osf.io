@@ -340,3 +340,11 @@ removed a citation ({{ params.citation.name }})
 from
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
+
+<script type="text/html" id="institution_added">
+affiliated this node with <strong>{{ params.institution.name }}</strong>.
+</script>
+
+<script type="text/html" id="institution_removed">
+removed this node's affiliation with <strong>{{ params.institution.name }}</strong>.
+</script>
