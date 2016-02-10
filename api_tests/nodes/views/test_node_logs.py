@@ -156,10 +156,10 @@ class TestNodeLogFiltering(TestNodeLogList):
         assert_equal(res.json['data'][0]['attributes']['action'], 'project_created')
 
 
-class TestNodeLogAssociatedContributors(ApiTestCase):
+class TestNodeLogContributors(ApiTestCase):
 
     def setUp(self):
-        super(TestNodeLogAssociatedContributors, self).setUp()
+        super(TestNodeLogContributors, self).setUp()
         self.user = AuthUserFactory()
         self.user_two = AuthUserFactory()
         self.node = ProjectFactory(is_public=False)
@@ -174,8 +174,8 @@ class TestNodeLogAssociatedContributors(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         json_data = res.json['data']
-        associated_contributors_url = json_data['relationships']['associated_contributors']['links']['related']['href']
-        assert_equal(urlparse.urlparse(associated_contributors_url).path, url + 'associated_contributors/')
+        associated_contributors_url = json_data['relationships']['contributors']['links']['related']['href']
+        assert_equal(urlparse.urlparse(associated_contributors_url).path, url + 'contributors/')
 
         res = self.app.get(associated_contributors_url, auth=self.user.auth)
         added_contributor_id = res.json['data'][0]['id']
@@ -187,8 +187,8 @@ class TestNodeLogAssociatedContributors(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         json_data = res.json['data']
-        associated_contributors_url = json_data['relationships']['associated_contributors']['links']['related']['href']
-        assert_equal(urlparse.urlparse(associated_contributors_url).path, url + 'associated_contributors/')
+        associated_contributors_url = json_data['relationships']['contributors']['links']['related']['href']
+        assert_equal(urlparse.urlparse(associated_contributors_url).path, url + 'contributors/')
 
         res = self.app.get(associated_contributors_url, auth=self.user.auth)
         assert_equal(res.json['data'], [])
@@ -200,8 +200,8 @@ class TestNodeLogAssociatedContributors(ApiTestCase):
         assert_equal(res.status_code, 200)
         json_data = res.json['data']
         assert_equal(json_data['attributes']['action'], 'contributor_removed')
-        associated_contributors_url = json_data['relationships']['associated_contributors']['links']['related']['href']
-        assert_equal(urlparse.urlparse(associated_contributors_url).path, url + 'associated_contributors/')
+        associated_contributors_url = json_data['relationships']['contributors']['links']['related']['href']
+        assert_equal(urlparse.urlparse(associated_contributors_url).path, url + 'contributors/')
 
         res = self.app.get(associated_contributors_url, auth=self.user.auth)
         removed_contributor_id = res.json['data'][0]['id']

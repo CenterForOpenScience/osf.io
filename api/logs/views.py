@@ -201,11 +201,13 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
         pass
 
 
-class NodeLogAssociatedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
+class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
     """List of contributors that a given log is associated with. *Read-only*.
 
-    Paginated list of users that were associated with a contributor log action. Each resource contains the full
-    representation of the user, meaning additional requests to an individual user's detail view are not necessary.
+    Paginated list of users that were associated with a contributor log action. For example, if a log action was `contributor_added`,
+    the new contributors' names would be found at this endpoint. If the relevant log had nothing to do with contributors,
+    an empty list would be returned. Each resource contains the full representation of the user, meaning additional requests
+    to an individual user's detail view are not necessary.
 
     ##User Attributes
 
@@ -259,7 +261,7 @@ class NodeLogAssociatedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFi
     serializer_class = UserSerializer
 
     view_category = 'logs'
-    view_name = 'log-added_contributors'
+    view_name = 'log-contributors'
 
     # overrides ListAPIView
     def get_queryset(self):

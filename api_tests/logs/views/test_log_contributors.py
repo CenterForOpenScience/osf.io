@@ -5,7 +5,7 @@ from nose.tools import *  # noqa
 from test_log_nodes_list import LogsTestCase
 
 
-class TestLogAssociatedContributors(LogsTestCase):
+class TestLogContributors(LogsTestCase):
 
     def test_log_detail_private_logged_in_contributor_can_access_logs(self):
         res = self.app.get(self.private_log_contribs_url, auth=self.user.auth)
