@@ -436,9 +436,6 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMi
     def test_selected_folder_name(self):
         # Mock the return from api call to get the folder's name
         mock_folder = MockFolder()
-
-        self.node_settings.mendeley_list_id = 'fake-list-id'
-
         name = None
 
         with mock.patch.object(self.OAuthProviderClass, '_folder_metadata', return_value=mock_folder):
@@ -530,6 +527,38 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMi
         assert_equal(log.params['folder_id'], folder_id)
         assert_equal(log.params['folder_name'], folder_name)
 
+    @mock.patch('framework.status.push_status_message')
+    def test_remove_contributor_authorizer(self, mock_push_status):
+        contributor = UserFactory()
+        self.node.add_contributor(contributor, permissions=['read', 'write', 'admin'])
+        self.node.remove_contributor(self.node.creator, auth=Auth(user=contributor))
+
+        assert_false(self.node_settings.has_auth)
+        assert_false(self.user_settings.verify_oauth_access(self.node, self.external_account))
+
+    def test_remove_contributor_not_authorizer(self):
+        contributor = UserFactory()
+        self.node.add_contributor(contributor)
+        self.node.remove_contributor(contributor, auth=Auth(user=self.node.creator))
+
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.user_settings.verify_oauth_access(self.node, self.external_account))
+
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_by_authorizer(self, mock_push_status):
+        fork = self.node.fork_node(auth=Auth(user=self.node.creator))
+
+        assert_true(fork.get_addon(self.short_name).has_auth)
+        assert_true(self.user_settings.verify_oauth_access(fork, self.external_account))
+
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_not_by_authorizer(self, mock_push_status):
+        contributor = UserFactory()
+        self.node.add_contributor(contributor)
+        fork = self.node.fork_node(auth=Auth(user=contributor))
+
+        assert_false(fork.get_addon(self.short_name).has_auth)
+        assert_false(self.user_settings.verify_oauth_access(fork, self.external_account))
 
 class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
 
@@ -578,9 +607,14 @@ class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
             assert_false(mock_get_client.called)
 
     def test_has_access(self):
-        mock_client = mock.Mock()
-        mock_client.folders.list.return_value = self.ApiExceptionClass({'status_code': 403, 'text': 'Mocked 403 ApiException'})
-        mock_client.collections.return_value = self.ApiExceptionClass({'status_code': 403, 'text': 'Mocked 403 ApiException'})
-        self.provider._client = mock_client
-        self.provider._client
-        assert_raises(HTTPError(403))
+        with mock.patch.object(self.OAuthProviderClass, '_get_client') as mock_get_client:
+            mock_client = mock.Mock()
+            mock_error = mock.PropertyMock()
+            mock_error.status_code = 403
+            mock_error.text = 'Mocked 403 ApiException'
+            mock_client.folders.list.side_effect = self.ApiExceptionClass(mock_error)
+            mock_client.collections.side_effect = self.ApiExceptionClass(mock_error)
+            mock_get_client.return_value = mock_client
+            with assert_raises(HTTPError) as exc_info:
+                self.provider.client
+            assert_equal(exc_info.exception.code, 403)
