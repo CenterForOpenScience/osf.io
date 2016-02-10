@@ -52,26 +52,31 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
             else:
                 old_file = FileNode.resolve_class(source.get('provider'), FileNode.FILE).get_or_create(source_node, source.get('path'))
 
-            if source['provider'] != 'osfstorage':
-                data = dict(destination)  # convert OrderedDict to dict
-                data['extra'] = dict(destination['extra'])
-                old_file.update(revision=None, data=data)
-
             has_comments = Comment.find(Q('root_target', 'eq', old_file._id)).count()
-            if source_node._id != destination_node._id:
-                old_file.node = destination_node
-                if has_comments:
+            if has_comments:
+                if destination['provider'] == 'osfstorage':
+                    new_file = FileNode.load(destination['path'].strip('/'))
+                    if old_file._id != new_file._id:
+                        update_comment_target(old_file, new_file)
+
+                if source['provider'] != 'osfstorage':
+                    data = dict(destination)  # convert OrderedDict to dict
+                    data['extra'] = dict(destination['extra'])
+                    old_file.update(revision=None, data=data)
+
+                if source_node._id != destination_node._id:
+                    old_file.node = destination_node
                     update_comment_node(old_file, source_node, destination_node)
 
-            if source['provider'] != destination['provider']:
-                old_file.stored_object.provider = destination['provider']
+                if source['provider'] != destination['provider']:
+                    old_file.stored_object.provider = destination['provider']
 
-            new_path = destination['path']
-            if destination['provider'] == 'dropbox':  # prepend root folder
-                new_path = '{}/{}'.format(destination_node.get_addon(destination['provider']).folder, new_path.strip('/'))
+                new_path = destination['path']
+                if destination['provider'] == 'dropbox':  # prepend root folder
+                    new_path = '{}/{}'.format(destination_node.get_addon(destination['provider']).folder, new_path.strip('/'))
 
-            old_file.stored_object.path = new_path
-            old_file.save()
+                old_file.stored_object.path = new_path
+                old_file.save()
 
 
 def update_osffolder_contents(folder_contents, source_node, destination_node):
@@ -137,6 +142,11 @@ def update_comment_node(root_target, source_node, destination_node):
     del source_node.commented_files[root_target._id]
     source_node.save()
     destination_node.save()
+
+
+def update_comment_target(old_target, new_target):
+    Comment.update(Q('root_target', 'eq', old_target._id), data={'root_target': new_target})
+    Comment.update(Q('target', 'eq', old_target._id), data={'target': new_target})
 
 
 @comment_added.connect
