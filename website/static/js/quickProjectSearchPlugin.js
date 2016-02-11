@@ -468,7 +468,7 @@ var quickSearchProject = {
 
                 m('div', {class: 'row'},
                     m('div.text-center.m-b-sm', {'class': 'col-sm-12'},
-                    m('h5', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')
+                    m('p', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')
                     ))
                 ),
 
