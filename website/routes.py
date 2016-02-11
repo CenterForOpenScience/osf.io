@@ -709,7 +709,7 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-
+        # '/' route loads home.mako if logged in, otherwise loads landing.mako
         Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
         Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako')),
 
