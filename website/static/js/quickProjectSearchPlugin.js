@@ -62,7 +62,7 @@ var QuickSearchProject = {
             }
             else {
                 self.loadingComplete(true);
-                //m.redraw();
+                m.redraw();
             }
         };
 
@@ -455,17 +455,23 @@ var QuickSearchProject = {
                     m('div', {'class': 'col-sm-12'}, m('h3', 'My Projects')))),
                 m('div', {'class': 'row'},
                     m('div', {'class': 'col-sm-3'}),
-                    m('div', {'class': 'col-sm-6 m-b-md text-center'}, [
+                    m('div.m-b-sm.text-center', {'class': 'col-sm-6'}, [
                         searchBar(),
-                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('div', {'class':'logo-spin logo-sm m-r-lg'}), 'Loading projects...')
+                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('div.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
                     ]),
                     m('div', {'class': 'col-sm-3'})),
 
+                m('div', {class: 'row'},
+                    m('div.text-center.m-b-sm', {'class': 'col-sm-12'},
+                    m('h5', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')
+                    ))
+                ),
+
                 m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
-                    m('div', {'class': 'row node-col-headers'}, [
-                        m('div', {'class': 'col-sm-7 col-md-6 col-lg-5 p-v-xs, f-w-xl'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
-                        m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 f-w-xl p-v-xs'}, 'Contributors'),
-                        m('div', {'class': 'col-sm-2 col-md-3 col-lg-3 f-w-xl p-v-xs'}, 'Modified', m('span', {'class': 'sort-group'}, sortDateAsc(), sortDateDesc()))]
+                    m('div.node-col-headers', {'class': 'row'}, [
+                        m('div.p-v-xs.f-w-xl', {'class': 'col-sm-7 col-md-6 col-lg-5'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
+                        m('div.f-w-xl.p-v-xs', {'class': 'col-sm-3 col-md-3 col-lg-4'}, 'Contributors'),
+                        m('div.f-w-xl.p-v-xs', {'class': 'col-sm-2 col-md-3 col-lg-3'}, 'Modified', m('span.sort-group', sortDateAsc(), sortDateDesc()))]
                     )
                 )),
 
@@ -488,7 +494,7 @@ var QuickSearchProject = {
                 ]),
                 m('div', {'class': 'row m-v-md'},
                     m('div', {'class': 'col-sm-1'}),
-                    m('div', {'class': 'col-sm-11'}, m('h4', 'You have no projects. Go here to create one.'))
+                    m('div', {'class': 'col-sm-11'}, m('h4', 'You have no projects. Go ', m('a', {href: '/dashboard'}, 'here'), ' to create one.'))
             )]
         );
         }
