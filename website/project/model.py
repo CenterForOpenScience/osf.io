@@ -877,16 +877,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         inst = self.primary_institution
         self.primary_institution = None
         self.add_log(
-                action=NodeLog.INSTITUTION_REMOVED,
-                params={
-                    'node': self._primary_key,
-                    'institution': {
-                        'id': inst._id,
-                        'name': inst.name
-                    }
-                },
-                auth=Auth(user)
-            )
+            action=NodeLog.INSTITUTION_REMOVED,
+            params={
+                'node': self._primary_key,
+                'institution': {
+                    'id': inst._id,
+                    'name': inst.name
+                }
+            },
+            auth=Auth(user)
+        )
         self.save()
 
     def institution_id(self):

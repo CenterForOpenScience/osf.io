@@ -29,7 +29,7 @@ var ViewModel = function() {
 };
 
 var InstitutionSignIn = function(selector) {
-    $osf.applyBindings(new ViewModel(), selector)
+    $osf.applyBindings(new ViewModel(), selector);
 };
 
 module.exports = InstitutionSignIn;

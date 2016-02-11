@@ -1,5 +1,7 @@
 'use strict';
+var $ = require('jquery');
 var ko = require('knockout');
+var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 var ctx = window.contextVars;
@@ -10,9 +12,10 @@ var ViewModel = function() {
     self.institutionHref = ko.observable('');
     self.availableInstitutions = ko.observable();
     self.fetchUserInstitutions = function() {
+        var url = ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/?embed=institutions';
         return $osf.ajaxJSON(
             'GET',
-            ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/?embed=institutions',
+            url,
             {isCors: true}
         ).done(function (response) {
             self.availableInstitutions(response.data.embeds.institutions.data);
@@ -25,9 +28,10 @@ var ViewModel = function() {
         });
     };
     self.fetchNodeInstitutions = function() {
+        var url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/?embed=primary_institution';
         return $osf.ajaxJSON(
             'GET',
-            ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/?embed=primary_institution',
+            url,
             {isCors: true}
         ).done(function (response) {
             if (response.data.embeds.primary_institution.data) {
