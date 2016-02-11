@@ -3,12 +3,10 @@
  */
 'use strict';
 var $ = require('jquery');
-var ko = require('knockout');
 
-var $osf = require('js/osfHelpers');
 var SignUp = require('js/signUp');
 var LogInForm = require('js/signIn');
-
+var InstitutionSignIn = require('js/institutionSignIn');
 
 var registerUrl = window.contextVars.registerUrl;
 
@@ -22,38 +20,11 @@ var activateToggleBox = function () {
     }
 };
 
-
-var InstitutionViewModel = function() {
-    var self = this;
-    self.instNames = ko.observableArray([]);
-    self.selectedInst = ko.observable();
-    self.insts = {};
-    $osf.ajaxJSON(
-        'GET',
-        window.contextVars.apiV2Prefix + 'institutions/',
-        {
-            isCors: true
-        }
-    ).done( function(response){
-        for (var i = 0; i < response.data.length; i++){
-            var name = response.data[i].attributes.name;
-            self.instNames.push(name);
-            self.insts[name] = response.data[i].attributes.auth_url;
-        }
-    }).fail(function(response){
-    });
-
-    self.instLogin = function(){
-        window.location = self.insts[self.selectedInst()];
-    };
-};
-
-
 $(document).ready(function() {
     var self = this;
     self.campaign = $('#campaign').val();
     if (self.campaign === 'institution'){
-        $osf.applyBindings(new InstitutionViewModel(), '#inst');
+        new InstitutionSignIn('#inst');
     } else {
         new LogInForm.SignIn('#logInForm');
         new SignUp('#signUpScope', registerUrl, $('#campaign').val());
