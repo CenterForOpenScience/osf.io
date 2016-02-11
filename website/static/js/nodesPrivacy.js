@@ -24,7 +24,7 @@ var MESSAGES = {
     confirmWarning: {
         nodesPublic: 'The following projects and components will be made <b>public</b>.',
         nodesPrivate: 'The following projects and components will be made <b>private</b>.',
-        nodesNotChangedWarning: 'No nodes were changed.',
+        nodesNotChangedWarning: 'No privacy settings were changed. Go back to make a change.',
         tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.'
     }
 };

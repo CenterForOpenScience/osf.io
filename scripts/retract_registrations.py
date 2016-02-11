@@ -66,7 +66,7 @@ def should_be_retracted(retraction):
 
 
 @celery_app.task(name='scripts.retract_registrations')
-def run_main(dry_run):
+def run_main(dry_run=True):
     init_app(routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)

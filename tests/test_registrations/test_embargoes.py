@@ -896,7 +896,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_valid_POST_embargo_adds_to_parent_projects_log(self, mock_enquque):
         initial_project_logs = len(self.project.logs)
-        res = self.app.post(
+        self.app.post(
             self.project.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_embargo_payload,
             content_type='application/json',
@@ -905,6 +905,24 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         self.project.reload()
         # Logs: Created, registered, embargo initiated
         assert_equal(len(self.project.logs), initial_project_logs + 1)
+
+    def test_embargoed_registration_cannot_be_made_public(self):
+        # Initiate and approve embargo
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
+        self.registration.embargo.approve_embargo(self.user, approval_token)
+        self.registration.save()
+
+        res = self.app.post(
+            self.registration.api_url_for('project_set_privacy', permissions='public'),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'An embargoed registration cannot be made public.')
 
     def test_non_contributor_GET_approval_returns_HTTPError(self):
         non_contributor = AuthUserFactory()

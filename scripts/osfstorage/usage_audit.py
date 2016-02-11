@@ -13,9 +13,9 @@ import functools
 
 from collections import defaultdict
 
-from framework.tasks import app as celery_app
-
 from modularodm import Q
+
+from framework.tasks import app as celery_app
 
 from website import mails
 from website.app import init_app
@@ -100,9 +100,9 @@ def main(send_email=False):
 
 
 @celery_app.task(name='scripts.osfstorage.usage_audit')
-def run_main(*arg):
+def run_main(send_mail=False, white_list=None):
     scripts_utils.add_file_logger(logger, __file__)
-    if len(arg) > 0 and arg[0] == 'whitelist':
-        add_to_white_list(arg[1:])
+    if white_list:
+        add_to_white_list(white_list)
     else:
-        main(send_email='send_mail' in arg)
+        main(send_mail)

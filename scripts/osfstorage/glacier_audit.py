@@ -9,9 +9,7 @@ Should be run after `glacier_inventory.py`.
 import logging
 
 from modularodm import Q
-
 from boto.glacier.layer2 import Layer2
-
 from dateutil.parser import parse as parse_date
 from dateutil.relativedelta import relativedelta
 
@@ -114,7 +112,7 @@ def main(job_id=None):
 
 
 @celery_app.task(name='scripts.osfstorage.glacier_audit')
-def run_main(job_id, dry_run):
+def run_main(job_id=None, dry_run=True):
     init_app(set_backends=True, routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
