@@ -1,9 +1,12 @@
+from django.views.generic.edit import FormView
+from django.core.urlresolvers import reverse
+
 from website.project.model import User
 
 from admin.base.views import GuidFormView
 from admin.users.templatetags.user_extras import reverse_user
 from .serializers import serialize_user
-from .models import AjaxTemplateMixin
+from .forms import OSFUserForm
 
 
 class UserFormView(GuidFormView):
@@ -18,4 +21,7 @@ class UserFormView(GuidFormView):
         return reverse_user(self.guid)
 
 
-class TestFormView(Su)
+class TestFormView(FormView):
+    template_name = 'users/notes.html'
+    form_class = OSFUserForm
+    success_url = reverse('users:user')
