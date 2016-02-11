@@ -855,9 +855,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Primary institution node is attached to
     primary_institution = fields.ForeignField('institution')
 
+    affiliated_institutions = fields.ForeignField('institution', list=True)
+
     def add_primary_institution(self, user, inst):
         if inst.auth(user):
             self.primary_institution = inst
+            self.affiliated_institutions.append(inst)
             self.save()
             self.add_log(
                 action=NodeLog.INSTITUTION_ADDED,
@@ -876,6 +879,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def remove_primary_institution(self, user):
         inst = self.primary_institution
         self.primary_institution = None
+        if inst in self.affiliated_institutions:
+            self.affiliated_institutions.remove(inst)
         self.add_log(
             action=NodeLog.INSTITUTION_REMOVED,
             params={
