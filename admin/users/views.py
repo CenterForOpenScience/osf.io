@@ -1,5 +1,4 @@
 from django.views.generic.edit import FormView
-from django.core.urlresolvers import reverse
 
 from website.project.model import User
 
@@ -16,12 +15,25 @@ class UserFormView(GuidFormView):
     def get_guid_object(self):
         return serialize_user(User.load(self.guid))
 
+    def get_context_data(self, **kwargs):
+        user_kwargs = super(UserFormView, self).get_context_data(**kwargs)
+        user_kwargs.setdefault(
+            'notes_form', OSFUserForm(initial={'osf_id': self.guid}))
+        return user_kwargs
+
     @property
     def success_url(self):
         return reverse_user(self.guid)
 
 
-class TestFormView(FormView):
-    template_name = 'users/notes.html'
+class OSFUserFormView(FormView):
+    template_name = 'users/user.html'
     form_class = OSFUserForm
-    success_url = reverse('users:user')
+
+    def form_valid(self, form):
+        print 'Here!'
+        super(OSFUserFormView, self).form_valid(form)
+
+    @property
+    def success_url(self):
+        return reverse_user(None)
