@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-from framework.forms import Form, TextField, TextAreaField, validators
-from framework.forms import (
-    BootstrapTextArea,
-    BootstrapTextInput,
-)
+from framework.forms import Form, TextField, validators
 
 ###############################################################################
 # Forms
@@ -15,7 +11,7 @@ class NewNodeForm(Form):
         validators.Required(message=u'Title is required'),
         validators.Length(min=1, message=u'Title must contain at least 1 character.'),
         validators.Length(max=200, message=u'Title must contain fewer than 200 characters.')
-    ], widget=BootstrapTextInput())
-    description = TextAreaField('Description', widget=BootstrapTextArea())
-    category = TextField('Category', widget=BootstrapTextInput())
-    inheritContributors = TextField('Inherit', widget=BootstrapTextInput())
+    ])
+    description = TextField('Description')
+    category = TextField('Category')
+    inheritContributors = TextField('Inherit')
