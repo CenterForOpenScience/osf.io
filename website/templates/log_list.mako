@@ -55,9 +55,19 @@
                                     </span>
                                 </span>
                                 <!-- Log actions are the same as their template name -->
-                                <span data-bind="template: {name: log.action, data: log}"></span>
+                                    <!-- Handle specific language for contributor bibliographic/non-bibliographic on anonymous VOLs -->
+                                    <!-- ko if: (log.action == 'made_contributor_visible' && log.anonymous -->
+                                        changed a non-bibliographic contributor to a bibliographic contributor on
+                                        <a class="log-node-title-link overflow" data-bind="attr: {href: log.nodeUrl}, text: log.nodeTitle"></a>
+                                    <!-- /ko -->
+                                    <!-- ko if: log.action == 'made_contributor_invisible' && log.anonymous -->
+                                        changed a bibliographic contributor to a non-bibliographic contributor on
+                                        <a class="log-node-title-link overflow" data-bind="attr: {href: log.nodeUrl}, text: log.nodeTitle"></a>
+                                    <!-- /ko -->
+                                    <!-- ko ifnot: (log.action == 'made_contributor_visible' || log.action == 'made_contributor_invisible') && log.anonymous -->
+                                        <span data-bind="template: {name: log.action, data: log}"></span>
+                                    <!-- /ko -->
                                 <!-- /ko -->
-
                                 <!-- ko ifnot: log.hasUser() -->
                                     <!-- Log actions are the same as their template name  + no_user -->
                                     <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>

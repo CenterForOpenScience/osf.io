@@ -9,12 +9,15 @@ import bson
 import pytz
 import itsdangerous
 
+from django.core.urlresolvers import reverse
+
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
 from modularodm.validators import URLValidator
 
 import framework
+from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
 from framework import analytics
 from framework.auth import signals, utils
@@ -1001,11 +1004,14 @@ class User(GuidStoredObject, AddonModelMixin):
         from mailchimp emails.
         """
         from website import mailchimp_utils
-        mailchimp_utils.unsubscribe_mailchimp(
-            list_name=settings.MAILCHIMP_GENERAL_LIST,
-            user_id=self._id,
-            username=self.username
-        )
+        try:
+            mailchimp_utils.unsubscribe_mailchimp(
+                list_name=settings.MAILCHIMP_GENERAL_LIST,
+                user_id=self._id,
+                username=self.username
+            )
+        except mailchimp_utils.mailchimp.ListNotSubscribedError:
+            pass
         self.is_disabled = True
 
     @property
@@ -1350,6 +1356,13 @@ class User(GuidStoredObject, AddonModelMixin):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
+    def has_inst_auth(self, inst):
+        if inst in self.affiliated_institutions:
+            return True
+        return False
+
+    affiliated_institutions = fields.ForeignField('institution', list=True)
+
     def get_node_comment_timestamps(self, node, page, file_id=None):
         """ Returns the timestamp for when comments were last viewed on a node or
             a dictionary of timestamps for when comments were last viewed on files.
@@ -1369,3 +1382,51 @@ def _merge_into_reversed(*iterables):
     '''Merge multiple sorted inputs into a single output in reverse order.
     '''
     return sorted(itertools.chain(*iterables), reverse=True)
+
+
+class Institution(StoredObject):
+
+    _id = fields.StringField(index=True, unique=True, primary=True)
+    name = fields.StringField(required=True)
+    logo_name = fields.StringField(required=True)
+
+    @property
+    def pk(self):
+        return self._id
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def url(self):
+        return '/{}/'.format(self._id)
+
+    @property
+    def deep_url(self):
+        return '/institution/{}/'.format(self._id)
+
+    @property
+    def api_v2_url(self):
+        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def absolute_api_v2_url(self):
+        from api.base.utils import absolute_reverse
+        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def logo_path(self):
+        return '/static/img/institutions/{}/'.format(self.logo_name)
+
+    def get_api_url(self):
+        return self.absolute_api_v2_url
+
+    def get_absolute_url(self):
+        return self.absolute_url
+
+    def auth(self, user):
+        return user.has_inst_auth(self)
+
+    def view(self):
+        return 'Static paths for custom pages'

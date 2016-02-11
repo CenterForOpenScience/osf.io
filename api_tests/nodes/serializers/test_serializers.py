@@ -46,6 +46,7 @@ class TestNodeSerializer(DbTestCase):
         assert_in('contributors', relationships)
         assert_in('files', relationships)
         assert_in('parent', relationships)
+        assert_in('primary_institution', relationships)
         parent_link = relationships['parent']['links']['related']['href']
         assert_equal(
             urlparse(parent_link).path,
@@ -81,7 +82,8 @@ class TestNodeRegistrationSerializer(DbTestCase):
         assert_equal(data['type'], 'registrations')
         should_not_relate_to_registrations = [
             'registered_from',
-            'registered_by'
+            'registered_by',
+            'primary_institution'
         ]
 
         # Attributes

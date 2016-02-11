@@ -18,7 +18,15 @@ from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
 
 import importlib
-URLS_MODULES = [importlib.import_module('api.{}.urls'.format(name)) for loader, name, _ in pkgutil.iter_modules(['api']) if name != 'base']
+
+URLS_MODULES = []
+for loader, name, _ in pkgutil.iter_modules(['api']):
+    if name != 'base':
+        try:
+            URLS_MODULES.append(importlib.import_module('api.{}.urls'.format(name)))
+        except ImportError:
+            pass
+        
 VIEW_CLASSES = []
 for mod in URLS_MODULES:
     urlpatterns = mod.urlpatterns
@@ -46,7 +54,7 @@ class TestApiBaseViews(ApiTestCase):
             assert_equal(errors[0], {'detail': 'Not found.'})
 
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
-        base_permissions = [            
+        base_permissions = [
             TokenHasScope,
             (IsAuthenticated, IsAuthenticatedOrReadOnly)
         ]

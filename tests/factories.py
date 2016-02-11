@@ -33,6 +33,7 @@ from website.oauth.models import (
     ExternalAccount,
     ExternalProvider
 )
+from website.models import Institution
 from website.project.model import (
     Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig, AlternativeCitation,
@@ -520,6 +521,31 @@ class CommentFactory(ModularOdmFactory):
                 instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
                 instance.node.save()
         instance.save()
+        return instance
+
+
+class InstitutionFactory(ModularOdmFactory):
+    FACTORY_FOR = Institution
+    _id = Sequence(lambda n: "S{}".format(n))
+    name = Sequence(lambda n: "School{}".format(n))
+
+    @classmethod
+    def _create(cls, target_class, _id, name):
+        instance = target_class(
+            _id=_id,
+            name=name,
+            logo_name='logo.img',
+        )
+        instance.save()
+        return instance
+
+    @classmethod
+    def _build(cls, target_class, _id, name):
+        instance = target_class(
+            _id=_id,
+            name=name,
+            logo_name='logo.img',
+        )
         return instance
 
 

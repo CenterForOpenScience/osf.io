@@ -20,8 +20,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
-// TODO: Uncomment when APIv2 concurrency issues are fixed
-// var NodesPrivacy = require('js/nodesPrivacy');
+var NodesPrivacy = require('js/nodesPrivacy');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -41,11 +40,9 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
-
-    // TODO: Uncomment when APIv2 concurrency issues are fixed
-    // if (window.contextVars.currentUser.isAdmin) {
-    //     new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data.node.is_public);
-    // }
+    if (data.user.is_admin) {
+        new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data.node.is_public);
+    }
 });
 
 // Initialize comment pane w/ its viewmodel

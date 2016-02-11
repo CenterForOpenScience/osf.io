@@ -20,7 +20,6 @@ from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
@@ -64,6 +63,7 @@ from website.project.licenses import (
     NodeLicenseRecord,
 )
 from website.project import signals as project_signals
+from website.project.spam.model import SpamMixin
 from website.prereg import utils as prereg_utils
 
 logger = logging.getLogger(__name__)
@@ -157,19 +157,7 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
-def validate_comment_reports(value, *args, **kwargs):
-    for key, val in value.iteritems():
-        if not User.load(key):
-            raise ValidationValueError('Keys must be user IDs')
-        if not isinstance(val, dict):
-            raise ValidationTypeError('Values must be dictionaries')
-        if 'category' not in val or 'text' not in val:
-            raise ValidationValueError(
-                'Values must include `category` and `text` keys'
-            )
-
-
-class Comment(GuidStoredObject):
+class Comment(GuidStoredObject, SpamMixin):
 
     __guid_min_length__ = 12
 
@@ -194,13 +182,6 @@ class Comment(GuidStoredObject):
     page = fields.StringField()
     content = fields.StringField(required=True,
                                  validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
-
-    # Dictionary field mapping user IDs to dictionaries of report details:
-    # {
-    #   'icpnw': {'category': 'hate', 'text': 'offensive'},
-    #   'cdi38': {'category': 'spam', 'text': 'godwins law'},
-    # }
-    reports = fields.DictionaryField(validate=validate_comment_reports)
 
     # For Django compatibility
     @property
@@ -398,36 +379,6 @@ class Comment(GuidStoredObject):
             )
             self.node.save()
 
-    def report_abuse(self, user, save=False, **kwargs):
-        """Report that a comment is abuse.
-
-        :param User user: User submitting the report
-        :param bool save: Save changes
-        :param dict kwargs: Report details
-        :raises: ValueError if the user submitting abuse is the same as the
-            user who posted the comment
-        """
-        if user == self.user:
-            raise ValueError
-        self.reports[user._id] = kwargs
-        if save:
-            self.save()
-
-    def unreport_abuse(self, user, save=False):
-        """Revoke report of abuse.
-
-        :param User user: User who submitted the report
-        :param bool save: Save changes
-        :raises: ValueError if user has not reported comment as abuse
-        """
-        try:
-            self.reports.pop(user._id)
-        except KeyError:
-            raise ValueError('User has not reported comment as abuse')
-
-        if save:
-            self.save()
-
 
 @unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):
@@ -614,6 +565,19 @@ class NodeLog(StoredObject):
             'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
         }
+
+    @property
+    def absolute_api_v2_url(self):
+        from api.logs.views import NodeLogDetail
+
+        return absolute_reverse('{}:{}'.format(NodeLogDetail.view_category, NodeLogDetail.view_name), kwargs={'log_id': self._id})
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_url(self):
+        return self.absolute_api_v2_url
 
 
 class Tag(StoredObject):
@@ -855,7 +819,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # One of 'public', 'private'
     # TODO: Add validator
-    comment_level = fields.StringField(default='private')
+    comment_level = fields.StringField(default='public')
 
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
@@ -884,6 +848,31 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     template_node = fields.ForeignField('node', backref='template_node', index=True)
 
     piwik_site_id = fields.StringField()
+
+    # Primary institution node is attached to
+    primary_institution = fields.ForeignField('institution')
+
+    def add_primary_institution(self, user, inst):
+        if inst.auth(user):
+            self.primary_institution = inst
+            self.save()
+            return True
+        return False
+
+    def remove_primary_institution(self):
+        self.primary_institution = None
+        self.save()
+
+    def institution_id(self):
+        # Empty string over None, as None was somehow being serialized to <string>'None',
+        # there's probably a better way to do this or a problem there.
+        return self.primary_institution._id if self.primary_institution else ''
+
+    def institution_url(self):
+        return self.absolute_api_v2_url + 'institution/'
+
+    def institution_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institution/'
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }

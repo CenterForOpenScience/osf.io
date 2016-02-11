@@ -1,9 +1,10 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 
-from website.models import NodeLog, Node
-
+from modularodm import Q
+from framework.auth.core import User
 from framework.auth.oauth_scopes import CoreScopes
+from website.models import NodeLog, Node
 from api.nodes.permissions import (
     ContributorOrPublic,
 )
@@ -12,6 +13,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.utils import get_user_auth, get_object_or_error
 from api.base import permissions as base_permissions
 from api.nodes.serializers import NodeSerializer
+from api.users.serializers import UserSerializer
 from api.logs.serializers import NodeLogSerializer
 from api.base.views import JSONAPIBaseView
 
@@ -196,3 +198,72 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
         pass
+
+
+class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
+    """List of added contributors that a given log is associated with. *Read-only*.
+
+    Paginated list of users that were added as contributors, associated with a log. Each resource contains the full
+    representation of the user, meaning additional requests to an individual user's detail view are not necessary.
+
+    ##User Attributes
+
+    <!--- Copied Attributes from UserDetail -->
+
+    OSF User entities have the "users" `type`.
+
+        name               type               description
+        ----------------------------------------------------------------------------------------
+        full_name          string             full name of the user; used for display
+        given_name         string             given name of the user; for bibliographic citations
+        middle_names       string             middle name of user; for bibliographic citations
+        family_name        string             family name of user; for bibliographic citations
+        suffix             string             suffix of user's name for bibliographic citations
+        date_registered    iso8601 timestamp  timestamp when the user's account was created
+
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
+
+    <!--- Copied Query Params from UserList -->
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
+
+    + `profile_image_size=<Int>` -- Modifies `/links/profile_image_url` of the user entities so that it points to
+    the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
+
+    #This Request/Response
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = UserSerializer
+
+    view_category = 'logs'
+    view_name = 'log-added_contributors'
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        log = self.get_log()
+        added_contrib_ids = log.params.get('contributors')
+        if added_contrib_ids is None:
+            return []
+        added_users = User.find(Q('_id', 'in', added_contrib_ids))
+        return added_users
