@@ -87,6 +87,14 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/dashboard/', auth=self.user.auth)
         assert_in('Projects', res)  # Projects heading
 
+    def test_logged_in_index_route_renders_home_template(self):
+        res = self.app.get('/', auth=self.user.auth)
+        assert_in('Placeholder', res)  # Will change once home page populated
+
+    def test_logged_out_index_route_renders_landing_page(self):
+        res = self.app.get('/')
+        assert_in('Simplified Scholarly Collaboration', res)
+
     def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
         assert_not_in('OSF Storage', res)
