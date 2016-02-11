@@ -499,7 +499,7 @@ var quickSearchProject = {
                 ]),
                 m('div', {'class': 'row m-v-md'},
                     m('div', {'class': 'col-sm-1'}),
-                    m('div', {'class': 'col-sm-11'}, m('h4', 'You have no projects. Go here to create one.'))
+                    m('div', {'class': 'col-sm-11'}, m('h4', 'You have no projects. Go ', m('a', {href: '/dashboard'}, 'here'), ' to create one.'))
             )]
         );
         }
