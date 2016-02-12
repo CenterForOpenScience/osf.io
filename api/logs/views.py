@@ -1,11 +1,14 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 
-from website.models import NodeLog
 from modularodm import Q
 from framework.auth.core import User
-
 from framework.auth.oauth_scopes import CoreScopes
+
+from website.models import NodeLog, Node
+from api.nodes.permissions import (
+    ContributorOrPublic,
+)
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_user_auth, get_object_or_error
@@ -27,10 +30,27 @@ class LogMixin(object):
             raise NotFound(
                 detail='No log matching that log_id could be found.'
             )
+
+        self.check_log_permission(log)
         return log
 
+    def check_log_permission(self, log):
+        """
+        Cycles through nodes on log backrefs.  If user can view any of the nodes pertaining to the log, this means
+        the log itself can be viewed.
+        """
+        auth_user = get_user_auth(self.request)
+        log_nodes = []
 
-class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+        for node_id in log._backrefs['logged']['node']['logs']:
+            node = get_object_or_error(Node, node_id, display_name='node')
+            log_nodes.append(node)
+            if node.can_view(auth_user):
+                return
+        self.check_object_permissions(self.request, log_nodes[0])  # will raise 401 or 403, as appropriate
+
+
+class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixin):
     """List of nodes that a given log is associated with. *Read-only*.
 
     Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
@@ -85,6 +105,7 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic
     )
 
     required_read_scopes = [CoreScopes.NODE_LOG_READ]
@@ -104,7 +125,7 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         ]
 
 
-class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     """List of nodes that a given log is associated with. *Read-only*.
 
     Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
@@ -160,10 +181,11 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_LOG_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeLogSerializer
     view_category = 'logs'
@@ -171,13 +193,7 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
-        log = get_object_or_error(
-            NodeLog,
-            self.kwargs['log_id'],
-            display_name='log'
-        )
-        # May raise a permission denied
-        self.check_object_permissions(self.request, log)
+        log = self.get_log()
         return log
 
     # overrides RetrieveUpdateDestroyAPIView
@@ -185,11 +201,13 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         pass
 
 
-class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
-    """List of added contributors that a given log is associated with. *Read-only*.
+class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
+    """List of contributors that a given log is associated with. *Read-only*.
 
-    Paginated list of users that were added as contributors, associated with a log. Each resource contains the full
-    representation of the user, meaning additional requests to an individual user's detail view are not necessary.
+    Paginated list of users that were associated with a contributor log action. For example, if a log action was `contributor_added`,
+    the new contributors' names would be found at this endpoint. If the relevant log had nothing to do with contributors,
+    an empty list would be returned. Each resource contains the full representation of the user, meaning additional requests
+    to an individual user's detail view are not necessary.
 
     ##User Attributes
 
@@ -234,6 +252,7 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
@@ -242,13 +261,13 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     serializer_class = UserSerializer
 
     view_category = 'logs'
-    view_name = 'log-added_contributors'
+    view_name = 'log-contributors'
 
     # overrides ListAPIView
     def get_queryset(self):
         log = self.get_log()
-        added_contrib_ids = log.params.get('contributors')
-        if added_contrib_ids is None:
+        associated_contrib_ids = log.params.get('contributors')
+        if associated_contrib_ids is None:
             return []
-        added_users = User.find(Q('_id', 'in', added_contrib_ids))
-        return added_users
+        associated_users = User.find(Q('_id', 'in', associated_contrib_ids))
+        return associated_users
