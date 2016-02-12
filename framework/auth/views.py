@@ -160,6 +160,25 @@ def auth_logout(redirect_url=None):
     return resp
 
 
+def auth_email_logout(token, auth=None, **kwargs):
+    """Log out and delete cookie.
+    """
+    redirect_url = web_url_for('goodbye', _absolute=True)
+    user = User.load(kwargs['uid'])
+    campaign = request.args.get('campaign')
+    if campaign:
+        redirect_url = campaigns.campaign_url_for(campaign) + '?campaign=' + campaign
+        # user.system_tags.append({campaign: token})
+        # user.system_tags.append({'token': token})
+        user.system_tags.append({'token': token})
+        user.system_tags = []
+        user.save()
+    logout()
+    resp = redirect(redirect_url)
+    resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+    return resp
+
+
 @collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
     """View for email confirmation links.
@@ -168,23 +187,17 @@ def confirm_email_get(token, auth=None, **kwargs):
 
     methods: GET
     """
-    user = User.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
+    user = User.load(kwargs['uid'])
     is_initial_confirmation = not user.date_confirmed
-
     if user is None:
         raise HTTPError(http.NOT_FOUND)
-    redirect_url = request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
-    if 'reauth' in request.args:
-        cas_endpoint = cas.get_login_url(redirect_url)
-    else:
-        cas_endpoint = cas.get_logout_url(redirect_url)
-    resp = redirect(cas_endpoint)
-    resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+
     if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
         if not is_merge:
             # determine if the user registered through a campaign
             campaign = campaigns.campaign_for_user(user)
+            campaign = request.args.get('campaign')
             if campaign:
                 return redirect(
                     campaigns.campaign_url_for(campaign)
@@ -221,7 +234,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     user.save()
 
     return redirect(cas.get_login_url(
-        request.url,
+        web_url_for('auth_login'),
         auto=True,
         username=user.username,
         verification_key=user.verification_key

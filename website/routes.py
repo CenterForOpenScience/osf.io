@@ -368,11 +368,21 @@ def make_url_map(app):
         Rule(
             '/confirm/<uid>/<token>/',
             'get',
-            auth_views.confirm_email_get,
+            auth_views.auth_email_logout,
             # View will either redirect or display error message
             OsfWebRenderer('error.mako', render_mako_string)
         ),
 
+    # process_rules(app, [
+    #
+    #     Rule(
+    #         '/confirm/<uid>/<token>/',
+    #         'get',
+    #         auth_views.confirm_email_get,
+    #         # View will either redirect or display error message
+    #         OsfWebRenderer('error.mako', render_mako_string)
+    #     ),
+    #
         Rule(
             '/resetpassword/<verification_key>/',
             ['get', 'post'],

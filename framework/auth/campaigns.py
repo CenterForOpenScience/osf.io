@@ -14,7 +14,7 @@ CAMPAIGNS = ImmutableDict({
     },
     'merge_user': {
         'system_tag': 'merge_user_login',
-        'redirect_url': 'http://windows.fun:5000/login/',
+        'redirect_url': lambda: web_url_for('auth_login'),
         'confirmation_email_template': mails.CONFIRM_MERGE,
     },
 })

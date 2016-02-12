@@ -14,6 +14,16 @@
 </div>
 %endif
 
+%if campaign == "merge_user":
+<div class="text-center m-t-lg">
+    <h3>Add an email to your account </h3>
+    <hr>
+    <p>
+      Please login to the Open Science Framework or create a free account to continue.
+    </p>
+</div>
+%endif
+
 <div class="row m-t-xl">
     <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
         <form
@@ -65,6 +75,7 @@
             </div>
         </form>
     </div>
+    %if campaign != "merge_user":
     <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
         <form data-bind="submit: submit" class="form-horizontal">
             <h3 class="m-b-lg"> Create a free account </h3>
@@ -179,6 +190,7 @@
             </div>
         </form>
     </div>
+    %endif
 </div>
 
 </%def>

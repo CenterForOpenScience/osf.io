@@ -802,7 +802,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force)
-        return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
+        return "{0}confirm/{1}/{2}/{3}".format(base, self._primary_key, token, '?campaign=merge_user')
 
     def _get_unconfirmed_email_for_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
