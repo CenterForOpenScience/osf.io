@@ -295,4 +295,3 @@ def search_project_files():
     query = bleach.clean(request.args.get('q', ''), tags=[], strip=True)
     results = search.search_project_files(query, pid)
     return results
-
