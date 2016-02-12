@@ -437,6 +437,14 @@ class User(GuidStoredObject, AddonModelMixin):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    @property
+    def institutions_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/institutions/'
+
+    @property
+    def institutions_related_url(self):
+        return self.absolute_api_v2_url + 'institutions/'
+
     @classmethod
     def create_unregistered(cls, fullname, email=None):
         """Create a new unregistered user.
@@ -1358,6 +1366,13 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def has_inst_auth(self, inst):
         if inst in self.affiliated_institutions:
+            return True
+        return False
+
+    def remove_inst(self, inst_id):
+        inst = Institution.load(inst_id)
+        if inst:
+            self.affiliated_institutions.remove(inst)
             return True
         return False
 
