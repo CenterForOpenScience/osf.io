@@ -423,9 +423,9 @@ var QuickSearchProject = {
             return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
                 m('div', {'class': 'row node-styling', onclick: function(){{ctrl.nodeDirect(project);
                 }}}, [
-                    m('div', {'class': 'col-sm-7 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
+                    m('div', {'class': 'col-sm-6 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
                     m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
-                    m('div', {'class': 'col-sm-2 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
+                    m('div', {'class': 'col-sm-3 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
                 ])
             ));
         }
@@ -433,8 +433,8 @@ var QuickSearchProject = {
         function xsDropdown () {
             if (ctrl.loadingComplete()) {
                 return m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
-                    m('div', {'class': 'row node-sort-dropdown'}, [
-                        m('div', {'class': 'col-sm-12 p-v-xs, f-w-xl'},
+                    m('div. node-sort-dropdown.text-right', {'class': 'row'}, [
+                        m('div.f-w-xl', {'class': 'col-sm-12'},
                             m('span', ascending(), descending()),
                             m('label', [
                                 m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(dropdown){
@@ -469,9 +469,9 @@ var QuickSearchProject = {
 
                 m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
                     m('div.node-col-headers', {'class': 'row'}, [
-                        m('div.p-v-xs.f-w-xl', {'class': 'col-sm-7 col-md-6 col-lg-5'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
+                        m('div.p-v-xs.f-w-xl', {'class': 'col-sm-6 col-md-6 col-lg-5'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
                         m('div.f-w-xl.p-v-xs', {'class': 'col-sm-3 col-md-3 col-lg-4'}, 'Contributors'),
-                        m('div.f-w-xl.p-v-xs', {'class': 'col-sm-2 col-md-3 col-lg-3'}, 'Modified', m('span.sort-group', sortDateAsc(), sortDateDesc()))]
+                        m('div.f-w-xl.p-v-xs', {'class': 'col-sm-3 col-md-3 col-lg-3'}, 'Modified', m('span.sort-group', sortDateAsc(), sortDateDesc()))]
                     )
                 )),
 
