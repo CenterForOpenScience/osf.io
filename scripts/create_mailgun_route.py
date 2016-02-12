@@ -25,7 +25,7 @@ def main():
             data={"priority": 0,
                   "description": "Project Mailing Route",
                   "expression": "match_recipient('.*@{}')".format(SHORT_DOMAIN),
-                  "action": ["forward('{}api/v1/discussions/messages/')".format(DOMAIN), "stop()"]})
+                  "action": ["forward('{}api/v1/discussions/messages/')".format(DOMAIN)]})
     logger.info('Finished creating route')
 
 if __name__ == '__main__':
