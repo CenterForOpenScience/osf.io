@@ -780,7 +780,7 @@ class JSONAPISerializer(ser.Serializer):
         query_params_blacklist = ['page[size]', 'format']
         try:
             href = data.get_absolute_url()
-        except:
+        except AttributeError:
             representation = super(JSONAPISerializer, self).to_representation(data)
             return representation
         else:
