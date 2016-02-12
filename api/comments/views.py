@@ -25,7 +25,7 @@ from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from website.project.model import Comment
-from website.files.models import StoredFileNode
+from website.files.models import StoredFileNode, TrashedFileNode
 from website.files.models.dropbox import DropboxFile
 from website.util import waterbutler_api_url_for
 
@@ -47,6 +47,10 @@ class CommentMixin(object):
 
         # Deleted root targets still appear as tuples in the database and are included in
         # the above query, requiring an additional check
+        if isinstance(comment.root_target.referent, TrashedFileNode):
+            comment.root_target = None
+            comment.save()
+
         if comment.root_target is None:
             raise NotFound
 
