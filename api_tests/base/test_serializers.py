@@ -154,6 +154,15 @@ class TestApiBaseSerializers(ApiTestCase):
                 assert_in('count', link['meta'])
             else:
                 assert_not_in('count', link['meta'])
+
+    def test_error_when_requesting_related_counts_for_attribute_field(self):
+
+        res = self.app.get(self.url, params={'related_counts': 'title'}, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.json['errors'][0]['detail'], "Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got 'title'")
+
+
+
 class TestRelationshipField(DbTestCase):
 
     # We need a Serializer to test the Relationship field (needs context)
