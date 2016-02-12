@@ -12,6 +12,7 @@ from website.exceptions import NodeStateError
 from website.files.models.base import File
 from website.util import permissions as osf_permissions
 
+from api.nodes.utils import get_file_object
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
@@ -224,7 +225,7 @@ class NodeSerializer(JSONAPISerializer):
         for file_obj in commented_files:
             if obj.get_addon(file_obj.provider):
                 try:
-                    self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider, check_object_permissions=False)
+                    get_file_object(node=obj, path=file_obj.path, provider=file_obj.provider, request=self.context['request'])
                 except (exceptions.NotFound, exceptions.PermissionDenied):
                     continue
                 n_unread += Comment.find_n_unread(user, obj, page='files', root_id=file_obj._id)
