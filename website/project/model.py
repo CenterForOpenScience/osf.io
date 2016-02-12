@@ -266,7 +266,7 @@ class Comment(GuidStoredObject, SpamMixin):
                 if not exists:
                     Comment.update(Q('root_target', 'eq', file_obj.get_guid()), data={'root_target': None})
                     continue
-                n_unread += cls.find_n_unread(user, node, page=Comment.FILES, root_id=file_obj._id)
+                n_unread += cls.find_n_unread(user, node, page=Comment.FILES, root_id=file_obj.get_guid()._id)
         return n_unread
 
     @classmethod
@@ -317,8 +317,8 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': self.user._id,
             'comment': self._id,
         }
-        if isinstance(self.root_target, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
+        if isinstance(self.root_target.referent, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
         self.content = content
         self.modified = True
         if save:
@@ -341,8 +341,8 @@ class Comment(GuidStoredObject, SpamMixin):
             'comment': self._id,
         }
         self.is_deleted = True
-        if isinstance(self.root_target, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
+        if isinstance(self.root_target.referent, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
             self.node.commented_files[self.root_target._id] -= 1
             if self.node.commented_files[self.root_target._id] == 0:
                 del self.node.commented_files[self.root_target._id]
@@ -366,8 +366,8 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': self.user._id,
             'comment': self._id,
         }
-        if isinstance(self.root_target, StoredFileNode):
-            log_dict['file'] = {'name': self.root_target.name, 'url': self.get_comment_page_url()}
+        if isinstance(self.root_target.referent, StoredFileNode):
+            log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
             file_key = self.root_target._id
             self.node.commented_files[file_key] = self.node.commented_files.get(file_key, 0) + 1
         if save:
