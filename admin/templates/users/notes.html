@@ -1,12 +1,12 @@
 <div class="modal" id="notesModal" style="display: none;">
-<form class="well" method="post" action="{% url 'users:notes' %}">
+<form class="well" method="post" action="{% url 'users:notes' guid %}">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
         <h3>Notes for OSF User</h3>
     </div>
     <div class="modal-body">
         {% csrf_token %}
-        {{ notes_form }}
+        {{ form }}
     </div>
     <div class="modal-footer">
         <input class="btn btn-primary" type="submit" value="Save" />

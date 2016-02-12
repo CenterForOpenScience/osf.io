@@ -45,7 +45,6 @@ class GuidFormView(FormView):
         self.guid = None
         super(GuidFormView, self).__init__()
 
-
     def get_context_data(self, **kwargs):
         kwargs.setdefault('view', self)
         kwargs.setdefault('form', self.get_form())

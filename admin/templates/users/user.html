@@ -13,10 +13,12 @@
                class="btn btn-primary">
                 Associated spam
             </a>
-            <a href=""
-               class="btn btn-primary disabled">
+            <a href="{% url 'users:notes' user.id %}"
+               data-toggle="modal" data-target="#notesModal"
+               class="btn btn-primary">
                 User notes
             </a>
+            {% include 'users/notes.html' %}
             <a href=""
                class="btn btn-danger disabled">
                 Disable account

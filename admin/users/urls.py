@@ -7,5 +7,6 @@ urlpatterns = [
         name='search'),
     url(r'^id-(?P<guid>[a-z0-9]+)/$', views.UserView.as_view(),
         name='user'),
-    url(r'^notes/$', views.OSFUserFormView.as_view(), name='notes'),
+    url(r'^id-(?P<guid>[a-z0-9]+)/notes/$', views.OSFUserFormView.as_view(),
+        name='notes'),
 ]

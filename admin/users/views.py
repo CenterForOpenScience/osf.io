@@ -18,16 +18,24 @@ class UserFormView(GuidFormView):
 
 
 class OSFUserFormView(FormView):
-    template_name = 'users/user.html'
+    template_name = 'users/notes.html'
     form_class = OSFUserForm
 
+    def __init__(self):
+        self.guid = None
+        super(OSFUserFormView, self).__init__()
+
+    def get_context_data(self, **kwargs):
+        self.guid = self.kwargs.get('guid', None)
+        return super(OSFUserFormView, self).get_context_data(**kwargs)
+
     def form_valid(self, form):
-        print 'Here!'
+        self.guid = form.cleaned_data('guid').strip()
         super(OSFUserFormView, self).form_valid(form)
 
     @property
     def success_url(self):
-        return reverse_user(None)
+        return reverse_user(self.guid)
 
 
 class UserView(GuidView):
