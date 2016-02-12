@@ -5,7 +5,6 @@ import github3
 import cachecontrol
 from requests.adapters import HTTPAdapter
 
-from website.settings import DOMAIN
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError
 
