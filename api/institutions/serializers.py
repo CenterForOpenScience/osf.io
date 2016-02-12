@@ -20,6 +20,11 @@ class InstitutionSerializer(JSONAPISerializer):
         related_view_kwargs={'institution_id': '<pk>'},
     )
 
+    registrations = RelationshipField(
+        related_view='institutions:institution-registrations',
+        related_view_kwargs={'institution_id': '<pk>'}
+    )
+
     users = RelationshipField(
         related_view='institutions:institution-users',
         related_view_kwargs={'institution_id': '<pk>'}
