@@ -111,6 +111,14 @@
                 <input class="form-control" data-bind="value: academiaProfileID" placeholder="profileID"/>
                 </div>
             </div>
+            
+            <div class="form-group">
+                <label>Baidu Scholar</label>
+                <div class="input-group">
+                <span class="input-group-addon">http://xueshu.baidu.com/scholarID/</span>
+                <input class="form-control" data-bind="value: baiduScholar" placeholder="profileID"/>
+                </div>
+            </div>
 
             <div class="p-t-lg p-b-lg">
 
