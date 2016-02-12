@@ -4080,6 +4080,9 @@ class TestProjectCreation(OsfTestCase):
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
+    def tearDown(self):
+        super(TestProjectCreation, self).tearDown()
+
     def test_needs_title(self):
         res = self.app.post_json(self.url, {}, auth=self.creator.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -4147,27 +4150,42 @@ class TestProjectCreation(OsfTestCase):
 
     def test_create_component_add_contributors(self):
         url = web_url_for('project_new_node', pid=self.project._id)
-        post_data = {'title': 'New Component With Contributors Title',  'category': '', 'inheritContributors': 'true'}
-        request = self.app.post(url, post_data, auth=self.user1.auth)
+        post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
+        res = self.app.post(url, post_data, auth=self.user1.auth)
         self.project.reload()
         child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(self.user1, child.contributors)
         assert_in(self.user2, child.contributors)
-        # check redirect url to make sure its not going to pid/components
-        assert_in('/contributors/', request)
+        # check redirect url
+        assert_in('/contributors/', res.location)
+
+    def test_create_component_with_contributors_not_admin(self):
+        url = web_url_for('project_new_node', pid=self.project._id)
+        non_admin = AuthUserFactory()
+        self.project.add_contributor(non_admin, permissions=['read', 'write'])
+        self.project.save()
+        post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
+        res = self.app.post(url, post_data, auth=non_admin.auth)
+        self.project.reload()
+        child = self.project.nodes[0]
+        assert_equal(child.title, 'New Component With Contributors Title')
+        assert_not_in(self.user1, child.contributors)
+        assert_not_in(self.user2, child.contributors)
+        # check redirect url
+        assert_not_in('/contributors/', res.location)
 
     def test_create_component_add_no_contributors(self):
         url = web_url_for('project_new_node', pid=self.project._id)
-        post_data = {'title': 'New Component With Contributors Title',  'category': '', 'inheritContributors': ''}
-        request = self.app.post(url, post_data, auth=self.user1.auth)
+        post_data = {'title': 'New Component With Contributors Title', 'category': ''}
+        res = self.app.post(url, post_data, auth=self.user1.auth)
         self.project.reload()
         child = self.project.nodes[0]
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(self.user1, child.contributors)
         assert_not_in(self.user2, child.contributors)
-        # check redirect url to make sure its not going to pid/components
-        assert_not_in('/contributors/', request)
+        # check redirect url
+        assert_not_in('/contributors/', res.location)
 
     def test_new_project_returns_serialized_node_data(self):
         payload = {

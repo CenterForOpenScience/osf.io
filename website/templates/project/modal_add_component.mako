@@ -24,10 +24,10 @@
                     </div>
                     %if (len(node['contributors']) > 1):
                         <div class="form-group">
-                            <label><input id="inheritContributors"
-                                          name="inheritContributors"
-                                          value="true"
-                                          type="checkbox"/> Add Contributors from ${node['title']}</label>
+                            <label class="f-w-md"><input id="inherit_contributors"
+                                          name="inherit_contributors"
+                                          value="True"
+                                          type="checkbox"/> Add contributors from <b>${node['title']}</b></label>
                         </div>
                     %endif
                 </div><!-- end modal-body -->

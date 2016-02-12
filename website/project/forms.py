@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from framework.forms import Form, TextField, validators
+from framework.forms import Form, TextField, BooleanField, validators
 
 ###############################################################################
 # Forms
@@ -14,4 +14,4 @@ class NewNodeForm(Form):
     ])
     description = TextField('Description')
     category = TextField('Category')
-    inheritContributors = TextField('Inherit')
+    inherit_contributors = BooleanField('Inherit')
