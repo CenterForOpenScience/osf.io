@@ -362,7 +362,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 )
         return field_counts_requested
 
-
     def get_meta_information(self, meta_data, value):
         """
         For retrieving meta values, otherwise returns {}
