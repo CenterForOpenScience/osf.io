@@ -21,13 +21,12 @@ var activateToggleBox = function () {
 };
 
 $(document).ready(function() {
-    var self = this;
-    self.campaign = $('#campaign').val();
-    if (self.campaign === 'institution'){
+    var campaign = $('#campaign').val();
+    if (campaign === 'institution'){
         new InstitutionSignIn('#inst');
     } else {
         new LogInForm.SignIn('#logInForm');
-        new SignUp('#signUpScope', registerUrl, $('#campaign').val());
+        new SignUp('#signUpScope', registerUrl, campaign);
     }
 });
 

@@ -121,10 +121,10 @@ class UserInstitutionsRelationshipSerializer(ser.Serializer):
                         'html': 'get_related_url'})
 
     def get_self_url(self, obj):
-        return obj['self'].institutions_self_url
+        return obj['self'].absolute_api_v2_url + 'relationships/institutions/'
 
     def get_related_url(self, obj):
-        return obj['self'].institutions_related_url
+        return obj['self'].absolute_api_v2_url + 'institutions/'
 
     class Meta:
         type_ = 'institutions'
