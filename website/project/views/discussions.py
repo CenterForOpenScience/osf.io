@@ -20,6 +20,7 @@ from website.project.mailing_list import (
     delete_list,
     update_subscription
 )
+from website.project.model import MailingListEventLog
 from website.util.permissions import ADMIN
 from website.models import Node
 
@@ -117,19 +118,27 @@ def route_message(**kwargs):
     }
 
     if not sender:
-        reason = 'no_user'
+        reason = MailingListEventLog.UNAUTHORIZED
     elif not node:
-        reason = 'node_dne'
+        reason = MailingListEventLog.NOT_FOUND
     elif node.is_deleted:
-        reason = 'node_deleted'
+        reason = MailingListEventLog.DELETED
     elif sender not in node.contributors:
-        reason = 'no_access' if node.is_public else 'private_no_access'
+        reason = MailingListEventLog.FORBIDDEN
     elif not node.mailing_enabled:
-        reason = 'discussions_disabled'
+        reason = MailingListEventLog.DISABLED
     else:
         reason = ''
 
     if reason:
         mails.send_mail(reason=reason, **mail_params)
 
-    # Any logging code should go here, since by now we know the email was sent
+    # Create a log of this mailing event
+    reason = reason if reason else MailingListEventLog.OK
+    MailingListEventLog.create_from_event(
+        content=message,
+        status=reason,
+        node=node,
+        email=sender_email,
+        user=sender,
+    )
