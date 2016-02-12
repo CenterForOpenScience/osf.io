@@ -95,8 +95,7 @@ def _render_nodes(nodes, auth=None, show_path=False):
     return ret
 
 
-@collect_auth
-def index(auth):
+def index():
     return {}
 
 
