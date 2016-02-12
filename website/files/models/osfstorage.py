@@ -7,7 +7,6 @@ from modularodm import Q
 from framework.auth import Auth
 from website.files import exceptions
 from website.files.models.base import File, Folder, FileNode, FileVersion
-from website.project.model import NodeLog
 
 
 __all__ = ('OsfStorageFile', 'OsfStorageFolder', 'OsfStorageFileNode')
@@ -100,7 +99,7 @@ class OsfStorageFileNode(FileNode):
             auth = Auth(user=self.node.creator)
 
             # is checkout vs is checkin
-            action = [NodeLog.CHECKED_IN, NodeLog.CHECKED_OUT][self.is_checked_out]
+            action = ['checked_in', 'checked_out'][self.is_checked_out]
 
             # Log the action
             self.node.add_log(

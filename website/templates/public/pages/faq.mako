@@ -25,7 +25,8 @@
                 <h1 class="text-center">Frequently Asked Questions</h1>
             </div>
 
-            <div id="about" class="anchor row">
+            <div>
+            <span id="about" class="anchor"></span>
                 <h2 class="text-center">About</h2>
                     <h4 class="m-t-lg f-w-lg">How much does the OSF service cost?</h4>
                         <p>It's free!</p>
@@ -37,7 +38,7 @@
                         <p>Data stored on the OSF is backed by a $250,000 preservation fund that will provide for persistence of your data, even if the Center for Open Science runs out of funding. The code base for the OSF is entirely <a href="https://github.com/CenterForOpenScience/osf.io">open source</a>, which enables other groups to continue maintaining and expanding it if we aren’t able to.</p>
 
                     <h4 class="m-t-lg f-w-lg">How will the OSF be useful to my research?</h4>
-                        <p>The OSF integrates with the scientist's daily workflow. The OSF helps document and archive study designs, materials, and data. The OSF facilitates sharing of materials and data within a laboratory or across laboratories. The OSF also facilitates transparency of laboratory research and provides a network design that details and credits individual contributions for all aspects of the research process. To see how it works, watch our short <a href="/getting-started">Getting Started</a> videos, see the <a href="/4znZP/wiki/home">OSF Features</a> page, or see how other scientists <a href="/svje2/">use the OSF.</a></p>
+                        <p>The OSF integrates with the scientist's daily workflow. The OSF helps document and archive study designs, materials, and data. The OSF facilitates sharing of materials and data within a laboratory or across laboratories. The OSF also facilitates transparency of laboratory research and provides a network design that details and credits individual contributions for all aspects of the research process. To see how it works, watch our short <a href="/getting-started">Getting Started</a> videos, see the <a href="https://osf.io/4znZP/wiki/home">OSF Features</a> page, or see how other scientists <a href="https://osf.io/svje2/">use the OSF.</a></p>
 
                     <h4 class="m-t-lg f-w-lg">How can I help develop the OSF?</h4>
                         <p>If you are a developer, check out the source code for the OSF <a href="https://github.com/CenterForOpenScience/osf.io">on GitHub</a>.
@@ -52,7 +53,8 @@
                     <h4 class="m-t-lg f-w-lg">How can I contact the OSF team if I have a question that the FAQ or Getting Started pages don’t answer?</h4>
                         <p>Send us an <a href="mailto:support@osf.io">email</a> and we'll be happy to help you.</p>
             </div>
-            <div id="using" class="anchor row">
+            <div>
+            <span id="using" class="anchor"></span>
                 <h2 class="text-center">Using the OSF</h2>
 
                     <h4 class="m-t-lg f-w-lg">How can I get started on using the OSF?</h4>
@@ -76,14 +78,15 @@
                         <p>Registering is an optional feature of the OSF.</p>
 
                     <h4 class="m-t-lg f-w-lg">What is the cap on data per user?</h4>
-                        <p>There is a limit on the size of individual files uploaded to the OSF. This limit is 128 MB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</p>
+                    <p>There is a limit on the size of individual files uploaded to the OSF. This limit is 5 GB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</p>
 
                     <h4 class="m-t-lg f-w-lg">How do I get a DOI or ARK for my project?</h4>
                         <p>DOIs and ARKs are available for <b>public registrations</b> of projects. To get a DOI or ARK for your project, first create a registration of your project, and make sure the registration is public. Then click the "Create DOI / ARK" link, located in the block of text below the project title. A DOI and ARK will be automatically created. </p>
 
             </div>
 
-            <div id="security" class="anchor row">
+            <div>
+            <span id="security" class="anchor"></span>
                 <h2 class="text-center">Privacy and security</h2>
                     <h4 class="m-t-lg f-w-lg">What if I don't want to make anything available publicly in the OSF?</h4>
                         <p>
@@ -125,7 +128,8 @@
 
             </div>
 
-            <div id="common" class="anchor row">
+            <div>
+            <span id="common" class="anchor"></span>
                 <h2 class="text-center">Common issues</h2>
                     <h4 class="m-t-lg f-w-lg">What do I do if I lost my email confirmation for OSF registration, or I never received it?</h4>
                         <p>Log into the OSF with the email address and password of the account you created, and there will be a link to resend the confirmation email.</p>

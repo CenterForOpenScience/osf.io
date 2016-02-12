@@ -71,6 +71,8 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
             var columns = [];
             var id = item.data.node.id;
             var nodesStateLocal = ko.toJS(nodesState());
+            //this lets treebeard know when changes come from the knockout side (select all or select none)
+            item.data.node.is_public = nodesStateLocal[id].public;
             columns.push(
                 {
                     data : 'action',

@@ -576,10 +576,10 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_bulk_creates_pointers_limits(self):
-        payload = {'data': [self.public_payload['data'][0]] * 11}
+        payload = {'data': [self.public_payload['data'][0]] * 101}
         res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
         res = self.app.get(self.public_url)
@@ -801,10 +801,10 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_bulk_delete_pointer_limits(self):
-        res = self.app.delete_json_api(self.public_url, {'data': [self.public_payload['data'][0]] * 11},
+        res = self.app.delete_json_api(self.public_url, {'data': [self.public_payload['data'][0]] * 101},
                                        auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_dict_inside_data(self):

@@ -527,7 +527,7 @@ function OBUploaderViewModel(params) {
         maxFiles: 9001,
         uploadMultiple: false,
         //in mib
-        maxFilesize: 128,
+        maxFilesize: 5 * 1024, // 5 GB
 
         acceptDirectories: false,
 

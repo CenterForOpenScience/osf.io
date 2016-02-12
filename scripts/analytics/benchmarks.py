@@ -66,9 +66,12 @@ def count_user_nodes(users=None):
     users = users or get_active_users()
     return [
         len(
-            user.node__contributed.find(
-                Q('is_deleted', 'eq', False) &
-                Q('is_folder', 'ne', True)
+            Node.find_for_user(
+                user,
+                (
+                    Q('is_deleted', 'eq', False) &
+                    Q('is_folder', 'ne', True)
+                )
             )
         )
         for user in users
