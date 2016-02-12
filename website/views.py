@@ -19,7 +19,6 @@ from framework.forms import utils as form_utils
 from framework.auth.forms import RegistrationForm
 from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
-from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
