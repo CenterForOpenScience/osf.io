@@ -50,9 +50,10 @@ var ProjectViewModel = function(data) {
 
     self.fetchInstitutions = function() {
         if (data.node.institution) {
+            var url = window.contextVars.apiV2Prefix + 'nodes/' + self._id + '/institution/';
             return $osf.ajaxJSON(
                 'GET',
-                window.contextVars.apiV2Prefix + 'nodes/' + self._id + '/institution/',
+                url,
                 {isCors: true}
             ).done(function (response) {
                 self.instLogoPath(response.data.attributes.logo_path);

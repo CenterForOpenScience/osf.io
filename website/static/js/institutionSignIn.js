@@ -2,6 +2,7 @@
 var ko = require('knockout');
 
 var $osf = require('js/osfHelpers');
+var Raven = require('raven-js');
 
 var ViewModel = function() {
     var self = this;
@@ -9,9 +10,10 @@ var ViewModel = function() {
     self.selectedInst = ko.observable();
     self.insts = {};
     self.fetchInstitutions = function() {
+        var url = window.contextVars.apiV2Prefix + 'institutions/';
         return $osf.ajaxJSON(
             'GET',
-            window.contextVars.apiV2Prefix + 'institutions/',
+            url,
             {
                 isCors: true
             }
