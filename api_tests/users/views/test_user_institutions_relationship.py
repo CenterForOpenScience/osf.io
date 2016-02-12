@@ -26,8 +26,8 @@ class TestUserInstititutionRelationship(ApiTestCase):
 
         assert_equal(res.status_code, 200)
 
-        assert_in(self.user.institutions_self_url, res.json['links']['self'])
-        assert_in(self.user.institutions_related_url, res.json['links']['html'])
+        assert_in(self.user.absolute_api_v2_url + 'relationships/institutions/', res.json['links']['self'])
+        assert_in(self.user.absolute_api_v2_url + 'institutions/', res.json['links']['html'])
 
         ids = [val['id'] for val in res.json['data']]
         assert_in(self.institution1._id, ids)
