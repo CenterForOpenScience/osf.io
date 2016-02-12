@@ -50,13 +50,15 @@ class CommentMixin(object):
         if comment.root_target is None:
             raise NotFound
 
-        if isinstance(comment.root_target, StoredFileNode):
+        if isinstance(comment.root_target.referent, StoredFileNode):
             root_target = comment.root_target
-            if root_target.provider == 'osfstorage':
+            referent = root_target.referent
+
+            if referent.provider == 'osfstorage':
                 try:
                     StoredFileNode.find(
                         Q('node', 'eq', comment.node._id) &
-                        Q('_id', 'eq', root_target._id) &
+                        Q('_id', 'eq', referent._id) &
                         Q('is_file', 'eq', True)
                     )
                 except NoResultsFound:
@@ -64,9 +66,9 @@ class CommentMixin(object):
                     del comment.node.commented_files[root_target._id]
                     raise NotFound
             else:
-                if root_target.provider == 'dropbox':
-                    root_target = DropboxFile.load(comment.root_target._id)
-                url = waterbutler_api_url_for(comment.node._id, root_target.provider, root_target.path, meta=True)
+                if referent.provider == 'dropbox':
+                    referent = DropboxFile.load(referent._id)
+                url = waterbutler_api_url_for(comment.node._id, referent.provider, referent.path, meta=True)
                 waterbutler_request = requests.get(
                     url,
                     cookies=self.request.COOKIES,
