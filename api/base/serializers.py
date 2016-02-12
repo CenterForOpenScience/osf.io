@@ -793,6 +793,8 @@ class JSONAPISerializer(ser.Serializer):
                         pass
                 query_params.update(dict(format='jsonapi'))
                 return '<esi:include src="{}?{}"/>'.format(href, query_params.urlencode())
+        # failsafe, let python do it if something bad happened in the ESI construction
+        return super(JSONAPISerializer, self).to_representation(data)
 
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
