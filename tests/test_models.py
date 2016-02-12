@@ -2562,7 +2562,7 @@ class TestProject(OsfTestCase):
         self.project.save()
         # The user is removed
         self.project.remove_contributor(
-            auth=self.consolidate_auth,
+            auth=self.auth,
             contributor=user2,
             save=True
         )
