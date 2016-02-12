@@ -21,7 +21,7 @@ var activateToggleBox = function () {
 };
 
 $(document).ready(function() {
-    var campaign = $('#campaign').val();
+    var campaign = window.contextVars.campaign;
     if (campaign === 'institution'){
         new InstitutionSignIn('#inst');
     } else {

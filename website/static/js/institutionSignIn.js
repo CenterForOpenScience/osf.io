@@ -16,11 +16,11 @@ var ViewModel = function() {
                 isCors: true
             }
         ).done(function (response) {
-            for (var i = 0; i < response.data.length; i++) {
-                var name = response.data[i].attributes.name;
+            response.data.map(function(item){
+                var name = item.attributes.name;
                 self.instNames.push(name);
-                self.insts[name] = response.data[i].attributes.auth_url;
-            }
+                self.insts[name] = item.attributes.auth_url;
+            });
         }).fail(function (xhr, status, error) {
             Raven.captureMessage('Unable to fetch institutions', {
                 url: url,

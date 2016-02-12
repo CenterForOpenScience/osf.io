@@ -1362,11 +1362,11 @@ class User(GuidStoredObject, AddonModelMixin):
         return False
 
     def remove_institution(self, inst_id):
-        inst = Institution.load(inst_id)
-        if inst:
-            self.affiliated_institutions.remove(inst)
-            return True
-        return False
+        try:
+            self.affiliated_institutions.remove(inst_id)
+        except ValueError:
+            return False
+        return True
 
     affiliated_institutions = fields.ForeignField('institution', list=True)
 

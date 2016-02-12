@@ -42,7 +42,6 @@
                 <div class="text-center m-t-lg">
                     <p>To login normally click <a href="/login/">here</a>.</p>
                 </div>
-                <input type="hidden" id="campaign" value="${campaign or ''}" />
             </div>
         </div>
     </div>
@@ -206,7 +205,6 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
-                    <input type="hidden" id="campaign" value="${campaign or ''}" />
                     <button type="submit" class="btn pull-right btn-success ">Create account</button>
                 </div>
             </div>
@@ -220,6 +218,11 @@
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            'campaign': ${campaign or '' | sjson, n}
+        });
+    </script>
 </%def>
 
 <%def name="stylesheets()">
