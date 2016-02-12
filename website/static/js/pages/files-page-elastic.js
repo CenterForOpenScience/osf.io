@@ -58,6 +58,9 @@ var fileFilter = function(tb){
         if (!tb.visibleTop) {
             index = 0;
         }
+        $.getJSON('api/v2/project_files', {'q': filter, 'pid': tb.flatData[0].row.nodeID}).done(
+            function(results){}
+        )
         var response = queryElasticSearch(filter, tb.flatData[0].row.nodeID);
         response.done(function(paths){showResults(paths, tb);});
     }
@@ -87,7 +90,42 @@ $(document).ready(function(){
             divID: 'treeGrid',
             filesData: data.data,
             xhrconfig: $osf.setXHRAuthorization,
-            filterTemplate: filterTemplate,
+            onfilter: function(){
+                var showResults = function(paths, tb){
+                    tb.visibleIndexes = [];
+                    for (var i=0; i < tb.flatData.length; i++){
+                        var element = tb.flatData[i];
+                        var item = tb.find(element.id);
+                        if (tb.rowFilterResult(item)) {
+                            tb.visibleIndexes.push(i);
+                        }
+                        else if (element.row.kind === 'file'){
+                            var path = element.row.path.replace('/', '');
+                            if (paths.indexOf(path) !== -1){
+                                tb.visibleIndexes.push(i);
+                            }
+                        }
+                    }
+                    tb.refreshRange(0);
+                    m.redraw(true);
+                };
+
+                var queryElasticSearch = function(query, node_id){
+                    var data = {'q': query, 'pid': node_id};
+                    var response = $.getJSON('/api/v1/project_files', data);
+                    return response;
+                };
+
+                var tb = this;
+                var query = this.filterText;
+                var node_id = tb.flatData[0].row.nodeID;
+                console.log(query);
+                var response = queryElasticSearch(query, node_id).done(
+                    function(results){showResults(results, tb);}
+                )
+
+
+            }
         });
     });
 });
