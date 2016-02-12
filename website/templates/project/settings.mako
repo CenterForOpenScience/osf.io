@@ -308,6 +308,7 @@
                     </div>
                     <div class="panel-body">
                         % if not node['institution']:
+                            <!-- ko if: availableInstitutions -->
                             <div class="help-block">
                                 Projects affiliated with institutions will show some institutional branding (such as logos) and if public, will be discoverable on OSF institutional landing pages.
 
@@ -324,6 +325,17 @@
                                 </div>
                             </div>
                             <button data-bind="click: submitInst" class="btn btn-success">Affiliate my project</button>
+                            <!-- /ko -->
+                            <!-- ko ifnot: availableInstitutions-->
+                            <div class="help-block">
+                                Projects can be affiliated with institutions that have created OSF for Institution accounts. This allows:
+                                <ul>
+                                    <li>institutional logos to be displayed on public projects</li>
+                                    <li>public projects to be discoverable on specific institutional landing pages</li>
+                                    <li>single-sign on to the OSF with institutional credentials</li>
+                                </ul>
+                            </div>
+                            <!-- /ko -->
                         % endif
                         % if node['institution']:
                             <div class="help-block">Your project is currently affiliated with: </div>

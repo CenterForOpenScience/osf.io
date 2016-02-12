@@ -10,7 +10,7 @@ var ViewModel = function() {
     var self = this;
     self.primaryInstitution = ko.observable('None');
     self.institutionHref = ko.observable('');
-    self.availableInstitutions = ko.observable();
+    self.availableInstitutions = ko.observable(false);
     self.selectedInstitution = ko.observable();
 
     self.fetchUserInstitutions = function() {
@@ -20,7 +20,9 @@ var ViewModel = function() {
             url,
             {isCors: true}
         ).done(function (response) {
-            self.availableInstitutions(response.data.embeds.institutions.data);
+            if (response.data.embeds.institutions.data.length){
+                self.availableInstitutions(response.data.embeds.institutions.data);
+            }
         }).fail(function (xhr, status, error) {
             Raven.captureMessage('Unable to fetch user wiith embedded institutions', {
                 url: url,
