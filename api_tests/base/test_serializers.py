@@ -139,6 +139,21 @@ class TestApiBaseSerializers(ApiTestCase):
             else:
                 assert_not_in('count', link['meta'])
 
+    def test_counts_included_in_children_and_contributors_fields_with_field_csv_related_counts_query_param(self):
+
+        res = self.app.get(self.url, params={'related_counts': 'children,contributors'})
+        relationships = res.json['data']['relationships']
+        for key, relation in relationships.iteritems():
+            if relation == {}:
+                continue
+            field = NodeSerializer._declared_fields[key]
+            if getattr(field, 'field', None):
+                field = field.field
+            link = relation['links'].values()[0]
+            if (field.related_meta or {}).get('count') and key == 'children' or key == 'contributors':
+                assert_in('count', link['meta'])
+            else:
+                assert_not_in('count', link['meta'])
 class TestRelationshipField(DbTestCase):
 
     # We need a Serializer to test the Relationship field (needs context)
