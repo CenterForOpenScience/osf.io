@@ -1054,11 +1054,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def mailing_params(self):
+        primary_emails = [user.email for user in self.contributors]
+        secondary_emails = []
+        for user in self.contributors:
+            for email in user.emails:
+                if email not in primary_emails:
+                    secondary_emails.append(email)
+
         return {
             'node_id': self._id,
             'url': self.absolute_url,
-            'contributors': [user.email for user in self.contributors],
-            'unsubs': [user.email for user in self.mailing_unsubs]
+            'contributors': primary_emails,
+            'unsubs': [user.email for user in self.mailing_unsubs] + secondary_emails
         }
 
     def nodes_active(self):

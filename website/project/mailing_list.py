@@ -270,23 +270,24 @@ def celery_update_email(*args, **kwargs):
     update_email(*args, **kwargs)
 
 
-@queued_task
-@app.task
-def send_message(node_id, node_title, message):
-    """ Sends a message from the node through the given mailing list
-    :param node_id: The id of the node in question
-    :param node_title: The title of the node in question
-    :param message: Dictionary with subject and text of the email to be sent
-    """
-    res = requests.post(
-        'https://api.mailgun.net/v3/{}/messages'.format(settings.MAILGUN_DOMAIN),
-        auth=('api', settings.MAILGUN_API_KEY),
-        data={'from': '{0} Mailing List <{1}>'.format(node_title, address(node_id)),
-              'to': address(node_id),
-              'subject': message['subject'],
-              'html': '<html>{}</html>'.format(message['text'])})
-    if res.status_code != 200:
-        raise HTTPError(res.status_code)
+# TODO: Remove probably
+# @queued_task
+# @app.task
+# def send_message(node_id, user_fullname, message):
+#     """ Sends a message from the node through the given mailing list
+#     :param node_id: The id of the node in question
+#     :param user_fullname: The user sending the message
+#     :param message: Dictionary with subject and text of the email to be sent
+#     """
+#     res = requests.post(
+#         'https://api.mailgun.net/v3/{}/messages'.format(settings.MAILGUN_DOMAIN),
+#         auth=('api', settings.MAILGUN_API_KEY),
+#         data={'from': '{0} <{1}>'.format(user_fullname, address(node_id)),
+#               'to': address(node_id),
+#               'subject': message['subject'],
+#               'html': '<html>{}</html>'.format(message['text'])})
+#     if res.status_code != 200:
+#         raise HTTPError(res.status_code)
 
 
 ###############################################################################
