@@ -6,10 +6,9 @@
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
-        <div class="row">
-            <h3>User details</h3>
-        </div>
         <div class="row"> {# Action and link buttons #}
+            <a href="{% url 'users:search' %}"
+               class="btn btn-primary"><i class="fa fa-search"></i> </a>
             <a href="{% url 'spam:user_spam' user.id %}"
                class="btn btn-primary">
                 Associated spam
@@ -23,7 +22,9 @@
                 Disable account
             </a>
         </div>
-
+        <div class="row">
+            <h3>User details</h3>
+        </div>
         <div class="row">
             <table class="table table-striped">
             <thead>
@@ -71,7 +72,7 @@
                 <tr>
                     <td>Nodes</td>
                     <td>
-                        <table class="table table-striped table-hover table-responsive">
+                        <table class="table table-hover table-bordered">
                         <thead>
                             <tr>
                                 <th>GUID</th>

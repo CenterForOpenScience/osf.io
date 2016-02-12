@@ -2,27 +2,19 @@
 {% load static %}
 {% load node_extras %}
 {% block title %}
-    <title>User Search</title>
+    <title>Node Search</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <form action="{% url 'users:search' %}" method="post">
+            <form action="{% url 'nodes:search' %}" method="post">
                 {% csrf_token %}
                 {% if form.errors %}
                     <div class="alert alert-danger">{{ form.errors }}</div>
                 {% endif %}
                 <div class="form-group">
-                    <label for="guid">User GUID:</label>
+                    <label for="guid">Node GUID:</label>
                     {{ form.guid }}
-                </div>
-                <div class="form-group">
-                    <label for="name">User name:</label>
-                    <input type="text" id="name" disabled/>
-                </div>
-                <div class="form-group">
-                    <label for="email">User email:</label>
-                    <input type="text" id="email" disabled/>
                 </div>
                 <input type="submit" class="btn btn-primary" value="Submit" />
             </form>

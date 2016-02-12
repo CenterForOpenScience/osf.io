@@ -8,120 +8,104 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <form action="{% url 'nodes:node_blank' %}" method="post">
-                {% csrf_token %}
-                {% if form.errors %}
-                    <div class="alert alert-danger">{{ form.errors }}</div>
-                {% endif %}
-                <div class="form-group">
-                    <label for="guid">Node GUID:</label>
-                    {{ form.guid }}
-                </div>
-                <input type="submit" class="btn btn-primary" value="Submit" />
-            </form>
+            <a href="{% url 'nodes:search' %}"
+               class="btn btn-primary"><i class="fa fa-search"></i> </a>
         </div>
+        <div class="row">
+            <h3>Node details</h3>
+        </div>
+        <div class="row">
+        <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Field</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>GUID</td>
+                <td>{{ node.id }}</td>
+            </tr>
+            <tr>
+                <td>Title</td>
+                <td>{{ node.title }}</td>
+            </tr>
+            <tr>
+                <td>Public</td>
+                <td>{{ node.public }}</td>
+            </tr>
+            <tr>
+                <td>Parent</td>
+                <td>
+                    {% if not node.parent %}
+                        {{ node.parent }}
+                    {% else %}
+                    <a href="{{ node.parent | reverse_node }}">
+                        {{ node.parent }}
+                    </a>
+                    {% endif %}
+                </td>
 
-        <hr>
-
-        {% if guid_object %}
-        {% with node=guid_object %}
-            <div class="row">
-                <h3>Node information</h3>
-            </div>
-            <div class="row">
-            <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Field</th>
-                    <th>Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>GUID</td>
-                    <td>{{ node.id }}</td>
-                </tr>
-                <tr>
-                    <td>Title</td>
-                    <td>{{ node.title }}</td>
-                </tr>
-                <tr>
-                    <td>Public</td>
-                    <td>{{ node.public }}</td>
-                </tr>
-                <tr>
-                    <td>Parent</td>
-                    <td>
-                        {% if not node.parent %}
-                            {{ node.parent }}
-                        {% else %}
-                        <a href="{{ node.parent | reverse_node }}">
-                            {{ node.parent }}
-                        </a>
-                        {% endif %}
-                    </td>
-
-                </tr>
-                <tr>
-                    <td>Contributors</td>
-                    <td>
-                        <table class="table table-bordered table-hover">
-                        <thead>
-                            <tr>
-                                <td>User id</td>
-                                <td>Name</td>
-                                <td>Permissions</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for user in node.contributors %}
-                            <tr>
-                                <td>
-                                    <a href="{{ user.id | reverse_user }}">
-                                        {{ user.id }}
-                                    </a>
-                                </td>
-                                <td>{{ user.name }}</td>
-                                <td>{{ user.permission|capfirst }}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Child nodes</td>
-                    <td>
-                        <table class="table table-bordered table-hover">
-                        <thead>
-                            <tr>
-                                <td>Node id</td>
-                                <td>Title</td>
-                                <td>Public</td>
-                                <td># of Contributors</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for child in node.children %}
-                            <tr>
-                                <td>
-                                    <a href="{{ child.id | reverse_node }}">
-                                        {{ child.id }}
-                                    </a>
-                                </td>
-                                <td>{{ child.title }}</td>
-                                <td>{{ child.public }}</td>
-                                <td>{{ child.number_contributors }}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                        </table>
-                    </td>
-                </tr>
-            </tbody>
-            </table>
-            </div>
-        {% endwith %}
-        {% endif %}
+            </tr>
+            <tr>
+                <td>Contributors</td>
+                <td>
+                    <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <td>User id</td>
+                            <td>Name</td>
+                            <td>Permissions</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for user in node.contributors %}
+                        <tr>
+                            <td>
+                                <a href="{{ user.id | reverse_user }}">
+                                    {{ user.id }}
+                                </a>
+                            </td>
+                            <td>{{ user.name }}</td>
+                            <td>{{ user.permission|capfirst }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>Child nodes</td>
+                <td>
+                    <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <td>Node id</td>
+                            <td>Title</td>
+                            <td>Public</td>
+                            <td># of Contributors</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for child in node.children %}
+                        <tr>
+                            <td>
+                                <a href="{{ child.id | reverse_node }}">
+                                    {{ child.id }}
+                                </a>
+                            </td>
+                            <td>{{ child.title }}</td>
+                            <td>{{ child.public }}</td>
+                            <td>{{ child.number_contributors }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+        </table>
+        </div>
     </div>
 {% endblock content %}

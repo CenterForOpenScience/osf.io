@@ -78,7 +78,7 @@
           <!-- Sidebar Menu -->
           <ul class="sidebar-menu">
             <li class="header">Menu</li>
-            <li><a href="{% url 'nodes:node_blank' %}"><i class='fa fa-link'></i><span> OSF Nodes</span> </a></li>
+            <li><a href="{% url 'nodes:search' %}"><i class='fa fa-link'></i><span> OSF Nodes</span> </a></li>
             <li><a href="{% url 'users:search' %}"><i class='fa fa-link'></i> <span>OSF Users</span></a></li>
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
             {% if 'prereg_group' in request.user.group_names %}
