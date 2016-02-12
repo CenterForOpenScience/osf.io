@@ -12,6 +12,7 @@ class InstitutionSerializer(JSONAPISerializer):
     name = ser.CharField(required=False)
     id = ser.CharField(required=False, source='_id')
     logo_path = ser.CharField()
+    auth_url = ser.CharField()
     links = LinksField({'self': 'get_api_url',
                         'html': 'get_absolute_url', })
 

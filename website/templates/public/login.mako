@@ -14,7 +14,42 @@
 </div>
 %endif
 
+%if campaign == "institution" and show_institutions:
+<div class="text-center m-t-lg">
+    <h3>OSF for Institutions </h3>
+    <hr>
+    <p>
+      If your institution has partnered with the Open Science Framework, please
+        select its name below and sign in with your institutional credentials. This action
+        will create an OSF account (if you don’t already have one) and affiliate your account
+        with that institution.
+    </p>
+</div>
+%endif
 <div class="row m-t-xl">
+    %if campaign == "institution" and show_institutions:
+    <div class="col-sm-6 col-sm-offset-3">
+        <h3 class="m-b-lg"> Login Through Institution</h3>
+        <div id="inst">
+            <div class="form-group">
+                <label for="selected_inst" class="control-label">Selected Institution</label>
+                <select id="selected_inst" class="form-control" data-bind="options: inst_names"></select>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                    <button data-bind="click: instLogin" class="btn btn-success pull-right">Sign in</button>
+                </div>
+            </div>
+            <div class="form-group" style="padding-top: 15px">
+                <div class="text-center m-t-lg">
+                    <p>To login normally click <a href="/login/">here</a>.</p>
+                </div>
+                <input type="hidden" id="campaign" value="${campaign or ''}" />
+            </div>
+        </div>
+    </div>
+    %endif
+    %if campaign != "institution" or not show_institutions:
     <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
         <form
             id="logInForm"
@@ -179,6 +214,7 @@
             </div>
         </form>
     </div>
+    %endif
 </div>
 
 </%def>
