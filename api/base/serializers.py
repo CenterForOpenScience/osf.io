@@ -348,7 +348,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         Processes related_counts parameter.
 
         Can either be a True/False value for fetching counts on all fields, or a comma-separated list for specifying
-        individual fields.  Ensures specified fields are allowed.
+        individual fields.  Ensures field for which we are requesting counts is a relationship field.
         """
         if utils.is_truthy(params) or utils.is_falsy(params):
             return params
