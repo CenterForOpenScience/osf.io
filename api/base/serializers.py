@@ -343,6 +343,26 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             )
         )
 
+    def process_related_counts_parameters(self, params):
+        """
+        Processes related_counts parameter.
+
+        Can either be a True/False value for fetching counts on all fields, or a comma-separated list for specifying
+        individual fields.  Ensures specified fields are allowed.
+        """
+        if utils.is_truthy(params) or utils.is_falsy(params):
+            return params
+
+        field_counts_requested = [val for val in params.split(',')]
+        for count_field in field_counts_requested:
+            if count_field not in [field for field in self.parent.fields if getattr(self.parent.fields[field], 'json_api_link', False)]:
+                raise InvalidQueryStringError(
+                    detail="Acceptable values for the related_counts query param are 'true' or 'false' or relationship fields; got '{0}'".format(params),
+                    parameter='related_counts'
+                )
+        return field_counts_requested
+
+
     def get_meta_information(self, meta_data, value):
         """
         For retrieving meta values, otherwise returns {}
