@@ -11,6 +11,8 @@ var ViewModel = function() {
     self.primaryInstitution = ko.observable('None');
     self.institutionHref = ko.observable('');
     self.availableInstitutions = ko.observable();
+    self.selectedInstitution = ko.observable();
+
     self.fetchUserInstitutions = function() {
         var url = ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/?embed=institutions';
         return $osf.ajaxJSON(
@@ -20,7 +22,7 @@ var ViewModel = function() {
         ).done(function (response) {
             self.availableInstitutions(response.data.embeds.institutions.data);
         }).fail(function (xhr, status, error) {
-            Raven.captureMessage('Error creating comment', {
+            Raven.captureMessage('Unable to fetch user wiith embedded institutions', {
                 url: url,
                 status: status,
                 error: error
@@ -39,7 +41,7 @@ var ViewModel = function() {
                 self.institutionHref(response.data.embeds.primary_institution.data.links.html);
             }
         }).fail(function (xhr, status, error) {
-            Raven.captureMessage('Error creating comment', {
+            Raven.captureMessage('Unable to fetch node with embedded institutions', {
                 url: url,
                 status: status,
                 error: error
@@ -48,7 +50,7 @@ var ViewModel = function() {
     };
     self.submitInst = function() {
         var url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/';
-        var inst = $('input[name=primaryInst]:checked', '#selectedInst').val();
+        var inst = self.selectedInstitution();
         return $osf.ajaxJSON(
             'PUT',
             url,
@@ -63,7 +65,7 @@ var ViewModel = function() {
             window.location.reload();
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to add institution to this node!');
-            Raven.captureMessage('Error creating comment', {
+            Raven.captureMessage('Unable to add institution to this node', {
                 url: url,
                 status: status,
                 error: error
@@ -86,7 +88,7 @@ var ViewModel = function() {
             window.location.reload();
         }).fail(function (xhr, status, error) {
             $osf.growl('Unable to remove institution from this node!');
-            Raven.captureMessage('Error creating comment', {
+            Raven.captureMessage('Unable to remove institution from this node!', {
                 url: url,
                 status: status,
                 error: error
@@ -96,9 +98,10 @@ var ViewModel = function() {
 };
 
 var InstitutionProjectSettings = function(selector)  {
-    this.ViewModel = new ViewModel();
-    $osf.applyBindings(this.ViewModel, selector);
-    return this.ViewModel;
+    this.viewModel = new ViewModel();
+    $osf.applyBindings(this.viewModel, selector);
+    this.viewModel.fetchUserInstitutions();
+    this.viewModel.fetchNodeInstitutions();
 };
 
 module.exports = InstitutionProjectSettings;

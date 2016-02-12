@@ -313,12 +313,12 @@
 
                                 You are authorized to affiliate your projects with the following institutions:
                             </div>
-                            <div class="radio" id="selectedInst">
-                                <div data-bind="foreach: availableInstitutions">
+                            <div class="radio">
+                                <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
                                     <div>
                                     <label>
-                                        <input type="radio" data-bind="value: id" name="primaryInst">
-                                        <p data-bind="text: attributes.name"></p>
+                                        <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution" name="primaryInst">
+                                        <p data-bind="text: item.attributes.name"></p>
                                     </label>
                                     </div>
                                 </div>
