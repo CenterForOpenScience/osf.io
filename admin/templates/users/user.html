@@ -7,6 +7,9 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
+            <h3>User details</h3>
+        </div>
+        <div class="row"> {# Action and link buttons #}
             <a href="{% url 'spam:user_spam' user.id %}"
                class="btn btn-primary">
                 Associated spam
@@ -20,57 +23,80 @@
                 Disable account
             </a>
         </div>
+
         <div class="row">
-            <h3>User information</h3>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <strong>Name:</strong> {{ user.name }}
-            </div>
-            <div class="col-md-6">
-                <strong>GUID:</strong> {{ user.id }}
-            </div>
-        </div>
-        <div class="row">
-            <strong>Emails:</strong>
-            <ul>
-            {% for email in user.emails %}
-                <li>
-                    {% if forloop.first %}
-                        <strong>Primary: </strong>
-                    {% endif %}
-                    {{ email }}
-                </li>
-            {% endfor %}
-            </ul>
-        </div>
-        <div class="row">
-            <strong>Last logged in:</strong> {{ user.last_login }}
-        </div>
-        <div class="row">
-            <strong>Nodes</strong>
-            <table class="table table-striped table-hover table-responsive">
+            <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>GUID</th>
-                    <th>Name</th>
-                    <th>Public</th>
-                    <th># of Contributors</th>
+                    <th>Field</th>
+                    <th>Value</th>
                 </tr>
             </thead>
             <tbody>
-            {% for node in user.nodes %}
                 <tr>
-                    <td>
-                        <a href="{{ node.id | reverse_node }}">
-                            {{ node.id }}
-                        </a>
-                    </td>
-                    <td>{{ node.title }}</td>
-                    <td>{{ node.public }}</td>
-                    <td>{{ node.number_contributors }}</td>
+                    <td>Name</td>
+                    <td>{{ user.name }}</td>
                 </tr>
-            {% endfor %}
+                <tr>
+                    <td>OSF account</td>
+                    <td>
+                        <a href="">{{ user.id }}</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Email</td>
+                    <td>
+                        {% for email in user.emails %}
+                            <li>
+                                {% if forloop.first %}
+                                    <strong>Primary: </strong>
+                                    {{ email }}
+                                    <a href=""
+                                       class="btn btn-default disabled">Email</a>
+                                {% else %}
+                                    {{ email }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Last login</td>
+                    <td>{{ user.last_login }}</td>
+                </tr>
+                <tr>
+                    <td>Account disabled</td>
+                    <td>False</td>
+                </tr>
+                <tr>
+                    <td>Nodes</td>
+                    <td>
+                        <table class="table table-striped table-hover table-responsive">
+                        <thead>
+                            <tr>
+                                <th>GUID</th>
+                                <th>Name</th>
+                                <th>Public</th>
+                                <th># of Contributors</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for node in user.nodes %}
+                            <tr>
+                                <td>
+                                    <a href="{{ node.id | reverse_node }}">
+                                        {{ node.id }}
+                                    </a>
+                                </td>
+                                <td>{{ node.title | truncatechars:20 }}</td>
+                                <td>{{ node.public }}</td>
+                                <td>{{ node.number_contributors }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                        </table>
+                    </td>
+                </tr>
             </tbody>
             </table>
         </div>
