@@ -15,7 +15,7 @@ from website import settings
 
 
 def address(node_id):
-    return node_id + '@' + settings.MAILGUN_DOMAIN
+    return node_id + '@' + settings.SHORT_DOMAIN
 
 
 def require_project_mailing(func):
@@ -280,7 +280,7 @@ def celery_update_email(*args, **kwargs):
 #     :param message: Dictionary with subject and text of the email to be sent
 #     """
 #     res = requests.post(
-#         'https://api.mailgun.net/v3/{}/messages'.format(settings.MAILGUN_DOMAIN),
+#         'https://api.mailgun.net/v3/{}/messages'.format(settings.SHORT_DOMAIN),
 #         auth=('api', settings.MAILGUN_API_KEY),
 #         data={'from': '{0} <{1}>'.format(user_fullname, address(node_id)),
 #               'to': address(node_id),
@@ -313,7 +313,7 @@ def full_update(node):
 
             subscriptions = {email: email not in unsubs for email in emails}
 
-            if info['name'] != ' Mailing List'.format(node.title):
+            if info['name'] != '{} Mailing List'.format(node.title):
                 update_title(node._id, node.title)
 
             if members != subscriptions:
