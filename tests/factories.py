@@ -535,7 +535,7 @@ class InstitutionFactory(ModularOdmFactory):
             _id=_id,
             name=name,
             logo_name='logo.img',
-            auth_url='thisIsUrl.biz'
+            auth_url='http://thisIsUrl.biz'
         )
         instance.save()
         return instance

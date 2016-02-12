@@ -162,8 +162,30 @@ class TestUserInstititutionRelationship(ApiTestCase):
         res = self.app.delete_json_api(
             self.url,
             {'data':
-                {'type': 'institutions', 'id': 'not_an_id'}
+                {'type': 'institutions', 'id': self.institution1._id}
             },
+            auth=self.user.auth, expect_errors=True
+        )
+
+        assert_equal(res.status_code, 400)
+
+    def test_attempt_with_no_type_field(self):
+        res = self.app.delete_json_api(
+            self.url,
+            {'data': [
+                {'id': self.institution1._id}
+            ]},
+            auth=self.user.auth, expect_errors=True
+        )
+
+        assert_equal(res.status_code, 400)
+
+    def test_attempt_with_no_id_field(self):
+        res = self.app.delete_json_api(
+            self.url,
+            {'data': [
+                {'type': 'institutions'}
+            ]},
             auth=self.user.auth, expect_errors=True
         )
 
