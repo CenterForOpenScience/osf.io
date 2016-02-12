@@ -123,6 +123,21 @@ class TestApiBaseSerializers(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(res.json['errors'][0]['detail'], "The following fields are not embeddable: foo")
 
+    def test_counts_included_in_children_field_with_children_related_counts_query_param(self):
+
+        res = self.app.get(self.url, params={'related_counts': 'children'})
+        relationships = res.json['data']['relationships']
+        for key, relation in relationships.iteritems():
+            if relation == {}:
+                continue
+            field = NodeSerializer._declared_fields[key]
+            if getattr(field, 'field', None):
+                field = field.field
+            link = relation['links'].values()[0]
+            if (field.related_meta or {}).get('count') and key == 'children':
+                assert_in('count', link['meta'])
+            else:
+                assert_not_in('count', link['meta'])
 
 class TestRelationshipField(DbTestCase):
 
