@@ -14,7 +14,6 @@ from website.settings import MAILGUN_API_KEY, SHORT_DOMAIN, DOMAIN
 logger = logging.getLogger(__name__)
 
 
-# Warning: This script is not in a ready state.
 def main():
     init_app()
     dry = 'dry' in sys.argv
@@ -24,7 +23,7 @@ def main():
             auth=("api", MAILGUN_API_KEY),
             data={"priority": 0,
                   "description": "Project Mailing Route",
-                  "expression": "match_recipient('.*@{}')".format(SHORT_DOMAIN),
+                  "expression": 'match_recipient(".{}@{}")'.format('{5}', settings.SHORT_DOMAIN), ## Any 5-char GUID@osf.io
                   "action": ["forward('{}api/v1/discussions/messages/')".format(DOMAIN)]})
     logger.info('Finished creating route')
 
