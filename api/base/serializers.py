@@ -372,14 +372,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             if key == 'count' or key == 'unread':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
                 field_counts_requested = self.process_related_counts_parameters(show_related_counts)
+
+                if utils.is_truthy(show_related_counts) or self.field_name in field_counts_requested:
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
-                elif utils.is_falsy(show_related_counts):
+
+                else:
                     continue
-                if not utils.is_truthy(show_related_counts):
-                    raise InvalidQueryStringError(
-                        detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
-                        parameter='related_counts'
-                    )
             else:
                 meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
