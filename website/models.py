@@ -7,7 +7,7 @@ from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
 
 from website.project.model import (
-    Node, NodeLog,
+    Node, NodeLog, MailingListEventLog,
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData,
     Retraction, Embargo, RegistrationApproval,
@@ -41,7 +41,7 @@ MODELS = (
     ArchiveJob, ArchiveTarget, BlacklistGuid,
     QueuedMail, AlternativeCitation,
     DraftRegistration, DraftRegistrationApproval,
-    NodeLicense, NodeLicenseRecord
+    NodeLicense, NodeLicenseRecord, MailingListEventLog
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)
