@@ -123,6 +123,45 @@ class TestApiBaseSerializers(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(res.json['errors'][0]['detail'], "The following fields are not embeddable: foo")
 
+    def test_counts_included_in_children_field_with_children_related_counts_query_param(self):
+
+        res = self.app.get(self.url, params={'related_counts': 'children'})
+        relationships = res.json['data']['relationships']
+        for key, relation in relationships.iteritems():
+            if relation == {}:
+                continue
+            field = NodeSerializer._declared_fields[key]
+            if getattr(field, 'field', None):
+                field = field.field
+            link = relation['links'].values()[0]
+            if (field.related_meta or {}).get('count') and key == 'children':
+                assert_in('count', link['meta'])
+            else:
+                assert_not_in('count', link['meta'])
+
+    def test_counts_included_in_children_and_contributors_fields_with_field_csv_related_counts_query_param(self):
+
+        res = self.app.get(self.url, params={'related_counts': 'children,contributors'})
+        relationships = res.json['data']['relationships']
+        for key, relation in relationships.iteritems():
+            if relation == {}:
+                continue
+            field = NodeSerializer._declared_fields[key]
+            if getattr(field, 'field', None):
+                field = field.field
+            link = relation['links'].values()[0]
+            if (field.related_meta or {}).get('count') and key == 'children' or key == 'contributors':
+                assert_in('count', link['meta'])
+            else:
+                assert_not_in('count', link['meta'])
+
+    def test_error_when_requesting_related_counts_for_attribute_field(self):
+
+        res = self.app.get(self.url, params={'related_counts': 'title'}, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.json['errors'][0]['detail'], "Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got 'title'")
+
+
 
 class TestRelationshipField(DbTestCase):
 
