@@ -2563,8 +2563,7 @@ class TestProject(OsfTestCase):
         # The user is removed
         self.project.remove_contributor(
             auth=self.auth,
-            contributor=user2,
-            save=True
+            contributor=user2
         )
 
         self.project.reload()
@@ -2641,8 +2640,7 @@ class TestProject(OsfTestCase):
         assert_in(self.project._primary_key, new_user.unclaimed_records)
         self.project.remove_contributor(
             auth=self.auth,
-            contributor=new_user,
-            save=True
+            contributor=new_user
         )
         self.project.save()
         assert_not_in(self.project._primary_key, new_user.unclaimed_records)
@@ -2864,7 +2862,6 @@ class TestProject(OsfTestCase):
         assert_in(creator, project.contributors)
         # Creator is removed from project
         project.remove_contributor(creator, auth=Auth(user=contrib))
-        project.save()
         assert_false(project.can_view(Auth(user=creator)))
         assert_false(project.can_edit(Auth(user=creator)))
         assert_false(project.is_contributor(creator))

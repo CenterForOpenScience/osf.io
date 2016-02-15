@@ -272,7 +272,7 @@ class TestProjectViews(OsfTestCase):
     def test_remove_only_visible_contributor_return_false(self):
         self.project.visible_contributor_ids.remove(self.user1._id)
         self.project.save()
-        ret = self.project.remove_contributor(contributor=self.user2, auth=self.consolidate_auth1, save=True)
+        ret = self.project.remove_contributor(contributor=self.user2, auth=self.consolidate_auth1)
         assert_false(ret)
         self.project.reload()
         assert_true(self.project.is_contributor(self.user2))
@@ -2361,7 +2361,7 @@ class TestClaimViews(OsfTestCase):
         """ Tests that when an unclaimed user is removed from a project, the
         unregistered user object does not retain the token.
         """
-        self.project.remove_contributor(self.user, Auth(user=self.referrer), save=True)
+        self.project.remove_contributor(self.user, Auth(user=self.referrer))
 
         assert_not_in(
             self.project._primary_key,
