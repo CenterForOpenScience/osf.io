@@ -60,9 +60,6 @@ def main(dry_run=True):
     glacier_audit.hour.on(6)
     glacier_audit.minute.on(0)  # Sunday 6:00 a.m.
 
-    mailing_lists = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/update_project_mailing_lists.sh')))
-    mailing_lists.minute.on(0)  # Every hour on the hour
-
     triggered_mails = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/triggered_mails.sh')))
     triggered_mails.hour.on(0)
     triggered_mails.minute.on(0)  # Daily 12 a.m.
