@@ -1049,6 +1049,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parents = self.parents
         return {p._id for p in parents}
 
+    @property
     def nodes_active(self):
         return [x for x in self.nodes if not x.is_deleted]
 

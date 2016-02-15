@@ -66,8 +66,9 @@ def set_subscription(node, auth, **kwargs):
 
 @user_confirmed.connect
 def resubscribe_on_confirm(user):
-    for node in user.node__contributed:
+    for node in user.contributed:
         node.mailing_unsubs.remove(user)
+        node.save()
 
 
 ###############################################################################

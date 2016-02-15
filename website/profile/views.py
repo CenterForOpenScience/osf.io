@@ -219,7 +219,6 @@ def update_user(auth):
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
-
             user.username = username
 
     ###################
