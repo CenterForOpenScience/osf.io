@@ -17,7 +17,7 @@ from website import mails, settings
 from website.util import api_url_for
 
 
-class TestNewNodeMailingEnabled(OsfTestCase):
+class TestNodeCreationMailingConfig(OsfTestCase):
 
     def test_top_level_project_enables_discussions(self):
         project = ProjectFactory(parent=None)
@@ -59,10 +59,11 @@ class TestNewNodeMailingEnabled(OsfTestCase):
         assert_false(dash.mailing_enabled)
 
 
-class TestDiscussionsOnUserActions(OsfTestCase):
+class TestDiscussionsViews(OsfTestCase):
 
     def setUp(self):
-        super(TestDiscussionsOnUserActions, self).setUp()
+        super(TestDiscussionsViews, self).setUp()
+        settings.ENABLE_PROJECT_MAILING = True
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, parent=None)
 
@@ -78,6 +79,35 @@ class TestDiscussionsOnUserActions(OsfTestCase):
         self.project.reload()
         assert_not_in(unreg, self.project.mailing_unsubs)
 
+
+    def test_disable_and_enable_project_discussions(self):
+        url = api_url_for('enable_discussions', pid=self.project._id)
+        payload = {}
+
+        assert_true(self.project.mailing_enabled)
+
+        self.app.delete(url, payload, auth=self.user.auth)
+        self.project.reload()
+        assert_false(self.project.mailing_enabled)
+
+        self.app.post(url, payload, auth=self.user.auth)
+        self.project.reload()
+        assert_true(self.project.mailing_enabled)
+
+    def test_set_subscription_false_then_true(self):
+        url = api_url_for('set_subscription', pid=self.project._id)
+
+        assert_not_in(self.user, self.project.mailing_unsubs)
+
+        payload = {'discussionsSub': 'unsubscribed'}
+        self.app.post_json(url, payload, auth=self.user.auth)
+        self.project.reload()
+        assert_in(self.user, self.project.mailing_unsubs)
+
+        payload = {'discussionsSub': 'subscribed'}
+        self.app.post_json(url, payload, auth=self.user.auth)
+        self.project.reload()
+        assert_not_in(self.user, self.project.mailing_unsubs)
 
 class TestEmailRejections(OsfTestCase):
 
