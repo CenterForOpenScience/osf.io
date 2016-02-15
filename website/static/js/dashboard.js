@@ -139,6 +139,8 @@ var Dashboard = {
     controller : function (options) {
         var self = this;
         self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
+        self.projectOrganizerOptions = options.projectOrganizerOptions || {};
+        self.viewOnly = options.viewOnly || {};
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.nonLoadTemplate = m.prop(m('.db-non-load-template.m-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
@@ -478,7 +480,19 @@ var Dashboard = {
         } else {
             ctrl.showSidebar(true);
         }
-
+        var projectOrganizerOptions = $.extend(
+            {}, {
+                filesData : ctrl.data,
+                updateSelected : ctrl.updateSelected,
+                updateFilesData : ctrl.updateFilesData,
+                LinkObject : LinkObject,
+                wrapperSelector : args.wrapperSelector,
+                allProjects : ctrl.allProjects,
+                reload : ctrl.reload,
+                resetUi : ctrl.resetUi
+            },
+            ctrl.projectOrganizerOptions
+        );
         return [
             m('.db-header.row', [
                 m('.col-xs-12.col-sm-8.col-lg-9', m.component(Breadcrumbs,ctrl)),
@@ -517,16 +531,7 @@ var Dashboard = {
             ]) : '',
             mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
                 ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
-                ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, {
-                        filesData : ctrl.data,
-                        updateSelected : ctrl.updateSelected,
-                        updateFilesData : ctrl.updateFilesData,
-                        LinkObject : LinkObject,
-                        wrapperSelector : args.wrapperSelector,
-                        allProjects : ctrl.allProjects,
-                        reload : ctrl.reload,
-                        resetUi : ctrl.resetUi
-                    })
+                ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions)
                 )
             ]),
             mobile ? '' : m('.db-info-toggle',{
@@ -812,7 +817,7 @@ var Collections  = {
                     'data-placement' : 'bottom'
                 }, ''),
                 m('.pull-right', [
-                    m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')),
+                    ctrl.viewOnly ? m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')) : '',
                     m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages })
                     ]
                 )

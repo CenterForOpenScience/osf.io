@@ -33,10 +33,19 @@ $(document).ready(function() {
     var self = this;
     self.viewModel = new InstitutionViewModel();
     $osf.applyBindings(self.viewModel, '#inst');
-    m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {wrapperSelector : '#fileBrowser', systemCollections:[
-        new LinkObject('collection', { path : 'institutions/ND/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Projects'),
-        new LinkObject('collection', { path : 'institutions/ND/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Registrations'),
-    ]}));
+    m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {
+        wrapperSelector : '#fileBrowser',
+        systemCollections:[
+            new LinkObject('collection', { path : 'institutions/ND/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Projects'),
+            new LinkObject('collection', { path : 'institutions/ND/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Registrations'),
+        ],
+        viewOnly: true,
+        projectOrganizerOptions: {
+            resolveToggle: function(){
+                return ''
+            },
+        },
+    }));
 
     // Add active class to navigation for my projects page
     $('#osfNavMyProjects').addClass('active');
