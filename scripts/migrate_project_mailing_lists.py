@@ -15,10 +15,11 @@ from scripts import utils as script_utils
 logger = logging.getLogger(__name__)
 
 def get_targets():
-    return list(Node.find(Q('is_dashboard', 'eq', False)))
+    return list(Node.find())
 
 def migrate(dry_run=True):
-    successful_creates = []
+    successful_enables = []
+    successful_disables = []
     unknown_failures = {}
     nodes = get_targets()
     ncount = len(nodes)
@@ -29,25 +30,32 @@ def migrate(dry_run=True):
                 logger.info('Unsubscribing user {} on node {} since it is not active'.format(user, node))
                 node.mailing_unsubs.append(user)
 
-        if not node.is_registration:
+        if not node.is_registration and not node.is_dashboard:
             try:
                 logger.info('({0}/{1})Enabling mailing list for node {2}'.format(nodes.index(node), ncount, node._id))
                 node.mailing_enabled = True
                 node.save()
-                successful_creates.append(node._id)
+                successful_enables.append(node._id)
             except Exception as e:
                 unknown_failures[node._id] = e
         else:
             try:
-                logger.info('({0}/{1})Disabling mailing list for registration {2}'.format(nodes.index(node), ncount, node._id))
+                logger.info('({0}/{1})Disabling mailing list for registration/dashboard {2}'.format(nodes.index(node), ncount, node._id))
                 node.mailing_enabled = False    
                 node.save()
+                successful_disables.append(node._id)
             except Exception as e:
                 unknown_failures[node._id] = e
 
     logger.info(
-        "Created {0} new mailing lists for nodes:\n{1}".format(
-            len(successful_creates), successful_creates
+        "Successfully enabled {0} new mailing lists for nodes:\n{1}".format(
+            len(successful_enables), successful_enables
+        )
+    )
+
+    logger.info(
+        "Successfully disabled {0} new mailing lists for registrations/dashboards:\n{1}".format(
+            len(successful_disables), successful_disables
         )
     )
 
