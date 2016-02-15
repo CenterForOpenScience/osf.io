@@ -734,7 +734,8 @@ class User(GuidStoredObject, AddonModelMixin):
         if not self.email_verifications:
             self.email_verifications = {}
 
-        self.email_verifications[token] = {'email': email}
+        self.email_verifications[token] = {'email': email,
+                                           'confirmed': False}
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 

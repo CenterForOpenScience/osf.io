@@ -165,13 +165,11 @@ def auth_email_logout(token, auth=None, **kwargs):
     """
     redirect_url = web_url_for('goodbye', _absolute=True)
     user = User.load(kwargs['uid'])
-    campaign = request.args.get('campaign')
+    campaign = request.args.get('campaign') or campaigns.campaign_for_user(user)
     if campaign:
         redirect_url = campaigns.campaign_url_for(campaign) + '?campaign=' + campaign
-        # user.system_tags.append({campaign: token})
-        # user.system_tags.append({'token': token})
-        user.system_tags.append({'token': token})
-        user.system_tags = []
+        user.email_verifications[token]['confirmed'] = True
+        user.system_tags.append(campaign)
         user.save()
     logout()
     resp = redirect(redirect_url)
