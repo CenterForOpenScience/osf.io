@@ -154,7 +154,7 @@ var Dashboard = {
         self.categoryList = [];
 
         // Load 'All my Projects' and 'All my Registrations'
-        self.systemCollections = [
+        self.systemCollections = options.systemCollections || [
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
             new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
         ];
