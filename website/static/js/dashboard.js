@@ -140,7 +140,7 @@ var Dashboard = {
         var self = this;
         self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
         self.projectOrganizerOptions = options.projectOrganizerOptions || {};
-        self.viewOnly = options.viewOnly || {};
+        self.viewOnly = options.viewOnly || false;
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.nonLoadTemplate = m.prop(m('.db-non-load-template.m-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
@@ -765,6 +765,7 @@ var Collections  = {
     view : function (ctrl, args) {
         var selectedCSS;
         var submenuTemplate;
+        var viewOnly = args.viewOnly
         var collectionList = function () {
             var item;
             var index;
@@ -817,7 +818,7 @@ var Collections  = {
                     'data-placement' : 'bottom'
                 }, ''),
                 m('.pull-right', [
-                    ctrl.viewOnly ? m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')) : '',
+                    !viewOnly ? m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')) : '',
                     m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages })
                     ]
                 )
@@ -989,6 +990,7 @@ var MicroPagination = {
 
 var Breadcrumbs = {
     view : function (ctrl, args) {
+        var viewOnly = args.viewOnly;
         var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
         var items = args.breadcrumbs();
         if (mobile && items.length > 1) {
@@ -1041,23 +1043,25 @@ var Breadcrumbs = {
         return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
-                    var label = item.type === 'node' ? ' Add Component' : ' Add Project';
-                    var addProjectTemplate = m.component(AddProject, {
-                        buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), label]),
-                        parentID : args.breadcrumbs()[args.breadcrumbs().length-1].data.id,
-                        modalID : 'addProject',
-                        categoryList : args.categoryList,
-                        stayCallback : function () {
-                            args.allProjectsLoaded(false);
-                            args.updateList(args.breadcrumbs()[args.breadcrumbs().length-1]);
-                        }
-                    });
+                    if (!viewOnly) {
+                        var label = item.type === 'node' ? ' Add Component' : ' Add Project';
+                        var addProjectTemplate = m.component(AddProject, {
+                            buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
+                            parentID: args.breadcrumbs()[args.breadcrumbs().length - 1].data.id,
+                            modalID: 'addProject',
+                            categoryList: args.categoryList,
+                            stayCallback: function () {
+                                args.allProjectsLoaded(false);
+                                args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
+                            }
+                        });
+                    }
                     return [
                         m('li',  [
                             m('span.btn', item.label),
                             m('i.fa.fa-angle-right')
                         ]),
-                        item.type === 'node' || (item.data.systemCollection === 'nodes' ) ? addProjectTemplate : ''
+                        (item.type === 'node' || (item.data.systemCollection === 'nodes' )) && !viewOnly ? addProjectTemplate : ''
                     ];
                 }
                 item.index = index; // Add index to update breadcrumbs
