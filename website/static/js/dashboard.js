@@ -63,13 +63,13 @@ var LinkObject = function _LinkObject (type, data, label) {
                 );
         }
         else if (self.type === 'tag') {
-            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'embed' : 'contributors'}});
+            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : true, 'embed' : 'contributors'}});
         }
         else if (self.type === 'name') {
-            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : { 'embed' : 'contributors' }});
+            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : true, 'embed' : 'contributors' }});
         }
         else if (self.type === 'node') {
-            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'page[size]'  : 60, 'embed' : 'contributors' }});
+            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors' }});
         }
         // If nothing
         throw new Error('Link could not be generated from linkObject data');
@@ -155,12 +155,12 @@ var Dashboard = {
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : {  'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : {  'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
+            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
         ];
         // Initial Breadcrumb for All my projects
         self.breadcrumbs = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : {  'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
         ]);
         // Calculate name filters
         self.nameFilters = [];
@@ -414,12 +414,12 @@ var Dashboard = {
             self.nameFilters = [];
             for (var user in self.users){
                 var u2 = self.users[user];
-                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : {  }}, u2.data.embeds.users.data.attributes.full_name));
+                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : true }}, u2.data.embeds.users.data.attributes.full_name));
             }
             self.tagFilters = [];
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { }}, tag));
+                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : true }}, tag));
             }
 
         };
@@ -595,7 +595,7 @@ var Collections  = {
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 });
                 if(result.links.next){
                     loadCollections(result.links.next);
@@ -608,7 +608,7 @@ var Collections  = {
             promise.then(self.calculateTotalPages());
         };
         self.init = function _collectionsInit (element, isInit) {
-            var collectionsUrl = $osf.apiV2Url('collections/', { query : { 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
+            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
             loadCollections(collectionsUrl);
             args.activeFilter(self.collections()[0]);
 
@@ -635,7 +635,7 @@ var Collections  = {
             promise.then(function(result){
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
-                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : {  }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 args.sidebarInit();
                 self.newCollectionName('');
             }, function(){

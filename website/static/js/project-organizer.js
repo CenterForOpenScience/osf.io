@@ -189,12 +189,15 @@ function _poColumnTitles() {
  */
 function _poResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus'),
-        togglePlus = m('i.fa.fa-plus');
-    // TODO: Children count is not available because of an API problem. All folders will show + icon in the meantime.
-    if (item.open) {
-        return toggleMinus;
+        togglePlus = m('i.fa.fa-plus'),
+        childrenCount = item.data.relationships.children.links.related.meta.count;
+    if (childrenCount > 0) {
+        if (item.open) {
+            return toggleMinus;
+        }
+        return togglePlus;
     }
-    return togglePlus;
+    return '';
 }
 
 /**
@@ -213,6 +216,7 @@ function _poResolveLazyLoad(item) {
         //return node.relationships.children.links.related.href;
         return $osf.apiV2Url('nodes/' + node.id + '/children/', {
             query : {
+                'related_counts' : true,
                 'embed' : 'contributors'
             }
         });
