@@ -37,13 +37,13 @@ $(document).ready(function() {
         wrapperSelector : '#fileBrowser',
         systemCollections:[
             new LinkObject('collection', { path : 'institutions/ND/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Projects'),
-            new LinkObject('collection', { path : 'institutions/ND/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Registrations'),
+            new LinkObject('collection', { path : 'institutions/ND/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'registrations'}, 'All Registrations'),
         ],
         viewOnly: true,
         projectOrganizerOptions: {
             resolveToggle: function(){
-                return ''
-            },
+                return '';
+            }
         },
     }));
 

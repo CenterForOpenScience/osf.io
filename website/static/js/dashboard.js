@@ -235,6 +235,9 @@ var Dashboard = {
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
         self.updateFilesData = function _updateFilesData (linkObject) {
+            if (self.viewOnly){
+                return;
+            }
             if (linkObject.link !== self.currentLink) {
                 self.updateBreadcrumbs(linkObject);
                 self.updateList(linkObject);
