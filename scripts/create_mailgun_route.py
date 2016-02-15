@@ -24,7 +24,7 @@ def main():
             data={"priority": 0,
                   "description": "Project Mailing Route",
                   "expression": 'match_recipient(".{}@{}")'.format('{5}', settings.SHORT_DOMAIN), ## Any 5-char GUID@osf.io
-                  "action": ["forward('{}api/v1/discussions/messages/')".format(DOMAIN)]})
+                  "action": ["forward('{}api/v1/discussions/messages/')".format(DOMAIN), "stop()"]})
     logger.info('Finished creating route')
 
 if __name__ == '__main__':
