@@ -1004,11 +1004,14 @@ class User(GuidStoredObject, AddonModelMixin):
         from mailchimp emails.
         """
         from website import mailchimp_utils
-        mailchimp_utils.unsubscribe_mailchimp(
-            list_name=settings.MAILCHIMP_GENERAL_LIST,
-            user_id=self._id,
-            username=self.username
-        )
+        try:
+            mailchimp_utils.unsubscribe_mailchimp(
+                list_name=settings.MAILCHIMP_GENERAL_LIST,
+                user_id=self._id,
+                username=self.username
+            )
+        except mailchimp_utils.mailchimp.ListNotSubscribedError:
+            pass
         self.is_disabled = True
 
     @property

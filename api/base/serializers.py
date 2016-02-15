@@ -343,6 +343,26 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             )
         )
 
+    def process_related_counts_parameters(self, params):
+        """
+        Processes related_counts parameter.
+
+        Can either be a True/False value for fetching counts on all fields, or a comma-separated list for specifying
+        individual fields.  Ensures field for which we are requesting counts is a relationship field.
+        """
+        if utils.is_truthy(params) or utils.is_falsy(params):
+            return params
+
+        field_counts_requested = [val for val in params.split(',')]
+        countable_fields = {field for field in self.root.fields if getattr(self.parent.fields[field], 'json_api_link', False)}
+        for count_field in field_counts_requested:
+            if count_field not in countable_fields:
+                raise InvalidQueryStringError(
+                    detail="Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got '{0}'".format(params),
+                    parameter='related_counts'
+                )
+        return field_counts_requested
+
     def get_meta_information(self, meta_data, value):
         """
         For retrieving meta values, otherwise returns {}
@@ -351,15 +371,16 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         for key in meta_data or {}:
             if key == 'count' or key == 'unread':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
+                field_counts_requested = self.process_related_counts_parameters(show_related_counts)
+
                 if utils.is_truthy(show_related_counts):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
                 elif utils.is_falsy(show_related_counts):
                     continue
-                if not utils.is_truthy(show_related_counts):
-                    raise InvalidQueryStringError(
-                        detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
-                        parameter='related_counts'
-                    )
+                elif self.field_name in field_counts_requested:
+                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                else:
+                    continue
             else:
                 meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
@@ -666,6 +687,7 @@ class NodeFileHyperLinkField(RelationshipField):
 class JSONAPIListSerializer(ser.ListSerializer):
 
     def to_representation(self, data):
+        enable_esi = self.context.get('enable_esi', False)
         # Don't envelope when serializing collection
         errors = {}
         bulk_skip_uneditable = utils.is_truthy(self.context['request'].query_params.get('skip_uneditable', False))
@@ -674,9 +696,14 @@ class JSONAPIListSerializer(ser.ListSerializer):
             errors = data.get('errors', None)
             data = data.get('data', None)
 
-        ret = [
-            self.child.to_representation(item, envelope=None) for item in data
-        ]
+        if enable_esi:
+            ret = [
+                self.child.to_esi_representation(item) for item in data
+            ]
+        else:
+            ret = [
+                self.child.to_representation(item, envelope=None) for item in data
+            ]
 
         if errors and bulk_skip_uneditable:
             ret.append({'errors': errors})
@@ -768,6 +795,27 @@ class JSONAPISerializer(ser.Serializer):
                 fields_check[index] = field.field
         invalid_embeds = set(embeds.keys()) - set([f.field_name for f in fields_check if getattr(f, 'json_api_link', False)])
         return invalid_embeds
+
+    def to_esi_representation(self, data):
+        href = None
+        query_params_blacklist = ['page[size]', 'format']
+        try:
+            href = data.get_absolute_url()
+        except AttributeError:
+            representation = super(JSONAPISerializer, self).to_representation(data)
+            return representation
+        else:
+            if href and href != '{}':
+                query_params = QueryDict(self.context['request'].QUERY_PARAMS.urlencode(), mutable=True)
+                for blacklisted in query_params_blacklist:
+                    try:
+                        query_params.pop(blacklisted)
+                    except KeyError:
+                        pass
+                query_params.update(dict(format='jsonapi'))
+                return '<esi:include src="{}?{}"/>'.format(href, query_params.urlencode())
+        # failsafe, let python do it if something bad happened in the ESI construction
+        return super(JSONAPISerializer, self).to_representation(data)
 
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
