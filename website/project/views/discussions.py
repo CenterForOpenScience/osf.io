@@ -67,9 +67,12 @@ def set_subscription(node, auth, **kwargs):
 @user_confirmed.connect
 def resubscribe_on_confirm(user):
     for node in user.contributed:
-        node.mailing_unsubs.remove(user)
-        node.save()
-
+        try:
+            node.mailing_unsubs.remove(user)
+            node.save()
+        except ValueError:
+            # Nodes created via OSF4M
+            pass
 
 ###############################################################################
 # MailGun Calls
