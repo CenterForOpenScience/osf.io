@@ -54,7 +54,7 @@ from website.exceptions import (
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.files.models.base import File, StoredFileNode
+from website.files.models.base import FileNode, StoredFileNode
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -255,8 +255,9 @@ class Comment(GuidStoredObject, SpamMixin):
     @classmethod
     def n_unread_file_comments(cls, user, node):
         n_unread = 0
-        commented_files = File.find(Q('_id', 'in', node.commented_files.keys()))
-        for file_obj in commented_files:
+        commented_file_guids = Guid.find(Q('_id', 'in', node.commented_files.keys()))
+        for target in commented_file_guids:
+            file_obj = FileNode.resolve_class(target.referent.provider, FileNode.FILE).load(target.referent._id)
             if node.get_addon(file_obj.provider):
                 try:
                     exists = file_obj and file_obj.touch(request.headers.get('Authorization'),
@@ -264,9 +265,9 @@ class Comment(GuidStoredObject, SpamMixin):
                 except requests.ConnectionError:
                     return 0
                 if not exists:
-                    Comment.update(Q('root_target', 'eq', file_obj.get_guid()), data={'root_target': None})
+                    Comment.update(Q('root_target', 'eq', target), data={'root_target': None})
                     continue
-                n_unread += cls.find_n_unread(user, node, page=Comment.FILES, root_id=file_obj.get_guid()._id)
+                n_unread += cls.find_n_unread(user, node, page=Comment.FILES, root_id=target._id)
         return n_unread
 
     @classmethod
