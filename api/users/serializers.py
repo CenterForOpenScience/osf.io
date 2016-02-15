@@ -53,7 +53,8 @@ class UserSerializer(JSONAPISerializer):
                                                       allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution'))
     academiaProfileID = DevOnly(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
                                                       allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID'))
-
+    baiduScholar = DevOnly(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
+                                                           allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar'))
     links = LinksField(
         add_dev_only_items({
             'html': 'absolute_url',

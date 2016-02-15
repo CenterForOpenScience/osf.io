@@ -221,6 +221,11 @@
                             <i class="fa social-icons" data-toggle="tooltip" title="Academia">A</i>
                         </a>
                     </li>
+                    <li data-bind="visible: social.baiduScholar">
+                        <a data-bind="attr.href: social.baiduScholar">
+                            <img class="social-icons" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar">
+                        </a>
+                    </li>
                 </ul>
                 <!-- /ko -->
             </div>
