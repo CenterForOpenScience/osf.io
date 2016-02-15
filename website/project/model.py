@@ -1488,7 +1488,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 raise NodeStateError("Only one dashboard allowed per user.")
 
         # Set mailing attribute before save
-        if self.is_registration:
+        if self.is_registration or self.is_dashboard:
             self.mailing_enabled = False
 
         is_original = not self.is_registration and not self.is_fork
