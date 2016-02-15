@@ -65,7 +65,7 @@ REST_FRAMEWORK = {
     # https://github.com/marcgibbons/django-rest-swagger/issues/271 is resolved.
     'DEFAULT_RENDERER_CLASSES': (
         'api.base.renderers.JSONAPIRenderer',
-        'rest_framework.renderers.JSONRenderer',
+        'api.base.renderers.JSONRendererWithESISupport',
         'api.base.renderers.BrowsableAPIRendererNoForms',
     ),
     'DEFAULT_PARSER_CLASSES': (
@@ -172,3 +172,4 @@ DEBUG_TRANSACTIONS = DEBUG
 ENABLE_VARNISH = False
 ENABLE_ESI = False
 VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
+ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}

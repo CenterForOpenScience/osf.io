@@ -12,6 +12,7 @@ from website.exceptions import NodeStateError
 from website.files.models.base import File
 from website.util import permissions as osf_permissions
 
+from api.nodes.utils import get_file_object
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
@@ -81,8 +82,7 @@ class NodeSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     fork = ser.BooleanField(read_only=True, source='is_fork')
-    collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
-    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
+    collection = DevOnly(ser.BooleanField(read_only=True, source='is_collection'))
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
@@ -224,7 +224,7 @@ class NodeSerializer(JSONAPISerializer):
         for file_obj in commented_files:
             if obj.get_addon(file_obj.provider):
                 try:
-                    self.context['view'].get_file_object(obj, file_obj.path, file_obj.provider, check_object_permissions=False)
+                    get_file_object(node=obj, path=file_obj.path, provider=file_obj.provider, request=self.context['request'])
                 except (exceptions.NotFound, exceptions.PermissionDenied):
                     continue
                 n_unread += Comment.find_n_unread(user, obj, page='files', root_id=file_obj._id)
@@ -419,7 +419,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         target_node_id = validated_data['_id']
         pointer_node = Node.load(target_node_id)
-        if not pointer_node or pointer_node.is_folder:
+        if not pointer_node or pointer_node.is_collection:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/node_links/data/id'},
                 detail='Target Node \'{}\' not found.'.format(target_node_id)

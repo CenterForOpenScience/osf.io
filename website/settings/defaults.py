@@ -223,11 +223,12 @@ SENTRY_DSN_JS = None
 # TODO: Delete me after merging GitLab
 MISSING_FILE_NAME = 'untitled'
 
-# Dashboard
+# Project Organizer
 ALL_MY_PROJECTS_ID = '-amp'
 ALL_MY_REGISTRATIONS_ID = '-amr'
 ALL_MY_PROJECTS_NAME = 'All my projects'
 ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
+NOTEWORTHY_LINKS_NODE = None
 
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
@@ -268,7 +269,7 @@ MFR_SERVER_URL = 'http://localhost:7778'
 ###### ARCHIVER ###########
 ARCHIVE_PROVIDER = 'osfstorage'
 
-MAX_ARCHIVE_SIZE = 1024 ** 3  # == math.pow(1024, 3) == 1 GB
+MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
 MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours

@@ -4,7 +4,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
-from rest_framework.status import is_server_error, HTTP_204_NO_CONTENT
+from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -31,6 +31,7 @@ from api.nodes.serializers import (
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
 )
+from api.nodes.utils import get_file_object
 
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
@@ -42,16 +43,16 @@ from api.nodes.permissions import (
     ReadOnlyIfRegistration,
     ExcludeRetractions,
 )
-from api.base.exceptions import ServiceUnavailableError
 from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, Institution, NodeLog
-from website.files.models import OsfStorageFileNode, StoredFileNode, FileNode
+from website.files.models import StoredFileNode, FileNode
 from website.files.models.dropbox import DropboxFile
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
+from api.base.utils import default_node_list_query
 
 
 class NodeMixin(object):
@@ -70,13 +71,12 @@ class NodeMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder or node.is_registration:
+        if node.is_collection or node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
         return node
-
 
 class WaterButlerMixin(object):
 
@@ -104,44 +104,11 @@ class WaterButlerMixin(object):
         return self.get_file_object(node, path, provider)
 
     def get_file_object(self, node, path, provider, check_object_permissions=True):
+        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
         if provider == 'osfstorage':
-            # Kinda like /me for a user
-            # The one odd case where path is not really path
-            if path == '/':
-                obj = node.get_addon('osfstorage').get_root()
-            else:
-                obj = get_object_or_error(
-                    OsfStorageFileNode,
-                    Q('node', 'eq', node._id) &
-                    Q('_id', 'eq', path.strip('/')) &
-                    Q('is_file', 'eq', not path.endswith('/'))
-                )
             if check_object_permissions:
                 self.check_object_permissions(self.request, obj)
-
-            return obj
-
-        url = waterbutler_api_url_for(node._id, provider, path, meta=True)
-        waterbutler_request = requests.get(
-            url,
-            cookies=self.request.COOKIES,
-            headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
-        )
-
-        if waterbutler_request.status_code == 401:
-            raise PermissionDenied
-
-        if waterbutler_request.status_code == 404:
-            raise NotFound
-
-        if is_server_error(waterbutler_request.status_code):
-            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
-
-        try:
-            return waterbutler_request.json()['data']
-        except KeyError:
-            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
-
+        return obj
 
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
@@ -175,7 +142,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         tags           array of strings   list of tags that describe the node
         registration   boolean            is this a registration?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -245,7 +211,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
+            Q('is_collection', 'ne', True) &
             Q('is_registration', 'ne', True)
         )
         user = self.request.user
@@ -370,7 +336,6 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Relationships
@@ -774,7 +739,6 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         tags               array of strings   list of tags that describe the registered node
         fork               boolean            is this project a fork?
         registration       boolean            has this project been registered?
-        dashboard          boolean            is this registered node visible on the user dashboard?
         public             boolean            has this registration been made publicly-visible?
         retracted          boolean            has this registration been retracted?
         date_registered    iso8601 timestamp  timestamp that the registration was created
@@ -843,7 +807,6 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         fork           boolean            is this node a fork of another node?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -910,10 +873,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return (
-            Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
-        )
+        return default_node_list_query()
 
     # overrides ListBulkCreateJSONAPIView
     def get_queryset(self):

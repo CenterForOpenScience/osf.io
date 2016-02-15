@@ -103,7 +103,6 @@ class TestRegistrationDetail(ApiTestCase):
             "registration": True,
             'fork': None,
             'collection': None,
-            'dashboard': None,
             'tags': None,
             'retracted': True,
             'pending_retraction': None,

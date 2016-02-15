@@ -4,6 +4,7 @@ from rest_framework.exceptions import NotFound
 from modularodm import Q
 from framework.auth.core import User
 from framework.auth.oauth_scopes import CoreScopes
+
 from website.models import NodeLog, Node
 from api.nodes.permissions import (
     ContributorOrPublic,
@@ -73,7 +74,6 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixi
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         collection     boolean            is this node a collection of other nodes?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -150,7 +150,6 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
         collection     boolean            is this node a collection of other nodes?
-        dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
     ##Links
@@ -200,11 +199,13 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
         pass
 
 
-class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
-    """List of added contributors that a given log is associated with. *Read-only*.
+class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, LogMixin):
+    """List of contributors that a given log is associated with. *Read-only*.
 
-    Paginated list of users that were added as contributors, associated with a log. Each resource contains the full
-    representation of the user, meaning additional requests to an individual user's detail view are not necessary.
+    Paginated list of users that were associated with a contributor log action. For example, if a log action was `contributor_added`,
+    the new contributors' names would be found at this endpoint. If the relevant log had nothing to do with contributors,
+    an empty list would be returned. Each resource contains the full representation of the user, meaning additional requests
+    to an individual user's detail view are not necessary.
 
     ##User Attributes
 
@@ -249,6 +250,7 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
@@ -257,13 +259,13 @@ class NodeLogAddedContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     serializer_class = UserSerializer
 
     view_category = 'logs'
-    view_name = 'log-added_contributors'
+    view_name = 'log-contributors'
 
     # overrides ListAPIView
     def get_queryset(self):
         log = self.get_log()
-        added_contrib_ids = log.params.get('contributors')
-        if added_contrib_ids is None:
+        associated_contrib_ids = log.params.get('contributors')
+        if associated_contrib_ids is None:
             return []
-        added_users = User.find(Q('_id', 'in', added_contrib_ids))
-        return added_users
+        associated_users = User.find(Q('_id', 'in', associated_contrib_ids))
+        return associated_users

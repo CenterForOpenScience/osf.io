@@ -74,7 +74,10 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
 
         context.update({
-            'enable_esi': is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)),
+            'enable_esi': (
+                is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
+                self.request.accepted_media_type in django_settings.ESI_MEDIA_TYPES
+            ),
             'embed': embeds_partials,
         })
         return context
@@ -410,6 +413,7 @@ def root(request, format=None):
     }
     if settings.DEV_MODE:
         return_val["links"]["collections"] = absolute_reverse('collections:collection-list')
+        return_val["links"]["registrations"] = absolute_reverse('registrations:registration-list')
 
     return Response(return_val)
 
