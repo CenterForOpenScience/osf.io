@@ -784,7 +784,7 @@ class JSONAPISerializer(ser.Serializer):
             representation = super(JSONAPISerializer, self).to_representation(data)
             return representation
         else:
-            if href and not href == '{}':
+            if href and href != '{}':
                 query_params = QueryDict(self.context['request'].QUERY_PARAMS.urlencode(), mutable=True)
                 for blacklisted in query_params_blacklist:
                     try:
