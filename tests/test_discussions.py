@@ -4,10 +4,14 @@ import mock
 
 from nose.tools import *  # noqa; PEP8 asserts
 
-from tests.factories import ProjectFactory, NodeFactory, RegistrationFactory, UserFactory, AuthUserFactory
+from tests.factories import (
+    ProjectFactory, NodeFactory, RegistrationFactory,
+    UserFactory, AuthUserFactory, DashboardFactory,
+)
 from tests.base import OsfTestCase
 
 from framework.auth.decorators import Auth
+from framework.auth.signals import user_confirmed
 
 from website import mails, settings
 from website.util import api_url_for
@@ -15,21 +19,16 @@ from website.util import api_url_for
 
 class TestNewNodeMailingEnabled(OsfTestCase):
 
-    @mock.patch('website.project.model.mailing_list.celery_create_list')
-    def test_node_with_mailing_enabled_creates_discussions(self, mock_create_list):
-        node = NodeFactory(mailing_enabled=True)
-        mock_create_list.assert_called()
-
     def test_top_level_project_enables_discussions(self):
         project = ProjectFactory(parent=None)
         assert_true(project.mailing_enabled)
 
-    def test_project_with_parent_disables_discussions(self):
+    def test_project_with_parent_enables_discussions(self):
         parent = ProjectFactory(parent=None)
         child = ProjectFactory(parent=parent)
-        assert_false(child.mailing_enabled)
+        assert_true(child.mailing_enabled)
 
-    def test_forking_with_child_enables_only_parent(self):
+    def test_forking_with_child_enables_discussion(self):
         user = AuthUserFactory()
         parent = ProjectFactory(parent=None, is_public=True)
         child = NodeFactory(parent=parent, is_public=True)
@@ -38,9 +37,9 @@ class TestNewNodeMailingEnabled(OsfTestCase):
         child_fork = parent_fork.nodes[0]
 
         assert_true(parent_fork.mailing_enabled)
-        assert_false(child_fork.mailing_enabled)
+        assert_true(child_fork.mailing_enabled)
 
-    def test_template_with_child_enables_only_parent(self):
+    def test_template_with_child_enables_discussion(self):
         user = AuthUserFactory()
         parent = ProjectFactory(parent=None, is_public=True)
         child = NodeFactory(parent=parent, is_public=True)
@@ -49,165 +48,15 @@ class TestNewNodeMailingEnabled(OsfTestCase):
         new_child = new_parent.nodes[0]
 
         assert_true(new_parent.mailing_enabled)
-        assert_false(new_child.mailing_enabled)
+        assert_true(new_child.mailing_enabled)
 
-    def test_registration_creates_discussions_with_no_setup(self):
+    def test_registration_disables_discussions(self):
         reg = RegistrationFactory()
         assert_false(reg.mailing_enabled)
 
-
-class TestListCreation(OsfTestCase):
-
-    @mock.patch('website.project.model.mailing_list.celery_create_list')
-    def test_node_with_mailing_enabled_creates_discussions(self, mock_create_list):
-        node = NodeFactory(mailing_enabled=True)
-        mock_create_list.assert_called()
-
-    @mock.patch('website.project.model.mailing_list.celery_create_list')
-    def test_forking_node_creates_unique_discussions(self, mock_create_list):
-        user = AuthUserFactory()
-        node = NodeFactory(is_public=True)
-        fork = node.fork_node(Auth(user=user))
-        mock_create_list.assert_called_with(title=fork.title, **fork.mailing_params)
-
-    @mock.patch('website.project.model.mailing_list.celery_create_list')
-    def test_using_as_template_creates_unique_discussions(self, mock_create_list):
-        user = AuthUserFactory()
-        node = NodeFactory(is_public=True)
-        new = node.use_as_template(Auth(user=user))
-        mock_create_list.assert_called_with(title=new.title, **new.mailing_params)
-
-
-class TestNodeMailingParams(OsfTestCase):
-
-    def setUp(self):
-        super(TestNodeMailingParams, self).setUp()
-        self.creator = UserFactory()
-        self.user = AuthUserFactory()
-
-        self.project = ProjectFactory(creator=self.creator, parent=None, is_public=True)
-        self.project.add_contributor(self.user)
-        self.project.mailing_unsubs.append(self.user)
-        self.project.save()
-        self.project.reload()
-
-        self.intended_params = {
-            'node_id': self.project._id,
-            'url': self.project.absolute_url,
-            'contributors': [self.creator.email, self.user.email],
-            'unsubs': [self.user.email]
-        }
-
-    def test_base_mailing_params(self):
-        assert_equal(self.project.mailing_params, self.intended_params)
-
-    def test_add_and_unsub_users(self):
-        url = api_url_for('set_subscription', pid=self.project._id)
-        users = [AuthUserFactory() for i in range(10)]
-
-        for user in users:
-            self.project.add_contributor(user)
-        self.project.save()
-        self.project.reload()
-
-        self.intended_params['contributors'].extend([user.email for user in users])
-        assert_equal(self.project.mailing_params, self.intended_params)
-
-        for user in users:
-            self.app.post_json(url, {'discussionsSub': 'unsubscribed'}, auth=user.auth)
-        self.project.reload()
-
-        self.intended_params['unsubs'].extend(user.email for user in users)
-        assert_equal(self.project.mailing_params, self.intended_params)
-
-    def test_fork_has_unique_params(self):
-        user = AuthUserFactory()
-        fork = self.project.fork_node(Auth(user=user))
-
-        assert_equal(fork.mailing_params, {
-            'node_id': fork._id,
-            'url': fork.absolute_url,
-            'contributors': [user.email],
-            'unsubs': []
-        })
-
-    def test_templated_has_unique_params(self):
-        user = AuthUserFactory()
-        new = self.project.use_as_template(Auth(user=user))
-
-        assert_equal(new.mailing_params, {
-            'node_id': new._id,
-            'url': new.absolute_url,
-            'contributors': [user.email],
-            'unsubs': []
-        })
-
-    def test_params_update_on_email_change(self):
-        new_email = 'new@newmail.new'
-        self.user.emails.append(new_email)
-        self.user.save()
-        url = api_url_for('update_user', uid=self.user._id)
-        payload = {
-            'id': self.user._id,
-            'emails': [
-                {'address': self.user.email, 'confirmed': True, 'primary': False},
-                {'address': new_email, 'confirmed': True, 'primary': True}
-            ]
-        }
-
-        self.app.put_json(url, payload, auth=self.user.auth)
-        self.user.reload()
-
-        self.intended_params['unsubs'] = [new_email]
-        self.intended_params['contributors'] = [self.creator.email, new_email]
-        assert_equal(self.project.mailing_params, self.intended_params)
-
-
-class TestDiscussionsOnProjectActions(OsfTestCase):
-
-    def setUp(self):
-        super(TestDiscussionsOnProjectActions, self).setUp()
-        self.creator = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.creator, parent=None)
-
-    @mock.patch('website.project.model.mailing_list.celery_match_members')
-    def test_add_single_contributor_updates(self, mock_match_members):
-        user = UserFactory()
-
-        self.project.add_contributor(user, save=True)
-
-        mock_match_members.assert_called_with(**self.project.mailing_params)
-
-    @mock.patch('website.project.model.mailing_list.celery_match_members')
-    def test_add_many_contributors_updates_only_once(self, mock_match_members):
-        users = [UserFactory() for i in range(10)]
-        emails = {user.email for user in users + [self.creator]}
-
-        for user in users:
-            self.project.add_contributor(user, save=False)
-        self.project.save()
-
-        mock_match_members.assert_called_once_with(**self.project.mailing_params)
-
-    @mock.patch('website.project.model.mailing_list.celery_match_members')
-    def test_add_contributor_then_remove_creator(self, mock_match_members):
-        user = UserFactory()
-
-        self.project.add_contributor(user, permissions=('read', 'write', 'admin'), save=True)
-        mock_match_members.assert_called_with(**self.project.mailing_params)
-
-        self.project.remove_contributor(self.creator, auth=Auth(user=self.creator), save=True)
-        self.project.reload()
-        mock_match_members.assert_called_with(**self.project.mailing_params)
-
-    @mock.patch('website.project.model.mailing_list.celery_delete_list')
-    def test_delete_project_disables_discussions(self, mock_delete_list):
-        assert_true(self.project.mailing_enabled)
-
-        self.project.remove_node(Auth(user=self.creator))
-
-        assert_false(self.project.mailing_enabled)
-        mock_delete_list.assert_called()
+    def test_dashboard_disables_discussions(self):
+        dash = DashboardFactory()
+        assert_false(dash.mailing_enabled)
 
 
 class TestDiscussionsOnUserActions(OsfTestCase):
@@ -217,66 +66,17 @@ class TestDiscussionsOnUserActions(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, parent=None)
 
-    @mock.patch('website.profile.views.celery_update_email')
-    def test_change_email(self, mock_update_email):
-        new_email = 'new@newmail.new'
-        self.user.emails.append(new_email)
-        self.user.save()
-        url = api_url_for('update_user', uid=self.user._id)
-        payload = {
-            'id': self.user._id,
-            'emails': [
-                {'address': self.user.email, 'confirmed': True, 'primary': False},
-                {'address': new_email, 'confirmed': True, 'primary': True}
-            ]
-        }
-
-        self.app.put_json(url, payload, auth=self.user.auth)
-
-        mock_update_email.assert_called_with(self.project._id, self.user.email, new_email)
-
-    @mock.patch('website.profile.views.celery_update_email')
-    def test_change_email_on_project_without_mailing_enabled(self, mock_update_email):
-        self.project.mailing_enabled = False
-        self.project.save()
-
-        new_email = 'newer@newmail.new'
-        self.user.emails.append(new_email)
-        self.user.save()
-        url = api_url_for('update_user', uid=self.user._id)
-        payload = {
-            'id': self.user._id,
-            'emails': [
-                {'address': self.user.email, 'confirmed': True, 'primary': False},
-                {'address': new_email, 'confirmed': True, 'primary': True}
-            ]
-        }
-
-        self.app.put_json(url, payload, auth=self.user.auth)
-
-        mock_update_email.assert_not_called()
-
-    @mock.patch('website.project.model.mailing_list.celery_match_members')
-    def test_unclaimed_user_is_unsubscribed(self, mock_match_members):
+    def test_unclaimed_user_behavior(self):
         unreg = self.project.add_unregistered_contributor('Billy', 'billy@gmail.com', Auth(self.user))
         self.project.reload()
 
         assert_in(unreg, self.project.mailing_unsubs)
-        mock_match_members.assert_called()
 
-    @mock.patch('website.project.model.mailing_list.celery_match_members')
-    def test_merge_contributor_into_other_user(self, mock_match_members):
-        other_user = UserFactory()
-        other_user.merge_user(self.user)
+        unreg.register(username='billy@gmail.com', password='password1')
+        assert(unreg.is_registered)
 
-        mock_match_members.assert_called()
-
-    @mock.patch('website.project.model.mailing_list.celery_match_members')
-    def test_merge_other_user_into_contributor_does_nothing(self, mock_match_members):
-        other_user = UserFactory()
-        self.user.merge_user(other_user)
-
-        mock_match_members.assert_not_called()
+        self.project.reload()
+        assert_not_in(unreg, self.project.mailing_unsubs)
 
 
 class TestEmailRejections(OsfTestCase):
@@ -297,13 +97,16 @@ class TestEmailRejections(OsfTestCase):
         self.post_url = api_url_for('route_message')
 
     @mock.patch('website.mails.send_mail')
-    def test_working_email(self, mock_send_mail):
+    @mock.patch('website.project.mailing_list.send_messages')
+    def test_working_email(self, mock_send_list, mock_send_mail):
         self.app.post(self.post_url, self.message)
 
         mock_send_mail.assert_not_called()
+        mock_send_list.assert_called()
 
     @mock.patch('website.mails.send_mail')
-    def test_email_from_non_registered_user(self, mock_send_mail):
+    @mock.patch('website.project.mailing_list.send_messages')
+    def test_email_from_non_registered_user(self, mock_send_list, mock_send_mail):
         self.message['From'] = 'non-email@osf.fake'
 
         self.app.post(self.post_url, self.message)
@@ -318,9 +121,11 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=False
         )
+        mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    def test_email_to_nonexistent_project(self, mock_send_mail):
+    @mock.patch('website.project.mailing_list.send_messages')
+    def test_email_to_nonexistent_project(self, mock_send_list, mock_send_mail):
         self.message['To'] = 'notarealprojectid@osf.io'
 
         self.app.post(self.post_url, self.message)
@@ -335,9 +140,11 @@ class TestEmailRejections(OsfTestCase):
             node_url='',
             is_admin=False
         )
+        mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    def test_email_to_deleted_project(self, mock_send_mail):
+    @mock.patch('website.project.mailing_list.send_messages')
+    def test_email_to_deleted_project(self, mock_send_list, mock_send_mail):
         self.project.remove_node(auth=Auth(user=self.user))
 
         self.app.post(self.post_url, self.message)
@@ -352,9 +159,11 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=True
         )
+        mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    def test_email_to_private_project_without_access(self, mock_send_mail):
+    @mock.patch('website.project.mailing_list.send_messages')
+    def test_email_to_private_project_without_access(self, mock_send_list, mock_send_mail):
         self.user = UserFactory()
         self.user.reload()
         self.message['From'] = self.user.email
@@ -362,7 +171,7 @@ class TestEmailRejections(OsfTestCase):
         self.app.post(self.post_url, self.message)
 
         mock_send_mail.assert_called_with(
-            reason='private_no_access',
+            reason='no_access',
             to_addr=self.user.email,
             mail=mails.DISCUSSIONS_EMAIL_REJECTED,
             target_address='{}@osf.io'.format(self.project._id),
@@ -371,9 +180,11 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=False
         )
+        mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    def test_email_to_public_project_without_access(self, mock_send_mail):
+    @mock.patch('website.project.mailing_list.send_messages')
+    def test_email_to_public_project_without_access(self, mock_send_list, mock_send_mail):
         self.project.is_public = True
         self.project.save()
         self.user = UserFactory()
@@ -392,9 +203,11 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=False
         )
+        mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    def test_email_to_project_with_discussions_disabled_as_admin(self, mock_send_mail):
+    @mock.patch('website.project.mailing_list.send_messages')
+    def test_email_to_project_with_discussions_disabled_as_admin(self, mock_send_list, mock_send_mail):
         self.project.mailing_enabled = False
         self.project.save()
 
@@ -410,9 +223,11 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=True
         )
+        mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    def test_email_to_project_with_discussions_disabled_as_non_admin(self, mock_send_mail):
+    @mock.patch('website.project.mailing_list.send_messages')
+    def test_email_to_project_with_discussions_disabled_as_non_admin(self, mock_send_list, mock_send_mail):
         self.user = UserFactory()
         self.user.reload()
         self.project.mailing_enabled = False
@@ -431,3 +246,4 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=False
         )
+        mock_send_list.assert_not_called()
