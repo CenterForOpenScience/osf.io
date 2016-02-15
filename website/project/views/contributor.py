@@ -189,7 +189,7 @@ def project_removecontributor(auth, node, **kwargs):
         })
 
     outcome = node.remove_contributor(
-        contributor=contributor, auth=auth, save=True
+        contributor=contributor, auth=auth,
     )
 
     if outcome:

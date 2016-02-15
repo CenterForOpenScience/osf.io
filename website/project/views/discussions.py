@@ -15,11 +15,7 @@ from website.project.decorators import (
     must_not_be_registration,
     must_be_contributor
 )
-from website.project.mailing_list import (
-    create_list,
-    delete_list,
-    update_subscription
-)
+from website.project.mailing_list import send_messages
 from website.project.model import MailingListEventLog
 from website.util.permissions import ADMIN
 from website.models import Node
@@ -34,7 +30,6 @@ from website.models import Node
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def enable_discussions(node, **kwargs):
-    create_list(title=node.title, **node.mailing_params)
     node.mailing_enabled = True
     node.save()
 
@@ -43,7 +38,6 @@ def enable_discussions(node, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def disable_discussions(node, **kwargs):
-    delete_list(node._id)
     node.mailing_enabled = False
     node.save()
 
@@ -56,8 +50,6 @@ def set_subscription(node, auth, **kwargs):
     subscription = request.json.get('discussionsSub')
     subscribed = True if subscription == 'subscribed' else False
     user = auth.user
-
-    update_subscription(node._id, user.email, subscribed)
 
     if subscribed and user in node.mailing_unsubs:
         node.mailing_unsubs.remove(user)
@@ -76,7 +68,6 @@ def set_subscription(node, auth, **kwargs):
 def resubscribe_on_confirm(user):
     for node in user.node__contributed:
         node.mailing_unsubs.remove(user)
-        update_subscription(node._id, user.email, True)
 
 
 ###############################################################################
@@ -132,6 +123,8 @@ def route_message(**kwargs):
 
     if reason:
         mails.send_mail(reason=reason, **mail_params)
+    else:
+        send_messages(node, sender, message)
 
     # Create a log of this mailing event
     reason = reason if reason else MailingListEventLog.OK

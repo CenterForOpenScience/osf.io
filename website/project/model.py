@@ -63,7 +63,6 @@ from website.project.licenses import (
     NodeLicenseRecord,
 )
 from website.project import signals as project_signals
-from website.project import mailing_list
 from website.project.spam.model import SpamMixin
 from website.prereg import utils as prereg_utils
 
@@ -823,9 +822,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     comment_level = fields.StringField(default='public')
 
     # Project Mailing
-    mailing_enabled = fields.BooleanField(default=False, index=True)
-    # Used for cron update job
-    mailing_updated = fields.BooleanField(default=False, index=True)
+    mailing_enabled = fields.BooleanField(default=True, index=True)
     # list of users who have unsubscribed from mailing on this node
     mailing_unsubs = fields.ForeignField('user', list=True)
 
@@ -1051,22 +1048,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def ids_above(self):
         parents = self.parents
         return {p._id for p in parents}
-
-    @property
-    def mailing_params(self):
-        primary_emails = [user.email for user in self.contributors]
-        secondary_emails = []
-        for user in self.contributors:
-            for email in user.emails:
-                if email not in primary_emails:
-                    secondary_emails.append(email)
-
-        return {
-            'node_id': self._id,
-            'url': self.absolute_url,
-            'contributors': primary_emails,
-            'unsubs': [user.email for user in self.mailing_unsubs] + secondary_emails
-        }
 
     def nodes_active(self):
         return [x for x in self.nodes if not x.is_deleted]
@@ -1506,10 +1487,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if existing_dashboards.count() > 0:
                 raise NodeStateError("Only one dashboard allowed per user.")
 
-        # Set mailing attributes before save
-        if first_save and not (getattr(self, 'parent', True) or self.is_registration):
-            self.mailing_enabled = True
-            self.mailing_updated = True
+        # Set mailing attribute before save
+        if self.is_registration:
+            self.mailing_enabled = False
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
@@ -1523,13 +1503,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # If you're saving a property, do it above this super call
         saved_fields = super(Node, self).save(*args, **kwargs)
-
-        # Make actual mailing changes after save to ensure node id
-        if self.mailing_enabled:
-            if first_save:
-                mailing_list.celery_create_list(title=self.title, **self.mailing_params)
-            elif 'contributors' in saved_fields:
-                mailing_list.celery_match_members(**self.mailing_params)
 
         if first_save and is_original and not suppress_log:
             # TODO: This logic also exists in self.use_as_template()
@@ -1633,8 +1606,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
-        new.mailing_enabled = False if new.is_folder else top_level
-        new.mailing_updated = new.mailing_enabled
+        new.mailing_enabled = False if new.is_folder else True
         new.mailing_unsubs = []
         new.node_license = self.license.copy() if self.license else None
 
@@ -1971,8 +1943,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if original_title == new_title:
             return False
         self.title = new_title
-        self.mailing_updated = True
-        mailing_list.celery_update_title(self._id, new_title)
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
@@ -2108,11 +2078,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 save=True,
             )
 
-        if self.mailing_enabled:
-            self.mailing_enabled = False
-            self.mailing_updated = True
-            mailing_list.celery_delete_list(self._id)
-
         self.is_deleted = True
         self.deleted_date = date
         self.save()
@@ -2121,7 +2086,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return True
 
-    def fork_node(self, auth, title='Fork of ', top_level=True):
+    def fork_node(self, auth, title='Fork of '):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
@@ -2156,7 +2121,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if not node_contained.is_deleted:
                 forked_node = None
                 try:  # Catch the potential PermissionsError above
-                    forked_node = node_contained.fork_node(auth=auth, title='', top_level=False)
+                    forked_node = node_contained.fork_node(auth=auth, title='')
                 except PermissionsError:
                     pass  # If this exception is thrown omit the node from the result set
                 if forked_node is not None:
@@ -2169,8 +2134,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
-        forked.mailing_enabled = False if forked.is_folder else top_level
-        forked.mailing_updated = forked.mailing_enabled
+        forked.mailing_enabled = False if forked.is_folder else True
         forked.mailing_unsubs = []
         forked.node_license = original.license.copy() if original.license else None
 
@@ -2706,7 +2670,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 return True
         return False
 
-    def remove_contributor(self, contributor, auth, log=True, save=False):
+    def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
@@ -2744,9 +2708,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if message:
                 status.push_status_message(message, kind='info', trust=True)
 
-        if self.mailing_enabled:
-            self.mailing_updated = True
-
         if log:
             self.add_log(
                 action=NodeLog.CONTRIB_REMOVED,
@@ -2759,8 +2720,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 save=False,
             )
 
-        if save:
-            self.save()
+        self.save()
 
         #send signal to remove this user from project subscriptions
         auth_signals.contributor_removed.send(contributor, node=self)
@@ -2774,7 +2734,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for contrib in contributors:
             outcome = self.remove_contributor(
-                contributor=contrib, auth=auth, log=False, save=False
+                contributor=contrib, auth=auth, log=False,
             )
             results.append(outcome)
             if outcome:
@@ -2981,9 +2941,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 user.recently_added.insert(0, contrib_to_add)
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
-
-            if self.mailing_enabled:
-                self.mailing_updated = True
 
             # Unsubscribe non-active users until they become active
             if not contrib_to_add.is_active:

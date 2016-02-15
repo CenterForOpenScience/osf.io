@@ -32,7 +32,6 @@ from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
 from website.addons.base import utils as addon_utils
-from website.project.mailing_list import celery_update_email
 
 logger = logging.getLogger(__name__)
 
@@ -220,12 +219,6 @@ def update_user(auth):
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
-
-            for node in user.node__contributed:
-                if node.mailing_enabled:
-                    node.mailing_updated = True
-                    node.save()
-                    celery_update_email(node._id, user.email, username)
 
             user.username = username
 
