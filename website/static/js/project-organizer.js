@@ -100,7 +100,7 @@ function _poModified(item) {
 function _poResolveRows(item) {
     var mobile = window.innerWidth < 767; // true if mobile view
     var tb = this;
-    var folderIcons = tb.filterOn ? false : true;
+    var folderIcons = !tb.filterOn;
     var defaultColumns = [];
 
     if(this.isMultiselected(item.id)){

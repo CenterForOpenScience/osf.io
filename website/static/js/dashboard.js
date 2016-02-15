@@ -35,9 +35,7 @@ function _formatDataforPO(item) {
     item.name = item.attributes.title;
     item.tags = item.attributes.tags.toString();
     item.contributors = '';
-    if (!item.embeds.contributors.data){
-        console.log(item.embeds.contributors.errors);
-    } else {
+    if (item.embeds.contributors.data){
         item.embeds.contributors.data.forEach(function(c){
             var attr = c.embeds.users.data.attributes;
             item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
@@ -278,7 +276,6 @@ var Dashboard = {
                 config : xhrconfig,
                 data : data
             }).then(function _removeProjectFromCollectionsSuccess(result){
-                console.log(result);
                 self.currentLink = null; // To bypass the check when updating file list
                 self.updateFilter(self.activeFilter());
             }, function _removeProjectFromCollectionsFail(result){
