@@ -309,27 +309,54 @@
 
             % if not node['is_registration']:
 
-                % if discussions['enabled']:  ## Begin Project Mailing Lists Settings
-
+                <div class="panel panel-default">
+                    <span id="configureNotificationsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Email Notifications</h3>
+                    </div>
                     <div class="help-block" style="padding-left: 15px">
-                            <p>Start an email discussions by sending an email to <a href="mailto: ${node['id']}@osf.io">${node['id']}@osf.io</a>.</p>
-                            % if not discussions['user_subscribed']:
-                                <p class="text-danger">You currently do not receive email discussions for this ${node['node_type']}
-                                    and may be missing important information from other contributors</p>
-                            % endif
+                            <p class="text-info">This notification setting applies to ALL project contributors.</p>
+                    </div>
+                    % if node['discussions_enabled']:  ## Begin Project Mailing Lists Settings
+                        <div style="padding-left: 15px">
+                            <a data-toggle="modal" data-target="#discussionsContributorsModal"><i class="fa fa-envelope"></i></a>
+                            Project Mailing List Info
                         </div>
+                        % if user['is_admin']:
+                            <div class="help-block" style="padding-left: 15px">
+                                <p>Email discussions are currently enabled for this ${node['node_type']}.</p>
+                            </div>
+                            <div class="panel-body">
+                                % if 'admin' in user['permissions']:
+                                    <div>
+                                        <button id="disableDiscussions" class="btn btn-danger">Disable</button>
+                                    </div>
+                                % endif
+                            </div>
+                            <!-- <form id="discussionsTreeSettings" class="osf-treebeard-minimal">
+                                <div id="discussionsGrid">
+                                    <div class="spinner-loading-wrapper">
+                                        <div class="logo-spin logo-lg"></div>
+                                        <p class="m-t-sm fg-load-message"> Loading discussions settings...  </p>
+                                    </div>
+                                </div>
+                                <div class="help-block" style="padding-left: 15px">
+                                    <p id="configureDiscussionssMessage"></p>
+                                </div>
+                            </form> -->
+                        % endif
+
                         <div class="panel-body">
                             <form class="form" id="discussionsSettings">
-
                                 <div class="radio">
                                     <label>
-                                        <input type="radio" name="discussionsSub" value="subscribed" ${'checked' if discussions['user_subscribed'] else ''}>
+                                        <input type="radio" name="discussionsSub" value="subscribed" ${'checked' if user['discussions_subscribed'] else ''}>
                                         Receive email discussions for this ${node['node_type']}
                                     </label>
                                 </div>
                                 <div class="radio">
                                     <label>
-                                        <input type="radio" name="discussionsSub" value="unsubscribed" ${'' if discussions['user_subscribed'] else 'checked'}>
+                                        <input type="radio" name="discussionsSub" value="unsubscribed" ${'' if user['discussions_subscribed'] else 'checked'}>
                                         Do not receive email discussions (can still send to the address)
                                     </label>
                                 </div>
@@ -341,41 +368,35 @@
                                     <p id="configureDiscussionsMessage"></p>
                                 </div>
                             </form>
-                % else:
-
-                    <div class="help-block" style="padding-left: 15px">
-                            <p>Email discussions are currently disabled for this ${node['node_type']}.</p>
-                        </div>
-                        <div class="panel-body">
-                            % if 'admin' in user['permissions']:
-                                <div>
-                                    <button id="enableDiscussions" class="btn btn-success">Enable</button>
-                                </div>
-                            % endif
                         </div>
 
-                % endif  ## End PML Settings
-
-                <div class="panel panel-default">  ## Begin Individual Email Notifications
-                    <span id="configureNotificationsAnchor" class="anchor"></span>
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Email Notifications</h3>
-                    </div>
-                    <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
-                    </div>
-                    <form id="notificationSettings" class="osf-treebeard-minimal">
-                        <div id="grid">
-                            <div class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-lg"></div>
-                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                    % else:
+                            <div class="help-block" style="padding-left: 15px">
+                                <p>Email discussions are currently disabled for this ${node['node_type']}.</p>
                             </div>
-                        </div>
-                        <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
-                        </div>
-                    </form>
+                            <div class="panel-body">
+                                % if 'admin' in user['permissions']:
+                                    <div>
+                                        <button id="enableDiscussions" class="btn btn-success">Enable</button>
+                                    </div>
+                                % endif
+                            </div>
+
+                    % endif  ## End PML Settings ## Begin Individual Email Notifications
+                <div class="help-block" style="padding-left: 15px">
+                    <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                 </div>
+                <form id="notificationSettings" class="osf-treebeard-minimal">
+                    <div id="grid">
+                        <div class="spinner-loading-wrapper">
+                            <div class="logo-spin logo-lg"></div>
+                            <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                        </div>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                        <p id="configureNotificationsMessage"></p>
+                    </div>
+                </form>
 
             %endif
 

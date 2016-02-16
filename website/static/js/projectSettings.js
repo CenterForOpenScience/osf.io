@@ -107,7 +107,40 @@ var ProjectSettings = oop.extend(
                     }
                 }
             };
-        }
+        },
+        enableDiscussions: function() {
+            var request = $.ajax({
+                type: 'post',
+                dataType: 'json',
+                url: nodeApiUrl + 'discussions/'
+            });
+            request.done(function() {
+                window.location.reload();
+            });
+            request.fail($osf.handleJSONError);
+        },
+        disableDiscussions: function(nodeType) {
+
+            var message = '<p>Are you sure that you want to disable email discussions for this ' + nodeType + '?';
+
+            bootbox.confirm({
+                title: 'Email discussions disable confirmation',
+                message: message,
+                callback: function (result) {
+                    if (result) {
+                        var request = $.ajax({
+                            type: 'delete',
+                            dataType: 'json',
+                            url: nodeApiUrl + 'discussions/'
+                        });
+                        request.done(function () {
+                            window.location.reload();
+                        });
+                        request.fail($osf.handleJSONError);
+                    }
+                }
+            });
+        },
     });
 
 // TODO: Pass this in as an argument rather than relying on global contextVars
@@ -167,41 +200,6 @@ var getConfirmationCode = function(nodeType) {
         buttons: {
             success: {
                 label: 'Delete'
-            }
-        }
-    });
-};
-
-ProjectSettings.enableDiscussions = function(nodeType) {
-    var request = $.ajax({
-        type: 'post',
-        dataType: 'json',
-        url: nodeApiUrl + 'discussions/'
-    });
-    request.done(function() {
-        window.location.reload();
-    });
-    request.fail($osf.handleJSONError);
-};
-
-ProjectSettings.disableDiscussions = function(nodeType) {
-
-    var message = '<p>Are you sure that you want to disable email discussions for this ' + nodeType + '?';
-
-    bootbox.confirm({
-        title: 'Email discussions disable confirmation',
-        message: message,
-        callback: function (result) {
-            if (result) {
-                var request = $.ajax({
-                    type: 'delete',
-                    dataType: 'json',
-                    url: nodeApiUrl + 'discussions/'
-                });
-                request.done(function () {
-                    window.location.reload();
-                });
-                request.fail($osf.handleJSONError);
             }
         }
     });

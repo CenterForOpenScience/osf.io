@@ -54,6 +54,7 @@ if ($('#wgrid').length) {
         });
     });
 }
+
 $(document).ready(function() {
     // Apply KO bindings for Project Settings
     var categoryOptions = [];
@@ -84,11 +85,11 @@ $(document).ready(function() {
     });
 
     $('#enableDiscussions').on('click', function() {
-        ProjectSettings.enableDiscussions(ctx.node.nodeType);
+        projectSettingsVM.enableDiscussions();
     });
 
     $('#disableDiscussions').on('click', function() {
-        ProjectSettings.disableDiscussions(ctx.node.nodeType);
+        projectSettingsVM.disableDiscussions(ctx.node.nodeType);
     });
 
     $('#discussionsSettings').on('submit', function() {
