@@ -123,8 +123,10 @@
                     </ol>
                 % endif
                 </div>
-                <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
-                <span class="text-muted"> ${node['institution']} </span>
+                %if enable_institutions:
+                    <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
+                    <span class="text-muted"> ${node['institution']} </span>
+                %endif
                 % if node['is_fork']:
                     <p>
                     Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on

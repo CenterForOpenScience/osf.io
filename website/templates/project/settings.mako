@@ -37,6 +37,9 @@
 
                         % if 'admin' in user['permissions']:
                             <li><a href="#configureCommentingAnchor">Commenting</a></li>
+                        % endif
+
+                        % if 'admin' in user['permissions'] and enable_institutions:
                             <li><a href="#configureInstitutionAnchor">Project Affiliation / Branding</a></li>
                         % endif
 
@@ -301,7 +304,8 @@
                     </div>
 
                 </div>
-                <div class="panel panel-default" id="institutionSettings">
+                % if enable_institutions:
+                    <div class="panel panel-default" id="institutionSettings">
                     <span id="configureInstitutionAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Project Affiliation / Branding</h3>
@@ -347,6 +351,8 @@
                         % endif
                     </div>
                 </div>
+                % endif
+
 
             % endif
 
