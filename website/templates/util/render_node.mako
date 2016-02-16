@@ -29,15 +29,14 @@
                   % elif summary['is_pending_embargo']:
                     <span class="label label-info"><strong>Pending embargo</strong></span> |
                   % endif
-                  % if summary['archiving']:
+                  % if summary['archive_tree_in_progress']:
                     <span class="label label-primary"><strong>Archiving</strong></span> |
                   % endif
                 </span>
             <span data-bind="getIcon: '${summary['category']}'"></span>
-            % if not summary['archiving']:
+            % if not summary['archive_tree_in_progress']:
                 <a href="${summary['url']}">${summary['title']}</a>
-            % endif
-            % if summary['archiving']:
+            % else:
                 <span class="f-w-lg">${summary['title']}</span>
             % endif
 
@@ -49,7 +48,7 @@
             </span>
 
             <!-- Show/Hide recent activity log -->
-            % if not summary['archiving']:
+            % if not summary['archive_tree_in_progress']:
             <div class="pull-right">
                 % if not summary['primary'] and 'admin' in user['permissions'] and not node['is_registration']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
@@ -99,7 +98,7 @@
             </div>
             <span class="text-muted">${summary['nlogs']} contributions</span>
         % endif
-        % if not summary['archiving']:
+        % if not summary['archive_tree_in_progress']:
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
             % if summary['is_retracted']:
