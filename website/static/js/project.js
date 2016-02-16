@@ -256,9 +256,8 @@ $(document).ready(function() {
         trigger: 'hover'
     });
 
-    var DiscussionsInfoHtml = '<p>A contributor who is not subscribed to email discussions ' +
-        'will not recieve any of the emails sent to it, but will still be able to send emails ' +
-        'to it themselves, which will be distributed normally.</p>' +
+    var DiscussionsInfoHtml = '<p>A contributor who is not subscribed to this mailing list will not recieve any emails sent to it, ' +
+        'but will still be able to send emails themselves. These emails will be distributed normally.</p>' +
         '<p>You can change your subscription setting on the settings page.</p>';
 
     $('.discussions-info').attr(
