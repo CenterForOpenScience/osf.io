@@ -74,6 +74,7 @@ var entry = {
         'jquery.cookie',
         'URIjs',
         // Common internal modules
+        'js/keen',
         'js/fangorn',
         'js/citations',
         'js/osfHelpers',

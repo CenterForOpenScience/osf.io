@@ -179,6 +179,12 @@
             </script>
         % endif
 
+%if keenio_project_id:
+        <script src="${"/static/public/js/keen.js" | webpack_asset}" type="text/javascript">
+            new KeenTracker(${keenio_project_id}, ${keenio_write_key});
+        </script>
+    %endif
+
 
         ${self.javascript_bottom()}
     </body>
