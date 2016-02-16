@@ -57,7 +57,6 @@ if ($('#wgrid').length) {
 }
 
 $(document).ready(function() {
-    var self = this;
     // Apply KO bindings for Project Settings
     new InstitutionProjectSettings('#institutionSettings');
 

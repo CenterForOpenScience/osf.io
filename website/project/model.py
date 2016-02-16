@@ -881,6 +881,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def remove_primary_institution(self, user):
         inst = self.primary_institution
+        if not inst:
+            return False
         self.primary_institution = None
         if inst in self.affiliated_institutions:
             self.affiliated_institutions.remove(inst)
@@ -895,7 +897,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             },
             auth=Auth(user)
         )
-        self.save()
+        return True
 
     def institution_id(self):
         # Empty string over None, as None was somehow being serialized to <string>'None',

@@ -27,7 +27,7 @@
 <div class="row m-t-xl">
     %if campaign == "institution" and enable_institutions:
     <div class="col-sm-6 col-sm-offset-3 toggle-box toggle-box-active">
-        <h3 class="m-b-lg"> Login Through Institution</h3>
+        <h3 class="m-b-lg"> Login through institution</h3>
         <div id="inst">
             <div class="form-group">
                 <label for="selectedInst" class="control-label">Select Institution</label>
@@ -40,7 +40,7 @@
             </div>
             <div class="form-group" style="padding-top: 15px">
                 <div class="text-center m-t-lg">
-                    <p>To login normally click <a href="/login/">here</a>.</p>
+                    <p>To login normally, click <a href="/login/">here</a>.</p>
                 </div>
             </div>
         </div>

@@ -496,6 +496,7 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
             node.save()
             return node
         node.remove_primary_institution(user)
+        node.save()
         return node
 
     def to_representation(self, obj):
