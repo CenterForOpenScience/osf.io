@@ -493,6 +493,7 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
             if not inst.auth(user):
                 raise exceptions.PermissionDenied
             node.add_primary_institution(inst=inst, user=user)
+            node.save()
             return node
         node.remove_primary_institution(user)
         return node

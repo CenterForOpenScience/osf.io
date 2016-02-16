@@ -51,6 +51,7 @@ from website.util import sanitize
 from website.exceptions import (
     NodeStateError,
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
+    UserNotAffiliatedError,
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
@@ -858,23 +859,25 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     affiliated_institutions = fields.ForeignField('institution', list=True)
 
     def add_primary_institution(self, user, inst):
-        if inst.auth(user):
-            self.primary_institution = inst
+        if not inst.auth(user):
+            raise UserNotAffiliatedError('User is not affiliared with {}'.format(inst.name))
+        if inst == self.primary_institution:
+            return False
+        self.primary_institution = inst
+        if inst not in self.affiliated_institutions:
             self.affiliated_institutions.append(inst)
-            self.save()
-            self.add_log(
-                action=NodeLog.INSTITUTION_ADDED,
-                params={
-                    'node': self._primary_key,
-                    'institution': {
-                        'id': inst._id,
-                        'name': inst.name
-                    }
-                },
-                auth=Auth(user)
-            )
-            return True
-        return False
+        self.add_log(
+            action=NodeLog.INSTITUTION_ADDED,
+            params={
+                'node': self._primary_key,
+                'institution': {
+                    'id': inst._id,
+                    'name': inst.name
+                }
+            },
+            auth=Auth(user)
+        )
+        return True
 
     def remove_primary_institution(self, user):
         inst = self.primary_institution
