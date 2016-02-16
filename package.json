@@ -29,6 +29,7 @@
     "jquery.cookie": "^1.4.1",
     "json-loader": "^0.5.3",
     "jstimezonedetect": "^1.0.6",
+    "keen-js": "^3.0.0",
     "knockout": "~3.2.0",
     "knockout.punches": "^0.5.1",
     "knockout.validation": "^2.0.2",
