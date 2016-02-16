@@ -1357,10 +1357,15 @@ class User(GuidStoredObject, AddonModelMixin):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
-    def has_inst_auth(self, inst):
-        if inst in self.affiliated_institutions:
-            return True
-        return False
+    def is_affiliated_with_institution(self, inst):
+        return inst in self.affiliated_institutions
+
+    def remove_institution(self, inst_id):
+        try:
+            self.affiliated_institutions.remove(inst_id)
+        except ValueError:
+            return False
+        return True
 
     affiliated_institutions = fields.ForeignField('institution', list=True)
 
@@ -1390,6 +1395,7 @@ class Institution(StoredObject):
     _id = fields.StringField(index=True, unique=True, primary=True)
     name = fields.StringField(required=True)
     logo_name = fields.StringField(required=True)
+    auth_url = fields.StringField(required=False, validate=URLValidator())
 
     @property
     def pk(self):
@@ -1425,9 +1431,6 @@ class Institution(StoredObject):
 
     def get_absolute_url(self):
         return self.absolute_url
-
-    def auth(self, user):
-        return user.has_inst_auth(self)
 
     def view(self):
         return 'Static paths for custom pages'
