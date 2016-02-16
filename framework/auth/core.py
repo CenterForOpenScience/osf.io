@@ -1431,8 +1431,5 @@ class Institution(StoredObject):
     def get_absolute_url(self):
         return self.absolute_url
 
-    def auth(self, user):
-        return user.is_affiliated_with_institution(self)
-
     def view(self):
         return 'Static paths for custom pages'

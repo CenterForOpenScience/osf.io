@@ -1957,7 +1957,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
 class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """ Detail of the one primary_institution a node has, if any. Returns NotFound
-    if the node does not have a primary_instituion.
+    if the node does not have a primary_institution.
 
     ##Attributes
 
@@ -1997,7 +1997,7 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
 
 
 class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
-    """ Relationship Endpoint for Node -> Instituion Relationship
+    """ Relationship Endpoint for Node -> Institution Relationship
 
     Used to set the primary_institution of a node to an institution
 

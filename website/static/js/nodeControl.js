@@ -46,7 +46,6 @@ var ProjectViewModel = function(data) {
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
-    self.instLogoPath = data.node.institution_logo_path;
 
 
     // The button text to display (e.g. "Watch" if not watching)

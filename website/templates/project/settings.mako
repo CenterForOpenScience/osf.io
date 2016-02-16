@@ -311,7 +311,7 @@
                         <h3 class="panel-title">Project Affiliation / Branding</h3>
                     </div>
                     <div class="panel-body">
-                        % if not node['institution']:
+                        % if not node['institution']['name']:
                             <!-- ko if: availableInstitutions -->
                             <div class="help-block">
                                 Projects affiliated with institutions will show some institutional branding (such as logos) and if public, will be discoverable on OSF institutional landing pages.
@@ -341,7 +341,7 @@
                             </div>
                             <!-- /ko -->
                         % endif
-                        % if node['institution']:
+                        % if node['institution']['name']:
                             <div class="help-block">Your project is currently affiliated with: </div>
                             <p data-bind="text: primaryInstitution"></p>
                             <div class="help-block">

@@ -66,7 +66,7 @@ var ViewModel = function() {
         ).done(function (response) {
             window.location.reload();
         }).fail(function (xhr, status, error) {
-            $osf.growl('Unable to add institution to this node!');
+            $osf.growl('Unable to add institution to this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to add institution to this node', {
                 url: url,
                 status: status,
@@ -89,7 +89,7 @@ var ViewModel = function() {
         ).done(function (response) {
             window.location.reload();
         }).fail(function (xhr, status, error) {
-            $osf.growl('Unable to remove institution from this node!');
+            $osf.growl('Unable to remove institution from this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
             Raven.captureMessage('Unable to remove institution from this node!', {
                 url: url,
                 status: status,

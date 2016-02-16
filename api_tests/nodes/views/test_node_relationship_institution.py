@@ -153,7 +153,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(node.primary_institution, self.institution)
 
-    def test_remove_instituion_not_admin_but_affiliated(self):
+    def test_remove_institution_not_admin_but_affiliated(self):
         node = NodeFactory(creator=self.user)
         user = AuthUserFactory()
         user.affiliated_institutions.append(self.institution)

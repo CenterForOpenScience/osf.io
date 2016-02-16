@@ -40,7 +40,7 @@
             </div>
             <div class="form-group" style="padding-top: 15px">
                 <div class="text-center m-t-lg">
-                    <p>To login normally, click <a href="/login/">here</a>.</p>
+                    <p>For non-institutional login, click <a href="/login/">here</a>.</p>
                 </div>
             </div>
         </div>
