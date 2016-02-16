@@ -217,12 +217,12 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'campaign': ${campaign or '' | sjson, n}
         });
     </script>
+    <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
 </%def>
 
 <%def name="stylesheets()">

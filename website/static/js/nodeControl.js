@@ -46,26 +46,8 @@ var ProjectViewModel = function(data) {
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
-    self.instLogoPath = ko.observable('');
+    self.instLogoPath = data.node.institution_logo_path;
 
-    self.fetchInstitutions = function() {
-        if (data.node.institution) {
-            var url = window.contextVars.apiV2Prefix + 'nodes/' + self._id + '/institution/';
-            return $osf.ajaxJSON(
-                'GET',
-                url,
-                {isCors: true}
-            ).done(function (response) {
-                self.instLogoPath(response.data.attributes.logo_path);
-            }).fail(function (xhr, status, error) {
-                Raven.captureMessage('Unable to fetch institutions', {
-                    url: url,
-                    status: status,
-                    error: error
-                });
-            });
-        }
-    };
 
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.pureComputed(function() {
@@ -285,7 +267,6 @@ function NodeControl (selector, data, options) {
 NodeControl.prototype.init = function() {
     var self = this;
     osfHelpers.applyBindings(self.viewModel, this.selector);
-    self.viewModel.fetchInstitutions();
 };
 
 module.exports = {
