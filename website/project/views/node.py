@@ -203,16 +203,26 @@ def project_new_node(auth, node, **kwargs):
                 http.BAD_REQUEST,
                 data=dict(message_long=e.message)
             )
-
+        redirect_url = new_component.url
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
             'or return to the <u><a href="{url}">project page</a></u>.'
         ).format(url=node.url)
+        if form.inherit_contributors.data and node.has_permission(user, ADMIN):
+            for contributor in node.contributors:
+                new_component.add_contributor(contributor, permissions=node.get_permissions(contributor), auth=auth)
+            new_component.save()
+            redirect_url = redirect_url + 'contributors/'
+            message = (
+                'Your component was created successfully. You can edit the contributor permissions below, '
+                'work on your <u><a href=' + new_component.url +
+                '>component</a></u> or return to the <u><a href="{url}">project page</a></u>.'
+            ).format(url=node.url)
         status.push_status_message(message, kind='info', trust=True)
 
         return {
             'status': 'success',
-        }, 201, None, new_component.url
+        }, 201, None, redirect_url
     else:
         # TODO: This function doesn't seem to exist anymore?
         status.push_errors_to_status(form.errors)
@@ -781,6 +791,7 @@ def _view_project(node, auth, primary=False):
             },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
+            'contributors': [contributor._id for contributor in node.contributors]
         },
         'parent_node': {
             'exists': parent is not None,
