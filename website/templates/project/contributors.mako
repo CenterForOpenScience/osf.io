@@ -58,6 +58,11 @@
                   <i class="fa fa-plus"></i> Add
                 </a>
             <!-- /ko -->
+            % if node['discussions_enabled'] and not node['is_registration']:
+                <span class="m-l-md pull-right" style="font-size: 65%">Mailing List Info: 
+                <a data-toggle="modal" data-target="#discussionsContributorsModal"><i class="fa fa-envelope"></i></a>
+                </span>
+            % endif
         </h3>
         % if 'admin' in user['permissions'] and not node['is_registration']:
             <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
@@ -235,6 +240,18 @@
                 data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}">Name
             </th>
             <th></th>
+            % if node['discussions_enabled']:
+                <th class="col-md-3" style="text-align: center">
+                    In Mailing List
+                    <i class="fa fa-question-circle discussions-info"
+                        data-toggle="popover"
+                        data-title="Mailing List Information"
+                        data-container="body"
+                        data-placement="right"
+                        data-html="true"
+                    ></i>
+                </th>
+            % endif
             <th>
                 Permissions
                 <i class="fa fa-question-circle permission-info"
@@ -256,18 +273,6 @@
                 ></i>
             </th>
             <th class="remove"></th>
-            % if discussions['enabled']:
-                <th class="col-md-3">
-                    On Email Discussions
-                    <i class="fa fa-question-circle discussions-info"
-                        data-toggle="popover"
-                        data-title="Email Discussions Information"
-                        data-container="body"
-                        data-placement="right"
-                        data-html="true"
-                    ></i>
-                </th>
-            % endif
         </tr>
     </thead>
     <!-- ko if: $data == 'contrib' -->
@@ -319,6 +324,12 @@
                 <a class="name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
+        % if node['discussions_enabled']:
+            <td class="text-center">
+                <i class="fa fa-check" data-bind="visible: subscribed"></i>
+                <i class="fa fa-close" data-bind="visible: !subscribed"></i>
+            </td>
+        % endif
         <td class="permissions">
             <div class="header" data-bind="visible: contributor.expanded() && $root.collapsed()"></div>
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
@@ -351,11 +362,6 @@
                 />
             </div>
         </td>
-        % if discussions['enabled']:
-            <td class="text-center">
-                <i class="fa fa-check" data-bind="visible: subscribed"></i>
-            </td>
-        % endif
         <td>
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: contributor.canEdit() -->

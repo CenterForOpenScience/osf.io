@@ -104,6 +104,9 @@
                 <div id="contributorsList" style="height: 25px; overflow: hidden">
                 % if user['is_contributor']:
                     <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
+                    % if node['discussions_enabled']:
+                        <a data-toggle="modal" data-target="#discussionsContributorsModal"><i class="fa fa-envelope"></i></a>
+                    % endif
                 % else:
                     Contributors:
                 % endif
