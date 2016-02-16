@@ -23,11 +23,11 @@ describe('fileBrowser', function() {
         before(function () {
             collection = new LinkObject('collection', {
                 path: 'users/me/nodes/',
-                query: {'related_counts': true},
+                query: {'related_counts': 'children'},
                 systemCollection: true
             }, 'All My Projects');
-            tag = new LinkObject('tag', { tag : 'something', query : { 'related_counts' : true }}, 'Something Else');
-            name = new LinkObject('name', { id : '8q36f', query : { 'related_counts' : true }}, 'Caner Uguz');
+            tag = new LinkObject('tag', { tag : 'something', query : { 'related_counts' : 'children' }}, 'Something Else');
+            name = new LinkObject('name', { id : '8q36f', query : { 'related_counts' : 'children' }}, 'Caner Uguz');
             node = new LinkObject('node', { id : 'qwerty'}, 'Node Title');
         });
 
