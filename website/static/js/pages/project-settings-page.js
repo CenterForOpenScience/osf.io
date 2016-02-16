@@ -58,8 +58,9 @@ if ($('#wgrid').length) {
 
 $(document).ready(function() {
     // Apply KO bindings for Project Settings
-    new InstitutionProjectSettings('#institutionSettings');
-
+    if ($('#institutionSettings').length) {
+        new InstitutionProjectSettings('#institutionSettings');
+    }
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
     for (var i = 0; i < keys.length; i++) {

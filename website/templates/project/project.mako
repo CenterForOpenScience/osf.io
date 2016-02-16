@@ -21,7 +21,7 @@
                     % endif
                 % endif
                 <h2 class="node-title">
-                    % if node['institution']:
+                    % if node['institution'] and enable_institutions:
                         <img class="img-circle" height="75" width="75" id="instLogo" data-bind="attr: {src: instLogoPath}">
                     % endif
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
