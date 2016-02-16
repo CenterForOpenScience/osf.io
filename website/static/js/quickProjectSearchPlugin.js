@@ -42,7 +42,9 @@ var QuickSearchProject = {
         });
         promise.then(
             function(){
-                self.recursiveNodes(self.next());
+                if (self.next()) {
+                    self.recursiveNodes(self.next());
+                }
             }
         );
 
@@ -62,6 +64,7 @@ var QuickSearchProject = {
             }
             else {
                 self.loadingComplete(true);
+                m.redraw()
             }
         };
 
