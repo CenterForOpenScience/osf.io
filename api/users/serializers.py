@@ -9,7 +9,6 @@ from website.models import User
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
-from api.base.utils import add_dev_only_items
 
 
 class UserSerializer(JSONAPISerializer):
@@ -56,11 +55,10 @@ class UserSerializer(JSONAPISerializer):
     baiduScholar = DevOnly(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
                                                            allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar'))
     links = LinksField(
-        add_dev_only_items({
+        {
             'html': 'absolute_url',
-        }, {
             'profile_image': 'profile_image_url',
-        })
+        }
     )
 
     nodes = RelationshipField(
