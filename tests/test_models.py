@@ -3976,6 +3976,7 @@ class TestRegisterNode(OsfTestCase):
         node.save()
         registration = RegistrationFactory(project=node)
         assert_equal(registration.primary_institution._id, node.primary_institution._id)
+        assert_equal(set(registration.affiliated_institutions), set(node.affiliated_institutions))
 
 class TestNodeLog(OsfTestCase):
 
