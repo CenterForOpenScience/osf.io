@@ -13,7 +13,7 @@ from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
-from website.settings.defaults import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE
+from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE
 
 logger = logging.getLogger(__name__)
 
