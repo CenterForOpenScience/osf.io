@@ -31,9 +31,6 @@ MAIL_PASSWORD = 'CHANGEME'
 # Mailchimp email subscriptions
 ENABLE_EMAIL_SUBSCRIPTIONS = False
 
-# Project Mailing Lists
-ENABLE_PROJECT_MAILING = False
-
 # Session
 OSF_COOKIE_DOMAIN = None
 COOKIE_NAME = 'osf'

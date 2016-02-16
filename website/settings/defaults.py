@@ -117,7 +117,6 @@ WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
-ENABLE_PROJECT_MAILING = True
 
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')

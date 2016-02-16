@@ -128,8 +128,6 @@ class DbTestCase(unittest.TestCase):
         settings.PIWIK_HOST = None
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-        cls._original_enable_project_mailing = settings.ENABLE_PROJECT_MAILING
-        settings.ENABLE_PROJECT_MAILING = False
 
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
         settings.BCRYPT_LOG_ROUNDS = 1
@@ -155,7 +153,6 @@ class DbTestCase(unittest.TestCase):
         settings.DB_NAME = cls._original_db_name
         settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
-        settings.ENABLE_PROJECT_MAILING = cls._original_enable_project_mailing
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
 
