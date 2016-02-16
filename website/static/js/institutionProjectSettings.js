@@ -4,9 +4,8 @@ var ko = require('knockout');
 var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
-var ctx = window.contextVars;
 
-var ViewModel = function() {
+var ViewModel = function(data) {
     var self = this;
     self.primaryInstitution = ko.observable('None');
     self.institutionHref = ko.observable('');
@@ -24,7 +23,7 @@ var ViewModel = function() {
                 self.availableInstitutions(response.data.embeds.institutions.data);
             }
         }).fail(function (xhr, status, error) {
-            Raven.captureMessage('Unable to fetch user wiith embedded institutions', {
+            Raven.captureMessage('Unable to fetch user with embedded institutions', {
                 url: url,
                 status: status,
                 error: error
@@ -32,7 +31,7 @@ var ViewModel = function() {
         });
     };
     self.fetchNodeInstitutions = function() {
-        var url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/?embed=primary_institution';
+        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/?embed=primary_institution';
         return $osf.ajaxJSON(
             'GET',
             url,
@@ -51,7 +50,7 @@ var ViewModel = function() {
         });
     };
     self.submitInst = function() {
-        var url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/';
+        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institution/';
         var inst = self.selectedInstitution();
         return $osf.ajaxJSON(
             'PUT',
@@ -75,7 +74,7 @@ var ViewModel = function() {
         });
     };
     self.clearInst = function() {
-        var url = ctx.apiV2Prefix + 'nodes/' + ctx.node.id + '/relationships/institution/';
+        var url = data.apiV2Prefix + 'nodes/' + data.node.id + '/relationships/institution/';
         return $osf.ajaxJSON(
             'PUT',
             url,
@@ -99,8 +98,8 @@ var ViewModel = function() {
     };
 };
 
-var InstitutionProjectSettings = function(selector)  {
-    this.viewModel = new ViewModel();
+var InstitutionProjectSettings = function(selector, data)  {
+    this.viewModel = new ViewModel(data);
     $osf.applyBindings(this.viewModel, selector);
     this.viewModel.fetchUserInstitutions();
     this.viewModel.fetchNodeInstitutions();

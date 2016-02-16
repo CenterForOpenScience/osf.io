@@ -36,7 +36,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
 
     def test_institution_doesnt_exist(self):
         node = NodeFactory(creator=self.user)
