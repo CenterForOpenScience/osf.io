@@ -13,7 +13,7 @@ var ViewModel = function(data) {
     self.selectedInstitution = ko.observable();
 
     self.fetchUserInstitutions = function() {
-        var url = ctx.apiV2Prefix + 'users/' + ctx.currentUser.id + '/?embed=institutions';
+        var url = data.apiV2Prefix + 'users/' + data.currentUser.id + '/?embed=institutions';
         return $osf.ajaxJSON(
             'GET',
             url,
