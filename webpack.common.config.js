@@ -74,7 +74,6 @@ var entry = {
         'jquery.cookie',
         'URIjs',
         // Common internal modules
-        'js/keen',
         'js/fangorn',
         'js/citations',
         'js/osfHelpers',
@@ -128,6 +127,7 @@ var resolve = {
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         'pikaday-css': nodePath('pikaday/css/pikaday.css'),
+        'keen-js': nodePath('keen-js'),
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),
         'tests': staticPath('js/tests'),

@@ -1,47 +1,86 @@
 var keen = require('keen-js');
-var ctx = window.contextVars;
+var oop = require('js/oop');
 
-var KeenTracker = function(keenioProjectId, keenioWriteKey){
+var KeenTracker = oop.defclass({
+    constructor: function(keenProjectId, keenWriteKey) {
+        this.client = new keen({
+            projectId: keenProjectId,
+            writeKey: keenWriteKey
+        });
+        this.init();
+    },
 
-    var self = this;
+    trackVisit: function(){
+        if(!$.cookie('keen_visit')){
+            console.log("Logged visit");
+            this.createOrUpdateCookie();
+        }
+    },
 
-    var keenClient = new keen({
-        projectId: keenioProjectId,
-        writeKey: keenioWriteKey
-    });
+    trackPageView: function(){
+        var pageView = {
+            "page_url": document.URL,
+            "ip_address": "${keen.ip}",
+            "user_agent": "${keen.user_agent}",
+            "keen": {
+                "addons": [
+                    {
+                       "name" : "keen:ip_to_geo",
+                        "input" : {
+                            "ip" : "ip_address"
+                        },
+                        "output" : "ip_geo_info"
+                    },
+                    {
+                        "name" : "keen:ua_parser",
+                        "input" : {
+                            "ua_string" : "user_agent"
+                        },
+                        "output" : "parsed_user_agent"
+                    },
+                    {
+                        "name" : "keen:url_parser",
+                        "input" : {
+                            "url" : "page_url"
+                        },
+                        "output" : "parsed_page_url"
+                    }
+                ]
+            },
+            "sessionID": $.cookie('keen_visit'),
+            "timeSpent": "",
+            "pageTitle": document.title,
+            "generation_time": ""
+        };
+        if(window.contextVars.node){
+            pageView.node = window.contextVars.node;
+        }
+        if(window.contextVars.currentUser){
+            pageView.user = window.contextVars.currentUser;
+        }
+        this.createOrUpdateCookie();
+        console.log("Logged pageview", pageView);
+    },
 
+    trackCustomEvent: function(eventCollection, eventData){},
 
-    self.trackVisit = function(){
-        self.createOrUpdateCookie();
-    };
-
-    self.trackPageView = function(){
-        self.createOrUpdateCookie();
-        console.log(ctx);
-    };
-
-    self.trackCustomEvent = function(eventCollection, eventData){};
-
-    self.createOrUpdateCookie = function() {
+    createOrUpdateCookie: function() {
         var date = new Date();
         var min = 25;
-        var expDate = date.setTime(date.getTime() + (30*60*1000));
+        var expDate = date.setTime(date.getTime() + (min*60*1000));
         if(!$.cookie('keen_visit')){
-            $.cookie('keen_visit','true', {expires: expDate});
+            $.cookie('keen_visit','random_key', {expires: expDate});
         } else {
             var sessionHash = $.cookie('keen_visit');
             $.cookie('keen_visit', null);
             $.cookie('keen_visit', sessionHash, {expires: expDate});
         }
-    };
+    },
 
-    self.init = function(){
-        self.trackVisit();
-        self.trackPageView();
+    init: function(){
+        this.trackVisit();
+        this.trackPageView();
     }
+});
 
-};
-
-module.exports = {
-    KeenTracker: KeenTracker
-};
+module.exports = KeenTracker;
