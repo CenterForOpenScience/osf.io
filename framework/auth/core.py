@@ -1363,6 +1363,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return False
 
     affiliated_institutions = fields.ForeignField('institution', list=True)
+    institutions_metadata = fields.DictionaryField()
 
     def get_node_comment_timestamps(self, node, page, file_id=None):
         """ Returns the timestamp for when comments were last viewed on a node or
@@ -1389,7 +1390,10 @@ class Institution(StoredObject):
 
     _id = fields.StringField(index=True, unique=True, primary=True)
     name = fields.StringField(required=True)
+
     logo_name = fields.StringField(required=True)
+    domains = fields.StringField(list=True)
+    metadata_request_fields = fields.DictionaryField()
 
     @property
     def pk(self):
