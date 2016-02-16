@@ -328,7 +328,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button data-bind="click: submitInst" class="btn btn-success">Affiliate my project</button>
+                            <button data-bind="click: submitInst" class="btn btn-success">Affiliate</button>
                             <!-- /ko -->
                             <!-- ko ifnot: availableInstitutions-->
                             <div class="help-block">
@@ -347,7 +347,7 @@
                             <div class="help-block">
                                 Projects affiliated with institutions will show some institutional branding (such as logos), and if public, will be discoverable on OSF institutional landing pages.
                             </div>
-                            <button data-bind="click: clearInst" class="btn btn-danger">Unaffiliate my project</button>
+                            <button data-bind="click: clearInst" class="btn btn-danger">Remove affiliation</button>
                         % endif
                     </div>
                 </div>

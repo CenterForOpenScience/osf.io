@@ -124,7 +124,7 @@
                 % endif
                 </div>
                 %if enable_institutions:
-                    <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
+                    <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated institution:</a>
                     <span class="text-muted"> ${node['institution']} </span>
                 %endif
                 % if node['is_fork']:
