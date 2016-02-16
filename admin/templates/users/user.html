@@ -18,7 +18,12 @@
                class="btn btn-primary">
                 User notes
             </a>
-            {% include 'users/notes.html' %}
+            <div class="modal" id="notesModal" style="display: none;">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+                {# Import form from above link #}
+            </div>
             <a href=""
                class="btn btn-danger disabled">
                 Disable account

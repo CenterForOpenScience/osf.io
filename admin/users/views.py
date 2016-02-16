@@ -27,11 +27,15 @@ class OSFUserFormView(FormView):
 
     def get_context_data(self, **kwargs):
         self.guid = self.kwargs.get('guid', None)
+        kwargs.setdefault('osf_id', self.guid)
         return super(OSFUserFormView, self).get_context_data(**kwargs)
+    #
+    # def get_form(self, form_class=None):
 
     def form_valid(self, form):
-        self.guid = form.cleaned_data('guid').strip()
-        super(OSFUserFormView, self).form_valid(form)
+        self.guid = form.cleaned_data.get('osf_id').strip()
+        print form.cleaned_data.get('notes').strip()
+        return super(OSFUserFormView, self).form_valid(form)
 
     @property
     def success_url(self):

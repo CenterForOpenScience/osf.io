@@ -1,5 +1,4 @@
-<div class="modal" id="notesModal" style="display: none;">
-<form class="well" method="post" action="{% url 'users:notes' guid %}">
+<form class="well" method="post" action="{% url 'users:notes' osf_id %}">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
         <h3>Notes for OSF User</h3>
@@ -13,4 +12,3 @@
         <button type="button" class="btn" data-dismiss="modal" >Cancel</button>
     </div>
 </form>
-</div>
