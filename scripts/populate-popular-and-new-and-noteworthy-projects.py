@@ -13,7 +13,7 @@ from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
-from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE
+from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, QA_USER_IDS
 
 logger = logging.getLogger(__name__)
 
@@ -80,10 +80,8 @@ def is_eligible_node(node):
     if node._id == POPULAR_LINKS_NODE or node._id == NEW_AND_NOTEWORTHY_LINKS_NODE:
         return False
 
-    qa_user_ids = ['nxygz', 'x952z', 'tgak8', 'gaexu', 'rgc49', 'nsx26', 'j52af', 'rbk3c', 'xyubm', 'bje5z', 'twkqb', 'mvzr6', 'dihba']
-
     for contrib in node.contributors:
-        if contrib._id in qa_user_ids:
+        if contrib._id in QA_USER_IDS:
             logger.warn('Node {} skipped because a QA member, {}, is a contributor.'.format(node._id, contrib._id))
             return False
 

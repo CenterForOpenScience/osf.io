@@ -229,6 +229,7 @@ ALL_MY_PROJECTS_NAME = 'All my projects'
 ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 POPULAR_LINKS_NODE = '8w6qe'  # Temporary.  Needs to be set to public node in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = 'su3q5' # Temporary. Needs to be set to public node in production.
+QA_USER_IDS = ['nxygz', 'x952z', 'tgak8', 'gaexu', 'rgc49', 'nsx26', 'j52af', 'rbk3c', 'xyubm', 'bje5z', 'twkqb', 'mvzr6', 'dihba'] # Should be updated periodically
 
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
