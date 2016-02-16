@@ -9,16 +9,17 @@ from framework.auth.core import get_user
 from framework.auth.signals import user_confirmed
 
 from website import mails
+from website import settings
+from website.models import Node
 from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
     must_be_contributor
 )
-from website.project.mailing_list import send_messages
 from website.project.model import MailingListEventLog
 from website.util.permissions import ADMIN
-from website.models import Node
+from website.util.sanitize import unescape_entities
 
 
 ###############################################################################
@@ -75,9 +76,11 @@ def resubscribe_on_confirm(user):
             pass
 
 ###############################################################################
-# MailGun Calls
+# Mailing List Functions
 ###############################################################################
 
+def address(node_id):
+    return node_id + '@' + settings.SHORT_DOMAIN
 
 def find_email(long_email):
     # allow for both "{email}" syntax and "{name} <{email}>" syntax
@@ -139,3 +142,30 @@ def route_message(**kwargs):
         email=sender_email,
         user=sender,
     )
+
+def send_messages(node, sender, message):
+    recipients = [u for u in node.contributors
+        if u not in node.mailing_unsubs
+        and u != sender
+        and u.is_active]
+    mail = mails.DISCUSSIONS_EMAIL_ACCEPTED
+    mail.subject = '{} [via OSF: {}]'.format(
+        message['subject'].split(' [via OSF')[0],  # Fixes reply subj, if node.title changes
+        unescape_entities(node.title)
+    )
+    from_addr = '{0} <{1}>'.format(sender.fullname, address(node._id))
+    context = {
+        'body': message['stripped-text'][0],
+        'cat': node.category,
+        'node_url': '{}{}'.format(settings.DOMAIN.rstrip('/'), node.url),
+        'node_title': node.title,
+        'url': '{}{}settings/#configureNotificationsAnchor'.format(settings.DOMAIN.rstrip('/'), node.url)
+    }
+
+    for recipient in recipients:
+        mails.send_mail(
+            to_addr=recipient.username,
+            mail=mail,
+            from_addr=from_addr,
+            **context
+        )

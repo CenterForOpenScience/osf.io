@@ -148,6 +148,7 @@ PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received r
 REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
 REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
 
+DISCUSSIONS_EMAIL_ACCEPTED = Mail('discussions_email_accepted', subject='')
 DISCUSSIONS_EMAIL_REJECTED = Mail('discussions_email_rejected', subject='Your email has been rejected')
 
 CONFERENCE_SUBMITTED = Mail(
