@@ -493,7 +493,7 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
             try:
                 node.add_primary_institution(inst=inst, user=user)
             except UserNotAffiliatedError:
-                raise exceptions.ValidationError
+                raise exceptions.ValidationError(detail='User not affiliated with institution')
             node.save()
             return node
         node.remove_primary_institution(user)
