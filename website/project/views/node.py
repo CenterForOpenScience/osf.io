@@ -781,6 +781,9 @@ def _view_project(node, auth, primary=False):
             },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
+            'discussions_enabled': node.mailing_enabled,
+            'discussions_unsubs': [u.fullname for u in node.mailing_unsubs] if node.is_contributor(user) else [],
+            'contrib_count': len(node.contributors) if node.is_contributor(user) else 0,
         },
         'parent_node': {
             'exists': parent is not None,
@@ -811,10 +814,7 @@ def _view_project(node, auth, primary=False):
             'can_comment': node.can_comment(auth),
             'show_wiki_widget': _should_show_wiki_widget(node, user),
             'dashboard_id': dashboard_id,
-        },
-        'discussions': {
-            'enabled': node.mailing_enabled,
-            'user_subscribed': user not in node.mailing_unsubs if user else False
+            'discussions_subscribed': user not in node.mailing_unsubs if user else False,
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
