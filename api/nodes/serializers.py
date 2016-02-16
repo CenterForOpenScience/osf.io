@@ -171,9 +171,11 @@ class NodeSerializer(JSONAPISerializer):
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
-            return ["read"]
-        else:
-            return obj.get_permissions(user=user)
+            return ['read']
+        permissions = obj.get_permissions(user=user)
+        if not permissions:
+            permissions = ['read']
+        return permissions
 
     class Meta:
         type_ = 'nodes'
