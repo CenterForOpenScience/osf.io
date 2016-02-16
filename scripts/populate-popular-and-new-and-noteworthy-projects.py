@@ -120,14 +120,16 @@ def main(dry_run=True):
             try:
                 popular_links_node.save()
                 logger.info('Node links on {} updated.'.format(popular_links_node._id))
-            except:
+            except (KeyError, RuntimeError) as error:
                 logger.error('Could not migrate popular nodes due to error')
+                logger.exception(error)
 
             try:
                 new_and_noteworthy_links_node.save()
                 logger.info('Node links on {} updated.'.format(new_and_noteworthy_links_node._id))
-            except:
+            except (KeyError, RuntimeError) as error:
                 logger.error('Could not migrate new and noteworthy nodes due to error')
+                logger.exception(error)
 
 
 if __name__ == '__main__':
