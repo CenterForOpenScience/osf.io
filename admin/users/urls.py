@@ -9,4 +9,6 @@ urlpatterns = [
         name='user'),
     url(r'^id-(?P<guid>[a-z0-9]+)/disable/$', views.disable_user,
         name='disable'),
+    url(r'^id-(?P<guid>[a-z0-9]+)/reactivate/$', views.reactivate_user,
+        name='reactivate'),
 ]

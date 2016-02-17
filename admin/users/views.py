@@ -9,7 +9,15 @@ from .serializers import serialize_user
 
 def disable_user(request, guid):
     user = User.load(guid)
+    # user.disable_account()
     user.is_disabled = True  # TODO: change to user.disable_account() after local tests
+    user.save()
+    return redirect(reverse_user(guid))
+
+
+def reactivate_user(request, guid):
+    user = User.load(guid)
+    user.date_disabled = None
     user.save()
     return redirect(reverse_user(guid))
 

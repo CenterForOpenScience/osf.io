@@ -17,6 +17,7 @@
                class="btn btn-primary disabled">
                 User notes
             </a>
+            {% if not user.disabled %}
             <button data-toggle="modal" data-target="#disableModal"
                     class="btn btn-danger">
                 Disable account
@@ -38,6 +39,10 @@
                 </div>
                 </div>
             </div>
+            {% else %}
+                <a href="{% url 'users:reactivate' user.id %}"
+                   class="btn btn-success">Reactivate account</a>
+            {% endif %}
         </div>
         <div class="row">
             <h3>User details</h3>
@@ -79,16 +84,12 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Disabled account</td>
+                    <td>Account disabled</td>
                     <td>{{ user.disabled }}</td>
                 </tr>
                 <tr>
                     <td>Last login</td>
                     <td>{{ user.last_login }}</td>
-                </tr>
-                <tr>
-                    <td>Account disabled</td>
-                    <td>False</td>
                 </tr>
                 <tr>
                     <td>Nodes</td>
