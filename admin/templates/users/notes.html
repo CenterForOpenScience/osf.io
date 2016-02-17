@@ -4,8 +4,13 @@
         <h3>Notes for OSF User</h3>
     </div>
     <div class="modal-body">
+        <h4>User: {{ osf_id }}</h4>
         {% csrf_token %}
-        {{ form }}
+        <label for="{{ form.notes.id_for_label }}">
+            <strong>Notes for OSF user:</strong>
+        </label>
+        <br>
+        {{ form.notes }}
     </div>
     <div class="modal-footer">
         <input class="btn btn-primary" type="submit" value="Save" />

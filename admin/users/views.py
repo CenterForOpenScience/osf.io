@@ -26,6 +26,9 @@ class OSFUserFormView(FormView):
         self.model = None
         super(OSFUserFormView, self).__init__()
 
+    def get(self, request, *args, **kwargs):
+        return self.render_to_response(self.get_context_data())  # TODO: 1.9 xx
+
     def get_context_data(self, **kwargs):
         self.guid = self.kwargs.get('guid', None)
         try:
@@ -34,21 +37,27 @@ class OSFUserFormView(FormView):
             self.model = OSFUser(osf_id=self.guid)
             self.model.save()
         kwargs.setdefault('osf_id', self.guid)
+        kwargs.setdefault('form', self.get_form())  # TODO: 1.9 xx
         return super(OSFUserFormView, self).get_context_data(**kwargs)
 
+    def post(self, request, *args, **kwargs):
+        self.guid = self.kwargs.get('guid', None)
+        try:
+            self.model = OSFUser.objects.get(osf_id=self.guid)
+        except OSFUser.DoesNotExist:
+            self.model = OSFUser(osf_id=self.guid)
+            self.model.save()
+        return super(OSFUserFormView, self).post(request, *args, **kwargs)
+
+    def get_initial(self):
+        return {'notes': self.model.notes}
+
     def get_form(self, form_class=None):
-        return self.form_class(instance=self.model, **self.get_form_kwargs())
+        return self.form_class(instance=self.model,
+                               **self.get_form_kwargs())
 
     def form_valid(self, form):
-        self.guid = form.cleaned_data.get('osf_id').strip()
-        notes = form.cleaned_data.get('notes').strip()
-        try:
-            osf_user = OSFUser.objects.get(osf_id=self.guid)
-            f = OSFUserForm(self.request.POST, instance=osf_user)
-            f.save()
-        except:
-            new_user = OSFUser(osf_id=self.guid, notes=notes)
-            new_user.save()
+        form.save()
         return super(OSFUserFormView, self).form_valid(form)
 
     @property

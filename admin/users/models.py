@@ -10,4 +10,4 @@ class OSFUser(models.Model):
 class OSFUserForm(ModelForm):
     class Meta:
         model = OSFUser
-        fields = ['osf_id', 'notes']
+        fields = ['notes']
