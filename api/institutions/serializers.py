@@ -13,8 +13,7 @@ class InstitutionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='_id')
     logo_path = ser.CharField(read_only=True)
     auth_url = ser.CharField(read_only=True)
-    links = LinksField({'self': 'get_api_url',
-                        'html': 'get_absolute_url', })
+    links = LinksField({'self': 'get_api_url', })
 
     nodes = RelationshipField(
         related_view='institutions:institution-nodes',
@@ -33,9 +32,6 @@ class InstitutionSerializer(JSONAPISerializer):
 
     def get_api_url(self, obj):
         return obj.absolute_api_v2_url
-
-    def get_absolute_url(self, obj):
-        return 'placeholder'
 
     class Meta:
         type_ = 'institutions'
