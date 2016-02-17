@@ -1,8 +1,16 @@
+from django.shortcuts import redirect
+
 from website.project.model import User
 
 from admin.base.views import GuidFormView, GuidView
 from admin.users.templatetags.user_extras import reverse_user
 from .serializers import serialize_user
+
+
+def remove_2_factor(request, guid):
+    user = User.load(guid)
+    user.delete_addon('twofactor')
+    return redirect(reverse_user(guid))
 
 
 class UserFormView(GuidFormView):

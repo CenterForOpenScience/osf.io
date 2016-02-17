@@ -70,6 +70,18 @@
                     <td>False</td>
                 </tr>
                 <tr>
+                    <td>Two factor</td>
+                    <td>
+                        {{ user.two_factor }}
+                        {% if user.two_factor %}
+                            <a href="{% url 'users:remove2factor' user.id %}"
+                               class="btn btn-default">
+                                Deactivate
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
                     <td>Nodes</td>
                     <td>
                         <table class="table table-hover table-bordered">
