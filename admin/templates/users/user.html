@@ -17,10 +17,27 @@
                class="btn btn-primary disabled">
                 User notes
             </a>
-            <a href=""
-               class="btn btn-danger disabled">
+            <button data-toggle="modal" data-target="#disableModal"
+                    class="btn btn-danger">
                 Disable account
-            </a>
+            </button>
+            <div class="modal" id="disableModal" style="display: none">
+                <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Are you sure you want to disable this user?</h3>
+                    </div>
+                    <div class="modal-body">
+                        Please be sure that you need to deactivate this user.
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{% url 'users:disable' user.id %}"
+                           class="btn btn-danger">Disable</a>
+                        <button class="btn" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+                </div>
+            </div>
         </div>
         <div class="row">
             <h3>User details</h3>
