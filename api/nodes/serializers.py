@@ -9,8 +9,8 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
 
 from website.models import Node, User, Comment, Institution
-from website.exceptions import NodeStateError
-from website.files.models import FileNode
+from website.exceptions import NodeStateError, UserNotAffiliatedError
+from website.files.models.base import FileNode
 from website.util import permissions as osf_permissions
 
 from api.nodes.utils import get_file_object
@@ -493,9 +493,13 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
             inst = Institution.load(inst)
             if not inst:
                 raise exceptions.NotFound
-            if not inst.auth(user):
-                raise exceptions.PermissionDenied
-        node.primary_institution = inst
+            try:
+                node.add_primary_institution(inst=inst, user=user)
+            except UserNotAffiliatedError:
+                raise exceptions.ValidationError(detail='User not affiliated with institution')
+            node.save()
+            return node
+        node.remove_primary_institution(user)
         node.save()
         return node
 

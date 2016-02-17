@@ -6,6 +6,7 @@ var Raven = require('raven-js');
 var ko = require('knockout');
 
 var ProjectSettings = require('js/projectSettings.js');
+var InstitutionProjectSettings = require('js/institutionProjectSettings.js');
 
 var $osf = require('js/osfHelpers');
 require('css/addonsettings.css');
@@ -54,8 +55,12 @@ if ($('#wgrid').length) {
         });
     });
 }
+
 $(document).ready(function() {
     // Apply KO bindings for Project Settings
+    if ($('#institutionSettings').length) {
+        new InstitutionProjectSettings('#institutionSettings', window.contextVars);
+    }
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
     for (var i = 0; i < keys.length; i++) {

@@ -263,7 +263,7 @@ def _profile_view(profile, is_profile=False):
         badges = []
 
     if profile:
-        profile_user_data = profile_utils.serialize_user(profile, full=True)
+        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile)
         return {
             'profile': profile_user_data,
             'assertions': badge_assertions,
