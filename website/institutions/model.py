@@ -3,7 +3,7 @@ import urlparse
 
 from django.core.urlresolvers import reverse
 
-from modularodm import fields, Q
+from modularodm import fields
 from modularodm.validators import URLValidator
 
 from website import settings
