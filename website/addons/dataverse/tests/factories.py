@@ -15,7 +15,6 @@ class DataverseAccountFactory(ExternalAccountFactory):
     provider_id = Sequence(lambda n: 'id-{0}'.format(n))
     oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
     display_name='foo.bar.baz'
-    oauth_key='foo.bar.baz'
     oauth_secret='doremi-abc-123'
 
 

@@ -55,7 +55,6 @@ def get_targets():
 
 def main():
     dry_run = False
-    remove_old = True
     if '--dry' in sys.argv:
         dry_run = True
     if not dry_run:

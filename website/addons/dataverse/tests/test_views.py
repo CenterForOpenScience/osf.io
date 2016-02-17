@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-
-import nose
 from nose.tools import *  # noqa
 import mock
 
 import httplib as http
 from tests.factories import AuthUserFactory
-
-from dataverse.exceptions import UnauthorizedError
 
 from framework.auth.decorators import Auth
 
@@ -18,12 +14,11 @@ from website.addons.dataverse.serializer import DataverseSerializer
 from website.addons.dataverse.tests.utils import (
     create_mock_connection, DataverseAddonTestCase, create_external_account,
 )
-from website.oauth.models import ExternalAccount
 
 class TestAuthViews(DataverseAddonTestCase):
 
     def test_deauthorize(self):
-        url = api_url_for('dataverse_import_auth',
+        url = api_url_for('dataverse_deauthorize_node',
                           pid=self.project._primary_key)
         self.app.delete(url, auth=self.user.auth)
 
@@ -301,7 +296,3 @@ class TestDataverseRestrictions(DataverseAddonTestCase):
         res = self.app.post_json(url, params, auth=self.contrib.auth,
                                  expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
-
-
-if __name__ == '__main__':
-    nose.run()

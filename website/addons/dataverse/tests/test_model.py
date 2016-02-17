@@ -2,9 +2,7 @@ from nose.tools import *  # noqa
 import mock
 
 from tests.base import get_default_metaschema
-from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
-from framework.exceptions import PermissionsError
 
 from website.addons.base.testing import models
 
