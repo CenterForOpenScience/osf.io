@@ -182,7 +182,8 @@ var Dashboard = {
                     });
                 }
             }, function _error(results){
-                console.error('Error loading category names:', results);
+                var message = 'Error loading project category names.';
+                Raven.captureMessage(message, {requestReturn: results});
             });
             return promise;
         };
