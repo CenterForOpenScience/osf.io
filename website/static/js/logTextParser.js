@@ -7,6 +7,8 @@ var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
 var $ = require('jquery');  // jQuery
 
+
+var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 /**
  * Checks if the required parameter to complete the log is returned
  * This may intentionally not be returned to make log anonymous
@@ -17,7 +19,10 @@ var $ = require('jquery');  // jQuery
 var paramIsReturned = function(param, logObject){
     if(!param){
         var message = 'Expected parameter for Log action ' + logObject.attributes.action + ' was not returned from log api.';
-        Raven.captureMessage(message, {logObject: logObject});
+        if(ravenMessagesCache.indexOf(message) === -1){
+            Raven.captureMessage(message, {logObject: logObject});
+            ravenMessagesCache.push(message);
+        }
         return false;
     }
     return true;
