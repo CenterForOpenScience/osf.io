@@ -24,18 +24,6 @@ class Institution(StoredObject):
         return self._id
 
     @property
-    def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
-
-    @property
-    def url(self):
-        return '/{}/'.format(self._id)
-
-    @property
-    def deep_url(self):
-        return '/institution/{}/'.format(self._id)
-
-    @property
     def api_v2_url(self):
         return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
 
@@ -47,12 +35,3 @@ class Institution(StoredObject):
     @property
     def logo_path(self):
         return '/static/img/institutions/{}/'.format(self.logo_name)
-
-    def get_api_url(self):
-        return self.absolute_api_v2_url
-
-    def get_absolute_url(self):
-        return self.absolute_url
-
-    def view(self):
-        return 'Static paths for custom pages'
