@@ -23,8 +23,24 @@ $(document).ready(function(){
             filesData: data.data,
             xhrconfig: $osf.setXHRAuthorization,
             onfilter: function(){
+                var queryElasticSearch = function(query, node_id){
+                    var data = {'q': query, 'pid': node_id};
+                    var response = $.getJSON('/api/v1/project_files', data);
+                    return response;
+                };
+
                 var showResults = function(paths, tb){
+
+                    // convert to a dictionary for constant time look-ups.
+                    var path_dict = {};
+                    for (var i=0; i<paths.length; i++){
+                        path_dict[paths[i]] = true;
+                    }
+
+                    // remove all displayed items
                     tb.visibleIndexes = [];
+
+                    // add items matching filter or in elastic search to displayed.
                     for (var i=0; i < tb.flatData.length; i++){
                         var element = tb.flatData[i];
                         var item = tb.find(element.id);
@@ -33,23 +49,16 @@ $(document).ready(function(){
                         }
                         else if (element.row.kind === 'file'){
                             var path = element.row.path.replace('/', '');
-                            if (paths.indexOf(path) !== -1){
+                            if (path_dict[path]){
                                 tb.visibleIndexes.push(i);
                             }
                         }
                     }
                     tb.refreshRange(0);
-                    m.redraw(true);
-                };
-
-                var queryElasticSearch = function(query, node_id){
-                    var data = {'q': query, 'pid': node_id};
-                    var response = $.getJSON('/api/v1/project_files', data);
-                    return response;
                 };
 
                 var tb = this;
-                var query = this.filterText;
+                var query = this.filterText();
                 var node_id = tb.flatData[0].row.nodeID;
                 console.log(query);
                 var response = queryElasticSearch(query, node_id).done(
