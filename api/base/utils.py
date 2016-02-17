@@ -111,11 +111,3 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
-
-def add_dev_only_items(items, dev_only_items):
-    """Add some items to a dictionary if in ``DEV_MODE``.
-    """
-    items = items.copy()
-    if website_settings.DEV_MODE:
-        items.update(dev_only_items)
-    return items

@@ -779,6 +779,10 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
+            'institution': {
+                'name': node.primary_institution.name if node.primary_institution else None,
+                'logo_path': node.primary_institution.logo_path if node.primary_institution else None,
+            },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
             'discussions_enabled': node.mailing_enabled,
