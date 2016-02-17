@@ -132,6 +132,8 @@ class StoredFileNode(StoredObject):
     node = fields.ForeignField('Node', required=True)
     parent = fields.ForeignField('StoredFileNode', default=None)
 
+    copied_from_id = fields.StringField(default=None)
+
     is_file = fields.BooleanField(default=True)
     provider = fields.StringField(required=True)
 
@@ -613,6 +615,7 @@ class File(FileNode):
                 version=None,
                 modified=None,
                 contentType=None,
+                copiedFromID=self.copied_from_id,
                 downloads=self.get_download_count(),
                 checkout=self.checkout._id if self.checkout else None,
             )

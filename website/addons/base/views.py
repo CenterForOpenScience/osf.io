@@ -577,6 +577,7 @@ def addon_view_file(auth, node, file_node, version):
             'sharejs': wiki_settings.SHAREJS_URL,
             'gravatar': get_gravatar(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),
+            'archived_from': get_archived_from_url(node, file_node),
         },
         'error': error,
         'file_name': file_node.name,
@@ -596,3 +597,24 @@ def addon_view_file(auth, node, file_node, version):
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
+
+
+def get_archived_from_url(node, file_node):
+    if node.is_registration:
+        if file_node.copied_from_id:
+            # this logic is for NEWLY archived files, which will store their copied_from_id
+            # this logic WILL find the live file if it has been moved, but not if deleted
+            trashed = TrashedFileNode.load(file_node.copied_from_id)
+            if not trashed:
+                return node.registered_from.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from_id)
+        else:
+            # this logic is for EXISTING archived files
+            # this logic WILL NOT find an archived_file_url if the original file has been moved or deleted
+
+            # Remove '/Archive of OSFStorage' from materialized path in order to compare with original
+            materialized_path_revised = '/{}'.format(file_node.materialized_path.split('/', 2)[-1])
+            files = FileNode.find(Q('node', 'eq', node.registered_from))
+            for file in files:
+                if file.materialized_path == materialized_path_revised:
+                    return file.deep_url
+    return None
