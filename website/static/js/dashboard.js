@@ -334,9 +334,9 @@ var Dashboard = {
                     }
                 } else {
                     self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                        'This project has no subcomponents.',
+                        'This project has no components.',
                         m.component(AddProject, {
-                            buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new Subcomponent'),
+                            buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new component'),
                             parentID : lastcrumb.data.id,
                             modalID : 'addSubcomponent',
                             categoryList : self.categoryList,
@@ -1042,7 +1042,7 @@ var Breadcrumbs = {
         return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
-                    var label = item.type === 'node' ? ' Add Component' : ' Add Project';
+                    var label = item.type === 'node' ? ' Add component' : ' Add project';
                     var addProjectTemplate = m.component(AddProject, {
                         buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), label]),
                         parentID : args.breadcrumbs()[args.breadcrumbs().length-1].data.id,
