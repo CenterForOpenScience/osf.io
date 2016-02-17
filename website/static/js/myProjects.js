@@ -28,6 +28,23 @@ var xhrconfig = function (xhr) {
     xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
 };
 
+// Refactor the information needed for filtering rows
+function _formatDataforPO(item) {
+    item.kind = 'folder';
+    item.uid = item.id;
+    item.name = item.attributes.title;
+    item.tags = item.attributes.tags.toString();
+    item.contributors = '';
+    if (item.embeds.contributors.data){
+        item.embeds.contributors.data.forEach(function(c){
+            var attr = c.embeds.users.data.attributes;
+            item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
+        });
+    }
+    item.date = new $osf.FormattableDate(item.attributes.date_modified);
+    return item;
+}
+
 var LinkObject = function _LinkObject (type, data, label) {
     if (type === undefined || data === undefined || label === undefined) {
         throw new Error('LinkObject expects type, data and label to be defined.');
@@ -46,13 +63,13 @@ var LinkObject = function _LinkObject (type, data, label) {
                 );
         }
         else if (self.type === 'tag') {
-            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : true, 'embed' : 'contributors'}});
+            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : 'children', 'embed' : 'contributors'}});
         }
         else if (self.type === 'name') {
-            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : true, 'embed' : 'contributors' }});
+            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : 'children', 'embed' : 'contributors' }});
         }
         else if (self.type === 'node') {
-            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors' }});
+            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }});
         }
         // If nothing
         throw new Error('Link could not be generated from linkObject data');
@@ -60,38 +77,12 @@ var LinkObject = function _LinkObject (type, data, label) {
     self.link = self.generateLink();
 };
 
-/**
- * Adds some information to the data object in a way that helps Treebeard be able to sort directly
- * @param {Object} item Node object as returned from API
- * @returns {Object} item The item with added attributes is returned
- * @private
- */
-function _formatDataforPO(item) {
-    item.uid = item.id;
-    item.name = item.attributes.title;
-    item.tags = item.attributes.tags.toString();
-    item.contributors = '';
-    if (!item.embeds.contributors.data){
-        console.log(item.embeds.contributors.errors);
-    } else {
-        item.embeds.contributors.data.forEach(function(c){
-            item.contributors += c.embeds.users.data.attributes.full_name;
-        });
-    }
-    item.date = new $osf.FormattableDate(item.attributes.date_modified);
-    return item;
-}
 
-/**
- * Converts a flat list of nodes to their hierarchical structure
- * @param {Array} flatData The flat list of node objects returned from API
- * @returns {Array} Hierarchical version of the flat data
- * @private
- */
-function _makeTree (flatData) {
+function _makeTree (flatData, lastcrumb) {
     var root = {id:0, children: [], data : {} };
     var node_list = { 0 : root};
     var parentID;
+    var crumbParent = lastcrumb ? lastcrumb.data.id : null;
     for (var i = 0; i < flatData.length; i++) {
         var n = _formatDataforPO(flatData[i]);
         if (!node_list[n.id]) { // If this node is not in the object list, add it
@@ -107,12 +98,11 @@ function _makeTree (flatData) {
         } else {
             parentID = null;
         }
-        if(parentID && !n.attributes.registration ) {
+        if(parentID && !n.attributes.registration && parentID !== crumbParent ) {
             if(!node_list[parentID]){
                 node_list[parentID] = { children : [] };
             }
             node_list[parentID].children.push(node_list[n.id]);
-
         } else {
             node_list[0].children.push(node_list[n.id]);
         }
@@ -165,12 +155,12 @@ var MyProjects = {
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
+            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
         ];
         // Initial Breadcrumb for All my projects
         self.breadcrumbs = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
         ]);
         // Calculate name filters
         self.nameFilters = [];
@@ -286,7 +276,6 @@ var MyProjects = {
                 config : xhrconfig,
                 data : data
             }).then(function _removeProjectFromCollectionsSuccess(result){
-                console.log(result);
                 self.currentLink = null; // To bypass the check when updating file list
                 self.updateFilter(self.activeFilter());
             }, function _removeProjectFromCollectionsFail(result){
@@ -371,7 +360,7 @@ var MyProjects = {
             } else {
                 self.loadingNodePages = false;
             }
-            self.data(_makeTree(self.data()));  // Do this regardless of what kind of source is loadin
+            self.data(_makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));  // Do this regardless of what kind of source is loadin
             if(self.loadingAllNodes) {
                 self.allProjects(self.data());
                 self.generateFiltersList();
@@ -425,12 +414,12 @@ var MyProjects = {
             self.nameFilters = [];
             for (var user in self.users){
                 var u2 = self.users[user];
-                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : true }}, u2.data.embeds.users.data.attributes.full_name));
+                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name));
             }
             self.tagFilters = [];
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : true }}, tag));
+                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag));
             }
 
         };
@@ -458,6 +447,13 @@ var MyProjects = {
             $('[data-toggle="tooltip"]').tooltip();
         };
 
+        // Resets UI to show All my projects and update states
+        self.resetUi = function _resetUi(){
+            var linkObject = self.systemCollections[0];
+            self.updateBreadcrumbs(linkObject);
+            self.activeFilter(linkObject);
+        };
+
         self.init = function _init_fileBrowser() {
             self.loadCategories().then(function(){
                 self.updateList(self.systemCollections[0]);
@@ -470,7 +466,6 @@ var MyProjects = {
         var infoPanel = '';
         var poStyle = 'width : 72%'; // Other percentages are set in CSS in file-browser.css These are here because they change
         var sidebarButtonClass = 'btn-default';
-        var projectCount = ctrl.data().length;
         if (ctrl.showInfo() && !mobile){
             infoPanel = m('.db-infobar', m.component(Information, ctrl));
             poStyle = 'width : 47%';
@@ -486,15 +481,14 @@ var MyProjects = {
 
         return [
             m('.db-header.row', [
-                m('.col-xs-12.col-sm-6', m.component(Breadcrumbs,ctrl)),
-                m('.db-buttonRow.col-xs-12.col-sm-6', [
+                m('.col-xs-12.col-sm-8.col-lg-9', m.component(Breadcrumbs,ctrl)),
+                m('.db-buttonRow.col-xs-12.col-sm-4.col-lg-3', [
                     mobile ? m('button.btn.btn-sm.m-r-sm', {
                         'class' : sidebarButtonClass,
                         onclick : function () {
                             ctrl.showSidebar(!ctrl.showSidebar());
                         }
                     }, m('.fa.fa-bars')) : '',
-                    m('span.m-r-md.hidden-xs', projectCount === 1 ? projectCount + ' Project' : projectCount + ' Projects'),
                     m('.db-poFilter.m-r-xs')
                 ])
             ]),
@@ -530,7 +524,8 @@ var MyProjects = {
                         LinkObject : LinkObject,
                         wrapperSelector : args.wrapperSelector,
                         allProjects : ctrl.allProjects,
-                        reload : ctrl.reload
+                        reload : ctrl.reload,
+                        resetUi : ctrl.resetUi
                     })
                 )
             ]),
@@ -593,17 +588,14 @@ var Collections  = {
             });
         };
         // Default system collections
-        self.collections = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
-        ]);
+        self.collections = m.prop([].concat(args.systemCollections));
         // Load collection list
         var loadCollections = function _loadCollections (url){
             var promise = m.request({method : 'GET', url : url, config : xhrconfig});
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 });
                 if(result.links.next){
                     loadCollections(result.links.next);
@@ -616,7 +608,7 @@ var Collections  = {
             promise.then(self.calculateTotalPages());
         };
         self.init = function _collectionsInit (element, isInit) {
-            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
+            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
             loadCollections(collectionsUrl);
             args.activeFilter(self.collections()[0]);
 
@@ -643,15 +635,16 @@ var Collections  = {
             promise.then(function(result){
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
-                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 args.sidebarInit();
+                self.newCollectionName('');
             }, function(){
                 var name = self.newCollectionName();
                 var message = '"' + name + '" collection could not be created.';
                 $osf.growl(message, 'Please try again');
                 Raven.captureMessage(message, { url: url, data : data });
+                self.newCollectionName('');
             });
-            self.newCollectionName('');
             self.dismissModal();
             self.calculateTotalPages();
             return promise;
@@ -667,6 +660,7 @@ var Collections  = {
                         break;
                     }
                 }
+                self.calculateTotalPages();
             }, function(){
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be deleted.';
@@ -674,7 +668,6 @@ var Collections  = {
                 Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
             });
             self.dismissModal();
-            self.calculateTotalPages();
             return promise;
         };
         self.renameCollection = function _renameCollection() {

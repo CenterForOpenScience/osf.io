@@ -159,6 +159,7 @@
 .db-poFilter {
     display: inline-block;
     position: relative;
+    width:100%;
 }
 
 .db-overlay {
@@ -291,6 +292,9 @@ div[data-growl="container"] {
     .collectionMenu .menuClose {
         float: right;
         margin-right: 5px;
+    }
+    .db-poFilter {
+        width: 80%;
     }
 }
 @media only screen and (max-width : 320px) {

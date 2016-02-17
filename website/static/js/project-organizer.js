@@ -100,7 +100,7 @@ function _poModified(item) {
 function _poResolveRows(item) {
     var mobile = window.innerWidth < 767; // true if mobile view
     var tb = this;
-    var folderIcons = tb.filterOn ? false : true;
+    var folderIcons = !tb.filterOn;
     var defaultColumns = [];
 
     if(this.isMultiselected(item.id)){
@@ -216,7 +216,7 @@ function _poResolveLazyLoad(item) {
         //return node.relationships.children.links.related.href;
         return $osf.apiV2Url('nodes/' + node.id + '/children/', {
             query : {
-                'related_counts' : true,
+                'related_counts' : 'children',
                 'embed' : 'contributors'
             }
         });
@@ -358,6 +358,7 @@ var tbOptions = {
                 onkeyup: function(event){
                     if ($(this).val().length === 1){
                         tb.updateFolder(allProjectsCache(), tb.treeData);
+                        tb.options.resetUi();
                     }
                     tb.filter(event);
                 },
@@ -383,7 +384,8 @@ var ProjectOrganizer = {
                     updateSelected : args.updateSelected,
                     updateFilesData : args.updateFilesData,
                     filesData: args.filesData(),
-                    dragContainment : args.wrapperSelector
+                    dragContainment : args.wrapperSelector,
+                    resetUi : args.resetUi
                 },
                 tbOptions
             );

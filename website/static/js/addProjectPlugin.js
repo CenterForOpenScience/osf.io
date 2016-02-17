@@ -158,7 +158,7 @@ var AddProject = {
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
-                            m('h4.p-md.add-project-success.text-success', 'Project created successfully!')
+                            m('h4.add-project-success.text-success', 'Project created successfully!')
                         ]
                     ),
                     m('.modal-footer', [
@@ -178,10 +178,13 @@ var AddProject = {
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
-                            m('h4.p-md.add-project-error.text-danger', 'Couldn\'t create your project'),
+                            m('h4.add-project-error.text-danger', 'Couldn\'t create your project'),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
-                    )
+                    ),
+                    m('.modal-footer', [
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]',  'OK')
+                    ])
                 )
             ])
         };
