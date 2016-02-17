@@ -443,6 +443,29 @@ var Dashboard = {
             self.breadcrumbs().push(linkObject);
         };
 
+        // GET COLLECTIONS
+        // Default system collections
+        self.collections = m.prop([].concat(self.systemCollections));
+        self.collectionsPageSize = m.prop(5);
+        // Load collection list
+        self.loadCollections = function _loadCollections (url){
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            promise.then(function(result){
+                result.data.forEach(function(node){
+                    var count = node.relationships.linked_nodes.links.related.meta.count;
+                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                });
+                if(result.links.next){
+                    self.loadCollections(result.links.next);
+                }
+            }, function(){
+                var message = 'Collections could not be loaded.';
+                $osf.growl(message, 'Please reload the page.');
+                Raven.captureMessage(message, { url: url });
+            });
+            return promise;
+        };
+
         self.sidebarInit = function _sidebarInit (element, isInit) {
             $('[data-toggle="tooltip"]').tooltip();
         };
@@ -458,6 +481,9 @@ var Dashboard = {
             self.loadCategories().then(function(){
                 self.updateList(self.systemCollections[0]);
             });
+            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
+            self.loadCollections(collectionsUrl);
+            self.activeFilter(self.collections()[0]);
         };
         self.init();
     },
@@ -549,6 +575,8 @@ var Dashboard = {
 var Collections  = {
     controller : function(args){
         var self = this;
+        self.collections = args.collections;
+        self.pageSize = args.collectionsPageSize;
         self.newCollectionName = m.prop('');
         self.newCollectionRename = m.prop('');
         self.dismissModal = function () {
@@ -587,31 +615,9 @@ var Collections  = {
                 y : y
             });
         };
-        // Default system collections
-        self.collections = m.prop([].concat(args.systemCollections));
-        // Load collection list
-        var loadCollections = function _loadCollections (url){
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
-            promise.then(function(result){
-                result.data.forEach(function(node){
-                    var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
-                });
-                if(result.links.next){
-                    loadCollections(result.links.next);
-                }
-            }, function(){
-                var message = 'Collections could not be loaded.';
-                $osf.growl(message, 'Please reload the page.');
-                Raven.captureMessage(message, { url: url });
-            });
-            promise.then(self.calculateTotalPages());
-        };
-        self.init = function _collectionsInit (element, isInit) {
-            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
-            loadCollections(collectionsUrl);
-            args.activeFilter(self.collections()[0]);
 
+        self.init = function _collectionsInit (element, isInit) {
+            self.calculateTotalPages();
             $(window).click(function(event){
                 var target = $(event.target);
                 if(!target.hasClass('collectionMenu') && !target.hasClass('fa-ellipsis-v') && target.parents('.collection').length === 0) {
