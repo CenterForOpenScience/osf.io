@@ -57,10 +57,9 @@ $(document).ready(function(){
                 var tb = this;
                 var query = this.filterText();
                 var node_id = tb.flatData[0].row.nodeID;
-                console.log(query);
                 var response = queryElasticSearch(query, node_id).done(
                     function(results){showResults(results, tb);}
-                )
+                );
             }
         });
     });
