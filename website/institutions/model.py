@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-import urlparse
-
 from django.core.urlresolvers import reverse
 
 from modularodm import fields
 from modularodm.validators import URLValidator
 
-from website import settings
 from framework.mongo import StoredObject
 
 class Institution(StoredObject):
