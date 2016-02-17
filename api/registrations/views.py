@@ -10,14 +10,15 @@ from api.base.serializers import HideIfRetraction
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
-    RegistrationContributorsSerializer
+    RegistrationContributorsSerializer,
 )
 
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
-    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList, WaterButlerMixin)
+    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
+    NodeInstitutionDetail, WaterButlerMixin)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer
 
@@ -316,3 +317,8 @@ class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList, Registr
 class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-alternative-citation-detail'
+
+
+class RegistrationInstitutionDetail(NodeInstitutionDetail, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-institution-detail'

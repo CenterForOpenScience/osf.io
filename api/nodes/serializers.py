@@ -8,7 +8,7 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from website.models import Node, User, Comment, Institution
-from website.exceptions import NodeStateError
+from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.files.models.base import File
 from website.util import permissions as osf_permissions
 
@@ -490,9 +490,13 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
             inst = Institution.load(inst)
             if not inst:
                 raise exceptions.NotFound
-            if not inst.auth(user):
-                raise exceptions.PermissionDenied
-        node.primary_institution = inst
+            try:
+                node.add_primary_institution(inst=inst, user=user)
+            except UserNotAffiliatedError:
+                raise exceptions.ValidationError(detail='User not affiliated with institution')
+            node.save()
+            return node
+        node.remove_primary_institution(user)
         node.save()
         return node
 
