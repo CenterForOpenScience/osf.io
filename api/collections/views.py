@@ -1,6 +1,8 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from rest_framework.response import Response
 
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
@@ -635,3 +637,10 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
         for val in data:
             if val['id'] in current_pointers:
                 collection.rm_pointer(current_pointers[val['id']], auth)
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(CollectionLinkedNodesRelationship, self).create(*args, **kwargs)
+        except AssertionError:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret

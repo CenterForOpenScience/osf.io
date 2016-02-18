@@ -1823,14 +1823,12 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         assert_in(self.linked_node._id, ids)
 
     def test_post_node_already_linked(self):
-        number_of_links = len(self.collection.nodes)
         res = self.app.post_json_api(
             self.url, self.payload([self.linked_node._id]),
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 201)
-        assert_equal(len(res.json['data']), number_of_links)
+        assert_equal(res.status_code, 204)
 
     def test_put_contributing_node(self):
         res = self.app.put_json_api(

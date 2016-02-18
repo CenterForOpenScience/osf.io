@@ -162,7 +162,10 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
 
         add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
 
-        for node in add:
-            collection.add_pointer(node, auth)
+        if len(add):
+            for node in add:
+                collection.add_pointer(node, auth)
 
-        return self.make_instance_obj(collection)
+            return self.make_instance_obj(collection)
+
+        return None
