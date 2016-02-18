@@ -12,6 +12,18 @@ from .serializers import serialize_comment
 from .forms import ConfirmForm
 
 
+def key_order_comments(comment):
+    reports = comment.reports
+    newest_report = None
+    for user, report in reports.iteritems():
+        date = report.get('date')
+        if newest_report is None or date > newest_report:
+            newest_report = date
+    if newest_report is None:
+        return comment.date_created
+    return newest_report
+
+
 class SpamList(ListView):
     template_name = 'spam/spam.html'
     paginate_by = 10
@@ -29,7 +41,12 @@ class SpamList(ListView):
             Q('reports', 'ne', None) &
             Q('spam_status', 'eq', int(self.status))
         )
-        return Comment.find(query).sort(self.ordering)
+        comments = Comment.find(query)
+        comments = list(reversed(
+            sorted(comments, key=lambda x: key_order_comments(x)))
+        )
+        return comments
+        # return Comment.find(query).sort(self.ordering)
 
     def get_context_data(self, **kwargs):
         queryset = kwargs.pop('object_list', self.object_list)
