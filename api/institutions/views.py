@@ -61,6 +61,8 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     view_category = 'institutions'
     view_name = 'institution-list'
 
+    ordering = ('name', )
+
     def get_default_odm_query(self):
         return Q('_id', 'ne', None)
 
@@ -135,19 +137,20 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
+    base_node_query = (
+        Q('is_deleted', 'ne', True) &
+        Q('is_folder', 'ne', True) &
+        Q('is_registration', 'eq', False)
+    )
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         inst = self.get_institution()
         inst_query = Q('primary_institution', 'eq', inst)
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
-            Q('is_registration', 'eq', False)
-        )
+        base_query = self.base_node_query
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query & inst_query
         return query
@@ -184,3 +187,16 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     def get_queryset(self):
         query = self.get_query_from_request()
         return User.find(query)
+
+
+class InstitutionRegistrationList(InstitutionNodeList):
+    """Registrations have selected an institution as their primary institution.
+    """
+
+    view_name = 'institution-registrations'
+
+    base_node_query = (
+        Q('is_deleted', 'ne', True) &
+        Q('is_folder', 'ne', True) &
+        Q('is_registration', 'eq', True)
+    )

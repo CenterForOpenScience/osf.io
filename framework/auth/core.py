@@ -9,15 +9,12 @@ import bson
 import pytz
 import itsdangerous
 
-from django.core.urlresolvers import reverse
-
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
 from modularodm.validators import URLValidator
 
 import framework
-from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
 from framework import analytics
 from framework.auth import signals, utils
@@ -205,7 +202,8 @@ class User(GuidStoredObject, AddonModelMixin):
         'researcherId': u'http://researcherid.com/rid/{}',
         'researchGate': u'https://researchgate.net/profile/{}',
         'academiaInstitution': u'https://{}',
-        'academiaProfileID': u'.academia.edu/{}'
+        'academiaProfileID': u'.academia.edu/{}',
+        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}'
     }
 
     # This is a GuidStoredObject, so this will be a GUID.
@@ -416,7 +414,7 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def contributed(self):
         from website.project.model import Node
-        return Node.find(Q('contributors', 'contains', self._id))
+        return Node.find(Q('contributors', 'eq', self._id))
 
     @property
     def email(self):
@@ -1004,11 +1002,14 @@ class User(GuidStoredObject, AddonModelMixin):
         from mailchimp emails.
         """
         from website import mailchimp_utils
-        mailchimp_utils.unsubscribe_mailchimp(
-            list_name=settings.MAILCHIMP_GENERAL_LIST,
-            user_id=self._id,
-            username=self.username
-        )
+        try:
+            mailchimp_utils.unsubscribe_mailchimp(
+                list_name=settings.MAILCHIMP_GENERAL_LIST,
+                user_id=self._id,
+                username=self.username
+            )
+        except mailchimp_utils.mailchimp.ListNotSubscribedError:
+            pass
         self.is_disabled = True
 
     @property
@@ -1342,8 +1343,8 @@ class User(GuidStoredObject, AddonModelMixin):
         or just their primary keys
         """
         if primary_keys:
-            projects_contributed_to = set([node._id for node in self.contributed])
-            other_projects_primary_keys = set([node._id for node in other_user.contributed])
+            projects_contributed_to = set(self.contributed.get_keys())
+            other_projects_primary_keys = set(other_user.contributed.get_keys())
             return projects_contributed_to.intersection(other_projects_primary_keys)
         else:
             projects_contributed_to = set(self.contributed)
@@ -1353,10 +1354,15 @@ class User(GuidStoredObject, AddonModelMixin):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
-    def has_inst_auth(self, inst):
-        if inst in self.affiliated_institutions:
-            return True
-        return False
+    def is_affiliated_with_institution(self, inst):
+        return inst in self.affiliated_institutions
+
+    def remove_institution(self, inst_id):
+        try:
+            self.affiliated_institutions.remove(inst_id)
+        except ValueError:
+            return False
+        return True
 
     affiliated_institutions = fields.ForeignField('institution', list=True)
 
@@ -1379,51 +1385,3 @@ def _merge_into_reversed(*iterables):
     '''Merge multiple sorted inputs into a single output in reverse order.
     '''
     return sorted(itertools.chain(*iterables), reverse=True)
-
-
-class Institution(StoredObject):
-
-    _id = fields.StringField(index=True, unique=True, primary=True)
-    name = fields.StringField(required=True)
-    logo_name = fields.StringField(required=True)
-
-    @property
-    def pk(self):
-        return self._id
-
-    @property
-    def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
-
-    @property
-    def url(self):
-        return '/{}/'.format(self._id)
-
-    @property
-    def deep_url(self):
-        return '/institution/{}/'.format(self._id)
-
-    @property
-    def api_v2_url(self):
-        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
-
-    @property
-    def absolute_api_v2_url(self):
-        from api.base.utils import absolute_reverse
-        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
-
-    @property
-    def logo_path(self):
-        return '/static/img/institutions/{}/'.format(self.logo_name)
-
-    def get_api_url(self):
-        return self.absolute_api_v2_url
-
-    def get_absolute_url(self):
-        return self.absolute_url
-
-    def auth(self, user):
-        return user.has_inst_auth(self)
-
-    def view(self):
-        return 'Static paths for custom pages'

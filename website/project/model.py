@@ -51,6 +51,7 @@ from website.util import sanitize
 from website.exceptions import (
     NodeStateError,
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
+    UserNotAffiliatedError,
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
@@ -483,7 +484,10 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
 
-    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED]
+    PRIMARY_INSTITUTION_CHANGED = 'primary_institution_changed'
+    PRIMARY_INSTITUTION_REMOVED = 'primary_institution_removed'
+
+    actions = [CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, PRIMARY_INSTITUTION_CHANGED, PRIMARY_INSTITUTION_REMOVED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -583,9 +587,13 @@ class NodeLog(StoredObject):
 class Tag(StoredObject):
 
     _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
+    lower = fields.StringField(index=True, validate=MaxLengthValidator(128))
+
+    def __init__(self, _id, lower=None, **kwargs):
+        super(Tag, self).__init__(_id=_id, lower=lower or _id.lower(), **kwargs)
 
     def __repr__(self):
-        return '<Tag() with id {self._id!r}>'.format(self=self)
+        return '<Tag({self.lower!r}) with id {self._id!r}>'.format(self=self)
 
     @property
     def url(self):
@@ -698,14 +706,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     #: Whether this is a pointer or not
     primary = True
 
-    __indices__ = [{
-        'unique': False,
-        'key_or_list': [
-            ('tags.$', pymongo.ASCENDING),
-            ('is_public', pymongo.ASCENDING),
-            ('is_deleted', pymongo.ASCENDING),
-        ]
-    }]
+    __indices__ = [
+        {
+            'unique': False,
+            'key_or_list': [
+                ('tags.$', pymongo.ASCENDING),
+                ('is_public', pymongo.ASCENDING),
+                ('is_deleted', pymongo.ASCENDING),
+            ]
+        },
+    ]
 
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
@@ -813,7 +823,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # One of 'public', 'private'
     # TODO: Add validator
-    comment_level = fields.StringField(default='private')
+    comment_level = fields.StringField(default='public')
 
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
@@ -846,16 +856,53 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Primary institution node is attached to
     primary_institution = fields.ForeignField('institution')
 
-    def add_primary_institution(self, user, inst):
-        if inst.auth(user):
-            self.primary_institution = inst
-            self.save()
-            return True
-        return False
+    affiliated_institutions = fields.ForeignField('institution', list=True)
 
-    def remove_primary_institution(self):
+    def add_primary_institution(self, user, inst):
+        if not user.is_affiliated_with_institution(inst):
+            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
+        if inst == self.primary_institution:
+            return False
+        previous = self.primary_institution
+        self.primary_institution = inst
+        if inst not in self.affiliated_institutions:
+            self.affiliated_institutions.append(inst)
+        self.add_log(
+            action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
+            params={
+                'node': self._primary_key,
+                'institution': {
+                    'id': inst._id,
+                    'name': inst.name
+                },
+                'previous_institution': {
+                    'id': previous._id if previous else None,
+                    'name': previous.name if previous else 'None'
+                }
+            },
+            auth=Auth(user)
+        )
+        return True
+
+    def remove_primary_institution(self, user):
+        inst = self.primary_institution
+        if not inst:
+            return False
         self.primary_institution = None
-        self.save()
+        if inst in self.affiliated_institutions:
+            self.affiliated_institutions.remove(inst)
+        self.add_log(
+            action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
+            params={
+                'node': self._primary_key,
+                'institution': {
+                    'id': inst._id,
+                    'name': inst.name
+                }
+            },
+            auth=Auth(user)
+        )
+        return True
 
     def institution_id(self):
         # Empty string over None, as None was somehow being serialized to <string>'None',
@@ -884,17 +931,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def __init__(self, *args, **kwargs):
 
-        tags = kwargs.pop('tags', [])
-
         super(Node, self).__init__(*args, **kwargs)
-
-        # Ensure when Node is created with tags through API, tags are added to Tag
-        if tags:
-            for tag in tags:
-                self.add_tag(tag, Auth(self.creator), save=False, log=False)
 
         if kwargs.get('_is_loaded', False):
             return
+
+        # Ensure when Node is created with tags through API, tags are added to Tag
+        tags = kwargs.pop('tags', [])
+        for tag in tags:
+            self.add_tag(tag, Auth(self.creator), save=False, log=False)
 
         if self.creator:
             self.contributors.append(self.creator)
@@ -2213,6 +2258,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.primary_institution = self.primary_institution
+        registered.affiliated_institutions = self.affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
 
@@ -3038,9 +3085,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
                 elif self.is_pending_registration:
                     raise NodeStateError("An unapproved registration cannot be made public.")
-                if self.embargo_end_date and not self.is_pending_embargo:
-                    self.embargo.state = Embargo.REJECTED
-                    self.embargo.save()
+                elif self.embargo_end_date:
+                    raise NodeStateError("An embargoed registration cannot be made public.")
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:

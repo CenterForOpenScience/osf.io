@@ -562,7 +562,7 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
         'poster': False,
-        'talk': False,
+        'talk': True,
         'field_names': {
             'submission1': 'poster',
             'submission2': 'study',
@@ -595,7 +595,7 @@ MEETING_DATA = {
         'CURCONF2016': {
         'name': 'CUR Biennial Conference 2016',
         'info_url': 'http://www.cur.org/conferences_and_events/biennial2016/',
-        'logo_url': 'http://s11.postimg.org/itsmubimq/Conference_logo_eps.jpg',
+        'logo_url': 'http://s11.postimg.org/v8feuna4y/Conference_logo_eps.jpg',
         'active': True,
         'admins': [],
         'public_projects': True,
@@ -632,6 +632,36 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'jssp2016': {
+        'name': 'Japanese Society of Social Psychology 2016',
+        'info_url': 'http://www.socialpsychology.jp/conf2016/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'sepech2016': {
+        'name': 'XI SEPECH - Research Seminar in Human Sciences (Seminário de Pesquisa em Ciências Humanas)',
+        'info_url': 'http://www.uel.br/eventos/sepech/sepech2016/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'etmaal2016': {
+        'name': 'Etmaal van de Communicatiewetenschap 2016 - Media Psychology',
+        'info_url': 'https://etmaal2016.wordpress.com',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 def populate_conferences():
@@ -645,9 +675,13 @@ def populate_conferences():
                 admin_objs.append(user)
             except ModularOdmException:
                 raise RuntimeError('Username {0!r} is not registered.'.format(email))
+
+        custom_fields = attrs.pop('field_names', {})
+
         conf = Conference(
             endpoint=meeting, admins=admin_objs, **attrs
         )
+        conf.field_names.update(custom_fields)
         try:
             conf.save()
         except ModularOdmException:

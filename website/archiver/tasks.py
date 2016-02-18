@@ -1,5 +1,6 @@
 import requests
 import json
+import httplib as http
 
 import celery
 from celery.utils.log import get_task_logger
@@ -155,7 +156,9 @@ def make_copy_request(job_pk, url, data):
     src, dst, user = job.info()
     provider = data['source']['provider']
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst._id))
-    requests.post(url, data=json.dumps(data))
+    res = requests.post(url, data=json.dumps(data))
+    if res.status_code not in (http.OK, http.CREATED, http.ACCEPTED):
+        raise HTTPError(res.status_code)
 
 
 def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revision=None):
@@ -384,6 +387,7 @@ def archive_success(dst_pk, job_pk):
         dst.save()
 
     job = ArchiveJob.load(job_pk)
-    job.sent = True
-    job.save()
-    dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
+    if not job.sent:
+        dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
+        job.sent = True
+        job.save()

@@ -4,7 +4,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
-from rest_framework.status import is_server_error, HTTP_204_NO_CONTENT
+from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -31,6 +31,7 @@ from api.nodes.serializers import (
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
 )
+from api.nodes.utils import get_file_object
 
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
@@ -42,13 +43,12 @@ from api.nodes.permissions import (
     ReadOnlyIfRegistration,
     ExcludeRetractions,
 )
-from api.base.exceptions import ServiceUnavailableError
 from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, Institution, NodeLog
-from website.files.models import OsfStorageFileNode, StoredFileNode, FileNode
+from website.files.models import StoredFileNode, FileNode
 from website.files.models.dropbox import DropboxFile
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
@@ -77,7 +77,6 @@ class NodeMixin(object):
             self.check_object_permissions(self.request, node)
         return node
 
-
 class WaterButlerMixin(object):
 
     path_lookup_url_kwarg = 'path'
@@ -104,44 +103,11 @@ class WaterButlerMixin(object):
         return self.get_file_object(node, path, provider)
 
     def get_file_object(self, node, path, provider, check_object_permissions=True):
+        obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
         if provider == 'osfstorage':
-            # Kinda like /me for a user
-            # The one odd case where path is not really path
-            if path == '/':
-                obj = node.get_addon('osfstorage').get_root()
-            else:
-                obj = get_object_or_error(
-                    OsfStorageFileNode,
-                    Q('node', 'eq', node._id) &
-                    Q('_id', 'eq', path.strip('/')) &
-                    Q('is_file', 'eq', not path.endswith('/'))
-                )
             if check_object_permissions:
                 self.check_object_permissions(self.request, obj)
-
-            return obj
-
-        url = waterbutler_api_url_for(node._id, provider, path, meta=True)
-        waterbutler_request = requests.get(
-            url,
-            cookies=self.request.COOKIES,
-            headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
-        )
-
-        if waterbutler_request.status_code == 401:
-            raise PermissionDenied
-
-        if waterbutler_request.status_code == 404:
-            raise NotFound
-
-        if is_server_error(waterbutler_request.status_code):
-            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
-
-        try:
-            return waterbutler_request.json()['data']
-        except KeyError:
-            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
-
+        return obj
 
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
@@ -251,7 +217,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -1957,7 +1923,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
 
 class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     """ Detail of the one primary_institution a node has, if any. Returns NotFound
-    if the node does not have a primary_instituion.
+    if the node does not have a primary_institution.
 
     ##Attributes
 
@@ -1997,7 +1963,7 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
 
 
 class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
-    """ Relationship Endpoint for Node -> Instituion Relationship
+    """ Relationship Endpoint for Node -> Institution Relationship
 
     Used to set the primary_institution of a node to an institution
 
