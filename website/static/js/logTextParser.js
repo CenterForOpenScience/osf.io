@@ -7,6 +7,21 @@ var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
 var $ = require('jquery');  // jQuery
 
+
+var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
+/**
+ * Utility function to not repeat logging errors to Sentry
+ * @param message {String} Custom message for error
+ * @param logObject {Object} the entire log object returned from the api
+ */
+function ravenMessage (message, logObject) {
+    if(ravenMessagesCache.indexOf(message) === -1){
+        Raven.captureMessage(message, {logObject: logObject});
+        ravenMessagesCache.push(message);
+    }
+}
+
+
 /**
  * Checks if the required parameter to complete the log is returned
  * This may intentionally not be returned to make log anonymous
@@ -14,10 +29,13 @@ var $ = require('jquery');  // jQuery
  * @param logObject {Object} the entire log object returned from the api
  * @returns {boolean}
  */
-var paramIsReturned = function(param, logObject){
+var paramIsReturned = function _paramIsReturned (param, logObject){
     if(!param){
         var message = 'Expected parameter for Log action ' + logObject.attributes.action + ' was not returned from log api.';
-        Raven.captureMessage(message, {logObject: logObject});
+        ravenMessage(message, logObject);
+        return false;
+    }
+    if (param.errors){
         return false;
     }
     return true;
@@ -33,6 +51,7 @@ var paramIsReturned = function(param, logObject){
  */
 var returnTextParams = function (param, text, logObject) {
     var source = logObject.attributes.params[param];
+
     if(paramIsReturned(source, logObject)){
         if($.isArray(source)){
             return m('span', [
@@ -73,7 +92,8 @@ var LogText = {
             ]);
         } else {
             var message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
-            Raven.captureMessage(message, {logObject: logObject});
+            ravenMessage(message, logObject);
+            return m('');
         }
     }
 };
@@ -83,10 +103,10 @@ var LogPieces = {
     user: {
         view: function (ctrl, logObject) {
             var userObject = logObject.embeds.user;
-            if(paramIsReturned(userObject, logObject)) {
+            if(paramIsReturned(userObject, logObject) && userObject.data) {
                 return m('a', {href: userObject.data.links.html}, userObject.data.attributes.full_name);
             } else {
-                return m('span', 'a user');
+                return m('span', 'A user');
             }
         }
     },
@@ -94,7 +114,7 @@ var LogPieces = {
     node: {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.nodes;
-            if(paramIsReturned(nodeObject, logObject)){
+            if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
                 return m('a', {href: nodeObject.data[0].links.html}, nodeObject.data[0].attributes.title);
             } else {
                 return m('span', 'a project');
@@ -105,11 +125,11 @@ var LogPieces = {
     contributors: {
         view: function (ctrl, logObject) {
             var contributors = logObject.embeds.contributors;
-            if(paramIsReturned(contributors, logObject)) {
+            /*if(paramIsReturned(contributors, logObject)) {
                 return contributors.map(function(item){
                     return m('a', {href: '#'}, 'Person');
                 });
-            }
+            }*/
             return m('span', 'some users');
         }
     },
@@ -221,19 +241,115 @@ var LogPieces = {
             return returnTextParams('filename', 'a title', logObject);
         }
     },
-        //
-    study: {
-        view: function (ctrl, logObject) {
-            return returnTextParams('study', 'a study', logObject);
-        }
-    },
-        //
-    dataset: {
-        view: function (ctrl, logObject) {
-            return returnTextParams('dataset', 'a dataset', logObject);
-        }
-    },
-};
 
+    folder: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('folder', 'a folder', logObject);
+        }
+    },
+
+    repo: {
+        view: function(ctrl, logObject) {
+            var github_user = logObject.attributes.params.github_user;
+            var github_repo = logObject.attributes.params.github_repo;
+            if (paramIsReturned(github_repo, logObject) && paramIsReturned(github_user, logObject)){
+                return m('span', github_user + '/' + github_repo);
+            }
+            return m('span', '');
+        }
+    },
+
+    folder_name: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('folder_name', 'a folder', logObject);
+        }
+    },
+
+    bucket: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('bucket', 'a bucket', logObject);
+        }
+    },
+
+    forward_url: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('forward_url', 'a new URL', logObject);
+        }
+    },
+
+    box_folder: {
+        view: function(ctrl, logObject) {
+            var folder = logObject.attributes.params.folder;
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === 'All Files' ? '/ (Full Box)' : (folder || '').replace('All Files',''));
+            }
+            return m('span', '');
+        }
+    },
+
+    citation: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('citation_name', '', logObject);
+        }
+    },
+
+    dataset: {
+        view: function(ctrl, logObject){
+            return returnTextParams('data_set', '', logObject);
+        }
+    },
+
+    study: {
+        view: function(ctrl, logObject){
+            return returnTextParams('study', '', logObject);
+        }
+    },
+
+    googledrive_path: {
+        view: function(ctrl, logObject){
+            var path = logObject.attributes.params.path;
+            if(paramIsReturned(path, logObject)){
+                return m('span', decodeURIComponent(path));
+            }
+            return m('span', '');
+        }
+    },
+
+    googledrive_folder: {
+        view: function(ctrl, logObject){
+            var folder = logObject.attributes.params.folder;
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === '/' ? '(Full Google Drive)' : decodeURIComponent(folder));
+            }
+            return m('span', '');
+        }
+    },
+
+    addon: {
+        view: function(ctrl, logObject){
+            return returnTextParams('addon', '', logObject);
+        }
+    },
+
+    previous_institution: {
+        view: function(ctrl, logObject){
+            var previous_institution = logObject.attributes.params.previous_institution;
+            if (paramIsReturned(previous_institution, logObject)){
+                return m('span', previous_institution.name);
+            }
+            return m('span', 'an institution');
+        }
+    },
+
+    institution: {
+        view: function(ctrl, logObject){
+            var institution = logObject.attributes.params.institution;
+            if (paramIsReturned(institution, logObject)){
+                return m('span', institution.name);
+            }
+            return m('span', 'an institution');
+        }
+    }
+};
 
 module.exports = LogText;

@@ -124,7 +124,10 @@ def dashboard(auth):
 
 @must_be_logged_in
 def home(auth):
-    return {}
+    user = auth.user
+    return {
+        'userId': user._id,
+    }
 
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):

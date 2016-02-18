@@ -9,7 +9,6 @@ from website.models import User
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
-from api.base.utils import add_dev_only_items
 
 
 class UserSerializer(JSONAPISerializer):
@@ -53,13 +52,13 @@ class UserSerializer(JSONAPISerializer):
                                                       allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution'))
     academiaProfileID = DevOnly(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
                                                       allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID'))
-
+    baiduScholar = DevOnly(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
+                                                           allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar'))
     links = LinksField(
-        add_dev_only_items({
+        {
             'html': 'absolute_url',
-        }, {
             'profile_image': 'profile_image_url',
-        })
+        }
     )
 
     nodes = RelationshipField(
@@ -76,6 +75,11 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<pk>'},
         self_view='users:user-institutions-relationship',
         self_view_kwargs={'user_id': '<pk>'}
+    )
+
+    logs = RelationshipField(
+        related_view='users:user-logs',
+        related_view_kwargs={'user_id': '<pk>'},
     )
 
     class Meta:

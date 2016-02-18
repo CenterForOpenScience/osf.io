@@ -63,13 +63,13 @@ var LinkObject = function _LinkObject (type, data, label) {
                 );
         }
         else if (self.type === 'tag') {
-            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : true, 'embed' : 'contributors'}});
+            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : 'children', 'embed' : 'contributors'}});
         }
         else if (self.type === 'name') {
-            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : true, 'embed' : 'contributors' }});
+            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : 'children', 'embed' : 'contributors' }});
         }
         else if (self.type === 'node') {
-            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors' }});
+            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }});
         }
         // If nothing
         throw new Error('Link could not be generated from linkObject data');
@@ -162,7 +162,7 @@ var Dashboard = {
         ];
         // Initial Breadcrumb for All my projects
         self.breadcrumbs = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
         ]);
         // Calculate name filters
         self.nameFilters = [];
@@ -184,13 +184,15 @@ var Dashboard = {
                     });
                 }
             }, function _error(results){
-                console.error('Error loading category names:', results);
+                var message = 'Error loading project category names.';
+                Raven.captureMessage(message, {requestReturn: results});
             });
             return promise;
         };
 
         // Activity Logs
         self.activityLogs = m.prop();
+        self.logRequestPending = false;
         self.showMoreActivityLogs = m.prop(null);
         self.getLogs = function _getLogs (nodeId, link, addToExistingList) {
             var cachedResults;
@@ -218,15 +220,19 @@ var Dashboard = {
                 cachedResults = self.logUrlCache[url];
                 _processResults(cachedResults);
             } else {
+                self.logRequestPending = true;
                 var promise = m.request({method : 'GET', url : url, config : xhrconfig});
                 promise.then(_processResults);
+                promise.then(function(){
+                    self.logRequestPending = false;
+                });
                 return promise;
             }
 
         };
         // separate concerns, wrap getlogs here to get logs for the selected item
         self.getCurrentLogs = function _getCurrentLogs ( ){
-            if(self.selected().length === 1){
+            if(self.selected().length === 1 && !self.logRequestPending){
                 var id = self.selected()[0].data.id;
                 var promise = self.getLogs(id);
                 return promise;
@@ -339,9 +345,9 @@ var Dashboard = {
                     }
                 } else {
                     self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                        'This project has no subcomponents.',
+                        'This project has no components.',
                         m.component(AddProject, {
-                            buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new Subcomponent'),
+                            buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new component'),
                             parentID : lastcrumb.data.id,
                             modalID : 'addSubcomponent',
                             categoryList : self.categoryList,
@@ -419,12 +425,12 @@ var Dashboard = {
             self.nameFilters = [];
             for (var user in self.users){
                 var u2 = self.users[user];
-                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : true }}, u2.data.embeds.users.data.attributes.full_name));
+                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name));
             }
             self.tagFilters = [];
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : true }}, tag));
+                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag));
             }
 
         };
@@ -448,6 +454,29 @@ var Dashboard = {
             self.breadcrumbs().push(linkObject);
         };
 
+        // GET COLLECTIONS
+        // Default system collections
+        self.collections = m.prop([].concat(self.systemCollections));
+        self.collectionsPageSize = m.prop(5);
+        // Load collection list
+        self.loadCollections = function _loadCollections (url){
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            promise.then(function(result){
+                result.data.forEach(function(node){
+                    var count = node.relationships.linked_nodes.links.related.meta.count;
+                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                });
+                if(result.links.next){
+                    self.loadCollections(result.links.next);
+                }
+            }, function(){
+                var message = 'Collections could not be loaded.';
+                $osf.growl(message, 'Please reload the page.');
+                Raven.captureMessage(message, { url: url });
+            });
+            return promise;
+        };
+
         self.sidebarInit = function _sidebarInit (element, isInit) {
             $('[data-toggle="tooltip"]').tooltip();
         };
@@ -463,6 +492,9 @@ var Dashboard = {
             self.loadCategories().then(function(){
                 self.updateList(self.systemCollections[0]);
             });
+            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
+            self.loadCollections(collectionsUrl);
+            self.activeFilter(self.collections()[0]);
         };
         self.init();
     },
@@ -557,6 +589,8 @@ var Dashboard = {
 var Collections  = {
     controller : function(args){
         var self = this;
+        self.collections = args.collections;
+        self.pageSize = args.collectionsPageSize;
         self.newCollectionName = m.prop('');
         self.newCollectionRename = m.prop('');
         self.dismissModal = function () {
@@ -595,31 +629,9 @@ var Collections  = {
                 y : y
             });
         };
-        // Default system collections
-        self.collections = m.prop([].concat(args.systemCollections));
-        // Load collection list
-        var loadCollections = function _loadCollections (url){
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
-            promise.then(function(result){
-                result.data.forEach(function(node){
-                    var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true, 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
-                });
-                if(result.links.next){
-                    loadCollections(result.links.next);
-                }
-            }, function(){
-                var message = 'Collections could not be loaded.';
-                $osf.growl(message, 'Please reload the page.');
-                Raven.captureMessage(message, { url: url });
-            });
-            promise.then(self.calculateTotalPages());
-        };
-        self.init = function _collectionsInit (element, isInit) {
-            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : true, 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
-            loadCollections(collectionsUrl);
-            args.activeFilter(self.collections()[0]);
 
+        self.init = function _collectionsInit (element, isInit) {
+            self.calculateTotalPages();
             $(window).click(function(event){
                 var target = $(event.target);
                 if(!target.hasClass('collectionMenu') && !target.hasClass('fa-ellipsis-v') && target.parents('.collection').length === 0) {
@@ -643,7 +655,7 @@ var Collections  = {
             promise.then(function(result){
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
-                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : true }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
                 args.sidebarInit();
                 self.newCollectionName('');
             }, function(){

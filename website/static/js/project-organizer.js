@@ -216,7 +216,7 @@ function _poResolveLazyLoad(item) {
         //return node.relationships.children.links.related.href;
         return $osf.apiV2Url('nodes/' + node.id + '/children/', {
             query : {
-                'related_counts' : true,
+                'related_counts' : 'children',
                 'embed' : 'contributors'
             }
         });

@@ -205,7 +205,8 @@ class User(GuidStoredObject, AddonModelMixin):
         'researcherId': u'http://researcherid.com/rid/{}',
         'researchGate': u'https://researchgate.net/profile/{}',
         'academiaInstitution': u'https://{}',
-        'academiaProfileID': u'.academia.edu/{}'
+        'academiaProfileID': u'.academia.edu/{}',
+        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}'
     }
 
     # This is a GuidStoredObject, so this will be a GUID.
@@ -1356,10 +1357,8 @@ class User(GuidStoredObject, AddonModelMixin):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
-    def has_inst_auth(self, inst):
-        if inst in self.affiliated_institutions:
-            return True
-        return False
+    def is_affiliated_with_institution(self, inst):
+        return inst in self.affiliated_institutions
 
     def remove_institution(self, inst_id):
         try:
@@ -1432,9 +1431,6 @@ class Institution(StoredObject):
 
     def get_absolute_url(self):
         return self.absolute_url
-
-    def auth(self, user):
-        return user.has_inst_auth(self)
 
     def view(self):
         return 'Static paths for custom pages'

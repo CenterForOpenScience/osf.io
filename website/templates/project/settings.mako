@@ -37,6 +37,9 @@
 
                         % if 'admin' in user['permissions']:
                             <li><a href="#configureCommentingAnchor">Commenting</a></li>
+                        % endif
+
+                        % if 'admin' in user['permissions'] and enable_institutions:
                             <li><a href="#configureInstitutionAnchor">Project Affiliation / Branding</a></li>
                         % endif
 
@@ -301,13 +304,14 @@
                     </div>
 
                 </div>
-                <div class="panel panel-default" id="institutionSettings">
+                % if enable_institutions:
+                    <div class="panel panel-default" id="institutionSettings">
                     <span id="configureInstitutionAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Project Affiliation / Branding</h3>
                     </div>
                     <div class="panel-body">
-                        % if not node['institution']:
+                        % if not node['institution']['name']:
                             <!-- ko if: availableInstitutions -->
                             <div class="help-block">
                                 Projects affiliated with institutions will show some institutional branding (such as logos) and if public, will be discoverable on OSF institutional landing pages.
@@ -324,7 +328,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button data-bind="click: submitInst" class="btn btn-success">Affiliate my project</button>
+                            <button data-bind="click: submitInst" class="btn btn-success">Affiliate</button>
                             <!-- /ko -->
                             <!-- ko ifnot: availableInstitutions-->
                             <div class="help-block">
@@ -337,16 +341,18 @@
                             </div>
                             <!-- /ko -->
                         % endif
-                        % if node['institution']:
+                        % if node['institution']['name']:
                             <div class="help-block">Your project is currently affiliated with: </div>
                             <p data-bind="text: primaryInstitution"></p>
                             <div class="help-block">
                                 Projects affiliated with institutions will show some institutional branding (such as logos), and if public, will be discoverable on OSF institutional landing pages.
                             </div>
-                            <button data-bind="click: clearInst" class="btn btn-danger">Unaffiliate my project</button>
+                            <button data-bind="click: clearInst" class="btn btn-danger">Remove affiliation</button>
                         % endif
                     </div>
                 </div>
+                % endif
+
 
             % endif
 

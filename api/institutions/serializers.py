@@ -9,10 +9,10 @@ class InstitutionSerializer(JSONAPISerializer):
         'name'
     ])
 
-    name = ser.CharField(required=True)
-    id = ser.CharField(required=True, source='_id')
-    logo_path = ser.CharField()
-    auth_url = ser.CharField(required=True)
+    name = ser.CharField(read_only=True)
+    id = ser.CharField(read_only=True, source='_id')
+    logo_path = ser.CharField(read_only=True)
+    auth_url = ser.CharField(read_only=True)
     links = LinksField({'self': 'get_api_url',
                         'html': 'get_absolute_url', })
 
