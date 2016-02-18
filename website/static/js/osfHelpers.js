@@ -588,7 +588,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         }
     }
     nodesOriginal[nodeId] = {
-        public: nodeTree.node.is_public,
+        isPublic: nodeTree.node.is_public,
         id: nodeTree.node.id,
         title: nodeTree.node.title,
         contributors: nodeTree.node.contributors,

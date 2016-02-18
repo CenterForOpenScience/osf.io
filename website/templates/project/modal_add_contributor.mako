@@ -216,9 +216,6 @@
                                 <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
                             </div>
                         </div>
-                        <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
-                        </div>
                     </div>
 
                 </div><!-- end component selection page -->

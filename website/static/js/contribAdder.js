@@ -445,23 +445,14 @@ var AddContributorViewModel = oop.extend(Paginator, {
             dataType: 'json'
         }).done(function(response) {
             self.nodesOriginal = $osf.getNodesOriginal(response[0], self.nodesOriginal);
-            Object.size = function(obj) {
-                var size = 0, key;
-                for (key in obj) {
-                    if (obj.hasOwnProperty(key)) size++;
-                }
-                return size;
-            };
-            // Get the size of an object
-            var size = Object.size(self.nodesOriginal);
-            self.hasChildren(size > 1);
-            var nodesStateLocal = $.extend(true, {}, self.nodesOriginal);
+            self.hasChildren(Object.keys(self.nodesOriginal).length > 1);
+            var nodesState = $.extend(true, {}, self.nodesOriginal);
             var nodeParent = response[0].node.id;
             //parent node is changed by default
-            nodesStateLocal[nodeParent].checked = true;
+            nodesState[nodeParent].checked = true;
             //parent node cannot be changed
-            nodesStateLocal[nodeParent].canWrite = false;
-            self.nodesState(nodesStateLocal);
+            nodesState[nodeParent].canWrite = false;
+            self.nodesState(nodesState);
         }).fail(function(xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
             Raven.captureMessage('Could not GET project settings.', {
