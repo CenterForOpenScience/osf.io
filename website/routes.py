@@ -184,6 +184,7 @@ def make_url_map(app):
         Rule('/about/', 'get', website_views.redirect_about, json_renderer,),
         Rule('/howosfworks/', 'get', website_views.redirect_howosfworks, json_renderer,),
         Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
+        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako')),
         Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
