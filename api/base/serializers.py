@@ -356,12 +356,10 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         field_counts_requested = [val for val in params.split(',')]
         countable_fields = {field for field in self.parent.fields if getattr(self.parent.fields[field], 'json_api_link', False)}
         for count_field in field_counts_requested:
+            # Some fields will hide relationships, e.g. HideIfRetraction
+            # Ignore related_counts for these fields
             fetched_field = self.parent.fields.get(count_field)
-            hidden = False
-            if fetched_field:
-                check = fetched_field.get_attribute(value)
-                if check is None:
-                    hidden = True
+            hidden = fetched_field and fetched_field.get_attribute(value) is None
 
             if not hidden and count_field not in countable_fields:
                 raise InvalidQueryStringError(
