@@ -127,16 +127,15 @@ var QuickSearchProject = {
         };
 
         // Formats contrib family names for display
-        self.getContributors = function (node) {
-            var numContributors = node.embeds.contributors.links.meta.total;
-            if (numContributors === 1) {
+        self.getContributors = function (node, number) {
+            if (number === 1) {
                 return self.getFamilyName(0, node);
             }
-            else if (numContributors === 2) {
+            else if (number === 2) {
                 return self.getFamilyName(0, node) + ' and ' +
                     self.getFamilyName(1, node);
             }
-            else if (numContributors === 3) {
+            else if (number === 3) {
                 return self.getFamilyName(0, node) + ', ' +
                     self.getFamilyName(1, node) + ', and ' +
                     self.getFamilyName(2, node);
@@ -144,7 +143,7 @@ var QuickSearchProject = {
             else {
                 return self.getFamilyName(0, node) + ', ' +
                     self.getFamilyName(1, node) + ', ' +
-                    self.getFamilyName(2, node) + ' + ' + (numContributors - 3);
+                    self.getFamilyName(2, node) + ' + ' + (number - 3);
             }
 
         };
@@ -422,11 +421,12 @@ var QuickSearchProject = {
         }
 
         function projectView(project) {
+            var numContributors = project.embeds.contributors.links.meta.total;
             return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
                 m('div', {'class': 'row node-styling', onclick: function(){{ctrl.nodeDirect(project);
                 }}}, [
                     m('div', {'class': 'col-sm-6 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
-                    m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
+                    m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 text-muted p-v-xs'}, $osf.contribNameFormat(project, numContributors, ctrl.getFamilyName)),
                     m('div', {'class': 'col-sm-3 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
                 ])
             ));

@@ -65,27 +65,6 @@ var NewAndNoteworthy = {
             return self.contributorsMapping[node.id][0][i];
         };
 
-        // Returns name if one contrib, or adds et al if > 1
-        self.contribNameFormat = function(node, number) {
-            if (number === 1) {
-                return self.getFamilyName(0, node);
-            }
-            else if (number === 2) {
-                return self.getFamilyName(0, node) + ' and ' +
-                    self.getFamilyName(1, node);
-            }
-            else if (number === 3) {
-                return self.getFamilyName(0, node) + ', ' +
-                    self.getFamilyName(1, node) + ', and ' +
-                    self.getFamilyName(2, node);
-            }
-            else {
-                return self.getFamilyName(0, node) + ', ' +
-                    self.getFamilyName(1, node) + ', ' +
-                    self.getFamilyName(2, node) + ' + ' + (number - 3);
-            }
-        };
-
         self.addToolTip = function(line) {
             var $line = $(line);
             if (line.offsetWidth < line.scrollWidth) {
@@ -97,7 +76,7 @@ var NewAndNoteworthy = {
         function nodeDisplay(node) {
             var description = node.embeds.target_node.data.attributes.description;
             var title = node.embeds.target_node.data.attributes.title;
-            var contributors = ctrl.contribNameFormat(node, ctrl.contributorsMapping[node.id][1]);
+            var contributors = $osf.contribNameFormat(node, ctrl.contributorsMapping[node.id][1], ctrl.getFamilyName);
 
             return m('div.node-styling.noteworthy-spacing', {'class': 'row', onclick: function(){
                 location.href = '/' + node.embeds.target_node.data.id;}
