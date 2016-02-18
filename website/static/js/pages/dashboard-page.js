@@ -9,6 +9,7 @@ var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect');
+var bootbox = require('bootbox');
 
 // Knockout components for the onboarder
 require('js/onboarder.js');
@@ -17,6 +18,7 @@ var LogFeed = require('js/logFeed');
 var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
 
 var url = '/api/v1/dashboard/get_nodes/';
+
 var request = $.getJSON(url, function(response) {
     var allNodes = response.nodes;
     //  For uploads, only show nodes for which user has write or admin permissions
@@ -28,12 +30,52 @@ var request = $.getJSON(url, function(response) {
     var registrationSelection = ko.utils.arrayFilter(allNodes, function(node) {
         return $.inArray(node.permissions, ['admin']) !== -1;
     });
-
     $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
     $osf.applyBindings({nodes: registrationSelection, enableComponents: true}, '#obRegisterProject');
     $osf.applyBindings({nodes: uploadSelection}, '#obUploader');
     $osf.applyBindings({nodes: allNodes}, '#obCreateProject');
 });
+request.fail(function(xhr, textStatus, error) {
+    Raven.captureMessage('Could not fetch dashboard nodes.', {
+        url: url, textStatus: textStatus, error: error
+    });
+});
+
+
+function confirm_emails(email) {
+        bootbox.confirm({
+            title: 'Merge Account?',
+            message: 'You want to merge, ' + email.address + ' motherscratcher?',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    var url = '/api/v1/dashboard/confirmed_emails/';
+                    var res = $osf.putJSON(
+                        url,
+                        email
+                    );
+                }
+                else {
+                    console.log("denied!");
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Add email',
+                    className:'btn-danger'
+                }
+            }
+        });
+}
+
+
+var url = '/api/v1/dashboard/confirmed_emails/';
+var i;
+var confirmed_emails = [];
+var request_emails = $.getJSON(url, function(response) {
+    for (var i=0; i<response.length; i++) {
+        confirm_emails(response[i]);
+    }
+ });
 request.fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {
         url: url, textStatus: textStatus, error: error

@@ -8,6 +8,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
+import datetime as dt
 import framework.auth
 
 from framework.auth import cas, campaigns
@@ -178,16 +179,47 @@ def auth_email_logout(token, auth=None, **kwargs):
 
 
 @collect_auth
-def confirm_email_get(token, auth=None, **kwargs):
+def confirm_email_get(auth=None, **kwargs):
     """View for email confirmation links.
     Authenticates and redirects to user settings page if confirmation is
     successful, otherwise shows an "Expired Link" error.
 
     methods: GET
     """
-    is_merge = 'confirm_merge' in request.args
-    user = User.load(kwargs['uid'])
+    # user = User.load(kwargs['uid'])
+    user = auth.user
+    email_verifications = user.email_verifications
+    verified_emails = []
+    for token in email_verifications:
+        # return [emails for emails in email_verifications if email_verifications[token][confirmed]]
+        #todo migrate to remove this hack
+        expiration = email_verifications[token].get('expiration')
+        try:
+            email_verifications[token]['confirmed']
+        except:
+            email_verifications[token]['confirmed'] = False
+        if email_verifications[token]['confirmed'] and not expiration or \
+                (expiration and expiration < dt.datetime.utcnow()):
+            verified_emails.append({'address': email_verifications[token]['email'],
+                                    'token': token,
+                                    'confirmed': email_verifications[token]['confirmed']})
+    return verified_emails
+
+
+@collect_auth
+def add_confirmed_emails(auth=None, **kwargs):
+    """View for email confirmation links.
+    Authenticates and redirects to user settings page if confirmation is
+    successful, otherwise shows an "Expired Link" error.
+
+    methods: GET
+    """
+    user = auth.user
+    confirmed_email = request.json.get('address')
+    token = request.json.get('token')
+    is_merge = 'merge_user' in user.system_tags
     is_initial_confirmation = not user.date_confirmed
+
     if user is None:
         raise HTTPError(http.NOT_FOUND)
 
@@ -195,7 +227,6 @@ def confirm_email_get(token, auth=None, **kwargs):
         if not is_merge:
             # determine if the user registered through a campaign
             campaign = campaigns.campaign_for_user(user)
-            campaign = request.args.get('campaign')
             if campaign:
                 return redirect(
                     campaigns.campaign_url_for(campaign)
@@ -232,7 +263,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     user.save()
 
     return redirect(cas.get_login_url(
-        web_url_for('auth_login'),
+        request.url,
         auto=True,
         username=user.username,
         verification_key=user.verification_key
