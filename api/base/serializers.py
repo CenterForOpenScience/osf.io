@@ -93,6 +93,13 @@ class HideIfRegistration(ser.Field):
             self.field.parent = self.field.root
         return self.field.to_representation(value)
 
+    def to_esi_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_esi_representation(value)
+
 
 class HideIfRetraction(HideIfRegistration):
     """
@@ -336,6 +343,26 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             )
         )
 
+    def process_related_counts_parameters(self, params):
+        """
+        Processes related_counts parameter.
+
+        Can either be a True/False value for fetching counts on all fields, or a comma-separated list for specifying
+        individual fields.  Ensures field for which we are requesting counts is a relationship field.
+        """
+        if utils.is_truthy(params) or utils.is_falsy(params):
+            return params
+
+        field_counts_requested = [val for val in params.split(',')]
+        countable_fields = {field for field in self.parent.fields if getattr(self.parent.fields[field], 'json_api_link', False)}
+        for count_field in field_counts_requested:
+            if count_field not in countable_fields:
+                raise InvalidQueryStringError(
+                    detail="Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got '{0}'".format(params),
+                    parameter='related_counts'
+                )
+        return field_counts_requested
+
     def get_meta_information(self, meta_data, value):
         """
         For retrieving meta values, otherwise returns {}
@@ -344,15 +371,16 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         for key in meta_data or {}:
             if key == 'count' or key == 'unread':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
+                field_counts_requested = self.process_related_counts_parameters(show_related_counts)
+
                 if utils.is_truthy(show_related_counts):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
                 elif utils.is_falsy(show_related_counts):
                     continue
-                if not utils.is_truthy(show_related_counts):
-                    raise InvalidQueryStringError(
-                        detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
-                        parameter='related_counts'
-                    )
+                elif self.field_name in field_counts_requested:
+                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                else:
+                    continue
             else:
                 meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
@@ -410,6 +438,15 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if not urls['self'] and not urls['related']:
             urls = None
         return urls
+
+    def to_esi_representation(self, value):
+        relationships = super(RelationshipField, self).to_representation(value)
+        if relationships is not None:
+            for type, href in relationships.items():
+                if href and not href == '{}':
+                    return '<esi:include src="{}?format=jsonapi"/>'.format(href)
+        else:
+            raise SkipField
 
     def format_filter(self, obj):
         qd = QueryDict(mutable=True)
@@ -486,6 +523,12 @@ class TargetField(ser.Field):
                 kwargs=kwargs
             )
         )
+
+    def to_esi_representation(self, value):
+        url = value.get_absolute_url()
+        if url:
+            return '<esi:include src="{}?format=jsonapi"/>'.format(url)
+        return self.to_representation(value)
 
     def to_representation(self, value):
         """
@@ -651,11 +694,9 @@ class JSONAPIListSerializer(ser.ListSerializer):
         if isinstance(data, collections.Mapping):
             errors = data.get('errors', None)
             data = data.get('data', None)
-
         ret = [
             self.child.to_representation(item, envelope=None) for item in data
         ]
-
         if errors and bulk_skip_uneditable:
             ret.append({'errors': errors})
 
@@ -769,7 +810,7 @@ class JSONAPISerializer(ser.Serializer):
         ])
 
         embeds = self.context.get('embed', {})
-
+        enable_esi = self.context.get('enable_esi', False)
         is_anonymous = is_anonymized(self.context['request'])
         to_be_removed = []
         if is_anonymous and hasattr(self, 'non_anonymized_fields'):
@@ -799,8 +840,14 @@ class JSONAPISerializer(ser.Serializer):
                 if attribute is None:
                     continue
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
+                    if enable_esi:
+                        try:
+                            result = field.to_esi_representation(attribute)
+                        except SkipField:
+                            continue
+                    else:
+                        result = self.context['embed'][field.field_name](obj)
 
-                    result = self.context['embed'][field.field_name](obj)
                     if result:
                         data['embeds'][field.field_name] = result
                 else:
@@ -866,14 +913,13 @@ class JSONAPIRelationshipSerializer(ser.Serializer):
     Provides a simplified serialization of the relationship, allowing for simple update request
     bodies.
     """
-    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    id = ser.CharField(required=False, allow_null=True)
     type = TypeField(required=False, allow_null=True)
 
     def to_representation(self, obj):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
-
         relation_id_field = self.fields['id']
         attribute = relation_id_field.get_attribute(obj)
         relationship = relation_id_field.to_representation(attribute)

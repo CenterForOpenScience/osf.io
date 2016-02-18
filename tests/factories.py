@@ -33,6 +33,7 @@ from website.oauth.models import (
     ExternalAccount,
     ExternalProvider
 )
+from website.models import Institution
 from website.project.model import (
     Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig, AlternativeCitation,
@@ -521,6 +522,14 @@ class CommentFactory(ModularOdmFactory):
                 instance.node.save()
         instance.save()
         return instance
+
+
+class InstitutionFactory(ModularOdmFactory):
+    FACTORY_FOR = Institution
+    _id = Sequence(lambda n: "S{}".format(n))
+    name = Sequence(lambda n: "School{}".format(n))
+    logo_name = 'logo.img'
+    auth_url = 'http://thisIsUrl.biz'
 
 
 class NotificationSubscriptionFactory(ModularOdmFactory):

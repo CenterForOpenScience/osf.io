@@ -41,6 +41,13 @@ class TestAuthViews(BoxAddonTestCase, testing.views.OAuthAddonAuthViewsTestCaseM
         self.mock_refresh.stop()
         super(TestAuthViews, self).tearDown()
 
+    @mock.patch(
+        'website.addons.box.model.BoxUserSettings.revoke_remote_oauth_access',
+        mock.PropertyMock()
+    )
+    def test_delete_external_account(self):
+        super(TestAuthViews, self).test_delete_external_account()
+
 
 class TestConfigViews(BoxAddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMixin):
 

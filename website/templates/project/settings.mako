@@ -39,6 +39,10 @@
                             <li><a href="#configureCommentingAnchor">Commenting</a></li>
                         % endif
 
+                        % if 'admin' in user['permissions'] and enable_institutions:
+                            <li><a href="#configureInstitutionAnchor">Project Affiliation / Branding</a></li>
+                        % endif
+
                         <li><a href="#configureNotificationsAnchor">Email Notifications</a></li>
 
                     % endif
@@ -300,6 +304,55 @@
                     </div>
 
                 </div>
+                % if enable_institutions:
+                    <div class="panel panel-default" id="institutionSettings">
+                    <span id="configureInstitutionAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Project Affiliation / Branding</h3>
+                    </div>
+                    <div class="panel-body">
+                        % if not node['institution']['name']:
+                            <!-- ko if: availableInstitutions -->
+                            <div class="help-block">
+                                Projects affiliated with institutions will show some institutional branding (such as logos) and if public, will be discoverable on OSF institutional landing pages.
+
+                                You are authorized to affiliate your projects with the following institutions:
+                            </div>
+                            <div class="radio">
+                                <div data-bind="foreach: {data: availableInstitutions, as: 'item'}">
+                                    <div>
+                                    <label>
+                                        <input type="radio" data-bind="value: item.id, checked: $parent.selectedInstitution" name="primaryInst">
+                                        <p data-bind="text: item.attributes.name"></p>
+                                    </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <button data-bind="click: submitInst" class="btn btn-success">Affiliate</button>
+                            <!-- /ko -->
+                            <!-- ko ifnot: availableInstitutions-->
+                            <div class="help-block">
+                                Projects can be affiliated with institutions that have created OSF for Institution accounts. This allows:
+                                <ul>
+                                    <li>institutional logos to be displayed on public projects</li>
+                                    <li>public projects to be discoverable on specific institutional landing pages</li>
+                                    <li>single-sign on to the OSF with institutional credentials</li>
+                                </ul>
+                            </div>
+                            <!-- /ko -->
+                        % endif
+                        % if node['institution']['name']:
+                            <div class="help-block">Your project is currently affiliated with: </div>
+                            <p data-bind="text: primaryInstitution"></p>
+                            <div class="help-block">
+                                Projects affiliated with institutions will show some institutional branding (such as logos), and if public, will be discoverable on OSF institutional landing pages.
+                            </div>
+                            <button data-bind="click: clearInst" class="btn btn-danger">Remove affiliation</button>
+                        % endif
+                    </div>
+                </div>
+                % endif
+
 
             % endif
 
@@ -422,5 +475,6 @@
     % for js_asset in addon_js:
     <script src="${js_asset | webpack_asset}"></script>
     % endfor
+
 
 </%def>

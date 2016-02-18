@@ -12,6 +12,7 @@ from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework.auth.core import Auth
+from framework.transactions import commands
 
 from website import settings
 from website.models import User, Node
@@ -124,6 +125,13 @@ class ContextTestCase(OsfTestCase):
     def tearDownClass(cls):
         super(ContextTestCase, cls).tearDownClass()
         settings.MAILGUN_API_KEY = cls._MAILGUN_API_KEY
+
+    def tearDown(self):
+        try:
+            commands.commit()
+        except Exception:
+            pass
+        super(ContextTestCase, self).tearDown()
 
     def make_context(self, method='POST', **kwargs):
         data = {
@@ -242,6 +250,8 @@ class TestProvisionNode(ContextTestCase):
 
 
 class TestMessage(ContextTestCase):
+
+    PUSH_CONTEXT = False
 
     def test_verify_signature_valid(self):
         with self.make_context():

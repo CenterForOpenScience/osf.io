@@ -58,9 +58,9 @@ from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
+    ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, DashboardFactory, FolderFactory,
-    NodeLicenseRecordFactory
+    NodeLicenseRecordFactory, InstitutionFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -2113,6 +2113,49 @@ class TestNodeTraversals(OsfTestCase):
         reg.delete_registration_tree(save=True)
         assert_false(proj.node__registrations)
 
+    def test_get_active_contributors_recursive_with_duplicate_users(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        grandchild = ProjectFactory(creator=self.user, parent=child)
+
+        contributors = list(parent.get_active_contributors_recursive())
+        assert_equal(len(contributors), 4)
+        user_ids = [user._id for user, node in contributors]
+
+        assert_in(self.user._id, user_ids)
+        assert_in(self.viewer._id, user_ids)
+        assert_in(child_non_admin._id, user_ids)
+
+        node_ids = [node._id for user, node in contributors]
+        assert_in(parent._id, node_ids)
+        assert_in(grandchild._id, node_ids)
+
+    def test_get_active_contributors_recursive_with_no_duplicate_users(self):
+        parent = ProjectFactory(creator=self.user)
+
+        child = ProjectFactory(creator=self.viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=self.auth,
+                              permissions=expand_permissions(WRITE))
+        grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
+
+        contributors = list(parent.get_active_contributors_recursive(unique_users=True))
+        assert_equal(len(contributors), 3)
+        user_ids = [user._id for user, node in contributors]
+
+        assert_in(self.user._id, user_ids)
+        assert_in(self.viewer._id, user_ids)
+        assert_in(child_non_admin._id, user_ids)
+
+        node_ids = [node._id for user, node in contributors]
+        assert_in(parent._id, node_ids)
+
     def test_get_admin_contributors_recursive_with_duplicate_users(self):
         parent = ProjectFactory(creator=self.user)
 
@@ -3029,11 +3072,11 @@ class TestProject(OsfTestCase):
         )
         assert_true(registration.is_pending_embargo)
 
-        func = lambda: registration.set_privacy('public', auth=self.auth)
-        assert_raises(NodeStateError, func)
+        with assert_raises(NodeStateError):
+            registration.set_privacy('public', auth=self.auth)
         assert_false(registration.is_public)
 
-    def test_set_privacy_cancels_active_embargo_for_registration(self):
+    def test_set_privacy_can_not_cancel_active_embargo_for_registration(self):
         registration = RegistrationFactory(project=self.project)
         registration.embargo_registration(
             self.user,
@@ -3046,12 +3089,8 @@ class TestProject(OsfTestCase):
         registration.embargo.approve_embargo(self.user, approval_token)
         assert_false(registration.is_pending_embargo)
 
-        registration.set_privacy('public', auth=self.auth)
-        registration.save()
-        assert_false(registration.is_pending_embargo)
-        assert_equal(registration.embargo.state, Embargo.REJECTED)
-        assert_true(registration.is_public)
-        assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
+        with assert_raises(NodeStateError):
+            registration.set_privacy('public', auth=self.auth)
 
     def test_set_description(self):
         old_desc = self.project.description
@@ -3929,6 +3968,15 @@ class TestRegisterNode(OsfTestCase):
 
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)
+
+    def test_registration_gets_institution_affiliation(self):
+        node = NodeFactory()
+        institution = InstitutionFactory()
+        node.primary_institution = institution
+        node.save()
+        registration = RegistrationFactory(project=node)
+        assert_equal(registration.primary_institution._id, node.primary_institution._id)
+        assert_equal(set(registration.affiliated_institutions), set(node.affiliated_institutions))
 
 class TestNodeLog(OsfTestCase):
 

@@ -6,7 +6,6 @@ from api.base.serializers import (
     RestrictedDictSerializer,
     LinksField,
 )
-from api.base.utils import absolute_reverse
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -77,6 +76,12 @@ class NodeLogSerializer(JSONAPISerializer):
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'},
     )
+
+    contributors = RelationshipField(
+        related_view='logs:log-contributors',
+        related_view_kwargs={'log_id': '<pk>'},
+    )
+
     # This would be a node_link, except that data isn't stored in the node log params
     linked_node = RelationshipField(
         related_view='nodes:node-detail',
@@ -88,9 +93,4 @@ class NodeLogSerializer(JSONAPISerializer):
     )
 
     def get_absolute_url(self, obj):
-        return absolute_reverse(
-            'logs:log-detail',
-            kwargs={
-                'log_id': obj._id,
-            }
-        )
+        return obj.absolute_url

@@ -253,16 +253,16 @@ in
 </script>
 
 <script type="text/html" id="made_contributor_visible">
-made contributor
+made non-bibliographic contributor
 <span data-bind="html: displayContributors"></span>
-visible on
+a bibliographic contributor on
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
 <script type="text/html" id="made_contributor_invisible">
-made contributor
+made bibliographic contributor
 <span data-bind="html: displayContributors"></span>
-invisible on
+a non-bibliographic contributor on
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
@@ -339,4 +339,12 @@ on
 removed a citation ({{ params.citation.name }})
 from
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
+<script type="text/html" id="primary_institution_changed">
+changed this node's primary institution from <strong>{{ params.previous_institution.name }}</strong> to <strong>{{ params.institution.name }}</strong>.
+</script>
+
+<script type="text/html" id="primary_institution_removed">
+removed <strong>{{ params.institution.name }}</strong> as this node's primary institution.
 </script>

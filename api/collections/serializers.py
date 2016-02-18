@@ -99,6 +99,7 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
 
 
 class LinkedNode(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='node._id', required=False, allow_null=True)
     class Meta:
         type_ = 'linked_nodes'
 
