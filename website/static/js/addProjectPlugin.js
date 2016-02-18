@@ -18,13 +18,14 @@ var AddProject = {
     controller : function (options) {
         var self = this;
         self.defaults = {
-            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Add new Project'),
+            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Add new project'),
             parentID : null,
             modalID : 'addProjectModal',
-            stayCallback :null // Function to call when user decides to stay after project creation
+            stayCallback :null, // Function to call when user decides to stay after project creation
+            categoryList : []
         };
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
-        self.options = $.extend(self.defaults, options);
+        self.options = $.extend({}, self.defaults, options);
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
@@ -35,33 +36,11 @@ var AddProject = {
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
         };
-        // Load Category list from API
-        self.categoryList = [];
-        self.loadCategories = function () {
-            m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig}).then(function _success(results){
-                console.log(results);
-                if(results.actions.POST.category){
-                    self.categoryList = results.actions.POST.category.choices;
-                    self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
-                        if(a.value < b.value) return -1;
-                        if(a.value > b.value) return 1;
-                        return 0;
-                    });
-                }
-            }, function _error(results){
-                console.error('Error loading category names:', results);
-            });
-        };
-        self.loadCategories();
+
         // Validation
         self.isValid = m.prop(false);
-        self.checkValid = function () {
-            var projectNameNotEmpty = self.newProjectName().trim().length > 0 ? true : false;
-            if(projectNameNotEmpty){
-                self.isValid(true);
-            } else {
-                self.isValid(false);
-            }
+        self.checkValid = function _checkValid() {
+            self.isValid(self.newProjectName().trim().length > 0);
         };
         self.add = function _add () {
             var url;
@@ -77,20 +56,18 @@ var AddProject = {
                         'type': 'nodes',
                         'attributes': {
                             'title': self.newProjectName(),
-                            'category': self.newProjectCategory,
+                            'category': self.newProjectCategory(),
                             'description' : self.newProjectDesc()
                         }
                     }
                 };
             var success = function _success (result) {
                 self.viewState('success');
-                console.log('success', result);
                 self.goToProjectLink(result.data.links.html);
                 self.saveResult(result);
             };
             var error = function _error (result) {
                 self.viewState('error');
-                console.log('error', result);
             };
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);
@@ -111,7 +88,7 @@ var AddProject = {
                     m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                         m('span[aria-hidden="true"]','×'),
                     ]),
-                    m('h3.modal-title', 'Add New Project')
+                    m('h3.modal-title', 'Add new project')
                 ]),
                 m('.modal-body', [
                     m('.text-left', [
@@ -128,7 +105,7 @@ var AddProject = {
                                 value : ctrl.newProjectName()
                             })
                         ]),
-                        m('.text-muted', { onclick : function(){
+                        m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
                         }},[
                             ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
@@ -144,7 +121,7 @@ var AddProject = {
                             ]),
                             m('.f-w-lg.text-bigger','Category'),
                             m('.category-radio.p-h-md', [
-                                ctrl.categoryList.map(function(cat){
+                                ctrl.options.categoryList.map(function(cat){
                                     return m('.radio', m('label', [  m('input', {
                                         type: 'radio',
                                         name: 'projectCategory',
@@ -182,7 +159,7 @@ var AddProject = {
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
-                            m('h4.p-md.add-project-success.text-success', 'Project created successfully!')
+                            m('h4.add-project-success.text-success', 'Project created successfully!')
                         ]
                     ),
                     m('.modal-footer', [
@@ -191,8 +168,8 @@ var AddProject = {
                                 ctrl.reset();
                                 ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
                             }
-                        },  'Keep Working Here'),
-                        m('a.btn.btn-success', { href : ctrl.goToProjectLink() },'Go to New Project')
+                        },  'Keep working here'),
+                        m('a.btn.btn-success', { href : ctrl.goToProjectLink() },'Go to new project')
                     ])
                 )
             ]),
@@ -202,10 +179,13 @@ var AddProject = {
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
-                            m('h4.p-md.add-project-error.text-danger', 'Couldn\'t create your project'),
+                            m('h4.add-project-error.text-danger', 'Couldn\'t create your project'),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
-                    )
+                    ),
+                    m('.modal-footer', [
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]',  'OK')
+                    ])
                 )
             ])
         };
@@ -213,7 +193,7 @@ var AddProject = {
         return  m('span', [
             ctrl.options.buttonTemplate,
             m('#' + ctrl.options.modalID + '.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addProject"][aria-hidden="true"]',
-                m('.modal-dialog',
+                m('.modal-dialog.text-left',
                     templates[ctrl.viewState()]
                 )
             )

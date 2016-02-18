@@ -13,16 +13,13 @@ require('css/fangorn.css');
 var $ = require('jquery');
 var m = require('mithril');
 var moment = require('moment');
-var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
-var iconmap = require('js/iconmap');
 
 
 var LinkObject;
 var allProjectsCache;
 /**
  * Edits the template for the column titles.
- * Used here to make smart folder italicized
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller Check Treebeard API for methods available
  * @private
@@ -56,7 +53,16 @@ function _poContributors(item) {
     }
 
     return contributorList.map(function (person, index, arr) {
-        var name = person.embeds.users.data.attributes.family_name;
+        var name;
+        var familyName = person.embeds.users.data.attributes.family_name;
+        var givenName = person.embeds.users.data.attributes.given_name;
+        if (familyName) {
+            name = familyName;
+        } else if(givenName){
+            name = givenName;
+        } else {
+            name = 'A contributor';
+        }
         var comma;
         if (index === 0) {
             comma = '';
@@ -64,7 +70,7 @@ function _poContributors(item) {
             comma = ', ';
         }
         if (index > 2) {
-            return;
+            return m('span');
         }
         if (index === 2) {
             return m('span', ' + ' + (arr.length - 2));
@@ -74,14 +80,13 @@ function _poContributors(item) {
 }
 
 /**
- * Displays who modified the data and when. i.e. "6 days ago, by Uguz"
+ * Displays date modified
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @private
  */
 function _poModified(item) {
-    var dateString = '';
     var node = item.data;
-    dateString = moment.utc(node.attributes.date_modified).fromNow();
+    var dateString = moment.utc(node.attributes.date_modified).fromNow();
     return m('span', dateString);
 }
 
@@ -94,25 +99,26 @@ function _poModified(item) {
  */
 function _poResolveRows(item) {
     var mobile = window.innerWidth < 767; // true if mobile view
+    var tb = this;
+    var folderIcons = !tb.filterOn;
+    var defaultColumns = [];
 
-    var css = '',
-        default_columns = [];
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     } else {
         item.css = '';
     }
 
-    default_columns.push({
+    defaultColumns.push({
         data : 'name',  // Data field name
-        folderIcons : true,
+        folderIcons : folderIcons,
         filter : true,
         css : 'po-draggable', // All projects are draggable since we separated collections from the grid
         custom : _poTitleColumn
     });
 
     if (!mobile) {
-        default_columns.push({
+        defaultColumns.push({
             data : 'contributors',
             filter : true,
             custom : _poContributors
@@ -122,7 +128,7 @@ function _poResolveRows(item) {
             custom : _poModified
         });
     } else {
-        default_columns.push({
+        defaultColumns.push({
             data : 'name',
             filter : false,
             custom : function (row){
@@ -132,7 +138,7 @@ function _poResolveRows(item) {
         });
     }
 
-    return default_columns;
+    return defaultColumns;
 }
 
 /**
@@ -210,13 +216,12 @@ function _poResolveLazyLoad(item) {
         //return node.relationships.children.links.related.href;
         return $osf.apiV2Url('nodes/' + node.id + '/children/', {
             query : {
-                'related_counts' : true,
+                'related_counts' : 'children',
                 'embed' : 'contributors'
             }
         });
     }
     return false;
-
 }
 
 /**
@@ -261,6 +266,7 @@ function filterRowsNotInParent(rows) {
             if (currentItem.parentID === originalParent && currentItem.id !== -1) {
                 newRows.push(rows[i]);
             } else {
+                // The following row flashes a pastel red shade for a short time to denote that the row in question can't be multiselected with others
                 $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93').animate({ backgroundColor: '#fff'}, 500, changeColor);
             }
         }
@@ -268,10 +274,6 @@ function filterRowsNotInParent(rows) {
     tb.multiselected(newRows);
     tb.highlightMultiselect();
     return newRows;
-}
-
-function _poIconView(item) {
-    return false;
 }
 
 /**
@@ -298,14 +300,13 @@ var tbOptions = {
     },
     sortDepth : 0,
     onload : function () {
-
         var tb = this,
             rowDiv = tb.select('.tb-row');
         rowDiv.first().trigger('click');
         $('.gridWrapper').on('mouseout', function () {
             tb.select('.tb-row').removeClass('po-hover');
         });
-        m.render(document.getElementById('poFilter'), tb.options.filterTemplate.call(this));
+        m.render($(tb.options.dragContainment + ' .db-poFilter').get(0), tb.options.filterTemplate.call(this));
     },
     ontogglefolder : function (item, event) {
         if (!item.open) {
@@ -317,7 +318,9 @@ var tbOptions = {
         $('[data-toggle="tooltip"]').tooltip();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : _poIconView,
+    resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
+        return false;
+    },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
     resolveRefreshIcon : function () {
@@ -354,7 +357,8 @@ var tbOptions = {
                 style: 'display:inline;',
                 onkeyup: function(event){
                     if ($(this).val().length === 1){
-                        tb.updateFolder(allProjectsCache().data, tb.treeData);
+                        tb.updateFolder(allProjectsCache(), tb.treeData);
+                        tb.options.resetUi();
                     }
                     tb.filter(event);
                 },
@@ -367,8 +371,7 @@ var tbOptions = {
             } }, tb.options.removeIcon())
         ];
     },
-    hiddenFilterRows : ['tags'],
-    onselectrow : function (row) {console.log(row);}
+    hiddenFilterRows : ['tags']
 };
 
 var ProjectOrganizer = {
@@ -380,9 +383,9 @@ var ProjectOrganizer = {
                 {
                     updateSelected : args.updateSelected,
                     updateFilesData : args.updateFilesData,
-                    filesData: args.filesData().data,
-                    wrapperSelector : args.wrapperSelector,
-                    dragContainment : args.dragContainment
+                    filesData: args.filesData(),
+                    dragContainment : args.wrapperSelector,
+                    resetUi : args.resetUi
                 },
                 tbOptions
             );

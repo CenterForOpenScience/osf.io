@@ -10,17 +10,14 @@
 
 <div class="dashboard-header">
     <div class="row">
-        <div class="col-xs-8">
+        <div class="col-xs-12">
             <h3>My Projects <small class="hidden-xs">Browse and organize all your projects </small></h3>
-        </div>
-        <div class="col-xs-4">
-            <div id="addProjectWrap" class="m-t-md pull-right"></div>
         </div>
     </div>
 </div>
 
 
-  <div id="fileBrowser" class="fileBrowser clearfix" >
+  <div id="dashboard" class="dashboard clearfix" >
     <div class="spinner-loading-wrapper">
        <div class="logo-spin logo-lg"></div>
        <p class="m-t-sm fg-load-message"> Loading projects...  </p>
@@ -52,7 +49,7 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/css/file-browser.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
     <link rel="stylesheet" href="/static/css/pages/dashboard-page.css">
 </%def>
 

@@ -4,7 +4,6 @@ var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var ko = require('knockout');
 require('js/qToggle');
-require('js/onboarder.js');
 require('js/components/autocomplete');
 
 $(function(){

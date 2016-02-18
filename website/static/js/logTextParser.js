@@ -4,9 +4,11 @@
  * Remeber to embed nodes, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-var logActions = require('js/_allLogTexts.js');
+var logActions = require('json!js/_allLogTexts.json');
 var $ = require('jquery');  // jQuery
 
+
+var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 /**
  * Checks if the required parameter to complete the log is returned
  * This may intentionally not be returned to make log anonymous
@@ -17,7 +19,10 @@ var $ = require('jquery');  // jQuery
 var paramIsReturned = function(param, logObject){
     if(!param){
         var message = 'Expected parameter for Log action ' + logObject.attributes.action + ' was not returned from log api.';
-        Raven.captureMessage(message, {logObject: logObject});
+        if(ravenMessagesCache.indexOf(message) === -1){
+            Raven.captureMessage(message, {logObject: logObject});
+            ravenMessagesCache.push(message);
+        }
         return false;
     }
     return true;
@@ -42,7 +47,7 @@ var returnTextParams = function (param, text, logObject) {
                         return m('span', item);
                     }
                     if(index === arr.length-1) {
-                        return m('span', ' and ' + item);
+                        return m('span', ', and ' + item);
                     }
                     return m('span', item + ', ');
                 })
@@ -60,7 +65,9 @@ var LogText = {
             var list = text.split(/(\${.*?})/);
             return m('span.osf-log-item',[
                 list.map(function(piece){
-                    if(piece === '') { return; }
+                    if (piece === '') {
+                        return m('span');
+                    }
                     var startsWith = piece.substring(0,2);
                     if(startsWith === '${'){
                         var last = piece.length-1;
@@ -116,9 +123,9 @@ var LogPieces = {
     tag: {
         view: function (ctrl, logObject) {
             var tag = logObject.attributes.params.tag;
-           if(paramIsReturned(tag, logObject)) {
+            if(paramIsReturned(tag, logObject)) {
                return m('a', {href: '/search/?q=%22' + tag + '%22'}, tag);
-           }
+            }
             return m('span', 'a tag');
        }
     },

@@ -26,8 +26,8 @@ var GrowlBox = oop.defclass({
             type: this.type,
             delay: 0,
             animate: {
-                enter: 'animated slideInDown',
-                exit: 'animated slideOutRight'
+                enter: 'animated fadeInDown',
+                exit: 'animated fadeOut'
             }
         });
 
