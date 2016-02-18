@@ -75,6 +75,7 @@ def get_globals():
         'login_url': cas.get_login_url(request.url, auto=True),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
+        'enable_institutions': settings.ENABLE_INSTITUTIONS,
     }
 
 

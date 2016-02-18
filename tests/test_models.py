@@ -60,7 +60,7 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, DashboardFactory, FolderFactory,
-    NodeLicenseRecordFactory
+    NodeLicenseRecordFactory, InstitutionFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -3968,6 +3968,15 @@ class TestRegisterNode(OsfTestCase):
 
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)
+
+    def test_registration_gets_institution_affiliation(self):
+        node = NodeFactory()
+        institution = InstitutionFactory()
+        node.primary_institution = institution
+        node.save()
+        registration = RegistrationFactory(project=node)
+        assert_equal(registration.primary_institution._id, node.primary_institution._id)
+        assert_equal(set(registration.affiliated_institutions), set(node.affiliated_institutions))
 
 class TestNodeLog(OsfTestCase):
 

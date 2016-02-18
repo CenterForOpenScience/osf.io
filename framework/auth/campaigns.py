@@ -12,6 +12,10 @@ CAMPAIGNS = ImmutableDict({
         'redirect_url': lambda: web_url_for('prereg_landing_page'),
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
     },
+    'institution': {
+        'system_tag': 'institution_campaign',
+        'redirect_url': lambda: ''
+    }
 })
 
 def system_tag_for_campaign(campaign):
