@@ -1,0 +1,8 @@
+{
+  "figshare_content_linked" : "${user} linked content from Figshare in ${node}",
+  "figshare_content_unlinked": "${user} unlinked content from Figshare in ${node}",
+  "figshare_file_added" : "${user} added file ${path} to Figshare in ${node}",
+  "figshare_file_removed" : "${user} removed file ${path} from Figshare in ${node}",
+  "figshare_node_authorized" : "${user} authorized the Figshare addon from ${node}",
+  "figshare_node_deauthorized" : "${user} deauthorized the Figshare addon from ${node}"
+}
