@@ -343,7 +343,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             )
         )
 
-    def process_related_counts_parameters(self, params):
+    def process_related_counts_parameters(self, params, value):
         """
         Processes related_counts parameter.
 
@@ -353,10 +353,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if utils.is_truthy(params) or utils.is_falsy(params):
             return params
 
+        is_retraction = getattr(value, 'is_retracted', False)
+
         field_counts_requested = [val for val in params.split(',')]
         countable_fields = {field for field in self.parent.fields if getattr(self.parent.fields[field], 'json_api_link', False)}
         for count_field in field_counts_requested:
-            if count_field not in countable_fields:
+            if not is_retraction and count_field not in countable_fields:
                 raise InvalidQueryStringError(
                     detail="Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got '{0}'".format(params),
                     parameter='related_counts'
@@ -371,7 +373,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         for key in meta_data or {}:
             if key == 'count' or key == 'unread':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
-                field_counts_requested = self.process_related_counts_parameters(show_related_counts)
+                field_counts_requested = self.process_related_counts_parameters(show_related_counts, value)
 
                 if utils.is_truthy(show_related_counts):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
