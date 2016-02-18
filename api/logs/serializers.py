@@ -13,6 +13,10 @@ class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
     doi = ser.CharField(read_only=True)
     ark = ser.CharField(read_only=True)
 
+class NodeLogInstitutionSerializer(RestrictedDictSerializer):
+
+    id = ser.CharField(read_only=True)
+    name = ser.CharField(read_only=True)
 
 class NodeLogFileParamsSerializer(RestrictedDictSerializer):
 
@@ -50,6 +54,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     updated_fields = ser.ListField(read_only=True)
     version = ser.CharField(read_only=True)
     citation_name = ser.CharField(read_only=True, source='citation.name')
+    institution = NodeLogInstitutionSerializer(read_only=True)
+    previous_institution = NodeLogInstitutionSerializer(read_only=True)
 
 class NodeLogSerializer(JSONAPISerializer):
 
