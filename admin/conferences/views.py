@@ -6,8 +6,8 @@ from .models import Conference
 # Create your views here.
 def create_conference(request):
     if request.user.is_staff:
+        form = ConferenceForm(request.POST)
         if request.method == 'POST':
-            form = ConferenceForm(request.POST)
             if form.is_valid():
                 new_conference = form.save()
                 # Save with commit=False to do stuff here if need be
@@ -20,7 +20,6 @@ def create_conference(request):
 
                 return redirect('conferences:create_conference')
         else:
-            form = ConferenceForm()
             context = {'form': form}
             return render(request, 'conferences/create_conference.html', context)
     else:

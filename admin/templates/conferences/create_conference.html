@@ -20,7 +20,7 @@
             {% for field in form %}
                 <div class="form-group">
                     <p>{{ field.name }} </p><span class="text-danger"><p>{{ field }}</p>
-                    {% if form.field.errors %}<span class="text-danger"> {{ form.field.error }}</span>{% endif %}
+                    {% if field.errors %}<span class="text-danger"> {{ field.errors }}</span>{% endif %}
                 </div>
             {% endfor %}
 <!--
