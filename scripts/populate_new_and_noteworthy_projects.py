@@ -59,6 +59,7 @@ def get_popular_nodes():
     discover_url = get_api_base_path() + 'api/v1/explore/activity/popular/raw/'
     return retrieve_data(discover_url)
 
+
 def get_new_and_noteworthy_nodes():
     """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """
     today = datetime.datetime.now()
