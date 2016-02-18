@@ -10,19 +10,32 @@ var $ = require('jquery');  // jQuery
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 /**
+ * Utility function to not repeat logging errors to Sentry
+ * @param message {String} Custom message for error
+ * @param logObject {Object} the entire log object returned from the api
+ */
+function ravenMessage (message, logObject) {
+    if(ravenMessagesCache.indexOf(message) === -1){
+        Raven.captureMessage(message, {logObject: logObject});
+        ravenMessagesCache.push(message);
+    }
+}
+
+
+/**
  * Checks if the required parameter to complete the log is returned
  * This may intentionally not be returned to make log anonymous
  * @param param {string|number} The parameter to be used
  * @param logObject {Object} the entire log object returned from the api
  * @returns {boolean}
  */
-var paramIsReturned = function(param, logObject){
+var paramIsReturned = function _paramIsReturned (param, logObject){
     if(!param){
         var message = 'Expected parameter for Log action ' + logObject.attributes.action + ' was not returned from log api.';
-        if(ravenMessagesCache.indexOf(message) === -1){
-            Raven.captureMessage(message, {logObject: logObject});
-            ravenMessagesCache.push(message);
-        }
+        ravenMessage(message, logObject);
+        return false;
+    }
+    if (param.errors){
         return false;
     }
     return true;
@@ -78,7 +91,8 @@ var LogText = {
             ]);
         } else {
             var message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
-            Raven.captureMessage(message, {logObject: logObject});
+            ravenMessage(message, logObject);
+            return m('');
         }
     }
 };
