@@ -17,6 +17,10 @@ CAMPAIGNS = ImmutableDict({
         'redirect_url': lambda: web_url_for('auth_login'),
         'confirmation_email_template': mails.CONFIRM_MERGE,
     },
+    'institution': {
+        'system_tag': 'institution_campaign',
+        'redirect_url': lambda: ''
+    }
 })
 
 def system_tag_for_campaign(campaign):
