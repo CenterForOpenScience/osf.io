@@ -230,12 +230,20 @@ def get_auth(auth, **kwargs):
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
+    file_guids =[]
+    path = data.get('path', None)
+    if path and action == 'movefrom':
+        file_guids = FileNode.resolve_class(provider_name, FileNode.ANY).get_file_guids(path=path, provider=provider_name, guids=[], node=node)
+
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
             'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
             'credentials': credentials,
             'settings': waterbutler_settings,
+            'passthrough': {
+                'file_guids': file_guids,
+            },
             'callback_url': node.api_url_for(
                 ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
                 _absolute=True,

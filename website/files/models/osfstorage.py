@@ -33,6 +33,18 @@ class OsfStorageFileNode(FileNode):
         # Dont raise anything a 404 will be raised later
         return cls.create(node=node, path=path)
 
+    @classmethod
+    def get_file_guids(cls, path, provider, guids, node=None):
+        file_obj = cls.load(path.strip('/'))
+        if file_obj.kind == 'folder':
+            for item in file_obj.children:
+                cls.get_file_guids(item.path, provider, guids, node)
+        else:
+            guid = file_obj.stored_object.get_guid()
+            if guid:
+                guids.append(guid._id)
+        return guids
+
     @property
     def kind(self):
         return 'file' if self.is_file else 'folder'

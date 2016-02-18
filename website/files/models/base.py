@@ -251,6 +251,29 @@ class FileNode(object):
             return cls.create(node=node, path=path)
 
     @classmethod
+    def get_file_guids(cls, path, provider, guids, node):
+        if path.endswith('/'):
+            folder_children = cls.find(Q('provider', 'eq', provider) &
+                                       Q('node', 'eq', node) &
+                                       Q('path', 'startswith', path))
+            for item in folder_children:
+                if item.kind == 'file':
+                    guid = item.get_guid()
+                    if guid:
+                        guids.append(guid._id)
+        else:
+            path = '/' + path.lstrip('/')
+            try:
+                file_obj = cls.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
+            except NoResultsFound:
+                return None
+            guid = file_obj.get_guid()
+            if guid:
+                guids.append(guid._id)
+
+        return guids
+
+    @classmethod
     def resolve_class(cls, provider, _type=2):
         """Resolve a provider and type to the appropriate subclass.
         Usage:
