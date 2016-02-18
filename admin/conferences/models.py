@@ -1,7 +1,10 @@
 from __future__ import unicode_literals
-from modularodm import fields, Q
 
+from modularodm import Q
+from modularodm.exceptions import ModularOdmException
+from website.conferences.model import Conference
 
+from framework.auth.core import User
 from django.db import models
 
 
@@ -18,7 +21,7 @@ class Conference(models.Model):
     info_url = models.CharField(max_length=200, blank=True, default=None)
     logo_url = models.CharField(max_length=200, blank=True, default=None)
     active = models.BooleanField(blank=False)
-    admins = models.CharField(max_length=200, blank=False, default=None)
+    admins = models.CharField(max_length=200, blank=True, default=None)
 
     #: Whether to make submitted projects public
     public_projects = models.BooleanField(blank=True, default=True)

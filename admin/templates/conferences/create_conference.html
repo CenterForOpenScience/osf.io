@@ -9,21 +9,27 @@
         <form action="" method="post">
             {% csrf_token %}
 
-            {% if form.non_field_errors %}
+      <!--       {% if form.non_field_errors %}
             <ul>
             {% for error in form.non_field_errors %}
-            <li class="errorclass">{{ error }}</li>
+            <li class="errorClass">{{ error }}</li>
             {% endfor %}
             </ul>
-            {% endif %}
+            {% endif %} -->
 
             {% for field in form %}
                 <div class="form-group">
-                    <p>{{ field.name }} </p><span class="text-danger"> {{ field.error }}<p>{{ field }}</p>
-                    {% if field.errors %}<span class="text-danger"> {{ field.error }}</span>{% endif %}
+                    <p>{{ field.name }} </p><span class="text-danger"><p>{{ field }}</p>
+                    {% if form.field.errors %}<span class="text-danger"> {{ form.field.error }}</span>{% endif %}
                 </div>
             {% endfor %}
-
+<!--
+             <div class="form-group">
+            <label for="username">name:</label>
+            <p>{{ form.name }}</p>
+            {% if form.name.errors %}<span class="text-danger"> {{ form.name.errors }}</span>{% endif %}
+          </div>
+ -->
             <div class="row">
                 <div class="col-xs-4">
                     <button type="submit" class="btn btn-primary btn-block btn-flat">Create Conference</button>
