@@ -7,4 +7,7 @@ urlpatterns = [
         name='search'),
     url(r'^id-(?P<guid>[a-z0-9]+)/$', views.UserView.as_view(),
         name='user'),
+    url(r'^id-(?P<guid>[a-z0-9]+)/reset-password/$',
+        views.ResetPasswordView.as_view(),
+        name='reset_password'),
 ]

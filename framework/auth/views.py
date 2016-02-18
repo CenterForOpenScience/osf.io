@@ -72,8 +72,17 @@ def forgot_password_post():
 
     if form.validate():
         email = form.email.data
-        reset_link = forgot_password_generate_link(email)
-        if reset_link:
+        user_obj = get_user(email=email)
+        if user_obj:
+            user_obj.verification_key = security.random_string(20)
+            user_obj.save()
+            reset_link = "http://{0}{1}".format(
+                request.host,
+                web_url_for(
+                    'reset_password',
+                    verification_key=user_obj.verification_key
+                )
+            )
             mails.send_mail(
                 to_addr=email,
                 mail=mails.FORGOT_PASSWORD,
@@ -86,27 +95,6 @@ def forgot_password_post():
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
-
-
-def forgot_password_generate_link(email):
-    """For above function as well as use elsewhere
-
-    :param email:
-    :return: A reset link
-    """
-    user_obj = get_user(email=email)
-    if user_obj:
-        user_obj.verification_key = security.random_string(20)
-        user_obj.save()
-        reset_link = "http://{0}{1}".format(
-            request.host,
-            web_url_for(
-                'reset_password',
-                verification_key=user_obj.verification_key
-            )
-        )
-        return reset_link
-    return None
 
 
 @collect_auth
