@@ -126,3 +126,25 @@ class TestRegistrationDetail(ApiTestCase):
         assert_not_in('forked_from', res.json['data']['relationships'])
         assert_not_in('files', res.json['data']['relationships'])
         assert_not_in('logs', res.json['data']['relationships'])
+
+
+    def test_field_specific_related_counts_ignored_if_hidden_field_on_retraction(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project, public=True)
+        url = '/{}registrations/{}/?related_counts=children'.format(API_BASE, registration._id)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        retraction.justification = 'We made a major error.'
+        retraction.save()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_not_in('children', res.json['data']['relationships'])
+
+    def test_field_specific_related_counts_retrieved_if_visible_field_on_retraction(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project, public=True)
+        url = '/{}registrations/{}/?related_counts=contributors'.format(API_BASE, registration._id)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
+        retraction.justification = 'We made a major error.'
+        retraction.save()
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['relationships']['contributors']['links']['related']['meta']['count'], 1)
+
