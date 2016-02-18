@@ -82,6 +82,9 @@
             {% if 'prereg_group' in request.user.group_names %}
             <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
             {% endif %}
+            {% if  request.user.is_staff %}
+            <li><a href="{% url 'conferences:create_conference' %}"><i class='fa fa-link'></i> <span>OSF For Meetings</span></a></li>
+            {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>
         <!-- /.sidebar -->

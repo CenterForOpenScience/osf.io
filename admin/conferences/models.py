@@ -22,7 +22,7 @@ class Conference(models.Model):
 
     #: Whether to make submitted projects public
     public_projects = models.BooleanField(blank=True, default=True)
-    poster = fields.BooleanField(default=True)
+    poster = models.BooleanField(default=True)
     talk = models.BooleanField(default=True)
 
     # [TODO] field_names are used to customize the text on the conference page, the categories

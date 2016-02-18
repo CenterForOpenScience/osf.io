@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+{% load staticfiles %}
+
+{% block content %}
+
+<div>
+    <p><b>Create a new Conference:</b></p>
+        <form action="" method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <ul>
+            {% for error in form.non_field_errors %}
+            <li class="errorclass">{{ error }}</li>
+            {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% for field in form %}
+                <div class="form-group">
+                    <p>{{ field.name }} </p><span class="text-danger"> {{ field.error }}<p>{{ field }}</p>
+                    {% if field.errors %}<span class="text-danger"> {{ field.error }}</span>{% endif %}
+                </div>
+            {% endfor %}
+
+            <div class="row">
+                <div class="col-xs-4">
+                    <button type="submit" class="btn btn-primary btn-block btn-flat">Create Conference</button>
+                </div><!-- /.col -->
+            </div>
+        </form>
+        <a href="{% url 'home' %}" class="text-center">Return to home page</a>
+        <div>
+          {% if messages %}
+            <ul class="login_page_messages">
+              {% for message in messages %}
+                   <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+                   </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+</div>
+
+{% endblock %}
