@@ -337,7 +337,7 @@ var LogPieces = {
             if (paramIsReturned(previous_institution, logObject)){
                 return m('span', previous_institution.name);
             }
-            return m('span', 'an institution')
+            return m('span', 'an institution');
         }
     },
 
@@ -347,7 +347,7 @@ var LogPieces = {
             if (paramIsReturned(institution, logObject)){
                 return m('span', institution.name);
             }
-            return m('span', 'an institution')
+            return m('span', 'an institution');
         }
     }
 };

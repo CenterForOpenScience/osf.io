@@ -25,7 +25,7 @@ from api.base.utils import default_node_list_query
 
 from .pagination import UserLogPagination
 from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
-from .permissions import  CurrentUser, ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
+from .permissions import CurrentUser, ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
 
 
 class UserMixin(object):
