@@ -353,12 +353,17 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if utils.is_truthy(params) or utils.is_falsy(params):
             return params
 
-        is_retraction = getattr(value, 'is_retracted', False)
-
         field_counts_requested = [val for val in params.split(',')]
         countable_fields = {field for field in self.parent.fields if getattr(self.parent.fields[field], 'json_api_link', False)}
         for count_field in field_counts_requested:
-            if not is_retraction and count_field not in countable_fields:
+            fetched_field = self.parent.fields.get(count_field)
+            hidden = False
+            if fetched_field:
+                check = fetched_field.get_attribute(value)
+                if check is None:
+                    hidden = True
+
+            if not hidden and count_field not in countable_fields:
                 raise InvalidQueryStringError(
                     detail="Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got '{0}'".format(params),
                     parameter='related_counts'
