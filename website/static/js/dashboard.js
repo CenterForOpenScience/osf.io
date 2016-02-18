@@ -190,6 +190,7 @@ var Dashboard = {
 
         // Activity Logs
         self.activityLogs = m.prop();
+        self.logRequestPending = false;
         self.showMoreActivityLogs = m.prop(null);
         self.getLogs = function _getLogs (nodeId, link, addToExistingList) {
             var cachedResults;
@@ -217,15 +218,19 @@ var Dashboard = {
                 cachedResults = self.logUrlCache[url];
                 _processResults(cachedResults);
             } else {
+                self.logRequestPending = true;
                 var promise = m.request({method : 'GET', url : url, config : xhrconfig});
                 promise.then(_processResults);
+                promise.then(function(){
+                    self.logRequestPending = false;
+                });
                 return promise;
             }
 
         };
         // separate concerns, wrap getlogs here to get logs for the selected item
         self.getCurrentLogs = function _getCurrentLogs ( ){
-            if(self.selected().length === 1){
+            if(self.selected().length === 1 && !self.logRequestPending){
                 var id = self.selected()[0].data.id;
                 var promise = self.getLogs(id);
                 return promise;
