@@ -13,6 +13,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.collections.serializers import (
     CollectionSerializer,
     CollectionDetailSerializer,
@@ -641,6 +642,6 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
     def create(self, *args, **kwargs):
         try:
             ret = super(CollectionLinkedNodesRelationship, self).create(*args, **kwargs)
-        except AssertionError:
+        except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret

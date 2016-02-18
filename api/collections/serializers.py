@@ -6,7 +6,7 @@ from framework.exceptions import PermissionsError
 from website.models import Node
 from api.base.serializers import LinksField, RelationshipField, DevOnly, JSONAPIRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, relationship_diff
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
 
@@ -162,10 +162,10 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
 
         add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
 
-        if len(add):
-            for node in add:
-                collection.add_pointer(node, auth)
+        if not len(add):
+            raise RelationshipPostMakesNoChanges
 
-            return self.make_instance_obj(collection)
+        for node in add:
+            collection.add_pointer(node, auth)
 
-        return None
+        return self.make_instance_obj(collection)
