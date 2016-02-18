@@ -145,8 +145,7 @@ class NodeSerializer(JSONAPISerializer):
         return auth
 
     def get_logs_count(self, obj):
-        logs = obj.logs
-        return len(logs)
+        return len(obj.logs)
 
     def get_node_count(self, obj):
         auth = self.get_user_auth(self.context['request'])
