@@ -28,6 +28,12 @@ class TestRegistrationDetail(ApiTestCase):
         self.public_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration._id)
         self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
 
+        self.retraction_registration = RegistrationFactory(creator=self.user, project=self.public_project, public=True)
+        self.retraction_url = '/{}registrations/{}/'.format(API_BASE, self.retraction_registration._id)
+        retraction = RetractedRegistrationFactory(registration=self.retraction_registration, user=self.retraction_registration.creator)
+        retraction.justification = 'We made a major error.'
+        retraction.save()
+
     def test_return_public_registration_details_logged_out(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
@@ -83,12 +89,8 @@ class TestRegistrationDetail(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], "Not found.")
 
     def test_retractions_display_limited_fields(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project, public=True)
-        url = '/{}registrations/{}/'.format(API_BASE, registration._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        retraction.justification = 'We made a major error.'
-        retraction.save()
-        res = self.app.get(url, auth=self.user.auth)
+        registration = self.retraction_registration
+        res = self.app.get(self.retraction_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         assert_items_equal(res.json['data']['attributes'], {
@@ -126,3 +128,17 @@ class TestRegistrationDetail(ApiTestCase):
         assert_not_in('forked_from', res.json['data']['relationships'])
         assert_not_in('files', res.json['data']['relationships'])
         assert_not_in('logs', res.json['data']['relationships'])
+
+
+    def test_field_specific_related_counts_ignored_if_hidden_field_on_retraction(self):
+        url = '/{}registrations/{}/?related_counts=children'.format(API_BASE, self.retraction_registration._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_not_in('children', res.json['data']['relationships'])
+
+    def test_field_specific_related_counts_retrieved_if_visible_field_on_retraction(self):
+        url = '/{}registrations/{}/?related_counts=contributors'.format(API_BASE, self.retraction_registration._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['relationships']['contributors']['links']['related']['meta']['count'], 1)
+
