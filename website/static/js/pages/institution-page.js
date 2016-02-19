@@ -31,13 +31,14 @@ var InstitutionViewModel = function() {
 
 $(document).ready(function() {
     var self = this;
+    var institutionId = 'ND';
     self.viewModel = new InstitutionViewModel();
     $osf.applyBindings(self.viewModel, '#inst');
     m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {
         wrapperSelector : '#fileBrowser',
         systemCollections:[
-            new LinkObject('collection', { path : 'institutions/ND/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Projects'),
-            new LinkObject('collection', { path : 'institutions/ND/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'registrations'}, 'All Registrations'),
+            new LinkObject('collection', { path : 'institutions/' + institutionId + '/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Projects'),
+            new LinkObject('collection', { path : 'institutions/' + institutionId + '/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'registrations'}, 'All Registrations'),
         ],
         viewOnly: true,
         projectOrganizerOptions: {
@@ -45,6 +46,7 @@ $(document).ready(function() {
                 return '';
             }
         },
+        institutionId: institutionId,
     }));
 
     // Add active class to navigation for my projects page

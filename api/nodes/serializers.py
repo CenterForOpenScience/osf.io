@@ -45,7 +45,8 @@ class NodeSerializer(JSONAPISerializer):
         'date_modified',
         'registration',
         'root',
-        'parent'
+        'parent',
+        'contributors'
     ])
 
     non_anonymized_fields = [
