@@ -22,7 +22,6 @@ var InstitutionViewModel = function() {
             isCors: true
         }
     ).done( function(response){
-        console.log(response.data);
         self.allNodes(response.data);
     }).fail(function(response){
     });
@@ -31,7 +30,7 @@ var InstitutionViewModel = function() {
 
 $(document).ready(function() {
     var self = this;
-    var institutionId = 'ND';
+    var institutionId = window.contextVars.institution.id;
     self.viewModel = new InstitutionViewModel();
     $osf.applyBindings(self.viewModel, '#inst');
     m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {
