@@ -162,7 +162,7 @@ var Dashboard = {
         ];
         // Initial Breadcrumb for All my projects
         self.breadcrumbs = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
+            new LinkObject('collection', { path : 'users/fme/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
         ]);
         // Calculate name filters
         self.nameFilters = [];
@@ -241,7 +241,7 @@ var Dashboard = {
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
         self.updateFilesData = function _updateFilesData (linkObject) {
-            if (self.viewOnly){
+            if ((linkObject.type === 'node') && self.viewOnly){
                 return;
             }
             if (linkObject.link !== self.currentLink) {
@@ -780,7 +780,7 @@ var Collections  = {
     view : function (ctrl, args) {
         var selectedCSS;
         var submenuTemplate;
-        var viewOnly = args.viewOnly
+        var viewOnly = args.viewOnly;
         var collectionList = function () {
             var item;
             var index;
