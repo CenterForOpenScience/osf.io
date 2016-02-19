@@ -1483,6 +1483,16 @@ def make_url_map(app):
                 '/project/<pid>/discussions/',
                 '/project/<pid>/node/<nid>/discussions/',
             ],
+            'get',
+            project_views.discussions.get_node_discussions,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/discussions/',
+                '/project/<pid>/node/<nid>/discussions/',
+            ],
             'post',
             project_views.discussions.enable_discussions,
             json_renderer,

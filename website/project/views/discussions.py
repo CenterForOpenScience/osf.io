@@ -13,6 +13,11 @@ from website.project.mailing_list import route_message
 # View Functions
 ###############################################################################
 
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def get_node_discussions(node, auth, **kwargs):
+    return format_node_data_recursive([node], auth.user)
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -30,3 +35,49 @@ def disable_discussions(node, **kwargs):
     node.save()
 
 route_message = route_message
+
+def format_node_data_recursive(nodes, user):
+    items = []
+
+    for node in nodes:
+
+        can_read = node.has_permission(user, 'read')
+        can_read_children = node.has_permission_on_children(user, 'read')
+
+        if not can_read and not can_read_children:
+            continue
+
+        children = []
+        # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
+        # user is contributor on a component of the project/node
+
+        if can_read_children:
+            children.extend(format_node_data_recursive(
+                [
+                    n
+                    for n in node.nodes
+                    if n.primary and
+                    not n.is_deleted
+                ],
+                user
+            ))
+
+        item = {
+            'node': {
+                'id': node._id,
+                'url': node.url if can_read else '',
+                'title': node.title if can_read else 'Private Project',
+                'discussions': ('enabled' if node.mailing_enabled else 'disabled') if can_read else None
+            },
+            'children': children,
+            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'view': can_read,
+            },
+        }
+
+        items.append(item)
+
+    return items
