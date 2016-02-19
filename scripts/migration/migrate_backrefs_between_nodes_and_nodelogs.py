@@ -28,6 +28,7 @@ def main(dry=True):
     total_log_count = node_logs.count()
     count = 0
     errored_logs = []
+    logger.info('Adding original_node and node fields to each log and then cloning the log for remaining nodes in the log backref.')
     for log in node_logs:
         count += 1
         original_node = lookup_node(log.params['node'])
