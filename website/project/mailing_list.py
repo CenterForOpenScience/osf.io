@@ -111,10 +111,10 @@ def route_message(**kwargs):
         user=sender,
     )
 
-def get_recipients(node):
+def get_recipients(node, sender=None):
     if node.mailing_enabled:
         subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
-        return subscription.email_transactional
+        return [u for u in subscription.email_transactional if not u == sender]
     return []
 
 def get_unsubscribes(node):
@@ -126,8 +126,7 @@ def get_unsubscribes(node):
     return []
 
 def send_messages(node, sender, message):
-    subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
-    recipients = subscription.email_transactional
+    recipients = get_recipients(node, sender=sender)
     mail = mails.DISCUSSIONS_EMAIL_ACCEPTED
     mail._subject = '{} [via OSF: {}]'.format(
         message['subject'].split(' [via OSF')[0],  # Fixes reply subj, if node.title changes
@@ -138,7 +137,7 @@ def send_messages(node, sender, message):
         'body': message['stripped-text'],
         'cat': node.category,
         'node_url': '{}{}'.format(settings.DOMAIN.rstrip('/'), node.url),
-        'node_title': node.title,
+        'node_title': unescape_entities(node.title),
         'url': '{}{}settings/#configureNotificationsAnchor'.format(settings.DOMAIN.rstrip('/'), node.url)
     }
 
