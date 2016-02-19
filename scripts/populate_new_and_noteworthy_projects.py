@@ -108,34 +108,36 @@ def update_node_links(designated_node, target_nodes, description):
 def main(dry_run=True):
     init_app(routes=False)
 
-    with TokuTransaction():
-        popular_nodes = get_popular_nodes()['popular_node_ids']
-        popular_links_node = models.Node.find(Q('_id', 'eq', POPULAR_LINKS_NODE))[0]
-        new_and_noteworthy_links_node = models.Node.find(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))[0]
-        new_and_noteworthy_nodes = get_new_and_noteworthy_nodes()
+    popular_nodes = get_popular_nodes()['popular_node_ids']
+    popular_links_node = models.Node.find(Q('_id', 'eq', POPULAR_LINKS_NODE))[0]
+    new_and_noteworthy_links_node = models.Node.find(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))[0]
+    new_and_noteworthy_nodes = get_new_and_noteworthy_nodes()
 
-        update_node_links(popular_links_node, popular_nodes, 'popular')
-        update_node_links(new_and_noteworthy_links_node, new_and_noteworthy_nodes, 'new and noteworthy')
+    update_node_links(popular_links_node, popular_nodes, 'popular')
+    update_node_links(new_and_noteworthy_links_node, new_and_noteworthy_nodes, 'new and noteworthy')
 
-        if not dry_run:
-            try:
-                popular_links_node.save()
-                logger.info('Node links on {} updated.'.format(popular_links_node._id))
-            except (KeyError, RuntimeError) as error:
-                logger.error('Could not migrate popular nodes due to error')
-                logger.exception(error)
+    try:
+        popular_links_node.save()
+        logger.info('Node links on {} updated.'.format(popular_links_node._id))
+    except (KeyError, RuntimeError) as error:
+        logger.error('Could not migrate popular nodes due to error')
+        logger.exception(error)
 
-            try:
-                new_and_noteworthy_links_node.save()
-                logger.info('Node links on {} updated.'.format(new_and_noteworthy_links_node._id))
-            except (KeyError, RuntimeError) as error:
-                logger.error('Could not migrate new and noteworthy nodes due to error')
-                logger.exception(error)
+    try:
+        new_and_noteworthy_links_node.save()
+        logger.info('Node links on {} updated.'.format(new_and_noteworthy_links_node._id))
+    except (KeyError, RuntimeError) as error:
+        logger.error('Could not migrate new and noteworthy nodes due to error')
+        logger.exception(error)
+
+    if dry_run:
+        raise RuntimeError('Dry run -- transaction rolled back.')
 
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    main(dry_run=dry_run)
+    with TokuTransaction():
+        main(dry_run=dry_run)
 
