@@ -3,6 +3,8 @@
 
 <%def name="stylesheets()">
     <link rel="stylesheet" href="/static/css/pages/support-page.css">
+    <link rel="stylesheet" href="/static/css/pages/getting-started-page.css">
+
 </%def>
 
 <%def name="content()">
@@ -23,7 +25,7 @@
                             <p class="support-body">It's free!</p>
                         </div>
                         <div class="support-item m-t-lg">
-                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can it be free? How are you funded?</h5>
+                            <h5 class="support-head f-w-xl"><i cla`ss="fa fa-angle-right"></i> How can it be free? How are you funded?</h5>
                             <p class="support-body">The OSF is maintained and developed by the <a href="http://cos.io">Center for Open Science</a> (COS), a non-profit organization. COS is supported through grants from a variety of supporters, including <a href="http://centerforopenscience.org/about_sponsors/"> federal agencies, private foundations, and commercial entities</a>.</p>
                         </div>
                         <div class="support-item m-t-lg">
@@ -165,15 +167,89 @@
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> I have a DOI for my project on the OSF, but I've decided I'd rather host the material elsewhere. How can I do this without losing/needing a new DOI?</h5>
                             <p class="support-body">Send us an email with your DOI and the new location of your materials and we'll update the URL associated with your DOI. </p>
                         </div>
-
-
-
-
-
-
                 </div>
                 <div class="col-md-6">
                     <h3> Getting Started with OSF </h3>
+
+                        <div class="support-item m-t-lg">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Use projects to organize your work</h5>
+                            <p class="support-body">The OSF organizes your lines of research into projects. Projects come with features meant to streamline
+                            your workflow as well as make your work more discoverable.
+
+                                        <div class="gs-video embed-responsive embed-responsive-16by9" style="max-width: 102%; width: 102%;">
+                                               <!--  Max width for this video adjusted because of black border -->
+                                            <div class="embed-responsive-item youtube-loader" id="2TV21gOzfhw"></div>
+                                        </div>
+
+                            </p>
+
+                        </div>
+
+
+
+
+                        <h3 class="text-center anchor">Collaborate with your colleagues</h3>
+                        <p>Keep yourself and your collaborators on point while collecting data by using the OSF. Add
+                            contributors to your project so that everyone has access to the same files. Use our pre-formatted
+                            citations and URLs to make sure credit is given where credit is due.  </p>
+                        <div class="row">
+                            <div class="col-md-10 col-md-offset-1">
+                                <div class="gs-video embed-responsive embed-responsive-16by9">
+                                    <div class="embed-responsive-item youtube-loader" id="UtahdT9wZ1Y"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                                    <h3 class="text-center anchor">Simplify your life with version control</h3>
+                                    <p>Keep your research up to date by uploading new versions of documents to the OSF. We use version
+                                        control to keep track of older versions of your documents so you don't have to. You can also register
+                                        your work to freeze a version of your project.</p>
+                                    <div class="row">
+                                        <div class="col-md-10 col-md-offset-1">
+                                            <div class="gs-video embed-responsive embed-responsive-16by9">
+                                                <div class="embed-responsive-item youtube-loader" id="ZUtazJQUwEc"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                <h2 class="text-center">Structuring your work</h2>
+                                <div class="col-md-12">
+                                    <%include file="/public/pages/help/organizer.mako"/>
+                                    <%include file="/public/pages/help/dashboards.mako"/>
+                                    <%include file="/public/pages/help/user_profile.mako"/>
+                                    <%include file="/public/pages/help/projects.mako"/>
+                                    <%include file="/public/pages/help/components.mako"/>
+                                    <%include file="/public/pages/help/files.mako"/>
+                                    <%include file="/public/pages/help/links.mako"/>
+                                    <%include file="/public/pages/help/forks.mako"/>
+                                    <%include file="/public/pages/help/registrations.mako"/>
+                                    <%include file="/public/pages/help/wiki.mako"/>
+                                </div>
+
+                                <h2 class="text-center">Sharing your work</h2>
+                                <div class="col-md-12">
+                                    <%include file="/public/pages/help/contributors.mako"/>
+                                    <%include file="/public/pages/help/privacy.mako"/>
+                                    <%include file="/public/pages/help/licenses.mako"/>
+                                    <%include file="/public/pages/help/citations.mako"/>
+                                    <%include file="/public/pages/help/view_only.mako"/>
+                                    <%include file="/public/pages/help/comments.mako"/>
+                                </div>
+
+                                <h2 class="text-center m-b-lg">OSF Add-ons</h2>
+                                <div class="col-md-12">
+                                    <%include file="/public/pages/help/addons.mako"/>
+                                </div>
+
+                                <h2 class="text-center">Metrics</h2>
+                                <div class="col-md-12">
+                                    <%include file="/public/pages/help/statistics.mako"/>
+                                    <%include file="/public/pages/help/notifications.mako"/>
+                                </div>
+
+
+
+
                 </div>
             </div>
         </div>
