@@ -367,16 +367,17 @@
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Email Notifications</h3>
                     </div>
-                    <div class="help-block" style="padding-left: 15px">
-                            <p class="text-info">This notification setting applies to ALL project contributors.</p>
-                    </div>
                     % if node['discussions_enabled']:  ## Begin Project Mailing Lists Settings
+                        <br/>
                         <div style="padding-left: 15px">
                             <a data-toggle="modal" data-target="#discussionsContributorsModal"><i class="fa fa-envelope"></i></a>
                             Project Mailing List Info
                         </div>
                     % endif
                     % if user['is_admin']:
+                        <div class="help-block" style="padding-left: 15px">
+                            <p class="text-info">This notification setting applies to ALL project contributors.</p>
+                        </div>
                         <form id="discussionsTreeSettings" class="osf-treebeard-minimal">
                             <div id="discussionsGrid">
                                 <div class="spinner-loading-wrapper">
