@@ -201,13 +201,12 @@ var Dashboard = {
         self.activityLogs = m.prop();
         self.logRequestPending = false;
         self.showMoreActivityLogs = m.prop(null);
-        self.getLogs = function _getLogs (nodeId, link, addToExistingList) {
+        self.getLogs = function _getLogs (url, addToExistingList) {
             var cachedResults;
             if(!addToExistingList){
                 self.activityLogs([]); // Empty logs from other projects while load is happening;
                 self.showMoreActivityLogs(null);
             }
-            var url = link || $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
 
             function _processResults (result){
                 self.logUrlCache[url] = result;
@@ -240,9 +239,14 @@ var Dashboard = {
         // separate concerns, wrap getlogs here to get logs for the selected item
         self.getCurrentLogs = function _getCurrentLogs ( ){
             if(self.selected().length === 1 && !self.logRequestPending){
-                var id = self.selected()[0].data.id;
-                var promise = self.getLogs(id);
-                return promise;
+                var item = self.selected()[0];
+                var id = item.data.id;
+                if(!item.data.attributes.retracted){
+                    var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
+                    var promise = self.getLogs(url);
+                    return promise;
+                }
             }
         };
 
@@ -1261,7 +1265,7 @@ var ActivityLogs = {
                 ]);
             }) : '',
             m('.db-activity-nav.text-center', [
-                args.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){ args.getLogs(null, args.showMoreActivityLogs(), true); }}, [ 'Show more', m('i.fa.fa-caret-down.m-l-xs')]) : '',
+                args.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){ args.getLogs(args.showMoreActivityLogs(), true); }}, [ 'Show more', m('i.fa.fa-caret-down.m-l-xs')]) : '',
             ])
 
         ]);
