@@ -29,7 +29,9 @@ def main(dry=True):
     count = 0
     errored_logs = []
     logger.info('Adding original_node and node fields to each log and then cloning the log for remaining nodes in the log backref.')
+
     for log in node_logs:
+        # Two steps. Step 1: Add original_node and node field to log.
         count += 1
         original_node = lookup_node(log.params['node'])
         log.original_node = original_node
@@ -42,6 +44,7 @@ def main(dry=True):
             logger.exception(error)
             errored_logs.append(log)
 
+        # Step 2: For remaining nodes in log's backrefs, clone log, and point original_node and node fields in the right direction.
         errored_clones = []
         backref_total = len(log._backrefs['logged']['node']['logs']) - 1
         backref_count = 0
@@ -51,7 +54,7 @@ def main(dry=True):
             clone.original_node = original_node
             try:
                 clone.save()
-                logger.info('{}/{} {}/{} Log {} cloned for node {}. New log is {}'.format(count, total_log_count, backref_count, backref_total, log._id, node, clone._id))
+                logger.info('{}/{} {}/{} ...Cloning log {} for node {}. New log is {}'.format(count, total_log_count, backref_count, backref_total, log._id, node, clone._id))
             except KeyError as error:
                 logger.error('Could not copy node log due to error')
                 logger.exception(error)
