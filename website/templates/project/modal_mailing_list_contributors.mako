@@ -8,17 +8,21 @@
             <div class="modal-body">
                 <h3 style="text-align: center">${node['id']}@osf.io</h4>
                 
-                <p>${node['contrib_count'] - len(node['discussions_unsubs'])} out of ${node['contrib_count']} contributors will receive this email.</p>
-                <p>A contributor who is not subscribed to this mailing list will not recieve any emails sent to it, but will still be able to send emails themselves. These emails will be distributed normally.</p>
-                <div style="padding-left: 15px; background-color: #F5F5F5; border: 1px solid #CCC;">
-                Contributors not on this list:</br>
-                % for each in node['discussions_unsubs']:
-                    <div style="padding-left: 15px">
-                       ${each}
+                % if len(node['discussions_unsubs']):
+                    <p>${node['contrib_count'] - len(node['discussions_unsubs'])} out of ${node['contrib_count']} contributors will receive this email.</p>
+                    <p>A contributor who is not subscribed to this mailing list will not recieve any emails sent to it, but will still be able to send emails themselves. These emails will be distributed normally.</p>
+                    <div style="padding-left: 15px; background-color: #F5F5F5; border: 1px solid #CCC;">
+                    Contributors not on this list:</br>
+                    % for each in node['discussions_unsubs']:
+                        <div style="padding-left: 15px">
+                           ${each}
+                        </div>
+                    % endfor
                     </div>
-                % endfor
-                </div>
-
+                % else:
+                    <br/>
+                    <p>All contributors are subscribed and will receive this email.</p>
+                % endif
 
             </div><!-- end modal-body -->
 
