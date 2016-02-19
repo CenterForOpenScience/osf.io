@@ -360,6 +360,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             # Ignore related_counts for these fields
             fetched_field = self.parent.fields.get(count_field)
             hidden = fetched_field and fetched_field.get_attribute(value) is None
+            if fetched_field is not hidden and fetched_field not in countable_fields:
+                countable_fields.add(fetched_field.field_name)
 
             if not hidden and count_field not in countable_fields:
                 raise InvalidQueryStringError(
