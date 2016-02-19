@@ -375,42 +375,19 @@
                             <a data-toggle="modal" data-target="#discussionsContributorsModal"><i class="fa fa-envelope"></i></a>
                             Project Mailing List Info
                         </div>
-                        % if user['is_admin']:
-                            <div class="help-block" style="padding-left: 15px">
-                                <p>Email discussions are currently enabled for this ${node['node_type']}.</p>
-                            </div>
-                            <div class="panel-body">
-                                % if 'admin' in user['permissions']:
-                                    <div>
-                                        <button id="disableDiscussions" class="btn btn-danger">Disable</button>
-                                    </div>
-                                % endif
-                            </div>
-                            <!-- <form id="discussionsTreeSettings" class="osf-treebeard-minimal">
-                                <div id="discussionsGrid">
-                                    <div class="spinner-loading-wrapper">
-                                        <div class="logo-spin logo-lg"></div>
-                                        <p class="m-t-sm fg-load-message"> Loading discussions settings...  </p>
-                                    </div>
+                    % endif
+                    % if user['is_admin']:
+                        <form id="discussionsTreeSettings" class="osf-treebeard-minimal">
+                            <div id="discussionsGrid">
+                                <div class="spinner-loading-wrapper">
+                                    <div class="logo-spin logo-lg"></div>
+                                    <p class="m-t-sm fg-load-message"> Loading discussions settings...  </p>
                                 </div>
-                                <div class="help-block" style="padding-left: 15px">
-                                    <p id="configureDiscussionssMessage"></p>
-                                </div>
-                            </form> -->
-                        % endif
-
-                    % else:
+                            </div>
                             <div class="help-block" style="padding-left: 15px">
-                                <p>Email discussions are currently disabled for this ${node['node_type']}.</p>
+                                <p id="configureDiscussionssMessage"></p>
                             </div>
-                            <div class="panel-body">
-                                % if 'admin' in user['permissions']:
-                                    <div>
-                                        <button id="enableDiscussions" class="btn btn-success">Enable</button>
-                                    </div>
-                                % endif
-                            </div>
-
+                        </form>
                     % endif  ## End PML Settings ## Begin Individual Email Notifications
                 <div class="help-block" style="padding-left: 15px">
                     <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>

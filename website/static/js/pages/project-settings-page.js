@@ -35,6 +35,22 @@ if ($('#grid').length) {
     });
 }
 
+//Initialize treebeard grid for node admins
+var ProjectDiscussions = require('../discussionsTreebeard.js');
+var discussionsSettingsURL = ctx.node.urls.api + 'discussions/';
+var $discussionsMsg = $('#configureDiscussionsMessage');
+
+$.ajax({
+    url: discussionsSettingsURL,
+    type: 'GET',
+    dataType: 'json'
+}).done( function(response) {
+    new ProjectDiscussions(response);
+}).fail( function() {
+    $discussionsMsg.addClass('text-danger');
+    $discussionsMsg.text('Could not retrieve notification settings.');
+});
+
 //Initialize treebeard grid for wiki
 var ProjectWiki = require('js/wikiSettingsTreebeard.js');
 var wikiSettingsURL = ctx.node.urls.api  + 'wiki/settings/';
