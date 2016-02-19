@@ -228,9 +228,11 @@ ALL_MY_REGISTRATIONS_ID = '-amr'
 ALL_MY_PROJECTS_NAME = 'All my projects'
 ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 
+# Most Popular and New and Noteworthy Nodes
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
 QA_USER_IDS = []  # TODO Override in local.py in production.
+URL_BASE = None  # TODO Override with LOCAL, STAGING, STAGING2, or PRODUCTION in local.py.
 
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.

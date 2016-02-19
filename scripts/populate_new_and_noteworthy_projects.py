@@ -13,13 +13,9 @@ from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
-from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, QA_USER_IDS
+from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, QA_USER_IDS, URL_BASE as BASE
 
 logger = logging.getLogger(__name__)
-
-# TODO change to production after code review
-BASE = 'LOCAL'  # options are LOCAL, STAGING, STAGING2, or PRODUCTION
-
 
 def retrieve_data(url):
     """ Fetch data and decode json """
