@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def main(dry=True):
     init_app(routes=False)
     users = models.User.find(Q('date_last_request', 'eq', None))
-    logger.warn('All active users will have a date_last_request field added and set equal to date_last_login.')
+    logger.info('All active users will have a date_last_request field added and set equal to date_last_login.')
 
     for user in users:
         if user.is_active:
