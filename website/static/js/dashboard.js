@@ -346,13 +346,13 @@ var Dashboard = {
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            'You have not created any projects yet.'));
+                            options.institutionId ? 'This institution has no projects yet.':'You have not created any projects yet.'));
                     } else if (lastcrumb.data.systemCollection === 'registrations'){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            'You have not made any registrations yet.'));
+                            options.institutionId ? 'This institution has no registrations yet.':'You have not made any registrations yet.'));
                     } else {
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
+                            'This collection has no projects.' +  (options.institutionId ? '' : ' To add projects go to "All My Projects" collection; drag and drop projects into the collection link')));
                     }
                 } else {
                     self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
