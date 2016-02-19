@@ -3779,7 +3779,7 @@ class TestReorderComponents(OsfTestCase):
         self.contrib = AuthUserFactory()
         # Project is public
         self.project = ProjectFactory.build(creator=self.creator, is_public=True)
-        self.project.add_contributor(self.contrib, auth=Auth(self.creator))
+        self.project.add_contributor(self.contrib, auth=Auth(self.creator), save=True)
 
         # subcomponent that only creator can see
         self.public_component = NodeFactory(creator=self.creator, is_public=True)

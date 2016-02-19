@@ -34,6 +34,7 @@ class TestRubeus(OsfTestCase):
         self.project.add_contributor(
             contributor=self.non_authenticator,
             auth=self.consolidated_auth,
+            save=True
         )
         self.project.add_addon('s3', self.consolidated_auth)
         self.project.creator.add_addon('s3', self.consolidated_auth)
@@ -204,6 +205,7 @@ class TestRubeus(OsfTestCase):
         user = UserFactory()
         auth = Auth(user=user)
         public = ProjectFactory.build(is_public=True)
+        public.save()
         # Add contributor with write permissions to avoid admin permission cascade
         public.add_contributor(user, permissions=['read', 'write'])
         public.save()
