@@ -1,3 +1,5 @@
+'use strict';
+
 var $ = require('jquery');
 var m = require('mithril');
 var moment = require('moment');
