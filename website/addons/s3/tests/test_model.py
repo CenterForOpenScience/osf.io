@@ -58,6 +58,7 @@ class TestCallbacks(OsfTestCase):
         self.project.add_contributor(
             contributor=self.non_authenticator,
             auth=Auth(self.project.creator),
+            save=True
         )
         self.project.save()
 
