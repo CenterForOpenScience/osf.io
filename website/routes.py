@@ -1500,16 +1500,6 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/discussions/sub/',
-                '/project/<pid>/node/<nid>/discussions/sub/',
-            ],
-            'post',
-            project_views.discussions.set_subscription,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/discussions/messages/',
             ],
             'post',

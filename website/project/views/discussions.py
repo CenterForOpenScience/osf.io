@@ -4,26 +4,26 @@ import re
 
 from flask import request
 
-from framework.auth.decorators import collect_auth
 from framework.auth.core import get_user
 from framework.auth.signals import user_confirmed
 
 from website import mails
 from website import settings
-from website.models import Node
+from website.models import Node, NotificationSubscription
+from website.notifications.utils import to_subscription_key
 from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
-    must_be_contributor
 )
 from website.project.model import MailingListEventLog
+from website.project.signals import contributor_added, node_created
 from website.util.permissions import ADMIN
 from website.util.sanitize import unescape_entities
 
 
 ###############################################################################
-# Internal Calls
+# View Functions
 ###############################################################################
 
 
@@ -43,37 +43,34 @@ def disable_discussions(node, **kwargs):
     node.save()
 
 
-@must_be_valid_project
-@collect_auth
-@must_be_contributor
-@must_not_be_registration
-def set_subscription(node, auth, **kwargs):
-    subscription = request.json.get('discussionsSub')
-    subscribed = True if subscription == 'subscribed' else False
-    user = auth.user
-
-    if subscribed and user in node.mailing_unsubs:
-        node.mailing_unsubs.remove(user)
-    elif not subscribed and user not in node.mailing_unsubs:
-        node.mailing_unsubs.append(user)
-
-    node.save()
-
-
 ###############################################################################
 # Signalled Functions
 ###############################################################################
 
+@node_created.connect
+def create_mailing_list_subscription(node):
+    if node.mailing_enabled:
+        subscription = NotificationSubscription(
+            _id=to_subscription_key(node._id, 'mailing_list_events'),
+            owner=node,
+            event_name='mailing_list_events'
+        )
+        subscription.add_user_to_subscription(node.creator, 'email_transactional', save=True)
+        subscription.save()
+
+@contributor_added.connect
+def subscribe_contributor_to_mailing_list(node, contributor, auth=None):
+    if node.mailing_enabled and contributor.is_active:
+        subscription = NotificationSubscription.load(
+            to_subscription_key(node._id, 'mailing_list_events')
+        )
+        subscription.add_user_to_subscription(contributor, 'email_transactional', save=True)
+        subscription.save()
 
 @user_confirmed.connect
 def resubscribe_on_confirm(user):
     for node in user.contributed:
-        try:
-            node.mailing_unsubs.remove(user)
-            node.save()
-        except ValueError:
-            # Nodes created via OSF4M
-            pass
+        subscribe_contributor_to_mailing_list(node, user)
 
 ###############################################################################
 # Mailing List Functions
@@ -143,19 +140,27 @@ def route_message(**kwargs):
         user=sender,
     )
 
+def get_recipients(node):
+    subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
+    return subscription.email_transactional
+
+def get_unsubscribes(node):
+    # Non-subscribed users not guaranteed to be in subscription.none
+    # Safer to calculate it
+    recipients = get_recipients(node)
+    return [u for u in node.contributors if u not in recipients]
+
 def send_messages(node, sender, message):
-    recipients = [u for u in node.contributors
-        if u not in node.mailing_unsubs
-        and u != sender
-        and u.is_active]
+    subscription = NotificationSubscription.load(to_subscription_key(node._id, 'mailing_list_events'))
+    recipients = subscription.email_transactional
     mail = mails.DISCUSSIONS_EMAIL_ACCEPTED
-    mail.subject = '{} [via OSF: {}]'.format(
+    mail._subject = '{} [via OSF: {}]'.format(
         message['subject'].split(' [via OSF')[0],  # Fixes reply subj, if node.title changes
         unescape_entities(node.title)
     )
     from_addr = '{0} <{1}>'.format(sender.fullname, address(node._id))
     context = {
-        'body': message['stripped-text'][0],
+        'body': message['stripped-text'],
         'cat': node.category,
         'node_url': '{}{}'.format(settings.DOMAIN.rstrip('/'), node.url),
         'node_title': node.title,

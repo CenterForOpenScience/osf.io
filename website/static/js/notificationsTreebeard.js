@@ -139,6 +139,36 @@ function ProjectNotifications(data) {
                     }
                 });
             }
+            else if (item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading' && item.data.kind === 'event' && item.data.event.notificationType === 'mailing_list_events') {
+                columns.push(
+                {
+                    data : 'project',  // Data field name
+                    folderIcons : true,
+                    filter : true,
+                    css : iconcss,
+                    sortInclude : false,
+                    custom : function(item, col) {
+                        return item.data.event.description;
+                    }
+                },
+                {
+                    data : 'notificationType',  // Data field name
+                    folderIcons : false,
+                    filter : false,
+                    custom : function(item, col) {
+                        return m('div[style="padding-right:10px"]',
+                            [m('select.form-control', {
+                                onchange: function(ev) {
+                                    subscribe(item, ev.target.value);
+                                }},
+                                [
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
+                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                            ])
+                        ]);
+                    }
+                });
+            }
             else if (item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading' && item.data.kind === 'event') {
                 columns.push(
                 {

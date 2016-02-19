@@ -96,35 +96,6 @@ $(document).ready(function() {
         projectSettingsVM.disableDiscussions(ctx.node.nodeType);
     });
 
-    $('#discussionsSettings').on('submit', function() {
-        var $discussionsMsg = $('#configureDiscussionsMessage');
-
-        var $this = $(this);
-        var discussionsSub = $this.find('input[name="discussionsSub"]:checked').val();
-
-        $osf.postJSON(
-            ctx.node.urls.api + 'discussions/sub/',
-            {discussionsSub: discussionsSub}
-        ).done(function () {
-                $discussionsMsg.addClass('text-success');
-                $discussionsMsg.text('Successfully updated subscription.');
-                window.location.reload();
-            }).fail(function () {
-                bootbox.alert({
-                    message: 'Could not set discussions subscription. Please try again.',
-                    buttons: {
-                        ok: {
-                            label: 'Close',
-                            className: 'btn-default'
-                        }
-                    }
-                });
-            });
-
-        return false;
-
-    });
-
     // TODO: Knockout-ify me
     $('#commentSettings').on('submit', function() {
         var $commentMsg = $('#configureCommentingMessage');

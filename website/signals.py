@@ -11,6 +11,7 @@ ALL_SIGNALS = [
     project.comment_added,
     project.unreg_contributor_added,
     project.contributor_added,
+    project.node_created,
     project.privacy_set_public,
     auth.user_confirmed,
     auth.user_email_removed,

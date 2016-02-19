@@ -399,30 +399,6 @@
                             </form> -->
                         % endif
 
-                        <div class="panel-body">
-                            <form class="form" id="discussionsSettings">
-                                <div class="radio">
-                                    <label>
-                                        <input type="radio" name="discussionsSub" value="subscribed" ${'checked' if user['discussions_subscribed'] else ''}>
-                                        Receive email discussions for this ${node['node_type']}
-                                    </label>
-                                </div>
-                                <div class="radio">
-                                    <label>
-                                        <input type="radio" name="discussionsSub" value="unsubscribed" ${'' if user['discussions_subscribed'] else 'checked'}>
-                                        Do not receive email discussions (can still send to the address)
-                                    </label>
-                                </div>
-
-                                <button class="btn btn-success">Save</button>
-
-                                <!-- Flashed Messages -->
-                                <div class="help-block">
-                                    <p id="configureDiscussionsMessage"></p>
-                                </div>
-                            </form>
-                        </div>
-
                     % else:
                             <div class="help-block" style="padding-left: 15px">
                                 <p>Email discussions are currently disabled for this ${node['node_type']}.</p>

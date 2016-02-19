@@ -10,9 +10,14 @@ from framework.transactions.context import TokuTransaction
 
 from website.app import init_app
 from website.models import Node
+from website.notifications.model import NotificationSubscription
+from website.notifications.utils import to_subscription_key
 from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
+
+EVENT = 'mailing_list_events'
+SUBSCRIPTION_TYPE = 'email_transactional'
 
 def get_targets():
     return list(Node.find())
@@ -25,25 +30,32 @@ def migrate(dry_run=True):
     ncount = len(nodes)
     logger.info('Preparing to migrate {} nodes.'.format(ncount))
     for node in nodes:
-        for user in node.contributors:
-            if not user.is_active:
-                logger.info('Unsubscribing user {} on node {} since it is not active'.format(user, node))
-                node.mailing_unsubs.append(user)
-
-        if not node.is_registration and not node.is_dashboard:
-            try:
-                logger.info('({0}/{1})Enabling mailing list for node {2}'.format(nodes.index(node), ncount, node._id))
-                node.mailing_enabled = True
-                node.save()
-                successful_enables.append(node._id)
-            except Exception as e:
-                unknown_failures[node._id] = e
-        else:
+        if node.is_registration or node.is_dashboard:
             try:
                 logger.info('({0}/{1})Disabling mailing list for registration/dashboard {2}'.format(nodes.index(node), ncount, node._id))
                 node.mailing_enabled = False    
                 node.save()
                 successful_disables.append(node._id)
+            except Exception as e:
+                unknown_failures[node._id] = e
+        else:
+            try:
+                subscription = NotificationSubscription(
+                    _id=to_subscription_key(node._id, EVENT),
+                    owner=node,
+                    event_name=EVENT
+                )
+                logger.info('({0}/{1})Enabling mailing list for node {2}'.format(nodes.index(node), ncount, node._id))
+                node.mailing_enabled = True
+
+                for user in node.contributors:
+                    if user.is_active:
+                        logger.info('Subscribing user {} on node {}'.format(user, node))
+                        subscription.add_user_to_subscription(user, SUBSCRIPTION_TYPE)
+
+                subscription.save()
+                node.save()
+                successful_enables.append(node._id)
             except Exception as e:
                 unknown_failures[node._id] = e
 
