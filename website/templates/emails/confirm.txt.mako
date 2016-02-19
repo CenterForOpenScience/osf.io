@@ -1,7 +1,9 @@
 Hello ${user.fullname},
 
-Welcome to the Open Science Framework. To get started, please verify your email address by visiting this link:
+Welcome to the Open Science Framework. Please verify your email address by visiting this link:
 
 ${confirmation_url}
 
-From the OSF Robots
+The OSF Team
+
+Center for Open Science

@@ -60,7 +60,7 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, DashboardFactory, FolderFactory,
-    NodeLicenseRecordFactory
+    NodeLicenseRecordFactory, InstitutionFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -3072,11 +3072,11 @@ class TestProject(OsfTestCase):
         )
         assert_true(registration.is_pending_embargo)
 
-        func = lambda: registration.set_privacy('public', auth=self.auth)
-        assert_raises(NodeStateError, func)
+        with assert_raises(NodeStateError):
+            registration.set_privacy('public', auth=self.auth)
         assert_false(registration.is_public)
 
-    def test_set_privacy_cancels_active_embargo_for_registration(self):
+    def test_set_privacy_can_not_cancel_active_embargo_for_registration(self):
         registration = RegistrationFactory(project=self.project)
         registration.embargo_registration(
             self.user,
@@ -3089,12 +3089,8 @@ class TestProject(OsfTestCase):
         registration.embargo.approve_embargo(self.user, approval_token)
         assert_false(registration.is_pending_embargo)
 
-        registration.set_privacy('public', auth=self.auth)
-        registration.save()
-        assert_false(registration.is_pending_embargo)
-        assert_equal(registration.embargo.state, Embargo.REJECTED)
-        assert_true(registration.is_public)
-        assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
+        with assert_raises(NodeStateError):
+            registration.set_privacy('public', auth=self.auth)
 
     def test_set_description(self):
         old_desc = self.project.description
@@ -3972,6 +3968,15 @@ class TestRegisterNode(OsfTestCase):
 
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)
+
+    def test_registration_gets_institution_affiliation(self):
+        node = NodeFactory()
+        institution = InstitutionFactory()
+        node.primary_institution = institution
+        node.save()
+        registration = RegistrationFactory(project=node)
+        assert_equal(registration.primary_institution._id, node.primary_institution._id)
+        assert_equal(set(registration.affiliated_institutions), set(node.affiliated_institutions))
 
 class TestNodeLog(OsfTestCase):
 

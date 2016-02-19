@@ -343,6 +343,31 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             )
         )
 
+    def process_related_counts_parameters(self, params, value):
+        """
+        Processes related_counts parameter.
+
+        Can either be a True/False value for fetching counts on all fields, or a comma-separated list for specifying
+        individual fields.  Ensures field for which we are requesting counts is a relationship field.
+        """
+        if utils.is_truthy(params) or utils.is_falsy(params):
+            return params
+
+        field_counts_requested = [val for val in params.split(',')]
+        countable_fields = {field for field in self.parent.fields if getattr(self.parent.fields[field], 'json_api_link', False)}
+        for count_field in field_counts_requested:
+            # Some fields will hide relationships, e.g. HideIfRetraction
+            # Ignore related_counts for these fields
+            fetched_field = self.parent.fields.get(count_field)
+            hidden = fetched_field and fetched_field.get_attribute(value) is None
+
+            if not hidden and count_field not in countable_fields:
+                raise InvalidQueryStringError(
+                    detail="Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got '{0}'".format(params),
+                    parameter='related_counts'
+                )
+        return field_counts_requested
+
     def get_meta_information(self, meta_data, value):
         """
         For retrieving meta values, otherwise returns {}
@@ -351,15 +376,16 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         for key in meta_data or {}:
             if key == 'count' or key == 'unread':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
+                field_counts_requested = self.process_related_counts_parameters(show_related_counts, value)
+
                 if utils.is_truthy(show_related_counts):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
                 elif utils.is_falsy(show_related_counts):
                     continue
-                if not utils.is_truthy(show_related_counts):
-                    raise InvalidQueryStringError(
-                        detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
-                        parameter='related_counts'
-                    )
+                elif self.field_name in field_counts_requested:
+                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                else:
+                    continue
             else:
                 meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
@@ -673,11 +699,9 @@ class JSONAPIListSerializer(ser.ListSerializer):
         if isinstance(data, collections.Mapping):
             errors = data.get('errors', None)
             data = data.get('data', None)
-
         ret = [
             self.child.to_representation(item, envelope=None) for item in data
         ]
-
         if errors and bulk_skip_uneditable:
             ret.append({'errors': errors})
 

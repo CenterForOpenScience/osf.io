@@ -77,6 +77,7 @@ def get_globals():
         'profile_url': cas.get_profile_url(),
         'keen_project_id': settings.KEEN_PROJECT_ID,
         'keen_write_key': settings.KEEN_WRITE_KEY,
+        'enable_institutions': settings.ENABLE_INSTITUTIONS,
     }
 
 
