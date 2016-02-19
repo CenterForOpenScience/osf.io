@@ -9,6 +9,7 @@ user_email_removed = signals.signal('user-email-removed')
 user_merged = signals.signal('user-merged')
 
 contributor_removed = signals.signal('contributor-removed')
+node_created = signals.signal('node-created')
 node_deleted = signals.signal('node-deleted')
 
 unconfirmed_user_created = signals.signal('unconfirmed-user-created')
