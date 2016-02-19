@@ -19,16 +19,17 @@ def main(dry=True):
     logger.warn('All active users will have a date_last_request field added and set equal to date_last_login.')
 
     for user in users:
-        with TokuTransaction():
-            if user.is_active:
-                user.date_last_request = user.date_last_login
-                if not dry:
-                    user.save()
-                    logger.info('User {0} "date_last_request" added'.format(user._id))
+        if user.is_active:
+            user.date_last_request = user.date_last_login
+            user.save()
+            logger.info('User {0} "date_last_request" added'.format(user._id))
+    if dry:
+        raise RuntimeError('Dry run -- transaction rolled back')
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    main(dry=dry_run)
+    with TokuTransaction():
+        main(dry=True)
 
