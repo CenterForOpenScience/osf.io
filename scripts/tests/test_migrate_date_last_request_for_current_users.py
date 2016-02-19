@@ -1,6 +1,6 @@
 from nose.tools import *
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from tests.base import OsfTestCase
 from tests import factories
 from website import models
@@ -21,6 +21,9 @@ class TestMigrateDateLastRequest(OsfTestCase):
             user.__setattr__('date_last_login', datetime.utcnow())
             user.save()
 
+        self.user3.date_last_request = (datetime.utcnow() + timedelta(hours=24))
+        self.user3.save()
+
 
     def tearDown(self):
         super(TestMigrateDateLastRequest, self).tearDown()
@@ -29,7 +32,8 @@ class TestMigrateDateLastRequest(OsfTestCase):
     def test_get_users(self):
         assert_equal(self.user.date_last_request, None)
         assert_equal(self.user2.date_last_request, None)
-        assert_equal(self.user3.date_last_request, None)
+        assert_not_equal(self.user3.date_last_request, None)
+
         assert_not_equal(self.user.date_last_request, self.user.date_last_login)
         assert_not_equal(self.user2.date_last_request, self.user2.date_last_login)
         assert_not_equal(self.user3.date_last_request, self.user3.date_last_login)
@@ -41,4 +45,4 @@ class TestMigrateDateLastRequest(OsfTestCase):
 
         assert_equal(self.user.date_last_request, self.user.date_last_login)
         assert_equal(self.user2.date_last_request, self.user2.date_last_login)
-        assert_equal(self.user3.date_last_request, self.user3.date_last_login)
+        assert_not_equal(self.user3.date_last_request, self.user3.date_last_login)
