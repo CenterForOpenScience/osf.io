@@ -76,4 +76,6 @@
         </div>
     </div>
 </div>
+<script src=${"/static/public/js/support-page.js" | webpack_asset}></script>
+
 </%def>
