@@ -1596,7 +1596,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # Ensure Mailing list subscription is set up
         if first_save and self.mailing_enabled:
-            project_signals.node_created.send(self)
+            auth_signals.node_created.send(self)
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -1646,7 +1646,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # set attributes which may NOT be overridden by `changes`
         new.creator = auth.user
         new.template_node = self
-        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
@@ -1667,6 +1666,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         )
 
         new.save(suppress_log=True)
+        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
 
         # Log the creation
         new.add_log(
@@ -2186,6 +2186,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # Clear permissions before adding users
         forked.permissions = {}
         forked.visible_contributor_ids = []
+        forked.save()
 
         for citation in self.alternative_citations:
             forked.add_citation(
