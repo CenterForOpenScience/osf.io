@@ -5,4 +5,5 @@ Welcome to the Open Science Framework. Please verify your email address by visit
 ${confirmation_url}
 
 The OSF Team
+
 Center for Open Science
