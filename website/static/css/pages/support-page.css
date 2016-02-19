@@ -1,0 +1,22 @@
+.support-item {
+    border: 1px solid #eee;
+}
+.support-head, .support-body {
+    padding: 10px;
+}
+.support-head {
+    background-color: #f5f5f5;
+    padding-left: 25px;
+    position: relative;
+    margin-top:0;
+}
+
+.support-head > .fa{
+    position: absolute;
+    left: 10px;
+}
+
+.support-body {
+
+}
+
