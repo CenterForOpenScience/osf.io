@@ -28,13 +28,6 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.nn4 = ProjectFactory()
         self.nn5 = ProjectFactory()
 
-        self.popular_links_node = ProjectFactory()
-        self.popular_links_node._id = POPULAR_LINKS_NODE
-        self.popular_links_node.save()
-        self.new_and_noteworthy_links_node = ProjectFactory()
-        self.new_and_noteworthy_links_node._id = NEW_AND_NOTEWORTHY_LINKS_NODE
-        self.new_and_noteworthy_links_node.save()
-
         today = datetime.datetime.now()
         self.last_month = (today - dateutil.relativedelta.relativedelta(months=1)).isoformat()
 
@@ -86,6 +79,13 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         assert_equal(new_noteworthy, [self.nn1._id, self.nn2._id, self.nn3._id, self.nn4._id, self.nn5._id])
 
     def test_populate_new_and_noteworthy(self):
+        self.popular_links_node = ProjectFactory()
+        self.popular_links_node._id = POPULAR_LINKS_NODE
+        self.popular_links_node.save()
+        self.new_and_noteworthy_links_node = ProjectFactory()
+        self.new_and_noteworthy_links_node._id = NEW_AND_NOTEWORTHY_LINKS_NODE
+        self.new_and_noteworthy_links_node.save()
+
         popular_url = script.get_api_base_path() + 'api/v1/explore/activity/popular/raw/'
         httpretty.register_uri(httpretty.GET, popular_url, status=200, body=self.popular_json_body, content_type='application/vnd.api+json')
         new_noteworthy_url = script.get_apiv2_base_path() + 'v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(self.last_month)
