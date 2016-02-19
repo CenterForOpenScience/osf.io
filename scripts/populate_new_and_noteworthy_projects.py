@@ -83,7 +83,7 @@ def is_eligible_node(node):
 
     for contrib in node.contributors:
         if contrib._id in QA_USER_IDS:
-            logger.warn('Node {} skipped because a QA member, {}, is a contributor.'.format(node._id, contrib._id))
+            logger.info('Node {} skipped because a QA member, {}, is a contributor.'.format(node._id, contrib._id))
             return False
 
     return True
@@ -91,7 +91,7 @@ def is_eligible_node(node):
 
 def update_node_links(designated_node, target_nodes, description):
     """ Takes designated node, removes current node links and replaces them with node links to target nodes """
-    logger.warn('Repopulating {} with latest {} nodes.'.format(designated_node._id, description))
+    logger.info('Repopulating {} with latest {} nodes.'.format(designated_node._id, description))
     user = designated_node.creator
     auth = Auth(user)
 
