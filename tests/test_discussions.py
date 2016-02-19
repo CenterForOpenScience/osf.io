@@ -15,6 +15,7 @@ from framework.auth.signals import user_confirmed
 from werkzeug.datastructures import ImmutableMultiDict
 
 from website import mails, settings
+from website.project.mailing_list import get_unsubscribes
 from website.util import api_url_for
 
 
@@ -71,13 +72,13 @@ class TestDiscussionsViews(OsfTestCase):
         unreg = self.project.add_unregistered_contributor('Billy', 'billy@gmail.com', Auth(self.user))
         self.project.reload()
 
-        assert_in(unreg, self.project.mailing_unsubs)
+        assert_in(unreg, get_unsubscribes(self.project))
 
         unreg.register(username='billy@gmail.com', password='password1')
         assert(unreg.is_registered)
 
         self.project.reload()
-        assert_not_in(unreg, self.project.mailing_unsubs)
+        assert_not_in(unreg, get_unsubscribes(self.project))
 
 
     def test_disable_and_enable_project_discussions(self):
@@ -93,21 +94,6 @@ class TestDiscussionsViews(OsfTestCase):
         self.app.post(url, payload, auth=self.user.auth)
         self.project.reload()
         assert_true(self.project.mailing_enabled)
-
-    def test_set_subscription_false_then_true(self):
-        url = api_url_for('set_subscription', pid=self.project._id)
-
-        assert_not_in(self.user, self.project.mailing_unsubs)
-
-        payload = {'discussionsSub': 'unsubscribed'}
-        self.app.post_json(url, payload, auth=self.user.auth)
-        self.project.reload()
-        assert_in(self.user, self.project.mailing_unsubs)
-
-        payload = {'discussionsSub': 'subscribed'}
-        self.app.post_json(url, payload, auth=self.user.auth)
-        self.project.reload()
-        assert_not_in(self.user, self.project.mailing_unsubs)
 
 class TestEmailRejections(OsfTestCase):
 
@@ -127,7 +113,7 @@ class TestEmailRejections(OsfTestCase):
         self.post_url = api_url_for('route_message')
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.views.discussions.send_messages')
+    @mock.patch('website.project.mailing_list.send_messages')
     def test_working_email(self, mock_send_list, mock_send_mail):
         self.app.post(self.post_url, self.message)
 
@@ -140,7 +126,7 @@ class TestEmailRejections(OsfTestCase):
             for key in self.message.keys()]
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.views.discussions.send_messages')
+    @mock.patch('website.project.mailing_list.send_messages')
     def test_email_from_non_registered_user(self, mock_send_list, mock_send_mail):
         self.message['From'] = 'non-email@osf.fake'
 
@@ -159,7 +145,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.views.discussions.send_messages')
+    @mock.patch('website.project.mailing_list.send_messages')
     def test_email_to_nonexistent_project(self, mock_send_list, mock_send_mail):
         self.message['To'] = 'notarealprojectid@osf.io'
 
@@ -178,7 +164,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.views.discussions.send_messages')
+    @mock.patch('website.project.mailing_list.send_messages')
     def test_email_to_deleted_project(self, mock_send_list, mock_send_mail):
         self.project.remove_node(auth=Auth(user=self.user))
 
@@ -197,7 +183,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.views.discussions.send_messages')
+    @mock.patch('website.project.mailing_list.send_messages')
     def test_email_to_private_project_without_access(self, mock_send_list, mock_send_mail):
         self.user = UserFactory()
         self.user.reload()
@@ -218,7 +204,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.views.discussions.send_messages')
+    @mock.patch('website.project.mailing_list.send_messages')
     def test_email_to_public_project_without_access(self, mock_send_list, mock_send_mail):
         self.project.is_public = True
         self.project.save()
@@ -241,7 +227,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.views.discussions.send_messages')
+    @mock.patch('website.project.mailing_list.send_messages')
     def test_email_to_project_with_discussions_disabled_as_admin(self, mock_send_list, mock_send_mail):
         self.project.mailing_enabled = False
         self.project.save()
@@ -261,7 +247,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_list.assert_not_called()
 
     @mock.patch('website.mails.send_mail')
-    @mock.patch('website.project.views.discussions.send_messages')
+    @mock.patch('website.project.mailing_list.send_messages')
     def test_email_to_project_with_discussions_disabled_as_non_admin(self, mock_send_list, mock_send_mail):
         self.user = UserFactory()
         self.user.reload()
