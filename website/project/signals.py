@@ -4,6 +4,7 @@ signals = blinker.Namespace()
 comment_added = signals.signal('comment-added')
 contributor_added = signals.signal('contributor-added')
 contributor_removed = signals.signal('contributor-removed')
+node_created = signals.signal('node-created')
 unreg_contributor_added = signals.signal('unreg-contributor-added')
 write_permissions_revoked = signals.signal('write-permissions-revoked')
 

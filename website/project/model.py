@@ -827,8 +827,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # Project Mailing
     mailing_enabled = fields.BooleanField(default=True, index=True)
-    # list of users who have unsubscribed from mailing on this node
-    mailing_unsubs = fields.ForeignField('user', list=True)
 
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
@@ -1596,6 +1594,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if settings.PIWIK_HOST and update_piwik:
             piwik_tasks.update_node(self._id, saved_fields)
 
+        # Ensure Mailing list subscription is set up
+        if first_save and self.mailing_enabled:
+            project_signals.node_created.send(self)
+
         # Return expected value for StoredObject::save
         return saved_fields
 
@@ -1649,7 +1651,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.is_registration = False
         new.piwik_site_id = None
         new.mailing_enabled = False if new.is_folder else True
-        new.mailing_unsubs = []
         new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
@@ -2177,7 +2178,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.creator = user
         forked.piwik_site_id = None
         forked.mailing_enabled = False if forked.is_folder else True
-        forked.mailing_unsubs = []
         forked.node_license = original.license.copy() if original.license else None
 
         # Forks default to private status
@@ -2272,7 +2272,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.tags = self.tags
         registered.piwik_site_id = None
         registered.mailing_enabled = False
-        registered.mailing_unsubs = []
         registered.primary_institution = self.primary_institution
         registered.affiliated_institutions = self.affiliated_institutions
         registered.alternative_citations = self.alternative_citations
@@ -2985,10 +2984,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 user.recently_added.insert(0, contrib_to_add)
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
-
-            # Unsubscribe non-active users until they become active
-            if not contrib_to_add.is_active:
-                self.mailing_unsubs.append(contrib_to_add)
 
             if log:
                 self.add_log(
