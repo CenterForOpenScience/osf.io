@@ -4,7 +4,7 @@ var uuid = require('uuid');
 
 var KeenTracker = oop.defclass({
     constructor: function(keenProjectId, keenWriteKey) {
-        this.client = new keen({
+        this.keenClient = new keen({
             projectId: keenProjectId,
             writeKey: keenWriteKey
         });
@@ -13,7 +13,7 @@ var KeenTracker = oop.defclass({
 
     getOrCreateKeenID: function() {
         if(!$.cookie('keenID')){
-                $.cookie('keenID', uuid.v1(), {expires: 365, path: '/'})
+            $.cookie('keenID', uuid.v1(), {expires: 365, path: '/'})
         }
 
         return $.cookie('keenID');
@@ -23,37 +23,38 @@ var KeenTracker = oop.defclass({
         var ctx = window.contextVars;
         if(!$.cookie('keenSessionID')){
             this.createOrUpdateKeenSession();
-            var returning = $('keenID') ? true : false;
+            var returning = $.cookie('keenID') ? true : false;
             var visit = {
-                "user_agent": "${keen.user_agent}",
+                "userAgent": "${keen.user_agent}",
                 "referrer": {
                     "url": document.referrer
                 },
-                "ip_address": "${keen.ip}",
+                "ipAddress": "${keen.ip}",
                 "sessionID": $.cookie('keenSessionID'),
                 "keenID": this.getOrCreateKeenID(),
                 "returning": returning,
+                "pageUrl": document.URL,
                 "keen": {
                     "addons": [
                         {
                             "name": "keen:ip_to_geo",
                             "input": {
-                                "ip": "ip_address"
+                                "ip": "ipAddress"
                             },
-                            "output": "ip_geo_info"
+                            "output": "ipGeoInfo"
                         },
                         {
                             "name": "keen:ua_parser",
                             "input": {
-                                "ua_string": "user_agent"
+                                "ua_string": "userAgent"
                             },
-                            "output": "parsed_user_agent"
+                            "output": "parsedUserAgent"
                         },
                         {
                             "name": "keen:referrer_parser",
                             "input": {
                                 "referrer_url": "referrer.url",
-                                "page_url": document.URL
+                                "page_url": "pageUrl"
                             },
                             "output": "referrer.info"
                         }
@@ -68,23 +69,24 @@ var KeenTracker = oop.defclass({
                 visit.currentUser = ctx.currentUser;
             }
 
-            console.log("Logged visit", visit);
+            this.keenClient.addEvent('visits', visit);
         }
     },
 
     trackPageView: function(){
         this.createOrUpdateKeenSession();
+        debugger;
         var ctx = window.contextVars;
         var pageView = {
-            "page_url": document.URL,
+            "pageUrl": document.URL,
             "keen": {
                 "addons": [
                     {
                         "name" : "keen:url_parser",
                         "input" : {
-                            "url" : "page_url"
+                            "url" : "pageUrl"
                         },
-                        "output" : "parsed_page_url"
+                        "output" : "parsedPageUrl"
                     }
                 ]
             },
@@ -100,13 +102,13 @@ var KeenTracker = oop.defclass({
                 "title": ctx.node.title,
                 "type": ctx.node.category,
                 "tags": ctx.node.tags
-
             };
         }
         if(ctx.currentUser){
             pageView.user = ctx.currentUser;
         }
-        console.log("Logged pageview", pageView);
+
+        this.keenClient.addEvent('pageviews', pageView);
     },
 
     trackCustomEvent: function(eventCollection, eventData){},
