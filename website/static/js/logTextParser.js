@@ -125,11 +125,11 @@ var LogPieces = {
     contributors: {
         view: function (ctrl, logObject) {
             var contributors = logObject.embeds.contributors;
-            /*if(paramIsReturned(contributors, logObject)) {
+            if(paramIsReturned(contributors, logObject)) {
                 return contributors.map(function(item){
-                    return m('a', {href: '#'}, 'Person');
+                    return m('a', {href: item.data.links.html}, item.data.attributes.full_name);
                 });
-            }*/
+            }
             return m('span', 'some users');
         }
     },
@@ -214,7 +214,7 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var source = logObject.attributes.params.source;
             if(paramIsReturned(source, logObject)){
-                return m('a', {href: source.url}, source.materialized);
+                return m('span', [m('a', {href: source.url}, source.materialized), ' in ', source.addon]);
             }
             return m('span','a name/location' );
         }
@@ -224,7 +224,7 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var destination = logObject.attributes.params.destination;
             if(paramIsReturned(destination, logObject)){
-                return m('a', {href: destination.url}, destination.materialized);
+                return m('span', [m('a', {href: destination.url}, destination.materialized, ' in ', source.addon]);
             }
             return m('span','a new name/location' );
         }
