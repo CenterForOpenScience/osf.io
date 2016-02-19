@@ -10,10 +10,10 @@
     <h1> Support</h1>
     <div class="row m-t-md">
         <div class="col-md-9">
-            <input type="text" class="form-control" placeholder="Search">
+            <input type="text" class="form-control support-filter" placeholder="Search">
             <button class="btn btn-default">Clear Search</button>
-            <button class="btn btn-default"> Expand All </button>
-            <button class="btn btn-default"> Collapse All </button>
+            <button class="btn btn-default expand-all"> Expand All </button>
+            <button class="btn btn-default collapse-all"> Collapse All </button>
 
             <div class="row">
                 <div class="col-md-6">
