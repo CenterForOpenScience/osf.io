@@ -88,6 +88,7 @@ class TestUserLogs(ApiTestCase):
         )
 
         assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_wrong_auth(self):
         res = self.app.get(
@@ -97,3 +98,4 @@ class TestUserLogs(ApiTestCase):
         )
 
         assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
