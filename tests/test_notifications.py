@@ -11,8 +11,7 @@ from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
 from framework.auth.core import User
-from framework.auth.signals import contributor_removed
-from framework.auth.signals import node_deleted
+from framework.auth.signals import contributor_removed, node_deleted, node_created
 from website.notifications.tasks import get_users_emails, send_users_email, group_by_node, remove_notifications
 from website.notifications import constants
 from website.notifications.model import NotificationDigest
@@ -262,7 +261,7 @@ class TestRemoveNodeSignal(OsfTestCase):
             subscription.save()
 
             s = getattr(project.creator, 'email_transactional', [])
-            assert_equal(len(s), 1)
+            assert_equal(len(s), 2)
 
             with capture_signals() as mock_signals:
                 project.remove_node(auth=Auth(project.creator))
@@ -401,16 +400,17 @@ class TestNotificationUtils(OsfTestCase):
         assert_in(self.project_subscription, user_subscriptions)
         assert_in(self.node_subscription, user_subscriptions)
         assert_in(self.user_subscription, user_subscriptions)
-        assert_equal(len(user_subscriptions), 3)
+        assert_equal(len(user_subscriptions), 5)
 
     def test_get_all_node_subscriptions_given_user_subscriptions(self):
         user_subscriptions = utils.get_all_user_subscriptions(self.user)
         node_subscriptions = [x for x in utils.get_all_node_subscriptions(self.user, self.node,
-                                                                          user_subscriptions=user_subscriptions)]
+                                                                          user_subscriptions=user_subscriptions)
+                                if x.event_name != 'mailing_list_events']
         assert_equal(node_subscriptions, [self.node_subscription])
 
     def test_get_all_node_subscriptions_given_user_and_node(self):
-        node_subscriptions = [x for x in utils.get_all_node_subscriptions(self.user, self.node)]
+        node_subscriptions = [x for x in utils.get_all_node_subscriptions(self.user, self.node) if x.event_name != 'mailing_list_events']
         assert_equal(node_subscriptions, [self.node_subscription])
 
     def test_get_configured_project_ids_does_not_return_user_or_node_ids(self):
@@ -462,10 +462,13 @@ class TestNotificationUtils(OsfTestCase):
         assert_in(private_project._id, configured_project_ids)
 
     def test_get_configured_project_ids_excludes_private_projects_if_no_subscriptions_on_node(self):
+        from website.project.mailing_list import create_mailing_list_subscription
+        node_created.disconnect(create_mailing_list_subscription)
         private_project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=private_project)
         configured_project_ids = utils.get_configured_projects(node.creator)
         assert_not_in(private_project._id, configured_project_ids)
+        node_created.connect(create_mailing_list_subscription)
 
     def test_get_parent_notification_type(self):
         nt = utils.get_parent_notification_type(self.node, 'comments', self.user)
@@ -681,7 +684,7 @@ class TestNotificationUtils(OsfTestCase):
         self.project_subscription.save()
         self.node.add_contributor(contributor=user, permissions=['read'])
         self.node.save()
-        node_subscriptions = [x for x in utils.get_all_node_subscriptions(user, self.node)]
+        node_subscriptions = [x for x in utils.get_all_node_subscriptions(user, self.node) if x.event_name != 'mailing_list_events']
         data = utils.serialize_event(user=user, event_description='comments',
                                      subscription=node_subscriptions, node=self.node)
         expected = {
