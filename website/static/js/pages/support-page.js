@@ -38,6 +38,7 @@ $(document).ready(function(){
             _toggleItem(el, true);
             el.removeClass('support-nomatch');
         });
+        $('.support-filter').val('');
     }
     // Toggle individual view when clicked on header
     $('.support-head').click(function(){
@@ -57,10 +58,14 @@ $(document).ready(function(){
         });
     });
 
+    $('.clear-search').click(resetFilter);
+
     $('.support-filter').keyup(function(){
         var text = $(this).val().toLowerCase();
-        if (text.length < 2) {
+        if(text.length === 0){
             resetFilter();
+        }
+        if (text.length < 2) {
             return;
         }
         var el;

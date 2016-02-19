@@ -11,7 +11,7 @@
     <div class="row m-t-md">
         <div class="col-md-9">
             <input type="text" class="form-control support-filter" placeholder="Search">
-            <button class="btn btn-default">Clear Search</button>
+            <button class="btn btn-default clear-search">Clear Search</button>
             <button class="btn btn-default expand-all"> Expand All </button>
             <button class="btn btn-default collapse-all"> Collapse All </button>
 
