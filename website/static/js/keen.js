@@ -111,7 +111,9 @@ var KeenTracker = oop.defclass({
         this.keenClient.addEvent('pageviews', pageView);
     },
 
-    trackCustomEvent: function(eventCollection, eventData){},
+    trackCustomEvent: function(eventCollection, eventData){
+        this.keenClient.addEvent(eventCollection, eventData);
+    },
 
     createOrUpdateKeenSession: function() {
         var date = new Date();
