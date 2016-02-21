@@ -19,6 +19,20 @@ def random_string(length=8, chars=string.letters + string.digits):
     return ''.join([chars[random.randint(0, len(chars) - 1)] for i in range(length)])
 
 
+def random_pin(length=6):
+    """ Generates a random pin with (length) digits
+    :raises: ValueError
+    :param int length:
+    :rtype: int
+    :return: a psuedo randomly generated n digit pin number
+    """
+    if length == 1:
+        return random.randint(0, 9)
+    elif length > 1:
+        return random.randint(10 ** (length - 1), 10 ** length - 1)
+    else:
+        raise ValueError
+
 class Encryption(object):
 
     if settings.USE_GNUPG:

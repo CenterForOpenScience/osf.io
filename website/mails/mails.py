@@ -132,6 +132,7 @@ CONFIRM_EMAIL = Mail('confirm', subject='Open Science Framework Account Verifica
 CONFIRM_EMAIL_PREREG = Mail('confirm_prereg', subject='Open Science Framework Account Verification, Preregistration Challenge')
 
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
+CONFIRM_MERGE_PIN = Mail('confirm_merge_pin', subject='Confirm account merge')
 
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')

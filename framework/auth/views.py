@@ -169,6 +169,7 @@ def confirm_email_get(token, auth=None, **kwargs):
 
     methods: GET
     """
+    # TODO catch pin
     user = User.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
     is_initial_confirmation = not user.date_confirmed
@@ -222,43 +223,119 @@ def confirm_email_get(token, auth=None, **kwargs):
         verification_key=user.verification_key
     ))
 
+def send_merge_emails(user_main, user_main_email, user_to_merge, user_to_merge_email, confirmation):
+    """ Sends a confirm email to user_to_merge and a pin email to user_main
+
+    :param User user_main: The User into which user_to_merge will be merged
+    :param str user_main_email: The email for user_mail
+    :param User user_to_merge: The User who will be merged into user_main
+    :param str user_to_merge_email: The email for user_to_merge
+    :param str confirmation: The url for confirmation
+
+    :rtype: None
+    """
+
+    # send merge confirm email
+    mails.send_mail(
+        user_to_merge_email,
+        mails.CONFIRM_MERGE,
+        'plain',
+        user=user_main,
+        confirmation_url=confirmation,
+        email=user_to_merge_email,
+        merge_target=user_to_merge,
+    )
+
+    # TODO implement
+    pin = user_main.get_pin_token(user_to_merge_email, force=True)
+
+    # send pin email
+    mails.send_mail(
+        user_main_email,
+        mails.CONFIRM_MERGE_PIN,
+        'plain',
+        user=user_main,
+        pin=pin,
+        email=user_main_email,
+        merge_target=user_to_merge,
+    )
+
+def send_campaign_email(user, email, confirmation, campaign):
+    """ Sends a camgaign email to a User
+
+    TODO document params better
+    :param User user:
+    :param str email:
+    :param str confirmation:
+    :param str campaign:
+    :rtype: None
+    """
+    campaign_template = campaigns.email_template_for_campaign(campaign)
+
+    mails.send_mail(
+        email,
+        campaign_template,
+        'plain',
+        user=user,
+        confirmation_url=confirmation,
+        email=email
+    )
+
+
+def send_new_user_email(user, email, confirmation):
+    """Sends the standard new user email
+
+    TODO document params better
+    :param User user:
+    :param str email:
+    :param str confirmation:
+    :rtype: None
+    """
+    mails.send_mail(
+        email,
+        mails.CONFIRM_EMAIL,
+        'plain',
+        user=user,
+        confirmation_url=confirmation,
+        email=email,
+    )
 
 def send_confirm_email(user, email):
     """Sends a confirmation email to `user` to a given email.
 
-    :raises: KeyError if user does not have a confirmation token for the given
-        email.
+    :param User user:
+    :param str email:
     """
+    # get and format email parameters
     confirmation_url = user.get_confirmation_url(
         email,
         external=True,
         force=True,
     )
 
-    try:
-        merge_target = User.find_one(Q('emails', 'eq', email))
-    except NoResultsFound:
-        merge_target = None
+    merge_target = get_merge_target(email)
 
     campaign = campaigns.campaign_for_user(user)
+
     # Choose the appropriate email template to use
     if merge_target:
-        mail_template = mails.CONFIRM_MERGE
+        send_merge_emails(user, user.email, merge_target, email, confirmation_url)
     elif campaign:
-        mail_template = campaigns.email_template_for_campaign(campaign)
+        send_campaign_email(user, email, confirmation_url, campaign)
     else:
-        mail_template = mails.CONFIRM_EMAIL
+        send_new_user_email(user, email, confirmation_url)
 
-    mails.send_mail(
-        email,
-        mail_template,
-        'plain',
-        user=user,
-        confirmation_url=confirmation_url,
-        email=email,
-        merge_target=merge_target,
-    )
-
+def get_merge_target(email):
+    """Returns the merge target if it exists otherwise none
+    :raises: KeyError if user does not have a confirmation token for the given email
+    :param str email: The email to merge
+    :return: The user we are trying to get merged into us
+    :rtype: User
+    """
+    try:
+        return User.find_one(Q('emails', 'eq', email))
+    except NoResultsFound:
+        return None
 
 def register_user(**kwargs):
     """Register new user account.

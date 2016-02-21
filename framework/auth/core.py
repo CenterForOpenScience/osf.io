@@ -46,6 +46,12 @@ logger = logging.getLogger(__name__)
 def generate_confirm_token():
     return security.random_string(30)
 
+def generate_confirm_pin():
+    """Generates a 6 digit pin
+    :rtype: int
+    :return: pin number
+    """
+    return security.random_pin()
 
 def generate_claim_token():
     return security.random_string(30)
@@ -287,6 +293,14 @@ class User(GuidStoredObject, AddonModelMixin):
     email_verifications = fields.DictionaryField(default=dict)
     # Format: {
     #   <token> : {'email': <email address>,
+    #              'expiration': <datetime>}
+    # }
+
+    # merge verification pins
+    #   Each email to add should only have one pin associated with it
+    pending_merges = fields.DictionaryField(default=dict)
+    # Format: {
+    #   <email> : {'pin'       : <int>,
     #              'expiration': <datetime>}
     # }
 
@@ -792,6 +806,124 @@ class User(GuidStoredObject, AddonModelMixin):
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
+    ###########################
+    # Dealing with merging pins
+    def _set_merge_pin_expiration(self, email, expiration=None):
+        """Set the expiration date for given email pin.
+
+        private method shouldn't be called outside of class
+
+        :param str email: The email to set for expiration
+        :param datetime expiration: Datetime at which to expire the token. If ``None``, the
+            token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours. This is only
+            used for testing purposes.
+        """
+        expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=settings.EMAIL_TOKEN_EXPIRATION))
+        self.pending_merges[email]['expiration'] = expiration
+        return expiration
+
+    def remove_unmerged_email(self, email):
+        """Drop email for pending merges
+
+        :param str email:
+        :rtype: bool
+        :return: boolen true/false
+        """
+        for email_temp, _ in self.pending_merges.iteritems():
+            if email_temp == email:
+                del self.pending_merges[email]
+                return True
+        return False
+
+    def add_unconfirmed_pin(self, email, expiration=None):
+        """Adds email and pin to pending merges
+
+        Algo:
+            1. Email checking
+                a. Verfiy email isn't already merged
+                b. Verify that email is in valid format
+                c. If the email is in unmerged but not in merged, remove it
+            2. Generate a new pin
+            3. Add email to pending verifications with pin and expiration
+
+        :param str email: Email to merge in
+        :param datetime expiration: A custom expiration time, otherwise 24 hours
+        :rtype: int
+        :return: return the pin
+        """
+        email = email.lower().strip()
+
+        if email in self.emails:
+            raise ValueError("Email already merged to this user.")
+
+        utils.validate_email(email)
+
+        # If the unconfirmed email is already present, refresh the pin
+        if email in self.pending_merges:
+            # TODO remve_pending_verification
+            self.remove_unconfirmed_email(email)
+
+        pin = generate_confirm_pin()
+
+        self.pending_merges[email] = {'pin': pin}
+        self._set_merge_pin_expiration(email, expiration=expiration)  # no need to change this method
+        return pin
+
+    def get_pin_token(self, email, force=False):
+        """Given an email, verify that it has a pin, otherwise raise an error
+
+        :param str email:
+        :param bool force:
+        :rtype: int
+        :return: the new pin
+        """
+        email_dict = self.getEmail(email)
+        expiration = self.getExpiration(email_dict)
+
+        if not expiration or (expiration and expiration < dt.datetime.utcnow()):
+            if not force:
+                raise ExpiredTokenError('Pin for email "{0}" has expired'.format(email))
+            else:
+                new_pin = self.add_unconfirmed_pin(email)
+                # self.save()  # dirty state
+                return new_pin
+        return email_dict['pin']
+
+    def getExpiration(self, email_dict):
+        """ try to get an expiration date, if it exists
+        :param dict email_dict:
+        :return: an expiration date or nothing
+        :rtype: datetime or None
+        """
+        try:
+            return email_dict['expiration']
+        except:
+            return None
+
+    def getEmail(self, email):
+        """
+        :param str email:
+        :rtype: dict
+        :raises: KeyError
+        :return:
+        """
+        try:
+            return self.pending_merges.get(email)
+        except:
+            raise KeyError('No pending merges for email "{0}"'.format(email))
+
+    def confirm_pin(self, pin, email):
+        """Confirm that the pin entered is the correct pin
+
+        :param int pin: The possible pin
+        :param str email: The email to check against
+        :rtype: int
+        :return:
+        """
+        return pin == self.pending_merges[email]['pin']
+    # end merging
+    ###########################
+
     def get_confirmation_url(self, email, external=True, force=False):
         """Return the confirmation url for a given email.
 
@@ -829,6 +961,7 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return record['token'] == token
 
+    # TODO factor out the merge logic into confirm pin
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
         email = self._get_unconfirmed_email_for_token(token)
