@@ -11,6 +11,7 @@ import furl
 from modularodm import Q
 from modularodm.exceptions import ValidationError
 
+from framework.auth import get_or_create_user
 from framework.auth.core import Auth
 from framework.transactions import commands
 
@@ -66,7 +67,7 @@ class TestConferenceUtils(OsfTestCase):
 
     def test_get_or_create_user_exists(self):
         user = UserFactory()
-        fetched, created = utils.get_or_create_user(user.fullname, user.username, True)
+        fetched, created = get_or_create_user(user.fullname, user.username, True)
         assert_false(created)
         assert_equal(user._id, fetched._id)
         assert_false('is_spam' in fetched.system_tags)
@@ -74,7 +75,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_not_exists(self):
         fullname = 'Roger Taylor'
         username = 'roger@queen.com'
-        fetched, created = utils.get_or_create_user(fullname, username, False)
+        fetched, created = get_or_create_user(fullname, username, False)
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -83,7 +84,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_is_spam(self):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'
-        fetched, created = utils.get_or_create_user(fullname, username, True)
+        fetched, created = get_or_create_user(fullname, username, True)
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)

@@ -2,6 +2,7 @@ from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField
 
+
 class InstitutionSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset([

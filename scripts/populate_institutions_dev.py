@@ -1,25 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
+import sys
+
 from website.app import init_app
 from website.models import Institution
 from framework.transactions.context import TokuTransaction
 
-
-INSTITUTIONS = [
-    {
-        'name': 'Virginia Tech',
-        '_id': 'VT',
-        'logo_name': 'virginia-tech.jpg',
-        'auth_url': 'https://login.vt.test',
-    },
-    {
-        'name': 'Notre Dame',
-        '_id': 'ND',
-        'logo_name': 'notre-dame.jpg',
-        'auth_url': 'https://login.nd.test',
-    }
-]
+ENVS = ['prod', 'nonprod']
+SHIBBOLETH_SP = 'https://staging-accounts.osf.io/Shibboleth.sso/Login?entityID={}'
 
 def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
@@ -36,7 +25,27 @@ def update_or_create(inst_data):
         print('Added new institution: {}'.format(new_inst._id))
         return new_inst, True
 
-def main():
+
+def main(env):
+    INSTITUTIONS = [
+        {
+            'name': 'Virginia Tech',
+            '_id': 'VT',
+            'logo_name': 'virginia-tech.jpg',
+            'auth_url': SHIBBOLETH_SP.format(
+                'https://shib-pprd.middleware.vt.edu'
+            )
+        },
+        {
+            'name': 'Notre Dame',
+            '_id': 'ND',
+            'logo_name': 'notre-dame.jpg',
+            'auth_url': SHIBBOLETH_SP.format(
+                'https://login.nd.edu/idp/shibboleth' if env == 'prod' else 'https://login-test.cc.nd.edu/idp/shibboleth'
+            )
+        }
+    ]
+
     init_app(routes=False)
     for inst_data in INSTITUTIONS:
         with TokuTransaction():
@@ -44,4 +53,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    env = str(sys.argv[1]).lower() if len(sys.argv) >= 1 else None
+    if env not in ENVS:
+        print('An environment must be specified : {}', ENVS)
+        sys.exit(1)
+    main(env)

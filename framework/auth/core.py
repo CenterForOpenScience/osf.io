@@ -1395,6 +1395,7 @@ class Institution(StoredObject):
     _id = fields.StringField(index=True, unique=True, primary=True)
     name = fields.StringField(required=True)
     logo_name = fields.StringField(required=True)
+    domains = fields.StringField(list=True)
     auth_url = fields.StringField(required=False, validate=URLValidator())
 
     @property
