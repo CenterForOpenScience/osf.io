@@ -1,5 +1,6 @@
 .support-item {
     border: 1px solid #eee;
+    margin: 15px 0;
 }
 .support-head, .support-body {
     padding: 10px;
@@ -37,4 +38,33 @@
 }
 .support-sidebar p {
     font-size: 13px;
+}
+
+.search-layer input {
+    width: 400px;
+    display: inline-block;
+}
+.search-layer .clear-search {
+    margin-left: -30px;
+    font-size: 18px;
+    color: #CCCCCC;
+}
+.search-layer .clear-search.clear-active {
+    color: #666;
+}
+
+.search-layer .btn-group {
+    margin-left: 30px;
+}
+
+.search-layer.fixed-layer {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    width: 100%;
+    z-index: 99;
+    padding: 12px;
+    background: #fff;
+    box-shadow: 0 1px 5px #ccc;
+    text-align: center;
 }

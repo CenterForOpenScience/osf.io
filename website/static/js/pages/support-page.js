@@ -39,6 +39,7 @@ $(document).ready(function(){
             el.removeClass('support-nomatch');
         });
         $('.support-filter').val('');
+        $('.clear-search').removeClass('clear-active');
     }
     // Toggle individual view when clicked on header
     $('.support-head').click(function(){
@@ -46,13 +47,13 @@ $(document).ready(function(){
         _toggleItem(item, item.hasClass('open'));
     });
 
-    $('.expand-all').click(function(){
+    $('.search-expand').click(function(){
         $('.support-item').each(function(){
             _toggleItem($(this));
         });
     });
 
-    $('.collapse-all').click(function(){
+    $('.search.collapse').click(function(){
         $('.support-item').each(function(){
             _toggleItem($(this), true);
         });
@@ -65,6 +66,7 @@ $(document).ready(function(){
         if(text.length === 0){
             resetFilter();
         }
+        $('.clear-search').addClass('clear-active');
         if (text.length < 2) {
             return;
         }
@@ -83,6 +85,21 @@ $(document).ready(function(){
         });
     });
 
+    function fixSearchLayer () {
+        var topOffset = $(window).scrollTop();
+        var searchLayer = $('.search-layer');
+        if(topOffset > 100 && !searchLayer.hasClass('fixed-layer')){
+            searchLayer.addClass('fixed-layer');
+            searchLayer.find('h1').hide();
+        }
+        if(topOffset <= 100 && searchLayer.hasClass('fixed-layer')){
+            searchLayer.removeClass('fixed-layer');
+            searchLayer.find('h1').show();
+        }
+    }
 
+    // Handle fixing support search box on scroll
+    $(window).scroll(fixSearchLayer);
+    fixSearchLayer();
 
 });
