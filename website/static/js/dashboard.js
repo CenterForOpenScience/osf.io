@@ -779,11 +779,7 @@ var Collections  = {
                 self.validationError('"Bookmarks" is a reserved collection name. Please use another name.');
             } else {
                 self.validationError('');
-                if(val.length > 0) {
-                    self.isValid(true);
-                } else {
-                    self.isValid(false);
-                }
+                self.isValid(val.length);
             }
         };
         self.init();

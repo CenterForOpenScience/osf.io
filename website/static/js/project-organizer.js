@@ -214,7 +214,8 @@ function _poResolveLazyLoad(item) {
     }
     if(node.relationships.children){
         //return node.relationships.children.links.related.href;
-        return $osf.apiV2Url('nodes/' + node.id + '/children/', {
+        var urlPrefix = node.attributes.registration ? 'registrations' : 'nodes';
+        return $osf.apiV2Url(urlPrefix + '/' + node.id + '/children/', {
             query : {
                 'related_counts' : 'children',
                 'embed' : 'contributors'
