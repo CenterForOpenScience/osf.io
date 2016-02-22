@@ -236,9 +236,11 @@ def format_data(user, node_ids):
                              if getattr(subscription, 'event_name') in node_sub_available]
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
-                children.append(serialize_event(user, subscription=subscription,
+                if not (not node.mailing_enabled and subscription.event_name == 'mailing_list_events'):
+                    children.append(serialize_event(user, subscription=subscription,
                                                 node=node, event_description=node_sub_available.pop(index)))
             for node_sub in node_sub_available:
+                if not (not node.mailing_enabled and node_sub == 'mailing_list_events'):
                     children.append(serialize_event(user, node=node, event_description=node_sub))
             children.sort(key=lambda s: s['event']['title'])
 
