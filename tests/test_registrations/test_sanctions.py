@@ -26,6 +26,9 @@ class SanctionTestClass(TokenApprovableSanction):
     def _validate_authorizer(self, user):
         return 'flag' in user.system_tags
 
+    def _get_registration(self):
+        return factories.RegistrationFactory()
+
 class EmailApprovableSanctionTestClass(PreregCallbackMixin, EmailApprovableSanction):
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = 'authorizer'
@@ -54,7 +57,8 @@ class TestSanction(SanctionsTestCase):
             initiated_by=self.user,
             end_date=datetime.datetime.now() + datetime.timedelta(days=2)
         )
-        self.sanction.add_authorizer(self.user, save=True)
+        self.registration = factories.RegistrationFactory()
+        self.sanction.add_authorizer(self.user, self.registration, save=True)
 
     def test_pending_approval(self):
         assert_true(self.sanction.is_pending_approval)
@@ -67,20 +71,21 @@ class TestSanction(SanctionsTestCase):
 
     def test_add_authorizer(self):
         new_user = valid_user()
-        added = self.sanction.add_authorizer(new_user)
+        added = self.sanction.add_authorizer(new_user, node=self.registration)
         assert_true(added)
         assert_in(new_user._id, self.sanction.approval_state.keys())
         assert_in('approval_token', self.sanction.approval_state[new_user._id])
         assert_in('rejection_token', self.sanction.approval_state[new_user._id])
+        assert_equal(self.sanction.approval_state[new_user._id]['node_id'], self.registration._id)
 
     def test_add_authorizer_already_added(self):
-        added = self.sanction.add_authorizer(self.user)
+        added = self.sanction.add_authorizer(self.user, self.registration)
         assert_false(added)
         assert_in(self.user._id, self.sanction.approval_state.keys())
 
     def test_add_authorizer_invalid(self):
         invalid_user = factories.UserFactory()
-        added = self.sanction.add_authorizer(invalid_user)
+        added = self.sanction.add_authorizer(invalid_user, self.registration)
         assert_false(added)
         assert_not_in(invalid_user._id, self.sanction.approval_state.keys())
 
@@ -100,15 +105,9 @@ class TestSanction(SanctionsTestCase):
     @mock.patch.object(SanctionTestClass, '_on_complete')
     def test_on_approve_incomplete(self, mock_complete):
         another_user = valid_user()
-        self.sanction.add_authorizer(another_user, approved=True)
+        self.sanction.add_authorizer(another_user, self.sanction._get_registration(), approved=True)
         self.sanction._on_approve(self.user, '')
         assert_false(mock_complete.called)
-
-    @mock.patch.object(SanctionTestClass, '_on_complete')
-    def test_on_approve_complete(self, mock_complete):
-        self.sanction.approval_state[self.user._id]['has_approved'] = True
-        self.sanction._on_approve(self.user, '')
-        assert_true(mock_complete.called)
 
     @mock.patch.object(SanctionTestClass, '_on_complete')
     def test_on_approve_complete(self, mock_complete):
@@ -142,7 +141,10 @@ class TestSanction(SanctionsTestCase):
     @mock.patch.object(SanctionTestClass, '_notify_non_authorizer')
     def test_ask(self, mock_notify_non_authorizer, mock_notify_authorizer):
         other_user = factories.UserFactory()
-        group = [other_user, self.user]
+        group = [
+            (other_user, factories.ProjectFactory()),
+            (self.user, factories.ProjectFactory()),
+        ]
         self.sanction.ask(group)
         assert_true(mock_notify_non_authorizer.called_once_with(other_user))
         assert_true(mock_notify_authorizer.called_once_with(self.user))
@@ -157,7 +159,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
             initiated_by=self.user,
             end_date=datetime.datetime.now() + datetime.timedelta(days=2)
         )
-        self.sanction.add_authorizer(self.user)
+        self.sanction.add_authorizer(self.user, self.sanction._get_registration())
 
     def test_format_or_empty(self):
         context = {
@@ -175,7 +177,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     @mock.patch.object(EmailApprovableSanctionTestClass, '_email_template_context')
     def test_notify_authorizer(self, mock_get_email_template_context, mock_send_approval_email):
         mock_get_email_template_context.return_value = 'context'
-        self.sanction._notify_authorizer(self.user)
+        self.sanction._notify_authorizer(self.user, self.sanction._get_registration())
         assert_true(mock_get_email_template_context.called_once_with(self.user, True))
         assert_true(mock_send_approval_email.called_once_with(self.user, 'authorizer', 'context'))
 
@@ -184,7 +186,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     def test_notify_non_authorizer(self, mock_get_email_template_context, mock_send_approval_email):
         mock_get_email_template_context.return_value = 'context'
         other_user = factories.UserFactory()
-        self.sanction._notify_non_authorizer(other_user)
+        self.sanction._notify_non_authorizer(other_user, self.sanction._get_registration())
         assert_true(mock_get_email_template_context.called_once_with(other_user, False))
         assert_true(mock_send_approval_email.called_once_with(other_user, 'non-authorizer', 'context'))
 
@@ -193,33 +195,33 @@ class TestEmailApprovableSanction(SanctionsTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test__notify_authorizer(self, mock_send):
-        self.sanction._notify_authorizer(self.user)
+        self.sanction._notify_authorizer(self.user, self.sanction._get_registration())
         assert_true(mock_send.called)
         args, kwargs = mock_send.call_args
         assert_true(self.user.username in args)
 
     @mock.patch('website.mails.send_mail')
     def test__notify_non_authorizer(self, mock_send):
-        self.sanction._notify_non_authorizer(self.user)
+        self.sanction._notify_non_authorizer(self.user, self.sanction._get_registration())
         assert_true(mock_send.called)
         args, kwargs = mock_send.call_args
         assert_true(self.user.username in args)
 
     @mock.patch('website.mails.send_mail')
     def test_ask(self, mock_send):
-        group = [self.user]
+        group = [(self.user, factories.ProjectFactory())]
         for i in range(5):
-            u = factories.UserFactory()
-            group.append(u)
+            u, n = factories.UserFactory(), factories.ProjectFactory()
+            group.append((u, n))
         self.sanction.ask(group)
-        authorizer = group.pop(0)
+        authorizer = group.pop(0)[0]
         mock_send.assert_any_call(
             authorizer.username,
             self.sanction.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
             user=authorizer,
             **{}
         )
-        for user in group:
+        for user, _ in group:
             mock_send.assert_any_call(
                 user.username,
                 self.sanction.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
@@ -233,7 +235,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
             end_date=datetime.datetime.now() + datetime.timedelta(days=2),
             notify_initiator_on_complete=True
         )
-        sanction.add_authorizer(self.user)
+        sanction.add_authorizer(self.user, sanction._get_registration())
         sanction.save()
         with mock.patch.object(EmailApprovableSanctionTestClass, '_notify_initiator') as mock_notify:
             sanction._on_complete(self.user)
@@ -245,7 +247,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
             end_date=datetime.datetime.now() + datetime.timedelta(days=2),
             notify_initiator_on_complete=True
         )
-        sanction.add_authorizer(self.user)
+        sanction.add_authorizer(self.user, sanction._get_registration())
         sanction.save()
         with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
             sanction._on_complete(self.user)

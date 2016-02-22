@@ -330,55 +330,6 @@ a {
     display: inline-block;
 }
 
-/* Comments Panel */
-.comment-actions i {
-    cursor: pointer;
-}
-
-.comment-info {
-  padding-bottom: 10px;
-}
-
-.comment-container {
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-
-.comment-body {
-    padding: 5px;
-    background-color: white;
-}
-
-.comment-author {
-    color: #999999;
-}
-
-.comment-date {
-    color: #999999;
-}
-.edit-comment {
-    background-color: #F3F3F3;
-}
-
-.comment-body i {
-    padding-right: 5px;
-}
-
-.comment-handle-icon {
-    color: white;
-    vertical-align: middle;
-    line-height: 50px;
-    cursor: pointer;
-    position: relative;
-}
-
-.unread-comments-count {
-    font-size: medium;
-    color: white;
-    position: absolute;
-    margin-left: 40px;
-}
-
 /*  Add-on styles */
 .addon-auth {
     margin-top: 4.8px;

@@ -17,7 +17,7 @@ api_routes = {
                 '/settings/googledrive/accounts/',
             ],
             'get',
-            views.config.list_googledrive_user_accounts,
+            views.googledrive_account_list,
             json_renderer,
 
         ),
@@ -28,7 +28,7 @@ api_routes = {
             ['/project/<pid>/googledrive/folders/',
              '/project/<pid>/node/<nid>/googledrive/folders/'],
             'get',
-            views.hgrid.googledrive_folders,
+            views.googledrive_folder_list,
             json_renderer
         ),
 
@@ -36,7 +36,7 @@ api_routes = {
             ['/project/<pid>/googledrive/config/',
              '/project/<pid>/node/<nid>/googledrive/config/'],
             'get',
-            views.config.googledrive_config_get,
+            views.googledrive_get_config,
             json_renderer
         ),
 
@@ -44,7 +44,7 @@ api_routes = {
             ['/project/<pid>/googledrive/config/',
              '/project/<pid>/node/<nid>/googledrive/config/'],
             'put',
-            views.config.googledrive_config_put,
+            views.googledrive_set_config,
             json_renderer
         ),
 
@@ -52,7 +52,7 @@ api_routes = {
             ['/project/<pid>/googledrive/config/',
              '/project/<pid>/node/<nid>/googledrive/config/'],
             'delete',
-            views.config.googledrive_remove_user_auth,
+            views.googledrive_deauthorize_node,
             json_renderer
         ),
 
@@ -60,7 +60,7 @@ api_routes = {
             ['/project/<pid>/googledrive/config/import-auth/',
              '/project/<pid>/node/<nid>/googledrive/config/import-auth/'],
             'put',
-            views.config.googledrive_import_user_auth,
+            views.googledrive_import_auth,
             json_renderer
         ),
     ],
