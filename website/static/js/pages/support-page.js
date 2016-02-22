@@ -53,10 +53,14 @@ $(document).ready(function(){
         });
     });
 
-    $('.search.collapse').click(function(){
+    $('.search-collapse').click(function(){
         $('.support-item').each(function(){
             _toggleItem($(this), true);
         });
+    });
+
+    $('.search-up').click(function(){
+        $(window).scrollTop(0);
     });
 
     $('.clear-search').click(resetFilter);

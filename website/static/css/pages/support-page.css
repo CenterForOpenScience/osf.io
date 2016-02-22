@@ -68,3 +68,18 @@
     box-shadow: 0 1px 5px #ccc;
     text-align: center;
 }
+.search-layer ul {
+    display: inline-block;
+}
+.search-layer ul li {
+    display: inline;
+    padding: 3px 8px;
+    color: #666666;
+    cursor: pointer;
+}
+.search-layer ul li:hover {
+    color: #293C4A;
+}
+.content-layer {
+    border-top: 1px solid #eee;
+}

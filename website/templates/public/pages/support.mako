@@ -14,21 +14,17 @@
         <input type="text" class="form-control support-filter" placeholder="Search">
         <i class="fa fa-times-circle clear-search" ></i>
         <ul>
-            <li class="search-expand"><i class="fa fa-plus"></i> Expand All </li>
-            <li class="search-collapse"><i class="fa fa-th-list"></i> Collapse All </li>
+            <li class="search-expand"><i class="fa fa-th-list"></i> Expand All </li>
+            <li class="search-collapse"><i class="fa fa-list"></i> Collapse All </li>
             <li class="search-previous"><i class="fa fa-angle-left"></i> Previous</li>
-            <li class="search-next"><i class="fa fa-angle-right"></i> Next</li>
-            <li class="search-up"><i class="fa fa-arrow-circle-up"></i> </li>
+            <li class="search-next">Next <i class="fa fa-angle-right"></i> </li>
+            <li class="search-up"><i class="fa fa-arrow-circle-up"></i> Top </li>
 
         </ul>
-        <div class="btn-group" role="group" aria-label="expand collapse buttons">
-            <button class="btn btn-default btn-sm expand-all"> Expand All </button>
-            <button class="btn btn-default btn-sm collapse-all"> Collapse All </button>
-        </div>
     </div>
 
 
-    <div class="row m-t-md">
+    <div class="content-layer row m-t-md p-t-md">
             <div class="col-sm-8">
             <div class="row">
                 <div class="col-xs-12">
