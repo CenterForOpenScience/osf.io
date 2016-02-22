@@ -263,7 +263,7 @@ def _profile_view(profile, is_profile=False):
         badges = []
 
     if profile:
-        profile_user_data = profile_utils.serialize_user(profile, full=True)
+        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile)
         return {
             'profile': profile_user_data,
             'assertions': badge_assertions,
@@ -822,13 +822,3 @@ def redirect_to_twitter(twitter_handle):
         })
 
     return redirect(user.url)
-
-def view_institution(**kwargs):
-    from website.models import Institution
-    inst = Institution.load(kwargs.get('id'))
-
-    return {
-        'id': kwargs.get('id'),
-        'name': inst.name,
-        'logo_path': inst.logo_path
-    }

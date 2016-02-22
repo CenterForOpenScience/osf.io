@@ -14,27 +14,24 @@
 </div>
 %endif
 
-%if campaign == "institution" and show_institutions:
+%if campaign == "institution" and enable_institutions:
 <div class="text-center m-t-lg">
     <h3>OSF for Institutions </h3>
     <hr>
     <p>
       If your institution has partnered with the Open Science Framework, please
-        select its name below and sign in with your institutional credentials. This action
-        will create an OSF account (if you don’t already have one) and affiliate your account
-        with that institution.
-    To sign up for an OSF without being affilated with an institution, create a free account here.
+        select its name below and sign in with your institutional credentials.
     </p>
 </div>
 %endif
 <div class="row m-t-xl">
-    <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
-        %if campaign == "institution" and show_institutions:
-        <h3 class="m-b-lg"> Login Through Institution</h3>
+    %if campaign == "institution" and enable_institutions:
+    <div class="col-sm-6 col-sm-offset-3 toggle-box toggle-box-active">
+        <h3 class="m-b-lg"> Login through institution</h3>
         <div id="inst">
             <div class="form-group">
-                <label for="selected_inst" class="control-label">Selected Institution</label>
-                <select id="selected_inst" class="form-control" data-bind="options: inst_names"></select>
+                <label for="selectedInst" class="control-label">Select Institution</label>
+                <select id="selectedInst" class="form-control" data-bind="value: selectedInst, options: instNames"></select>
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-3 col-sm-9">
@@ -43,12 +40,14 @@
             </div>
             <div class="form-group" style="padding-top: 15px">
                 <div class="text-center m-t-lg">
-                    <p>To login normally click <a href="/login/">here</a>.</p>
+                    <p>For non-institutional login, click <a href="/login/">here</a>.</p>
                 </div>
             </div>
         </div>
-        %endif
-        %if campaign != "institution" or not show_institutions:
+    </div>
+    %endif
+    %if campaign != "institution" or not enable_institutions:
+    <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
         <form
             id="logInForm"
             class="form-horizontal"
@@ -97,7 +96,6 @@
                 </div>
             </div>
         </form>
-        %endif
     </div>
     <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
         <form data-bind="submit: submit" class="form-horizontal">
@@ -207,18 +205,23 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
-                    <input type="hidden" id="campaign" value="${campaign or ''}" />
                     <button type="submit" class="btn pull-right btn-success ">Create account</button>
                 </div>
             </div>
         </form>
     </div>
+    %endif
 </div>
 
 </%def>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            'campaign': ${campaign or '' | sjson, n}
+        });
+    </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
 </%def>
 

@@ -140,7 +140,7 @@ def auth_login(auth, **kwargs):
 
     data = {}
     if campaign and campaign in campaigns.CAMPAIGNS:
-        if (campaign == 'institution' and not settings.INSTITUTION_HIDE_UI_FLAG) or campaign != 'institution':
+        if (campaign == 'institution' and settings.ENABLE_INSTITUTIONS) or campaign != 'institution':
             data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
 

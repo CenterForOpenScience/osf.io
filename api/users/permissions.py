@@ -25,4 +25,4 @@ class ReadOnlyOrCurrentUserRelationship(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         else:
-            return obj['self'] == request_user
+            return obj['self']._id == request_user._id
