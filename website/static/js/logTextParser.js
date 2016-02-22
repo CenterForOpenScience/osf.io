@@ -224,6 +224,9 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var destination = logObject.attributes.params.destination;
             if(paramIsReturned(destination, logObject)){
+                if (destination.materialized.endsWith('/')){
+                    return m('span', [destination.materialized, ' in ', destination.addon]);
+                }
                 return m('span', [m('a', {href: destination.url}, destination.materialized), ' in ', destination.addon]);
             }
             return m('span','a new name/location' );
