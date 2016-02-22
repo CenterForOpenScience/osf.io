@@ -11,14 +11,14 @@
 <div class="container">
     <h1> Support</h1>
     <div class="row m-t-md">
-        <div class="col-sm-9">
+        <div class="col-sm-8 col-lg-9">
             <input type="text" class="form-control support-filter" placeholder="Search">
             <button class="btn btn-default clear-search">Clear Search</button>
             <button class="btn btn-default expand-all"> Expand All </button>
             <button class="btn btn-default collapse-all"> Collapse All </button>
 
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-xs-12">
                     <h3> Frequently Asked Questions </h3>
                         <div class="support-item m-t-lg">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How much does the OSF service cost?</h5>
@@ -167,8 +167,9 @@
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> I have a DOI for my project on the OSF, but I've decided I'd rather host the material elsewhere. How can I do this without losing/needing a new DOI?</h5>
                             <p class="support-body">Send us an email with your DOI and the new location of your materials and we'll update the URL associated with your DOI. </p>
                         </div>
-                </div>
-                <div class="col-md-6">
+
+
+                        <!-- Getting Started -->
                     <h3> Getting Started with OSF </h3>
 
                         <div class="support-item m-t-lg">
@@ -253,8 +254,8 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-3 support-sidebar">
-            <h4 class="f-w-xl">Get in Touch</h4>
+        <div class="col-sm-4 col-lg-3 support-sidebar">
+            <h4 class="f-w-lg">Get in Touch</h4>
             <p> For emails about technical support:</p>
             <p> support@cos.io</p>
             <p> For all other questions or comments: </p>
