@@ -664,7 +664,6 @@ MEETING_DATA = {
     },
 }
 
-
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
         meeting = meeting.strip()

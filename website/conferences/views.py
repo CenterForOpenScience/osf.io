@@ -222,7 +222,6 @@ def conference_results(meeting):
         'settings': settings,
     }
 
-
 def conference_submissions(**kwargs):
     """Return data for all OSF4M submissions.
 
@@ -248,7 +247,6 @@ def conference_submissions(**kwargs):
             continue
     submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
     return {'submissions': submissions}
-
 
 def conference_view(**kwargs):
     meetings = []

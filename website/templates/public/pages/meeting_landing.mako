@@ -78,33 +78,33 @@
         <div class="row m-v-lg">
             <div class="col-md-12">
                 <div role="tabpanel">
-                     <!-- Nav tabs -->
-                     <ul class="nav nav-tabs m-b-md" role="tablist">
-                         <li role="presentation" class="active">
-                             <a href="#meetings" aria-controls="meetings" role="tab" data-toggle="tab">All meetings</a>
-                         </li>
-                         <li role="presentation">
-                             <a href="#submissions" aria-controls="submissions" role="tab" data-toggle="tab">All submissions</a>
-                         </li>
-                     </ul>
-                     <!-- Tab panes -->
-                     <div class="tab-content">
-                         <div role="tabpanel" class="tab-pane active" id="meetings">
-                             <p>
-                                 <small>Only conferences with at least five submissions are displayed.</small>
-                             </p>
-                             <div id="meetings-grid"></div>
-                         </div>
-                         <div role="tabpanel" class="tab-pane" id="submissions">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs m-b-md" role="tablist">
+                        <li role="presentation" class="active">
+                            <a href="#meetings" aria-controls="meetings" role="tab" data-toggle="tab">All meetings</a>
+                        </li>
+                        <li role="presentation">
+                            <a href="#submissions" aria-controls="submissions" role="tab" data-toggle="tab">All submissions</a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="meetings">
+                            <p>
+                                <small>Only conferences with at least five submissions are displayed.</small>
+                            </p>
+                            <div id="meetings-grid"></div>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="submissions">
 
-                             <div id="submissions-grid">
-                                 <div id="allMeetingsLoader" class="spinner-loading-wrapper">
-                                     <div class="logo-spin logo-lg"></div>
-                                     <p class="m-t-sm fg-load-message"> Loading submissions...</p>
-                                 </div>
-                             </div>
-                         </div>
-                     </div>
+                            <div id="submissions-grid">
+                                <div id="allMeetingsLoader" class="spinner-loading-wrapper">
+                                    <div class="logo-spin logo-lg"></div>
+                                    <p class="m-t-sm fg-load-message"> Loading submissions...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
