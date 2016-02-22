@@ -7,4 +7,5 @@ Please verify your email address by visiting this link:
 ${confirmation_url}
 
 The OSF Team
+
 Center for Open Science
