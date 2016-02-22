@@ -20,7 +20,6 @@ class TestInstitutionAuth(ApiTestCase):
     def setUp(self):
         super(TestInstitutionAuth, self).setUp()
         self.institution = InstitutionFactory()
-        self.institution.domains.append('uva.edu')
         self.institution.save()
         self.url = '/{0}institutions/auth/'.format(API_BASE)
 
@@ -49,8 +48,7 @@ class TestInstitutionAuth(ApiTestCase):
         }, settings.JWT_SECRET, algorithm='HS256'), settings.JWE_SECRET)
 
     def test_creates_user(self):
-        username = 'hmoco@{}'.format(self.institution.domains[0])
-
+        username = 'hmoco@circle.edu'
         assert_equal(User.find(Q('username', 'eq', username)).count(), 0)
 
         with capture_signals() as mock_signals:
@@ -65,7 +63,7 @@ class TestInstitutionAuth(ApiTestCase):
         assert_in(self.institution, user.affiliated_institutions)
 
     def test_adds_institution(self):
-        username = 'hmoco@{}'.format(self.institution.domains[0])
+        username = 'hmoco@circle.edu'
 
         user = User(username=username, fullname='Mr Moco')
         user.save()
@@ -80,7 +78,7 @@ class TestInstitutionAuth(ApiTestCase):
         assert_in(self.institution, user.affiliated_institutions)
 
     def test_finds_user(self):
-        username = 'hmoco@{}'.format(self.institution.domains[0])
+        username = 'hmoco@circle.edu'
 
         user = User(username=username, fullname='Mr Moco')
         user.affiliated_institutions.append(self.institution)
