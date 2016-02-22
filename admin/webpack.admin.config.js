@@ -25,7 +25,6 @@ common.output = {
     sourcePrefix: ''
 };
 
-
 var config = assign({}, common, {
     entry: {
         'admin-base-page': staticAdminPath('js/pages/base-page.js'),

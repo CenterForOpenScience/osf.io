@@ -72,14 +72,24 @@ class RegistrationSerializer(NodeSerializer):
     )))
 
     parent = HideIfRetraction(RelationshipField(
-        related_view='nodes:node-detail',
+        related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<parent_id>'}
     ))
 
     logs = HideIfRetraction(RelationshipField(
-        related_view='nodes:node-logs',
+        related_view='registrations:registration-logs',
         related_view_kwargs={'node_id': '<pk>'},
     ))
+
+    root = HideIfRetraction(RelationshipField(
+        related_view='registrations:registration-detail',
+        related_view_kwargs={'node_id': '<root._id>'}
+    ))
+
+    primary_institution = RelationshipField(
+        related_view='registrations:registration-institution-detail',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
 
     # TODO: Finish me
 

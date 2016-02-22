@@ -88,14 +88,14 @@ USE_CDN_FOR_CLIENT_LIBS = True
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 SUPPORT_EMAIL = 'support@osf.io'
+
+# SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
-# Mandrill
-MANDRILL_USERNAME = None
-MANDRILL_PASSWORD = None
-MANDRILL_MAIL_SERVER = None
+# OR, if using Sendgrid's API
+SENDGRID_API_KEY = None
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
@@ -192,6 +192,7 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     addon_settings = json.load(fp)
     ADDONS_REQUESTED = addon_settings['addons']
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
+    ADDONS_COMMENTABLE = addon_settings['addons_commentable']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -267,7 +268,7 @@ MFR_SERVER_URL = 'http://localhost:7778'
 ###### ARCHIVER ###########
 ARCHIVE_PROVIDER = 'osfstorage'
 
-MAX_ARCHIVE_SIZE = 1024 ** 3  # == math.pow(1024, 3) == 1 GB
+MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
 MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
@@ -295,6 +296,7 @@ CELERY_IMPORTS = (
     'website.notifications.tasks',
     'website.archiver.tasks',
     'website.search.search',
+    'api.caching.tasks'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
@@ -328,3 +330,5 @@ DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
 
 PREREG_ADMIN_TAG = "prereg_admin"
+
+ENABLE_INSTITUTIONS = False
