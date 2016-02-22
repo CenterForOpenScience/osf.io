@@ -386,7 +386,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                addon_settings = node.get_addon(external_account.provider)
+                addon_settings = node.get_addon(external_account.provider, deleted=True)
             except AttributeError:
                 # No associated addon settings despite oauth grant
                 pass
