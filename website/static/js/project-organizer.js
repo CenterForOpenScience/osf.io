@@ -188,9 +188,9 @@ function _poColumnTitles() {
  * @private
  */
 function _poResolveToggle(item) {
-    var toggleMinus = m('i.fa.fa-minus'),
-        togglePlus = m('i.fa.fa-plus'),
-        childrenCount = item.data.relationships.children.links.related.meta.count;
+    var toggleMinus = m('i.fa.fa-minus');
+    var togglePlus = m('i.fa.fa-plus');
+    var childrenCount = item.data.relationships.children ? item.data.relationships.children.links.related.meta.count : 0;
     if (childrenCount > 0) {
         if (item.open) {
             return toggleMinus;
@@ -214,7 +214,8 @@ function _poResolveLazyLoad(item) {
     }
     if(node.relationships.children){
         //return node.relationships.children.links.related.href;
-        return $osf.apiV2Url('nodes/' + node.id + '/children/', {
+        var urlPrefix = node.attributes.registration ? 'registrations' : 'nodes';
+        return $osf.apiV2Url(urlPrefix + '/' + node.id + '/children/', {
             query : {
                 'related_counts' : 'children',
                 'embed' : 'contributors'
