@@ -3,12 +3,13 @@
 """Populate development database with Institution fixtures."""
 import sys
 
+from website import settings
 from website.app import init_app
 from website.models import Institution
 from framework.transactions.context import TokuTransaction
 
 ENVS = ['prod', 'nonprod']
-SHIBBOLETH_SP = 'https://staging-accounts.osf.io/Shibboleth.sso/Login?entityID={}'
+SHIBBOLETH_SP = settings.CAS_SERVER_URL + '/Shibboleth.sso/Login?entityID={}'
 
 def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
