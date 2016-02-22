@@ -112,6 +112,6 @@ $(function() {
     }
     new NavbarControl('.osf-nav-wrapper');
     if(window.contextVars.keenProjectId){
-        new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteId);
+        new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey);
     }
 });
