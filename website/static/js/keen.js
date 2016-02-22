@@ -3,7 +3,7 @@ var oop = require('js/oop');
 var uuid = require('uuid');
 
 var KeenTracker = oop.defclass({
-    constructor: function(keenProjectID, keenWriteKey) {
+    constructor: function(keenProjectId, keenWriteKey) {
         this.keenClient = new keen({
             projectId: keenProjectId,
             writeKey: keenWriteKey
@@ -81,7 +81,11 @@ var KeenTracker = oop.defclass({
                 visit.currentUser = ctx.currentUser;
             }
 
-            this.keenClient.addEvent('visits', visit);
+            this.keenClient.addEvent('visits', visit, function(err){
+                if(err){
+                    throw 'Error sending Keen data: ' + err;
+                }
+            });
         }
     },
 
@@ -119,7 +123,11 @@ var KeenTracker = oop.defclass({
             pageView.user = ctx.currentUser;
         }
 
-        this.keenClient.addEvent('pageviews', pageView);
+        this.keenClient.addEvent('pageviews', pageView, function(err){
+            if(err){
+                throw 'Error sending Keen data: ' + err;
+            }
+        });
     },
 
     trackCustomEvent: function(eventCollection, eventData){
