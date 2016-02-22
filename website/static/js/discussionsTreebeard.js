@@ -40,7 +40,7 @@ function openAncestors (tb, item) {
     }
 }
 
-function subscribe(item, notification_type) {
+function subscribe(item, notification_type, reload) {
     var id = item.data.node.id;
     var url = window.contextVars.node.urls.api  + 'discussions/';
     var method = notification_type === 'enabled' ? 'POST' : 'DELETE';
@@ -52,6 +52,7 @@ function subscribe(item, notification_type) {
         //'notfiy-success' is to override default class 'success' in treebeard
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
         item.data.node.discussions = notification_type;
+        reload();
     }).fail(function() {
         item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
     });
@@ -72,7 +73,7 @@ function displayParentNotificationType(item){
 }
 
 
-function ProjectDiscussions(data) {
+function ProjectDiscussions(data, reload) {
 
     //  Treebeard version
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
@@ -141,7 +142,7 @@ function ProjectDiscussions(data) {
                         return m('div[style="padding-right:10px"]',
                             [m('select.form-control', {
                                 onchange: function(ev) {
-                                    subscribe(item, ev.target.value);
+                                    subscribe(item, ev.target.value, reload);
                                 }},
                                 [
                                     m('option', {value: 'disabled', selected : item.data.node.discussions === 'disabled' ? 'selected': ''}, 'Mailing List Disabled'),

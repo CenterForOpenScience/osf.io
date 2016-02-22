@@ -13,44 +13,48 @@ require('css/addonsettings.css');
 
 var ctx = window.contextVars;
 
-
-// Initialize treebeard grid for notifications
 var ProjectNotifications = require('js/notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
-// Need check because notifications settings don't exist on registration's settings page
-if ($('#grid').length) {
-    $.ajax({
-        url: notificationsURL,
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
-        new ProjectNotifications(response);
-    }).fail(function(xhr, status, error) {
-        $notificationsMsg.addClass('text-danger');
-        $notificationsMsg.text('Could not retrieve notification settings.');
-        Raven.captureMessage('Could not GET notification settings.', {
-            url: notificationsURL, status: status, error: error
+
+function initNotificationsTB() {
+    // Initialize treebeard grid for notifications
+    // Need check because notifications settings don't exist on registration's settings page
+    if ($('#grid').length) {
+        $.ajax({
+            url: notificationsURL,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(response) {
+            new ProjectNotifications(response);
+        }).fail(function(xhr, status, error) {
+            $notificationsMsg.addClass('text-danger');
+            $notificationsMsg.text('Could not retrieve notification settings.');
+            Raven.captureMessage('Could not GET notification settings.', {
+                url: notificationsURL, status: status, error: error
+            });
         });
-    });
+    }
 }
+initNotificationsTB();
 
 //Initialize treebeard grid for node admins
 var ProjectDiscussions = require('../discussionsTreebeard.js');
 var discussionsSettingsURL = ctx.node.urls.api + 'discussions/';
 var $discussionsMsg = $('#configureDiscussionsMessage');
 
-$.ajax({
-    url: discussionsSettingsURL,
-    type: 'GET',
-    dataType: 'json'
-}).done( function(response) {
-    new ProjectDiscussions(response);
-}).fail( function() {
-    $discussionsMsg.addClass('text-danger');
-    $discussionsMsg.text('Could not retrieve notification settings.');
-});
-
+if ($('#discussionsGrid').length) {
+    $.ajax({
+        url: discussionsSettingsURL,
+        type: 'GET',
+        dataType: 'json'
+    }).done( function(response) {
+        new ProjectDiscussions(response, initNotificationsTB);
+    }).fail( function() {
+        $discussionsMsg.addClass('text-danger');
+        $discussionsMsg.text('Could not retrieve notification settings.');
+    });
+}
 //Initialize treebeard grid for wiki
 var ProjectWiki = require('js/wikiSettingsTreebeard.js');
 var wikiSettingsURL = ctx.node.urls.api  + 'wiki/settings/';
@@ -102,14 +106,6 @@ $(document).ready(function() {
 
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);
-    });
-
-    $('#enableDiscussions').on('click', function() {
-        projectSettingsVM.enableDiscussions();
-    });
-
-    $('#disableDiscussions').on('click', function() {
-        projectSettingsVM.disableDiscussions(ctx.node.nodeType);
     });
 
     // TODO: Knockout-ify me
