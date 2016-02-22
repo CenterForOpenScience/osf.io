@@ -17,7 +17,6 @@ def create_conference(request):
             else:
                 print(form.errors)
                 messages.error(request, 'Test..')
-
                 return redirect('conferences:create_conference')
         else:
             context = {'form': form}
@@ -27,12 +26,11 @@ def create_conference(request):
         return redirect('auth:login')
 
 
-def populate_conferences():
-    # objects = Conference.objects.all()
-    # for obj in objects:
-    for meeting, attrs in MEETING_DATA.iteritems():
-        meeting = meeting.strip() #obj.endpoint.strip()
-        admin_emails = attrs.pop('admins', []) # obj.admins
+def add_conference_to_OSF():
+    objects = Conference.objects.all()
+    for obj in objects:
+        obj.endpoint.strip()
+        admin_emails = obj.admins
         admin_objs = []
         for email in admin_emails:
             try:
@@ -41,17 +39,17 @@ def populate_conferences():
             except ModularOdmException:
                 raise RuntimeError('Username {0!r} is not registered.'.format(email))
 
-        custom_fields = attrs.pop('field_names', {}) # obj.field_names
+        custom_fields = obj.field_names
 
         conf = Conference(
-            endpoint=meeting, admins=admin_objs, **attrs # =
-        ) #
+            endpoint=meeting, admins=admin_objs, **attrs # What is equivalent call for creating OSF obj from Admin?
+        )
         conf.field_names.update(custom_fields)
         try:
             conf.save()
         except ModularOdmException:
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
-            for key, value in attrs.items():
+            for key, value in objects.items():
                 if isinstance(value, dict):
                     current = getattr(conf, key)
                     current.update(value)
