@@ -83,3 +83,6 @@
 .content-layer {
     border-top: 1px solid #eee;
 }
+.support-item.search-selected {
+    box-shadow: 0 0 5px #9195AD;
+}

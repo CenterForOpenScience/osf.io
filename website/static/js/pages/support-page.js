@@ -44,6 +44,10 @@ $(document).ready(function(){
 
     var searchItemIndex = 0; // Index for which search result is now supposed to be in view; for prev and next buttons
 
+    function scrollTo (el) {
+        var location = el.offsetTop;
+        $(window).scrollTop(location-150);
+    }
     // Toggle individual view when clicked on header
     $('.support-head').click(function(){
         var item = $(this).parent();
@@ -66,10 +70,24 @@ $(document).ready(function(){
         $(window).scrollTop(0);
     });
     $('.search-previous').click(function(){
-
+        if(searchItemIndex > 0){
+            var openItems = $('.support-item.open');
+            var prevEl = openItems.get(searchItemIndex-1);
+            scrollTo(prevEl);
+            $(prevEl).addClass('search-selected');
+            $(openItems.get(searchItemIndex)).removeClass('search-selected');
+            searchItemIndex--;
+        }
     });
     $('.search-next').click(function(){
-
+        var openItems = $('.support-item.open');
+        var nextEl = openItems.get(searchItemIndex+1);
+        if(nextEl){
+            scrollTo(nextEl);
+            $(nextEl).addClass('search-selected');
+            $(openItems.get(searchItemIndex)).removeClass('search-selected');
+            searchItemIndex++;
+        }
     });
 
 
