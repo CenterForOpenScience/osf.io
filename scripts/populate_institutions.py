@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
 import sys
+import urllib
 
 from website import settings
 from website.app import init_app
@@ -9,7 +10,8 @@ from website.models import Institution
 from framework.transactions.context import TokuTransaction
 
 ENVS = ['prod', 'nonprod']
-SHIBBOLETH_SP = settings.CAS_SERVER_URL + '/Shibboleth.sso/Login?entityID={}'
+TARGET_URL = '/login?service={}&auto=true'.format(urllib.quote(settings.DOMAIN, safe='~()*!.\''))
+SHIBBOLETH_SP = '{}/Shibboleth.sso/Login?entityID={{}}&target={}'.format(settings.CAS_SERVER_URL, urllib.quote(TARGET_URL, safe='~()*!.\''))
 
 def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
@@ -34,7 +36,7 @@ def main(env):
             '_id': 'VT',
             'logo_name': 'virginia-tech.jpg',
             'auth_url': SHIBBOLETH_SP.format(
-                'https://shib-pprd.middleware.vt.edu'
+                urllib.quote('https://shib-pprd.middleware.vt.edu', safe='~()*!.\'')
             )
         },
         {
@@ -42,7 +44,7 @@ def main(env):
             '_id': 'ND',
             'logo_name': 'notre-dame.jpg',
             'auth_url': SHIBBOLETH_SP.format(
-                'https://login.nd.edu/idp/shibboleth' if env == 'prod' else 'https://login-test.cc.nd.edu/idp/shibboleth'
+                urllib.quote('https://login.nd.edu/idp/shibboleth', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://login-test.cc.nd.edu/idp/shibboleth', safe='~()*!.\'')
             )
         }
     ]
