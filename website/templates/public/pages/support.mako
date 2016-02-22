@@ -11,7 +11,7 @@
 <div class="container">
     <h1> Support</h1>
     <div class="row m-t-md">
-        <div class="col-md-9">
+        <div class="col-sm-9">
             <input type="text" class="form-control support-filter" placeholder="Search">
             <button class="btn btn-default clear-search">Clear Search</button>
             <button class="btn btn-default expand-all"> Expand All </button>
@@ -253,7 +253,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-sm-3 support-sidebar">
             <h4 class="f-w-xl">Get in Touch</h4>
             <p> For emails about technical support:</p>
             <p> support@cos.io</p>
