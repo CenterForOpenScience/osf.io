@@ -3,7 +3,7 @@ var oop = require('js/oop');
 var uuid = require('uuid');
 
 var KeenTracker = oop.defclass({
-    constructor: function(keenProjectId, keenWriteKey) {
+    constructor: function(keenProjectID, keenWriteKey) {
         this.keenClient = new keen({
             projectId: keenProjectId,
             writeKey: keenWriteKey
@@ -15,35 +15,35 @@ var KeenTracker = oop.defclass({
         var date = new Date();
         var min = 25;
         var expDate = date.setTime(date.getTime() + (min*60*1000));
-        if(!$.cookie('keenSessionID')){
-            $.cookie('keenSessionID', uuid.v1(), {expires: expDate, path: '/'});
+        if(!$.cookie('keenSessionId')){
+            $.cookie('keenSessionId', uuid.v1(), {expires: expDate, path: '/'});
         } else {
-            var sessionID = $.cookie('keenSessionID');
-            $.cookie('keenSessionID', sessionID, {expires: expDate, path: '/'});
+            var sessionId = $.cookie('keenSessionId');
+            $.cookie('keenSessionId', sessionId, {expires: expDate, path: '/'});
         }
     },
 
-    getOrCreateKeenID: function() {
-        if(!$.cookie('keenID')){
-            $.cookie('keenID', uuid.v1(), {expires: 365, path: '/'});
+    getOrCreateKeenId: function() {
+        if(!$.cookie('keenId')){
+            $.cookie('keenId', uuid.v1(), {expires: 365, path: '/'});
         }
 
-        return $.cookie('keenID');
+        return $.cookie('keenId');
     },
 
     trackVisit: function(){
         var ctx = window.contextVars;
-        if(!$.cookie('keenSessionID')){
+        if(!$.cookie('keenSessionId')){
             this.createOrUpdateKeenSession();
-            var returning = $.cookie('keenID') ? true : false;
+            var returning = $.cookie('keenId') ? true : false;
             var visit = {
                 'userAgent': '${keen.user_agent}',
                 'referrer': {
                     'url': document.referrer
                 },
                 'ipAddress': '${keen.ip}',
-                'sessionID': $.cookie('keenSessionID'),
-                'keenID': this.getOrCreateKeenID(),
+                'sessionId': $.cookie('keenSessionId'),
+                'keenId': this.getOrCreateKeenId(),
                 'returning': returning,
                 'pageUrl': document.URL,
                 'keen': {
@@ -101,8 +101,8 @@ var KeenTracker = oop.defclass({
                     }
                 ]
             },
-            'keenID': this.getOrCreateKeenID(),
-            'sessionID': $.cookie('keenSessionID'),
+            'keenId': this.getOrCreateKeenId(),
+            'sessionId': $.cookie('keenSessionId'),
             'pageTitle': document.title
             //'generation_time': ''
             //'timeSpend': ''
