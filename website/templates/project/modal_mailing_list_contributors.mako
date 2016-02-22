@@ -6,9 +6,9 @@
             </div>
 
             <div class="modal-body">
-                <h4 class="text-center">
+                <h4 class="row text-center">
                 <div class="btn-group">
-                    <button data-clipboard-text="${node['id']}@osf.io" title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button zeroclipboard-is-hover">
+                    <button data-clipboard-text="${node['id']}@osf.io" title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button zeroclipboard-is-hover" style="margin-right: 0px">
                         <i class="fa fa-copy"></i>
                     </button>
                     <input readonly="readonly" class="link-url", click: toggle, clickBubble: false type="text", value="${node['id']}@osf.io">
@@ -17,7 +17,7 @@
                 
                 % if len(node['discussions_unsubs']):
                     <p>${node['contrib_count'] - len(node['discussions_unsubs'])} out of ${node['contrib_count']} contributors will receive any email sent to this address.</p>
-                    <p>A contributor who is not subscribed to this mailing list will not recieve any emails sent to it. To
+                    <p>A contributor who is not subscribed to this mailing list will not receive any emails sent to it. To
                     % if user['is_admin']:
                         disable or 
                     % endif:

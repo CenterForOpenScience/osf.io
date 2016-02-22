@@ -60,7 +60,7 @@ def find_email(long_email):
 
 
 def route_message(**kwargs):
-    """ Recieves messages sent through Mailgun, validates them, and warns the
+    """ Acquires messages sent through Mailgun, validates them, and warns the
     user if they are not valid"""
     message = request.form
     target = find_email(message['To'])

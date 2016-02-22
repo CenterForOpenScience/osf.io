@@ -31,6 +31,11 @@
     margin: 0;
 }
 
+.link-url{
+    padding: 3px 0px;
+    background-color: #F5F5F5;
+}
+
 .node-title {
     line-height: 44px;
     border-bottom: none;
