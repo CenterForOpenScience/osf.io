@@ -4293,7 +4293,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     def _add_success_logs(self, node, user):
         src = node.registered_from
         log_type = NodeLog.PROJECT_REGISTERED
-
+        submitted_time = None
         try:
             draft = DraftRegistration.find_one(Q("registered_node", "eq", node))
             is_prereg = "Prereg" in draft.registration_schema.name
