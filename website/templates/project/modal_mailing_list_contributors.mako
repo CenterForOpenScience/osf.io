@@ -24,8 +24,9 @@
                         unsubscribe from this mailing list, visit the <a href="${node['url']}settings/#configureNotificationsAnchor" class="">${node['category']} settings</a>.
                     </p>
                     <div style="padding-left: 15px; background-color: #F5F5F5; border: 1px solid #CCC;">
+                        Contributors not on this list: 
                         <a id="unsubToggle" role="button" data-toggle="collapse" href="#unsubContribs" aria-expanded="false" aria-controls="unsubContribs">
-                            Contributors not on this list:
+                            Show
                         </a>
                         <div id="unsubContribs" class="panel-collapse collapse" role="tabpanel" aria-expanded="false" aria-labelledby="unsubToggle">
                         % for each in node['discussions_unsubs']:
@@ -50,3 +51,14 @@
         </div><!-- end modal-content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
+
+<script>
+$(document).ready(function() {
+    $('#unsubContribs').on('hide.bs.collapse', function () {
+        $('#unsubToggle').text('Show');
+    });
+    $('#unsubContribs').on('show.bs.collapse', function () {
+        $('#unsubToggle').text('Hide');
+    });
+});
+</script>
