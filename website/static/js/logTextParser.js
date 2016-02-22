@@ -224,7 +224,7 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var destination = logObject.attributes.params.destination;
             if(paramIsReturned(destination, logObject)){
-                return m('span', [m('a', {href: destination.url}), destination.materialized, ' in ', destination.addon]);
+                return m('span', [m('a', {href: destination.url}, destination.materialized), ' in ', destination.addon]);
             }
             return m('span','a new name/location' );
         }
@@ -348,6 +348,16 @@ var LogPieces = {
                 return m('span', institution.name);
             }
             return m('span', 'an institution');
+        }
+    },
+
+    comment_file: {
+        view: function(ctrl,logObject){
+            var file = logObject.attributes.params.file;
+            if (file){  // skipe paramIsReturned, as not having a file is expected at times
+                return m('span', ['in ', m('a', {href: file.url}, file.name)]);
+            }
+            return m('span', '');
         }
     }
 };
