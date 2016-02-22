@@ -257,18 +257,18 @@
         <div class="col-sm-4 col-lg-3 support-sidebar">
             <h4 class="f-w-lg">Get in Touch</h4>
             <p> For emails about technical support:</p>
-            <p> support@cos.io</p>
+            <p> <a href="mailto:support@cos.io" class="text-bigger">support@cos.io</a></p>
             <p> For all other questions or comments: </p>
-            <p>contact@cos.io</p>
-            <h4 class="f-w-xl"> Do you have Prereg Challenge related questions? </h4>
+            <p><a href="mailto:contact@cos.io" class="text-bigger">contact@cos.io</a></p>
+            <h5 class="m-t-md f-w-xl"> Do you have Prereg Challenge related questions? </h4>
                 <p>Check out our [Prereg section] on the cos.io website. </p>
-            <h4 class="f-w-xl"> Are you looking for statistics consultations?</h4>
+            <h5 class="m-t-md f-w-xl"> Are you looking for statistics consultations?</h4>
                 <p>COS provides statistics consulation for free. To learn more about this service visit the [COS statistics consulting pages].</p>
 
-            <h4 class="f-w-xl"> Other ways to get help </h4>
-            <button class="btn btn-sm btn-default"> Ask us a question on twitter </button>
-            <button class="btn btn-sm btn-default"> Join our mailing list </button>
-            <button class="btn btn-sm btn-default"> Follow us on Facebook </button>
+            <h5 class="m-t-md f-w-xl"> Other ways to get help </h4>
+            <button class="btn btn-sm btn-link"><i class="fa fa-twitter"></i> Ask us a question on twitter </button>
+            <button class="btn btn-sm btn-link"><i class="fa fa-users"></i> Join our mailing list </button>
+            <button class="btn btn-sm btn-link"><i class="fa fa-facebook"></i> Follow us on Facebook </button>
 
         </div>
     </div>

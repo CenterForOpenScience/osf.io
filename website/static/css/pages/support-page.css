@@ -35,3 +35,6 @@
     border-top: 1px solid #f5f5f5;
     border-left: 1px solid #f5f5f5;
 }
+.support-sidebar p {
+    font-size: 13px;
+}
