@@ -41,6 +41,9 @@ $(document).ready(function(){
         $('.support-filter').val('');
         $('.clear-search').removeClass('clear-active');
     }
+
+    var searchItemIndex = 0; // Index for which search result is now supposed to be in view; for prev and next buttons
+
     // Toggle individual view when clicked on header
     $('.support-head').click(function(){
         var item = $(this).parent();
@@ -62,6 +65,13 @@ $(document).ready(function(){
     $('.search-up').click(function(){
         $(window).scrollTop(0);
     });
+    $('.search-previous').click(function(){
+
+    });
+    $('.search-next').click(function(){
+
+    });
+
 
     $('.clear-search').click(resetFilter);
 
