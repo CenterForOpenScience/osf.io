@@ -3,36 +3,17 @@
 var $ = require('jquery');
 var ko = require('knockout');
 
-var $osf = require('js/osfHelpers');
 ko.punches.enableAll();
 
 var FileBrowser = require('js/dashboard.js').Dashboard;
 var LinkObject = require('js/dashboard.js').LinkObject;
+var InstitutionNodes = require('js/institutionNodes.js');
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-
-var InstitutionViewModel = function() {
-    var self = this;
-    self.id = window.contextVars.institution.id;
-    self.allNodes = ko.observable();
-    // Need to get the node
-    $osf.ajaxJSON(
-        'GET',
-        window.contextVars.apiV2Prefix + 'institutions/' + self.id + '/nodes/',
-        {
-            isCors: true
-        }
-    ).done( function(response){
-        self.allNodes(response.data);
-    }).fail(function(response){
-    });
-};
 
 
 $(document).ready(function() {
-    var self = this;
     var institutionId = window.contextVars.institution.id;
-    self.viewModel = new InstitutionViewModel();
-    $osf.applyBindings(self.viewModel, '#inst');
+    new InstitutionNodes('#inst', window.contextVars);
     m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {
         wrapperSelector : '#fileBrowser',
         systemCollections:[

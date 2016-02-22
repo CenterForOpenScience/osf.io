@@ -7,13 +7,14 @@
 % if disk_saving_mode:
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
+    <div id="inst">
 <div class="dashboard-header">
     <div class="row" style="text-align: center">
         <div class="col-sm-2"></div>
         <div class="col-sm-3"><img class="img-circle" height="110" width="110" src=${ logo_path }></div>
         <div class="col-sm-3">
             <h2>${ name }</h2>
-            <h4><small class="hidden-sm">This is an institution. This is a small blurb about this institution. Cool, right?</small></h4>
+            <h4><small data-bind="text: instDescription" class="hidden-sm">Loading description ...</small></h4>
         </div>
         <div class="col-sm-2"></div>
     </div>
@@ -24,7 +25,7 @@
        <p class="m-t-sm fg-load-message"> Loading projects...  </p>
     </div>
   </div>
-    <div id="inst"></div>
+    </div>
 </%def>
 
 <%def name="stylesheets()">
