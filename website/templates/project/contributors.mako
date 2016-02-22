@@ -353,7 +353,7 @@
                 <!-- /ko -->
             </div>
         </td>
-        <td>
+        <td class="text-center">
             <div class="header" data-bind="visible: contributor.expanded() && $root.collapsed()"></div>
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <input

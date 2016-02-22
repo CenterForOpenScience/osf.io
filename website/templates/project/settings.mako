@@ -367,7 +367,7 @@
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Email Notifications</h3>
                     </div>
-                    % if node['discussions_enabled']:  ## Begin Project Mailing Lists Settings
+                    % if node['discussions_enabled'] or user['is_admin']:  ## Begin Project Mailing Lists Settings
                         <br/>
                         <div style="padding-left: 15px">
                             <a data-toggle="modal" data-target="#discussionsContributorsModal"><i class="fa fa-envelope"></i></a>
