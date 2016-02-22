@@ -76,7 +76,6 @@ Registration of
 initiated registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: projectUrl}"></a>.
     It was submitted for review to the Preregistration Challenge on
-##     <span class="log-node-title-link overflow" data-bind="text: params.submitted_time"></span>
     <span class="date log-date" data-bind="text: log.params.submitted_time.local, tooltip: {title: log.params.submitted_time.utc}"></span>
 </script>
 
