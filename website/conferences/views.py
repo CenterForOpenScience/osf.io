@@ -14,7 +14,7 @@ from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 
 from website import settings
-from website.models import Node
+from website.models import Node, Tag
 from website.util import web_url_for
 from website.mails import send_mail
 from website.files.models import StoredFileNode
