@@ -17,7 +17,8 @@ def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
     if inst:
         for key, val in inst_data.iteritems():
-            inst.key = val
+            if key != '_id':
+                inst.key = val
         changed_fields = inst.save()
         if changed_fields:
             print('Updated {}: {}'.format(inst.name, changed_fields))
