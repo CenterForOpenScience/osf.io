@@ -13,7 +13,7 @@ var KeenTracker = oop.defclass({
 
     createOrUpdateKeenSession: function() {
         var date = new Date();
-        var min = 25;
+        var expiresInMin = 25;
         var expDate = date.setTime(date.getTime() + (min*60*1000));
         if(!$.cookie('keenSessionId')){
             $.cookie('keenSessionId', uuid.v1(), {expires: expDate, path: '/'});
@@ -24,78 +24,52 @@ var KeenTracker = oop.defclass({
     },
 
     getOrCreateKeenId: function() {
-        if(!$.cookie('keenId')){
-            $.cookie('keenId', uuid.v1(), {expires: 365, path: '/'});
+        if(!$.cookie('keenUserId')){
+            $.cookie('keenUserId', uuid.v1(), {expires: 365, path: '/'});
         }
 
-        return $.cookie('keenId');
-    },
-
-    trackVisit: function(){
-        var ctx = window.contextVars;
-        if(!$.cookie('keenSessionId')){
-            this.createOrUpdateKeenSession();
-            var returning = $.cookie('keenId') ? true : false;
-            var visit = {
-                'userAgent': '${keen.user_agent}',
-                'referrer': {
-                    'url': document.referrer
-                },
-                'ipAddress': '${keen.ip}',
-                'sessionId': $.cookie('keenSessionId'),
-                'keenId': this.getOrCreateKeenId(),
-                'returning': returning,
-                'pageUrl': document.URL,
-                'keen': {
-                    'addons': [
-                        {
-                            'name': 'keen:ip_to_geo',
-                            'input': {
-                                'ip': 'ipAddress'
-                            },
-                            'output': 'ipGeoInfo'
-                        },
-                        {
-                            'name': 'keen:ua_parser',
-                            'input': {
-                                'ua_string': 'userAgent'
-                            },
-                            'output': 'parsedUserAgent'
-                        },
-                        {
-                            'name': 'keen:referrer_parser',
-                            'input': {
-                                'referrer_url': 'referrer.url',
-                                'page_url': 'pageUrl'
-                            },
-                            'output': 'referrer.info'
-                        }
-                    ]
-                }
-                // 'daysSinceFirstVisit':'',
-                // 'daysSinceLastVisit': '',
-                //'resolution': '' //temp user agent stuff
-            };
-
-            if(ctx.currentUser){
-                visit.currentUser = ctx.currentUser;
-            }
-
-            this.keenClient.addEvent('visits', visit, function(err){
-                if(err){
-                    throw 'Error sending Keen data: ' + err;
-                }
-            });
-        }
+        return $.cookie('keenUserId');
     },
 
     trackPageView: function(){
         this.createOrUpdateKeenSession();
         var ctx = window.contextVars;
+        var returning = $.cookie('keenUserId') ? true : false;
         var pageView = {
             'pageUrl': document.URL,
+            'keenUserId': this.getOrCreateKeenId(),
+            'sessionId': $.cookie('keenSessionId'),
+            'pageTitle': document.title,
+            'userAgent': '${keen.user_agent}',
+            'referrer': {
+                'url': document.referrer
+            },
+            'ipAddress': '${keen.ip}',
+            'returning': returning,
             'keen': {
                 'addons': [
+                    {
+                        'name': 'keen:ip_to_geo',
+                        'input': {
+                            'ip': 'ipAddress'
+                        },
+                        'output': 'ipGeoInfo'
+                    },
+                    {
+                        'name': 'keen:ua_parser',
+                        'input': {
+                            'ua_string': 'userAgent'
+                        },
+                        'output': 'parsedUserAgent'
+                    },
+                    {
+                        'name': 'keen:referrer_parser',
+                        'input': {
+                            'referrer_url': 'referrer.url',
+                            'page_url': 'pageUrl'
+                        },
+                        'output': 'referrer.info'
+                    },
                     {
                         'name' : 'keen:url_parser',
                         'input' : {
@@ -104,10 +78,10 @@ var KeenTracker = oop.defclass({
                         'output' : 'parsedPageUrl'
                     }
                 ]
-            },
-            'keenId': this.getOrCreateKeenId(),
-            'sessionId': $.cookie('keenSessionId'),
-            'pageTitle': document.title
+            }
+            // 'daysSinceFirstVisit':'',
+            // 'daysSinceLastVisit': '',
+            //'resolution': '' //temp user agent stuff
             //'generation_time': ''
             //'timeSpend': ''
         };
@@ -135,7 +109,6 @@ var KeenTracker = oop.defclass({
     },
 
     init: function(){
-        this.trackVisit();
         this.trackPageView();
     }
 });
