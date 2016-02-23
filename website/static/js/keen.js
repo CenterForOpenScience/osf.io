@@ -1,5 +1,8 @@
+"use strict";
+
 var keen = require('keen-js');
 var oop = require('js/oop');
+var $ = require('jquery');
 var uuid = require('uuid');
 
 var KeenTracker = oop.defclass({
@@ -99,13 +102,9 @@ var KeenTracker = oop.defclass({
 
         this.keenClient.addEvent('pageviews', pageView, function(err){
             if(err){
-                throw 'Error sending Keen data: ' + err;
+                throw new Error('Error sending Keen data: ' + err);
             }
         });
-    },
-
-    trackCustomEvent: function(eventCollection, eventData){
-        this.keenClient.addEvent(eventCollection, eventData);
     },
 
     init: function(){
