@@ -116,7 +116,8 @@ def auth_login(auth, **kwargs):
 
     """
     campaign = request.args.get('campaign')
-    next_url = request.args.get('next')
+    if campaign:
+        next_url = request.args.get('next')
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
     if auth.logged_in:
@@ -171,7 +172,8 @@ def auth_email_logout(token, auth=None, **kwargs):
     if campaign:
         redirect_url = campaigns.campaign_url_for(campaign) + '?campaign=' + campaign
         user.email_verifications[token]['confirmed'] = True
-        user.system_tags.append(campaign)
+            # user.system_tags.append(campaign)
+            # user.system_tags = []
         user.save()
     logout()
     resp = redirect(redirect_url)
