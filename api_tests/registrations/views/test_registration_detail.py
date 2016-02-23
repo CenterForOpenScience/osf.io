@@ -129,6 +129,12 @@ class TestRegistrationDetail(ApiTestCase):
         assert_not_in('files', res.json['data']['relationships'])
         assert_not_in('logs', res.json['data']['relationships'])
 
+    def test_registration_shows_specific_related_counts(self):
+        url = '/{}registrations/{}/?related_counts=children'.format(API_BASE, self.private_registration._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['relationships']['children']['links']['related']['meta']['count'], 0)
+        assert_equal(res.json['data']['relationships']['contributors']['links']['related']['meta'], {})
 
     def test_field_specific_related_counts_ignored_if_hidden_field_on_retraction(self):
         url = '/{}registrations/{}/?related_counts=children'.format(API_BASE, self.retraction_registration._id)
