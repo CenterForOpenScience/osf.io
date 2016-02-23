@@ -13,7 +13,7 @@ var KeenTracker = oop.defclass({
 
     createOrUpdateKeenSession: function() {
         var date = new Date();
-        var expiresInMin = 25;
+        var expiresInMinutes = 25;
         var expDate = date.setTime(date.getTime() + (min*60*1000));
         if(!$.cookie('keenSessionId')){
             $.cookie('keenSessionId', uuid.v1(), {expires: expDate, path: '/'});
