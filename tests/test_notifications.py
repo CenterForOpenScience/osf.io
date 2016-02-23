@@ -367,14 +367,18 @@ class TestNotificationUtils(OsfTestCase):
         self.project_subscription.save()
 
         self.node = factories.NodeFactory(parent=self.project, creator=self.user)
-        self.node_subscription = factories.NotificationSubscriptionFactory(
+        self.node_subscription_comments = factories.NotificationSubscriptionFactory(
             _id=self.node._id + '_' + 'comments',
             owner=self.node,
             event_name='comments'
         )
-        self.node_subscription.save()
-        self.node_subscription.email_transactional.append(self.user)
-        self.node_subscription.save()
+        self.node_subscription_comments.save()
+        self.node_subscription_comments.email_transactional.append(self.user)
+        self.node_subscription_comments.save()
+
+        self.node_subscription_mail_list = NotificationSubscription.load(self.node._id + '_mailing_list_events')
+
+        self.node_subscriptions = [self.node_subscription_mail_list, self.node_subscription_comments]
 
         self.user_subscription = factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'comment_replies',
@@ -402,20 +406,20 @@ class TestNotificationUtils(OsfTestCase):
     def test_get_all_user_subscriptions(self):
         user_subscriptions = [x for x in utils.get_all_user_subscriptions(self.user)]
         assert_in(self.project_subscription, user_subscriptions)
-        assert_in(self.node_subscription, user_subscriptions)
+        assert_in(self.node_subscriptions[0], user_subscriptions)
+        assert_in(self.node_subscriptions[1], user_subscriptions)
         assert_in(self.user_subscription, user_subscriptions)
         assert_equal(len(user_subscriptions), 5)
 
     def test_get_all_node_subscriptions_given_user_subscriptions(self):
         user_subscriptions = utils.get_all_user_subscriptions(self.user)
         node_subscriptions = [x for x in utils.get_all_node_subscriptions(self.user, self.node,
-                                                                          user_subscriptions=user_subscriptions)
-                                if x.event_name != 'mailing_list_events']
-        assert_equal(node_subscriptions, [self.node_subscription])
+                                                                          user_subscriptions=user_subscriptions)]
+        assert_equal(node_subscriptions, self.node_subscriptions)
 
     def test_get_all_node_subscriptions_given_user_and_node(self):
-        node_subscriptions = [x for x in utils.get_all_node_subscriptions(self.user, self.node) if x.event_name != 'mailing_list_events']
-        assert_equal(node_subscriptions, [self.node_subscription])
+        node_subscriptions = [x for x in utils.get_all_node_subscriptions(self.user, self.node)]
+        assert_equal(node_subscriptions, self.node_subscriptions)
 
     def test_get_configured_project_ids_does_not_return_user_or_node_ids(self):
         configured_ids = utils.get_configured_projects(self.user)
