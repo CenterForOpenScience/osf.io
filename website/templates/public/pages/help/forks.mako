@@ -11,7 +11,7 @@
         contributor. Private components that you do not have access to will not be forked.</p>
     <p>A <a href="#links">linked</a> project can also easily be turned into a fork. If you were originally
         linking to someone else's project but would now like to edit it and make your own version, from the project
-        overview page, find the linked project from the and hit the small fork button. There will now be a version you
+        overview page, find the linked project and hit the small fork button. There will now be a version you
         can edit in addition to the original.</p>
     <div class="row">
         <div class="col-md-8 col-md-offset-2 col-sm-12">
