@@ -63,7 +63,6 @@ function Submissions(data) {
                     custom: function() { return m('a', {href: item.data.authorUrl, target : '_blank'}, item.data.author); },
                     filter : true
                 },
-
                 {
                     data: 'dateCreated', // Data field name
                     sortInclude: true,
