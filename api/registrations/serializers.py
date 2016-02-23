@@ -86,6 +86,11 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<root._id>'}
     ))
 
+    primary_institution = RelationshipField(
+        related_view='registrations:registration-institution-detail',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
+
     # TODO: Finish me
 
     # TODO: Override create?
