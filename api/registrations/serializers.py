@@ -96,7 +96,7 @@ class RegistrationSerializer(NodeSerializer):
         return absolute_reverse('registrations:registration-detail', kwargs={'node_id': obj._id})
 
     def get_absolute_url(self, obj):
-        return obj.absolute_url
+        return self.get_registration_url(obj)
 
     def get_registered_meta(self, obj):
         if obj.registered_meta:
