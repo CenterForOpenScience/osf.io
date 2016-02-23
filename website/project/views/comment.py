@@ -5,6 +5,7 @@ from flask import request
 from modularodm import Q
 
 from framework.auth.decorators import must_be_logged_in
+from framework.guid.model import Guid
 
 from website.addons.base.signals import file_updated
 from website.files.models import FileNode
@@ -17,25 +18,59 @@ from website.project.signals import comment_added
 
 
 @file_updated.connect
-def update_comment_root_target_file(self, node, event_type, payload, user=None):
-    if event_type == 'addon_file_moved':
+def update_file_guid_referent(self, node, event_type, payload, user=None):
+    if event_type == 'addon_file_moved' or event_type == 'addon_file_renamed':
         source = payload['source']
         destination = payload['destination']
         source_node = Node.load(source['node']['_id'])
         destination_node = node
+        file_guids = payload['passthrough']['file_guids']
 
-        if (source.get('provider') == destination.get('provider') == 'osfstorage') and source_node._id != destination_node._id:
-            old_file = FileNode.load(source.get('path').strip('/'))
-            new_file = FileNode.resolve_class(destination.get('provider'), FileNode.FILE).get_or_create(destination_node, destination.get('path'))
+        if event_type == 'addon_file_renamed' and (source['provider'] == 'osfstorage' or source['provider'] == 'box'):
+            return
+        if event_type == 'addon_file_moved' and (source['provider'] == destination['provider'] and (source['provider'] == 'osfstorage' or source['provider'] == 'box')) and source_node == destination_node:
+            return
 
-            Comment.update(Q('root_target', 'eq', old_file._id), data={'node': destination_node})
+        for guid in file_guids:
+            obj = Guid.load(guid)
+            if source_node != destination_node:
+                update_comment_node(guid, source_node, destination_node)
 
-            # update node record of commented files
-            if old_file._id in source_node.commented_files:
-                destination_node.commented_files[new_file._id] = source_node.commented_files[old_file._id]
-                del source_node.commented_files[old_file._id]
-                source_node.save()
-                destination_node.save()
+            if not (source['provider'] == destination['provider'] and (source['provider'] == 'osfstorage')):
+                if not source['path'].endswith('/'):
+                    data = dict(destination)
+                    new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, destination['path'])
+                    if destination['provider'] != 'osfstorage':
+                        new_file.update(revision=None, data=data)
+                else:
+                    if source['provider'] == 'box':
+                        new_path = obj.referent.path
+                    else:
+                        new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
+                    new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
+
+                    for item in destination.get('children', []):
+                        if item['kind'] == 'file' and item['materialized'].replace(destination['materialized'], source['materialized']) == obj.referent.materialized_path:
+                            data = dict(item)
+                            if destination['provider'] != 'osfstorage':
+                                new_file.update(revision=None, data=data)
+                            break
+                    else:
+                        new_file.name = obj.referent.name
+                        new_file.materialized_path = new_path
+                        new_file.save()
+
+                obj.referent = new_file
+                obj.save()
+
+
+def update_comment_node(root_target_id, source_node, destination_node):
+    Comment.update(Q('root_target', 'eq', root_target_id), data={'node': destination_node})
+    destination_node.commented_files[root_target_id] = source_node.commented_files[root_target_id]
+    del source_node.commented_files[root_target_id]
+    source_node.save()
+    destination_node.save()
+
 
 @comment_added.connect
 def send_comment_added_notification(comment, auth):
