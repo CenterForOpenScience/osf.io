@@ -1,6 +1,8 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from rest_framework.exceptions import ValidationError
+from rest_framework.reverse import reverse_lazy
+
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
@@ -178,7 +180,7 @@ class NodeSerializer(JSONAPISerializer):
         type_ = 'nodes'
 
     def get_absolute_url(self, obj):
-        return obj.absolute_url
+        return obj.get_absolute_url()
 
     # TODO: See if we can get the count filters into the filter rather than the serializer.
 
@@ -438,7 +440,6 @@ class NodeLinksSerializer(JSONAPISerializer):
 
 
 class NodeProviderSerializer(JSONAPISerializer):
-
     id = ser.SerializerMethodField(read_only=True)
     kind = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
@@ -462,6 +463,16 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'nodes:node-provider-detail',
+            kwargs={
+                'node_id': obj.node._id,
+                'provider': obj.provider
+            }
+        )
+
 
 class NodeInstitutionRelationshipSerializer(ser.Serializer):
     id = ser.CharField(source='institution_id', required=False, allow_null=True)

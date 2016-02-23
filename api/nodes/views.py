@@ -1564,6 +1564,24 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             and addon.complete
         ]
 
+class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeRetractions,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = NodeProviderSerializer
+    view_category = 'nodes'
+    view_name = 'node-provider-detail'
+
+    def get_object(self):
+        return NodeProvider(self.kwargs['provider'], Node.load(self.kwargs['node_id']))
+
 class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """List of alternative citations for a project.
 
