@@ -18,6 +18,7 @@ from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.notifications import emails
 from website.notifications import utils
+from website.project.mailing_list import create_mailing_list_subscription
 from website.project.model import Node, Comment
 from website import mails
 from website.util import api_url_for
@@ -384,6 +385,9 @@ class TestNotificationUtils(OsfTestCase):
         self.user_subscription.email_transactional.append(self.user)
         self.user_subscription.save()
 
+    def tearDown(self):
+        node_created.connect(create_mailing_list_subscription)
+
     def test_to_subscription_key(self):
         key = utils.to_subscription_key('xyz', 'comments')
         assert_equal(key, 'xyz_comments')
@@ -462,13 +466,11 @@ class TestNotificationUtils(OsfTestCase):
         assert_in(private_project._id, configured_project_ids)
 
     def test_get_configured_project_ids_excludes_private_projects_if_no_subscriptions_on_node(self):
-        from website.project.mailing_list import create_mailing_list_subscription
         node_created.disconnect(create_mailing_list_subscription)
         private_project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=private_project)
         configured_project_ids = utils.get_configured_projects(node.creator)
         assert_not_in(private_project._id, configured_project_ids)
-        node_created.connect(create_mailing_list_subscription)
 
     def test_get_parent_notification_type(self):
         nt = utils.get_parent_notification_type(self.node, 'comments', self.user)
