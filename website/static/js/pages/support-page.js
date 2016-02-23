@@ -28,8 +28,6 @@ $(document).ready(function(){
             icon.removeClass('fa-angle-right').addClass('fa-angle-down');
             item.removeClass('collapsed').addClass('open');
         }
-
-
     }
 
     function resetFilter () {
@@ -40,13 +38,30 @@ $(document).ready(function(){
         });
         $('.support-filter').val('');
         $('.clear-search').removeClass('clear-active');
+        searchItemIndex = 0;
     }
 
     var searchItemIndex = 0; // Index for which search result is now supposed to be in view; for prev and next buttons
 
     function scrollTo (el) {
-        var location = el.offsetTop;
-        $(window).scrollTop(location-150);
+        var location = el ? el.offsetTop : 150; // Scroll to top if nothing given
+        $('html, body').animate({
+            scrollTop: location-150
+        }, 500);
+    }
+
+    function updatePrevNextStatus () {
+        var openItems = $('.support-item.open');
+        if (openItems[searchItemIndex + 1]){
+            $('.search-next').removeClass('disabled');
+        } else {
+            $('.search-next').addClass('disabled');
+        }
+        if (openItems[searchItemIndex - 1]){
+            $('.search-previous').removeClass('disabled');
+        } else {
+            $('.search-previous').addClass('disabled');
+        }
     }
     // Toggle individual view when clicked on header
     $('.support-head').click(function(){
@@ -55,19 +70,24 @@ $(document).ready(function(){
     });
 
     $('.search-expand').click(function(){
+        resetFilter();
         $('.support-item').each(function(){
             _toggleItem($(this));
         });
+        updatePrevNextStatus();
+
     });
 
     $('.search-collapse').click(function(){
+        resetFilter();
         $('.support-item').each(function(){
             _toggleItem($(this), true);
         });
+        updatePrevNextStatus();
     });
 
     $('.search-up').click(function(){
-        $(window).scrollTop(0);
+        scrollTo();
     });
     $('.search-previous').click(function(){
         if(searchItemIndex > 0){
@@ -78,6 +98,7 @@ $(document).ready(function(){
             $(openItems.get(searchItemIndex)).removeClass('search-selected');
             searchItemIndex--;
         }
+        updatePrevNextStatus();
     });
     $('.search-next').click(function(){
         var openItems = $('.support-item.open');
@@ -88,6 +109,7 @@ $(document).ready(function(){
             $(openItems.get(searchItemIndex)).removeClass('search-selected');
             searchItemIndex++;
         }
+        updatePrevNextStatus();
     });
 
 
@@ -115,6 +137,7 @@ $(document).ready(function(){
                 el.addClass('support-nomatch');
             }
         });
+        updatePrevNextStatus();
     });
 
     function fixSearchLayer () {
@@ -123,15 +146,17 @@ $(document).ready(function(){
         if(topOffset > 100 && !searchLayer.hasClass('fixed-layer')){
             searchLayer.addClass('fixed-layer');
             $('.support-title').hide();
+            $('.search-up').removeClass('disabled');
         }
         if(topOffset <= 100 && searchLayer.hasClass('fixed-layer')){
             searchLayer.removeClass('fixed-layer');
             $('.support-title').show();
+            $('.search-up').addClass('disabled');
         }
     }
 
     // Handle fixing support search box on scroll
     $(window).scroll(fixSearchLayer);
     fixSearchLayer();
-
+    updatePrevNextStatus();
 });

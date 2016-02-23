@@ -72,11 +72,13 @@
 .search-layer ul li {
     display: inline;
     padding: 3px 8px;
-    color: #666666;
     cursor: pointer;
 }
 .search-layer ul li:hover {
     color: #293C4A;
+}
+.search-layer ul li.disabled {
+    color: #AAAAAA;
 }
 .content-layer {
     border-top: 1px solid #eee;
