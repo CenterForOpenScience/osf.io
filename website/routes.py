@@ -175,8 +175,6 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/home/', 'get', website_views.home, OsfWebRenderer('home.mako')),
-
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
@@ -710,9 +708,9 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-
+        # '/' route loads home.mako if logged in, otherwise loads landing.mako
         Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
-        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('index.mako')),
+        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako')),
 
         Rule(
             [
