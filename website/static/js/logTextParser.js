@@ -4,8 +4,23 @@
  * Remeber to embed nodes, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-var logActions = require('js/_allLogTexts.js');
+var logActions = require('json!js/_allLogTexts.json');
 var $ = require('jquery');  // jQuery
+
+
+var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
+/**
+ * Utility function to not repeat logging errors to Sentry
+ * @param message {String} Custom message for error
+ * @param logObject {Object} the entire log object returned from the api
+ */
+function ravenMessage (message, logObject) {
+    if(ravenMessagesCache.indexOf(message) === -1){
+        Raven.captureMessage(message, {logObject: logObject});
+        ravenMessagesCache.push(message);
+    }
+}
+
 
 /**
  * Checks if the required parameter to complete the log is returned
@@ -14,10 +29,13 @@ var $ = require('jquery');  // jQuery
  * @param logObject {Object} the entire log object returned from the api
  * @returns {boolean}
  */
-var paramIsReturned = function(param, logObject){
+var paramIsReturned = function _paramIsReturned (param, logObject){
     if(!param){
         var message = 'Expected parameter for Log action ' + logObject.attributes.action + ' was not returned from log api.';
-        Raven.captureMessage(message, {logObject: logObject});
+        ravenMessage(message, logObject);
+        return false;
+    }
+    if (param.errors){
         return false;
     }
     return true;
@@ -41,7 +59,7 @@ var returnTextParams = function (param, text, logObject) {
                         return m('span', item);
                     }
                     if(index === arr.length-1) {
-                        return m('span', ' and ' + item);
+                        return m('span', ', and ' + item);
                     }
                     return m('span', item + ', ');
                 })
@@ -55,23 +73,33 @@ var returnTextParams = function (param, text, logObject) {
 var LogText = {
     view : function(ctrl, logObject) {
         var text = logActions[logObject.attributes.action];
+        var message = '';
         if(text){
             var list = text.split(/(\${.*?})/);
             return m('span.osf-log-item',[
                 list.map(function(piece){
-                    if(piece === '') { return; }
+                    if (piece === '') {
+                        return m('span');
+                    }
                     var startsWith = piece.substring(0,2);
                     if(startsWith === '${'){
                         var last = piece.length-1;
                         var logComponentName = piece.substring(2,last);
-                        return m.component(LogPieces[logComponentName], logObject);
+                        if(LogPieces[logComponentName]){
+                            return m.component(LogPieces[logComponentName], logObject);
+                        } else {
+                            message = 'There is no template in logTextParser.js for  ' + logComponentName + '.';
+                            ravenMessage(message, logObject);
+                            return m('');
+                        }
                     }
                     return piece;
                 })
             ]);
         } else {
-            var message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
-            Raven.captureMessage(message, {logObject: logObject});
+            message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
+            ravenMessage(message, logObject);
+            return m('');
         }
     }
 };
@@ -115,9 +143,9 @@ var LogPieces = {
     tag: {
         view: function (ctrl, logObject) {
             var tag = logObject.attributes.params.tag;
-           if(paramIsReturned(tag, logObject)) {
+            if(paramIsReturned(tag, logObject)) {
                return m('a', {href: '/search/?q=%22' + tag + '%22'}, tag);
-           }
+            }
             return m('span', 'a tag');
        }
     },

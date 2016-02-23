@@ -623,7 +623,7 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
         obj = {'data': [
             pointer for pointer in
             collection.nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_folder
+            if not pointer.node.is_deleted and not pointer.node.is_collection
         ], 'self': collection}
         self.check_object_permissions(self.request, obj)
         return obj

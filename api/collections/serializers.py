@@ -143,7 +143,7 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
         return {'data': [
             pointer for pointer in
             obj.nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_folder
+            if not pointer.node.is_deleted and not pointer.node.is_collection
         ], 'self': obj}
 
     def update(self, instance, validated_data):
