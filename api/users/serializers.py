@@ -9,7 +9,7 @@ from website.models import User
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
-from api.base.utils import add_dev_only_items
+from api.base.utils import add_dev_only_items, absolute_reverse
 
 
 class UserSerializer(JSONAPISerializer):
@@ -79,6 +79,9 @@ class UserSerializer(JSONAPISerializer):
         if obj is not None:
             return obj.absolute_url
         return None
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse('users:user-detail', kwargs={'user_id': obj._id})
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
