@@ -79,11 +79,12 @@ class UserSpamList(SpamList):
 class SpamDetail(FormView):
     form_class = ConfirmForm
     template_name = 'spam/comment.html'
-    spam_id = None
-    page = 1
 
     def __init__(self):
         self.item = None
+        self.spam_id = None
+        self.page = 1
+        self.status = 1
         super(SpamDetail, self).__init__()
 
     @method_decorator(login_required)
@@ -94,6 +95,8 @@ class SpamDetail(FormView):
             return page_not_found(request)  # TODO: 1.9 update to have exception with node/user 404.html will be added
         self.page = request.GET.get('page', 1)
         context['page_number'] = self.page
+        self.status = request.GET.get('status', 1)
+        context['status'] = self.status
         context['form'] = self.get_form()
         return self.render_to_response(context)
 
@@ -105,6 +108,8 @@ class SpamDetail(FormView):
             return page_not_found(request)  # TODO: 1.9 update to have exception
         self.page = request.GET.get('page', 1)
         context['page_number'] = self.page
+        self.status = request.GET.get('status', 1)
+        context['status'] = self.status
         context['form'] = self.get_form()
         if context['form'].is_valid():
             return self.form_valid(context['form'])
