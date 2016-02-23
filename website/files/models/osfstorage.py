@@ -143,6 +143,22 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 raise exceptions.VersionNotFoundError(version)
             return None
 
+    def add_tag_log(self, action, tag, auth):
+        node = self.node
+        node.add_log(
+            action=action,
+            params={
+                'parent_node': node.parent_id,
+                'node': node._id,
+                'urls': {
+                    'download': '/project/{}/files/osfstorage/{}/?action=download'.format(node._id, self._id),
+                    'view': '/project/{}/files/osfstorage/{}/'.format(node._id, self._id)},
+                'path': self.materialized_path,
+                'tag': tag,
+            },
+            auth=auth,
+        )
+
     def delete(self, user=None, parent=None):
         from website.search import search
         search.update_file(self, delete=True)

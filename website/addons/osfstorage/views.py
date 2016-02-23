@@ -245,29 +245,6 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
     }
 
 
-def add_tag_log(file_node, action, tag, auth):
-    """ adds a tag log
-
-    Abstract out some logging features between add/delete and for user auth
-
-    :param file_node: FileNode the FileNode associated with the relevant operation
-    :param action: String Nodelog action performed ( Either tag or removed tag)
-    :param tag: String the string of the tag
-    """
-    file_node.node.add_log(
-        action=action,
-        params={
-            'parent_node': file_node.node.parent_id,
-            'node': file_node.node._id,
-            'urls': {
-                'download': "/project/" + file_node.node._id + "/files/osfstorage/" + file_node._id + "/?action=download",
-                'view': "/project/" + file_node.node._id + "/files/osfstorage/" + file_node._id},
-            'path': file_node.materialized_path,
-            'tag': tag,
-        },
-        auth=auth,
-    )
-
 @must_have_permission('write')
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_add_tag(file_node, **kwargs):
@@ -279,7 +256,7 @@ def osfstorage_add_tag(file_node, **kwargs):
             new_tag = Tag(_id=tag)
         new_tag.save()
         file_node.tags.append(new_tag)
-        add_tag_log(file_node, NodeLog.FILE_TAG_ADDED, tag, kwargs['auth'])
+        file_node.add_tag_log(NodeLog.FILE_TAG_ADDED, tag, kwargs['auth'])
         file_node.save()
         return {'status': 'success'}, httplib.OK
     return {'status': 'failure'}, httplib.BAD_REQUEST
@@ -292,8 +269,8 @@ def osfstorage_remove_tag(file_node, **kwargs):
     tag_string = tag
     tag = Tag.load(tag)
     if tag and tag in file_node.tags and not file_node.node.is_registration:
-        add_tag_log(file_node, NodeLog.FILE_TAG_REMOVED, tag_string, kwargs['auth'])
         file_node.tags.remove(tag)
+        file_node.add_tag_log(NodeLog.FILE_TAG_REMOVED, tag_string, kwargs['auth'])
         file_node.save()
         return {'status': 'success'}, httplib.OK
     return {'status': 'failure'}, httplib.BAD_REQUEST
