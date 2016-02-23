@@ -343,11 +343,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             )
         )
 
-<<<<<<< HEAD
-    def process_related_counts_parameters(self, params):
-=======
     def process_related_counts_parameters(self, params, value):
->>>>>>> develop
         """
         Processes related_counts parameter.
 
@@ -358,11 +354,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             return params
 
         field_counts_requested = [val for val in params.split(',')]
-<<<<<<< HEAD
-        countable_fields = {field for field in self.root.fields if getattr(self.parent.fields[field], 'json_api_link', False)}
-        for count_field in field_counts_requested:
-            if count_field not in countable_fields:
-=======
+
         countable_fields = {field for field in self.parent.fields if getattr(self.parent.fields[field], 'json_api_link', False) or
                             getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)}
         for count_field in field_counts_requested:
@@ -372,7 +364,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             hidden = fetched_field and fetched_field.get_attribute(value) is None
 
             if not hidden and count_field not in countable_fields:
->>>>>>> develop
                 raise InvalidQueryStringError(
                     detail="Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got '{0}'".format(params),
                     parameter='related_counts'
@@ -387,11 +378,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         for key in meta_data or {}:
             if key == 'count' or key == 'unread':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
-<<<<<<< HEAD
-                field_counts_requested = self.process_related_counts_parameters(show_related_counts)
-=======
                 field_counts_requested = self.process_related_counts_parameters(show_related_counts, value)
->>>>>>> develop
 
                 if utils.is_truthy(show_related_counts):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)

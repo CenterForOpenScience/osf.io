@@ -9,7 +9,7 @@ from website.models import User
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
-from api.base.utils import add_dev_only_items, absolute_reverse
+from api.base.utils import absolute_reverse
 
 
 class UserSerializer(JSONAPISerializer):
