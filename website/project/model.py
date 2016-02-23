@@ -2365,7 +2365,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
-        params['node'] = params.get('node') or params.get('project')
+        params['node'] = params.get('node') or params.get('project') or self
         log = NodeLog(
             action=action,
             user=user,
