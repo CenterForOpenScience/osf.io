@@ -79,6 +79,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 self.request.accepted_media_type in django_settings.ESI_MEDIA_TYPES
             ),
             'embed': embeds_partials,
+            'envelope': self.request.query_params.get('envelope', None),
         })
         return context
 
