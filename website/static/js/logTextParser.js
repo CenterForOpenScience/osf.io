@@ -74,6 +74,7 @@ var returnTextParams = function (param, text, logObject) {
 var LogText = {
     view : function(ctrl, logObject) {
         var text = logActions[logObject.attributes.action];
+        var message = '';
         if(text){
             var list = text.split(/(\${.*?})/);
             return m('span.osf-log-item',[
@@ -85,13 +86,19 @@ var LogText = {
                     if(startsWith === '${'){
                         var last = piece.length-1;
                         var logComponentName = piece.substring(2,last);
-                        return m.component(LogPieces[logComponentName], logObject);
+                        if(LogPieces[logComponentName]){
+                            return m.component(LogPieces[logComponentName], logObject);
+                        } else {
+                            message = 'There is no template in logTextParser.js for  ' + logComponentName + '.';
+                            ravenMessage(message, logObject);
+                            return m('');
+                        }
                     }
                     return piece;
                 })
             ]);
         } else {
-            var message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
+            message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
             ravenMessage(message, logObject);
             return m('');
         }

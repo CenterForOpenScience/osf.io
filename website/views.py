@@ -19,14 +19,12 @@ from framework.forms import utils as form_utils
 from framework.auth.forms import RegistrationForm
 from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
-from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
 from website.models import Node
 from website.util import sanitize
 from website.project import model
-from website.util import web_url_for
 from website.util import permissions
 from website.project import new_bookmark_collection
 
@@ -96,13 +94,7 @@ def _render_nodes(nodes, auth=None, show_path=False):
     return ret
 
 
-@collect_auth
-def index(auth):
-    """Redirect to dashboard if user is logged in, else show homepage.
-
-    """
-    if auth.user:
-        return redirect(web_url_for('home'))
+def index():
     return {}
 
 
