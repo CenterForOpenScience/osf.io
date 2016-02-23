@@ -63,7 +63,6 @@
     left: 0;
     width: 100%;
     z-index: 99;
-    background: #fff;
     box-shadow: 0 1px 5px #ccc;
     text-align: center;
 }
@@ -84,4 +83,64 @@
 }
 .support-item.search-selected {
     box-shadow: 0 0 5px #9195AD;
+}
+
+/* Getting Started */
+
+
+/* nested links */
+.gs-sidebar .nav .nav>li>a {
+    font-size: 12px;
+    padding: 4px 0 4px 15px;
+    opacity: 0.8;
+    font-weight: bold;
+}/* nested navs */
+.gs-sidebar .nav .nav {
+    display: none;
+}
+/* nested active navs */
+.gs-sidebar .nav .active .nav {
+    display: block;
+}
+/* nested link icons */
+.gs-sidebar .nav .nav>li>a i {
+    display: none;
+}
+/* nested active link icons */
+.gs-sidebar .nav .nav>.active>a i {
+    display: inline-block;
+}
+/* active & hover links */
+.gs-sidebar .nav>.active>a {
+    font-weight: bold;
+}
+/* nested active links */
+.gs-sidebar .nav .nav>.active>a {
+    font-weight: bold;
+}
+/* affixed sidebar */
+.gs-sidebar,
+.gs-sidebar.affix,
+.gs-sidebar.affix-top {
+    position: fixed;
+    top: 70px;
+}
+.affix-bottom {
+    position: relative;
+}
+
+/* embedded video */
+.gs-video {
+    margin-top: 25px;
+    margin-bottom: 25px;
+    margin-left: auto;
+    margin-right: auto;
+    border: solid 1px #ddd;
+    z-index: 98; /* Should be lower than 99 to be below filter bar */
+}
+
+/* phase number counters */
+.gs-count {
+    margin-bottom: 20px;
+    margin-top: 50px;
 }

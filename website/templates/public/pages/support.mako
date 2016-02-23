@@ -3,14 +3,12 @@
 
 <%def name="stylesheets()">
     <link rel="stylesheet" href="/static/css/pages/support-page.css">
-    <link rel="stylesheet" href="/static/css/pages/getting-started-page.css">
-
 </%def>
 
 <%def name="content()">
 <div class="container">
     <h1 class="m-b-lg support-title"> Support</h1>
-    <div class="search-layer p-sm">
+    <div class="search-layer bg-color-hover p-sm">
         <input type="text" class="form-control support-filter" placeholder="Search">
         <i class="fa fa-times-circle clear-search" ></i>
         <ul>
