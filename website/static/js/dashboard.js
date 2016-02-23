@@ -1065,9 +1065,10 @@ var Breadcrumbs = {
         return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
+                    var addProjectTemplate = '';
                     if (!viewOnly) {
                         var label = item.type === 'node' ? ' Add Component' : ' Add Project';
-                        var addProjectTemplate = m.component(AddProject, {
+                        addProjectTemplate = m.component(AddProject, {
                             buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
                             parentID: args.breadcrumbs()[args.breadcrumbs().length - 1].data.id,
                             modalID: 'addProject',
