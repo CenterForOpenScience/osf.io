@@ -63,7 +63,6 @@
     left: 0;
     width: 100%;
     z-index: 99;
-    padding: 12px;
     background: #fff;
     box-shadow: 0 1px 5px #ccc;
     text-align: center;
@@ -74,7 +73,7 @@
 .search-layer ul li {
     display: inline;
     padding: 3px 8px;
-    color: #444444;
+    color: #666666;
     cursor: pointer;
 }
 .search-layer ul li:hover {

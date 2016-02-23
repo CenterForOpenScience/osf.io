@@ -9,8 +9,8 @@
 
 <%def name="content()">
 <div class="container">
-    <div class="search-layer">
-        <h1 class="m-b-lg"> Support</h1>
+    <h1 class="m-b-lg support-title"> Support</h1>
+    <div class="search-layer p-sm">
         <input type="text" class="form-control support-filter" placeholder="Search">
         <i class="fa fa-times-circle clear-search" ></i>
         <ul>

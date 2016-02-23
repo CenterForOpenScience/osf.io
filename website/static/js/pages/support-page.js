@@ -122,11 +122,11 @@ $(document).ready(function(){
         var searchLayer = $('.search-layer');
         if(topOffset > 100 && !searchLayer.hasClass('fixed-layer')){
             searchLayer.addClass('fixed-layer');
-            searchLayer.find('h1').hide();
+            $('.support-title').hide();
         }
         if(topOffset <= 100 && searchLayer.hasClass('fixed-layer')){
             searchLayer.removeClass('fixed-layer');
-            searchLayer.find('h1').show();
+            $('.support-title').show();
         }
     }
 
