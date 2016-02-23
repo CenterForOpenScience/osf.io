@@ -17,7 +17,7 @@ class SpamList(ListView):
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'date_created'
-    context_object_name = 'Spam'
+    context_object_name = 'spam'
 
     def __init__(self):
         self.status = str(Comment.FLAGGED)
@@ -37,12 +37,13 @@ class SpamList(ListView):
         page_size = self.get_paginate_by(queryset)
         paginator, page, queryset, is_paginated = self.paginate_queryset(
             queryset, page_size)
-        return {
+        context = {
             'spam': map(serialize_comment, queryset),
             'page': page,
             'status': self.status,
             'page_number': page.number
         }
+        return super(SpamList, self).get_context_data(**context)
 
 
 class SpamDetail(FormView):
@@ -58,37 +59,25 @@ class SpamDetail(FormView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            context = self.get_context_data(**kwargs)
+            return super(SpamDetail, self).get(request, *args, **kwargs)
         except AttributeError:
             return page_not_found(request)  # TODO: 1.9 update to have exception with node/user 404.html will be added
-        self.page = request.GET.get('page', 1)
-        context['page_number'] = self.page
-        context['form'] = self.get_form()
-        return self.render_to_response(context)
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         try:
-            context = self.get_context_data(**kwargs)
+            self.get_context_data(**kwargs)
         except AttributeError:
             return page_not_found(request)  # TODO: 1.9 update to have exception
-        self.page = request.GET.get('page', 1)
-        context['page_number'] = self.page
-        context['form'] = self.get_form()
-        if context['form'].is_valid():
-            return self.form_valid(context['form'])
-        else:
-            return render(request, self.template_name, context=context)
-        # return super(SpamDetail, self).post(request, *args, **kwargs)
+        return super(SpamDetail, self).post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        self.spam_id = kwargs['spam_id']
+        self.spam_id = self.kwargs['spam_id']
         self.item = Comment.load(self.spam_id)
+        self.page = self.request.GET.get('page', 1)
         kwargs = super(SpamDetail, self).get_context_data(**kwargs)
-        try:
-            kwargs['comment'] = serialize_comment(self.item)
-        except AttributeError:
-            raise
+        kwargs.setdefault('page_number', self.page)
+        kwargs.setdefault('comment', serialize_comment(self.item))
         return kwargs
 
     def form_valid(self, form):
