@@ -3122,13 +3122,8 @@ class TestProject(OsfTestCase):
     def test_get_recent_logs(self):
         # Add some logs
         for _ in range(5):
-            NodeLogFactory.create(
-                user=self.user,
-                action='file_added',
-                params={'node': self.project._id},
-                node=self.project,
-                original_node=self.project
-            )
+            self.project.add_log('file_added', params={'node': self.project._id}, auth=self.auth)
+
         # Expected logs appears
         assert_equal(
             self.project.get_recent_logs(3),
