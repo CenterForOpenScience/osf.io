@@ -230,7 +230,7 @@ def get_auth(auth, **kwargs):
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
-    file_guids =[]
+    file_guids = []
     path = data.get('path', None)
     if path and action == 'movefrom':
         file_guids = FileNode.resolve_class(provider_name, FileNode.ANY).get_file_guids(path=path, provider=provider_name, guids=[], node=node)
