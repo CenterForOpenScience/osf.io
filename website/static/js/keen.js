@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var keen = require('keen-js');
 var oop = require('js/oop');
