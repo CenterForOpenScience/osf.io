@@ -34,7 +34,7 @@
                             <div class="support-body">It's free!</div>
                         </div>
                         <div class="support-item">
-                            <h5 class="support-head f-w-xl"><i cla`ss="fa fa-angle-right"></i> How can it be free? How are you funded?</h5>
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can it be free? How are you funded?</h5>
                             <div class="support-body">The OSF is maintained and developed by the <a href="http://cos.io">Center for Open Science</a> (COS), a non-profit organization. COS is supported through grants from a variety of supporters, including <a href="http://centerforopenscience.org/about_sponsors/"> federal agencies, private foundations, and commercial entities</a>.</div>
                         </div>
                         <div class="support-item">
@@ -186,9 +186,13 @@
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Use projects to organize your work</h5>
                             <div class="support-body">The OSF organizes your lines of research into projects. Projects come with features meant to streamline
                             your workflow as well as make your work more discoverable.
-                                <div class="gs-video embed-responsive embed-responsive-16by9" style="max-width: 102%; width: 102%;">
-                                       <! Max width for this video adjusted because of black border -->
-                                    <div class="embed-responsive-item youtube-loader" id="2TV21gOzfhw"></div>
+                            <div class="row">
+                                    <div class="col-md-10 col-md-offset-1">
+                                        <div class="gs-video embed-responsive embed-responsive-16by9" style="max-width: 102%; width: 102%;">
+                                               <! Max width for this video adjusted because of black border -->
+                                            <div class="embed-responsive-item youtube-loader" id="2TV21gOzfhw"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
