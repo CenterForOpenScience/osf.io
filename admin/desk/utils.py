@@ -1,11 +1,9 @@
 """
-https://gist.github.com/pamelafox/5855372
+Modified from https://gist.github.com/pamelafox/5855372
 """
 
-import logging
 import requests
 import json
-from django.conf import settings
 
 
 class DeskError(Exception):

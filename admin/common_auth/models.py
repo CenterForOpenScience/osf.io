@@ -47,6 +47,10 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(default=datetime.now)
     confirmed = models.BooleanField(default=False)
     osf_id = models.CharField(default=False, max_length=10, blank=True)
+    desk_email = models.EmailField(verbose_name='desk email', max_length=255,
+                                   default='')
+    desk_password = models.CharField(verbose_name='desk password',
+                                     max_length=128, default='')  # TODO: encrypt
 
     objects = MyUserManager()
 
@@ -64,12 +68,6 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         ordering = ['email']
-
-    # Todo: implement this if needed
-    # @property
-    # def is_staff(self):
-    #     "Is the user a member of staff?"
-    #     return self.is_admin
 
     @property
     def osf_user(self):
