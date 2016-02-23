@@ -1595,7 +1595,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             piwik_tasks.update_node(self._id, saved_fields)
 
         # Ensure Mailing list subscription is set up
-        if first_save and self.mailing_enabled:
+        if first_save:
             auth_signals.node_created.send(self)
 
         # Return expected value for StoredObject::save
