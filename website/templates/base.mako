@@ -179,14 +179,14 @@
             </script>
         % endif
 
-%if keen_project_id:
-        <script>
-            window.contextVars = $.extend(true, {}, window.contextVars, {
-                keenProjectId: '${keen_project_id}',
-                keenWriteKey: '${keen_write_key}'
-            })
-        </script>
-    %endif
+        %if keen_project_id:
+            <script>
+                window.contextVars = $.extend(true, {}, window.contextVars, {
+                    keenProjectId: '${keen_project_id}',
+                    keenWriteKey: '${keen_write_key}'
+                })
+            </script>
+        %endif
 
 
         ${self.javascript_bottom()}
