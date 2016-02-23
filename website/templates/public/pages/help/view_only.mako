@@ -7,7 +7,7 @@
             <p>To create a view-only link, click on the "Sharing" tab, and scroll down to the "View-only links" section. Click
                 "create a link," give the link a name, and choose the project or component(s) you'd like to link to.</p>
             <div class="row">
-                <div class="col-md-8 col-md-offset-2 col-sm-12">
+                <div class="col-md-10 col-md-offset-1">
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="X6vDs2jaAnA"></div>
                     </div>

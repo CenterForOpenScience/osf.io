@@ -4,7 +4,7 @@
         <p>Components are like sub-projects that help you organize different parts of your research. Components have their own privacy settings, contributors, wiki, add-ons, and files.</p>
 
         <div class="row">
-            <div class="col-md-8 col-md-offset-2 col-sm-12">
+            <div class="col-md-10 col-md-offset-1">
                 <div class="gs-video embed-responsive embed-responsive-16by9">
                     <div class="embed-responsive-item youtube-loader" id="kotF8Pnurpw"></div>
                 </div>
@@ -15,7 +15,7 @@
         <p>A particular project and component structure that is useful for multiple projects can be used as a template when creating new projects.</p>
 
         <div class="row">
-            <div class="col-md-8 col-md-offset-2 col-sm-12">
+            <div class="col-md-10 col-md-offset-1">
                 <div class="gs-video embed-responsive embed-responsive-16by9">
                     <div class="embed-responsive-item youtube-loader" id="N1Jk7ax2UHs"></div>
                 </div>

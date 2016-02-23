@@ -27,7 +27,7 @@
                 be private, then no one will be able to see the enclosed files, but public components and projects allow
                 anyone to download their materials.</p>
             <div class="row">
-                <div class="col-md-8 col-md-offset-2 col-sm-12">
+                <div class="col-md-10 col-md-offset-1">
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="_8-nrjOWpfE"></div>
                     </div>

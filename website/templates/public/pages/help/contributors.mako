@@ -21,7 +21,7 @@
             <p>Project administrators can also choose the order in which contributors are listed. To re-order, drag and drop the
              names into their new positions.</p>
             <div class="row">
-                <div class="col-md-8 col-md-offset-2 col-sm-12">
+                <div class="col-md-10 col-md-offset-1">
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="eYpAn59G6Yk"></div>
                     </div>

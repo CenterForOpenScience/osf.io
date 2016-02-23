@@ -7,7 +7,7 @@
         page and you will see the URL to be cited. If you click "more" then you will see the APA, MLA, and Chicago
         citations.</p>
          <div class="row">
-            <div class ="col-md-8 col-md-offset-2 col-sm-12">
+            <div class ="col-md-10 col-md-offset-1">
                 <div class="gs-video embed-responsive embed-responsive-16by9">
                     <div class="embed-responsive-item youtube-loader" id="Ow7YoAHrflo"></div>
                 </div>
@@ -17,7 +17,7 @@
          to public <a href="#registrations">registrations</a>. To be issued one of these identifiers, visit your public registration
          and click "Create DOI/ARK" below the project title.</p>
          <div class="row">
-             <div class ="col-md-8 col-md-offset-2">
+             <div class ="col-md-10 col-md-offset-1">
                  <div class="gs-video embed-responsive embed-responsive-16by9">
                      <div class="embed-responsive-item youtube-loader" id="jnbeytIkfFs"></div>
                  </div>

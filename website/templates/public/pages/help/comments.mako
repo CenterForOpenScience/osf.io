@@ -6,7 +6,7 @@
             reflects their decision to only allow contributors to comment on the project. As an administrator, to change your project's comment settings, visit "Settings" in the grey navigation bar below the project
             title. Select your preference under "Commenting" and submit your changes. </p>
             <div class="row">
-                <div class="col-md-8 col-md-offset-2 col-sm-12">
+                <div class="col-md-10 col-md-offset-1">
                     <div class="gs-video embed-responsive embed-responsive-16by9">
                         <div class="embed-responsive-item youtube-loader" id="ut0ofij_cFA"></div>
                     </div>
