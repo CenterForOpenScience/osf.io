@@ -137,11 +137,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
     selectWhich: function() {
         //when the next button is hit by the user, the nodes to change and disable are decided
         var self = this;
-        var nodesStateLocal = self.nodesState();
-        for (var key in nodesStateLocal) {
-            var node = nodesStateLocal[key];
-            var enabled = nodesStateLocal[key].canWrite;
-            var checked =  nodesStateLocal[key].checked;
+        var nodesState = self.nodesState();
+        for (var key in nodesState) {
+            var node = nodesState[key];
+            var enabled = nodesState[key].canWrite;
+            var checked =  nodesState[key].checked;
             if (enabled) {
                 for (var i = 0; i < self.contributorIDsToAdd().length; i++) {
                     if (node.contributors.indexOf(self.contributorIDsToAdd()[i]) < 0) {
@@ -153,10 +153,10 @@ var AddContributorViewModel = oop.extend(Paginator, {
                     }
                 }
             }
-            nodesStateLocal[key].enabled = enabled;
-            nodesStateLocal[key].checked = checked;
+            nodesState[key].enabled = enabled;
+            nodesState[key].checked = checked;
         }
-        self.nodesState(nodesStateLocal);
+        self.nodesState(nodesState);
         this.page('which');
     },
     gotoInvite: function() {
@@ -336,29 +336,29 @@ var AddContributorViewModel = oop.extend(Paginator, {
         //select all nodes to add a contributor to.  THe changed variable is set here for timing between
         // treebeard and knockout
         var self = this;
-        var nodesStateLocal = ko.toJS(self.nodesState());
-        for (var key in nodesStateLocal) {
-            if (nodesStateLocal[key].enabled) {
-                nodesStateLocal[key].checked = true;
-                nodesStateLocal[key].changed = nodesStateLocal[key].checked !== self.nodesOriginal[key].checked;
+        var nodesState = ko.toJS(self.nodesState());
+        for (var key in nodesState) {
+            if (nodesState[key].enabled) {
+                nodesState[key].checked = true;
+                nodesState[key].changed = nodesState[key].checked !== self.nodesOriginal[key].checked;
             }
         }
-        self.nodesState(nodesStateLocal);
+        self.nodesState(nodesState);
         m.redraw(true);
     },
     selectNoNodes: function() {
         //select no nodes to add a contributor to.  THe changed variable is set here for timing between
         // treebeard and knockout
         var self = this;
-        var nodesStateLocal = ko.toJS(self.nodesState());
-        for (var key in nodesStateLocal) {
-            if (nodesStateLocal[key].enabled && nodesStateLocal[key].checked) {
-                nodesStateLocal[key].checked = false;
-                nodesStateLocal[key].changed = nodesStateLocal[key].checked !== self.nodesOriginal[key].checked;
+        var nodesState = ko.toJS(self.nodesState());
+        for (var key in nodesState) {
+            if (nodesState[key].enabled && nodesState[key].checked) {
+                nodesState[key].checked = false;
+                nodesState[key].changed = nodesState[key].checked !== self.nodesOriginal[key].checked;
             }
             m.redraw(true);
         }
-        self.nodesState(nodesStateLocal);
+        self.nodesState(nodesState);
         m.redraw(true);
     },
     submit: function() {
