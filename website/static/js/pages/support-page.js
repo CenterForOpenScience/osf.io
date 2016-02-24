@@ -15,7 +15,7 @@ $(document).ready(function(){
      * @param turnOff {Boolean} true if we are closing and open item
      * @private
      */
-    function _toggleItem (item, turnOff) {
+    function changeExpandState (item, turnOff) {
         var body = item.children('.support-body');
         var head = item.children('.support-head');
         var icon = head.children('.fa');
@@ -30,10 +30,13 @@ $(document).ready(function(){
         }
     }
 
+    /**
+     * Resets the filter states for searching support items
+     */
     function resetFilter () {
         $('.support-item').each(function() {
             var el = $(this);
-            _toggleItem(el, true);
+            changeExpandState(el, true);
             el.removeClass('support-nomatch');
         });
         $('.support-filter').val('');
@@ -43,6 +46,10 @@ $(document).ready(function(){
 
     var searchItemIndex = 0; // Index for which search result is now supposed to be in view; for prev and next buttons
 
+    /**
+     * Small utility function to ease scrolling into locations in the body
+     * @param el {Object} jquery element object
+     */
     function scrollTo (el) {
         var location = el ? el.offsetTop : 150; // Scroll to top if nothing given
         $('html, body').animate({
@@ -50,6 +57,9 @@ $(document).ready(function(){
         }, 500);
     }
 
+    /**
+     * Changes state of previous and next buttons based on whether there are available items to show.
+     */
     function updatePrevNextStatus () {
         var openItems = $('.support-item.open');
         if (openItems[searchItemIndex + 1]){
@@ -63,16 +73,17 @@ $(document).ready(function(){
             $('.search-previous').addClass('disabled');
         }
     }
+
     // Toggle individual view when clicked on header
     $('.support-head').click(function(){
         var item = $(this).parent();
-        _toggleItem(item, item.hasClass('open'));
+        changeExpandState(item, item.hasClass('open'));
     });
 
     $('.search-expand').click(function(){
         resetFilter();
         $('.support-item').each(function(){
-            _toggleItem($(this));
+            changeExpandState($(this));
         });
         updatePrevNextStatus();
 
@@ -81,7 +92,7 @@ $(document).ready(function(){
     $('.search-collapse').click(function(){
         resetFilter();
         $('.support-item').each(function(){
-            _toggleItem($(this), true);
+            changeExpandState($(this), true);
         });
         updatePrevNextStatus();
     });
@@ -130,10 +141,10 @@ $(document).ready(function(){
             el = $(this);
             content = el.text().toLowerCase();
             if (content.indexOf(text) !== -1) {
-                _toggleItem(el);
+                changeExpandState(el);
                 el.removeClass('support-nomatch');
             } else {
-                _toggleItem(el, true);
+                changeExpandState(el, true);
                 el.addClass('support-nomatch');
             }
         });
