@@ -17,7 +17,7 @@ from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission
 )
 from website.util import rubeus
-from website.project.model import has_anonymous_link, Tag, NodeLog
+from website.project.model import has_anonymous_link
 
 from website.files import models
 from website.files import exceptions
