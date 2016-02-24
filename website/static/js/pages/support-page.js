@@ -82,11 +82,13 @@ $(document).ready(function(){
             searchLayer.addClass('fixed-layer');
             $('.support-title').hide();
             $('.search-up').removeClass('disabled');
+            $('.content-layer').addClass('content-padding'); // To avoid a suddent layout shift when affixing search layer
         }
         if(topOffset <= 100 && searchLayer.hasClass('fixed-layer')){
             searchLayer.removeClass('fixed-layer');
             $('.support-title').show();
             $('.search-up').addClass('disabled');
+            $('.content-layer').removeClass('content-padding');
         }
     }
 
