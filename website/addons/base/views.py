@@ -16,6 +16,7 @@ from framework import sentry
 from framework.auth import cas
 from framework.auth import Auth
 from framework.auth import oauth_scopes
+from framework.guid.model import Guid
 from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
@@ -24,15 +25,14 @@ from framework.transactions.handlers import no_auto_transaction
 from framework.auth.decorators import must_be_logged_in, must_be_signed, collect_auth
 from website import mails
 from website import settings
-from website.files.models import FileNode
-from website.files.models import TrashedFileNode
+from website.files.models import FileNode, TrashedFileNode
 from website.project import decorators
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
 from website.addons.base import StorageAddonBase
 from website.models import User, Node, NodeLog
 from website.project.model import DraftRegistration, MetaSchema
-from website.util import rubeus
+from website.util import rubeus, web_url_for
 from website.profile.utils import get_gravatar
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 from website.project.utils import serialize_node
@@ -577,7 +577,7 @@ def addon_view_file(auth, node, file_node, version):
             'sharejs': wiki_settings.SHAREJS_URL,
             'gravatar': get_gravatar(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),
-            'archived_from': get_archived_from_url(node, file_node),
+            'archived_from': get_archived_from_url(node, file_node) if node.is_registration else None,
         },
         'error': error,
         'file_name': file_node.name,
@@ -600,21 +600,11 @@ def addon_view_file(auth, node, file_node, version):
 
 
 def get_archived_from_url(node, file_node):
-    if node.is_registration:
-        if file_node.copied_from_id:
-            # this logic is for NEWLY archived files, which will store their copied_from_id
-            # this logic WILL find the live file if it has been moved, but not if deleted
-            trashed = TrashedFileNode.load(file_node.copied_from_id)
-            if not trashed:
-                return node.registered_from.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from_id)
+    if file_node.archived_from_id:
+        if Guid.load(file_node.archived_from_id):
+            return web_url_for('resolve_guid', guid=file_node.archived_from_id)
         else:
-            # this logic is for EXISTING archived files
-            # this logic WILL NOT find an archived_file_url if the original file has been moved or deleted
-
-            # Remove '/Archive of OSFStorage' from materialized path in order to compare with original
-            materialized_path_revised = '/{}'.format(file_node.materialized_path.split('/', 2)[-1])
-            files = FileNode.find(Q('node', 'eq', node.registered_from))
-            for file in files:
-                if file.materialized_path == materialized_path_revised:
-                    return file.deep_url
+            trashed = TrashedFileNode.load(file_node.archived_from_id)
+            if not trashed:
+                return node.registered_from.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.archived_from_id)
     return None
