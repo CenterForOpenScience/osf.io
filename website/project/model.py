@@ -24,7 +24,6 @@ from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
 from framework import status
-
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.mongo import validators
@@ -77,16 +76,9 @@ def has_anonymous_link(node, auth):
     :param str link: any view-only link in the current url
     :return bool anonymous: Whether the node is anonymous to the user or not
     """
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    if not view_only_link:
-        return False
-    if node.is_public:
-        return False
-    return any(
-        link.anonymous
-        for link in node.private_links_active
-        if link.key == view_only_link
-    )
+    if auth.private_link:
+        return auth.private_link.anonymous
+    return False
 
 @unique_on(['name', 'schema_version', '_id'])
 class MetaSchema(StoredObject):
@@ -1141,6 +1133,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return False
 
     def can_view(self, auth):
+        if auth and getattr(auth.private_link, 'anonymous', False):
+            return self._id in auth.private_link.nodes
+
         if not auth and not self.is_public:
             return False
 
