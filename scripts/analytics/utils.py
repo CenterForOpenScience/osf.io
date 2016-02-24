@@ -24,6 +24,10 @@ def mkdirp(path):
 
 
 def plot_dates(dates, *args, **kwargs):
+
+    if dates is None or len(dates) == 0:
+        return -1
+
     """Plot date histogram."""
     fig = plt.figure()
     ax = fig.add_subplot(111)

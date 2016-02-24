@@ -117,5 +117,8 @@ admin/static/vendor/
 admin/db.sqlite3
 
 # Celery
-./celerybeat-schedule
-./celerybeat.pid
+celerybeat-schedule
+celerybeat.pid
+
+# Analytics Output
+websites/analytics/
