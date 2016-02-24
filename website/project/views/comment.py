@@ -14,6 +14,7 @@ from website.models import Comment
 from website.project.decorators import must_be_contributor_or_public
 from website.project.model import Node
 from website.project.signals import comment_added
+import markdown
 
 
 @file_updated.connect
@@ -44,7 +45,7 @@ def send_comment_added_notification(comment, auth):
 
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
-        content=comment.content,
+        content=markdown.markdown(comment.content, ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code']),
         page_type='file' if comment.page == Comment.FILES else node.project_or_component,
         page_title=comment.root_target.name if comment.page == Comment.FILES else '',
         provider=PROVIDERS[comment.root_target.provider] if comment.page == Comment.FILES else '',
