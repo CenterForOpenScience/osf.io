@@ -395,9 +395,8 @@ else:
         },
         'analytics': {
             'task': 'scripts.analytics.tasks',
-            # 'schedule': crontab(minute=0, hour=0),  # Daily 2:00 a.m.
-            'schedule': crontab(minute='*/3'),  # Testing
-            'args': ()
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+            'kwargs': ()
         }
     }
 

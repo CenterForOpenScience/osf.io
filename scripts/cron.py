@@ -26,10 +26,6 @@ def main(dry_run=True):
 
     cron = crontab.CronTab(user=settings.CRON_USER)
 
-    analytics = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/analytics.sh')))
-    analytics.hour.on(2)
-    analytics.minute.on(0)  # Daily 2:00 a.m.
-
     logger.info('Updating crontab file:')
     logger.info(cron.render())
 
