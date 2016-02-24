@@ -2857,7 +2857,7 @@ class TestProject(OsfTestCase):
         creator = UserFactory()
         project = ProjectFactory(creator=creator)
         contrib = UserFactory()
-        project.add_contributor(contrib, auth=Auth(user=creator))
+        project.add_contributor(contrib, permissions=['read', 'write', 'admin'], auth=Auth(user=creator))
         project.save()
         assert_in(creator, project.contributors)
         # Creator is removed from project
