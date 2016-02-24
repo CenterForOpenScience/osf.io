@@ -20,6 +20,9 @@ from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
+from modularodm import Q
+from modularodm.exceptions import QueryException
+
 from website import util
 from website import prereg
 from website import settings
@@ -44,6 +47,7 @@ def get_globals():
     """
     user = _get_current_user()
     return {
+        'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
@@ -77,6 +81,16 @@ def get_globals():
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
     }
+
+def is_private_link_anonymous_view():
+    try:
+        # Avoid circular import
+        from website.project.model import PrivateLink
+        return PrivateLink.find_one(
+            Q('key', 'eq', request.args.get('view_only'))
+        ).anonymous
+    except QueryException:
+        return False
 
 
 class OsfWebRenderer(WebRenderer):

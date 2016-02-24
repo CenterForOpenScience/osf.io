@@ -112,7 +112,10 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_in('Invalid link name.', res.body)
 
-    def test_not_anonymous_for_public_project(self):
+    @mock.patch('framework.auth.core.Auth.private_link')
+    def test_can_be_anonymous_for_public_project(self, mock_property):
+        mock_property.return_value(mock.MagicMock())
+        mock_property.anonymous = True
         anonymous_link = PrivateLinkFactory(anonymous=True)
         anonymous_link.nodes.append(self.project)
         anonymous_link.save()
@@ -120,7 +123,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.save()
         self.project.reload()
         auth = Auth(user=self.user, private_key=anonymous_link.key)
-        assert_false(has_anonymous_link(self.project, auth))
+        assert_true(has_anonymous_link(self.project, auth))
 
     def test_has_private_link_key(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
