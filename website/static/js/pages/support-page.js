@@ -3,14 +3,11 @@
  */
 
 'use strict';
-
-var Raven = require('raven-js');
 var $ = require('jquery');
-var $osf = require('js/osfHelpers');
 
 $(document).ready(function(){
     /**
-     * Toggle individual item with jQuery
+     * handle expanding or collapsing individual support item with jQuery
      * @param item {Object} jQuery object for the .support-item element
      * @param turnOff {Boolean} true if we are closing and open item
      * @private
@@ -74,12 +71,31 @@ $(document).ready(function(){
         }
     }
 
-    // Toggle individual view when clicked on header
+    /**
+     * Affix or restore search layer based on location
+     */
+    function fixSearchLayer () {
+        var topOffset = $(window).scrollTop();
+        var searchLayer = $('.search-layer');
+        if(topOffset > 100 && !searchLayer.hasClass('fixed-layer')){
+            searchLayer.addClass('fixed-layer');
+            $('.support-title').hide();
+            $('.search-up').removeClass('disabled');
+        }
+        if(topOffset <= 100 && searchLayer.hasClass('fixed-layer')){
+            searchLayer.removeClass('fixed-layer');
+            $('.support-title').show();
+            $('.search-up').addClass('disabled');
+        }
+    }
+
+    /* expand or collapse on clicking support item header */
     $('.support-head').click(function(){
         var item = $(this).parent();
         changeExpandState(item, item.hasClass('open'));
     });
 
+    /* Expand All button event  */
     $('.search-expand').click(function(){
         resetFilter();
         $('.support-item').each(function(){
@@ -89,6 +105,7 @@ $(document).ready(function(){
 
     });
 
+    /* Collapse All button event  */
     $('.search-collapse').click(function(){
         resetFilter();
         $('.support-item').each(function(){
@@ -97,9 +114,12 @@ $(document).ready(function(){
         updatePrevNextStatus();
     });
 
+    /* Top button event to scroll to top*/
     $('.search-up').click(function(){
         scrollTo();
     });
+
+    /* Previous button event to scroll view to the previous open support item */
     $('.search-previous').click(function(){
         if(searchItemIndex > 0){
             var openItems = $('.support-item.open');
@@ -111,6 +131,8 @@ $(document).ready(function(){
         }
         updatePrevNextStatus();
     });
+
+    /* Next button event to scroll view to the next open support item */
     $('.search-next').click(function(){
         var openItems = $('.support-item.open');
         var nextEl = openItems.get(searchItemIndex+1);
@@ -122,7 +144,6 @@ $(document).ready(function(){
         }
         updatePrevNextStatus();
     });
-
 
     $('.clear-search').click(resetFilter);
 
@@ -150,21 +171,6 @@ $(document).ready(function(){
         });
         updatePrevNextStatus();
     });
-
-    function fixSearchLayer () {
-        var topOffset = $(window).scrollTop();
-        var searchLayer = $('.search-layer');
-        if(topOffset > 100 && !searchLayer.hasClass('fixed-layer')){
-            searchLayer.addClass('fixed-layer');
-            $('.support-title').hide();
-            $('.search-up').removeClass('disabled');
-        }
-        if(topOffset <= 100 && searchLayer.hasClass('fixed-layer')){
-            searchLayer.removeClass('fixed-layer');
-            $('.support-title').show();
-            $('.search-up').addClass('disabled');
-        }
-    }
 
     // Handle fixing support search box on scroll
     $(window).scroll(fixSearchLayer);
