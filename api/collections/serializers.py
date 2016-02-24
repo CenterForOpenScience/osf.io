@@ -46,7 +46,7 @@ class CollectionSerializer(JSONAPISerializer):
         type_ = 'collections'
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('collections:collection-detail', kwargs={'collection_id':obj._id})
+        return absolute_reverse('collections:collection-detail', kwargs={'collection_id': obj._id})
 
     def get_node_links_count(self, obj):
         return len(obj.nodes_pointer)
