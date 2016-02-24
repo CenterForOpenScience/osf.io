@@ -53,7 +53,7 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
         assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.read_permissions)
 
-    def test_return_public_project_details_logged_in(self):
+    def test_return_public_project_details_contributor_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
@@ -61,6 +61,15 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
         assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
         assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.admin_permissions)
+
+    def test_return_public_project_details_non_contributor_logged_in(self):
+        res = self.app.get(self.public_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.public_project.title)
+        assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
+        assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.read_permissions)
 
     def test_return_private_project_details_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
