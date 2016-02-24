@@ -74,7 +74,7 @@ class CommentSerializer(JSONAPISerializer):
         user = self.context['request'].user
         if user.is_anonymous():
             return False
-        return obj.user._id == user._id
+        return obj.user._id == user._id and obj.node.can_comment(Auth(user))
 
     def get_has_children(self, obj):
         return Comment.find(Q('target', 'eq', obj)).count() > 0
