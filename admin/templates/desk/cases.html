@@ -1,1 +1,25 @@
 {#Used to list cases#}
+
+{% load render_bundle from webpack_loader %}
+{% load static %}
+
+<h3>List of user cases</h3>
+
+<table class="table table-striped">
+<thead>
+    <tr>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Subject</th>
+    </tr>
+</thead>
+<tbody>
+{% for case in cases %}
+    <tr>
+        <td>{{ case.type }}</td>
+        <td>{{ case.status }}</td>
+        <td>{{ case.subject }}</td>
+    </tr>
+{% endfor %}
+</tbody>
+</table>

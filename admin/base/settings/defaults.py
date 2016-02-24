@@ -41,6 +41,7 @@ INSTALLED_APPS = (
     'admin.spam',
     'admin.nodes',
     'admin.users',
+    'admin.desk',
 
     # 3rd party
     'raven.contrib.django.raven_compat',

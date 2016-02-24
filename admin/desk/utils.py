@@ -25,21 +25,20 @@ class DeskClient(object):
     a single person is to use Basic Auth.
     """
     BASE_URL = 'desk.com/api/v2'
+    SITE_NAME = 'openscience'
 
-    def __init__(self, sitename, username, password):
-        self.sitename = sitename
+    def __init__(self, username, password):
         self.username = username
         self.password = password
 
     def build_url(self, service):
         """ Constructs the URL for a given service."""
-        return 'https://%s.%s/%s' % (self.sitename, DeskClient.BASE_URL, service)
+        return 'https://%s.%s/%s' % (self.SITE_NAME, DeskClient.BASE_URL, service)
 
-    def call_get(self, service, params=None):
+    def call_get(self, service, params=None, data=None):
         """ Calls a GET API for the given service name and URL parameters."""
         url = self.build_url(service)
-        r = requests.get(url, params=params, auth=(self.username, self.password))
-        print r.content
+        r = requests.get(url, params=params, data=json.dumps(data), auth=(self.username, self.password))
         if r.status_code != requests.codes.ok:
             raise DeskError(str(r.status_code))
         return json.loads(r.content)
@@ -133,7 +132,23 @@ class DeskClient(object):
             pass
         return case_link
 
-    def find_or_create_customer_by_email(self, email, full_name=None):
+    # def customer_cases(self, email):
+    #     params = {'email': email}
+    #     customer = self.find_customer(params)
+
+    def cases(self, params):
+        case_list = [None]
+        data = {
+            'sort_field': 'created_at',
+            'sort_direction': 'desc'
+        }
+        try:
+            case_list = self.call_get('cases/search', params, data)
+        except DeskError:
+            pass
+        return case_list[u'_embedded'][u'entries']
+
+    def create_find_customer_by_email(self, email, full_name=None):
         """ A convenience function for finding or creating a customer, given an email.
             It tries to create the customer first, and if it gets a validation error
             about the customer already existing, it finds the customer.
@@ -160,4 +175,4 @@ class DeskClient(object):
         """ A convenience function for turning the link returned back by the case API
             into a web link that Desk agents can view."""
         case_number = case_api_link.split('/')[-1]
-        return 'https://%s.desk.com/agent/case/%s' % (self.sitename, case_number)
+        return 'https://%s.desk.com/agent/case/%s' % (self.SITE_NAME, case_number)
