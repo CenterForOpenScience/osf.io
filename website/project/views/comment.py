@@ -33,35 +33,41 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
         for guid in file_guids:
             obj = Guid.load(guid)
-            if source_node != destination_node:
-                update_comment_node(guid, source_node, destination_node)
+            # if source_node != destination_node:
+            #     update_comment_node(guid, source_node, destination_node)
 
-            if not (source['provider'] == destination['provider'] and (source['provider'] == 'osfstorage')):
+            if not (source['provider'] == destination['provider'] and source['provider'] == 'osfstorage'):
                 if not source['path'].endswith('/'):
                     data = dict(destination)
                     new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, destination['path'])
                     if destination['provider'] != 'osfstorage':
                         new_file.update(revision=None, data=data)
                 else:
-                    if source['provider'] == 'box':
-                        new_path = obj.referent.path
-                    else:
-                        new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
-                    new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
-
-                    for item in destination.get('children', []):
-                        if item['kind'] == 'file' and item['materialized'].replace(destination['materialized'], source['materialized']) == obj.referent.materialized_path:
-                            data = dict(item)
-                            if destination['provider'] != 'osfstorage':
-                                new_file.update(revision=None, data=data)
-                            break
-                    else:
+                    new_file = create_file_from_metadata(destination.get('children', []), source, destination, destination_node, obj)
+                    if not new_file:
+                        if source['provider'] == 'box':
+                            new_path = obj.referent.path
+                        else:
+                            new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
+                        new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
                         new_file.name = obj.referent.name
                         new_file.materialized_path = new_path
                         new_file.save()
 
                 obj.referent = new_file
                 obj.save()
+
+
+def create_file_from_metadata(children, source, destination, destination_node, obj):
+    for item in children:
+        if item['kind'] == 'folder':
+            return create_file_from_metadata(item.get('children', []), source, destination, destination_node, obj)
+        elif item['kind'] == 'file' and item['materialized'].replace(destination['materialized'], source['materialized']) == obj.referent.materialized_path:
+            data = dict(item)
+            new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, item['path'])
+            if destination['provider'] != 'osfstorage':
+                new_file.update(revision=None, data=data)
+            return new_file
 
 
 def update_comment_node(root_target_id, source_node, destination_node):
