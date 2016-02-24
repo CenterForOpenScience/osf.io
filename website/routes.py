@@ -125,6 +125,9 @@ def goodbye():
     status.push_status_message(language.LOGOUT, 'success')
     return {}
 
+def redirect_to_support():
+    # Redirect to support page
+    return redirect('/support/')
 
 def make_url_map(app):
     """Set up all the routes for the OSF app.
@@ -183,7 +186,11 @@ def make_url_map(app):
 
         Rule('/about/', 'get', website_views.redirect_about, json_renderer,),
         Rule('/howosfworks/', 'get', website_views.redirect_howosfworks, json_renderer,),
+
+        Rule('/faq/', 'get', lambda *args, **kwargs: redirect('/support/'), OsfWebRenderer('public/pages/support.mako')),
+        Rule('/getting-started/', 'get', redirect_to_support, OsfWebRenderer('public/pages/support.mako')),
         Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako')),
+
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
 
