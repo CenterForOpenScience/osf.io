@@ -8,7 +8,6 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
-import datetime as dt
 import framework.auth
 
 from framework.auth import cas, campaigns
