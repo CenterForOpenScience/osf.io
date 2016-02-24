@@ -13,6 +13,7 @@ import warnings
 import requests
 
 import pytz
+from flask import request
 from django.core.urlresolvers import reverse
 
 from modularodm import Q
@@ -23,12 +24,7 @@ from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
-
-from flask import request
-
 from framework import status
-
-
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.mongo import validators

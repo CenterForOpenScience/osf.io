@@ -147,7 +147,7 @@ def get_user(email=None, password=None, verification_key=None):
 class Auth(object):
 
     def __init__(self, user=None, api_node=None,
-                 private_key=None, private_link=None):
+                 private_key=None):
         self.user = user
         self.api_node = api_node
         self.private_key = private_key
