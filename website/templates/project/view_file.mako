@@ -1,10 +1,4 @@
 <%inherit file="project/project_base.mako"/>
-<div id="alertBar">
-    % if node['is_registration'] and urls['archived_from']:
-        <div class="alert alert-info">This file is part of a registration and is being shown in its archived version (and cannot be altered).
-            The <a class="link-solid" href="${urls['archived_from']}">active file</a> is viewable from within the <a class="link-solid" href="${node['registered_from_url']}">live ${node['node_type']}</a>.</div>
-    % endif
-</div>
 
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
