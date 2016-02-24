@@ -114,28 +114,16 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             return canRemoveNodes;
         });
 
-        self.removeSelf = ko.computed(function() {
-            var currentUser = window.contextVars.currentUser.id;
-            if (self.contributorToRemove().id === currentUser) {
-                return true;
-            }
-            else {
-                return false;
-            }
+        self.removeSelf = ko.pureComputed(function() {
+            return self.contributorToRemove().id === window.contextVars.currentUser.id;
         });
 
         self.canRemoveNode = ko.computed(function() {
             return self.canRemoveNodes()[self.nodeId];
         });
 
-        self.canRemoveNodesLength = ko.computed(function() {
-            var canRemoveNodeLengthLocal = 0;
-            for (var key in self.canRemoveNodes()) {
-                if (self.canRemoveNodes()[key]) {
-                    canRemoveNodeLengthLocal++;
-                }
-            }
-            return canRemoveNodeLengthLocal;
+        self.canRemoveNodesLength = ko.pureComputed(function() {
+            return Object.keys(self.canRemoveNodes()).length;
         });
 
         self.hasChildrenToRemove = ko.computed(function() {
@@ -151,9 +139,8 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         });
 
         self.modalSize = ko.pureComputed(function() {
-            var self = this;
             return self.hasChildrenToRemove() && self.canRemoveNode() ? 'modal-dialog modal-lg' : 'modal-dialog modal-md';
-        }, self);
+        });
 
         self.titlesToRemove = ko.computed(function() {
             var titlesToRemove = [];
