@@ -595,7 +595,7 @@ MEETING_DATA = {
         'CURCONF2016': {
         'name': 'CUR Biennial Conference 2016',
         'info_url': 'http://www.cur.org/conferences_and_events/biennial2016/',
-        'logo_url': 'http://s11.postimg.org/itsmubimq/Conference_logo_eps.jpg',
+        'logo_url': 'http://s11.postimg.org/v8feuna4y/Conference_logo_eps.jpg',
         'active': True,
         'admins': [],
         'public_projects': True,

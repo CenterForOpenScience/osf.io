@@ -5,7 +5,7 @@ import urllib
 import urlparse
 import bson.objectid
 import httplib as http
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import itsdangerous
 
@@ -162,8 +162,10 @@ def before_request():
             session.data['auth_user_username'] = user.username
             session.data['auth_user_id'] = user._primary_key
             session.data['auth_user_fullname'] = user.fullname
-            user.date_last_login = datetime.utcnow()
-            user.save()
+
+            if user.date_last_login is None or (datetime.utcnow() - user.date_last_login) > timedelta(seconds=60):
+                user.date_last_login = datetime.utcnow()
+                user.save()
         else:
             # Invalid key: Not found in database
             session.data['auth_error_code'] = http.UNAUTHORIZED
