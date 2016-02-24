@@ -121,4 +121,4 @@ celerybeat-schedule
 celerybeat.pid
 
 # Analytics Output
-websites/analytics/
+website/analytics/

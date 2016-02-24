@@ -53,6 +53,8 @@ def make_csv(fp, rows, headers=None):
 
 def send_file(app, name, content_type, file_like, node, user):
     """Upload file to OSF."""
+    if not node:
+        return
     file_like.seek(0)
     with app.test_request_context():
         upload_url = util.waterbutler_url_for('upload', 'osfstorage', name, node, user=user)
