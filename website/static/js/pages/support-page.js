@@ -39,6 +39,7 @@ $(document).ready(function(){
         $('.support-filter').val('');
         $('.clear-search').removeClass('clear-active');
         searchItemIndex = 0;
+        updatePrevNextStatus();
     }
 
     var searchItemIndex = 0; // Index for which search result is now supposed to be in view; for prev and next buttons
@@ -102,7 +103,6 @@ $(document).ready(function(){
             changeExpandState($(this));
         });
         updatePrevNextStatus();
-
     });
 
     /* Collapse All button event  */
