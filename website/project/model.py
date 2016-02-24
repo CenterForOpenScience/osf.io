@@ -1290,7 +1290,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     value.get('year'),
                     value.get('copyright_holders'),
                     auth,
-                    save=True
+                    save=save
                 )
             else:
                 with warnings.catch_warnings():
