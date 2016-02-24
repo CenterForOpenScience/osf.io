@@ -116,8 +116,7 @@ def auth_login(auth, **kwargs):
 
     """
     campaign = request.args.get('campaign')
-    if campaign:
-        next_url = request.args.get('next')
+    next_url = request.args.get('next')
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
     if auth.logged_in:
@@ -134,10 +133,10 @@ def auth_login(auth, **kwargs):
     if status_message == 'expired':
         status.push_status_message('The private link you used is expired.')
 
-    if next_url:
-        status.push_status_message(language.MUST_LOGIN)
-    # set login_url to form action, upon successful authentication specifically w/o logout=True,
-    # allows for next to be followed or a redirect to the dashboard.
+    # if next_url:
+    #     status.push_status_message(language.MUST_LOGIN)
+    # # set login_url to form action, upon successful authentication specifically w/o logout=True,
+    # # allows for next to be followed or a redirect to the dashboard.
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
 
     data = {}
@@ -170,12 +169,16 @@ def auth_email_logout(token, auth=None, **kwargs):
     user = User.load(kwargs['uid'])
     campaign = request.args.get('campaign') or campaigns.campaign_for_user(user)
     if campaign:
-        redirect_url = campaigns.campaign_url_for(campaign) + '?campaign=' + campaign
-        user.email_verifications[token]['confirmed'] = True
-            # user.system_tags.append(campaign)
-            # user.system_tags = []
-        user.save()
-    logout()
+        redirect_url = web_url_for('auth_login') + '?campaign=' + campaign
+        # redirect_url = campaigns.campaign_url_for(campaign) + '?campaign=' + campaign
+
+        if user.confirm_token(token):
+            user.email_verifications[token]['confirmed'] = True
+            user.save()
+            logout()
+        else:
+            user.email_verifications[token]['confirmed'] = False
+            status.push_status_message('The private link you used is expired.')
     resp = redirect(redirect_url)
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
     return resp
@@ -191,21 +194,18 @@ def confirm_email_get(auth=None, **kwargs):
     """
     # user = User.load(kwargs['uid'])
     user = auth.user
-    email_verifications = user.email_verifications
     verified_emails = []
-    for token in email_verifications:
-        # return [emails for emails in email_verifications if email_verifications[token][confirmed]]
+    for token in user.email_verifications:
         #todo migrate to remove this hack
-        expiration = email_verifications[token].get('expiration')
-        try:
-            email_verifications[token]['confirmed']
-        except:
-            email_verifications[token]['confirmed'] = False
-        if email_verifications[token]['confirmed'] and not expiration or \
-                (expiration and expiration < dt.datetime.utcnow()):
-            verified_emails.append({'address': email_verifications[token]['email'],
-                                    'token': token,
-                                    'confirmed': email_verifications[token]['confirmed']})
+        if user.confirm_token(token):
+            if user.email_verifications[token]['confirmed']:
+                #todo remove confirmed, and maybe token, from object
+                verified_emails.append({'address': user.email_verifications[token]['email'],
+                                        'token': token,
+                                        'confirmed': user.email_verifications[token]['confirmed']})
+            else:
+                user.email_verifications[token]['confirmed'] = False
+                user.save()
     return verified_emails
 
 
@@ -226,7 +226,8 @@ def add_confirmed_emails(auth=None, **kwargs):
     if user is None:
         raise HTTPError(http.NOT_FOUND)
 
-    if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
+    if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id) \
+            and not confirmed_email:
         if not is_merge:
             # determine if the user registered through a campaign
             campaign = campaigns.campaign_for_user(user)
@@ -242,7 +243,7 @@ def add_confirmed_emails(auth=None, **kwargs):
         return redirect(web_url_for('user_account'))
 
     try:
-        user.confirm_email(token, merge=is_merge)
+        user.confirm_email(token, merge=True)
     except exceptions.EmailConfirmTokenError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,

@@ -820,6 +820,20 @@ class User(GuidStoredObject, AddonModelMixin):
 
         return verification['email']
 
+    def confirm_token(self, token):
+        """Return whether or not a confirmation token is valid for this user.
+        :rtype: bool
+        """
+        verification = self.email_verifications[token]
+        # Check token for existance and date
+        if (
+            'expiration' in verification and
+            verification['expiration'] < dt.datetime.utcnow() or
+            token not in self.email_verifications
+        ):
+            return False
+        return True
+
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
         a given node which they were added as a unregistered contributor for.
