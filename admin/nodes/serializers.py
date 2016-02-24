@@ -19,7 +19,7 @@ def serialize_node(node):
         'is_registration': node.is_registration,
         'date_created': node.date_created,
         'contributors': map(serialize_simple_user, user_list.iteritems()),
-        'retraction': node.retraction,
+        'retraction': node.is_retracted,
         'embargo': embargo,
         'children': map(serialize_simple_node, node.nodes),
     }
