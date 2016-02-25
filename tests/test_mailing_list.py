@@ -116,6 +116,8 @@ class TestEmailRejections(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.project.mailing_list.send_acception')
     def test_working_email(self, mock_send_list, mock_send_mail):
+        user2 = AuthUserFactory()
+        self.project.add_contributor(user2, save=True)
         self.app.post(self.post_url, self.message)
 
         assert mock_send_mail.call_count == 0
@@ -123,8 +125,28 @@ class TestEmailRejections(OsfTestCase):
         assert_equal(mock_send_list.call_count, 1)
         assert_equal(mock_send_list.call_args[0][0]._id, self.project._id)
         assert_equal(mock_send_list.call_args[0][1]._id, self.user._id)
+        assert_equal(len(mock_send_list.call_args[0][2]), 1)
+        assert_equal(mock_send_list.call_args[0][2][0]._id, user2._id)
         [assert_equal(mock_send_list.call_args[0][3][key], self.message[key])
             for key in self.message.keys()]
+
+    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.project.mailing_list.send_acception')
+    def test_no_recipients(self, mock_send_list, mock_send_mail):
+        self.app.post(self.post_url, self.message)
+
+        mock_send_mail.assert_called_with(
+            reason='no_recipients',
+            to_addr=self.user.email,
+            mail=mails.MAILING_LIST_EMAIL_REJECTED,
+            target_address='{}@osf.io'.format(self.project._id),
+            user=self.user,
+            node_type='project',
+            node_url=self.project.absolute_url,
+            is_admin=True,
+            mail_log_class=MailingListEventLog
+        )
+        assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.project.mailing_list.send_acception')
