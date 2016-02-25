@@ -2,17 +2,15 @@ from __future__ import unicode_literals
 
 import copy
 import json
-import unittest
 import random
+import unittest
+import uuid
 
 import requests
 from django.conf import settings as django_settings
-
 from requests.auth import HTTPBasicAuth
 
 from framework.auth import User
-import uuid
-
 from scripts.create_fakes import create_fake_project
 from tests.base import DbTestCase
 
@@ -21,8 +19,7 @@ from tests.base import DbTestCase
 # from datadiff import tools
 
 class TestVarnish(DbTestCase):
-    local_varnish_base_url = '{}/v2/'.format(django_settings.VARNISH_SERVERS[
-                                                 0])
+    local_varnish_base_url = '{}/v2/'.format(django_settings.VARNISH_SERVERS[0])
     local_python_base_url = 'http://localhost:8000/v2/'
 
     @classmethod
@@ -180,8 +177,7 @@ class TestVarnish(DbTestCase):
         assert create_response.ok, 'Failed to create node'
 
         node_id = create_response.json()['data']['id']
-        new_title = "{} -- But Changed!".format(create_response.json()['data'][
-                                                    'attributes']['title'])
+        new_title = "{} -- But Changed!".format(create_response.json()['data']['attributes']['title'])
 
         response = requests.get(
             '{}/v2/nodes/{}/?format=jsonapi&esi=true&embed=comments&embed=children&embed=files&embed=registrations&embed=contributors&embed=node_links&embed=parent'.format(
@@ -210,14 +206,10 @@ class TestVarnish(DbTestCase):
 
         assert individual_response_before_update.ok, 'Individual request failed.'
 
-        assert individual_response_before_update.headers[
-                   'x-cache'] == 'HIT', 'Request never made it to cache'
+        assert individual_response_before_update.headers['x-cache'] == 'HIT', 'Request never made it to cache'
 
-        update_response = requests.put('{}/v2/nodes/{}/'.format(
-            django_settings.VARNISH_SERVERS[0], node_id),
-            json=new_data_object,
-            auth=self.authorization
-        )
+        update_response = requests.put('{}/v2/nodes/{}/'.format(django_settings.VARNISH_SERVERS[0], node_id),
+                                       json=new_data_object, auth=self.authorization)
 
         assert update_response.ok, 'Your update request failed. {}'.format(
             update_response.text)
@@ -230,5 +222,4 @@ class TestVarnish(DbTestCase):
         assert individual_response.ok, 'Your individual node request failed. {}'.format(
             individual_response.json())
 
-        assert individual_response.headers[
-                   'x-cache'] == 'MISS', 'Request got a cache hit.'
+        assert individual_response.headers['x-cache'] == 'MISS', 'Request got a cache hit.'
