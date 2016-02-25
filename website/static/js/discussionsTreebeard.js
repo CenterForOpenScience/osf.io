@@ -49,7 +49,7 @@ function subscribe(item, notification_type, reload) {
         type: method,
         dataType: 'json'
     }).done(function(){
-        //'notfiy-success' is to override default class 'success' in treebeard
+        //'notify-success' is to override default class 'success' in treebeard
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
         item.data.node.discussions = notification_type;
         reload();
