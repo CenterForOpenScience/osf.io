@@ -1,27 +1,25 @@
-import re
 import collections
+import re
 
 import furl
-from rest_framework import exceptions
-from rest_framework import serializers as ser
 from django.core.urlresolvers import resolve, reverse
 from django.http.request import QueryDict
+from rest_framework import exceptions
+from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
-
-from api.base.utils import extend_querystring_params
-from framework.auth import core as auth_core
-from website import settings
-from website.util.sanitize import strip_html
-from website import util as website_utils
 from rest_framework.fields import get_attribute as get_nested_attributes
 
 from api.base import utils
-from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
-
-from website.models import PrivateLink
+from api.base.settings import BULK_SETTINGS
+from api.base.utils import extend_querystring_params
+from framework.auth import core as auth_core
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+from website import settings
+from website import util as website_utils
+from website.models import PrivateLink
+from website.util.sanitize import strip_html
 
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
@@ -456,7 +454,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             urls = None
         return urls
 
-    def to_esi_representation(self, value, envelope):
+    def to_esi_representation(self, value, envelope='data'):
         relationships = super(RelationshipField, self).to_representation(value)
         if relationships is not None and 'related' in relationships.keys():
             href = relationships['related']
@@ -820,18 +818,12 @@ class JSONAPISerializer(ser.Serializer):
 
     def to_esi_representation(self, data, envelope='data'):
         href = None
-        query_params_blacklist = ['page[size]', 'format']
-        try:
-            href = self.get_absolute_url(data)
-        except NotImplementedError:
-            # catch failure, make django do the work
-            representation = super(JSONAPISerializer, self).to_representation(data)
-            return representation
-        else:
-            if href and href != '{}':
-                esi_url = furl.furl(href).remove(args=query_params_blacklist).add(
-                    args=self.context['request'].QUERY_PARAMS).url
-                return '<esi:include src="{}"/>'.format(esi_url)
+        query_params_blacklist = ['page[size]']
+        href = self.get_absolute_url(data)
+        if href and href != '{}':
+            esi_url = furl.furl(href).add(args=dict(self.context['request'].query_params)).remove(
+                args=query_params_blacklist).remove(args=['envelope']).add(args={'envelope': envelope}).url
+            return '<esi:include src="{}"/>'.format(esi_url)
         # failsafe, let python do it if something bad happened in the ESI construction
         return super(JSONAPISerializer, self).to_representation(data)
 
