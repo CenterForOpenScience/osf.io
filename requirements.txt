@@ -19,6 +19,7 @@ itsdangerous==0.24
 lxml==3.4.1
 mailchimp==2.0.9
 nameparser==0.3.3
+nose-parameterized==0.5.0
 py-bcrypt==0.4
 pymongo==2.5.1
 python-dateutil==2.4.2
