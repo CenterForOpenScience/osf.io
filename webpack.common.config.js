@@ -58,6 +58,7 @@ var entry = {
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'share-embed-page': staticPath('js/pages/share-embed-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
+    'home': staticPath('js/pages/home.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -145,7 +146,8 @@ var resolve = {
         'tests': staticPath('js/tests'),
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
-        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js')
+        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
+        'sliderPips': staticPath('vendor/bower_components/jQuery-ui-Slider-Pips/dist/jquery-ui-slider-pips.min.js')
     }
 };
 
