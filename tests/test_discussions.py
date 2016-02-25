@@ -16,6 +16,7 @@ from werkzeug.datastructures import ImmutableMultiDict
 
 from website import mails, settings
 from website.project.mailing_list import get_unsubscribes
+from website.project.model import MailingListEventLog
 from website.util import api_url_for
 
 
@@ -140,7 +141,8 @@ class TestEmailRejections(OsfTestCase):
             user=None,
             node_type='project',
             node_url=self.project.absolute_url,
-            is_admin=False
+            is_admin=False,
+            mail_log_class=MailingListEventLog
         )
         assert mock_send_list.call_count == 0
 
@@ -159,7 +161,8 @@ class TestEmailRejections(OsfTestCase):
             user=self.user,
             node_type='',
             node_url='',
-            is_admin=False
+            is_admin=False,
+            mail_log_class=MailingListEventLog
         )
         assert mock_send_list.call_count == 0
 
@@ -178,7 +181,8 @@ class TestEmailRejections(OsfTestCase):
             user=self.user,
             node_type='project',
             node_url=self.project.absolute_url,
-            is_admin=True
+            is_admin=True,
+            mail_log_class=MailingListEventLog
         )
         assert mock_send_list.call_count == 0
 
@@ -199,7 +203,8 @@ class TestEmailRejections(OsfTestCase):
             user=self.user,
             node_type='project',
             node_url=self.project.absolute_url,
-            is_admin=False
+            is_admin=False,
+            mail_log_class=MailingListEventLog
         )
         assert mock_send_list.call_count == 0
 
@@ -222,7 +227,8 @@ class TestEmailRejections(OsfTestCase):
             user=self.user,
             node_type='project',
             node_url=self.project.absolute_url,
-            is_admin=False
+            is_admin=False,
+            mail_log_class=MailingListEventLog
         )
         assert mock_send_list.call_count == 0
 
@@ -242,7 +248,8 @@ class TestEmailRejections(OsfTestCase):
             user=self.user,
             node_type='project',
             node_url=self.project.absolute_url,
-            is_admin=True
+            is_admin=True,
+            mail_log_class=MailingListEventLog
         )
         assert mock_send_list.call_count == 0
 
@@ -265,6 +272,7 @@ class TestEmailRejections(OsfTestCase):
             user=self.user,
             node_type='project',
             node_url=self.project.absolute_url,
-            is_admin=False
+            is_admin=False,
+            mail_log_class=MailingListEventLog
         )
         assert mock_send_list.call_count == 0

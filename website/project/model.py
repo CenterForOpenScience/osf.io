@@ -21,6 +21,7 @@ from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import KeyExistsException
 
 from api.base.utils import absolute_reverse
 from framework import status
@@ -1596,10 +1597,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # Ensure Mailing list subscription is set up
         if first_save:
-            auth_signals.node_created.send(self)
+            self.create_mailing_list_subscription()
 
         # Return expected value for StoredObject::save
         return saved_fields
+
+    def create_mailing_list_subscription(node):
+        if node.mailing_enabled:
+            #imported here to avoid circularity
+            from website.models import NotificationSubscription
+            from website.notifications.utils import to_subscription_key
+            try:
+                subscription = NotificationSubscription(
+                    _id=to_subscription_key(node._id, 'mailing_list_events'),
+                    owner=node,
+                    event_name='mailing_list_events'
+                )
+                subscription.add_user_to_subscription(node.creator, 'email_transactional', save=True)
+                subscription.save()
+            except KeyExistsException:
+                pass
 
     ######################################
     # Methods that return a new instance #
@@ -2186,7 +2203,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # Clear permissions before adding users
         forked.permissions = {}
         forked.visible_contributor_ids = []
-        forked.save()
+
+        # Create mailing list before adding users
+        forked.create_mailing_list_subscription()
 
         for citation in self.alternative_citations:
             forked.add_citation(

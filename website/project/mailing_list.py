@@ -3,7 +3,7 @@ import re
 from flask import request
 
 from framework.auth.core import get_user
-from framework.auth.signals import user_confirmed, node_created
+from framework.auth.signals import user_confirmed
 
 from website import mails
 from website import settings
@@ -17,17 +17,6 @@ from website.util.sanitize import unescape_entities
 ###############################################################################
 # Signalled Functions
 ###############################################################################
-
-@node_created.connect
-def create_mailing_list_subscription(node):
-    if node.mailing_enabled:
-        subscription = NotificationSubscription(
-            _id=to_subscription_key(node._id, 'mailing_list_events'),
-            owner=node,
-            event_name='mailing_list_events'
-        )
-        subscription.add_user_to_subscription(node.creator, 'email_transactional', save=True)
-        subscription.save()
 
 @contributor_added.connect
 def subscribe_contributor_to_mailing_list(node, contributor, auth=None):
@@ -80,7 +69,8 @@ def route_message(**kwargs):
         'user': sender,
         'node_type': node.project_or_component if node else '',
         'node_url': node.absolute_url if node else '',
-        'is_admin': user_is_admin
+        'is_admin': user_is_admin,
+        'mail_log_class': MailingListEventLog
     }
 
     if not sender:

@@ -7,7 +7,6 @@ from website.conferences import signals as conference
 
 ALL_SIGNALS = [
     auth.contributor_removed,
-    auth.node_created,
     auth.node_deleted,
     project.comment_added,
     project.unreg_contributor_added,
