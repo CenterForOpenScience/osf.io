@@ -36,7 +36,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from website.models import Node, Pointer, WatchConfig, PrivateLink
+from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
 from website import settings
 from website.views import _render_nodes, find_bookmark_collection, validate_page_num
 from website.profile import utils
@@ -214,6 +214,10 @@ def node_fork_page(auth, node, **kwargs):
             http.FORBIDDEN,
             redirect_url=node.url
         )
+    message = '{} has been successfully forked.'.format(
+        node.project_or_component.capitalize()
+    )
+    status.push_status_message(message, kind='success', trust=False)
     return fork.url
 
 
@@ -256,8 +260,13 @@ def node_setting(auth, node, **kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name != 'wiki'
     ], key=lambda addon: addon.full_name.lower())
+
+    for addon in settings.ADDONS_AVAILABLE:
+        if 'node' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name == 'wiki':
+            ret['wiki'] = addon
+            break
 
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
@@ -325,7 +334,6 @@ def configure_comments(node, **kwargs):
 @must_be_contributor_or_public
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
-
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
 
@@ -547,7 +555,7 @@ def component_remove(auth, node, **kwargs):
         )
     node.save()
 
-    message = '{} deleted'.format(
+    message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
     status.push_status_message(message, kind='success', trust=False)
@@ -602,6 +610,7 @@ def _should_show_wiki_widget(node, user):
         return has_wiki and wiki_page and wiki_page.html(node)
     else:
         return has_wiki
+
 
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
@@ -676,11 +685,15 @@ def _view_project(node, auth, primary=False):
             'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
             'comment_level': node.comment_level,
-            'has_comments': bool(getattr(node, 'commented', [])),
-            'has_children': bool(getattr(node, 'commented', False)),
+            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
+            'has_children': bool(Comment.find(Q('node', 'eq', node))),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
+            },
+            'institution': {
+                'name': node.primary_institution.name if node.primary_institution else None,
+                'logo_path': node.primary_institution.logo_path if node.primary_institution else None,
             },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,

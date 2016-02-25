@@ -6,11 +6,13 @@ var Raven = require('raven-js');
 var ko = require('knockout');
 
 var ProjectSettings = require('js/projectSettings.js');
+var InstitutionProjectSettings = require('js/institutionProjectSettings.js');
 
 var $osf = require('js/osfHelpers');
 require('css/addonsettings.css');
 
 var ctx = window.contextVars;
+
 
 // Initialize treebeard grid for notifications
 var ProjectNotifications = require('js/notificationsTreebeard.js');
@@ -55,8 +57,10 @@ if ($('#wgrid').length) {
 }
 
 $(document).ready(function() {
-
     // Apply KO bindings for Project Settings
+    if ($('#institutionSettings').length) {
+        new InstitutionProjectSettings('#institutionSettings', window.contextVars);
+    }
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
     for (var i = 0; i < keys.length; i++) {
@@ -252,5 +256,33 @@ $(document).ready(function() {
             }
         }
     });
-
 });
+
+var WikiSettingsViewModel = {
+    enabled: ko.observable(ctx.wiki.isEnabled), // <- this would get set in the mako template, as usual
+    wikiMessage: ko.observable('')
+};
+
+WikiSettingsViewModel.enabled.subscribe(function(newValue) {
+    var self = this;
+    $osf.postJSON(ctx.node.urls.api + 'settings/addons/', {wiki: newValue}
+    ).done(function(response) {
+        if (newValue) {
+            self.wikiMessage('Wiki Enabled');
+        }
+        else {
+            self.wikiMessage('Wiki Disabled');
+        }
+        //Give user time to see message before reload.
+        setTimeout(function(){window.location.reload();}, 1500);
+    }).fail(function(xhr, status, error) {
+        $osf.growl('Error', 'Unable to update wiki');
+        Raven.captureMessage('Could not update wiki.', {
+            url: ctx.node.urls.api + 'settings/addons/', status: status, error: error
+        });
+        setTimeout(function(){window.location.reload();}, 1500);
+    });
+    return true;
+}, WikiSettingsViewModel);
+
+$osf.applyBindings(WikiSettingsViewModel, '#selectWikiForm');

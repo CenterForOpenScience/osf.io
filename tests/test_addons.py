@@ -5,12 +5,13 @@ import mock
 import datetime
 import unittest
 from nose.tools import *  # noqa
+import httplib as http
 
 import jwe
 import jwt
 import furl
 import itsdangerous
-from modularodm import storage
+from modularodm import storage, Q
 
 from framework.auth import cas
 from framework.auth import signing
@@ -18,10 +19,12 @@ from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions.model import Session
 from framework.mongo import set_up_storage
+from tests import factories
 
 from website import settings
 from website.files import models
 from website.files.models.base import PROVIDER_MAP
+from website.project.model import MetaSchema, ensure_schemas
 from website.util import api_url_for, rubeus
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
@@ -373,6 +376,63 @@ class TestCheckAuth(OsfTestCase):
         res = views.check_access(component, Auth(user=self.user), 'copyfrom', None)
         assert_true(res)
 
+class TestCheckPreregAuth(OsfTestCase):
+
+    def setUp(self):
+        super(TestCheckPreregAuth, self).setUp()
+
+        ensure_schemas()
+        self.prereg_challenge_admin_user = AuthUserFactory()
+        self.prereg_challenge_admin_user.system_tags.append(settings.PREREG_ADMIN_TAG)
+        self.prereg_challenge_admin_user.save()
+        prereg_schema = MetaSchema.find_one(
+                Q('name', 'eq', 'Prereg Challenge') &
+                Q('schema_version', 'eq', 2)
+        )
+
+        self.user = AuthUserFactory()
+        self.node = factories.ProjectFactory(creator=self.user)
+
+        self.parent = factories.ProjectFactory()
+        self.child = factories.NodeFactory(parent=self.parent)
+
+        self.draft_registration = factories.DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema,
+            branched_from=self.parent
+        )
+
+    def test_has_permission_download_prereg_challenge_admin(self):
+        res = views.check_access(self.draft_registration.branched_from,
+            Auth(user=self.prereg_challenge_admin_user), 'download', None)
+        assert_true(res)
+
+    def test_has_permission_download_on_component_prereg_challenge_admin(self):
+        try:
+            res = views.check_access(self.draft_registration.branched_from.nodes[0],
+                                     Auth(user=self.prereg_challenge_admin_user), 'download', None)
+        except Exception:
+            self.fail()
+        assert_true(res)
+
+    def test_has_permission_download_not_prereg_challenge_admin(self):
+        new_user = AuthUserFactory()
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.draft_registration.branched_from,
+                 Auth(user=new_user), 'download', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+
+    def test_has_permission_download_prereg_challenge_admin_not_draft(self):
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.node,
+                 Auth(user=self.prereg_challenge_admin_user), 'download', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
+
+    def test_has_permission_write_prereg_challenge_admin(self):
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(self.draft_registration.branched_from,
+                Auth(user=self.prereg_challenge_admin_user), 'write', None)
+            assert_equal(exc_info.exception.code, http.FORBIDDEN)
 
 class TestCheckOAuth(OsfTestCase):
 
@@ -560,6 +620,7 @@ class TestAddonFileViews(OsfTestCase):
             'extra': '',
             'file_name': '',
             'materialized_path': '',
+            'file_id': '',
         })
         ret.update(rubeus.collect_addon_assets(self.project))
         return ret

@@ -233,12 +233,8 @@ def conference_submissions(**kwargs):
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
-        for tag in Tag.find(Q('_id', 'iexact', conf.endpoint)):
-            for node in tag.node__tagged:
-                if not node:
-                    continue
-                if not node.is_public or node.is_deleted:
-                    continue
+        for tag in Tag.find(Q('lower', 'eq', conf.endpoint.lower())):
+            for node in tag.node__tagged.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)):
                 projects.add(node)
 
         for idx, node in enumerate(projects):
@@ -250,7 +246,6 @@ def conference_submissions(**kwargs):
         if num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
     submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
-
     return {'submissions': submissions}
 
 def conference_view(**kwargs):

@@ -81,5 +81,6 @@
 
 /* Style for file name */
 #file-ext {
-    white-space: nowrap;
+	white-space: nowrap;
+	display: inline-block;
 }

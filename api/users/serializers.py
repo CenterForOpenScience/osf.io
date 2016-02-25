@@ -3,16 +3,15 @@ from rest_framework import serializers as ser
 from modularodm.exceptions import ValidationValueError
 
 from api.base.exceptions import InvalidModelValueError
-from api.base.serializers import AllowMissing
+from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, DoNotRelateWhenAnonymous
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
-from api.base.utils import add_dev_only_items
 
 
-class UserSerializer(DoNotRelateWhenAnonymous, JSONAPISerializer):
+class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'full_name',
         'given_name',
@@ -46,14 +45,20 @@ class UserSerializer(DoNotRelateWhenAnonymous, JSONAPISerializer):
     orcid = DevOnly(AllowMissing(ser.CharField(required=False, source='social.orcid',
                                                          allow_blank=True, help_text='ORCID'), required=False, source='social.orcid'))
     researcherId = DevOnly(AllowMissing(ser.CharField(required=False, source='social.researcherId',
-                                                                allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId'))
-
+                                                      allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId'))
+    researchGate = DevOnly(AllowMissing(ser.CharField(required=False, source='social.researchGate',
+                                                      allow_blank=True, help_text='ResearchGate Account'), required=False, source='social.researchGate'))
+    academiaInstitution = DevOnly(AllowMissing(ser.CharField(required=False, source='social.academiaInstitution',
+                                                      allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution'))
+    academiaProfileID = DevOnly(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
+                                                      allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID'))
+    baiduScholar = DevOnly(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
+                                                           allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar'))
     links = LinksField(
-        add_dev_only_items({
+        {
             'html': 'absolute_url',
-        }, {
             'profile_image': 'profile_image_url',
-        })
+        }
     )
 
     nodes = RelationshipField(
@@ -65,6 +70,12 @@ class UserSerializer(DoNotRelateWhenAnonymous, JSONAPISerializer):
         related_view='users:user-registrations',
         related_view_kwargs={'user_id': '<pk>'},
     ))
+    institutions = RelationshipField(
+        related_view='users:user-institutions',
+        related_view_kwargs={'user_id': '<pk>'},
+        self_view='users:user-institutions-relationship',
+        self_view_kwargs={'user_id': '<pk>'}
+    )
 
     class Meta:
         type_ = 'users'
@@ -98,3 +109,25 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class RelatedInstitution(JSONAPIRelationshipSerializer):
+    id = ser.CharField(required=False, allow_null=True, source='_id')
+    class Meta:
+        type_ = 'institutions'
+
+
+class UserInstitutionsRelationshipSerializer(ser.Serializer):
+
+    data = ser.ListField(child=RelatedInstitution())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return obj['self'].absolute_api_v2_url + 'relationships/institutions/'
+
+    def get_related_url(self, obj):
+        return obj['self'].absolute_api_v2_url + 'institutions/'
+
+    class Meta:
+        type_ = 'institutions'

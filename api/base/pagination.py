@@ -9,6 +9,8 @@ from rest_framework.response import Response
 from rest_framework.utils.urls import (
     replace_query_param, remove_query_param
 )
+from api.base.serializers import is_anonymized
+from api.base.settings import MAX_PAGE_SIZE
 
 class JSONAPIPagination(pagination.PageNumberPagination):
     """
@@ -19,6 +21,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
     """
 
     page_size_query_param = 'page[size]'
+    max_page_size = MAX_PAGE_SIZE
 
     def page_number_query(self, url, page_number):
         """
@@ -82,6 +85,8 @@ class JSONAPIPagination(pagination.PageNumberPagination):
                 ]))
             ])),
         ])
+        if is_anonymized(self.request):
+            response_dict['meta'] = {'anonymous': True}
         return Response(response_dict)
 
     def paginate_queryset(self, queryset, request, view=None):
@@ -91,10 +96,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         If this is an embedded resource, returns first page, ignoring query params.
         """
         if request.parser_context['kwargs'].get('is_embedded'):
-            page_size = self.get_page_size(request)
-            if not page_size:
-                return None
-            paginator = DjangoPaginator(queryset, page_size)
+            paginator = DjangoPaginator(queryset, self.page_size)
             page_number = 1
             try:
                 self.page = paginator.page(page_number)
