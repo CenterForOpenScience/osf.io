@@ -15,8 +15,6 @@ var Paginator = require('js/paginator');
 var NodeSelectTreebeard = require('js/nodeSelectTreebeard');
 var m = require('mithril');
 
-var NODE_OFFSET = 25;
-
 function Contributor(data) {
     $.extend(this, data);
     if (data.n_projects_in_common === 1) {
