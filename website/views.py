@@ -23,6 +23,7 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
 from website.models import Node
+from website.models import Institution
 from website.util import sanitize
 from website.project import model
 from website.util import permissions
@@ -95,7 +96,18 @@ def _render_nodes(nodes, auth=None, show_path=False):
 
 
 def index():
-    return {}
+    try:
+        domain = request.headers['Host'].split('.')[1]
+        inst = [p for p in (Institution.find(Q('domain', 'contains', domain)))][0]
+        return {
+            'id': inst._id,
+            'name': inst.name,
+            'logo_path': inst.logo_path,
+            'home': False,
+        }
+    except:
+        pass
+    return {'home': True}
 
 
 def find_bookmark_collection(user):

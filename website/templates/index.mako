@@ -1,11 +1,17 @@
 <%def name="logged_in(name)">
     %if name != '':
-        <%include file="home.mako"/>
+        %if home:
+            <%include file="home.mako"/>
+        %else:
+            <%include file="institution.mako"/>
+        %endif
     %else:
-        <%include file="landing.mako"/>
+        %if home:
+            <%include file="landing.mako"/>
+        %else:
+            <%include file="institution.mako"/>
+        %endif
     %endif
 </%def>
 
 ${logged_in(user_name)}
-
-
