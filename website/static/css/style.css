@@ -603,3 +603,16 @@ button.close {
     max-width: 75%;
     display: inline-block
 }
+
+/* Anonymous-mode notification bar
+-------------------------------------------------- */
+#anonymous-mode {
+    position: fixed;
+    bottom: 30px; 
+    left: 0;
+    z-index: 8;
+    width: 100%;
+    text-align: center;
+    background-color: #f0ad4e;
+    padding: .5em;
+}
