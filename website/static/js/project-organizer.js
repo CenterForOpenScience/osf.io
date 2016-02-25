@@ -386,10 +386,13 @@ var ProjectOrganizer = {
                     updateFilesData : args.updateFilesData,
                     filesData: args.filesData(),
                     dragContainment : args.wrapperSelector,
-                    resetUi : args.resetUi
+                    resetUi : args.resetUi,
                 },
                 tbOptions
             );
+            if (args.resolveToggle){
+                poOptions.resolveToggle = args.resolveToggle;
+            }
             var tb = new Treebeard(poOptions, true);
             m.redraw.strategy('all');
             return tb;

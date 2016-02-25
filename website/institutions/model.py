@@ -12,6 +12,7 @@ class Institution(StoredObject):
     name = fields.StringField(required=True)
     logo_name = fields.StringField(required=True)
     auth_url = fields.StringField(required=False, validate=URLValidator())
+    description = fields.StringField()
 
     def __repr__(self):
         return '<Institution ({}) with id \'{}\'>'.format(self.name, self._id)

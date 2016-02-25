@@ -114,6 +114,13 @@ def dashboard(auth):
             'dashboard_id': dashboard_id,
             }
 
+@must_be_logged_in
+def home(auth):
+    user = auth.user
+    return {
+        'userId': user._id,
+    }
+
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):
         raise HTTPError(http.BAD_REQUEST, data=dict(
