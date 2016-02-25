@@ -9,15 +9,12 @@ import bson
 import pytz
 import itsdangerous
 
-from django.core.urlresolvers import reverse
-
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError, ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
 
 import framework
-from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
 from framework import analytics
 from framework.auth import signals, utils
@@ -163,11 +160,29 @@ class Auth(object):
     def logged_in(self):
         return self.user is not None
 
+    @property
+    def private_link(self):
+        if not self.private_key:
+            return None
+        try:
+            # Avoid circular import
+            from website.project.model import PrivateLink
+            private_link = PrivateLink.find_one(
+                Q('key', 'eq', self.private_key)
+            )
+
+            if private_link.is_deleted:
+                return None
+
+        except QueryException:
+            return None
+
+        return private_link
+
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
         user = request_args.get('user') or kwargs.get('user') or _get_current_user()
         private_key = request_args.get('view_only')
-
         return cls(
             user=user,
             private_key=private_key,
@@ -205,7 +220,8 @@ class User(GuidStoredObject, AddonModelMixin):
         'researcherId': u'http://researcherid.com/rid/{}',
         'researchGate': u'https://researchgate.net/profile/{}',
         'academiaInstitution': u'https://{}',
-        'academiaProfileID': u'.academia.edu/{}'
+        'academiaProfileID': u'.academia.edu/{}',
+        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}'
     }
 
     # This is a GuidStoredObject, so this will be a GUID.
@@ -1356,10 +1372,15 @@ class User(GuidStoredObject, AddonModelMixin):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
-    def has_inst_auth(self, inst):
-        if inst in self.affiliated_institutions:
-            return True
-        return False
+    def is_affiliated_with_institution(self, inst):
+        return inst in self.affiliated_institutions
+
+    def remove_institution(self, inst_id):
+        try:
+            self.affiliated_institutions.remove(inst_id)
+        except ValueError:
+            return False
+        return True
 
     affiliated_institutions = fields.ForeignField('institution', list=True)
 
@@ -1382,51 +1403,3 @@ def _merge_into_reversed(*iterables):
     '''Merge multiple sorted inputs into a single output in reverse order.
     '''
     return sorted(itertools.chain(*iterables), reverse=True)
-
-
-class Institution(StoredObject):
-
-    _id = fields.StringField(index=True, unique=True, primary=True)
-    name = fields.StringField(required=True)
-    logo_name = fields.StringField(required=True)
-
-    @property
-    def pk(self):
-        return self._id
-
-    @property
-    def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
-
-    @property
-    def url(self):
-        return '/{}/'.format(self._id)
-
-    @property
-    def deep_url(self):
-        return '/institution/{}/'.format(self._id)
-
-    @property
-    def api_v2_url(self):
-        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
-
-    @property
-    def absolute_api_v2_url(self):
-        from api.base.utils import absolute_reverse
-        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
-
-    @property
-    def logo_path(self):
-        return '/static/img/institutions/{}/'.format(self.logo_name)
-
-    def get_api_url(self):
-        return self.absolute_api_v2_url
-
-    def get_absolute_url(self):
-        return self.absolute_url
-
-    def auth(self, user):
-        return user.has_inst_auth(self)
-
-    def view(self):
-        return 'Static paths for custom pages'

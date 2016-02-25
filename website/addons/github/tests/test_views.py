@@ -109,25 +109,6 @@ class TestGithubViews(OsfTestCase):
             github_mock.branches.return_value
         )
 
-    def test_before_remove_contributor_authenticator(self):
-        url = self.project.api_url + 'beforeremovecontributors/'
-        res = self.app.post_json(
-            url,
-            {'id': self.project.creator._id},
-            auth=self.user.auth,
-        ).maybe_follow()
-        # One prompt for transferring auth, one for removing self
-        assert_equal(len(res.json['prompts']), 2)
-
-    def test_before_remove_contributor_not_authenticator(self):
-        url = self.project.api_url + 'beforeremovecontributors/'
-        res = self.app.post_json(
-            url,
-            {'id': self.non_authenticator._id},
-            auth=self.user.auth,
-        ).maybe_follow()
-        assert_equal(len(res.json['prompts']), 0)
-
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
