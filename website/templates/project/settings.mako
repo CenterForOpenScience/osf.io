@@ -367,10 +367,10 @@
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Email Notifications</h3>
                     </div>
-                    % if node['discussions_enabled'] or user['is_admin']:  ## Begin Project Mailing Lists Settings
+                    % if node['mailing_list_enabled'] or user['is_admin']:  ## Begin Project Mailing Lists Settings
                         <br/>
                         <div style="padding-left: 15px">
-                            <a data-toggle="modal" data-target="#discussionsContributorsModal"><i class="fa fa-envelope"></i></a>
+                            <a data-toggle="modal" data-target="#mailingListContributorsModal"><i class="fa fa-envelope"></i></a>
                             Project Mailing List Info
                         </div>
                     % endif
@@ -378,15 +378,15 @@
                         <div class="help-block" style="padding-left: 15px">
                             <p class="text-info">This notification setting applies to ALL project contributors.</p>
                         </div>
-                        <form id="discussionsTreeSettings" class="osf-treebeard-minimal">
-                            <div id="discussionsGrid">
+                        <form id="mailingListTreeSettings" class="osf-treebeard-minimal">
+                            <div id="mailingListGrid">
                                 <div class="spinner-loading-wrapper">
                                     <div class="logo-spin logo-lg"></div>
-                                    <p class="m-t-sm fg-load-message"> Loading discussions settings...  </p>
+                                    <p class="m-t-sm fg-load-message"> Loading mailing list settings...  </p>
                                 </div>
                             </div>
                             <div class="help-block" style="padding-left: 15px">
-                                <p id="configureDiscussionssMessage"></p>
+                                <p id="configureMailingListMessage"></p>
                             </div>
                         </form>
                     % endif  ## End PML Settings ## Begin Individual Email Notifications

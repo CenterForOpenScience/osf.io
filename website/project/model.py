@@ -4644,7 +4644,7 @@ class MailingListEventLog(StoredObject):
     NOT_FOUND = 'node_dne'
     DELETED = 'node_deleted'
     FORBIDDEN = 'no_access'
-    DISABLED = 'discussions_disabled'
+    DISABLED = 'mailing_list_disabled'
     OK = 'sent'
 
     @classmethod

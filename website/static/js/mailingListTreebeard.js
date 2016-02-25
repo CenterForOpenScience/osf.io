@@ -42,7 +42,7 @@ function openAncestors (tb, item) {
 
 function subscribe(item, notification_type, reload) {
     var id = item.data.node.id;
-    var url = window.contextVars.node.urls.api  + 'discussions/';
+    var url = window.contextVars.node.urls.api  + 'mailing_list/';
     var method = notification_type === 'enabled' ? 'POST' : 'DELETE';
     $.ajax({
         url: url,
@@ -51,7 +51,7 @@ function subscribe(item, notification_type, reload) {
     }).done(function(){
         //'notify-success' is to override default class 'success' in treebeard
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
-        item.data.node.discussions = notification_type;
+        item.data.node.mailing_list = notification_type;
         reload();
     }).fail(function() {
         item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
@@ -73,11 +73,11 @@ function displayParentNotificationType(item){
 }
 
 
-function ProjectDiscussions(data, reload) {
+function ProjectMailingList(data, reload) {
 
     //  Treebeard version
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
-        divID: 'discussionsGrid',
+        divID: 'mailingListGrid',
         filesData: data,
         naturalScrollLimit : 0,
         resolveRows: function notificationResolveRows(item){
@@ -145,8 +145,8 @@ function ProjectDiscussions(data, reload) {
                                     subscribe(item, ev.target.value, reload);
                                 }},
                                 [
-                                    m('option', {value: 'disabled', selected : item.data.node.discussions === 'disabled' ? 'selected': ''}, 'Mailing List Disabled'),
-                                    m('option', {value: 'enabled', selected : item.data.node.discussions === 'enabled' ? 'selected': ''}, 'Mailing List Enabled'),
+                                    m('option', {value: 'disabled', selected : item.data.node.mailing_list === 'disabled' ? 'selected': ''}, 'Mailing List Disabled'),
+                                    m('option', {value: 'enabled', selected : item.data.node.mailing_list === 'enabled' ? 'selected': ''}, 'Mailing List Enabled'),
                             ])
                         ]);
                     }
@@ -156,8 +156,8 @@ function ProjectDiscussions(data, reload) {
             return columns;
         }
     });
-    var discussionsGrid = new Treebeard(tbOptions);
-    expandOnLoad.call(discussionsGrid.tbController);
+    var mailingListGrid = new Treebeard(tbOptions);
+    expandOnLoad.call(mailingListGrid.tbController);
 }
 
-module.exports = ProjectDiscussions;
+module.exports = ProjectMailingList;

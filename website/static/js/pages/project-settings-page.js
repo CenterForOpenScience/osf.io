@@ -39,20 +39,20 @@ function initNotificationsTB() {
 initNotificationsTB();
 
 //Initialize treebeard grid for node admins
-var ProjectDiscussions = require('../discussionsTreebeard.js');
-var discussionsSettingsURL = ctx.node.urls.api + 'discussions/';
-var $discussionsMsg = $('#configureDiscussionsMessage');
+var ProjectMailingList = require('../mailingListTreebeard.js');
+var mailingListSettingsURL = ctx.node.urls.api + 'mailing_list/';
+var $mailingListMsg = $('#configureMailingListMessage');
 
-if ($('#discussionsGrid').length) {
+if ($('#mailingListGrid').length) {
     $.ajax({
-        url: discussionsSettingsURL,
+        url: mailingListSettingsURL,
         type: 'GET',
         dataType: 'json'
     }).done( function(response) {
-        new ProjectDiscussions(response, initNotificationsTB);
+        new ProjectMailingList(response, initNotificationsTB);
     }).fail( function() {
-        $discussionsMsg.addClass('text-danger');
-        $discussionsMsg.text('Could not retrieve notification settings.');
+        $mailingListMsg.addClass('text-danger');
+        $mailingListMsg.text('Could not retrieve mailing list settings.');
     });
 }
 //Initialize treebeard grid for wiki

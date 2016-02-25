@@ -16,13 +16,13 @@ from website.project.mailing_list import route_message
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def get_node_discussions(node, auth, **kwargs):
+def get_node_mailing_list(node, auth, **kwargs):
     return format_node_data_recursive([node], auth.user)
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def enable_discussions(node, **kwargs):
+def enable_mailing_list(node, **kwargs):
     node.mailing_enabled = True
     node.save()
 
@@ -30,7 +30,7 @@ def enable_discussions(node, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def disable_discussions(node, **kwargs):
+def disable_mailing_list(node, **kwargs):
     node.mailing_enabled = False
     node.save()
 
@@ -67,7 +67,7 @@ def format_node_data_recursive(nodes, user):
                 'id': node._id,
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
-                'discussions': ('enabled' if node.mailing_enabled else 'disabled') if can_read else None
+                'mailing_list': ('enabled' if node.mailing_enabled else 'disabled') if can_read else None
             },
             'children': children,
             'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',

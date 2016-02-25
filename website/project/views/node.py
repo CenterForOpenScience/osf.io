@@ -796,8 +796,8 @@ def _view_project(node, auth, primary=False):
             },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'discussions_enabled': node.mailing_enabled,
-            'discussions_unsubs': [u.fullname for u in get_unsubscribes(node)] if node.is_contributor(user) else [],
+            'mailing_list_enabled': node.mailing_enabled,
+            'mailing_list_unsubs': [u.fullname for u in get_unsubscribes(node)] if node.is_contributor(user) else [],
             'contributors': [contributor._id for contributor in node.contributors]
         },
         'parent_node': {

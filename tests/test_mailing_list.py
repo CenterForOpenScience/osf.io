@@ -22,16 +22,16 @@ from website.util import api_url_for
 
 class TestNodeCreationMailingConfig(OsfTestCase):
 
-    def test_top_level_project_enables_discussions(self):
+    def test_top_level_project_enables_mailing_list(self):
         project = ProjectFactory(parent=None)
         assert_true(project.mailing_enabled)
 
-    def test_project_with_parent_enables_discussions(self):
+    def test_project_with_parent_enables_mailing_list(self):
         parent = ProjectFactory(parent=None)
         child = ProjectFactory(parent=parent)
         assert_true(child.mailing_enabled)
 
-    def test_forking_with_child_enables_discussion(self):
+    def test_forking_with_child_enables_mailing_list(self):
         user = AuthUserFactory()
         parent = ProjectFactory(parent=None, is_public=True)
         child = NodeFactory(parent=parent, is_public=True)
@@ -42,7 +42,7 @@ class TestNodeCreationMailingConfig(OsfTestCase):
         assert_true(parent_fork.mailing_enabled)
         assert_true(child_fork.mailing_enabled)
 
-    def test_template_with_child_enables_discussion(self):
+    def test_template_with_child_enables_mailing_list(self):
         user = AuthUserFactory()
         parent = ProjectFactory(parent=None, is_public=True)
         child = NodeFactory(parent=parent, is_public=True)
@@ -53,19 +53,19 @@ class TestNodeCreationMailingConfig(OsfTestCase):
         assert_true(new_parent.mailing_enabled)
         assert_true(new_child.mailing_enabled)
 
-    def test_registration_disables_discussions(self):
+    def test_registration_disables_mailing_list(self):
         reg = RegistrationFactory()
         assert_false(reg.mailing_enabled)
 
-    def test_dashboard_disables_discussions(self):
+    def test_dashboard_disables_mailing_list(self):
         dash = DashboardFactory()
         assert_false(dash.mailing_enabled)
 
 
-class TestDiscussionsViews(OsfTestCase):
+class TestMailingListViews(OsfTestCase):
 
     def setUp(self):
-        super(TestDiscussionsViews, self).setUp()
+        super(TestMailingListViews, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, parent=None)
 
@@ -82,8 +82,8 @@ class TestDiscussionsViews(OsfTestCase):
         assert_not_in(unreg, get_unsubscribes(self.project))
 
 
-    def test_disable_and_enable_project_discussions(self):
-        url = api_url_for('enable_discussions', pid=self.project._id)
+    def test_disable_and_enable_project_mailing_list(self):
+        url = api_url_for('enable_mailing_list', pid=self.project._id)
         payload = {}
 
         assert_true(self.project.mailing_enabled)
@@ -136,7 +136,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_mail.assert_called_with(
             reason='no_user',
             to_addr='non-email@osf.fake',
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            mail=mails.MAILING_LIST_EMAIL_REJECTED,
             target_address='{}@osf.io'.format(self.project._id),
             user=None,
             node_type='project',
@@ -156,7 +156,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_mail.assert_called_with(
             reason='node_dne',
             to_addr=self.user.email,
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            mail=mails.MAILING_LIST_EMAIL_REJECTED,
             target_address='notarealprojectid@osf.io',
             user=self.user,
             node_type='',
@@ -176,7 +176,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_mail.assert_called_with(
             reason='node_deleted',
             to_addr=self.user.email,
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            mail=mails.MAILING_LIST_EMAIL_REJECTED,
             target_address='{}@osf.io'.format(self.project._id),
             user=self.user,
             node_type='project',
@@ -198,7 +198,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_mail.assert_called_with(
             reason='no_access',
             to_addr=self.user.email,
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            mail=mails.MAILING_LIST_EMAIL_REJECTED,
             target_address='{}@osf.io'.format(self.project._id),
             user=self.user,
             node_type='project',
@@ -222,7 +222,7 @@ class TestEmailRejections(OsfTestCase):
         mock_send_mail.assert_called_with(
             reason='no_access',
             to_addr=self.user.email,
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            mail=mails.MAILING_LIST_EMAIL_REJECTED,
             target_address='{}@osf.io'.format(self.project._id),
             user=self.user,
             node_type='project',
@@ -234,16 +234,16 @@ class TestEmailRejections(OsfTestCase):
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.project.mailing_list.send_messages')
-    def test_email_to_project_with_discussions_disabled_as_admin(self, mock_send_list, mock_send_mail):
+    def test_email_to_project_with_mailing_list_disabled_as_admin(self, mock_send_list, mock_send_mail):
         self.project.mailing_enabled = False
         self.project.save()
 
         self.app.post(self.post_url, self.message)
 
         mock_send_mail.assert_called_with(
-            reason='discussions_disabled',
+            reason='mailing_list_disabled',
             to_addr=self.user.email,
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            mail=mails.MAILING_LIST_EMAIL_REJECTED,
             target_address='{}@osf.io'.format(self.project._id),
             user=self.user,
             node_type='project',
@@ -255,7 +255,7 @@ class TestEmailRejections(OsfTestCase):
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.project.mailing_list.send_messages')
-    def test_email_to_project_with_discussions_disabled_as_non_admin(self, mock_send_list, mock_send_mail):
+    def test_email_to_project_with_mailing_list_disabled_as_non_admin(self, mock_send_list, mock_send_mail):
         self.user = UserFactory()
         self.user.reload()
         self.project.mailing_enabled = False
@@ -265,9 +265,9 @@ class TestEmailRejections(OsfTestCase):
         self.app.post(self.post_url, self.message)
 
         mock_send_mail.assert_called_with(
-            reason='discussions_disabled',
+            reason='mailing_list_disabled',
             to_addr=self.user.email,
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            mail=mails.MAILING_LIST_EMAIL_REJECTED,
             target_address='{}@osf.io'.format(self.project._id),
             user=self.user,
             node_type='project',

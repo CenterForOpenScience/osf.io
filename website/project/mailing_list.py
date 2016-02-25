@@ -62,7 +62,7 @@ def route_message(**kwargs):
 
     mail_params = {
         'to_addr': sender_email,
-        'mail': mails.DISCUSSIONS_EMAIL_REJECTED,
+        'mail': mails.MAILING_LIST_EMAIL_REJECTED,
         'target_address': target,
         'user': sender,
         'node_type': node.project_or_component if node else '',
@@ -115,7 +115,7 @@ def get_unsubscribes(node):
 
 def send_messages(node, sender, message):
     recipients = get_recipients(node, sender=sender)
-    mail = mails.DISCUSSIONS_EMAIL_ACCEPTED
+    mail = mails.MAILING_LIST_EMAIL_ACCEPTED
     mail._subject = '{} [via OSF: {}]'.format(
         message['subject'].split(' [via OSF')[0],  # Fixes reply subj, if node.title changes
         unescape_entities(node.title)

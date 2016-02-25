@@ -108,30 +108,30 @@ var ProjectSettings = oop.extend(
                 }
             };
         },
-        enableDiscussions: function() {
+        enableMailingList: function() {
             var request = $.ajax({
                 type: 'post',
                 dataType: 'json',
-                url: nodeApiUrl + 'discussions/'
+                url: nodeApiUrl + 'mailing_list/'
             });
             request.done(function() {
                 window.location.reload();
             });
             request.fail($osf.handleJSONError);
         },
-        disableDiscussions: function(nodeType) {
+        disableMailingList: function(nodeType) {
 
-            var message = '<p>Are you sure that you want to disable email discussions for this ' + nodeType + '?';
+            var message = '<p>Are you sure that you want to disable the mailing list for this ' + nodeType + '?';
 
             bootbox.confirm({
-                title: 'Email discussions disable confirmation',
+                title: 'Disable mailing list confirmation',
                 message: message,
                 callback: function (result) {
                     if (result) {
                         var request = $.ajax({
                             type: 'delete',
                             dataType: 'json',
-                            url: nodeApiUrl + 'discussions/'
+                            url: nodeApiUrl + 'mailing_list/'
                         });
                         request.done(function () {
                             window.location.reload();

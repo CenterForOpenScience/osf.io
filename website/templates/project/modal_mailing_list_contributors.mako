@@ -1,4 +1,4 @@
-<div class="modal fade" id="discussionsContributorsModal">
+<div class="modal fade" id="mailingListContributorsModal">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -15,8 +15,8 @@
                 </div>
                 </h4>
                 
-                % if len(node['discussions_unsubs']):
-                    <p>${len(node['contributors']) - len(node['discussions_unsubs'])} out of ${len(node['contributors'])} contributors will receive any email sent to this address.</p>
+                % if len(node['mailing_list_unsubs']):
+                    <p>${len(node['contributors']) - len(node['mailing_list_unsubs'])} out of ${len(node['contributors'])} contributors will receive any email sent to this address.</p>
                     <p>A contributor who is not subscribed to this mailing list will not receive any emails sent to it. To
                     % if user['is_admin']:
                         disable or 
@@ -29,7 +29,7 @@
                             Show
                         </a>
                         <div id="unsubContribs" class="panel-collapse collapse" role="tabpanel" aria-expanded="false" aria-labelledby="unsubToggle">
-                        % for each in node['discussions_unsubs']:
+                        % for each in node['mailing_list_unsubs']:
                             <div style="padding-left: 15px">
                                ${each}
                             </div>

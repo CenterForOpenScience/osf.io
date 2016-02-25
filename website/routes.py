@@ -1480,40 +1480,40 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/discussions/',
-                '/project/<pid>/node/<nid>/discussions/',
+                '/project/<pid>/mailing_list/',
+                '/project/<pid>/node/<nid>/mailing_list/',
             ],
             'get',
-            project_views.discussions.get_node_discussions,
+            project_views.mailing_list.get_node_mailing_list,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/discussions/',
-                '/project/<pid>/node/<nid>/discussions/',
+                '/project/<pid>/mailing_list/',
+                '/project/<pid>/node/<nid>/mailing_list/',
             ],
             'post',
-            project_views.discussions.enable_discussions,
+            project_views.mailing_list.enable_mailing_list,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/discussions/',
-                '/project/<pid>/node/<nid>/discussions/',
+                '/project/<pid>/mailing_list/',
+                '/project/<pid>/node/<nid>/mailing_list/',
             ],
             'delete',
-            project_views.discussions.disable_discussions,
+            project_views.mailing_list.disable_mailing_list,
             json_renderer,
         ),
 
         Rule(
             [
-                '/discussions/messages/',
+                '/mailing_list/messages/',
             ],
             'post',
-            project_views.discussions.route_message,
+            project_views.mailing_list.route_message,
             json_renderer,
         ),
 

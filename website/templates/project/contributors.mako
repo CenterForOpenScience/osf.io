@@ -58,9 +58,9 @@
                   <i class="fa fa-plus"></i> Add
                 </a>
             <!-- /ko -->
-            % if node['discussions_enabled'] and not node['is_registration']:
+            % if node['mailing_list_enabled'] and not node['is_registration']:
                 <span class="m-l-md pull-right" style="font-size: 65%">Mailing List Info: 
-                <a data-toggle="modal" data-target="#discussionsContributorsModal"><i class="fa fa-envelope"></i></a>
+                <a data-toggle="modal" data-target="#mailingListContributorsModal"><i class="fa fa-envelope"></i></a>
                 </span>
             % endif
         </h3>
@@ -240,10 +240,10 @@
                 data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}">Name
             </th>
             <th></th>
-            % if node['discussions_enabled']:
+            % if node['mailing_list_enabled']:
                 <th class="col-md-3" style="text-align: center">
                     In Mailing List
-                    <i class="fa fa-question-circle discussions-info"
+                    <i class="fa fa-question-circle mailing-list-info"
                         data-toggle="popover"
                         data-title="Mailing List Information"
                         data-container="body"
@@ -324,7 +324,7 @@
                 <a class="name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
-        % if node['discussions_enabled']:
+        % if node['mailing_list_enabled']:
             <td class="text-center">
                 <i class="fa fa-check" data-bind="visible: subscribed"></i>
                 <i class="fa fa-close" data-bind="visible: !subscribed"></i>
