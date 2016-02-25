@@ -456,7 +456,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             urls = None
         return urls
 
-    def to_esi_representation(self, value, envelope):
+    def to_esi_representation(self, value, envelope='data'):
         relationships = super(RelationshipField, self).to_representation(value)
         if relationships is not None and 'related' in relationships.keys():
             href = relationships['related']
@@ -821,17 +821,11 @@ class JSONAPISerializer(ser.Serializer):
     def to_esi_representation(self, data, envelope='data'):
         href = None
         query_params_blacklist = ['page[size]', 'format']
-        try:
-            href = self.get_absolute_url(data)
-        except NotImplementedError:
-            # catch failure, make django do the work
-            representation = super(JSONAPISerializer, self).to_representation(data)
-            return representation
-        else:
-            if href and href != '{}':
-                esi_url = furl.furl(href).remove(args=query_params_blacklist).add(
-                    args=self.context['request'].QUERY_PARAMS).url
-                return '<esi:include src="{}"/>'.format(esi_url)
+        href = self.get_absolute_url(data)
+        if href and href != '{}':
+            esi_url = furl.furl(href).remove(args=query_params_blacklist).add(
+                args=self.context['request'].QUERY_PARAMS).add(args={'envelope': envelope}).url
+            return '<esi:include src="{}"/>'.format(esi_url)
         # failsafe, let python do it if something bad happened in the ESI construction
         return super(JSONAPISerializer, self).to_representation(data)
 
