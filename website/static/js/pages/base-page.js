@@ -112,6 +112,9 @@ $(function() {
     }
     new NavbarControl('.osf-nav-wrapper');
     if(window.contextVars.keenProjectId){
-        new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey);
+        var params = {};
+        params.currentUser = window.contextVars.currentUser;
+        params.node = window.contextVars.node;
+        new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
     }
 });

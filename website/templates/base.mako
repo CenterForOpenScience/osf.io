@@ -182,8 +182,8 @@
         %if keen_project_id:
             <script>
                 window.contextVars = $.extend(true, {}, window.contextVars, {
-                    keenProjectId: '${keen_project_id}',
-                    keenWriteKey: '${keen_write_key}'
+                    keenProjectId: ${keen_project_id | sjson, n},
+                    keenWriteKey: ${keen_write_key | sjson, n}
                 })
             </script>
         %endif

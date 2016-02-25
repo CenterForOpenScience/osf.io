@@ -6,11 +6,13 @@ var $ = require('jquery');
 var uuid = require('uuid');
 
 var KeenTracker = oop.defclass({
-    constructor: function(keenProjectId, keenWriteKey) {
+    constructor: function(keenProjectId, keenWriteKey, params) {
         this.keenClient = new keen({
             projectId: keenProjectId,
             writeKey: keenWriteKey
         });
+        this.currentUser = params.user || null;
+        this.node = params.node || null;
         this.init();
     },
 
@@ -36,8 +38,7 @@ var KeenTracker = oop.defclass({
 
     trackPageView: function(){
         this.createOrUpdateKeenSession();
-        var ctx = window.contextVars;
-        var returning = $.cookie('keenUserId') ? true : false;
+        var returning = Boolean($.cookie('keenUserId'));
         var pageView = {
             'pageUrl': document.URL,
             'keenUserId': this.getOrCreateKeenId(),
@@ -85,20 +86,22 @@ var KeenTracker = oop.defclass({
             // 'daysSinceFirstVisit':'',
             // 'daysSinceLastVisit': '',
             //'resolution': '' //temp user agent stuff
-            //'generation_time': ''
-            //'timeSpend': ''
+            //'generationTime': ''
+            //'timeSpent': ''
         };
-        if(ctx.node){
+        if(this.node){
             pageView.node = {
-                'id': ctx.node.id,
-                'title': ctx.node.title,
-                'type': ctx.node.category,
-                'tags': ctx.node.tags
+                'id': this.node.id,
+                'title': this.node.title,
+                'type': this.node.category,
+                'tags': this.node.tags
             };
         }
-        if(ctx.currentUser){
-            pageView.user = ctx.currentUser;
+        if(this.currentUser){
+            pageView.user = this.currentUser;
         }
+
+        console.log(pageView);
 
         this.keenClient.addEvent('pageviews', pageView, function(err){
             if(err){
