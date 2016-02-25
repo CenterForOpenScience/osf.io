@@ -4637,6 +4637,7 @@ class MailingListEventLog(StoredObject):
     sending_email = fields.StringField(index=True)
     sending_user = fields.ForeignField('user', index=True)
     destination_node = fields.ForeignField('node', index=True)
+    intended_recipients = fields.ForeignField('user', list=True)
     status = fields.StringField()
 
     # Possible statuses
@@ -4646,15 +4647,3 @@ class MailingListEventLog(StoredObject):
     FORBIDDEN = 'no_access'
     DISABLED = 'mailing_list_disabled'
     OK = 'sent'
-
-    @classmethod
-    def create_from_event(cls, content, status, node, email, user):
-        event = cls(
-            content=content,
-            status=status,
-            destination_node=node,
-            sending_email=email,
-            user=user
-        )
-        event.save()
-        return event
