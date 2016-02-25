@@ -127,14 +127,12 @@ var resolve = {
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         'pikaday-css': nodePath('pikaday/css/pikaday.css'),
-        'keen-js': nodePath('keen-js'),
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),
         'tests': staticPath('js/tests'),
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
         'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
-        'uuid': nodePath('uuid')
     }
 };
 
