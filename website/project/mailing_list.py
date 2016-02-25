@@ -45,59 +45,49 @@ def find_email(long_email):
     else:
         return long_email
 
+def reason_for_rejection(sender, node):
+    if not sender:
+        return MailingListEventLog.UNAUTHORIZED
+    elif not node:
+        return MailingListEventLog.NOT_FOUND
+    elif node.is_deleted:
+        return MailingListEventLog.DELETED
+    elif sender not in node.contributors:
+        return MailingListEventLog.FORBIDDEN
+    elif not node.mailing_enabled:
+        return MailingListEventLog.DISABLED
+    return
 
 def route_message(**kwargs):
     """ Acquires messages sent through Mailgun, validates them, and warns the
     user if they are not valid"""
     message = request.form
     target = find_email(message['To'])
-    node_id = re.search(r'[a-z0-9]*@', target).group(0)[:-1]
-    node = Node.load(node_id)
+    # node_id = re.search(r'[a-z0-9]*@', target).group(0)[:-1]
+    node = Node.load(re.search(r'[a-z0-9]*@', target).group(0)[:-1])
 
     sender_email = find_email(message['From'])
     sender = get_user(email=sender_email)
 
-    user_is_admin = 'admin' in node.get_permissions(sender)\
-        if sender and node else False
-
-    mail_params = {
-        'to_addr': sender_email,
-        'mail': mails.MAILING_LIST_EMAIL_REJECTED,
-        'target_address': target,
-        'user': sender,
-        'node_type': node.project_or_component if node else '',
-        'node_url': node.absolute_url if node else '',
-        'is_admin': user_is_admin,
-        'mail_log_class': MailingListEventLog
-    }
-
-    if not sender:
-        reason = MailingListEventLog.UNAUTHORIZED
-    elif not node:
-        reason = MailingListEventLog.NOT_FOUND
-    elif node.is_deleted:
-        reason = MailingListEventLog.DELETED
-    elif sender not in node.contributors:
-        reason = MailingListEventLog.FORBIDDEN
-    elif not node.mailing_enabled:
-        reason = MailingListEventLog.DISABLED
-    else:
-        reason = ''
+    reason = reason_for_rejection(sender, node)
 
     if reason:
-        mails.send_mail(reason=reason, **mail_params)
+        send_rejection(node, sender, sender_email, target, message, reason)
+        recipients = []
     else:
-        send_messages(node, sender, message)
+        reason = MailingListEventLog.OK
+        recipients = get_recipients(node, sender=sender)
+        send_acception(node, sender, recipients, message)
 
     # Create a log of this mailing event
-    reason = reason if reason else MailingListEventLog.OK
-    MailingListEventLog.create_from_event(
+    MailingListEventLog(
         content=message,
         status=reason,
-        node=node,
-        email=sender_email,
-        user=sender,
-    )
+        destination_node=node,
+        sending_email=sender_email,
+        sending_user=sender,
+        intended_recipients=recipients
+    ).save()
 
 def get_recipients(node, sender=None):
     if node.mailing_enabled:
@@ -113,8 +103,7 @@ def get_unsubscribes(node):
         return [u for u in node.contributors if u not in recipients]
     return []
 
-def send_messages(node, sender, message):
-    recipients = get_recipients(node, sender=sender)
+def send_acception(node, sender, recipients, message):
     mail = mails.MAILING_LIST_EMAIL_ACCEPTED
     mail._subject = '{} [via OSF: {}]'.format(
         message['subject'].split(' [via OSF')[0],  # Fixes reply subj, if node.title changes
@@ -136,3 +125,20 @@ def send_messages(node, sender, message):
             from_addr=from_addr,
             **context
         )
+
+def send_rejection(node, sender, sender_email, target, message, reason):
+    user_is_admin = 'admin' in node.get_permissions(sender)\
+        if sender and node else False
+
+    mail_params = {
+        'to_addr': sender_email,
+        'mail': mails.MAILING_LIST_EMAIL_REJECTED,
+        'target_address': target,
+        'user': sender,
+        'node_type': node.project_or_component if node else '',
+        'node_url': node.absolute_url if node else '',
+        'is_admin': user_is_admin,
+        'mail_log_class': MailingListEventLog
+    }
+
+    mails.send_mail(reason=reason, **mail_params)
