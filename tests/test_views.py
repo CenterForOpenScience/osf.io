@@ -1522,6 +1522,18 @@ class TestUserProfile(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['message_long'], '"id" is required')
 
+    def test_add_emails_return_emails(self):
+        user1 = AuthUserFactory()
+        url = api_url_for('update_user')
+        email = 'test@cos.io'
+        header = {'id': user1.username,
+                  'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
+                            {'address': email, 'primary': False, 'confirmed': False}
+                  ]}
+        res = self.app.put_json(url, header, auth=user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal('emails', res.json['profile'])
+
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
