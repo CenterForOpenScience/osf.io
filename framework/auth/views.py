@@ -195,14 +195,20 @@ def confirm_email_get(auth=None, **kwargs):
     user = auth.user
     verified_emails = []
     for token in user.email_verifications:
-        #todo migrate to remove this hack
         if user.confirm_token(token):
             if user.email_verifications[token]['confirmed']:
+                try:
+                    user_merge = User.find_one(Q('emails', 'iexact', user.email_verifications[token]['email']))
+                except NoResultsFound:
+                    user_merge = False
+
                 #todo remove confirmed, and maybe token, from object
                 verified_emails.append({'address': user.email_verifications[token]['email'],
                                         'token': token,
-                                        'confirmed': user.email_verifications[token]['confirmed']})
+                                        'confirmed': user.email_verifications[token]['confirmed'],
+                                        'user_merge': user_merge})
             else:
+                #todo migrate to remove this hack
                 user.email_verifications[token]['confirmed'] = False
                 user.save()
     return verified_emails

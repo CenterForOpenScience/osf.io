@@ -42,19 +42,27 @@ request.fail(function(xhr, textStatus, error) {
 });
 
 
-function confirm_emails(email) {
+function confirm_emails(emails) {
+    if (emails.length > 0) {
+        var email = emails.splice(0,1);
         bootbox.confirm({
             title: 'Merge Account?',
-            message: 'You want to merge, ' + email.address + ' motherscratcher?',
+            message: 'You want to merge, ' + email[0].address + ' motherscratcher?',
             callback: function(confirmed) {
                 if (confirmed) {
                     var url = '/api/v1/dashboard/confirmed_emails/';
-                    var res = $osf.putJSON(
+                    $osf.putJSON(
                         url,
-                        email
-                    );
+                        email[0]
+                    ).done(function() {
+                        confirm_emails(emails);
+                    }).fail(function() {
+                        console.log("api call failed");
+                        confirm_emails(emails);
+                    });
                 }
                 else {
+                    confirm_emails(emails);
                     console.log("denied!");
                 }
             },
@@ -65,6 +73,8 @@ function confirm_emails(email) {
                 }
             }
         });
+
+    }
 }
 
 
@@ -72,10 +82,9 @@ var url = '/api/v1/dashboard/confirmed_emails/';
 var i;
 var confirmed_emails = [];
 var request_emails = $.getJSON(url, function(response) {
-    for (var i=0; i<response.length; i++) {
-        confirm_emails(response[i]);
-    }
+        confirm_emails(response);
  });
+
 request.fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {
         url: url, textStatus: textStatus, error: error
