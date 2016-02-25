@@ -56,6 +56,8 @@ def reason_for_rejection(sender, node):
         return MailingListEventLog.FORBIDDEN
     elif not node.mailing_enabled:
         return MailingListEventLog.DISABLED
+    elif not get_recipients(node, sender):
+        return MailingListEventLog.NO_RECIPIENTS
     return
 
 def route_message(**kwargs):

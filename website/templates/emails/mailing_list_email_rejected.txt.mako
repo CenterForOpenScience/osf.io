@@ -11,6 +11,9 @@ The reason for this rejection was either that there is no project/component asso
 %elif reason == mail_log_class.DISABLED:
 The reason for this rejection was that your ${node_type} at ${node_url} does not have its mailing list currently enabled. Please ${'go to {}settings/#configureMailingListAnchor to enable this mailing list.'.format(node_url) if is_admin else 'ask an administrator on your {} to enable this mailing list.'.format(node_type)}
 
+%elif reason == mail_log_class.NO_RECIPIENTS:
+The reason for this rejection was that there are no contributors subscribed to this mailing list on your ${node_type} at ${node_url}
+
 %endif
 
 Sincerely,
