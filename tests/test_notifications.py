@@ -250,29 +250,29 @@ class TestRemoveContributor(OsfTestCase):
 
 
 class TestRemoveNodeSignal(OsfTestCase):
-        def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
-            project = factories.ProjectFactory()
-            subscription = factories.NotificationSubscriptionFactory(
-                _id=project._id + '_comments',
-                owner=project
-            )
-            subscription.save()
-            subscription.email_transactional.append(project.creator)
-            subscription.save()
+    def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
+        project = factories.ProjectFactory()
+        subscription = factories.NotificationSubscriptionFactory(
+            _id=project._id + '_comments',
+            owner=project
+        )
+        subscription.save()
+        subscription.email_transactional.append(project.creator)
+        subscription.save()
 
-            s = getattr(project.creator, 'email_transactional', [])
-            assert_equal(len(s), 2)
+        s = getattr(project.creator, 'email_transactional', [])
+        assert_equal(len(s), 2)
 
-            with capture_signals() as mock_signals:
-                project.remove_node(auth=Auth(project.creator))
-            assert_true(project.is_deleted)
-            assert_equal(mock_signals.signals_sent(), set([node_deleted]))
+        with capture_signals() as mock_signals:
+            project.remove_node(auth=Auth(project.creator))
+        assert_true(project.is_deleted)
+        assert_equal(mock_signals.signals_sent(), set([node_deleted]))
 
-            s = getattr(project.creator, 'email_transactional', [])
-            assert_equal(len(s), 0)
+        s = getattr(project.creator, 'email_transactional', [])
+        assert_equal(len(s), 0)
 
-            with assert_raises(NoResultsFound):
-                NotificationSubscription.find_one(Q('owner', 'eq', project))
+        with assert_raises(NoResultsFound):
+            NotificationSubscription.find_one(Q('owner', 'eq', project))
 
 
 def list_or_dict(data):
