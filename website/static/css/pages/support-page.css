@@ -64,7 +64,6 @@
     width: 100%;
     z-index: 99;
     box-shadow: 0 1px 5px #ccc;
-    text-align: center;
 }
 .search-layer ul {
     display: inline-block;
@@ -89,8 +88,16 @@
 .support-item.search-selected {
     box-shadow: 0 0 5px #9195AD;
 }
+@media (max-width: 991px) {
+    .search-layer input {
+        width: 250px;
+    }
+    .search-layer ul li {
+        padding: 3px;
+    }
+}
 
-/* Getting Started */
+    /* Getting Started */
 
 
 /* nested links */
