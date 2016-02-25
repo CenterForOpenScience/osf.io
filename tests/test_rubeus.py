@@ -204,11 +204,9 @@ class TestRubeus(OsfTestCase):
     def test_serialize_private_node(self):
         user = UserFactory()
         auth = Auth(user=user)
-        public = ProjectFactory.build(is_public=True)
-        public.save()
+        public = ProjectFactory.create(is_public=True)
         # Add contributor with write permissions to avoid admin permission cascade
-        public.add_contributor(user, permissions=['read', 'write'])
-        public.save()
+        public.add_contributor(user, permissions=['read', 'write'], save=True)
         private = ProjectFactory(parent=public, is_public=False)
         NodeFactory(parent=private)
         collector = rubeus.NodeFileCollector(node=public, auth=auth)

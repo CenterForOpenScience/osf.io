@@ -376,12 +376,10 @@ class TestGithubSettings(OsfTestCase):
 
         super(TestGithubSettings, self).setUp()
         self.github = create_mock_github(user='fred', private=False)
-        self.project = ProjectFactory.build()
-        self.project.save()
+        self.project = ProjectFactory.create()
         self.auth = self.project.creator.auth
         self.consolidated_auth = Auth(user=self.project.creator)
 
-        self.project.save()
         self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')
         self.node_settings = self.project.get_addon('github')
