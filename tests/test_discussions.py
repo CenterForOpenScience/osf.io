@@ -117,7 +117,7 @@ class TestEmailRejections(OsfTestCase):
     def test_working_email(self, mock_send_list, mock_send_mail):
         self.app.post(self.post_url, self.message)
 
-        mock_send_mail.assert_not_called()
+        assert mock_send_mail.call_count == 0
         # Due to unicode/str non-equality in assert_called_with:
         assert_equal(mock_send_list.call_count, 1)
         assert_equal(mock_send_list.call_args[0][0]._id, self.project._id)
@@ -142,7 +142,7 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=False
         )
-        mock_send_list.assert_not_called()
+        assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.project.mailing_list.send_messages')
@@ -161,7 +161,7 @@ class TestEmailRejections(OsfTestCase):
             node_url='',
             is_admin=False
         )
-        mock_send_list.assert_not_called()
+        assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.project.mailing_list.send_messages')
@@ -180,7 +180,7 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=True
         )
-        mock_send_list.assert_not_called()
+        assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.project.mailing_list.send_messages')
@@ -201,7 +201,7 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=False
         )
-        mock_send_list.assert_not_called()
+        assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.project.mailing_list.send_messages')
@@ -224,7 +224,7 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=False
         )
-        mock_send_list.assert_not_called()
+        assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.project.mailing_list.send_messages')
@@ -244,7 +244,7 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=True
         )
-        mock_send_list.assert_not_called()
+        assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.project.mailing_list.send_messages')
@@ -267,4 +267,4 @@ class TestEmailRejections(OsfTestCase):
             node_url=self.project.absolute_url,
             is_admin=False
         )
-        mock_send_list.assert_not_called()
+        assert mock_send_list.call_count == 0

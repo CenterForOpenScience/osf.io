@@ -16,7 +16,7 @@
                 </h4>
                 
                 % if len(node['discussions_unsubs']):
-                    <p>${node['contrib_count'] - len(node['discussions_unsubs'])} out of ${node['contrib_count']} contributors will receive any email sent to this address.</p>
+                    <p>${len(node['contributors']) - len(node['discussions_unsubs'])} out of ${len(node['contributors'])} contributors will receive any email sent to this address.</p>
                     <p>A contributor who is not subscribed to this mailing list will not receive any emails sent to it. To
                     % if user['is_admin']:
                         disable or 
