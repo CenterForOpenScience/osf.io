@@ -4,13 +4,13 @@ from rest_framework.exceptions import NotFound
 from modularodm import Q
 from framework.auth.core import User
 from framework.auth.oauth_scopes import CoreScopes
+
 from website.models import NodeLog
-from api.nodes.permissions import (
-    ContributorOrPublic,
+from api.logs.permissions import (
+    ContributorOrPublicForLogs
 )
 
 from api.base.filters import ODMFilterMixin
-from api.base.utils import get_user_auth
 from api.base import permissions as base_permissions
 from api.users.serializers import UserSerializer
 from api.logs.serializers import NodeLogSerializer
@@ -29,19 +29,8 @@ class LogMixin(object):
                 detail='No log matching that log_id could be found.'
             )
 
-        self.check_log_permission(log)
+        self.check_object_permissions(self.request, log)
         return log
-
-    def check_log_permission(self, log):
-        """
-        If user can view the node associated with this log, the log itself can be viewed.
-        """
-        auth_user = get_user_auth(self.request)
-        node = log.node
-        if node.can_view(auth_user):
-            return
-
-        self.check_object_permissions(self.request, node)  # will raise 401 or 403, as appropriate
 
 
 class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
@@ -150,7 +139,7 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ContributorOrPublic
+        ContributorOrPublicForLogs
     )
 
     required_read_scopes = [CoreScopes.NODE_LOG_READ]
@@ -221,7 +210,7 @@ class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin,
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ContributorOrPublic
+        ContributorOrPublicForLogs
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
