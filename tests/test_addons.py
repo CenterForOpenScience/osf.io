@@ -291,6 +291,9 @@ class TestAddonLogs(OsfTestCase):
             metadata={
                 'path': 'foo',
             },
+            passthrough={
+                'file_guids': []
+            },
             source={
                 'materialized': 'foo',
                 'provider': 'github',

@@ -291,7 +291,7 @@ class TestCommentModel(OsfTestCase):
         assert_equal(n_unread, 0)
 
 
-class FileCommentMoveRenameTestMixin(OsfTestCase):
+class FileCommentMoveRenameTestMixin(object):
 
     id_based_providers = ['osfstorage']
 
@@ -765,7 +765,7 @@ class FileCommentMoveRenameTestMixin(OsfTestCase):
         # assert_equal(file_comments.count(), 1)
 
 
-class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
+class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTestCase):
 
     provider = 'osfstorage'
     ProviderFile = OsfStorageFile
@@ -891,7 +891,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         pass
 
 
-class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
+class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTestCase):
 
     provider = 'box'
     ProviderFile = BoxFile
@@ -913,7 +913,7 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         return '/9876543210/' if path.endswith('/') else '/1234567890'
 
 
-class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
+class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTestCase):
 
     provider = 'dropbox'
     ProviderFile = DropboxFile
@@ -930,19 +930,19 @@ class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         self.comment = CommentFactory(user=self.user, node=node, target=self.guid)
 
 
-class TestGoogleDriveFileCommentMoveRename(FileCommentMoveRenameTestMixin):
+class TestGoogleDriveFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTestCase):
 
     provider = 'googledrive'
     ProviderFile = GoogleDriveFile
 
 
-class TestGithubFileCommentMoveRename(FileCommentMoveRenameTestMixin):
+class TestGithubFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTestCase):
 
     provider = 'github'
     ProviderFile = GithubFile
 
 
-class TestS3FileCommentMoveRename(FileCommentMoveRenameTestMixin):
+class TestS3FileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTestCase):
 
     provider = 's3'
     ProviderFile = S3File
