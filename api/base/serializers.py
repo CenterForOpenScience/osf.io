@@ -818,10 +818,10 @@ class JSONAPISerializer(ser.Serializer):
 
     def to_esi_representation(self, data, envelope='data'):
         href = None
-        query_params_blacklist = ['page[size]', 'embed']
+        query_params_blacklist = ['page[size]']
         href = self.get_absolute_url(data)
         if href and href != '{}':
-            esi_url = furl.furl(href).add(args=self.context['request'].QUERY_PARAMS).remove(
+            esi_url = furl.furl(href).add(args=dict(self.context['request'].query_params)).remove(
                 args=query_params_blacklist).remove(args=['envelope']).add(args={'envelope': envelope}).url
             return '<esi:include src="{}"/>'.format(esi_url)
         # failsafe, let python do it if something bad happened in the ESI construction
