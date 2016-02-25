@@ -89,6 +89,7 @@ class TestAUser(OsfTestCase):
 
     def test_logged_in_index_route_renders_home_template(self):
         res = self.app.get('/', auth=self.user.auth)
+        #TODO change test to check for homepage contents rather than placeholder
         assert_in('Placeholder', res)  # Will change once home page populated
 
     def test_logged_out_index_route_renders_landing_page(self):

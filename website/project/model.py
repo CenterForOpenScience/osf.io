@@ -724,6 +724,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'wiki_pages_current',
         'is_retracted',
         'node_license',
+        'primary_institution'
     }
 
     # Maps category identifier => Human-readable representation for use in
