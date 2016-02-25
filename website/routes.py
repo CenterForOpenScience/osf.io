@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import furl
 import httplib as http
 
 from flask import request
