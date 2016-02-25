@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import furl
 import httplib as http
 
 from flask import request
@@ -43,6 +44,7 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
+    login_url = request.url.replace(request.host_url, settings.DOMAIN)
     return {
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
@@ -73,7 +75,7 @@ def get_globals():
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
-        'login_url': cas.get_login_url(request.url, auto=True),
+        'login_url': cas.get_login_url(login_url, auto=True),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
