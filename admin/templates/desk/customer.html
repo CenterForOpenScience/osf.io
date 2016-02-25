@@ -1,0 +1,43 @@
+<table class="table table-striped">
+<thead>
+    <tr>
+        <th>Field</th>
+        <th>Value</th>
+    </tr>
+</thead>
+<tbody>
+    <tr>
+        <td>Name</td>
+        <td>{{ customer.name }}</td>
+    </tr>
+    <tr>
+        <td>Company</td>
+        <td>{{ customer.company }}</td>
+    </tr>
+    <tr>
+        <td>Background</td>
+        <td>{{ customer.background }}</td>
+    </tr>
+    <tr>
+        <td>Email</td>
+        <td>
+            <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for email in customer.emails %}
+                <tr>
+                    <td>{{ email.type }}</td>
+                    <td>{{ email.value }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            </table>
+        </td>
+    </tr>
+</tbody>
+</table>

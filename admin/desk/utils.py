@@ -56,14 +56,23 @@ class DeskClient(object):
             Documentation: http://dev.desk.com/API/customers/#search
             Example URL: https://yoursite.desk.com/api/v2/customers/search?email=andrew@example.com
         """
-        customer_link = None
+        customer_data = {}
         try:
             customer_json = self.call_get('customers/search', params)
             if customer_json['total_entries'] > 0:
+                customer = customer_json['_embedded']['entries'][0]
+                customer_data = {
+                    'id': customer['id'],
+                    'name': '{} {}'.format(
+                        customer['first_name'], customer['last_name']),
+                    'emails': customer['emails'],
+                    'background': customer['background'],
+                    'company': customer['company'],
+                }
                 customer_link = customer_json['_embedded']['entries'][0]['_links']['self']
         except DeskError:
             pass
-        return customer_link
+        return customer_data
 
     def create_customer(self, data):
         """ Creates a customer based on the given data.
