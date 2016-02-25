@@ -931,6 +931,9 @@ class JSONAPISerializer(ser.Serializer):
     def get_absolute_url(self, obj):
         raise NotImplementedError()
 
+    def get_absolute_html_url(self, obj):
+        return obj.absolute_url
+
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
         """
