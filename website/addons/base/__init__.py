@@ -22,7 +22,7 @@ from framework.auth import Auth
 
 from website import settings
 from website.addons.base import serializer, logger
-from website.project.model import Node
+from website.project.model import Node, User
 from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
@@ -386,17 +386,33 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                addon_settings = node.get_addon(external_account.provider)
+                addon_settings = node.get_addon(external_account.provider, deleted=True)
             except AttributeError:
                 # No associated addon settings despite oauth grant
                 pass
             else:
                 addon_settings.deauthorize(auth=auth)
 
+        if User.find(Q('external_accounts', 'contains', external_account._id)).count() == 1:
+            # Only this user is using the account, so revoke remote access as well.
+            self.revoke_remote_oauth_access(external_account)
+
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
         if save:
             self.save()
+
+    def revoke_remote_oauth_access(self, external_account):
+        """ Makes outgoing request to remove the remote oauth grant
+        stored by third-party provider.
+
+        Individual addons must override this method, as it is addon-specific behavior.
+        Not all addon providers support this through their API, but those that do
+        should also handle the case where this is called with an external_account
+        with invalid credentials, to prevent a user from being unable to disconnect
+        an account.
+        """
+        pass
 
     def verify_oauth_access(self, node, external_account, metadata=None):
         """Verify that access has been previously granted.

@@ -108,12 +108,8 @@ def index(auth):
 
 def find_bookmark_collection(user):
     bookmark_collection = Node.find(Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user._id))
-
     if bookmark_collection.count() == 0:
         new_bookmark_collection(user)
-        bookmark_collection = user.node__contributed.find(
-            Q('is_bookmark_collection', 'eq', True)
-        )
     return bookmark_collection[0]
 
 

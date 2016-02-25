@@ -21,6 +21,7 @@ urlpatterns = [
                          url(r'^logs/', include('api.logs.urls', namespace='logs')),
                          url(r'^files/', include('api.files.urls', namespace='files')),
                          url(r'^docs/', include('rest_framework_swagger.urls')),
+                         url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
                          ))
         )
 ]

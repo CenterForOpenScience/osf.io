@@ -21,6 +21,9 @@
                     % endif
                 % endif
                 <h2 class="node-title">
+                    % if node['institution']['name'] and enable_institutions:
+                        <img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}">
+                    % endif
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
@@ -33,16 +36,12 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions'] and not node['is_registration']:
-                            <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
-                            ## TODO: Uncomment when APIv2 concurrency issues are fixed
-                            ## <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
+                        % if 'admin' in user['permissions'] and not node['is_pending_registration'] and not node['embargo_end_date']:
+                            <a class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal" >Make Public</a>
                         % endif
                     % else:
                         % if 'admin' in user['permissions'] and not node['is_registration']:
-                            <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
-                            ## TODO: Uncomment when APIv2 concurrency issues are fixed
-                            ## <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
+                            <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     % endif
@@ -124,6 +123,14 @@
                     </ol>
                 % endif
                 </div>
+                % if enable_institutions:
+                    % if user['is_contributor']:
+                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
+                    % else:
+                        Affiliated institution:
+                    % endif
+                    <span class="text-muted"> ${node['institution']['name']} </span>
+                % endif
                 % if node['is_fork']:
                     <p>
                     Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
@@ -198,6 +205,7 @@
                       </license-picker>
                     </p>
                  % endif
+
             </div>
         </div>
 
@@ -212,7 +220,7 @@
 <%include file="project/modal_add_component.mako"/>
 
 % if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_template.mako"/>
+    <%include file="include/comment_pane_template.mako"/>
 % endif
 
 <div class="row">
@@ -226,6 +234,7 @@
         }'></div>
         %endif
 
+        <!-- Files -->
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Files</h3>
@@ -318,7 +327,7 @@
                     ##     <!-- /ko -->
                     ## % endif
                 </div>
-                <p><strong>More</strong></p>
+                <p><strong>Get more citations</strong></p>
                 <div id="citationStylePanel" class="citation-picker">
                     <input id="citationStyleInput" type="hidden" />
                 </div>
@@ -412,7 +421,6 @@ ${parent.javascript_bottom()}
     // Hack to allow mako variables to be accessed to JS modules
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
-            name: ${ user_full_name | sjson, n },
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n }
         },

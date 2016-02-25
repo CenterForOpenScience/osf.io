@@ -57,7 +57,7 @@ class FilterMixin(object):
     MATCH_OPERATORS = ('contains', 'icontains')
     MATCHABLE_FIELDS = (ser.CharField, ser.ListField)
 
-    DEFAULT_OPERATOR = 'eq'
+    DEFAULT_OPERATORS = ('eq', 'ne')
     DEFAULT_OPERATOR_OVERRIDES = {
         ser.CharField: 'icontains',
         ser.ListField: 'contains',
@@ -72,7 +72,6 @@ class FilterMixin(object):
     COMPARABLE_FIELDS = NUMERIC_FIELDS + DATE_FIELDS
 
     LIST_FIELDS = (ser.ListField, )
-
     RELATIONSHIP_FIELDS = (RelationshipField, TargetField)
 
     def __init__(self, *args, **kwargs):
@@ -81,13 +80,13 @@ class FilterMixin(object):
             raise NotImplementedError()
 
     def _get_default_operator(self, field):
-        return self.DEFAULT_OPERATOR_OVERRIDES.get(type(field), self.DEFAULT_OPERATOR)
+        return self.DEFAULT_OPERATOR_OVERRIDES.get(type(field), 'eq')
 
     def _get_valid_operators(self, field):
         if isinstance(field, self.COMPARABLE_FIELDS):
-            return self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )
+            return self.COMPARISON_OPERATORS + self.DEFAULT_OPERATORS
         elif isinstance(field, self.MATCHABLE_FIELDS):
-            return self.MATCH_OPERATORS + (self.DEFAULT_OPERATOR, )
+            return self.MATCH_OPERATORS + self.DEFAULT_OPERATORS
         else:
             return None
 
@@ -111,7 +110,7 @@ class FilterMixin(object):
         :raises InvalidFilterMatchType: If the query contains comparisons against non-string or non-list fields
         :raises InvalidFilterOperator: If the filter operator is not a member of self.COMPARISON_OPERATORS
         """
-        if op not in set(self.MATCH_OPERATORS + self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )):
+        if op not in set(self.MATCH_OPERATORS + self.COMPARISON_OPERATORS + self.DEFAULT_OPERATORS):
             valid_operators = self._get_valid_operators(field)
             raise InvalidFilterOperator(value=op, valid_operators=valid_operators)
         if op in self.COMPARISON_OPERATORS:
@@ -184,7 +183,9 @@ class FilterMixin(object):
                 op = match_dict.get('op') or self._get_default_operator(field)
                 self._validate_operator(field, field_name, op)
 
-                field_name = self.convert_key(field_name, field)
+                if not isinstance(field, ser.SerializerMethodField):
+                    field_name = self.convert_key(field_name, field)
+
                 if field_name not in query:
                     query[field_name] = []
 
@@ -236,7 +237,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
-        elif isinstance(field, (self.LIST_FIELDS, self.RELATIONSHIP_FIELDS)) \
+        elif isinstance(field, (self.LIST_FIELDS, self.RELATIONSHIP_FIELDS, ser.SerializerMethodField)) \
                 or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
             if value == 'null':
                 value = None
@@ -368,7 +369,7 @@ class ListFilterMixin(FilterMixin):
         elif isinstance(field, ser.CharField):
             return_val = [
                 item for item in default_queryset
-                if params['value'] in getattr(item, field_name, {}).lower()
+                if params['value'].lower() in getattr(item, field_name, {}).lower()
             ]
         else:
             return_val = [

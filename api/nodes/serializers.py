@@ -7,10 +7,12 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.models import Node, User, Comment
-from website.exceptions import NodeStateError
+from website.models import Node, User, Comment, Institution
+from website.exceptions import NodeStateError, UserNotAffiliatedError
+from website.files.models.base import File
 from website.util import permissions as osf_permissions
 
+from api.nodes.utils import get_file_object
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
@@ -45,6 +47,27 @@ class NodeSerializer(JSONAPISerializer):
         'parent'
     ])
 
+    non_anonymized_fields = [
+        'id',
+        'title',
+        'description',
+        'category',
+        'date_created',
+        'date_modified',
+        'registration',
+        'tags',
+        'public',
+        'links',
+        'children',
+        'comments',
+        'contributors',
+        'files',
+        'node_links',
+        'parent',
+        'root',
+        'logs',
+    ]
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
@@ -60,6 +83,15 @@ class NodeSerializer(JSONAPISerializer):
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = DevOnly(ser.BooleanField(read_only=True, source='is_collection'))
     tags = JSONAPIListField(child=NodeTagField(), required=False)
+    template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
+                                  help_text='Specify a node id for a node you would like to use as a template for the '
+                                            'new node. Templating is like forking, except that you do not copy the '
+                                            'files, only the project structure. Some information is changed on the top '
+                                            'level project by submitting the appropriate fields in the request body, '
+                                            'and some information will not change. By default, the description will '
+                                            'be cleared and the project will be made private.')
+    current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
+                                                                   'for the current user on this node.')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
@@ -117,6 +149,13 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_registration_count'}
     )))
 
+    primary_institution = RelationshipField(
+        related_view='nodes:node-institution-detail',
+        related_view_kwargs={'node_id': '<pk>'},
+        self_view='nodes:node-relationships-institution',
+        self_view_kwargs={'node_id': '<pk>'}
+    )
+
     root = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<root._id>'}
@@ -126,6 +165,13 @@ class NodeSerializer(JSONAPISerializer):
         related_view='nodes:node-logs',
         related_view_kwargs={'node_id': '<pk>'},
     )
+
+    def get_current_user_permissions(self, obj):
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return ["read"]
+        else:
+            return obj.get_permissions(user=user)
 
     class Meta:
         type_ = 'nodes'
@@ -160,12 +206,45 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def get_unread_comments_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
-        user = auth.user
-        return Comment.find_unread(user=user, node=obj)
+        user = self.get_user_auth(self.context['request']).user
+        node_comments = Comment.find_n_unread(user=user, node=obj, page='node')
+        file_comments = self.get_unread_file_comments(obj)
+
+        return {
+            'total': node_comments + file_comments,
+            'node': node_comments,
+            'files': file_comments
+        }
+
+    def get_unread_file_comments(self, obj):
+        user = self.get_user_auth(self.context['request']).user
+        n_unread = 0
+        commented_files = File.find(Q('_id', 'in', obj.commented_files.keys()))
+        for file_obj in commented_files:
+            if obj.get_addon(file_obj.provider):
+                try:
+                    get_file_object(node=obj, path=file_obj.path, provider=file_obj.provider, request=self.context['request'])
+                except (exceptions.NotFound, exceptions.PermissionDenied):
+                    continue
+                n_unread += Comment.find_n_unread(user, obj, page='files', root_id=file_obj._id)
+        return n_unread
 
     def create(self, validated_data):
-        node = Node(**validated_data)
+        if 'template_from' in validated_data:
+            request = self.context['request']
+            user = request.user
+            template_from = validated_data.pop('template_from')
+            template_node = Node.load(key=template_from)
+            if template_node is None:
+                raise exceptions.NotFound
+            if not template_node.has_permission(user, 'read', check_parent=False):
+                raise exceptions.PermissionDenied
+
+            validated_data.pop('creator')
+            changed_data = {template_from: validated_data}
+            node = template_node.use_as_template(auth=self.get_user_auth(request), changes=changed_data)
+        else:
+            node = Node(**validated_data)
         try:
             node.save()
         except ValidationValueError as e:
@@ -382,6 +461,58 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
+
+class NodeInstitutionRelationshipSerializer(ser.Serializer):
+    id = ser.CharField(source='institution_id', required=False, allow_null=True)
+    type = TypeField(required=False, allow_null=True)
+
+    links = LinksField({
+        'self': 'get_self_link',
+        'related': 'get_related_link',
+    })
+
+    class Meta:
+        type_ = 'institutions'
+
+    def get_self_link(self, obj):
+        return obj.institution_relationship_url()
+
+    def get_related_link(self, obj):
+        return obj.institution_url()
+
+    def update(self, instance, validated_data):
+        node = instance
+        user = self.context['request'].user
+
+        inst = validated_data.get('institution_id', None)
+        if inst:
+            inst = Institution.load(inst)
+            if not inst:
+                raise exceptions.NotFound
+            try:
+                node.add_primary_institution(inst=inst, user=user)
+            except UserNotAffiliatedError:
+                raise exceptions.ValidationError(detail='User not affiliated with institution')
+            node.save()
+            return node
+        node.remove_primary_institution(user)
+        node.save()
+        return node
+
+    def to_representation(self, obj):
+        data = {}
+        meta = getattr(self, 'Meta', None)
+        type_ = getattr(meta, 'type_', None)
+        assert type_ is not None, 'Must define Meta.type_'
+        relation_id_field = self.fields['id']
+        attribute = relation_id_field.get_attribute(obj)
+        relationship = relation_id_field.to_representation(attribute)
+
+        data['data'] = {'type': type_, 'id': relationship} if relationship else None
+        data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
+
+        return data
+
 
 class NodeAlternativeCitationSerializer(JSONAPISerializer):
 

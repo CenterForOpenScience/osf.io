@@ -23,6 +23,7 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website.project.model import Node
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
@@ -37,29 +38,34 @@ logger = logging.getLogger(__name__)
 
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes(
-        list(user.node__contributed.find(
-            (
-                Q('category', 'eq', 'project') &
-                Q('is_public', 'eq', True) &
-                Q('is_registration', 'eq', False) &
-                Q('is_deleted', 'eq', False)
-            )
-        ))
+
+    nodes = Node.find_for_user(
+        user,
+        subquery=(
+            Q('category', 'eq', 'project') &
+            Q('is_public', 'eq', True) &
+            Q('is_registration', 'eq', False) &
+            Q('is_deleted', 'eq', False)
+        )
     )
+    return _render_nodes(list(nodes))
 
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
     # TODO: This should use User.visible_contributor_to?
-    nodes = list(user.node__contributed.find(
-        (
-            Q('category', 'ne', 'project') &
-            Q('is_public', 'eq', True) &
-            Q('is_registration', 'eq', False) &
-            Q('is_deleted', 'eq', False)
+
+    nodes = list(
+        Node.find_for_user(
+            user,
+            (
+                Q('category', 'ne', 'project') &
+                Q('is_public', 'eq', True) &
+                Q('is_registration', 'eq', False) &
+                Q('is_deleted', 'eq', False)
+            )
         )
-    ))
+    )
     return _render_nodes(nodes, show_path=True)
 
 
@@ -257,7 +263,7 @@ def _profile_view(profile, is_profile=False):
         badges = []
 
     if profile:
-        profile_user_data = profile_utils.serialize_user(profile, full=True)
+        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile)
         return {
             'profile': profile_user_data,
             'assertions': badge_assertions,

@@ -18,6 +18,7 @@ require('js/crossOrigin.js');
 var $osf = require('js/osfHelpers');
 var NavbarControl = require('js/navbarControl');
 var Raven = require('raven-js');
+var moment = require('moment');
 
 // Prevent IE from caching responses
 $.ajaxSetup({cache: false});
@@ -108,6 +109,5 @@ $(function() {
     if(affix.length){
         $osf.initializeResponsiveAffix();
     }
-
     new NavbarControl('.osf-nav-wrapper');
 });

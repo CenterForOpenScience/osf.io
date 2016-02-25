@@ -76,6 +76,7 @@ def get_globals():
         'login_url': cas.get_login_url(request.url, auto=True),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
+        'enable_institutions': settings.ENABLE_INSTITUTIONS,
     }
 
 
@@ -309,91 +310,11 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/comments/',
-                '/project/<pid>/node/<nid>/comments/',
-            ],
-            'get',
-            project_views.comment.list_comments,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comments/discussion/',
-                '/project/<pid>/node/<nid>/comments/discussion/',
-            ],
-            'get',
-            project_views.comment.comment_discussion,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/',
-                '/project/<pid>/node/<nid>/comment/',
-            ],
-            'post',
-            project_views.comment.add_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/',
-                '/project/<pid>/node/<nid>/comment/<cid>/',
-            ],
-            'put',
-            project_views.comment.edit_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/',
-                '/project/<pid>/node/<nid>/comment/<cid>/',
-            ],
-            'delete',
-            project_views.comment.delete_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/undelete/',
-                '/project/<pid>/node/<nid>/comment/<cid>/undelete/',
-            ],
-            'put',
-            project_views.comment.undelete_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/comments/timestamps/',
                 '/project/<pid>/node/<nid>/comments/timestamps/',
             ],
             'put',
             project_views.comment.update_comments_timestamp,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/report/',
-                '/project/<pid>/node/<nid>/comment/<cid>/report/',
-            ],
-            'post',
-            project_views.comment.report_abuse,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/unreport/',
-                '/project/<pid>/node/<nid>/comment/<cid>/unreport/',
-            ],
-            'post',
-            project_views.comment.unreport_abuse,
             json_renderer,
         ),
 
