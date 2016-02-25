@@ -45,6 +45,9 @@ var QuickSearchProject = {
                 if (self.next()) {
                     self.recursiveNodes(self.next());
                 }
+                else {
+                    self.loadingComplete(true);
+                }
             }
         );
 
