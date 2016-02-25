@@ -11,13 +11,12 @@
     <div class="search-layer bg-color-hover p-sm">
         <input type="text" class="form-control support-filter" placeholder="Search">
         <i class="fa fa-times-circle clear-search" ></i>
-        <ul>
+        <ul class="p-t-sm">
             <li class="search-expand"><i class="fa fa-th-list"></i> Expand All </li>
             <li class="search-collapse"><i class="fa fa-list"></i> Collapse All </li>
             <li class="search-previous"><i class="fa fa-angle-left"></i> Previous</li>
             <li class="search-next">Next <i class="fa fa-angle-right"></i> </li>
             <li class="search-up disabled"><i class="fa fa-arrow-circle-up"></i> Top </li>
-
         </ul>
     </div>
 
