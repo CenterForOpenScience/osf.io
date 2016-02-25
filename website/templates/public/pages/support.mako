@@ -287,9 +287,9 @@
             <p> For all other questions or comments: </p>
             <p><a href="mailto:contact@cos.io" class="text-bigger">contact@cos.io</a></p>
             <h5 class="m-t-md f-w-xl"> Do you have Prereg Challenge related questions? </h4>
-                <p>Check out our [Prereg section] on the cos.io website. </p>
+                <p>Check out our <a href="https://cos.io/prereg/">Prereg section</a> on the cos.io website. </p>
             <h5 class="m-t-md f-w-xl"> Are you looking for statistics consultations?</h4>
-                <p>COS provides statistics consulation for free. To learn more about this service visit the [COS statistics consulting pages].</p>
+                <p>COS provides statistics consulation for free. To learn more about this service visit the <a href="https://cos.io/stats_consulting/"> COS statistics consulting page</a>.</p>
 
             <h5 class="m-t-md f-w-xl"> Other ways to get help </h4>
             <button class="btn btn-sm btn-link"><i class="fa fa-twitter"></i> Ask us a question on twitter </button>
