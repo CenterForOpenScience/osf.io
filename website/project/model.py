@@ -1597,26 +1597,28 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # Ensure Mailing list subscription is set up
         if first_save:
-            self.create_mailing_list_subscription()
+            self.get_or_create_mailing_list_subscription()
 
         # Return expected value for StoredObject::save
         return saved_fields
 
-    def create_mailing_list_subscription(node):
-        if node.mailing_enabled:
+    def get_or_create_mailing_list_subscription(self):
+        if self.mailing_enabled:
             #imported here to avoid circularity
             from website.models import NotificationSubscription
             from website.notifications.utils import to_subscription_key
             try:
                 subscription = NotificationSubscription(
-                    _id=to_subscription_key(node._id, 'mailing_list_events'),
-                    owner=node,
+                    _id=to_subscription_key(self._id, 'mailing_list_events'),
+                    owner=self,
                     event_name='mailing_list_events'
                 )
-                subscription.add_user_to_subscription(node.creator, 'email_transactional', save=True)
+                subscription.add_user_to_subscription(self.creator, 'email_transactional', save=True)
                 subscription.save()
             except KeyExistsException:
-                pass
+                subscription = NotificationSubscription.load(to_subscription_key(self._id, 'mailing_list_events'))
+            finally:
+                return subscription
 
     ######################################
     # Methods that return a new instance #
@@ -2204,8 +2206,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.permissions = {}
         forked.visible_contributor_ids = []
 
-        # Create mailing list before adding users
-        forked.create_mailing_list_subscription()
+        # Save before creating mailing list due to NotificationSubscription's
+        # ForeignFields -- foreign object must exist to be linked.
+        forked.save(suppress_log=True)
 
         for citation in self.alternative_citations:
             forked.add_citation(

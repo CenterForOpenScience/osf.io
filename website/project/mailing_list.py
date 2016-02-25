@@ -21,9 +21,7 @@ from website.util.sanitize import unescape_entities
 @contributor_added.connect
 def subscribe_contributor_to_mailing_list(node, contributor, auth=None):
     if node.mailing_enabled and contributor.is_active:
-        subscription = NotificationSubscription.load(
-            to_subscription_key(node._id, 'mailing_list_events')
-        )
+        subscription = node.get_or_create_mailing_list_subscription()
         subscription.add_user_to_subscription(contributor, 'email_transactional', save=True)
         subscription.save()
 
