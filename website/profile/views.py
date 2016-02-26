@@ -243,7 +243,7 @@ def update_user(auth):
         if subscription:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
-    return _profile_view(user)
+    return _profile_view(user, is_profile=True)
 
 
 def _profile_view(profile, is_profile=False):
