@@ -59,7 +59,7 @@ GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
 
 # User management & registration
-CONFIRM_REGISTRATIONS_BY_EMAIL = False
+CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
