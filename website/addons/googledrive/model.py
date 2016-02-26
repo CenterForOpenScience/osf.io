@@ -101,10 +101,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_path = None
         return super(GoogleDriveNodeSettings, self).clear_auth()
 
-    def set_auth(self, *args, **kwargs):
-        self.folder_id = None
-        return super(GoogleDriveNodeSettings, self).set_auth(*args, **kwargs)
-
     def set_target_folder(self, folder, auth):
         """Configure this addon to point to a Google Drive folder
 
