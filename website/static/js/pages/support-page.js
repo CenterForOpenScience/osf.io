@@ -30,12 +30,14 @@ $(document).ready(function(){
     /**
      * Resets the filter states for searching support items
      */
-    function resetFilter () {
-        $('.support-item').each(function() {
-            var el = $(this);
-            changeExpandState(el, true);
-            el.removeClass('support-nomatch');
-        });
+    function resetFilter (noCollapse) {
+        if(!noCollapse){
+            $('.support-item').each(function() {
+                var el = $(this);
+                changeExpandState(el, true);
+                el.removeClass('support-nomatch');
+            });
+        }
         $('.support-filter').val('');
         $('.clear-search').removeClass('clear-active');
         searchItemIndex = 0;
@@ -100,7 +102,7 @@ $(document).ready(function(){
 
     /* Expand All button event  */
     $('.search-expand').click(function(){
-        resetFilter();
+        resetFilter(true);
         $('.support-item').each(function(){
             changeExpandState($(this));
         });
