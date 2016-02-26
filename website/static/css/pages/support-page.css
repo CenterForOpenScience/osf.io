@@ -1,0 +1,158 @@
+.support-item {
+    border: 1px solid #eee;
+    margin: 15px 0;
+}
+.support-head, .support-body {
+    padding: 10px;
+}
+.support-head {
+    background-color: #f5f5f5;
+    padding-left: 25px;
+    position: relative;
+    margin:0;
+    cursor: pointer;
+}
+
+.support-head > .fa{
+    position: absolute;
+    left: 10px;
+}
+
+.support-item .support-body {
+    display: none;
+}
+.support-nomatch {
+    color: #999;
+}
+.support-nomatch a {
+    color: #87cefa;
+}
+
+.support-sidebar {
+    border-right: 1px solid #eee;
+    background: #f8f8f8;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    border-top: 1px solid #f5f5f5;
+    border-left: 1px solid #f5f5f5;
+}
+.support-sidebar p {
+    font-size: 13px;
+}
+
+.search-layer input {
+    width: 400px;
+    display: inline-block;
+}
+.search-layer .clear-search {
+    margin-left: -30px;
+    font-size: 18px;
+    color: #CCCCCC;
+}
+.search-layer .clear-search.clear-active {
+    color: #666;
+}
+
+.search-layer .btn-group {
+    margin-left: 30px;
+}
+
+.search-layer.fixed-layer {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    width: 100%;
+    z-index: 99;
+    box-shadow: 0 1px 5px #ccc;
+}
+.search-layer ul {
+    display: inline-block;
+}
+.search-layer ul li {
+    display: inline;
+    padding: 3px 8px;
+    cursor: pointer;
+}
+.search-layer ul li:hover {
+    color: #293C4A;
+}
+.search-layer ul li.disabled {
+    color: #AAAAAA;
+}
+.content-layer {
+    border-top: 1px solid #eee;
+}
+.content-padding {
+    padding-top: 145px; /* To pad for the affixed menu changes */
+}
+.support-item.search-selected {
+    box-shadow: 0 0 5px #9195AD;
+}
+@media (max-width: 991px) {
+    .search-layer input {
+        width: 250px;
+    }
+    .search-layer ul li {
+        padding: 3px;
+    }
+}
+
+    /* Getting Started */
+
+
+/* nested links */
+.gs-sidebar .nav .nav>li>a {
+    font-size: 12px;
+    padding: 4px 0 4px 15px;
+    opacity: 0.8;
+    font-weight: bold;
+}/* nested navs */
+.gs-sidebar .nav .nav {
+    display: none;
+}
+/* nested active navs */
+.gs-sidebar .nav .active .nav {
+    display: block;
+}
+/* nested link icons */
+.gs-sidebar .nav .nav>li>a i {
+    display: none;
+}
+/* nested active link icons */
+.gs-sidebar .nav .nav>.active>a i {
+    display: inline-block;
+}
+/* active & hover links */
+.gs-sidebar .nav>.active>a {
+    font-weight: bold;
+}
+/* nested active links */
+.gs-sidebar .nav .nav>.active>a {
+    font-weight: bold;
+}
+/* affixed sidebar */
+.gs-sidebar,
+.gs-sidebar.affix,
+.gs-sidebar.affix-top {
+    position: fixed;
+    top: 70px;
+}
+.affix-bottom {
+    position: relative;
+}
+
+/* embedded video */
+.gs-video {
+    margin-top: 25px;
+    margin-bottom: 25px;
+    margin-left: auto;
+    margin-right: auto;
+    border: solid 1px #ddd;
+    z-index: 98; /* Should be lower than 99 to be below filter bar */
+}
+
+/* phase number counters */
+.gs-count {
+    margin-bottom: 20px;
+    margin-top: 50px;
+}
