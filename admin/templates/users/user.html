@@ -23,12 +23,25 @@
                     <div class="modal-content"></div>
                 </div>
             </div>
-            <a href="{% url 'desk:customer' user.id %}"
-               data-toggle="modal" data-target="#deskModal"
-               class="btn btn-primary">
-                User's desk profile
-            </a>
+            <div class="btn-group" role="group">
+                <span class="btn btn-primary disabled">User's desk</span>
+                <a href="{% url 'desk:customer' user.id %}"
+                   data-toggle="modal" data-target="#deskModal"
+                   class="btn btn-primary">
+                    Profile
+                </a>
+                <a href="{% url 'desk:user_cases' user.id %}"
+                   data-toggle="modal" data-target="#caseModal"
+                   class="btn btn-primary">
+                    Cases
+                </a>
+            </div>
             <div class="modal" id="deskModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+            <div class="modal" id="caseModal">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>

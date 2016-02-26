@@ -68,8 +68,8 @@ class DeskClient(object):
                     'emails': customer['emails'],
                     'background': customer['background'],
                     'company': customer['company'],
+                    'link': customer['_links']['self']
                 }
-                customer_link = customer_json['_embedded']['entries'][0]['_links']['self']
         except DeskError:
             pass
         return customer_data

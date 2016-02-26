@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.views.generic import ListView, DetailView
-from django.views.defaults import page_not_found
 
 from website.project.model import User
 
@@ -11,16 +10,19 @@ class DeskCaseList(ListView):
     template_name = 'desk/cases.html'
     ordering = 'updated_at'
     context_object_name = 'cases'
-    paginate_by = 10
-    paginate_orphans = 1
+    paginate_by = 100
+    paginate_orphans = 5
 
     def get_queryset(self):
-        user = self.request.user
-        desk = DeskClient(username=user.desk_email,
-                          password=user.desk_password)
+        customer_id = self.kwargs.get('user_id', None)
+        customer = User.load(customer_id)
+        email = customer.emails[0]
+        desk_user = self.request.user
+        desk = DeskClient(username=desk_user.desk_email,
+                          password=desk_user.desk_password)
         params = {
             'status': 'new,open,closed',
-            'email': 'michael@cos.io',
+            'email': email,
         }
         queryset = desk.cases(params)
         return queryset
@@ -41,9 +43,9 @@ class DeskCustomer(DetailView):
         customer_id = self.kwargs.get('user_id', None)
         customer = User.load(customer_id)
         email = customer.emails[0]
-        user = self.request.user
-        desk = DeskClient(username=user.desk_email,
-                          password=user.desk_password)
+        desk_user = self.request.user
+        desk = DeskClient(username=desk_user.desk_email,
+                          password=desk_user.desk_password)
         params = {'email': email}
         customer = desk.find_customer(params)
         if customer == {}:
