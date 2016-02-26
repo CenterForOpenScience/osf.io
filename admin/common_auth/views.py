@@ -1,8 +1,13 @@
+from django.views.generic import UpdateView
 from django.contrib import messages
-from django.contrib.auth import authenticate, logout as logout_user, login as auth_login
+from django.contrib.auth import (
+    authenticate, logout as logout_user, login as auth_login
+)
 from django.shortcuts import render, redirect
+from django.core.urlresolvers import reverse_lazy
 
-from forms import LoginForm
+from forms import LoginForm, DeskUserForm
+
 
 def login(request):
     if request.user.is_authenticated():
@@ -21,6 +26,16 @@ def login(request):
     context = {'form': form}
     return render(request, 'login.html', context)
 
+
 def logout(request):
     logout_user(request)
     return redirect('auth:login')
+
+
+class DeskUserFormView(UpdateView):
+    form_class = DeskUserForm
+    template_name = 'desk/settings.html'
+    success_url = reverse_lazy('home')
+
+    def get_object(self, queryset=None):
+        return self.request.user
