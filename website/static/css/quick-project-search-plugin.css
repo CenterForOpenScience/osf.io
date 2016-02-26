@@ -21,7 +21,7 @@
 }
 
 .quick-project .selected {
-    color: #000000
+    color: #000000;
 }
 
 .quick-project .not-selected {
@@ -37,11 +37,30 @@
     .node-col-headers {
         display: none;
     }
+
+    .sm-new-and-noteworthy {
+        display: none;
+    }
+
+    .noteworthy-spacing {
+        margin-top: 10px;
+    }
+
+    .conference-centering {
+        text-align: center;
+    }
+
 }
 
 @media screen and (min-width: 768px) {
     .node-sort-dropdown {
         display: none;
+    }
+
+    .noteworthy-spacing {
+        margin-left: 1px;
+        margin-right: 1px;
+        margin-top: 10px;
     }
 }
 
@@ -49,4 +68,16 @@
     font-weight: normal;
 }
 
+.conferences-and-meetings {
+    background-color: #EEEEEE;
+}
 
+.prevent-overflow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.blank-line {
+    margin-bottom: 15px;
+}

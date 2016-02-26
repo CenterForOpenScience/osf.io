@@ -800,6 +800,26 @@ var dialog = function(title, message, actionButtonLabel, options) {
     return ret.promise();
 };
 
+// Formats contributor family names for display.  Takes in project, number of contributors, and getFamilyName function
+var contribNameFormat = function(node, number, getFamilyName) {
+    if (number === 1) {
+        return getFamilyName(0, node);
+    }
+    else if (number === 2) {
+        return getFamilyName(0, node) + ' and ' +
+            getFamilyName(1, node);
+    }
+    else if (number === 3) {
+        return getFamilyName(0, node) + ', ' +
+            getFamilyName(1, node) + ', and ' +
+            getFamilyName(2, node);
+    }
+    else {
+        return getFamilyName(0, node) + ', ' +
+            getFamilyName(1, node) + ', ' +
+            getFamilyName(2, node) + ' + ' + (number - 3);
+    }
+};
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -836,5 +856,6 @@ module.exports = window.$.osf = {
     indexOf: indexOf,
     currentUser: currentUser,
     any: any,
-    dialog: dialog
+    dialog: dialog,
+    contribNameFormat: contribNameFormat
 };

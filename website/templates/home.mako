@@ -4,8 +4,9 @@
     <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
      <div>
             <div id="addQuickProjectSearchWrap"></div>
+            <div id="newAndNoteworthyWrap"></div>
+            <div id="hostingAMeetingWrap"></div>
      </div>
-
 
 </%def>
 
