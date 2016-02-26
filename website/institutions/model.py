@@ -1,12 +1,51 @@
 # -*- coding: utf-8 -*-
 from django.core.urlresolvers import reverse
 
-from modularodm import fields
+from modularodm import fields, Q
 from modularodm.validators import URLValidator
 
 from framework.mongo import StoredObject
 
-class Institution(StoredObject):
+class Institution():
+
+    institution_node_translator = {
+        '_id': 'institution_id',
+        'auth_url': 'institution_auth_url',
+        'domain': 'institution_domain',
+        'name': 'title'
+    }
+
+    def __init__(self, node):
+        self.node = node
+        for key, value in self.institution_node_translator.iteritems():
+            setattr(self, key, getattr(node, value))
+
+    def __getattr__(self, item):
+        return getattr(self.node, item)
+
+    @classmethod
+    def find(cls, query, **kwargs):
+        for node in query.nodes:
+            replacement_attr = cls.institution_node_translator.get(node.attribute, False)
+            node.attribute = replacement_attr if False else node.attribute
+        query = query & Q('is_institution', 'eq', True)
+        nodes = Node.find(query, allow_institution=True, **kwargs)
+        return [cls(node) for node in nodes]
+
+    @classmethod
+    def find_one(cls, query, **kwargs):
+        for node in query.nodes:
+            replacement_attr = cls.institution_node_translator.get(node.attribute, False)
+            node.attribute = replacement_attr if False else node.attribute
+        query = query & Q('is_institution', 'eq', True)
+        node = Node.find_one(query, allow_institution=True, **kwargs)
+        return cls(node)
+
+    @classmethod
+    def load(cls, id):
+        node = Node.find_one(Q('institution_id', 'eq', id) & Q('is_institution', 'eq', True), allow_institution=True)
+        return cls(node)
+
 
     _id = fields.StringField(index=True, unique=True, primary=True)
     name = fields.StringField(required=True)

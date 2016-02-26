@@ -898,6 +898,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         )
         return True
 
+
+    Node.find(Q('_primary_institution', 'eq', institution_obj.node))
+
+    _primary_institution = fields.ForeignField('node')
+
+    @property
+    def primary_institution(self):
+        return Institution(_primary_institution)
+
+
     def institution_id(self):
         # Empty string over None, as None was somehow being serialized to <string>'None',
         # there's probably a better way to do this or a problem there.
@@ -3472,6 +3482,24 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
             save=True,
         )
+
+    is_institution = fields.BooleanField(default=False, index=True)
+
+    institution_id = fields.StringField(unique=True)
+    institution_domain = fields.StringField(list=True)
+    institution_auth_url = fields.StringField(validate=URLValidator())
+
+    @classmethod
+    def find(cls, query, allow_institution=False, **kwargs):
+        if not allow_institution:
+            query = query & Q('is_institution', 'eq', False)
+        return super(Node, cls).find(query, **kwargs)
+
+    @classmethod
+    def find_one(cls, query, allow_institution=False, **kwargs):
+        if not allow_institution:
+            query = query & Q('is_institution', 'eq', False)
+        return super(Node, cls).find_one(query, **kwargs)
 
 
 @Node.subscribe('before_save')
