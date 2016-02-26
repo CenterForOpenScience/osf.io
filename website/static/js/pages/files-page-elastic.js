@@ -3,6 +3,7 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Fangorn = require('js/fangorn');
+var m = require('mithril');
 
 // Don't show dropped content if user drags outside grid
 window.ondragover = function(e) { e.preventDefault(); };
@@ -19,6 +20,14 @@ $(document).ready(function(){
             divID: 'treeGrid',
             filesData: data.data,
             xhrconfig: $osf.setXHRAuthorization,
+            filterTemplate: function () {
+                var tb = this;
+                return m("input.pull-right.form-control[placeholder='" + tb.options.filterPlaceholder + "'][type='text']", {
+                    style: "width:100%;display:inline;",
+                    oninput: tb.filter,
+                    value: tb.filterText()
+                });
+            },
             onfilter: function(){
                 var queryElasticSearch = function(query, node_id){
                     var data = {'q': query, 'pid': node_id};
