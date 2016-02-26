@@ -3,7 +3,6 @@
 import httplib as http
 import logging
 
-from bs4 import BeautifulSoup
 from flask import request
 
 from framework.mongo.utils import to_mongo_key
