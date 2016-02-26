@@ -22,8 +22,8 @@ $(document).ready(function(){
             xhrconfig: $osf.setXHRAuthorization,
             filterTemplate: function () {
                 var tb = this;
-                return m("input.pull-right.form-control[placeholder='" + tb.options.filterPlaceholder + "'][type='text']", {
-                    style: "width:100%;display:inline;",
+                return m('input.pull-right.form-control[placeholder=\'' + tb.options.filterPlaceholder + '\'][type=\'text\']', {
+                    style: 'width:100%;display:inline;',
                     oninput: tb.filter,
                     value: tb.filterText()
                 });
@@ -47,7 +47,7 @@ $(document).ready(function(){
                     tb.visibleIndexes = [];
 
                     // add items matching filter or in elastic search to displayed.
-                    for (var i=0; i < tb.flatData.length; i++){
+                    for (var j=0; j < tb.flatData.length; j++){
                         var element = tb.flatData[i];
                         var item = tb.find(element.id);
                         if (tb.rowFilterResult(item)) {
