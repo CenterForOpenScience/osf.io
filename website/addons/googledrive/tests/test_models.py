@@ -160,9 +160,13 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         external_account = GoogleDriveAccountFactory()
         self.user.external_accounts.append(external_account)
         self.user.save()
+        self.node_settings.external_account = external_account
+        self.node_settings.user_settings = self.user_settings
+        self.node_settings.save()
 
-        # this should be reset after the call
-        self.node_settings.folder_id = 'anything'
+        # this should not be reset after the call
+        folder = {'id': 'anything', 'path': 'anything'}
+        self.node_settings.set_target_folder(folder, Auth(self.user_settings.owner))
 
         self.node_settings.set_auth(
             external_account=external_account,
@@ -178,16 +182,12 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             self.node_settings.user_settings,
             self.user_settings
         )
-        assert_is_none(
-            self.node_settings.folder_id
+        assert_equal(
+            self.node_settings.folder_id,
+            folder['id']
         )
 
-        set_auth_gives_access = self.user_settings.verify_oauth_access(
-            node=self.node,
-            external_account=external_account,
-        )
-
-        assert_true(set_auth_gives_access)
+        assert_true(self.node_settings.complete)
 
     def test_set_auth_wrong_user(self):
         external_account = GoogleDriveAccountFactory()
