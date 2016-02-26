@@ -107,40 +107,7 @@ var ProjectSettings = oop.extend(
                     }
                 }
             };
-        },
-        enableMailingList: function() {
-            var request = $.ajax({
-                type: 'post',
-                dataType: 'json',
-                url: nodeApiUrl + 'mailing_list/'
-            });
-            request.done(function() {
-                window.location.reload();
-            });
-            request.fail($osf.handleJSONError);
-        },
-        disableMailingList: function(nodeType) {
-
-            var message = '<p>Are you sure that you want to disable the mailing list for this ' + nodeType + '?';
-
-            bootbox.confirm({
-                title: 'Disable mailing list confirmation',
-                message: message,
-                callback: function (result) {
-                    if (result) {
-                        var request = $.ajax({
-                            type: 'delete',
-                            dataType: 'json',
-                            url: nodeApiUrl + 'mailing_list/'
-                        });
-                        request.done(function () {
-                            window.location.reload();
-                        });
-                        request.fail($osf.handleJSONError);
-                    }
-                }
-            });
-        },
+        }
     });
 
 // TODO: Pass this in as an argument rather than relying on global contextVars
