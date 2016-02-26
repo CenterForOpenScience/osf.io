@@ -144,8 +144,8 @@ def wiki_widget(**kwargs):
     use_python_render = False
     if wiki_page and wiki_page.html(node):
         wiki_html = wiki_page.html(node)
-        if len(wiki_html) > 500:
-            wiki_html = BeautifulSoup(wiki_html[:500] + '...', 'html.parser')
+        if len(wiki_html) > 400:
+            wiki_html = BeautifulSoup(wiki_html[:400] + '...', 'html.parser')
             more = True
         else:
             wiki_html = BeautifulSoup(wiki_html)
