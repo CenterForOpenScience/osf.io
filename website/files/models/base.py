@@ -137,6 +137,8 @@ class StoredFileNode(StoredObject):
     node = fields.ForeignField('Node', required=True)
     parent = fields.ForeignField('StoredFileNode', default=None)
 
+    archived_from_id = fields.StringField(default=None)
+
     is_file = fields.BooleanField(default=True)
     provider = fields.StringField(required=True)
 

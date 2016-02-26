@@ -19,6 +19,7 @@ from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions.model import Session
 from framework.mongo import set_up_storage
+from framework.guid.model import Guid
 from tests import factories
 
 from website import settings
@@ -30,7 +31,7 @@ from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from website.addons.github.model import AddonGitHubOauthSettings
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.addons.github.exceptions import ApiError
 
@@ -615,6 +616,7 @@ class TestAddonFileViews(OsfTestCase):
                 'mfr': '',
                 'gravatar': '',
                 'external': '',
+                'archived_from': '',
             },
             'size': '',
             'extra': '',
@@ -799,6 +801,49 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 401)
+
+    def test_archived_from_url_with_osfs_id(self):
+        file_node = self.get_test_file()
+        file_node.archived_from_id = '12345'
+        registered_node = self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+        archived_from_url = views.get_archived_from_url(registered_node, file_node)
+        assert_true(archived_from_url)
+
+    def test_archived_from_url_without_osfs_id(self):
+        file_node = self.get_test_file()
+        registered_node = self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+        archived_from_url = views.get_archived_from_url(registered_node, file_node)
+        assert_false(archived_from_url)
+
+    def test_archived_from_url_with_addon_guid(self):
+        file_node = self.get_test_file()
+        file_node.archived_from_id = Guid.generate()._id
+        registered_node = self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+        archived_from_url = views.get_archived_from_url(registered_node, file_node)
+        assert_true(archived_from_url)
+
+    def test_archived_from_url_without_addon_guid(self):
+        file_node = self.get_test_file()
+        registered_node = self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+        archived_from_url = views.get_archived_from_url(registered_node, file_node)
+        assert_false(archived_from_url)
+
 
 class TestLegacyViews(OsfTestCase):
 
