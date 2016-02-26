@@ -21,7 +21,10 @@ class DeskCaseList(ListView):
         return super(DeskCaseList, self).get(request, *args, **kwargs)
 
     def get_queryset(self):
-        params = {'status': 'new,open,closed'}
+        params = {
+            'status': 'new,open,closed',
+            'email': 'michael@cos.io',
+        }
         queryset = self.desk.cases(params)
         return queryset
 
