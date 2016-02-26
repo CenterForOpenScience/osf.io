@@ -1,6 +1,10 @@
+from django.shortcuts import render
 from django.views.generic import ListView, DetailView
+from django.views.defaults import page_not_found
 
-from .utils import DeskClient
+from website.project.model import User
+
+from .utils import DeskClient, DeskError
 
 
 class DeskCaseList(ListView):
@@ -10,22 +14,15 @@ class DeskCaseList(ListView):
     paginate_by = 10
     paginate_orphans = 1
 
-    def __init__(self):
-        self.desk = None
-        super(DeskCaseList, self).__init__()
-
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        self.desk = DeskClient(username=user.desk_email,
-                               password=user.desk_password)
-        return super(DeskCaseList, self).get(request, *args, **kwargs)
-
     def get_queryset(self):
+        user = self.request.user
+        desk = DeskClient(username=user.desk_email,
+                          password=user.desk_password)
         params = {
             'status': 'new,open,closed',
             'email': 'michael@cos.io',
         }
-        queryset = self.desk.cases(params)
+        queryset = desk.cases(params)
         return queryset
 
 
@@ -33,17 +30,22 @@ class DeskCustomer(DetailView):
     template_name = 'desk/customer.html'
     context_object_name = 'customer'
 
-    def __init__(self):
-        self.desk = None
-        super(DeskCustomer, self).__init__()
-
     def get(self, request, *args, **kwargs):
-        user = request.user
-        self.desk = DeskClient(username=user.desk_email,
-                               password=user.desk_password)
-        return super(DeskCustomer, self).get(request, *args, **kwargs)
+        try:
+            return super(DeskCustomer, self).get(request, *args, **kwargs)
+        except (AttributeError, DeskError) as e:
+            return render(request, 'desk/user_not_found.html',
+                          context={'email': e.status})
 
     def get_object(self, queryset=None):
-        params = {'email': 'michael@cos.io'}
-        customer = self.desk.find_customer(params)
+        customer_id = self.kwargs.get('user_id', None)
+        customer = User.load(customer_id)
+        email = customer.emails[0]
+        user = self.request.user
+        desk = DeskClient(username=user.desk_email,
+                          password=user.desk_password)
+        params = {'email': email}
+        customer = desk.find_customer(params)
+        if customer == {}:
+            raise DeskError(email)
         return customer
