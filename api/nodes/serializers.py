@@ -43,7 +43,6 @@ class NodeSerializer(JSONAPISerializer):
         'category',
         'date_created',
         'date_modified',
-        'registration',
         'root',
         'parent'
     ])
