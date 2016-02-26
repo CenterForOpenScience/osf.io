@@ -43,6 +43,7 @@ INSTALLED_APPS = (
     # 3rd party
     'raven.contrib.django.raven_compat',
     'webpack_loader',
+    'django_crontab',
 )
 
 # Custom user model (extends AbstractBaseUser)
@@ -136,3 +137,7 @@ WEBPACK_LOADER = {
         'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
     }
 }
+
+CRONJOBS = [
+    ('*/5 * * * *', 'admin.metrics.utils.osf_site', []),
+]
