@@ -1,7 +1,12 @@
 """
 Metrics scripts
 """
+from website.project.model import User
+
+from .models import OSFStatistic
 
 
 def osf_site():
-    print "This is an awesome metric taking machine."
+    statistic = OSFStatistic()
+    statistic.users = User.find().count()
+    statistic.save()
