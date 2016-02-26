@@ -60,6 +60,7 @@ $(document).ready(function(){
                             }
                         }
                     }
+                    tb.calculateHeight();
                     tb.refreshRange(0);
                 };
 
