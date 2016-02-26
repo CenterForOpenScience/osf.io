@@ -177,7 +177,7 @@
                         </div>
 
 
-                        <!Getting Started -->
+                        <!-- Getting Started -->
                         <h3 class="m-t-xl m-b-lg"> Getting Started with OSF </h3>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Use projects to organize your work</h5>
@@ -186,7 +186,7 @@
                             <div class="row">
                                     <div class="col-md-10 col-md-offset-1">
                                         <div class="gs-video embed-responsive embed-responsive-16by9" style="max-width: 102%; width: 102%;">
-                                               <! Max width for this video adjusted because of black border -->
+                                               <!-- Max width for this video adjusted because of black border -->
                                             <div class="embed-responsive-item youtube-loader" id="2TV21gOzfhw"></div>
                                         </div>
                                     </div>
