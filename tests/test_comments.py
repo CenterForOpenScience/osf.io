@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import datetime as dt
+import unittest
 from collections import OrderedDict
 from nose.tools import *  # noqa PEP8 asserts
 from nose_parameterized import parameterized
@@ -403,6 +404,7 @@ class FileCommentMoveRenameTestMixin(object):
         # file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
         # assert_equal(file_comments.count(), 1)
 
+    @unittest.skip
     def test_comments_move_on_folder_rename(self):
         source = {
             'path': '/subfolder1/',
@@ -425,6 +427,7 @@ class FileCommentMoveRenameTestMixin(object):
         # file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
         # assert_equal(file_comments.count(), 1)
 
+    @unittest.skip
     def test_comments_move_on_subfolder_file_when_parent_folder_is_renamed(self):
         source = {
             'path': '/subfolder1/',
@@ -533,6 +536,7 @@ class FileCommentMoveRenameTestMixin(object):
         # file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
         # assert_equal(file_comments.count(), 1)
 
+    @unittest.skip
     def test_comments_move_when_folder_moved_to_subfolder(self):
         source = {
             'path': '/subfolder/',
@@ -555,6 +559,7 @@ class FileCommentMoveRenameTestMixin(object):
         # file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
         # assert_equal(file_comments.count(), 1)
 
+    @unittest.skip
     def test_comments_move_when_folder_moved_from_subfolder_to_root(self):
         source = {
             'path': '/subfolder2/subfolder/',
@@ -577,6 +582,7 @@ class FileCommentMoveRenameTestMixin(object):
         # file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
         # assert_equal(file_comments.count(), 1)
 
+    @unittest.skip
     def test_comments_move_when_folder_moved_from_project_to_component(self):
         source = {
             'path': '/subfolder/',
@@ -599,6 +605,7 @@ class FileCommentMoveRenameTestMixin(object):
         # file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
         # assert_equal(file_comments.count(), 1)
 
+    @unittest.skip
     def test_comments_move_when_folder_moved_from_component_to_project(self):
         source = {
             'path': '/subfolder/',
