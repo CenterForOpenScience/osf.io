@@ -2,6 +2,22 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from forms import ConferenceForm
 from .models import Conference
+from website.conferences.model import Conference as OSF_Conference
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import FormView, ProcessFormView
+from django.views.generic.list import ListView
+from django.core.urlresolvers import reverse
+from django.utils import timezone
+
+from modularodm import Q
+from modularodm.exceptions import ModularOdmException
+
+from framework.auth.core import User
+
+from website import settings
+from website.app import init_app
+
+
 
 # Create your views here.
 def create_conference(request):
@@ -25,39 +41,75 @@ def create_conference(request):
         messages.error(request, 'You do not have permission to access that page.')
         return redirect('auth:login')
 
-# def add_conference_to_OSF():
-#     objects = Conference.objects.all()
-#     for obj in objects:
-#         obj.endpoint.strip()
-#         admin_emails = obj.admins
-#         admin_objs = []
-#         for email in admin_emails:
-#             try:
-#                 user = User.find_one(Q('username', 'iexact', email))
-#                 admin_objs.append(user)
-#             except ModularOdmException:
-#                 raise RuntimeError('Username {0!r} is not registered.'.format(email))
+# check if at least one exists, otherwise do something else
+class ConfDetailView(DetailView):
+    model = Conference
+    template_name = 'create_conference.html'
 
-#         custom_fields = obj.field_names
+    def get_context_data(self, **kwargs):
+        context = super(ConfDetailView, self).get_context_data(**kwargs)
+        context['form'] = ConferenceForm
+        return context
 
-#         conf = Conference(
-#             endpoint=meeting, admins=admin_objs, **attrs # What is equivalent call for creating OSF obj from Admin?
-#         )
-#         conf.field_names.update(custom_fields)
-#         try:
-#             conf.save()
-#         except ModularOdmException:
-#             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
-#             for key, value in objects.items():
-#                 if isinstance(value, dict):
-#                     current = getattr(conf, key)
-#                     current.update(value)
-#                     setattr(conf, key, current)
-#                 else:
-#                     setattr(conf, key, value)
-#             conf.admins = admin_objs
-#             changed_fields = conf.save()
-#             if changed_fields:
-#                 print('Updated {}: {}'.format(meeting, changed_fields))
-#         else:
-#             print('Added new Conference: {}'.format(meeting))
+class ConfFormView(FormView, ProcessFormView):
+    form_class = ConferenceForm
+   # success_url = "/conferences/"
+
+class ConfListView(ListView):
+    model = Conference
+
+    def get_context_data(self, **kwargs):
+        context = super(ConfListView, self).get_context_data(**kwargs)
+        context['now'] = timezone.now()
+        return context
+
+
+
+def add_conference_to_OSF(self):
+    objects = Conference.objects.all()
+    for obj in objects:
+        endpoint = obj.endpoint
+        admin_email = obj.admins # should be one or more
+        admin_objs = []
+       #
+        try:
+            user = User.find_one(Q('username', 'iexact', admin_email))
+            admin_objs.append(user)
+        except ModularOdmException:
+           # raise RuntimeError('Username {0!r} is not registered.'.format(admin_email))
+            pass
+
+        #custom_fields = obj.field_names
+
+        conf = OSF_Conference(
+            endpoint=obj.endpoint, name=obj.name, info_url=obj.info_url, logo_url=obj.logo_url,
+            active=obj.active, admins=admin_objs, public_projects= obj.public_projects,
+            poster=obj.poster, talk=obj.talk, num_submissions=obj.num_submissions  # Is there a way to get a dict of each obj's fields/values
+        )                                                                           # and pass with **?
+        #conf.field_names.update(custom_fields)
+        try:
+            conf.save()
+        except ModularOdmException as error:
+            # conf = OSF_Conference.find_one(Q('endpoint', 'eq', endpoint))
+            # for key, value in objects.items():
+            #     if isinstance(value, dict):
+            #         current = getattr(conf, key)
+            #         current.update(value)
+            #         setattr(conf, key, current)
+            #     else:
+            #         setattr(conf, key, value)
+            print('ModularOdmException happened here')
+            print(obj.endpoint)
+            print '%s (%s)' % (error.message, type(error))
+            # conf.admins = admin_objs
+            # changed_fields = conf.save() # getting error 'Value must be unique'
+            # if changed_fields:
+            #     print('Updated {}: {}'.format(endpoint, changed_fields))
+            #     return redirect('auth:login')
+            # else:
+            return redirect('auth:login')
+
+        print('Added new Conference: {}'.format(endpoint))
+        return redirect('auth:login')
+
+

@@ -1,0 +1,8 @@
+<h1>Confs</h1>
+<ul>
+{% for conf in object_list %}
+    <li>{{ conf.pub_date|date }} - {{ conf.name }}</li>
+{% empty %}
+    <li>No confs yet.</li>
+{% endfor %}
+</ul>
