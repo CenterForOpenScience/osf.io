@@ -114,16 +114,12 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_id = folder['id']
         self.folder_path = folder['path']
 
-        if not self.complete:
-            # Tell the user's addon settings that this node is connecting
-            self.user_settings.grant_oauth_access(
-                node=self.owner,
-                external_account=self.external_account,
-                metadata={'folder': self.folder_id}
-            )
-            self.user_settings.save()
-
-        # update this instance
+        # Tell the user's addon settings that this node is connecting
+        self.user_settings.grant_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+            metadata={'folder': self.folder_id}
+        )  # Performs a save on self.user_settings
         self.save()
 
         self.owner.add_log(
