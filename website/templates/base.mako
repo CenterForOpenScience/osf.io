@@ -146,7 +146,9 @@
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
-                registerUrl: ${ api_url_for('register_user') | sjson, n}
+                registerUrl: ${ api_url_for('register_user') | sjson, n},
+                popular: ${ popular_links_node | sjson, n},
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n}
             });
         </script>
 

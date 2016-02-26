@@ -2,9 +2,11 @@
 """Consolidates all necessary models from the framework and website packages.
 """
 
-from framework.auth.core import User, Institution
+from framework.auth.core import User
 from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
+
+from website.institutions.model import Institution
 
 from website.project.model import (
     Node, NodeLog,

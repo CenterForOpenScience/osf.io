@@ -1,0 +1,83 @@
+
+.node-styling {
+    background-color: #fcfcfc;
+    border: 1px solid #cccccc;
+}
+
+.node-styling:hover {
+    background-color: #E0EBF3;
+    cursor: pointer;
+}
+
+.quick-project button {
+    -webkit-appearance: none;
+    outline: none;
+    border: 0;
+    background: transparent;
+}
+
+.load-nodes {
+    font-size: 1.5em;
+}
+
+.quick-project .selected {
+    color: #000000;
+}
+
+.quick-project .not-selected {
+    color: #347BB7;
+}
+
+.sort-group {
+  display: inline-block;
+
+}
+
+@media screen and (max-width: 768px) {
+    .node-col-headers {
+        display: none;
+    }
+
+    .sm-new-and-noteworthy {
+        display: none;
+    }
+
+    .noteworthy-spacing {
+        margin-top: 10px;
+    }
+
+    .conference-centering {
+        text-align: center;
+    }
+
+}
+
+@media screen and (min-width: 768px) {
+    .node-sort-dropdown {
+        display: none;
+    }
+
+    .noteworthy-spacing {
+        margin-left: 1px;
+        margin-right: 1px;
+        margin-top: 10px;
+    }
+}
+
+.quick-project label {
+    font-weight: normal;
+}
+
+.conferences-and-meetings {
+    background-color: #EEEEEE;
+}
+
+.prevent-overflow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.blank-line {
+    margin-bottom: 15px;
+}

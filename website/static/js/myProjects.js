@@ -182,21 +182,22 @@ var MyProjects = {
                     });
                 }
             }, function _error(results){
-                console.error('Error loading category names:', results);
+                var message = 'Error loading project category names.';
+                Raven.captureMessage(message, {requestReturn: results});
             });
             return promise;
         };
 
         // Activity Logs
         self.activityLogs = m.prop();
+        self.logRequestPending = false;
         self.showMoreActivityLogs = m.prop(null);
-        self.getLogs = function _getLogs (nodeId, link, addToExistingList) {
+        self.getLogs = function _getLogs (url, addToExistingList) {
             var cachedResults;
             if(!addToExistingList){
                 self.activityLogs([]); // Empty logs from other projects while load is happening;
                 self.showMoreActivityLogs(null);
             }
-            var url = link || $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
 
             function _processResults (result){
                 self.logUrlCache[url] = result;
@@ -216,18 +217,27 @@ var MyProjects = {
                 cachedResults = self.logUrlCache[url];
                 _processResults(cachedResults);
             } else {
+                self.logRequestPending = true;
                 var promise = m.request({method : 'GET', url : url, config : xhrconfig});
                 promise.then(_processResults);
+                promise.then(function(){
+                    self.logRequestPending = false;
+                });
                 return promise;
             }
 
         };
         // separate concerns, wrap getlogs here to get logs for the selected item
         self.getCurrentLogs = function _getCurrentLogs ( ){
-            if(self.selected().length === 1){
-                var id = self.selected()[0].data.id;
-                var promise = self.getLogs(id);
-                return promise;
+            if(self.selected().length === 1 && !self.logRequestPending){
+                var item = self.selected()[0];
+                var id = item.data.id;
+                if(!item.data.attributes.retracted){
+                    var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['nodes', 'user', 'linked_node', 'template_node']}});
+                    var promise = self.getLogs(url);
+                    return promise;
+                }
             }
         };
 
@@ -334,9 +344,9 @@ var MyProjects = {
                     }
                 } else {
                     self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                        'This project has no subcomponents.',
+                        'This project has no components.',
                         m.component(AddProject, {
-                            buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new Subcomponent'),
+                            buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new component'),
                             parentID : lastcrumb.data.id,
                             modalID : 'addSubcomponent',
                             categoryList : self.categoryList,
@@ -443,6 +453,29 @@ var MyProjects = {
             self.breadcrumbs().push(linkObject);
         };
 
+        // GET COLLECTIONS
+        // Default system collections
+        self.collections = m.prop([].concat(self.systemCollections));
+        self.collectionsPageSize = m.prop(5);
+        // Load collection list
+        self.loadCollections = function _loadCollections (url){
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            promise.then(function(result){
+                result.data.forEach(function(node){
+                    var count = node.relationships.linked_nodes.links.related.meta.count;
+                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
+                });
+                if(result.links.next){
+                    self.loadCollections(result.links.next);
+                }
+            }, function(){
+                var message = 'Collections could not be loaded.';
+                $osf.growl(message, 'Please reload the page.');
+                Raven.captureMessage(message, { url: url });
+            });
+            return promise;
+        };
+
         self.sidebarInit = function _sidebarInit (element, isInit) {
             $('[data-toggle="tooltip"]').tooltip();
         };
@@ -458,6 +491,9 @@ var MyProjects = {
             self.loadCategories().then(function(){
                 self.updateList(self.systemCollections[0]);
             });
+            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
+            self.loadCollections(collectionsUrl);
+            self.activeFilter(self.collections()[0]);
         };
         self.init();
     },
@@ -549,6 +585,8 @@ var MyProjects = {
 var Collections  = {
     controller : function(args){
         var self = this;
+        self.collections = args.collections;
+        self.pageSize = args.collectionsPageSize;
         self.newCollectionName = m.prop('');
         self.newCollectionRename = m.prop('');
         self.dismissModal = function () {
@@ -587,31 +625,9 @@ var Collections  = {
                 y : y
             });
         };
-        // Default system collections
-        self.collections = m.prop([].concat(args.systemCollections));
-        // Load collection list
-        var loadCollections = function _loadCollections (url){
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
-            promise.then(function(result){
-                result.data.forEach(function(node){
-                    var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
-                });
-                if(result.links.next){
-                    loadCollections(result.links.next);
-                }
-            }, function(){
-                var message = 'Collections could not be loaded.';
-                $osf.growl(message, 'Please reload the page.');
-                Raven.captureMessage(message, { url: url });
-            });
-            promise.then(self.calculateTotalPages());
-        };
-        self.init = function _collectionsInit (element, isInit) {
-            var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.pageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
-            loadCollections(collectionsUrl);
-            args.activeFilter(self.collections()[0]);
 
+        self.init = function _collectionsInit (element, isInit) {
+            self.calculateTotalPages();
             $(window).click(function(event){
                 var target = $(event.target);
                 if(!target.hasClass('collectionMenu') && !target.hasClass('fa-ellipsis-v') && target.parents('.collection').length === 0) {
@@ -748,11 +764,7 @@ var Collections  = {
                 self.validationError('"Bookmarks" is a reserved collection name. Please use another name.');
             } else {
                 self.validationError('');
-                if(val.length > 0) {
-                    self.isValid(true);
-                } else {
-                    self.isValid(false);
-                }
+                self.isValid(val.length);
             }
         };
         self.init();
@@ -1036,7 +1048,7 @@ var Breadcrumbs = {
         return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
-                    var label = item.type === 'node' ? ' Add Component' : ' Add Project';
+                    var label = item.type === 'node' ? ' Add component' : ' Add project';
                     var addProjectTemplate = m.component(AddProject, {
                         buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), label]),
                         parentID : args.breadcrumbs()[args.breadcrumbs().length-1].data.id,
@@ -1230,7 +1242,7 @@ var ActivityLogs = {
                 ]);
             }) : '',
             m('.db-activity-nav.text-center', [
-                args.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){ args.getLogs(null, args.showMoreActivityLogs(), true); }}, [ 'Show more', m('i.fa.fa-caret-down.m-l-xs')]) : '',
+                args.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){ args.getLogs(args.showMoreActivityLogs(), true); }}, [ 'Show more', m('i.fa.fa-caret-down.m-l-xs')]) : '',
             ])
 
         ]);

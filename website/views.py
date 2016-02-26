@@ -19,14 +19,12 @@ from framework.forms import utils as form_utils
 from framework.auth.forms import RegistrationForm
 from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
-from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
 from website.models import Node
 from website.util import sanitize
 from website.project import model
-from website.util import web_url_for
 from website.util import permissions
 from website.project import new_bookmark_collection
 
@@ -96,13 +94,7 @@ def _render_nodes(nodes, auth=None, show_path=False):
     return ret
 
 
-@collect_auth
-def index(auth):
-    """Redirect to dashboard if user is logged in, else show homepage.
-
-    """
-    if auth.user:
-        return redirect(web_url_for('home'))
+def index():
     return {}
 
 
@@ -121,10 +113,6 @@ def dashboard(auth):
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': dashboard_id,
             }
-
-@must_be_logged_in
-def home(auth):
-    return {}
 
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):
@@ -272,3 +260,7 @@ def redirect_about(**kwargs):
 
 def redirect_howosfworks(**kwargs):
     return redirect('/getting-started/')
+
+def redirect_to_support():
+    # Redirect to support page
+    return redirect('/support/')

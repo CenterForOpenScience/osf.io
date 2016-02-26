@@ -118,3 +118,11 @@ def default_node_list_query():
         Q('is_collection', 'ne', True) &
         Q('is_registration', 'ne', True)
     )
+
+
+def default_node_permission_query(user):
+    permission_query = Q('is_public', 'eq', True)
+    if not user.is_anonymous():
+        permission_query = (permission_query | Q('contributors', 'eq', user._id))
+
+    return permission_query

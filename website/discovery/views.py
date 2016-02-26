@@ -72,3 +72,13 @@ def activity():
         'popular_public_registrations': popular_public_registrations,
         'hits': hits,
     }
+
+
+def popular_activity_json():
+    """ Return popular_public_projects node_ids """
+    activity_json = activity()
+    popular = activity_json['popular_public_projects']
+    popular_ids = {'popular_node_ids': []}
+    for project in popular:
+        popular_ids['popular_node_ids'].append(project._id)
+    return popular_ids

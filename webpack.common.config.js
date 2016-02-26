@@ -25,6 +25,7 @@ var entry = {
     // JS
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
+    'landing-page': staticPath('js/pages/landing-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
     'profile-page': staticPath('js/pages/profile-page.js'),
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
@@ -57,6 +58,8 @@ var entry = {
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'share-embed-page': staticPath('js/pages/share-embed-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
+    'support-page': staticPath('js/pages/support-page.js'),
+
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -109,19 +112,8 @@ addons.addons.forEach(function(addonName) {
         for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
     }
 });
-// This function is needed because jshint doesn't like double quotes
-function objToString (obj) {
-    var str = '';
-    var comma = '';
-    for (var p in obj) {
-        if (obj.hasOwnProperty(p)) {
-            str += comma + '    "' + p + '" : ' + '"' + obj[p] + '"\n';
-        }
-        comma = ',';
-    }
-    return str;
-}
-fs.writeFileSync(staticPath('js/_allLogTexts.json'), '{\n' + objToString(mainLogs) + '}');
+
+fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
 
 var resolve = {
     extensions: ['', '.es6.js', '.js', '.min.js'],
