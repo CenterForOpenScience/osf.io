@@ -153,6 +153,8 @@ $(document).ready(function(){
         var text = $(this).val().toLowerCase();
         if(text.length === 0){
             resetFilter();
+            updatePrevNextStatus();
+            return;
         }
         $('.clear-search').addClass('clear-active');
         if (text.length < 2) {
