@@ -886,7 +886,7 @@ class JSONAPISerializer(ser.Serializer):
                 if embeds and (field.field_name in embeds or getattr(field, 'always_embed', None)):
                     if enable_esi:
                         try:
-                            result = field.to_esi_representation(attribute, envelope=None)
+                            result = field.to_esi_representation(attribute, envelope=envelope)
                         except SkipField:
                             continue
                     else:
