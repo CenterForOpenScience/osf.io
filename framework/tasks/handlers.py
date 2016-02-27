@@ -13,6 +13,12 @@ _local = threading.local()
 logger = logging.getLogger(__name__)
 
 
+def queue():
+    if not hasattr(_local, 'queue'):
+        _local.queue = []
+    return _local.queue
+
+
 def celery_before_request():
     _local.queue = []
 
@@ -21,11 +27,11 @@ def celery_teardown_request(error=None):
     if error is not None:
         return
     try:
-        if _local.queue:
+        if queue():
             if settings.USE_CELERY:
-                group(_local.queue).apply_async()
+                group(queue()).apply_async()
             else:
-                for task in _local.queue:
+                for task in queue():
                     task.apply()
     except AttributeError:
         if not settings.DEBUG_MODE:
@@ -38,8 +44,8 @@ def enqueue_task(signature):
     :param signature: Celery task signature
     """
     try:
-        if signature not in _local.queue:
-            _local.queue.append(signature)
+        if signature not in queue():
+            queue().append(signature)
     except (RuntimeError):
         signature()
 
