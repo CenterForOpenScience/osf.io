@@ -1,21 +1,10 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Home</%def>
 <%def name="content()">
-    <div>
-        <div id="addQuickProjectSearchWrap"></div>
-    </div>
-    <h3> Recent Activity </h3>
-    <p class="text-muted">Latest activities on your projects adjustable by date and category <p>
-    <div id="recentActivityWidget">
-        <div class="spinner-loading-wrapper">
-            <div class="logo-spin logo-xl"></div>
-            <p class="m-t-sm fg-load-message">
-                Loading Recent Activity...
-            </p>
-        </div>
-    </div>
-    <div id="newAndNoteworthyWrap"></div>
-    <div id="hostingAMeetingWrap"></div>
+
+
+    <div id="osfHome"></div>
+
 </%def>
 
 <%def name="stylesheets()">

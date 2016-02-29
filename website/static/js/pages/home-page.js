@@ -14,8 +14,18 @@ var LogWrap = require('js/recentActivityWidget');
 
 
 $(document).ready(function(){
-    m.mount(document.getElementById('newAndNoteworthyWrap'), m.component(newAndNoteworthy, {}));
-    m.mount(document.getElementById('hostingAMeetingWrap'), m.component(meetingsAndConferences, {}));
-    m.mount(document.getElementById('addQuickProjectSearchWrap'), m.component(quickSearchProject, {}));
-    m.mount(document.getElementById('recentActivityWidget'), m.component(LogWrap, {wrapper: 'recentActivity'}));
+    var osfHome = {
+        view : function(ctrl, args) {
+            return [
+                m('.quickSearch', m.component(quickSearchProject, {})),
+                m('.recentActvity', m.component(LogWrap, {wrapper: 'recentActivity'})),
+                m('.newAndNoteworthy', m.component(newAndNoteworthy, {})),
+                m('.meetings', m.component(meetingsAndConferences, {}))
+                ];
+        }
+    };
+    m.mount(document.getElementById('osfHome'), m.component(osfHome, {}));
+
+
+
 });
