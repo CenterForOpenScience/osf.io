@@ -141,16 +141,16 @@ def wiki_widget(**kwargs):
     wiki_page = node.get_wiki_page('home')
 
     more = True if len(node.wiki_pages_current.keys()) >= 2 else False
-
     use_python_render = False
     if wiki_page and wiki_page.html(node):
         wiki_html = wiki_page.html(node)
         if len(wiki_html) > 400:
             wiki_html = BeautifulSoup(wiki_html[:400] + '...', 'html.parser')
             more = True
+        else:
+            wiki_html = BeautifulSoup(wiki_html)
         use_python_render = wiki_page.rendered_before_update
     else:
-        wiki_html = BeautifulSoup(wiki_html)
         wiki_html = None
 
     ret = {
