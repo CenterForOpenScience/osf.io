@@ -1,12 +1,12 @@
 /**
  * Parses text to return to the log items
  * Created by cos-caner on 12/4/15.
- * Remeber to embed nodes, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
+ * Remember to embed nodes, user, linked_node and template_node in api call i.e. var url = $osf.apiV2Url('nodes/' + nodeId + '/logs/', { query : { 'embed' : ['nodes', 'user']}});
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
 var $ = require('jquery');  // jQuery
-
+var $osf = require('js/osfHelpers');
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 /**
@@ -45,7 +45,7 @@ var paramIsReturned = function _paramIsReturned (param, logObject){
 /**
  * Returns the text parameters since their formatting is mainly the same
  * @param param {string} The parameter to be used, has to be available under logObject.attributes.param
- * @param text {string'} The text to be used if param is not available
+ * @param text {string} The text to be used if param is not available
  * @param logObject {Object} the entire log object returned from the api
  * @returns {*}
  */
@@ -72,7 +72,7 @@ var returnTextParams = function (param, text, logObject) {
 };
 
 var LogText = {
-    view : function(ctrl, logObject) {
+    view : function(ctrl, logObject, trackingLocation, action) {
         var text = logActions[logObject.attributes.action];
         var message = '';
         if(text){
@@ -87,7 +87,7 @@ var LogText = {
                         var last = piece.length-1;
                         var logComponentName = piece.substring(2,last);
                         if(LogPieces[logComponentName]){
-                            return m.component(LogPieces[logComponentName], logObject);
+                            return m.component(LogPieces[logComponentName], logObject, trackingLocation, action);
                         } else {
                             message = 'There is no template in logTextParser.js for  ' + logComponentName + '.';
                             ravenMessage(message, logObject);
@@ -108,10 +108,12 @@ var LogText = {
 var LogPieces = {
     // User that took the action
     user: {
-        view: function (ctrl, logObject) {
+        view: function (ctrl, logObject, trackingLocation, action) {
             var userObject = logObject.embeds.user;
             if(paramIsReturned(userObject, logObject) && userObject.data) {
-                return m('a', {href: userObject.data.links.html}, userObject.data.attributes.full_name);
+                return m('a', {href: userObject.data.links.html, onclick: function() {
+                    $osf.trackClick(trackingLocation, action, 'navigate-to-user-from-logs');
+                }}, userObject.data.attributes.full_name);
             } else {
                 return m('span', 'A user');
             }
@@ -119,10 +121,12 @@ var LogPieces = {
     },
     // Node involved
     node: {
-        view: function (ctrl, logObject) {
+        view: function (ctrl, logObject, trackingLocation, action) {
             var nodeObject = logObject.embeds.nodes;
             if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
-                return m('a', {href: nodeObject.data[0].links.html}, nodeObject.data[0].attributes.title);
+                return m('a', {href: nodeObject.data[0].links.html, onclick: function() {
+                    $osf.trackClick(trackingLocation, action, 'navigate-to-project-from-logs');
+                }}, nodeObject.data[0].attributes.title);
             } else {
                 return m('span', 'a project');
             }
