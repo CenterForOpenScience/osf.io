@@ -37,7 +37,8 @@ def main(env):
             'logo_name': 'virginia-tech.jpg',
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://shib-pprd.middleware.vt.edu', safe='~()*!.\'')
-            )
+            ),
+            'domain': 'vt',
         },
         {
             'name': 'Notre Dame',
@@ -45,7 +46,8 @@ def main(env):
             'logo_name': 'notre-dame.jpg',
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://login.nd.edu/idp/shibboleth', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://login-test.cc.nd.edu/idp/shibboleth', safe='~()*!.\'')
-            )
+            ),
+            'domain': 'nd',
         }
     ]
 

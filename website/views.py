@@ -97,8 +97,9 @@ def _render_nodes(nodes, auth=None, show_path=False):
 
 def index():
     try:
-        domain = request.headers['Host'].split('.')[1]
-        inst = [p for p in (Institution.find(Q('domain', 'contains', domain)))][0]
+        #TODO : make this way more robust
+        domain = request.host.split('.')[1]
+        inst = Institution.find_one(Q('domain', 'contains', domain))
         return {
             'id': inst._id,
             'name': inst.name,
