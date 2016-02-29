@@ -266,7 +266,7 @@ class FileNode(object):
             try:
                 file_obj = cls.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
             except NoResultsFound:
-                return None
+                return guids
             guid = file_obj.get_guid()
             if guid:
                 guids.append(guid._id)
