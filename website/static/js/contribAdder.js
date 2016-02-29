@@ -43,7 +43,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodesOriginal = {};
         //state of current nodes
         self.nodesToChange = ko.observableArray();
-        self.nodesState = ko.observableArray();
+        self.nodesState = ko.observable();
         //nodesState is passed to nodesSelectTreebeard which can update it and key off needed action.
         self.nodesState.subscribe(function(newValue) {
             //The subscribe causes treebeard changes to change which nodes will be affected
@@ -58,7 +58,14 @@ var AddContributorViewModel = oop.extend(Paginator, {
             m.redraw(true);
         });
 
-        self.hasChildren = ko.observable(false);
+        self.hasChildren = ko.pureComputed(function() {
+            var index = 0;
+            for(var prop in self.nodesOriginal) {
+                if(self.nodesOriginal.hasOwnProperty(prop))
+                    index++;
+            }
+            return (index > 1);
+        });
 
         //list of permission objects for select.
         self.permissionList = [
@@ -79,12 +86,12 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.results = ko.observableArray([]);
         self.contributors = ko.observableArray([]);
         self.selection = ko.observableArray();
-        self.contributorIDsToAdd = ko.computed(function() {
-            var contributorIDs = [];
-            for (var i = 0; i < self.selection().length; i++) {
-                contributorIDs.push(self.selection()[i].id);
-            }
-            return contributorIDs;
+
+        self.contributorIDsToAdd = ko.pureComputed(function() {
+            var selected_ids = self.selection().map(function(user){
+                return user.id;
+            });
+            return selected_ids;
         });
 
         self.notification = ko.observable('');
@@ -349,7 +356,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         }
         self.nodesState(nodesState);
-        m.redraw(true);
     },
     selectNoNodes: function() {
         //select no nodes to add a contributor to.  THe changed variable is set here for timing between
@@ -361,7 +367,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 nodesState[key].checked = false;
                 nodesState[key].changed = nodesState[key].checked !== self.nodesOriginal[key].checked;
             }
-            m.redraw(true);
         }
         self.nodesState(nodesState);
         m.redraw(true);
