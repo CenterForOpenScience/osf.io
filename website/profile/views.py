@@ -121,7 +121,7 @@ def resend_confirmation(auth):
 
     user.save()
 
-    return _profile_view(user)
+    return _profile_view(user, is_profile=True)
 
 @must_be_logged_in
 def update_user(auth):
