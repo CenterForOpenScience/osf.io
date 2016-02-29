@@ -215,6 +215,19 @@ def confirm_email_get(auth=None, **kwargs):
 
 
 @collect_auth
+def confirm_email_remove(auth=None, **kwargs):
+    user = auth.user
+    confirmed_email = request.json.get('address')
+    for token in user.email_verifications:
+        if user.confirm_token(token):
+            if user.email_verifications[token]['email'] == confirmed_email:
+                del user.email_verifications[token]
+                user.save()
+                return True
+        return False
+
+
+@collect_auth
 def add_confirmed_emails(auth=None, **kwargs):
     """View for email confirmation links.
     Authenticates and redirects to user settings page if confirmation is

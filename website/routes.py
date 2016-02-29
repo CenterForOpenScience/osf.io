@@ -318,6 +318,10 @@ def make_url_map(app):
     ], prefix='/api/v1')
 
     process_rules(app, [
+        Rule('/dashboard/remove_confirmed_emails/', 'put', auth_views.confirm_email_remove, json_renderer)
+    ], prefix='/api/v1')
+
+    process_rules(app, [
         Rule('/dashboard/confirmed_emails/', 'put', auth_views.add_confirmed_emails, json_renderer)
     ], prefix='/api/v1')
 

@@ -49,8 +49,9 @@ function confirm_emails(emails) {
             title: 'Merge Account?',
             message: 'You want to merge, ' + email[0].address + ' motherscratcher?',
             callback: function(confirmed) {
+                var url;
                 if (confirmed) {
-                    var url = '/api/v1/dashboard/confirmed_emails/';
+                    url = '/api/v1/dashboard/confirmed_emails/';
                     $osf.putJSON(
                         url,
                         email[0]
@@ -62,8 +63,17 @@ function confirm_emails(emails) {
                     });
                 }
                 else {
-                    confirm_emails(emails);
-                    console.log("denied!");
+                    debugger;
+                    url = '/api/v1/dashboard/remove_confirmed_emails/';
+                    $osf.putJSON(
+                        url,
+                        email[0]
+                    ).done(function() {
+                        confirm_emails(emails);
+                    }).fail(function() {
+                        console.log("api call failed");
+                        confirm_emails(emails);
+                    });
                 }
             },
             buttons:{
@@ -81,7 +91,7 @@ function confirm_emails(emails) {
 var url = '/api/v1/dashboard/confirmed_emails/';
 var i;
 var confirmed_emails = [];
-var request_emails = $.getJSON(url, function(response) {
+$.getJSON(url, function(response) {
         confirm_emails(response);
  });
 
