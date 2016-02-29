@@ -21,7 +21,7 @@ mailchimp==2.0.9
 nameparser==0.3.3
 py-bcrypt==0.4
 pymongo==2.5.1
-python-dateutil==2.4.2
+python-dateutil==2.5.0
 python-gnupg==0.3.6
 pytz==2014.9
 bleach==1.4.1
