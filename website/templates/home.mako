@@ -11,6 +11,10 @@
             </p>
         </div>
     </div>
+    <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
+     <div>
+            <div id="addQuickProjectSearchWrap"></div>
+     </div>
 </%def>
 
 <%def name="stylesheets()">
@@ -23,3 +27,6 @@
     ${parent.javascript_bottom()}
     <script src="${"/static/public/js/home.js" | webpack_asset}"></script>
 </%def>
+
+
+
