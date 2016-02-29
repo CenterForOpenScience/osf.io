@@ -5,6 +5,8 @@ import httplib as http
 from flask import request
 from flask import send_from_directory
 
+from modularodm import Q
+
 from framework import status
 from framework import sentry
 from framework.auth import cas
@@ -40,13 +42,21 @@ from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.notifications import views as notification_views
+from website.models import Institution
 
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
     """
     user = _get_current_user()
-    login_url = request.url.replace(request.host_url, settings.DOMAIN)
+    if request.host_url != settings.DOMAIN:
+        try:
+            inst_id = (Institution.find_one(Q('domain', 'eq', request.host)))._id
+            login_url = '{}institution/{}'.format(settings.DOMAIN, inst_id)
+        except:
+            login_url = request.url.replace(request.host_url, settings.DOMAIN)
+    else:
+        login_url = request.url
     return {
         'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
