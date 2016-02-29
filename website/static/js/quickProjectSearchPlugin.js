@@ -14,7 +14,7 @@ var xhrconfig = function(xhr) {
 };
 
 
-var quickSearchProject = {
+var QuickSearchProject = {
     controller: function() {
         var self = this;
         self.nodes = m.prop([]); // Master node list
@@ -37,20 +37,22 @@ var quickSearchProject = {
                 self.nodes().push(node);
                 self.retrieveContributors(node);
             });
-            self.populateEligibleNodes(0, self.countDisplayed() - 1);
+            self.populateEligibleNodes(0, self.countDisplayed());
             self.next(result.links.next);
         });
         promise.then(
             function(){
-                self.recursiveNodes(self.next());
+                if (self.next()) {
+                    self.recursiveNodes(self.next());
+                }
+                else {
+                    self.loadingComplete(true);
+                }
             }
         );
 
         // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
-            if (self.pendingNodes()) {
-                m.redraw();
-            }
             if (self.next()) {
                 var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
                 nextPromise.then(function(result){
@@ -58,7 +60,7 @@ var quickSearchProject = {
                         self.nodes().push(node);
                         self.retrieveContributors(node);
                     });
-                self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length - 1);
+                self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length);
                 self.next(result.links.next);
                 self.recursiveNodes(self.next());
                 });
@@ -71,7 +73,7 @@ var quickSearchProject = {
 
         // Adds eligible node indices to array - used when no filter
         self.populateEligibleNodes = function (first, last) {
-            for (var n = first; n <= last; n++) {
+            for (var n = first; n < last; n++) {
                 self.eligibleNodes().push(n);
             }
         };
@@ -128,16 +130,15 @@ var quickSearchProject = {
         };
 
         // Formats contrib family names for display
-        self.getContributors = function (node) {
-            var numContributors = node.embeds.contributors.links.meta.total;
-            if (numContributors === 1) {
+        self.getContributors = function (node, number) {
+            if (number === 1) {
                 return self.getFamilyName(0, node);
             }
-            else if (numContributors === 2) {
+            else if (number === 2) {
                 return self.getFamilyName(0, node) + ' and ' +
                     self.getFamilyName(1, node);
             }
-            else if (numContributors === 3) {
+            else if (number === 3) {
                 return self.getFamilyName(0, node) + ', ' +
                     self.getFamilyName(1, node) + ', and ' +
                     self.getFamilyName(2, node);
@@ -145,7 +146,7 @@ var quickSearchProject = {
             else {
                 return self.getFamilyName(0, node) + ', ' +
                     self.getFamilyName(1, node) + ', ' +
-                    self.getFamilyName(2, node) + ' + ' + (numContributors - 3);
+                    self.getFamilyName(2, node) + ' + ' + (number - 3);
             }
 
         };
@@ -284,7 +285,7 @@ var quickSearchProject = {
 
         // Filters nodes
         self.filterNodes = function (){
-            for (var n = 0;  n <= self.nodes().length - 1;  n++) {
+            for (var n = 0;  n < self.nodes().length;  n++) {
                 var node = self.nodes()[n];
                 if (self.titleMatch(node) || self.contributorMatch(node) || self.tagMatch(node)) {
                     self.eligibleNodes().push(n);
@@ -296,7 +297,7 @@ var quickSearchProject = {
             self.eligibleNodes([]);
             // if backspace completely, previous nodes with prior sorting/count will be displayed
             if (self.filter() === '') {
-                self.populateEligibleNodes(0, self.nodes().length - 1);
+                self.populateEligibleNodes(0, self.nodes().length);
             }
             else {
                 self.filterNodes();
@@ -391,7 +392,7 @@ var quickSearchProject = {
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div', {'class' : 'input-group'}, [
+                return m('div.m-v-sm', {'class' : 'input-group'}, [
                     m('span', {'class': 'input-group-addon'}, m('i', {'class': 'fa fa-search'})),
                     m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
                         ctrl.filter(search.target.value);
@@ -423,12 +424,13 @@ var quickSearchProject = {
         }
 
         function projectView(project) {
+            var numContributors = project.embeds.contributors.links.meta.total;
             return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
                 m('div', {'class': 'row node-styling', onclick: function(){{ctrl.nodeDirect(project);
                 }}}, [
-                    m('div', {'class': 'col-sm-7 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
-                    m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 text-muted  p-v-xs'}, ctrl.getContributors(project)),
-                    m('div', {'class': 'col-sm-2 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
+                    m('div', {'class': 'col-sm-6 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
+                    m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 text-muted p-v-xs'}, $osf.contribNameFormat(project, numContributors, ctrl.getFamilyName)),
+                    m('div', {'class': 'col-sm-3 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
                 ])
             ));
         }
@@ -436,15 +438,14 @@ var quickSearchProject = {
         function xsDropdown () {
             if (ctrl.loadingComplete()) {
                 return m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
-                    m('div', {'class': 'row node-sort-dropdown'}, [
-                        m('div', {'class': 'col-sm-12 p-v-xs, f-w-xl'},
-                            m('label', [m('span', 'Order by: '),
+                    m('div. node-sort-dropdown.text-right', {'class': 'row'}, [
+                        m('div.f-w-xl', {'class': 'col-sm-12'},
+                            m('span', ascending(), descending()),
+                            m('label', [
                                 m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(dropdown){
                                     ctrl.fieldSort(dropdown.target.value);
                                     ctrl.sortFieldGivenDirection();
-                                }}, defaultSelected()),
-                                ascending(),
-                                descending()
+                                }}, defaultSelected())
                             ])
                         )]
                     ))
@@ -454,10 +455,9 @@ var quickSearchProject = {
 
         function resultsFound(){
             return m('div', {'class': 'container quick-project'}, [
-                m('div', {'class': 'row'}, [
-                    m('div', {'class': 'col-sm-1'}),
-                    m('div', {'class': 'col-sm-11'}, m('h3', 'My Projects'))
-                ]),
+                m('div', {'class': 'row'},
+                    m('div', {'class': 'col-md-10 col-md-offset-1'},
+                    m('div', {'class': 'col-sm-12'}, m('h3', 'My Projects')))),
                 m('div', {'class': 'row'},
                     m('div', {'class': 'col-sm-3'}),
                     m('div.m-b-sm.text-center', {'class': 'col-sm-6'}, [
@@ -468,15 +468,15 @@ var quickSearchProject = {
 
                 m('div', {class: 'row'},
                     m('div.text-center.m-b-sm', {'class': 'col-sm-12'},
-                    m('p', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')
+                    m('h5', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')
                     ))
                 ),
 
                 m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
                     m('div.node-col-headers', {'class': 'row'}, [
-                        m('div.p-v-xs.f-w-xl', {'class': 'col-sm-7 col-md-6 col-lg-5'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
+                        m('div.p-v-xs.f-w-xl', {'class': 'col-sm-6 col-md-6 col-lg-5'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
                         m('div.f-w-xl.p-v-xs', {'class': 'col-sm-3 col-md-3 col-lg-4'}, 'Contributors'),
-                        m('div.f-w-xl.p-v-xs', {'class': 'col-sm-2 col-md-3 col-lg-3'}, 'Modified', m('span.sort-group', sortDateAsc(), sortDateDesc()))]
+                        m('div.f-w-xl.p-v-xs', {'class': 'col-sm-3 col-md-3 col-lg-3'}, 'Modified', m('span.sort-group', sortDateAsc(), sortDateDesc()))]
                     )
                 )),
 
@@ -508,6 +508,7 @@ var quickSearchProject = {
         }
     }
 };
-module.exports = quickSearchProject;
+module.exports = QuickSearchProject;
+
 
 

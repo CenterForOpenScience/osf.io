@@ -14,6 +14,8 @@
             </p>
         </div>
     </div>
+    <div id="newAndNoteworthyWrap"></div>
+    <div id="hostingAMeetingWrap"></div>
 </%def>
 
 <%def name="stylesheets()">
