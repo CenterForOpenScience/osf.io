@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from forms import ConferenceForm
+from forms import ConferenceForm, ConferenceFieldNamesForm
 from .models import Conference
 from website.conferences.model import Conference as OSF_Conference
 from django.views.generic.detail import DetailView
@@ -22,20 +22,25 @@ from website.app import init_app
 # Create your views here.
 def create_conference(request):
     if request.user.is_staff:
-        form = ConferenceForm(request.POST)
+        conf_form = ConferenceForm(request.POST)
+        conf_field_names_form = ConferenceFieldNamesForm(request.POST)
         if request.method == 'POST':
-            if form.is_valid():
-                new_conference = form.save()
+            if all((conf_form.is_valid(), conf_field_names_form.is_valid())):
+                new_conference = conf_form.save()
+                new_conference_field_names = conf_field_names_form.save()
+                new_conference_field_names.save()
+                new_conference.field_names = new_conference_field_names
+                new_conference.save()
+                print('seems to have worked')
                 # Save with commit=False to do stuff here if need be
 
-                # new_conference.save()
                 return redirect('conferences:create_conference')
             else:
                 print(form.errors)
                 messages.error(request, 'Test..')
                 return redirect('conferences:create_conference')
         else:
-            context = {'form': form}
+            context = {'conf_form': conf_form, 'conf_field_names_form': conf_field_names_form}
             return render(request, 'conferences/create_conference.html', context)
     else:
         messages.error(request, 'You do not have permission to access that page.')
