@@ -662,6 +662,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+        'WSAN2016': {
+        'name': 'WSAN2016 Erasmus University Rotterdam',
+        'info_url': 'http://www.humane.eu/wsan/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 def populate_conferences():
