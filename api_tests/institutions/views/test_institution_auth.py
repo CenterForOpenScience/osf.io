@@ -75,13 +75,13 @@ class TestInstitutionAuth(ApiTestCase):
         assert_equal(mock_signals.signals_sent(), set())
 
         user.reload()
-        assert_in(self.institution, user.affiliated_institutions)
+        assert_in(self.institution.node, user.affiliated_institutions)
 
     def test_finds_user(self):
         username = 'hmoco@circle.edu'
 
         user = User(username=username, fullname='Mr Moco')
-        user.affiliated_institutions.append(self.institution)
+        user.affiliated_institutions.append(self.institution.node)
         user.save()
 
         res = self.app.post(self.url, self.build_payload(username))

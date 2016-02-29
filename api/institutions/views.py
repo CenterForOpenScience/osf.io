@@ -7,7 +7,8 @@ from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Institution, Node, User
+from website.models import Node, User
+from website.project.model import Institution
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin

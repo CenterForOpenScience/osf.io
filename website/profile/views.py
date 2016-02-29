@@ -825,7 +825,7 @@ def redirect_to_twitter(twitter_handle):
 
 
 def view_institution(**kwargs):
-    from website.models import Institution
+    from website.project.model import Institution
     inst = Institution.load(kwargs.get('id'))
 
     return {

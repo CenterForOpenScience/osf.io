@@ -6,8 +6,6 @@ from framework.auth.core import User
 from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
 
-from website.institutions.model import Institution
-
 from website.project.model import (
     Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
@@ -32,7 +30,7 @@ from website.project.licenses import NodeLicense, NodeLicenseRecord
 
 # All models
 MODELS = (
-    User, Institution,
+    User,
     ApiOAuth2Application, ApiOAuth2PersonalToken, Node,
     NodeLog, StoredFileNode, TrashedFileNode, FileVersion,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,

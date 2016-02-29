@@ -15,6 +15,7 @@ import requests
 import pytz
 from flask import request
 from django.core.urlresolvers import reverse
+from django.core.validators import URLValidator
 
 from modularodm import Q
 from modularodm import fields
@@ -3417,6 +3418,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     institution_id = fields.StringField(unique=True)
     institution_domain = fields.StringField(list=True)
     institution_auth_url = fields.StringField(validate=URLValidator())
+    institution_logo_name = fields.StringField()
 
     @classmethod
     def find(cls, query, allow_institution=False, **kwargs):
