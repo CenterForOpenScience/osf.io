@@ -25,7 +25,7 @@ class InstitutionMixin(object):
     """Mixin with convenience method get_institution
     """
 
-    institution_lookup_url_kwarg = '_institution_id'
+    institution_lookup_url_kwarg = 'institution_id'
 
     def get_institution(self):
         inst = get_object_or_error(
