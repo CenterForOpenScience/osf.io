@@ -15,11 +15,11 @@
 }
 
 .evernote-test {
-  color: green;
+  color: orange;
 }
 
 #evernote-notedisplay {
-
+  border-color: #ccc;
 }
 
 .btn-evernote {
