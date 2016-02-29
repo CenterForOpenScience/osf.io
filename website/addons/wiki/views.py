@@ -3,6 +3,7 @@
 import httplib as http
 import logging
 
+from bs4 import BeautifulSoup
 from flask import request
 
 from framework.mongo.utils import to_mongo_key
@@ -145,9 +146,11 @@ def wiki_widget(**kwargs):
     if wiki_page and wiki_page.html(node):
         wiki_html = wiki_page.html(node)
         if len(wiki_html) > 400:
+            wiki_html = BeautifulSoup(wiki_html[:400] + '...', 'html.parser')
             more = True
         use_python_render = wiki_page.rendered_before_update
     else:
+        wiki_html = BeautifulSoup(wiki_html)
         wiki_html = None
 
     ret = {
