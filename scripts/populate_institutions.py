@@ -38,7 +38,7 @@ def main(env):
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://shib-pprd.middleware.vt.edu', safe='~()*!.\'')
             ),
-            'domain': ['osf.vt.edu'],
+            'domain': ['osf.vt.edu:5000'],
         },
         {
             'name': 'Notre Dame',
@@ -47,7 +47,7 @@ def main(env):
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://login.nd.edu/idp/shibboleth', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://login-test.cc.nd.edu/idp/shibboleth', safe='~()*!.\'')
             ),
-            'domain': ['http://osf.nd.edu:5000'],
+            'domain': ['osf.nd.edu:5000'],
         }
     ]
 

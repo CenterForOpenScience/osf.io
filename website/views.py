@@ -98,7 +98,7 @@ def _render_nodes(nodes, auth=None, show_path=False):
 def index():
     try:
         #TODO : make this way more robust
-        inst = Institution.find_one(Q('domain', 'contains', request.host))
+        inst = Institution.find_one(Q('domain', 'eq', request.host))
         return {
             'id': inst._id,
             'name': inst.name,
