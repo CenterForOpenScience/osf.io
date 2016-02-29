@@ -2,10 +2,21 @@ from __future__ import unicode_literals
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
-from website.conferences.model import Conference
 
 from framework.auth.core import User
 from django.db import models
+
+# Use this plus model_to_dict to simulate dict field (field_names) on Conference
+class ConferenceFieldNames(models.Model):
+    submission1 = models.CharField(max_length=200, blank=True, default='poster')
+    submission2 = models.CharField(max_length=200, blank=True, default='talk')
+    submission1_plural = models.CharField(max_length=200, blank=True, default='posters')
+    submission2_plural = models.CharField(max_length=200, blank=True, default='talks')
+    meeting_title_type = models.CharField(max_length=200, blank=True, default='Posters & Talks')
+    add_submission = models.CharField(max_length=200, blank=True, default='poster or talk')
+    mail_subject = models.CharField(max_length=200, blank=True, default='Presentation title')
+    mail_message_body = models.CharField(max_length=200, blank=True, default='Presentation abstract (if any)')
+    mail_attachment = models.CharField(max_length=200, blank=True, default='Your presentation file (e.g., PowerPoint, PDF, etc.)')
 
 
 # Create your models here.
@@ -42,6 +53,15 @@ class Conference(models.Model):
     #         'mail_message_body': 'Presentation abstract (if any)',
     #         'mail_attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)'
     #     }
+
+    field_names = models.OneToOneField(
+        ConferenceFieldNames,
+        on_delete = models.CASCADE,
+        null=True,
+        blank=True,
+        default=None,
+    )
+
     # Cached number of submissions
     num_submissions = models.IntegerField(default=0)
 
@@ -58,9 +78,3 @@ class Conference(models.Model):
 
     class Meta:
         ordering = ['endpoint']
-
-
-class ConferenceFieldNames(models.Model):
-    key = models.CharField(max_length=200)
-    value = models.CharField(max_length=200)
-    conference = models.ForeignKey('conference', blank=False)
