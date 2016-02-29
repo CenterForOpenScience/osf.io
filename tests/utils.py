@@ -5,7 +5,7 @@ import datetime
 
 from django.http import HttpRequest
 from nose import SkipTest
-from nose.tools import assert_equal, assert_not_equal
+from nose.tools import assert_equal, assert_not_equal, assert_in
 
 from framework.auth import Auth
 from website.archiver import ARCHIVER_SUCCESS
@@ -152,6 +152,8 @@ class MockAuth(object):
     def __init__(self, user):
         self.user = user
         self.logged_in = True
+        self.private_key = None
+        self.private_link = None
 
 mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
 

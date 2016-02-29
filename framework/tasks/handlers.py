@@ -1,33 +1,37 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import threading
 import functools
 
 from celery import group
 
-from framework.tasks import queue
-
 from website import settings
 
 
+_local = threading.local()
 logger = logging.getLogger(__name__)
 
 
+def queue():
+    if not hasattr(_local, 'queue'):
+        _local.queue = []
+    return _local.queue
+
+
 def celery_before_request():
-    global queue
-    queue = []  # noqa
+    _local.queue = []
 
 
 def celery_teardown_request(error=None):
-    global queue
     if error is not None:
         return
     try:
-        if queue:
+        if queue():
             if settings.USE_CELERY:
-                group(queue).apply_async()
+                group(queue()).apply_async()
             else:
-                for task in queue:
+                for task in queue():
                     task.apply()
     except AttributeError:
         if not settings.DEBUG_MODE:
@@ -35,15 +39,14 @@ def celery_teardown_request(error=None):
 
 
 def enqueue_task(signature):
-    global queue
     """If working in a request context, push task signature to ``g`` to run
     after request is complete; else run signature immediately.
     :param signature: Celery task signature
     """
     try:
-        if signature not in queue:
-            queue.append(signature)
-    except RuntimeError:
+        if signature not in queue():
+            queue().append(signature)
+    except (RuntimeError):
         signature()
 
 

@@ -69,7 +69,9 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
         grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
 
-        approval = project._initiate_approval(project.creator)
+        registration = RegistrationFactory(project=project)
+
+        approval = registration._initiate_approval(registration.creator)
         assert_in(project_admin._id, approval.approval_state)
         assert_in(child_admin._id, approval.approval_state)
         assert_in(grandchild_admin._id, approval.approval_state)

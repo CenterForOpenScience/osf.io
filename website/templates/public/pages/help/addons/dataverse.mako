@@ -2,7 +2,7 @@
     <span id="dataverse" class="anchor"></span>
     <h4 class="m-t-lg f-w-lg">Dataverse</h4>
     <p><a href="https://osf.io/w75g2/">Dataverse</a> is a an open source web application to share, preserve, cite, explore,
-        and analyze research data. Enabling Dataverse for your project will allow contibutores to view, download,
+        and analyze research data. Enabling Dataverse for your project will allow contributors to view, download,
         and upload files to and from a Dataverse study/dataset. All from your project's "Files" page.</p>
     <p>To link a Dataverse study to a project/component, visit the project to which you want to add a Dataverse study. Click on the
         "Settings" tab in the grey navigation bar. Check "Dataverse" under "Select Add-ons" to enable the add-on. Read and agree to the terms to proceed. Next, authenticate with Dataverse by selecting the appropriate Dataverse repository, entering your Dataverse username and

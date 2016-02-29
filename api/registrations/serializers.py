@@ -72,26 +72,36 @@ class RegistrationSerializer(NodeSerializer):
     )))
 
     parent = HideIfRetraction(RelationshipField(
-        related_view='nodes:node-detail',
+        related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<parent_id>'}
     ))
 
     logs = HideIfRetraction(RelationshipField(
-        related_view='nodes:node-logs',
+        related_view='registrations:registration-logs',
         related_view_kwargs={'node_id': '<pk>'},
     ))
+
+    root = HideIfRetraction(RelationshipField(
+        related_view='registrations:registration-detail',
+        related_view_kwargs={'node_id': '<root._id>'}
+    ))
+
+    primary_institution = RelationshipField(
+        related_view='registrations:registration-institution-detail',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
 
     # TODO: Finish me
 
     # TODO: Override create?
 
-    links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_url'})
+    links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):
         return absolute_reverse('registrations:registration-detail', kwargs={'node_id': obj._id})
 
     def get_absolute_url(self, obj):
-        return obj.absolute_url
+        return self.get_registration_url(obj)
 
     def get_registered_meta(self, obj):
         if obj.registered_meta:

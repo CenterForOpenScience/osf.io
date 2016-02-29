@@ -55,9 +55,8 @@
                                     </span>
                                 </span>
                                 <!-- Log actions are the same as their template name -->
-                                <span data-bind="template: {name: log.action, data: log}"></span>
+                                    <span data-bind="template: {name: log.action, data: log}"></span>
                                 <!-- /ko -->
-
                                 <!-- ko ifnot: log.hasUser() -->
                                     <!-- Log actions are the same as their template name  + no_user -->
                                     <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>

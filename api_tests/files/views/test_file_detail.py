@@ -4,14 +4,15 @@ import pytz
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
-from website.files.exceptions import FileNodeCheckedOutError
+from framework.auth.core import Auth
 from website.addons.osfstorage import settings as osfstorage_settings
 
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     UserFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    CommentFactory
 )
 
 
@@ -76,6 +77,23 @@ class TestFileView(ApiTestCase):
                 },
             },
         })
+
+    def test_file_has_comments_link(self):
+        res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('comments', res.json['data']['relationships'].keys())
+        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.node._id, self.file._id)
+        url = res.json['data']['relationships']['comments']['links']['related']['href']
+        assert_in(expected_url, url)
+
+    def test_file_has_correct_unread_comments_count(self):
+        contributor = AuthUserFactory()
+        self.node.add_contributor(contributor, auth=Auth(self.user), save=True)
+        comment = CommentFactory(node=self.node, target=self.file, user=contributor, page='files')
+        res = self.app.get('/{}files/{}/?related_counts=True'.format(API_BASE, self.file._id), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
+        assert_equal(unread_comments, 1)
 
     def test_checkout(self):
         assert_equal(self.file.checkout, None)

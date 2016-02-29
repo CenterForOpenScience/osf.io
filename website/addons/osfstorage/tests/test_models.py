@@ -4,7 +4,7 @@ import mock
 import unittest
 from nose.tools import *  # noqa
 
-from tests.factories import ProjectFactory
+from tests.factories import ProjectFactory, NodeFactory, CommentFactory
 
 from website.addons.osfstorage.tests import factories
 from website.addons.osfstorage.tests.utils import StorageTestCase
@@ -18,6 +18,7 @@ from website.files import models
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import settings
 from website.files.exceptions import FileNodeCheckedOutError
+
 
 class TestOsfstorageFileNode(StorageTestCase):
 
