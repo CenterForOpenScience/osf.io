@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="register-page">
+    <div class="register-box">
+        <div class="register-logo">
+            <b>Create a new Conference</b>
+        </div>
+        <div class="register-box-body">
+            <form action="" method="post">
+                {% csrf_token %}
+
+                {% if conf_form.non_field_errors %}
+                <ul>
+                {% for error in conf_form.non_field_errors %}
+                <li class="errorClass">{{ error }}</li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% for field in conf_form %}
+                    <div class="form-group">
+                        <p><b>{{ field.name }}: </b></p><p class="">{{ field }}</p>
+                        {% if field.errors %}<span class="text-danger"> {{ field.errors }}</span>{% endif %}
+                    </div>
+                {% endfor %}
+                <p class="register-box-msg">Edit this conference's field names:</p>
+                {% for field in conf_field_names_form %}
+                    <div class="form-group">
+                        <p><b>{{ field.name }}: </b></p><span class="text-danger"><p>{{ field }}</p></span>
+                        {% if field.errors %}<span class="text-danger"> {{ field.errors }}</span>{% endif %}
+                    </div>
+                {% endfor %}
+                <!-- errors persist unwantingly ^ -->
+
+                <div class="row">
+                    <div>
+                        <button type="submit" class="btn btn-primary btn-block btn-flat">Create Conference</button>
+                    </div><!-- /.col -->
+                </div>
+            </form>
+            <a href="{% url 'home' %}">Return to home page</a>
+            <div>
+              {% if messages %}
+                <ul>
+                  {% for message in messages %}
+                       <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}
+                       </li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </div>
+        </div><!-- /.form-box -->
+    </div><!-- /.register-box -->
+</div><!-- /.register-page -->
+{% endblock %}
