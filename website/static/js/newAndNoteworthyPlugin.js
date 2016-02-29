@@ -79,7 +79,9 @@ var NewAndNoteworthy = {
             var contributors = $osf.contribNameFormat(node, ctrl.contributorsMapping[node.id][1], ctrl.getFamilyName);
 
             return m('div.node-styling.noteworthy-spacing', {'class': 'row', onclick: function(){
-                location.href = '/' + node.embeds.target_node.data.id;}
+                location.href = '/' + node.embeds.target_node.data.id;
+                $osf.trackClick('newAndNoteworthy', 'navigate', 'navigate-to-specific-project');
+            }
             },
                 m('div', {'class': 'col-sm-12'},
                     m('h5.prevent-overflow', {'data-title': title, 'data-location': 'top', onmouseover: function(){ctrl.addToolTip(this);}},
@@ -106,7 +108,9 @@ var NewAndNoteworthy = {
         }
 
         function findMoreProjectsButton () {
-            return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search'}, 'Find more projects with advanced search');
+            return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search', onclick: function() {
+                $osf.trackClick('newAndNoteworthy', 'navigate', 'navigate-to-advanced-search');
+            }}, 'Find more projects with advanced search');
         }
 
         return m('div', {'class': 'container'}, [

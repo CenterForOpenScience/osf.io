@@ -18,11 +18,15 @@ var xhrconfig = function(xhr) {
 var MeetingsAndConferences = {
     view: function(ctrl) {
         function findAMeetingButton() {
-             return m('a.btn.btn-default.btn-block.m-v-xl', {type:'button', href:'/meetings/'}, 'Find a Meeting');
+             return m('a.btn.btn-default.btn-block.m-v-xl', {type:'button', href:'/meetings/', onclick: function(){
+                 $osf.trackClick('meetingsAndConferences', 'navigate', 'navigate-to-find-a-meeting');
+             }}, 'Find a Meeting');
         }
 
         function createAMeetingButton() {
-             return m('a.btn.btn-default.btn-block.m-v-xl', {type:'button',  href:'/meetings/'}, 'Create a Meeting');
+             return m('a.btn.btn-default.btn-block.m-v-xl', {type:'button',  href:'/meetings/', onclick: function(){
+                 $osf.trackClick('meetingsAndConferences', 'navigate', 'navigate-to-create-a-meeting');
+             }}, 'Create a Meeting');
         }
         return m('div.container.conferences-and-meetings.p-v-sm',
             m('div', {'class': 'col-sm-6 col-md-5'},
@@ -34,7 +38,10 @@ var MeetingsAndConferences = {
                 ),
                 m('div', {'class': 'row'},
                     m('div', {'class': 'col-md-offset-1'},
-                        m('div.conference-centering', {'class': 'col-sm-11 col-xs-12'},  m('h6', 'Use the OSF meetings service to provide a central location for collection submissions!'), m('span', m('a', {href: '/meetings/'}, 'Learn more'))),
+                        m('div.conference-centering', {'class': 'col-sm-11 col-xs-12'},  m('h6', 'Use the OSF meetings service to provide a central location for collection submissions!'),
+                            m('span', m('a', {href: '/meetings/', onclick: function(){
+                                $osf.trackClick('meetingsAndConferences', 'navigate', 'navigate-to-learn-more');
+                            }}, 'Learn more'))),
                         m('div', {'class': 'col-sm-1'})
                     )
                 )

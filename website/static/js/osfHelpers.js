@@ -821,6 +821,13 @@ var contribNameFormat = function(node, number, getFamilyName) {
     }
 };
 
+var trackClick = function(category, action, label){
+    window.ga('send', 'event', category, action, label);
+    console.log(category, action, label);
+    //in order to make the href redirect work under knockout onclick binding
+    return true;
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -857,5 +864,6 @@ module.exports = window.$.osf = {
     currentUser: currentUser,
     any: any,
     dialog: dialog,
-    contribNameFormat: contribNameFormat
+    contribNameFormat: contribNameFormat,
+    trackClick: trackClick,
 };
