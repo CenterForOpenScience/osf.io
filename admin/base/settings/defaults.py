@@ -140,5 +140,5 @@ WEBPACK_LOADER = {
 }
 
 CRONJOBS = [
-    ('*/5 * * * *', 'admin.metrics.utils.osf_site', []),
+    ('*/5 * * * *', 'admin.metrics.utils.osf_site'),
 ]
