@@ -22,7 +22,7 @@
     <div id="navbar" class="navbar-collapse collapse navbar-right">
       <ul class="nav navbar-nav">
         % if user_name:
-            <li id="osfNavMyProjects"><a href="/dashboard/">Dashboard</a></li>
+            <li id="osfNavMyProjects"><a href="${web_url_for('dashboard', _absolute=True)}">Dashboard</a></li>
         % endif
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Browse <span class="caret"></span></a>
@@ -51,21 +51,21 @@
         <!-- /ko -->
         % if user_name and display_name:
         <li>
-            <a class="hidden-lg hidden-xs nav-profile" href="/profile/">
+            <a class="hidden-lg hidden-xs nav-profile" href="${web_url_for('profile_view', _absolute=True)}">
                 <span rel="tooltip" data-placement="bottom" title="${user_name}" class="osf-gravatar"><img src="${user_gravatar}" alt="User gravatar"/> </span>
             </a>
-            <a class="visible-lg visible-xs nav-profile" href="/profile/">
+            <a class="visible-lg visible-xs nav-profile" href="${web_url_for('profile_view', _absolute=True)}">
                 <span rel="tooltip" data-placement="bottom" title="${user_name}"><span class="osf-gravatar"> <img src="${user_gravatar}" alt="User gravatar"/> </span> ${display_name}</span>
             </a>
         </li>
         <li>
-            <a href="${web_url_for('user_profile')}">
+            <a href="${web_url_for('user_profile', _absolute=True)}">
                 <span rel="tooltip" data-placement="bottom" title="Settings" class="fa fa-cog hidden-xs fa-lg"></span>
                 <span class="visible-xs">Settings</span>
             </a>
         </li>
         <li>
-            <a href="${web_url_for('auth_logout')}">
+            <a href="${web_url_for('auth_logout', _absolute=True)}">
                 <span rel="tooltip" data-placement="bottom" title="Log&nbsp;out" class="fa fa-sign-out hidden-xs fa-lg"></span>
                 <span class="visible-xs">Log out</span>
             </a>

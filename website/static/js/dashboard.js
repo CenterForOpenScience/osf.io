@@ -182,7 +182,7 @@ var Dashboard = {
         self.loadCategories = function _loadCategories () {
             var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig});
             promise.then(function _success(results){
-                if(results.actions.POST.category){
+                if(results.actions && results.actions.POST.category){
                     self.categoryList = results.actions.POST.category.choices;
                     self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
                         if(a.value < b.value) return -1;
