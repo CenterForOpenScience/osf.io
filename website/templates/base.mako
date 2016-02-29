@@ -50,6 +50,12 @@
 
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
+
+    % if private_link_anonymous:  
+            <div class="" id="anonymous-mode">You are viewing the OSF through an anonymous view-only link. Keep this link safe. To return to the normal view click <a href="/?view_only=None">here</a></div>
+    % endif
+
+
     % if dev_mode:
     <style>
         #devmode {
@@ -172,6 +178,15 @@
                 });
             </script>
         % endif
+
+        %if keen_project_id:
+            <script>
+                window.contextVars = $.extend(true, {}, window.contextVars, {
+                    keenProjectId: ${keen_project_id | sjson, n},
+                    keenWriteKey: ${keen_write_key | sjson, n}
+                })
+            </script>
+        %endif
 
 
         ${self.javascript_bottom()}
