@@ -49,10 +49,10 @@ class SpamList(ListView):
 class SpamDetail(FormView):
     form_class = ConfirmForm
     template_name = 'spam/comment.html'
-    spam_id = None
-    page = 1
 
     def __init__(self):
+        self.spam_id = None
+        self.page = 1
         self.item = None
         super(SpamDetail, self).__init__()
 
@@ -89,7 +89,10 @@ class SpamDetail(FormView):
 
     @property
     def success_url(self):
-        return reverse('spam:detail', kwargs={'spam_id': self.spam_id}) + '?page={}'.format(self.page)
+        return '{}?page={}'.format(
+            reverse('spam:detail', kwargs={'spam_id': self.spam_id}),
+            self.page
+        )
 
 
 @login_required
