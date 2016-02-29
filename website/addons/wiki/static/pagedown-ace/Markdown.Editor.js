@@ -1844,7 +1844,6 @@ var Range = ace.require('ace/range').Range;
         chunk.before = this.stripLinkDefs(chunk.before, defsToAdd);
         chunk.selection = this.stripLinkDefs(chunk.selection, defsToAdd);
         chunk.after = this.stripLinkDefs(chunk.after, defsToAdd);
-        
         var defs = "";
         var regex = /(\[)((?:\[[^\]]*\]|[^\[\]])*)(\][ ]?(?:\n[ ]*)?\[)(\d+)(\])/g;
 
@@ -1853,7 +1852,6 @@ var Range = ace.require('ace/range').Range;
             def = def.replace(/^[ ]{0,3}\[(\d+)\]:/, "  [" + refNumber + "]:");
             defs += "\n" + def;
         };
-        
         // note that
         // a) the recursive call to getLink cannot go infinite, because by definition
         //    of regex, inner is always a proper substring of wholeMatch, and
@@ -1880,7 +1878,6 @@ var Range = ace.require('ace/range').Range;
         var refOut = refNumber;
         
         chunk.after = chunk.after.replace(regex, getLink);
-        
         if (chunk.after) {
             if (chunk.selection) {
                 chunk.selection = '[' + chunk.selection + '][' + refOut + ']';
@@ -1893,10 +1890,8 @@ var Range = ace.require('ace/range').Range;
             }
             chunk.selection = chunk.selection.replace(/\n*$/, "");
         }
-        
 
         chunk.after += "\n\n" + defs;
-                
         return refOut;
     };
 
@@ -1919,7 +1914,7 @@ var Range = ace.require('ace/range').Range;
             return title ? link + ' "' + title + '"' : link;
         });
     }
-    
+
     commandProto.doLinkOrImage = function (chunk, postProcessing, isImage, link, multiple, num) {
         chunk.trimWhitespace();
         chunk.findTags(/\s*!?\[/, /\][ ]?(?:\n[ ]*)?(\[.*?\])?/);
@@ -1939,7 +1934,6 @@ var Range = ace.require('ace/range').Range;
             // link text. linkEnteredCallback takes care of escaping any brackets.
             chunk.selection = chunk.startTag + chunk.selection + chunk.endTag;
             chunk.startTag = chunk.endTag = "";
-                        
             if (/\n\n/.test(chunk.selection)) {
                 this.addLinkDef(chunk, null);
                 return;
@@ -1948,7 +1942,6 @@ var Range = ace.require('ace/range').Range;
             // The function to be executed when you enter a link and press OK or Cancel.
             // Marks up the link and adds the ref.
             var linkEnteredCallback = function (link) {
-                
                 if (!!background) {
                     background.parentNode.removeChild(background);
                 }
