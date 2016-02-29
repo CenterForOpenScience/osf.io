@@ -15,7 +15,7 @@
 
         <div id="login-hero">
         <div class="container text-center">
-            <div class="visible-xs-block visible-sm-block visible-md-block network-bg"></div>
+            <div class="visible-xs-block visible-sm-block visible-md-block"></div>
             %if campaign == "institution" and enable_institutions:
 
             <h1 class="hero-brand">OSF For Institutions</h1>

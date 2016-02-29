@@ -83,3 +83,12 @@ height: 320px !important;
 h3.login-tagline {
     padding-bottom: 35px;
 }
+
+.login-network-bg {
+    background: url("/static/img/front-page/bg-web.png") repeat;
+    background-size: contain;
+    height: 1000px;
+    margin-bottom: -1000px;
+    opacity: 0.25;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
+}
