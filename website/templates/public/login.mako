@@ -16,7 +16,13 @@
         <div id="login-hero">
         <div class="container text-center">
             <div class="visible-xs-block visible-sm-block visible-md-block network-bg"></div>
+            %if campaign == "institution" and enable_institutions:
+
+            <h1 class="hero-brand">OSF For Institutions</h1>
+            %else:
             <h1 class="hero-brand">Open Science Framework</h1>
+            %endif
+
             <h3 class="login-tagline">A scholarly commons to connect the entire research cycle</h3>
         </div>
 %if campaign == "prereg":
@@ -31,12 +37,10 @@
 
 %if campaign == "institution" and enable_institutions:
 <div class="text-center m-t-lg">
-    <h3>OSF for Institutions </h3>
-    <hr>
-    <p>
+    <h4>
       If your institution has partnered with the Open Science Framework, please
         select its name below and sign in with your institutional credentials.
-    </p>
+    </h4>
 </div>
 %endif
 <div class="row m-t-xl">
