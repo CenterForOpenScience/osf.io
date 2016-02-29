@@ -2,9 +2,6 @@
 from django.core.urlresolvers import reverse
 
 from modularodm import fields, Q
-from modularodm.validators import URLValidator
-
-from framework.mongo import StoredObject
 
 class Institution():
 
@@ -43,15 +40,19 @@ class Institution():
 
     @classmethod
     def load(cls, id):
-        node = Node.find_one(Q('institution_id', 'eq', id) & Q('is_institution', 'eq', True), allow_institution=True)
-        return cls(node)
+        try:
+            node = Node.find_one(Q('institution_id', 'eq', id) & Q('is_institution', 'eq', True), allow_institution=True)
+            return cls(node)
+        except:
+            return None
 
-
+    '''
     _id = fields.StringField(index=True, unique=True, primary=True)
     name = fields.StringField(required=True)
     logo_name = fields.StringField(required=True)
     auth_url = fields.StringField(required=False, validate=URLValidator())
     description = fields.StringField()
+    '''
 
     def __repr__(self):
         return '<Institution ({}) with id \'{}\'>'.format(self.name, self._id)

@@ -24,15 +24,15 @@ class InstitutionMixin(object):
     """Mixin with convenience method get_institution
     """
 
-    institution_lookup_url_kwarg = 'institution_id'
+    institution_lookup_url_kwarg = '_institution_id'
 
     def get_institution(self):
         inst = get_object_or_error(
-            Institution,
+            Node,
             self.kwargs[self.institution_lookup_url_kwarg],
             display_name='institution'
         )
-        return inst
+        return Institution(inst)
 
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
@@ -149,21 +149,20 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        inst = self.get_institution()
-        inst_query = Q('primary_institution', 'eq', inst)
         base_query = self.base_node_query
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
             permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
-        query = base_query & permission_query & inst_query
+        query = base_query & permission_query
         return query
 
     # overrides RetrieveAPIView
     def get_queryset(self):
+        inst = self.get_institution()
         query = self.get_query_from_request()
-        return Node.find(query)
+        return Node.find_by_institution(inst, query)
 
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):

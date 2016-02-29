@@ -3430,8 +3430,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             query = query & Q('is_institution', 'eq', False)
         return super(Node, cls).find_one(query, **kwargs)
 
-    def find_by_institution(self, query):
-        pass
+    def find_by_institution(self, inst, query=None):
+        inst_node = inst.node
+        query = query & Q('_primary_institution', 'eq', inst_node)
+        self.__class__.find(query, allow_institution=True)
+
 
     # Primary institution node is attached to
     _primary_institution = fields.ForeignField('node')
@@ -3449,12 +3452,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def add_primary_institution(self, user, inst):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if inst == self.primary_institution:
+        if inst.node == self.primary_institution:
             return False
-        previous = self.primary_institution
-        self.primary_institution = inst
+        previous = Institution(self.primary_institution)
+        self.primary_institution = inst.node
         if inst not in self.affiliated_institutions:
-            self.affiliated_institutions.append(inst)
+            self.affiliated_institutions.append(inst.node)
         self.add_log(
             action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
             params={
@@ -3479,6 +3482,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.primary_institution = None
         if inst in self.affiliated_institutions:
             self.affiliated_institutions.remove(inst)
+        inst = Institution(inst)
         self.add_log(
             action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
             params={
@@ -3497,6 +3501,77 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def institution_relationship_url(self):
         return self.absolute_api_v2_url + 'relationships/institution/'
+
+class Institution():
+
+    institution_node_translator = {
+        '_id': 'institution_id',
+        'auth_url': 'institution_auth_url',
+        'domain': 'institution_domain',
+        'name': 'title'
+    }
+
+    def __init__(self, node):
+        self.node = node
+        for key, value in self.institution_node_translator.iteritems():
+            setattr(self, key, getattr(node, value))
+
+    def __getattr__(self, item):
+        return getattr(self.node, item)
+
+    @classmethod
+    def find(cls, query, **kwargs):
+        for node in query.nodes:
+            replacement_attr = cls.institution_node_translator.get(node.attribute, False)
+            node.attribute = replacement_attr if False else node.attribute
+        query = query & Q('is_institution', 'eq', True)
+        nodes = Node.find(query, allow_institution=True, **kwargs)
+        return [cls(node) for node in nodes]
+
+    @classmethod
+    def find_one(cls, query, **kwargs):
+        for node in query.nodes:
+            replacement_attr = cls.institution_node_translator.get(node.attribute, False)
+            node.attribute = replacement_attr if False else node.attribute
+        query = query & Q('is_institution', 'eq', True)
+        node = Node.find_one(query, allow_institution=True, **kwargs)
+        return cls(node)
+
+    @classmethod
+    def load(cls, id):
+        try:
+            node = Node.find_one(Q('institution_id', 'eq', id) & Q('is_institution', 'eq', True), allow_institution=True)
+            return cls(node)
+        except:
+            return None
+
+    '''
+    _id = fields.StringField(index=True, unique=True, primary=True)
+    name = fields.StringField(required=True)
+    logo_name = fields.StringField(required=True)
+    auth_url = fields.StringField(required=False, validate=URLValidator())
+    description = fields.StringField()
+    '''
+
+    def __repr__(self):
+        return '<Institution ({}) with id \'{}\'>'.format(self.name, self._id)
+
+    @property
+    def pk(self):
+        return self._id
+
+    @property
+    def api_v2_url(self):
+        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def absolute_api_v2_url(self):
+        from api.base.utils import absolute_reverse
+        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def logo_path(self):
+        return '/static/img/institutions/{}/'.format(self.logo_name)
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
