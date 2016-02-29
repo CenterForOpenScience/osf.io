@@ -128,7 +128,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.hasChildrenToRemove = ko.computed(function() {
             //if there is more then one node to remove, then show a simplified page
-            if (self.canRemoveNodesLength() > 1) {
+            if (self.canRemoveNodesLength() > 1 && self.titlesToRemove().length > 1) {
                 self.page(self.REMOVE);
                 return true;
             }

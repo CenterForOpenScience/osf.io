@@ -132,7 +132,7 @@ var resolve = {
         'tests': staticPath('js/tests'),
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
-        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js')
+        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
     }
 };
 
