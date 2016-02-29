@@ -17,6 +17,10 @@ from api.base.exceptions import (
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
 )
+from modularodm.query import queryset as modularodm_queryset
+from rest_framework.filters import OrderingFilter
+from modularodm import Q
+from modularodm.query import queryset as modularodm_queryset
 
 class FakeSerializer(ser.Serializer):
 
@@ -222,3 +226,57 @@ class TestFilterMixin(ApiTestCase):
         field = FakeSerializer._declared_fields['float_field']
         value = self.view.convert_value(value, field)
         assert_equal(value, 42.0)
+
+def sort_multiple(fields):
+    fields = list(fields)
+    def sort_fn(a, b):
+        while fields:
+            field = fields[0]
+            if field[0] == '-':
+                field = field[1:]
+                a_field = getattr(a, field)
+                b_field = getattr(b, field)
+                if a_field > b_field:
+                    return -1
+                elif a_field < b_field:
+                    return 1
+            else:
+                a_field = getattr(a, field)
+                b_field = getattr(b, field)
+                if a_field > b_field:
+                    return 1
+                elif a_field < b_field:
+                    return -1
+        return 0
+    return sort_fn
+
+
+class TestODMOrderingFilter(OrderingFilter):
+    """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
+
+    def setUp(self):
+        super(TestODMOrderingFilter, self).setUp()
+        self.view = FakeView()
+
+    def test_filter_queryset(self):
+        query_s =[
+            {"title": "NewProj"},
+
+            {"title": "Zip"},
+
+            {"title": "Proj"},
+
+            {"title": "Activity"},
+        ]
+
+        sorted_list = sorted(query_s, cmp=sort_multiple('-title'))
+        assert_equal(sorted_list, [
+        {"title": "Zip"},
+
+        {"title": "Proj"},
+
+        {"title": "NewProj"},
+
+        {"title": "Activity"},
+    ])
+
