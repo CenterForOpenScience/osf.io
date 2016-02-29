@@ -24,6 +24,7 @@ $(document).ready(function(){
                 ];
         }
     };
+    // If logged in...
     m.mount(document.getElementById('osfHome'), m.component(osfHome, {}));
 
 

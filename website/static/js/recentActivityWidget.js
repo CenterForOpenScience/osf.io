@@ -69,7 +69,7 @@ var LogWrap = {
             }
             var url = $osf.apiV2Url('users/me/logs/', { query : query });
             var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: (update ? true : false)});
-            promise.then(function(result){
+            promise.then(function _requestSuccess(result){
                 self.loading = false;
                 result.data.map(function(log){
                     log.attributes.formattableDate = new $osf.FormattableDate(log.attributes.date);
@@ -115,7 +115,7 @@ var LogWrap = {
                     }
                 }
                 self.lastPage = (result.links.meta.total / (result.links.meta.per_page/2) | 0) + 1;
-            }, function(){
+            }, function _requestFail(){
                 self.errorLoading = true;
                 self.activityLogs([]);
             });
