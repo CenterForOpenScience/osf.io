@@ -15,9 +15,30 @@
 
 .newAndNoteworthy {
     min-height: 650px;
+    background: #f5f5f5;
+    border-top: 1px solid #eee;
+    padding-top: 25px;
 }
 
 .meetings {
-    min-height: 200px;
+    background: #166595 url("/static/img/front-page/bg-web.png") no-repeat center top;
+    background-size: cover;
+    color: #fff;
 }
 
+.meetings .btn {
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    color: #eee;
+    font-size: 18px;
+}
+
+.meetings .btn:hover {
+    background: #eee;
+    color: #000;
+}
+
+.footer {
+    margin-top: 0; /* Override footer margin for this page only */
+}
