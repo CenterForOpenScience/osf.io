@@ -2,9 +2,6 @@
 <%page expression_filter="h"/>
 
 <div id="markdownRender" class="break-word">
-    % if not wiki_content:
-        <p><em>No wiki content</em></p>
-    % endif
 </div>
 
 <div id="more_link">
