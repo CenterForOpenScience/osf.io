@@ -48,15 +48,15 @@ $(document).ready(function(){
 
                     // add items matching filter or in elastic search to displayed.
                     for (var j=0; j < tb.flatData.length; j++){
-                        var element = tb.flatData[i];
+                        var element = tb.flatData[j];
                         var item = tb.find(element.id);
                         if (tb.rowFilterResult(item)) {
-                            tb.visibleIndexes.push(i);
+                            tb.visibleIndexes.push(j);
                         }
                         else if (element.row.kind === 'file'){
                             var path = element.row.path.replace('/', '');
                             if (path_dict[path]){
-                                tb.visibleIndexes.push(i);
+                                tb.visibleIndexes.push(j);
                             }
                         }
                     }
