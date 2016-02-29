@@ -27,16 +27,16 @@
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Browse <span class="caret"></span></a>
           <ul class="dropdown-menu" role="menu">
-              <li><a href="/explore/activity/">New Projects</a></li>
-              <li><a href="/search/?q=*&amp;filter=registration">Registry</a></li>
-              <li><a href="/meetings/">Meetings</a></li>
+              <li><a href="${domain}explore/activity/">New Projects</a></li>
+              <li><a href="${domain}search/?q=*&amp;filter=registration">Registry</a></li>
+              <li><a href="${web_url_for('conference_view', _absolute=True)}">Meetings</a></li>
           </ul>
         </li>
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Help <span class="caret"></span></a>
           <ul class="dropdown-menu" role="menu">
-              <li><a href="/faq/">FAQ</a></li>
-              <li><a href="/getting-started">Getting Started</a></li>
+              <li><a href="${domain}faq/">FAQ</a></li>
+              <li><a href="${domain}getting-started">Getting Started</a></li>
               <li><script type="text/javascript">document.write("<n uers=\"znvygb:fhccbeg@bfs.vb\" ery=\"absbyybj\">Rznvy Fhccbeg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Email Support: <span class="obfuscated-email-noscript"><strong><u>supp<span style="display:none;">null</span>ort@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
                 <li><script type="text/javascript">document.write("<n uers=\"znvygb:pbagnpg@bfs.vb\" ery=\"absbyybj\">Pbagnpg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Contact OSF: <span class="obfuscated-email-noscript"><strong><u>cont<span style="display:none;">null</span>act@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
           </ul>
@@ -82,9 +82,9 @@
                   <div class="form-group"><input name="password" id="password" class="form-control" type="password" placeholder="Password" data-bind="value: password" aria-label="Password"></div>
                   <div class="form-group"><button type="submit" id="btnLogin" class="btn btn-block btn-primary">Login</button></div>
                  %if enable_institutions:
-                  <div class="text-center m-b-sm"> <a href="/login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+                  <div class="text-center m-b-sm"> <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
                  %endif
-                  <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot password?</a></div>
+                  <div class="text-center m-b-sm"> <a href="${domain}forgot_password/">Forgot password?</a></div>
                </form>
             </ul>
           </div>
