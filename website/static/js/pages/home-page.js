@@ -17,11 +17,30 @@ $(document).ready(function(){
     var osfHome = {
         view : function(ctrl, args) {
             return [
-                m('.quickSearch', m('.container.p-t-lg', m.component(quickSearchProject, {}))),
-                m('.recentActvity', m.component(LogWrap, {wrapper: 'recentActivity'})),
-                m('.newAndNoteworthy', m.component(newAndNoteworthy, {})),
-                m('.meetings', m.component(meetingsAndConferences, {}))
-                ];
+                m('.quickSearch', m('.container.p-t-lg',
+                    [
+                        m('h3', 'My Projects'),
+                        m.component(quickSearchProject, {})
+                    ]
+                )),
+                m('.recentActvity', m('.container',
+                    [
+                        m('h3', 'Recent Activity'),
+                        m.component(LogWrap, {wrapper: 'recentActivity'})
+                    ]
+                )),
+                m('.newAndNoteworthy', m('.container',
+                    [
+                        m('h3', 'Discover Public Projects'),
+                        m.component(newAndNoteworthy, {})
+                    ]
+                )),
+                m('.meetings', m('.container',
+                    [
+                        m.component(meetingsAndConferences, {})
+                    ]
+                ))
+            ];
         }
     };
     // If logged in...

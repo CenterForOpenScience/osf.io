@@ -456,9 +456,6 @@ var QuickSearchProject = {
         function resultsFound(){
             return m('div', {'class': 'container quick-project'}, [
                 m('div', {'class': 'row'},
-                    m('div', {'class': 'col-md-10 col-md-offset-1'},
-                    m('div', {'class': 'col-sm-12'}, m('h3', 'My Projects')))),
-                m('div', {'class': 'row'},
                     m('div', {'class': 'col-sm-3'}),
                     m('div.m-b-sm.text-center', {'class': 'col-sm-6'}, [
                         searchBar(),

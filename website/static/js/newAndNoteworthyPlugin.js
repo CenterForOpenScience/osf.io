@@ -110,9 +110,6 @@ var NewAndNoteworthy = {
         }
 
         return m('div', {'class': 'container'}, [
-            m('div', {'class': 'row'},
-                m('div', {'class': 'col-md-10 col-md-offset-1'},
-                    m('div', {'class': 'col-sm-12'}, m('h3', 'Discover Public Projects')))),
 
             m('div', {'class': 'row'},
                 m('div', {'class': 'col-md-10 col-md-offset-1'},
