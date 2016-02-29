@@ -89,6 +89,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
 
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
+        self.doneSearching = ko.observable(false);
         self.totalPages = ko.observable(0);
         self.nodesToChange = ko.observableArray();
 
@@ -97,7 +98,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
         });
 
         self.noResults = ko.pureComputed(function() {
-            return self.query() && !self.results().length;
+            return self.query() && !self.results().length && self.doneSearching();
+        });
+
+        self.showLoading = ko.pureComputed(function() {
+            return !self.doneSearching() && !!self.query();
         });
 
         self.addAllVisible = ko.pureComputed(function() {
@@ -191,6 +196,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
                         userData.added = (self.contributors().indexOf(userData.id) !== -1);
                         return new Contributor(userData);
                     });
+                    self.doneSearching(true);
                     self.results(contributors);
                     self.currentPage(result.page);
                     self.numberOfPages(result.pages);
@@ -201,6 +207,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             self.results([]);
             self.currentPage(0);
             self.totalPages(0);
+            self.doneSearching(true);
         }
     },
     getContributors: function() {
