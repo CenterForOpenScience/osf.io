@@ -1,11 +1,13 @@
 
 .node-styling {
-    background-color: #fcfcfc;
-    border: 1px solid #cccccc;
+    background-color: rgba(252, 252, 252, 0.63);
+    border: 1px solid #ABC0CD;
+    padding: 3px;
+    color: #555;
 }
 
 .node-styling:hover {
-    background-color: #E0EBF3;
+    background-color: #fff;
     cursor: pointer;
 }
 

@@ -1,177 +1,23 @@
-/* Home Page */
-.hpLink:hover{
-    text-decoration: none;
-    color: red;
+.quickSearch {
+    min-height: 700px;
+    background: rgba(103, 163, 191, 0.27);
+    background: -moz-linear-gradient(35deg, rgba(103, 163, 191, 0.27) 0%, rgba(22, 101, 150, 0.22) 18%, rgba(155, 179, 194, 0.93) 100%);
+    background: -webkit-gradient(linear, left bottom, right top, color-stop(0%, rgba(103, 163, 191, 0.27)), color-stop(18%, rgba(22, 101, 150, 0.22)), color-stop(100%, rgba(155, 179, 194, 0.93)));
+    background: -webkit-linear-gradient(35deg, rgba(103, 163, 191, 0.27) 0%, rgba(22, 101, 150, 0.22) 18%, rgba(155, 179, 194, 0.93) 100%);
+    background: -o-linear-gradient(35deg, rgba(103, 163, 191, 0.27) 0%, rgba(22, 101, 150, 0.22) 18%, rgba(155, 179, 194, 0.93) 100%);
+    background: -ms-linear-gradient(35deg, rgba(103, 163, 191, 0.27) 0%, rgba(22, 101, 150, 0.22) 18%, rgba(155, 179, 194, 0.93) 100%);
+    background: linear-gradient(35deg, rgba(103, 163, 191, 0.27) 0%, rgba(22, 101, 150, 0.22) 18%, rgba(155, 179, 194, 0.93) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#67a3bf', endColorstr='#000000', GradientType=1);
 }
-.hpContainerOne{
-    margin-top: 0;
-}
-/* >= sm */
-@media (min-width: 768px) {
-    .hpContainerOne {
-        margin-top: 50px;
-    }
-}
-.headOne, /* TODO: cleanup getting started */
-.hpHeadOne {
-    font-family: 'Carrois Gothic', Helvetica;
-    letter-spacing: 1px;
-    font-size: 40px;
-    color: black;
-}
-/* >=sm */
-@media (min-width: 768px) {
-    .headOne, /* TODO: cleanup getting started */
-    .hpHeadOne {
-       font-size: 50px;
-    }
-}
-.hpHeadTwo {
-    padding-top: 70px;
-    font-family: 'Carrois Gothic', Helvetica;
-    letter-spacing:1px;
-    font-size: 40px;
-    color: black;
-}
-.hpSubHeadOne {
-    padding-bottom: 30px;
-    font-family: 'Inika', Helvetica;
-    font-size: 24px;
-    letter-spacing: 1px;
-}
-.hpSubHeadTwo {
-    font-size: 30px;
-    font-family: 'Patua One', Helvetica;
-    letter-spacing: 1px;
-}
-.hpSubHeadThree {
-    font-size: 28px;
-    color: #4089C7;
-    font-family: 'Patua One', Helvetica;
-    letter-spacing: 1px;
-}
-.subHeadFour, /* TODO: cleanup getting started */
-.hpSubHeadFour {
-    font-family: 'Carrois Gothic', Helvetica;
-    letter-spacing:1px;
-    font-size: 36px;
-    color: black;
-}
-.hpSignUp {
-    background: #aad4f7;
-    padding: 30px 30px 30px 30px;
-    border: solid #bacfd8 1px;
-}
-.hpSignUp .form-control {
-    margin-top: 20px;
-    height: 40px;
-}
-.hpSignUp .btn {
-    font-family: 'Inika', Helvetica;
-    font-size: 28px;
-    letter-spacing: 1pt;
-    margin-top: 40px;
-}
-.hpHeader {
-    font-family: 'Patua One', cursive;
-    font-size: 24px;
-    padding-top: 70px;
-}
-.hpFeature {
-    padding-bottom: 20px;
-    padding-top: 70px;
-    font-size: 22px;
-    font-family: 'Carrois Gothic', sans-serif;
-}
-.hpFeature img {
-    height: 85px;
-    margin-bottom: 25px;
-}
-.hpFeature .hpFeatureInfo {
-    font-family: 'Inika', serif;
-    font-size: 16px;
-}
-.hpSteps {
-    padding-bottom: 20px;
-    padding-top: 20px;
-}
-.hpStepsText {
-    font-family: 'Inika', serif;
-    font-size: 16px;
-    padding-top: 40px;
+.recentActvity {
+    min-height: 650px;
 }
 
-
-.padded {
-    padding-top: 20px;
-    padding-bottom: 20px;
+.newAndNoteworthy {
+    min-height: 650px;
 }
 
-.empty {
-    height: 500px;
-}
-.verticalline {
-    border-left:  thin solid #D9E8F4;
+.meetings {
+    min-height: 200px;
 }
 
-
-
-.FP_Header {
-color: #b4b4b4;
-font-weight: bold;
-
-}
-
-.FP_Question{
-color: #b4b4b4;
-font-weight: bold;
-font-size:500%
-}
-
-.FP_Center {
-text-align: center;
-}
-
-#FP_great {
-color: #b4b4b4;
-}
-
-.video_header {
-background-color: #D9E8F4;
-opacity:.3;
-
-}
-
-#video_font_head {
-color: #428bca;
-font-weight: bold;
-}
-
-.hrBlue {
-  margin-top: 20px;
-  margin-bottom: 20px;
-  border: 0;
-  border-top: 1px solid #D9E8F4;
-}
-
-/* Knockout Validation Styles */
-
-.customMessage { color: #ed9c28; }
-
-.spaced-buttons { margin-top: 10px; }
-
-/* Change width for sign in input element on header */
-@media (min-width: 768px) and (max-width: 991px)  {
-    #signInForm input {
-        width: 110px;
-    }
-}
-@media (min-width: 1600px) {
-    #signInForm input {
-        width: 220px;
-    }
-}
-
-#signInForm {
-    clear:left;
-}

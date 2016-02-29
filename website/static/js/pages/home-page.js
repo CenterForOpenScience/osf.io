@@ -17,7 +17,7 @@ $(document).ready(function(){
     var osfHome = {
         view : function(ctrl, args) {
             return [
-                m('.quickSearch', m.component(quickSearchProject, {})),
+                m('.quickSearch', m('.container.p-t-lg', m.component(quickSearchProject, {}))),
                 m('.recentActvity', m.component(LogWrap, {wrapper: 'recentActivity'})),
                 m('.newAndNoteworthy', m.component(newAndNoteworthy, {})),
                 m('.meetings', m.component(meetingsAndConferences, {}))
