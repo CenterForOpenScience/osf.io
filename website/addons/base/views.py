@@ -37,7 +37,6 @@ from website.profile.utils import get_gravatar
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 from website.project.utils import serialize_node
 
-
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
@@ -233,7 +232,13 @@ def get_auth(auth, **kwargs):
     file_guids = []
     path = data.get('path', None)
     if path and action == 'movefrom':
-        file_guids = FileNode.resolve_class(provider_name, FileNode.ANY).get_file_guids(path=path, provider=provider_name, guids=[], node=node)
+        file_guids = FileNode.resolve_class(provider_name, FileNode.ANY).get_file_guids(
+            path=path,
+            provider=provider_name,
+            guids=[],
+            node=node,
+            auth_header=request.headers.get('Authorization'),
+            cookie=request.cookies.get(settings.COOKIE_NAME))
 
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),

@@ -25,10 +25,10 @@ class PathFollowingFileNode(FileNode):
         return super(PathFollowingFileNode, cls).get_or_create(node, '/' + path)
 
     @classmethod
-    def get_file_guids(cls, path, provider, guids, node):
+    def get_file_guids(cls, path, provider, guids, node, auth_header, cookie):
         node_settings = node.get_addon(cls.provider)
         path = os.path.join(getattr(node_settings, cls.FOLDER_ATTR_NAME).strip('/'), path.lstrip('/'))
-        return super(PathFollowingFileNode, cls).get_file_guids(path='/' + path, provider=provider, guids=guids, node=node)
+        return super(PathFollowingFileNode, cls).get_file_guids(path='/' + path, provider=provider, guids=guids, node=node, auth_header=auth_header, cookie=cookie)
 
     @property
     def path(self):
