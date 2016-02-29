@@ -33,4 +33,4 @@ class Institution(StoredObject):
 
     @property
     def logo_path(self):
-        return '/static/img/institutions/{}/'.format(self.logo_name)
+        return '/static/img/institutions/{}'.format(self.logo_name)
