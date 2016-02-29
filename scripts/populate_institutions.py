@@ -47,7 +47,7 @@ def main(env):
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://login.nd.edu/idp/shibboleth', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://login-test.cc.nd.edu/idp/shibboleth', safe='~()*!.\'')
             ),
-            'domain': ['osf.nd.edu'],
+            'domain': ['http://osf.nd.edu:5000'],
         }
     ]
 
