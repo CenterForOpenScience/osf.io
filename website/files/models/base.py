@@ -574,7 +574,7 @@ class File(FileNode):
         # Transform here so it can be sortted on later
         if data['modified'] is not None and data['modified'] != '':
             data['modified'] = parse_date(
-                data['modified'] or None,
+                data['modified'],
                 ignoretz=True,
                 default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
             )
