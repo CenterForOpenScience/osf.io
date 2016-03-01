@@ -3,71 +3,68 @@ This migration will add original_node and node associated with the log to nodelo
 copies of each nodelog for the remaining nodes in the backref (registrations and forks),
 changing the node to the current node.
 """
-
-import sys
+from copy import deepcopy
 import logging
-from modularodm import Q
-from website.app import init_app
-from website import models
-from scripts import utils as script_utils
+import sys
+
+from framework.mongo import database as db
 from framework.transactions.context import TokuTransaction
+
+from website.app import init_app
+from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
 
 
-def lookup_node(node_id):
-    """
-    Retrieves original node on nodelog
-    """
-    return models.Node.find(Q('_id', 'eq', node_id))[0]
-
-
-def main(dry=True):
+def migrate(dry=True):
     init_app(routes=False)
-    node_logs = models.NodeLog.find(Q('original_node', 'eq', None))
+    node_logs = db.nodelog.find({'original_node': None})
     total_log_count = node_logs.count()
     count = 0
-    errored_logs = []
-    logger.info('Adding original_node and node fields to each log and then cloning the log for remaining nodes in the log backref.')
 
     for log in node_logs:
-        # Two steps. Step 1: Add original_node and node field to log.
         count += 1
-        original_node = lookup_node(log.params['node'])
-        log.original_node = original_node
-        log.node = lookup_node(log._backrefs['logged']['node']['logs'][0])
         try:
-            log.save()
-            logger.info('{}/{} Log {} "original_node = {} and node = {}" added'.format(count, total_log_count, log._id, log.original_node._id, log.node._id))
+            # Step 1: migrate original nodelog - updates existing
+            db.nodelog.update(
+                {'_id': log['_id']},
+                {'$set': {
+                    'original_node': log['params']['node'],
+                    'node': log['__backrefs']['logged']['node']['logs'][0]
+                    }
+                },
+                upsert=True
+            )
+            logger.info('{}/{} Log {} updated'.format(count, total_log_count, log['_id']))
         except KeyError as error:
-            logger.error('Could not migrate log due to error')
+            logger.error('Could not migrate nodelog due to error -- likely a lack of __backrefs')
             logger.exception(error)
-            errored_logs.append(log)
-
-        # Step 2: For remaining nodes in log's backrefs, clone log, and point original_node and node fields in the right direction.
-        errored_clones = []
-        backref_total = len(log._backrefs['logged']['node']['logs']) - 1
-        backref_count = 0
-        for node in log._backrefs['logged']['node']['logs'][1:]:
-            backref_count += 1
-            clone = log.clone_node_log(node)
-            clone.original_node = original_node
-            try:
-                clone.save()
-                logger.info('{}/{} {}/{} ...Cloning log {} for node {}. New log is {}'.format(count, total_log_count, backref_count, backref_total, log._id, node, clone._id))
-            except KeyError as error:
-                logger.error('Could not copy node log due to error')
-                logger.exception(error)
-                errored_clones.append([log, clone])
+            pass
+        else:
+            # Step 2: migrate any backreffed logs - creates new
+            for node in log['__backrefs']['logged']['node']['logs'][1:]:
+                clone = deepcopy(log)
+                clone.pop('_id')
+                clone.pop('__backrefs')
+                clone['original_node'] = log['params']['node']
+                clone['node'] = node
+                try:
+                    db.nodelog.save(clone)
+                    logger.info('{}/{} New log added: {}'.format(count, total_log_count, clone['_id']))
+                except KeyError as error:
+                    logger.error('Could not create new nodelog due to error')
+                    logger.exception(error)
+                    pass
 
     if dry:
         raise RuntimeError('Dry run -- transaction rolled back')
 
-
-if __name__ == '__main__':
-
+def main():
     dry_run = '--dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     with TokuTransaction():
-        main(dry=dry_run)
+        migrate(dry=dry_run)
+
+if __name__ == '__main__':
+    main()
