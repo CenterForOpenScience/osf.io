@@ -327,3 +327,5 @@ WATERBUTLER_JWT_EXPIRATION = 15
 
 DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
+
+PREREG_ADMIN_TAG = "prereg_admin"

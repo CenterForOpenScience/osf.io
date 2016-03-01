@@ -17,7 +17,7 @@ from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
-    NodeAlternativeCitationsList, NodeAlternativeCitationDetail)
+    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer
 
@@ -43,7 +43,7 @@ class RegistrationMixin(NodeMixin):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_collection:
+        if node.is_collection or not node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -269,6 +269,11 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-comments'
+
+
+class RegistrationLogList(NodeLogList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-logs'
 
 
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):

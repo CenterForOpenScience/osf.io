@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.utils.urls import (
     replace_query_param, remove_query_param
 )
+from api.base.serializers import is_anonymized
 
 class JSONAPIPagination(pagination.PageNumberPagination):
     """
@@ -82,6 +83,8 @@ class JSONAPIPagination(pagination.PageNumberPagination):
                 ]))
             ])),
         ])
+        if is_anonymized(self.request):
+            response_dict['meta'] = {'anonymous': True}
         return Response(response_dict)
 
     def paginate_queryset(self, queryset, request, view=None):
