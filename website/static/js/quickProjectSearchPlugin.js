@@ -127,7 +127,7 @@ var QuickSearchProject = {
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
             var attributes = node.embeds.contributors.data[i].embeds.users.data.attributes;
-            return $osf.findContribName(attributes)
+            return $osf.findContribName(attributes);
         };
 
          // Formats date for display

@@ -826,7 +826,7 @@ var findContribName = function (userAttributes) {
     var names = [userAttributes.family_name, userAttributes.given_name, userAttributes.middle_names, userAttributes.full_name];
     for (var n = 0; n < names.length; n++) {
         if (names[n]) {
-            return names[n]
+            return names[n];
         }
     }
 };
