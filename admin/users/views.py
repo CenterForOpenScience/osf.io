@@ -8,8 +8,9 @@ from .serializers import serialize_user
 
 
 def remove_2_factor(request, guid):
-    user = User.load(guid)
-    user.delete_addon('twofactor')
+    if request.method == 'POST' or request.method == 'DELETE':
+        user = User.load(guid)
+        user.delete_addon('twofactor')
     return redirect(reverse_user(guid))
 
 
