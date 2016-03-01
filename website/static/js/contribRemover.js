@@ -178,6 +178,9 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.nodeIDsToRemove = ko.computed(function() {
             var nodeIDsToRemove = [];
+            if (!self.deleteAll()) {
+                return [self.nodeId];
+            }
             for (var key in self.nodesOriginal()) {
                 if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveNodes()[key]) {
                     var node = self.nodesOriginal()[key];
