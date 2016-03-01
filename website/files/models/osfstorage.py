@@ -34,7 +34,8 @@ class OsfStorageFileNode(FileNode):
         return cls.create(node=node, path=path)
 
     @classmethod
-    def get_file_guids(cls, path, provider, guids, node=None, auth_header=None, cookie=None):
+    def get_file_guids(cls, materialized_path, provider, guids, node=None):
+        path = materialized_path
         file_obj = cls.load(path.strip('/'))
         if file_obj.kind == 'folder':
             for item in file_obj.children:

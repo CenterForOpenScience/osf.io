@@ -251,22 +251,19 @@ class FileNode(object):
             return cls.create(node=node, path=path)
 
     @classmethod
-    def get_file_guids(cls, path, provider, guids, node, auth_header, cookie):
-        if path.endswith('/'):
+    def get_file_guids(cls, materialized_path, provider, guids, node):
+        if materialized_path.endswith('/'):
             folder_children = cls.find(Q('provider', 'eq', provider) &
                                        Q('node', 'eq', node) &
-                                       Q('path', 'startswith', path))
+                                       Q('materialized_path', 'startswith', '/' + materialized_path))
             for item in folder_children:
                 if item.kind == 'file':
-                    exists = item.touch(auth_header, cookie=cookie)
-                    if exists:
-                        guid = item.get_guid()
-                        if guid:
-                            guids.append(guid._id)
+                    guid = item.get_guid()
+                    if guid:
+                        guids.append(guid._id)
         else:
-            path = '/' + path.lstrip('/')
             try:
-                file_obj = cls.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
+                file_obj = cls.find_one(Q('node', 'eq', node) & Q('materialized_path', 'eq', '/' + materialized_path))
             except NoResultsFound:
                 return guids
             guid = file_obj.get_guid()

@@ -24,12 +24,6 @@ class PathFollowingFileNode(FileNode):
         path = os.path.join(getattr(node_settings, cls.FOLDER_ATTR_NAME).strip('/'), path.lstrip('/'))
         return super(PathFollowingFileNode, cls).get_or_create(node, '/' + path)
 
-    @classmethod
-    def get_file_guids(cls, path, provider, guids, node, auth_header, cookie):
-        node_settings = node.get_addon(cls.provider)
-        path = os.path.join(getattr(node_settings, cls.FOLDER_ATTR_NAME).strip('/'), path.lstrip('/'))
-        return super(PathFollowingFileNode, cls).get_file_guids(path='/' + path, provider=provider, guids=guids, node=node, auth_header=auth_header, cookie=cookie)
-
     @property
     def path(self):
         """Mutates the underlying stored_object's path to be relative to _get_connected_path
