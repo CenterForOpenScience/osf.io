@@ -121,7 +121,7 @@ def resend_confirmation(auth):
 
     user.save()
 
-    return _profile_view(user)
+    return _profile_view(user, is_profile=True)
 
 @must_be_logged_in
 def update_user(auth):
@@ -243,7 +243,7 @@ def update_user(auth):
         if subscription:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
-    return _profile_view(user)
+    return _profile_view(user, is_profile=True)
 
 
 def _profile_view(profile, is_profile=False):
@@ -263,7 +263,7 @@ def _profile_view(profile, is_profile=False):
         badges = []
 
     if profile:
-        profile_user_data = profile_utils.serialize_user(profile, full=True)
+        profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile)
         return {
             'profile': profile_user_data,
             'assertions': badge_assertions,

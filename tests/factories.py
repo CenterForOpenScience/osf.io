@@ -528,25 +528,8 @@ class InstitutionFactory(ModularOdmFactory):
     FACTORY_FOR = Institution
     _id = Sequence(lambda n: "S{}".format(n))
     name = Sequence(lambda n: "School{}".format(n))
-
-    @classmethod
-    def _create(cls, target_class, _id, name):
-        instance = target_class(
-            _id=_id,
-            name=name,
-            logo_name='logo.img',
-        )
-        instance.save()
-        return instance
-
-    @classmethod
-    def _build(cls, target_class, _id, name):
-        instance = target_class(
-            _id=_id,
-            name=name,
-            logo_name='logo.img',
-        )
-        return instance
+    logo_name = 'logo.img'
+    auth_url = 'http://thisIsUrl.biz'
 
 
 class NotificationSubscriptionFactory(ModularOdmFactory):
