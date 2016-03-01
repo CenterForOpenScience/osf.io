@@ -10,8 +10,6 @@ from admin.base.forms import GuidForm
 
 
 class TestNodeFormView(AdminTestCase):
-    def setUp(self):
-        super(TestNodeFormView, self).setUp()
 
     def test_context_data_not_existing_guid(self):
         guid = '12345'

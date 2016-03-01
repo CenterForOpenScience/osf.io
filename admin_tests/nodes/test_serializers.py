@@ -7,8 +7,6 @@ from admin.nodes.serializers import serialize_simple_user, serialize_node
 
 
 class TestNodeSerializers(AdminTestCase):
-    def setUp(self):
-        super(TestNodeSerializers, self).setUp()
 
     def test_serialize_node(self):
         node = NodeFactory()
