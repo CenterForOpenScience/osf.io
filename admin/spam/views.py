@@ -13,7 +13,7 @@ from .forms import ConfirmForm
 
 
 class SpamList(ListView):
-    template_name = 'spam/spam.html'
+    template_name = 'spam/spam_list.html'
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'date_created'
@@ -45,7 +45,7 @@ class SpamList(ListView):
 
 
 class UserSpamList(SpamList):
-    template_name = 'users/spam.html'
+    template_name = 'spam/user.html'
 
     def __init__(self):
         self.user_id = None
@@ -78,7 +78,7 @@ class UserSpamList(SpamList):
 
 class SpamDetail(FormView):
     form_class = ConfirmForm
-    template_name = 'spam/comment.html'
+    template_name = 'spam/detail.html'
 
     def __init__(self):
         self.item = None
@@ -115,10 +115,9 @@ class SpamDetail(FormView):
             return self.form_valid(context['form'])
         else:
             return render(request, self.template_name, context=context)
-        # return super(SpamDetail, self).post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        self.spam_id = kwargs['spam_id']
+        self.spam_id = self.kwargs.get('spam_id')
         self.item = Comment.load(self.spam_id)
         kwargs = super(SpamDetail, self).get_context_data(**kwargs)
         try:
