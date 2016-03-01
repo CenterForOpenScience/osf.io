@@ -1,12 +1,17 @@
+from website.settings import DOMAIN as OSF_DOMAIN
 from website.project.model import User
+from furl import furl
 
 
 def serialize_comment(comment, full=False):
     reports = serialize_reports(comment.reports)
+    author_abs_url = furl(OSF_DOMAIN)
+    author_abs_url.path.add(comment.user.url)
 
     return {
         'id': comment._id,
         'author': User.load(comment.user._id),
+        'author_path': author_abs_url.url,
         'date_created': comment.date_created,
         'date_modified': comment.date_modified,
         'content': comment.content,

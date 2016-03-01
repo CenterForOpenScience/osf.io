@@ -27,6 +27,9 @@ ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
 
+with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
+    VERSION = json.load(fobj)['version']
+
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
@@ -88,14 +91,14 @@ USE_CDN_FOR_CLIENT_LIBS = True
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 SUPPORT_EMAIL = 'support@osf.io'
+
+# SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
-# Mandrill
-MANDRILL_USERNAME = None
-MANDRILL_PASSWORD = None
-MANDRILL_MAIL_SERVER = None
+# OR, if using Sendgrid's API
+SENDGRID_API_KEY = None
 
 # Mailchimp
 MAILCHIMP_API_KEY = None
@@ -216,6 +219,9 @@ PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
+KEEN_PROJECT_ID = None
+KEEN_WRITE_KEY = None
+
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
 
@@ -268,7 +274,7 @@ MFR_SERVER_URL = 'http://localhost:7778'
 ###### ARCHIVER ###########
 ARCHIVE_PROVIDER = 'osfstorage'
 
-MAX_ARCHIVE_SIZE = 1024 ** 3  # == math.pow(1024, 3) == 1 GB
+MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
 MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
@@ -330,3 +336,5 @@ DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
 
 PREREG_ADMIN_TAG = "prereg_admin"
+
+ENABLE_INSTITUTIONS = False

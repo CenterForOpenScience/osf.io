@@ -14,7 +14,39 @@
 </div>
 %endif
 
+%if campaign == "institution" and enable_institutions:
+<div class="text-center m-t-lg">
+    <h3>OSF for Institutions </h3>
+    <hr>
+    <p>
+      If your institution has partnered with the Open Science Framework, please
+        select its name below and sign in with your institutional credentials.
+    </p>
+</div>
+%endif
 <div class="row m-t-xl">
+    %if campaign == "institution" and enable_institutions:
+    <div class="col-sm-6 col-sm-offset-3 toggle-box toggle-box-active">
+        <h3 class="m-b-lg"> Login through institution</h3>
+        <div id="inst">
+            <div class="form-group">
+                <label for="selectedInst" class="control-label">Select Institution</label>
+                <select id="selectedInst" class="form-control" data-bind="value: selectedInst, options: instNames"></select>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                    <button data-bind="click: instLogin" class="btn btn-success pull-right">Sign in</button>
+                </div>
+            </div>
+            <div class="form-group" style="padding-top: 15px">
+                <div class="text-center m-t-lg">
+                    <p>For non-institutional login, click <a href="/login/">here</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    %endif
+    %if campaign != "institution" or not enable_institutions:
     <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
         <form
             id="logInForm"
@@ -173,18 +205,23 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
-                    <input type="hidden" id="campaign" value="${campaign or ''}" />
                     <button type="submit" class="btn pull-right btn-success ">Create account</button>
                 </div>
             </div>
         </form>
     </div>
+    %endif
 </div>
 
 </%def>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            'campaign': ${campaign or '' | sjson, n}
+        });
+    </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
 </%def>
 

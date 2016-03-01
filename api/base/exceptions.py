@@ -219,3 +219,7 @@ class InvalidModelValueError(JSONAPIException):
 class TargetNotSupportedError(Exception):
     """Raised if a TargetField is used for a resource that isn't supported."""
     pass
+
+class RelationshipPostMakesNoChanges(Exception):
+    """Raised when a post is on a relationship that already exists, so view can return a 204"""
+    pass

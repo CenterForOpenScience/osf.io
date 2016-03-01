@@ -107,14 +107,19 @@ class StoredFileNode(StoredObject):
             ('path', pymongo.ASCENDING),
             ('node', pymongo.ASCENDING),
             ('is_file', pymongo.ASCENDING),
-            ('provider', pymongo.ASCENDING)
+            ('provider', pymongo.ASCENDING),
         ]
     }, {
         'unique': False,
         'key_or_list': [
             ('node', pymongo.ASCENDING),
             ('is_file', pymongo.ASCENDING),
-            ('provider', pymongo.ASCENDING)
+            ('provider', pymongo.ASCENDING),
+        ]
+    }, {
+        'unique': False,
+        'key_or_list': [
+            ('parent', pymongo.ASCENDING),
         ]
     }]
 
@@ -567,11 +572,12 @@ class File(FileNode):
         version.update_metadata(data, save=False)
 
         # Transform here so it can be sortted on later
-        data['modified'] = parse_date(
-            data['modified'] or '',  # None breaks things to pass a string
-            ignoretz=True,
-            default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
-        )
+        if data['modified'] is not None and data['modified'] != '':
+            data['modified'] = parse_date(
+                data['modified'],
+                ignoretz=True,
+                default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
+            )
 
         # if revision is none then version is the latest version
         # Dont save the latest information
@@ -732,7 +738,7 @@ class FileVersion(StoredObject):
         # If its are not in this callback it'll be in the next
         self.size = self.metadata.get('size', self.size)
         self.content_type = self.metadata.get('contentType', self.content_type)
-        if self.metadata.get('modified') is not None:
+        if self.metadata.get('modified'):
             # TODO handle the timezone here the user that updates the file may see an
             # Incorrect version
             self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)

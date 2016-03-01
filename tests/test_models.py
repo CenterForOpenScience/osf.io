@@ -60,7 +60,7 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, DashboardFactory, FolderFactory,
-    NodeLicenseRecordFactory
+    NodeLicenseRecordFactory, InstitutionFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -2618,18 +2618,32 @@ class TestProject(OsfTestCase):
         link.save()
         assert_in(link, self.project.private_links)
 
-    def test_has_anonymous_link(self):
-        link1 = PrivateLinkFactory(anonymous=True, key="link1")
+    @mock.patch('framework.auth.core.Auth.private_link')
+    def test_has_anonymous_link(self, mock_property):
+        mock_property.return_value(mock.MagicMock())
+        mock_property.anonymous = True
+
+        link1 = PrivateLinkFactory(key="link1")
         link1.nodes.append(self.project)
         link1.save()
+
         user2 = UserFactory()
         auth2 = Auth(user=user2, private_key="link1")
+
+        assert_true(has_anonymous_link(self.project, auth2))
+
+    @mock.patch('framework.auth.core.Auth.private_link')
+    def test_has_no_anonymous_link(self, mock_property):
+        mock_property.return_value(mock.MagicMock())
+        mock_property.anonymous = False
+
         link2 = PrivateLinkFactory(key="link2")
         link2.nodes.append(self.project)
         link2.save()
+
         user3 = UserFactory()
         auth3 = Auth(user=user3, private_key="link2")
-        assert_true(has_anonymous_link(self.project, auth2))
+
         assert_false(has_anonymous_link(self.project, auth3))
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
@@ -2857,7 +2871,7 @@ class TestProject(OsfTestCase):
         creator = UserFactory()
         project = ProjectFactory(creator=creator)
         contrib = UserFactory()
-        project.add_contributor(contrib, auth=Auth(user=creator))
+        project.add_contributor(contrib, permissions=['read', 'write', 'admin'], auth=Auth(user=creator))
         project.save()
         assert_in(creator, project.contributors)
         # Creator is removed from project
@@ -3072,11 +3086,11 @@ class TestProject(OsfTestCase):
         )
         assert_true(registration.is_pending_embargo)
 
-        func = lambda: registration.set_privacy('public', auth=self.auth)
-        assert_raises(NodeStateError, func)
+        with assert_raises(NodeStateError):
+            registration.set_privacy('public', auth=self.auth)
         assert_false(registration.is_public)
 
-    def test_set_privacy_cancels_active_embargo_for_registration(self):
+    def test_set_privacy_can_not_cancel_active_embargo_for_registration(self):
         registration = RegistrationFactory(project=self.project)
         registration.embargo_registration(
             self.user,
@@ -3089,12 +3103,8 @@ class TestProject(OsfTestCase):
         registration.embargo.approve_embargo(self.user, approval_token)
         assert_false(registration.is_pending_embargo)
 
-        registration.set_privacy('public', auth=self.auth)
-        registration.save()
-        assert_false(registration.is_pending_embargo)
-        assert_equal(registration.embargo.state, Embargo.REJECTED)
-        assert_true(registration.is_public)
-        assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
+        with assert_raises(NodeStateError):
+            registration.set_privacy('public', auth=self.auth)
 
     def test_set_description(self):
         old_desc = self.project.description
@@ -3972,6 +3982,15 @@ class TestRegisterNode(OsfTestCase):
 
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)
+
+    def test_registration_gets_institution_affiliation(self):
+        node = NodeFactory()
+        institution = InstitutionFactory()
+        node.primary_institution = institution
+        node.save()
+        registration = RegistrationFactory(project=node)
+        assert_equal(registration.primary_institution._id, node.primary_institution._id)
+        assert_equal(set(registration.affiliated_institutions), set(node.affiliated_institutions))
 
 class TestNodeLog(OsfTestCase):
 
