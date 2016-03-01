@@ -28,10 +28,12 @@ class InstitutionMixin(object):
     institution_lookup_url_kwarg = 'institution_id'
 
     def get_institution(self):
+
         inst = get_object_or_error(
             Node,
-            self.kwargs[self.institution_lookup_url_kwarg],
-            display_name='institution'
+            Q('institution_id', 'eq', self.kwargs[self.institution_lookup_url_kwarg]),
+            display_name='institution',
+            allow_institution=True
         )
         return Institution(inst)
 
