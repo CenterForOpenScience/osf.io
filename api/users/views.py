@@ -12,14 +12,16 @@ from website.models import User, Node
 
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
+from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
+from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.nodes.serializers import NodeSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 
-from .serializers import UserSerializer, UserDetailSerializer
-from .permissions import ReadOnlyOrCurrentUser
+from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
+from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
 
 
 class UserMixin(object):
@@ -425,3 +427,44 @@ class UserRegistrations(UserNodes):
             Q('is_deleted', 'ne', True) &
             Q('is_registration', 'eq', True)
         )
+
+
+class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyOrCurrentUserRelationship
+    )
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserInstitutionsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'users'
+    view_name = 'user-institutions-relationship'
+
+    def get_object(self):
+        user = self.get_user(check_permissions=False)
+        obj = {
+            'data': user.affiliated_institutions,
+            'self': user
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_institutions = {inst._id for inst in user.affiliated_institutions}
+
+        # DELETEs normally dont get type checked
+        # not the best way to do it, should be enforced everywhere, maybe write a test for it
+        for val in data:
+            if val['type'] != self.serializer_class.Meta.type_:
+                raise Conflict()
+        for val in data:
+            if val['id'] in current_institutions:
+                user.remove_institution(val['id'])
+        user.save()

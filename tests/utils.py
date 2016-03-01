@@ -152,6 +152,8 @@ class MockAuth(object):
     def __init__(self, user):
         self.user = user
         self.logged_in = True
+        self.private_key = None
+        self.private_link = None
 
 mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
 
