@@ -384,6 +384,31 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
+@file_signals.file_updated.connect
+def addon_delete_file_node(self, node, event_type, payload, user=None):
+    if event_type == 'file_removed':
+        provider = payload['provider']
+        path = payload['metadata']['path']
+        materialized_path = payload['metadata']['materialized']
+        if path.endswith('/'):
+            folder_children = FileNode.resolve_class(provider, FileNode.FILE).find(
+                                Q('provider', 'eq', provider) &
+                                Q('node', 'eq', node) &
+                                Q('materialized_path', 'startswith', materialized_path))
+
+            for item in folder_children:
+                if item.kind == 'file' and not TrashedFileNode.load(item._id):
+                    item.delete()
+        else:
+            try:
+                file_node = FileNode.resolve_class(provider, FileNode.FILE).find_one(Q('node', 'eq', node) & Q('materialized_path', 'eq', materialized_path))
+            except NoResultsFound:
+                file_node = None
+
+            if file_node and not TrashedFileNode.load(file_node._id):
+                file_node.delete()
+
+
 @must_be_valid_project
 def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
@@ -514,6 +539,11 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if version is None:
         if file_node.get_guid():
             # If this file has been successfully view before but no longer exists
+
+            # Move file to trashed file node
+            if not TrashedFileNode.load(file_node._id):
+                file_node.delete()
+
             # Show a nice error message
             return addon_deleted_file(file_node=file_node, **kwargs)
 
