@@ -52,9 +52,9 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.page = ko.observable(self.REMOVE);
         self.pageTitle = ko.computed(function() {
             return {
-                remove: 'Delete Contributor',
-                removeAll: 'Delete Contributor',
-                removeNoChildren: 'Delete Contributor'
+                remove: 'Remove Contributor',
+                removeAll: 'Remove Contributor',
+                removeNoChildren: 'Remove Contributor'
             }[self.page()];
         });
         self.userName = ko.observable(userName);
@@ -78,7 +78,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                     var node = nodesOriginalLocal[key];
                     var contributorOnNode = false;
                     //User cannot modify the node without admin permissions.
-                    if (node.isAdmin || self.removeSelf) {
+                    if (node.isAdmin || self.removeSelf()) {
                         for (var i = 0; i < node.contributors.length; i++) {
                             if (node.contributors[i].id === self.contributorToRemove().id) {
                                 contributorOnNode = true;
