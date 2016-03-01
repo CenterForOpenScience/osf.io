@@ -672,6 +672,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+        'ContainerStrategies': {
+        'name': 'Container Strategies for Data & Software Preservation',
+        'info_url': 'https://daspos.crc.nd.edu/index.php/workshops/container-strategies-for-data-software-preservation-that-promote-open-science',
+        'logo_url': 'http://s9.postimg.org/rmnm36ndb/daspos_banner.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 def populate_conferences():
