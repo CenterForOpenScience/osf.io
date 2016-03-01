@@ -101,8 +101,6 @@ var KeenTracker = oop.defclass({
             pageView.user = this.currentUser;
         }
 
-        console.log(pageView);
-
         this.keenClient.addEvent('pageviews', pageView, function(err){
             if(err){
                 throw new Error('Error sending Keen data: ' + err);
