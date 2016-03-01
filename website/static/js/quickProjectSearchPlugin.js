@@ -126,29 +126,8 @@ var QuickSearchProject = {
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
-            return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name;
-        };
-
-        // Formats contrib family names for display
-        self.getContributors = function (node, number) {
-            if (number === 1) {
-                return self.getFamilyName(0, node);
-            }
-            else if (number === 2) {
-                return self.getFamilyName(0, node) + ' and ' +
-                    self.getFamilyName(1, node);
-            }
-            else if (number === 3) {
-                return self.getFamilyName(0, node) + ', ' +
-                    self.getFamilyName(1, node) + ', and ' +
-                    self.getFamilyName(2, node);
-            }
-            else {
-                return self.getFamilyName(0, node) + ', ' +
-                    self.getFamilyName(1, node) + ', ' +
-                    self.getFamilyName(2, node) + ' + ' + (number - 3);
-            }
-
+            var attributes = node.embeds.contributors.data[i].embeds.users.data.attributes;
+            return $osf.findContribName(attributes)
         };
 
          // Formats date for display
