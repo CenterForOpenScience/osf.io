@@ -6,7 +6,7 @@ from framework.exceptions import PermissionsError
 from website.models import Node
 from api.base.serializers import LinksField, RelationshipField, DevOnly, JSONAPIRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, relationship_diff
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
 
@@ -46,7 +46,7 @@ class CollectionSerializer(JSONAPISerializer):
         type_ = 'collections'
 
     def get_absolute_url(self, obj):
-        return obj.absolute_url
+        return absolute_reverse('collections:collection-detail', kwargs={'collection_id': obj._id})
 
     def get_node_links_count(self, obj):
         return len(obj.nodes_pointer)
@@ -161,6 +161,9 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
         collection = instance['self']
 
         add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
+
+        if not len(add):
+            raise RelationshipPostMakesNoChanges
 
         for node in add:
             collection.add_pointer(node, auth)

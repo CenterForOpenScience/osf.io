@@ -21,6 +21,9 @@
                     % endif
                 % endif
                 <h2 class="node-title">
+                    % if node['institution']['name'] and enable_institutions:
+                        <img class="img-circle" height="75" width="75" id="instLogo" src="${node['institution']['logo_path']}">
+                    % endif
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
@@ -108,7 +111,7 @@
                     Contributors:
                 % endif
 
-                % if node['anonymous'] and not node['is_public']:
+                % if node['anonymous']:
                     <ol>Anonymous Contributors</ol>
                 % else:
                     <ol>
@@ -120,6 +123,14 @@
                     </ol>
                 % endif
                 </div>
+                % if enable_institutions:
+                    % if user['is_contributor']:
+                        <a class="link-dashed" href="${node['url']}settings/#configureInstitutionAnchor" id="institution">Affiliated Institution:</a>
+                    % else:
+                        Affiliated institution:
+                    % endif
+                    <span class="text-muted"> ${node['institution']['name']} </span>
+                % endif
                 % if node['is_fork']:
                     <p>
                     Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
@@ -194,6 +205,7 @@
                       </license-picker>
                     </p>
                  % endif
+
             </div>
         </div>
 
