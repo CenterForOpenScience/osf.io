@@ -25,15 +25,20 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
         destination_node = node
 
         if (source.get('provider') == destination.get('provider') == 'osfstorage') and source_node._id != destination_node._id:
-            old_file = FileNode.load(source.get('path').strip('/'))
-            new_file = FileNode.resolve_class(destination.get('provider'), FileNode.FILE).get_or_create(destination_node, destination.get('path'))
+            obj = FileNode.load(source.get('path').strip('/'))
+            update_folder_contents([obj], source_node, destination_node)
 
-            Comment.update(Q('root_target', 'eq', old_file._id), data={'node': destination_node})
 
+def update_folder_contents(children, source_node, destination_node):
+    for item in children:
+        if not item.is_file:
+            update_folder_contents(item.children, source_node, destination_node)
+        else:
+            Comment.update(Q('root_target', 'eq', item._id), data={'node': destination_node})
             # update node record of commented files
-            if old_file._id in source_node.commented_files:
-                destination_node.commented_files[new_file._id] = source_node.commented_files[old_file._id]
-                del source_node.commented_files[old_file._id]
+            if item._id in source_node.commented_files:
+                destination_node.commented_files[item._id] = source_node.commented_files[item._id]
+                del source_node.commented_files[item._id]
                 source_node.save()
                 destination_node.save()
 
