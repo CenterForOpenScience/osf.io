@@ -92,3 +92,8 @@ h3.login-tagline {
     opacity: 0.25;
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
 }
+
+a {
+    color: #43a1f2;
+    text-decoration: none;
+}

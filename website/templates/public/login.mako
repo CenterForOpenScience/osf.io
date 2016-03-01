@@ -17,29 +17,30 @@
         <div class="container text-center">
             <div class="visible-xs-block visible-sm-block visible-md-block"></div>
             %if campaign == "institution" and enable_institutions:
-
-            <h1 class="hero-brand">OSF For Institutions</h1>
+                <h1 class="hero-brand">OSF For Institutions</h1>
             %else:
-            <h1 class="hero-brand">Open Science Framework</h1>
+                <h1 class="hero-brand">Open Science Framework</h1>
             %endif
 
-            <h3 class="login-tagline">A scholarly commons to connect the entire research cycle</h3>
+            %if campaign == "prereg":
+                <h3>Preregistration Challenge </h3>
+            %else:
+                <h3 class="login-tagline">A scholarly commons to connect the entire research cycle</h3>
+            %endif
+
         </div>
 %if campaign == "prereg":
 <div class="text-center m-t-lg">
-    <h3>Preregistration Challenge </h3>
-    <hr>
-    <p>
+    <h4>
       Please login to the Open Science Framework or create a free account to continue.
-    </p>
+    </h4>
 </div>
 %endif
 
 %if campaign == "institution" and enable_institutions:
 <div class="text-center m-t-lg">
     <h4>
-      If your institution has partnered with the Open Science Framework, please
-        select its name below and sign in with your institutional credentials.
+      Please select your institution below and sign in with your institutional credentials.
     </h4>
 </div>
 %endif
@@ -116,15 +117,6 @@
     %endif
 
     %if (campaign != "institution" or not enable_institutions) and campaign != "merge_user":
-
-      <div class="text-center m-t-lg">
-          <h3>Add an email to your account </h3>
-          <hr>
-          <p>
-              Please login to the Open Science Framework or create a free account to continue.
-          </p>
-      </div>
-
       <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
           <form
             id="logInForm"
@@ -135,7 +127,6 @@
         >
             <h3 class="m-b-lg"> Login </h3>
             <div class="form-group">
-                <label for="inputEmail3" class="col-sm-3 control-label">Email</label>
                 <div class="col-sm-9">
                     <input
                         type="email"
@@ -149,7 +140,6 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="inputPassword3" class="col-sm-3 control-label">Password</label>
                     <div class="col-sm-9">
                     <input
                         type="password"
