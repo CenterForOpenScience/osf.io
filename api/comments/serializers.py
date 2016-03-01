@@ -74,10 +74,14 @@ class CommentSerializer(JSONAPISerializer):
         user = self.context['request'].user
         if user.is_anonymous():
             return False
-        return obj.user._id == user._id
+        return obj.user._id == user._id and obj.node.can_comment(Auth(user))
 
     def get_has_children(self, obj):
         return Comment.find(Q('target', 'eq', obj)).count() > 0
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse('comments:comment-detail', kwargs={'comment_id': obj._id})
+        # return self.data.get_absolute_url()
 
     def update(self, comment, validated_data):
         assert isinstance(comment, Comment), 'comment must be a Comment'
