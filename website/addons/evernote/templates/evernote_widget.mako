@@ -2,24 +2,26 @@
 <div id="evernoteWidget">
   <div class="evernote-test">Notebook: ${folder_name}</div>
   <div class="col-md-12">
-    <%doc>
-    <div class="row">
-      <button class="btn btn-success" data-bind="click: openAddDialog"></button>
-    </div>
-    </%doc>
+    <table id="evernote-notes-list" class="display" cellspacing="0" width="100%">
+          <thead>
+              <tr>
+                  <th>Edit</th>
+                  <th>Delete</th>
+                  <th>Title</th>
+              </tr>
+          </thead>
 
-    <div class="row">
-        <div data-bind="foreach: notes">
-          <p>
-            <button class="btn btn-default btn-evernote" data-bind="click: $parent.openEditDialog"
-                title="Open Edit Dialog"></button>
-            <button class="btn btn-danger btn-evernote" data-bind="click: $parent.openDeleteNoteDialog"
-                title="Open Delete Note Dialog"></button>
-            <span data-bind="text: title"></span>
-          </p>
-        </div>
-        <div id="evernote-notedisplay"></div>
-      </div>
+          <tbody data-bind="foreach: notes">
+              <tr>
+                <td><button class="btn btn-default btn-evernote" data-bind="click: $parent.openEditDialog"
+                    title="Open Edit Dialog"></button></td>
+                <td><button class="btn btn-danger btn-evernote" data-bind="click: $parent.openDeleteNoteDialog"
+                    title="Open Delete Note Dialog"></button></td>
+                <td><span data-bind="text: title"></span></td>
+              </tr>
+          </tbody>
 
+    </table>
+    <div id="evernote-notedisplay"></div>
   </div>
 </div>
