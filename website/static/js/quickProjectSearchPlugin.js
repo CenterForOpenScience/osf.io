@@ -401,14 +401,14 @@ var QuickSearchProject = {
                         ctrl.filter('');
                         document.getElementById('searchQuery').value = '';
                         ctrl.quickSearch();
-                    }},  m('button', m('i', {'class': 'fa fa-times'})))
+                    }},  m('button', '×'))
                 ]);
             }
         }
 
         function displayNodes() {
             if (ctrl.eligibleNodes().length ===0 && ctrl.filter() != null) {
-                return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-10 col-sm-offset-1'},
+                return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2'},
                     m('div', {'class': 'row'}, [
                         m('div', {'class': 'col-sm-1'}),
                         m('div', {'class': 'col-sm-11'},[m('p', {'class' :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
@@ -424,8 +424,8 @@ var QuickSearchProject = {
 
         function projectView(project) {
             var numContributors = project.embeds.contributors.links.meta.total;
-            return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
-                m('div', {'class': 'row node-styling', onclick: function(){{ctrl.nodeDirect(project);
+            return m('div', {'class': 'm-v-sm'}, m('div', {'class': 'col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2'},
+                m('div', {'class': ' row node-styling', onclick: function(){{ctrl.nodeDirect(project);
                 }}}, [
                     m('div', {'class': 'col-sm-6 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
                     m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 text-muted p-v-xs'}, $osf.contribNameFormat(project, numContributors, ctrl.getFamilyName)),
@@ -453,7 +453,7 @@ var QuickSearchProject = {
         }
 
         function resultsFound(){
-            return m('div', {'class': 'container quick-project'}, [
+            return m('div', {'class': 'quick-project'}, [
                 m('div', {'class': 'row'},
                     m('div', {'class': 'col-sm-3'}),
                     m('div.m-b-sm.text-center', {'class': 'col-sm-6'}, [
@@ -464,11 +464,11 @@ var QuickSearchProject = {
 
                 m('div', {class: 'row'},
                     m('div.text-center.m-b-sm', {'class': 'col-sm-12'},
-                    m('h5', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')
+                    m('p', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')
                     ))
                 ),
 
-                m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
+                m('div', {'class': 'row'}, m('div', {'class': 'col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2'},
                     m('div.node-col-headers', {'class': 'row'}, [
                         m('div.p-v-xs.f-w-xl', {'class': 'col-sm-6 col-md-6 col-lg-5'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
                         m('div.f-w-xl.p-v-xs', {'class': 'col-sm-3 col-md-3 col-lg-4'}, 'Contributors'),

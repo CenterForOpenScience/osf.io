@@ -19,7 +19,6 @@ $(document).ready(function(){
             return [
                 m('.quickSearch', m('.container.p-t-lg',
                     [
-                        m('h3', 'My Projects'),
                         m.component(quickSearchProject, {})
                     ]
                 )),
