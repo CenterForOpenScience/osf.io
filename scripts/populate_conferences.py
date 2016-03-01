@@ -662,7 +662,7 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-        'WSAN2016': {
+    'WSAN2016': {
         'name': 'WSAN2016 Erasmus University Rotterdam',
         'info_url': 'http://www.humane.eu/wsan/',
         'logo_url': None,
@@ -670,6 +670,16 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
         'poster': True,
+        'talk': True,
+    },
+    'CNI2016': {
+        'name': 'Coalition for Networked Information (CNI) Spring Membership Meeting 2016',
+        'info_url': 'https://www.cni.org/events/membership-meetings/upcoming-meeting/spring-2016',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
         'talk': True,
     },
 }
