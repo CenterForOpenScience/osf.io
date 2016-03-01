@@ -392,8 +392,7 @@ var QuickSearchProject = {
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div.m-v-sm', {'class' : 'input-group'}, [
-                    m('span', {'class': 'input-group-addon'}, m('i', {'class': 'fa fa-search'})),
+                return m('div.m-v-sm.input-group.quick-search-input', [
                     m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
                         ctrl.filter(search.target.value);
                         ctrl.quickSearch();}

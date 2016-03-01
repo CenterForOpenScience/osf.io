@@ -79,3 +79,15 @@
 .blank-line {
     margin-bottom: 15px;
 }
+
+.quick-search-input input {
+    height: 38px;
+    border: none;
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
+}
+.quick-search-input .input-group-addon {
+    border: 1px solid #fff;
+    background: #f5f5f5;
+
+}
