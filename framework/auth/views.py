@@ -197,8 +197,9 @@ def confirm_email_get(auth=None, **kwargs):
     for token in user.email_verifications:
         if user.confirm_token(token):
             if user.email_verifications[token]['confirmed']:
+                user_merge = True
                 try:
-                    user_merge = User.find_one(Q('emails', 'iexact', user.email_verifications[token]['email']))
+                    User.find_one(Q('emails', 'iexact', user.email_verifications[token]['email']))
                 except NoResultsFound:
                     user_merge = False
 

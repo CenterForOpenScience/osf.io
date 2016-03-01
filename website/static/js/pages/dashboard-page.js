@@ -41,6 +41,8 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
+var confirmedEmailURL = window.contextVars.confirmedEmailURL;
+var removeConfirmedEmailURL = window.contextVars.removeConfirmedEmailURL;
 
 function confirm_emails(emails) {
     if (emails.length > 0) {
@@ -49,11 +51,9 @@ function confirm_emails(emails) {
             title: 'Merge Account?',
             message: 'You want to merge, ' + email[0].address + ' motherscratcher?',
             callback: function(confirmed) {
-                var url;
                 if (confirmed) {
-                    url = '/api/v1/dashboard/confirmed_emails/';
                     $osf.putJSON(
-                        url,
+                        confirmedEmailURL,
                         email[0]
                     ).done(function() {
                         confirm_emails(emails);
@@ -63,10 +63,8 @@ function confirm_emails(emails) {
                     });
                 }
                 else {
-                    debugger;
-                    url = '/api/v1/dashboard/remove_confirmed_emails/';
                     $osf.putJSON(
-                        url,
+                        removeConfirmedEmailURL,
                         email[0]
                     ).done(function() {
                         confirm_emails(emails);
@@ -88,10 +86,8 @@ function confirm_emails(emails) {
 }
 
 
-var url = '/api/v1/dashboard/confirmed_emails/';
-var i;
 var confirmed_emails = [];
-$.getJSON(url, function(response) {
+$.getJSON(confirmedEmailURL, function(response) {
         confirm_emails(response);
  });
 
