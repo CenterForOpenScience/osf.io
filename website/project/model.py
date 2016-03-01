@@ -2178,7 +2178,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.tags = self.tags
         registered.piwik_site_id = None
         registered.primary_institution = self.primary_institution
-        registered.affiliated_institutions = self.affiliated_institutions
+        registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
 
@@ -3423,19 +3423,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @classmethod
     def find(cls, query, allow_institution=False, **kwargs):
         if not allow_institution:
-            query = query & Q('is_institution', 'eq', False)
+            query = (query & Q('is_institution', 'eq', False)) if query else Q('is_institution', 'eq', False)
         return super(Node, cls).find(query, **kwargs)
 
     @classmethod
     def find_one(cls, query, allow_institution=False, **kwargs):
         if not allow_institution:
-            query = query & Q('is_institution', 'eq', False)
+            query = (query & Q('is_institution', 'eq', False)) if query else Q('is_institution', 'eq', False)
         return super(Node, cls).find_one(query, **kwargs)
 
-    def find_by_institution(self, inst, query=None):
+    @classmethod
+    def find_by_institution(cls, inst, query=None):
         inst_node = inst.node
         query = query & Q('_primary_institution', 'eq', inst_node)
-        self.__class__.find(query, allow_institution=True)
+        return cls.find(query, allow_institution=True)
 
 
     # Primary institution node is attached to
@@ -3445,39 +3446,44 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def primary_institution(self):
         return Institution(self._primary_institution) if self._primary_institution else None
 
+    @primary_institution.setter
+    def primary_institution(self, institution):
+        self._primary_institution = institution.node if institution else None
+
     _affiliated_institutions = fields.ForeignField('node', list=True)
 
     @property
     def affiliated_institutions(self):
         return [Institution(node) for node in self._affiliated_institutions]
 
-    def add_primary_institution(self, user, inst):
+    def add_primary_institution(self, user, inst, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if inst.node == self.primary_institution:
             return False
         previous = Institution(self.primary_institution)
-        self.primary_institution = inst.node
-        if inst not in self.affiliated_institutions:
+        self.primary_institution = inst
+        if inst.node not in self.affiliated_institutions:
             self.affiliated_institutions.append(inst.node)
-        self.add_log(
-            action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
-            params={
-                'node': self._primary_key,
-                'institution': {
-                    'id': inst._id,
-                    'name': inst.name
+        if log:
+            self.add_log(
+                action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
+                params={
+                    'node': self._primary_key,
+                    'institution': {
+                        'id': inst._id,
+                        'name': inst.name
+                    },
+                    'previous_institution': {
+                        'id': previous._id if previous else None,
+                        'name': previous.name if previous else 'None'
+                    }
                 },
-                'previous_institution': {
-                    'id': previous._id if previous else None,
-                    'name': previous.name if previous else 'None'
-                }
-            },
-            auth=Auth(user)
-        )
+                auth=Auth(user)
+            )
         return True
 
-    def remove_primary_institution(self, user):
+    def remove_primary_institution(self, user, log=True):
         inst = self.primary_institution
         if not inst:
             return False
@@ -3485,17 +3491,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if inst in self.affiliated_institutions:
             self.affiliated_institutions.remove(inst)
         inst = Institution(inst)
-        self.add_log(
-            action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
-            params={
-                'node': self._primary_key,
-                'institution': {
-                    'id': inst._id,
-                    'name': inst.name
-                }
-            },
-            auth=Auth(user)
-        )
+        if log:
+            self.add_log(
+                action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
+                params={
+                    'node': self._primary_key,
+                    'institution': {
+                        'id': inst._id,
+                        'name': inst.name
+                    }
+                },
+                auth=Auth(user)
+            )
         return True
 
     def institution_url(self):
@@ -3510,7 +3517,8 @@ class Institution():
         '_id': 'institution_id',
         'auth_url': 'institution_auth_url',
         'domain': 'institution_domain',
-        'name': 'title'
+        'name': 'title',
+        'logo_name': 'institution_logo_name'
     }
 
     def __init__(self, node):
@@ -3520,6 +3528,9 @@ class Institution():
 
     def __getattr__(self, item):
         return getattr(self.node, item)
+
+    def __eq__(self, other):
+        return self._id == other._id
 
     @classmethod
     def find(cls, query, **kwargs):
@@ -3548,14 +3559,6 @@ class Institution():
             return cls(node)
         except:
             return None
-
-    '''
-    _id = fields.StringField(index=True, unique=True, primary=True)
-    name = fields.StringField(required=True)
-    logo_name = fields.StringField(required=True)
-    auth_url = fields.StringField(required=False, validate=URLValidator())
-    description = fields.StringField()
-    '''
 
     def __repr__(self):
         return '<Institution ({}) with id \'{}\'>'.format(self.name, self._id)

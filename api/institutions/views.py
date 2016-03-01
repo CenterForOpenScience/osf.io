@@ -28,7 +28,6 @@ class InstitutionMixin(object):
     institution_lookup_url_kwarg = 'institution_id'
 
     def get_institution(self):
-
         inst = get_object_or_error(
             Node,
             Q('institution_id', 'eq', self.kwargs[self.institution_lookup_url_kwarg]),
@@ -187,7 +186,7 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         inst = self.get_institution()
-        query = Q('affiliated_institutions', 'eq', inst)
+        query = Q('_affiliated_institutions', 'eq', inst.node)
         return query
 
     # overrides RetrieveAPIView

@@ -527,22 +527,23 @@ class InstitutionFactory(ProjectFactory):
 
 
     def _build(cls, target_class, *args, **kwargs):
+        from random import randint
         '''Build an object without saving it.'''
         inst = ProjectFactory._build(target_class, *args, **kwargs)
         inst.is_institution = True
-        inst.institution_id = '1'
-        inst.institution_name = '123131'
+        inst.institution_id = str(randint(1, 20000))
+        inst.institution_name = str(randint(10, 20000))
         inst.institution_logo_name = 'logo.img'
         inst.institution_auth_url = 'http://thisIsUrl.biz'
-        inst.save()
         return Institution(inst)
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
+        from random import randint
         inst = ProjectFactory._create(target_class, *args, **kwargs)
         inst.is_institution = True
-        inst.institution_id = '1'
-        inst.institution_name = '13123'
+        inst.institution_id = str(randint(1, 20000))
+        inst.institution_name = str(randint(10, 20000))
         inst.institution_logo_name = 'logo.img'
         inst.institution_auth_url = 'http://thisIsUrl.biz'
         inst.save()
