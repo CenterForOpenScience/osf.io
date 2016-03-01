@@ -3523,18 +3523,20 @@ class Institution():
 
     @classmethod
     def find(cls, query, **kwargs):
-        for node in query.nodes:
-            replacement_attr = cls.institution_node_translator.get(node.attribute, False)
-            node.attribute = replacement_attr if False else node.attribute
+        if getattr(query, 'nodes', False):
+            for node in query.nodes:
+                replacement_attr = cls.institution_node_translator.get(node.attribute, False)
+                node.attribute = replacement_attr if False else node.attribute
         query = query & Q('is_institution', 'eq', True)
         nodes = Node.find(query, allow_institution=True, **kwargs)
         return [cls(node) for node in nodes]
 
     @classmethod
     def find_one(cls, query, **kwargs):
-        for node in query.nodes:
-            replacement_attr = cls.institution_node_translator.get(node.attribute, False)
-            node.attribute = replacement_attr if False else node.attribute
+        if getattr(query, 'nodes', False):
+            for node in query.nodes:
+                replacement_attr = cls.institution_node_translator.get(node.attribute, False)
+                node.attribute = replacement_attr if False else node.attribute
         query = query & Q('is_institution', 'eq', True)
         node = Node.find_one(query, allow_institution=True, **kwargs)
         return cls(node)
