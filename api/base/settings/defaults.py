@@ -49,7 +49,9 @@ INSTALLED_APPS = (
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
-    'dsn': osf_settings.SENTRY_DSN
+    'tags': {'App': 'api'},
+    'dsn': osf_settings.SENTRY_DSN,
+    'release': osf_settings.VERSION,
 }
 
 BULK_SETTINGS = {

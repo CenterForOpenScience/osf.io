@@ -9,7 +9,7 @@ from raven import Client
 from website import settings
 
 logger = logging.getLogger(__name__)
-sentry = Client(dsn=settings.SENTRY_DSN)
+sentry = Client(dsn=settings.SENTRY_DSN, release=settings.VERSION, tags={'App': 'celery'})
 
 # statuses
 FAILED = 'failed'
