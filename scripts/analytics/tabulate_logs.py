@@ -32,11 +32,14 @@ reducer = bson.Code('''function(key, values) {
 }''')
 
 
+out = {'replace': settings.TABULATE_LOGS_RESULTS_COLLECTION}
+
+
 def run_map_reduce(**kwargs):
     return database['nodelog'].map_reduce(
         mapper,
         reducer,
-        settings.TABULATE_LOGS_RESULTS_COLLECTION,
+        out,
         **kwargs
     )
 
