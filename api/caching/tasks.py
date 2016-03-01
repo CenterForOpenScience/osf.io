@@ -1,11 +1,10 @@
 import urlparse
 
 import requests
-from celery.utils.log import get_task_logger
-
+import logging
 from api.base import settings
 
-logger = get_task_logger(__name__)
+logger = logging.getLogger(__name__)
 
 def get_varnish_servers():
     #  TODO: this should get the varnish servers from HAProxy or a setting
