@@ -3,8 +3,11 @@
 require('./evernote.css');
 
 var $ = require('jquery');
+// http://stackoverflow.com/a/34255097/7782 --> why datatables.net and not datatables-dt
+var dt = require( 'datatables.net' )();
 var ko = require('knockout');
 var $osf = require('js/osfHelpers');
+
 
 
 var EvernoteWidget = function(urls) {
@@ -14,6 +17,14 @@ var EvernoteWidget = function(urls) {
     self.urls = urls;
 
     self.notes = ko.observableArray();
+    
+    // subscribe to changes in notes?
+    self.notes.subscribe(function(changes) {
+      console.log(changes);
+    }, null, "arrayChange");
+
+
+
     self.fetchNotes = $.getJSON.bind(null, urls.notes, function(notes) {
        self.notes(notes);
     });
@@ -24,6 +35,7 @@ var EvernoteWidget = function(urls) {
 
  EvernoteWidget.prototype.init = function() {
     this.fetchNotes();
+
  };
 
  EvernoteWidget.prototype.openEditDialog = function (note, event) {
@@ -54,6 +66,12 @@ if ($('#evernoteWidget').length) {
 
     // apply tooltip to all btn-evernote
     $(".btn-evernote").tooltip()
+
+    $(document).ready(function() {
+      $('#evernote-notes-list').DataTable( {
+          responsive: true
+      } );
+} );
 
   });
 
