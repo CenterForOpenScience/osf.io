@@ -57,6 +57,15 @@
     margin-bottom: -15px;
 }
 
+.org-logo {
+    display: flex;
+    justify-content: center;
+}
+
+.org-logo div{
+    align-self: center;
+}
+
 .org-logo img{
     padding: 20px 20% 0 20%;
 }
