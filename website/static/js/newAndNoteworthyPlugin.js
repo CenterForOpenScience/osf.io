@@ -52,7 +52,7 @@ var NewAndNoteworthy = {
             promise.then(function(result){
                 var contribNames = [];
                 result.data.forEach(function (contrib){
-                    contribNames.push(contrib.embeds.users.data.attributes.family_name);
+                    contribNames.push($osf.findContribName(contrib.embeds.users.data.attributes));
                 });
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;
