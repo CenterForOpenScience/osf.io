@@ -12,18 +12,6 @@ from .serializers import serialize_comment
 from .forms import ConfirmForm
 
 
-def key_order_comments(comment):
-    reports = comment.reports
-    newest_report = None
-    for user, report in reports.iteritems():
-        date = report.get('date')
-        if newest_report is None or date > newest_report:
-            newest_report = date
-    if newest_report is None:
-        return comment.date_created
-    return newest_report
-
-
 class SpamList(ListView):
     template_name = 'spam/spam.html'
     paginate_by = 10
