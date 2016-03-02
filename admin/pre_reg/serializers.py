@@ -1,7 +1,10 @@
+from furl import furl
+
 from framework.utils import iso8601format
 from dateutil import parser
 
 from website.project.metadata.utils import serialize_meta_schema
+from website.settings import DOMAIN as OSF_DOMAIN
 
 
 EMBARGO = 'embargo'
@@ -18,6 +21,12 @@ def serialize_user(user):
 
 # TODO: Write and use APIv2 serializer for this
 def serialize_draft_registration(draft, json_safe=True):
+    if draft.branched_from is not None:
+        url = furl(OSF_DOMAIN)
+        url.path.add(draft.branched_from.url)
+        node_url = url.url
+    else:
+        node_url = None
     registration_choice = draft.approval.meta.get('registration_choice', None)
     if registration_choice == EMBARGO:
         time = parser.parse(draft.approval.meta['embargo_end_date'])
@@ -43,4 +52,5 @@ def serialize_draft_registration(draft, json_safe=True):
         'assignee': draft.flags.get('assignee'),
         'title': draft.registration_metadata['q1']['value'],
         'embargo': embargo,
+        'registered_node': node_url,
     }
