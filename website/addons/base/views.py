@@ -392,10 +392,10 @@ def addon_delete_file_node(self, node, event_type, payload, user=None):
         materialized_path = payload['metadata']['materialized']
         if path.endswith('/'):
             folder_children = FileNode.resolve_class(provider, FileNode.FILE).find(
-                                Q('provider', 'eq', provider) &
-                                Q('node', 'eq', node) &
-                                Q('materialized_path', 'startswith', materialized_path))
-
+                Q('provider', 'eq', provider) &
+                Q('node', 'eq', node) &
+                Q('materialized_path', 'startswith', materialized_path)
+            )
             for item in folder_children:
                 if item.kind == 'file' and not TrashedFileNode.load(item._id):
                     item.delete()
