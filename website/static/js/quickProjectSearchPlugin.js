@@ -319,7 +319,7 @@ var QuickSearchProject = {
                     m('i.fa.fa-caret-down.load-nodes.m-b-xl'));
             }
             else {
-                return m('div.m-b-xl');
+                return m('.m-b-xl');
             }
         }
 
@@ -394,12 +394,12 @@ var QuickSearchProject = {
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div.m-v-sm.input-group', [
+                return m('.m-v-sm.input-group', [
                     m('span.input-group-addon', m('i.fa.fa-search')),
                     m('input[type=search].form-control', {'id': 'searchQuery', placeholder: 'Quick search projects', onkeyup: function(search) {
                         ctrl.filter(search.target.value);
-                        ctrl.quickSearch();}
-                    }),
+                        ctrl.quickSearch();
+                    }}),
                     m('span.input-group-addon', {onclick: function() {
                         ctrl.filter('');
                         document.getElementById('searchQuery').value = '';
@@ -411,9 +411,9 @@ var QuickSearchProject = {
 
         function displayNodes() {
             if (ctrl.eligibleNodes().length === 0 && ctrl.filter() != null) {
-                return m('div.row.m-v-sm', m('div.col-sm-10.col-sm-offset-1',
-                    m('div.row',
-                        m('div.col-sm-12', [m('p.fa.fa-exclamation-triangle'), m('em', 'No results found!')])
+                return m('.row.m-v-sm', m('.col-sm-10.col-sm-offset-1',
+                    m('.row',
+                        m('.col-sm-12', [m('p.fa.fa-exclamation-triangle'), m('em', 'No results found!')])
                     ))
                 );
             }
@@ -426,18 +426,20 @@ var QuickSearchProject = {
 
         function projectView(project) {
             var numContributors = project.embeds.contributors.links.meta.total;
-            return m('div.row.m-v-sm', {onclick: function(){
+            return m('.row.m-v-sm', {onclick: function(){
                 ctrl.nodeDirect(project);
-            }}, m('div.col-xs-10.col-xs-offset-1.col-sm-10.col-sm-offset-1', m('div.row.node-styling', [
-                    m('div.col-sm-4.col-md-5.p-v-xs', project.attributes.title),
-                    m('div.col-sm-4.col-md-4.text-muted.p-v-xs', $osf.contribNameFormat(project, numContributors, ctrl.getFamilyName)),
-                    m('div.col-sm-4.col-md-3.p-v-xs', ctrl.formatDate(project))
-            ])));
+            }}, m('.col-xs-10.col-xs-offset-1.col-sm-10.col-sm-offset-1', m('.row.node-styling',
+                [
+                    m('.col-sm-4.col-md-5.p-v-xs', project.attributes.title),
+                    m('.col-sm-4.col-md-4.text-muted.p-v-xs', $osf.contribNameFormat(project, numContributors, ctrl.getFamilyName)),
+                    m('.col-sm-4.col-md-3.p-v-xs', ctrl.formatDate(project))
+                ]
+            )));
         }
 
         function xsDropdown() {
             if (ctrl.loadingComplete()){
-                return m('div.row', m('div.col-xs-12.f-w-xl.node-sort-dropdown.text-right',
+                return m('.row', m('.col-xs-12.f-w-xl.node-sort-dropdown.text-right',
                     m('span', ascending(), descending()),
                     m('label', [
                         m('select.form-control', {'id': 'sortDropDown', onchange: function(dropdown){
@@ -450,30 +452,30 @@ var QuickSearchProject = {
         }
 
         function resultsFound() {
-            return m('div.row.quick-project',
-                m('div.col-sm-8.col-sm-offset-2.m-b-sm.text-center', [
+            return m('.row.quick-project',
+                m('.col-sm-8.col-sm-offset-2.m-b-sm.text-center', [
                     searchBar(),
-                    ctrl.loadingComplete() ? '' : m('.spinner-div', m('div.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
+                    ctrl.loadingComplete() ? '' : m('.spinner-div', m('.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
                 ]),
-                m('div.row', m('div.col-sm-12.text-center.m-b-sm',
+                m('.row', m('.col-sm-12.text-center.m-b-sm',
                     m('p', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything'))
                 )),
-                m('div.row', m('div.col-sm-10.col-sm-offset-1',
-                    m('div.row.node-col-headers', [
-                        m('div.col-sm-4.col-md-5', 'Title', sortAlphaAsc(), sortAlphaDesc()),
-                        m('div.col-sm-4.col-md-4', 'Contributors'),
-                        m('div.col-sm-4.col-md-3', 'Modified', m('span.sort-group', sortDateAsc(), sortDateDesc()))
+                m('.row', m('.col-sm-10.col-sm-offset-1',
+                    m('.row.node-col-headers', [
+                        m('.col-sm-4.col-md-5', 'Title', sortAlphaAsc(), sortAlphaDesc()),
+                        m('.col-sm-4.col-md-4', 'Contributors'),
+                        m('.col-sm-4.col-md-3', 'Modified', m('span.sort-group', sortDateAsc(), sortDateDesc()))
                 ]))),
                 xsDropdown(),
                 displayNodes(),
-                m('div.row.text-center', m('div.col-xs-12', loadMoreButton()))
+                m('.row.text-center', m('.col-xs-12', loadMoreButton()))
             );
         }
 
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
-            return m('div.row.quick-project',
-                m('div.col-sm-8.col-sm-offset-2.m-b-sm',
-                    m('div.row', m('div.col-sm-12'), m('h4', 'You have no projects. Go ', m('a', {href: '/dashboard'}, 'here'), ' to create one.')))
+            return m('.row.quick-project',
+                m('.col-sm-8.col-sm-offset-2.m-b-sm',
+                    m('.row', m('.col-sm-12'), m('h4', 'You have no projects. Go ', m('a', {href: '/dashboard'}, 'here'), ' to create one.')))
             );
         }
         else {
