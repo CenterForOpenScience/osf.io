@@ -464,6 +464,11 @@ def test_api():
     test_module(module="api_tests/")
 
 @task
+def test_scripts():
+    """Run the test suite for scripts."""
+    test_module(module="scripts/tests/")
+
+@task
 def test_admin():
     """Run the Admin test suite."""
     # test_module(module="admin_tests/")
@@ -506,6 +511,7 @@ def test(all=False, syntax=False):
 
     test_osf()
     test_api()
+    test_scripts()
     test_admin()
 
     if all:
@@ -528,6 +534,7 @@ def test_travis_else():
     """
     test_addons()
     test_api()
+    test_scripts()
     test_admin()
     karma(single=True, browsers='PhantomJS')
 
