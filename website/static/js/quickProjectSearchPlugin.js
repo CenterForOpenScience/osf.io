@@ -311,21 +311,24 @@ var QuickSearchProject = {
 
     },
     view : function(ctrl) {
-        function loadMoreButton() {
+        function loadMoreButton(){
             if (ctrl.pendingNodes()){
-                return m('button', {'class': 'col-sm-12 text-muted', onclick: function() {
-                        ctrl.loadUpToTen();
+                return m('button.col-sm-12.text-muted', {onclick: function(){
+                    ctrl.loadUpToTen();
                 }},
-                m('i', {'class': 'fa fa-caret-down load-nodes'}));
+                    m('i.fa.fa-caret-down.load-nodes.m-b-xl'));
+            }
+            else {
+                return m('div.m-b-xl');
             }
         }
 
         function sortAlphaAsc() {
             if (ctrl.loadingComplete()) {
-                return m('button', {id: 'alphaAsc', 'class': ctrl.colorSortButtons('alphaAsc'), onclick: function() {
+                return m('button', {'class': ctrl.colorSortButtons('alphaAsc'), onclick: function() {
                     ctrl.sortBySortState(ctrl.sortState('alphaAsc'));
                 }},
-                    m('i', {'class': 'fa fa-angle-up'}));
+                    m('i.fa.fa-angle-up'));
             }
         }
 
@@ -334,7 +337,7 @@ var QuickSearchProject = {
                 return m('button', {'class': ctrl.colorSortButtons('alphaDesc'), onclick: function() {
                     ctrl.sortBySortState(ctrl.sortState('alphaDesc'));
                 }},
-                m('i', {'class': 'fa fa-angle-down'}));
+                    m('i.fa.fa-angle-down'));
             }
         }
 
@@ -343,7 +346,7 @@ var QuickSearchProject = {
                  return m('button', {'class': ctrl.colorSortButtons('dateAsc'), onclick: function() {
                      ctrl.sortBySortState(ctrl.sortState('dateAsc'));
                  }},
-                 m('i', {'class': 'fa fa-angle-up'}));
+                     m('i.fa.fa-angle-up'));
             }
         }
 
@@ -352,7 +355,7 @@ var QuickSearchProject = {
                 return m('button', {'class': ctrl.colorSortButtons('dateDesc'), onclick: function() {
                     ctrl.sortBySortState(ctrl.sortState('dateDesc'));
                }},
-                m('i', {'class': 'fa fa-angle-down'}));
+                    m('i.fa.fa-angle-down'));
             }
         }
 
@@ -363,7 +366,7 @@ var QuickSearchProject = {
                      ctrl.directionSort('Asc');
                      ctrl.sortDirectionGivenField();
                 }},
-                     m('i', {'class': 'fa fa-angle-up'}));
+                     m('i.fa.fa-angle-up'));
             }
         }
 
@@ -374,7 +377,7 @@ var QuickSearchProject = {
                     ctrl.directionSort('Desc');
                     ctrl.sortDirectionGivenField();
                 }},
-                    m('i', {'class': 'fa fa-angle-down'}));
+                     m('i.fa.fa-angle-down'));
             }
         }
 
@@ -389,116 +392,89 @@ var QuickSearchProject = {
             }
         }
 
-
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div.m-v-sm', {'class' : 'input-group'}, [
-                    m('span', {'class': 'input-group-addon'}, m('i', {'class': 'fa fa-search'})),
-                    m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
+                return m('div.m-v-sm.input-group', [
+                    m('span.input-group-addon', m('i.fa.fa-search')),
+                    m('input[type=search].form-control', {'id': 'searchQuery', placeholder: 'Quick search projects', onkeyup: function(search) {
                         ctrl.filter(search.target.value);
                         ctrl.quickSearch();}
                     }),
-                    m('span', {'class': 'input-group-addon', onclick: function() {
+                    m('span.input-group-addon', {onclick: function() {
                         ctrl.filter('');
                         document.getElementById('searchQuery').value = '';
                         ctrl.quickSearch();
-                    }},  m('button', m('i', {'class': 'fa fa-times'})))
+                    }},  m('button', m('i.fa.fa-times')))
                 ]);
             }
         }
 
         function displayNodes() {
-            if (ctrl.eligibleNodes().length ===0 && ctrl.filter() != null) {
-                return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-10 col-sm-offset-1'},
-                    m('div', {'class': 'row'}, [
-                        m('div', {'class': 'col-sm-1'}),
-                        m('div', {'class': 'col-sm-11'},[m('p', {'class' :'fa fa-exclamation-triangle'}, m('em', '  No results found!'))])
-                    ])
-                ));
+            if (ctrl.eligibleNodes().length === 0 && ctrl.filter() != null) {
+                return m('div.row.m-v-sm', m('div.col-sm-10.col-sm-offset-1',
+                    m('div.row',
+                        m('div.col-sm-12', [m('p.fa.fa-exclamation-triangle'), m('em', 'No results found!')])
+                    ))
+                );
             }
             else {
                 return ctrl.eligibleNodes().slice(0, ctrl.countDisplayed()).map(function(n){
-                    return projectView(ctrl.nodes()[n]);
+                   return projectView(ctrl.nodes()[n]);
                 });
             }
         }
 
         function projectView(project) {
             var numContributors = project.embeds.contributors.links.meta.total;
-            return m('div', {'class': 'row m-v-sm'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
-                m('div', {'class': 'row node-styling', onclick: function(){{ctrl.nodeDirect(project);
-                }}}, [
-                    m('div', {'class': 'col-sm-6 col-md-6 col-lg-5 p-v-xs'}, project.attributes.title),
-                    m('div', {'class': 'col-sm-3 col-md-3 col-lg-4 text-muted p-v-xs'}, $osf.contribNameFormat(project, numContributors, ctrl.getFamilyName)),
-                    m('div', {'class': 'col-sm-3 col-md-3 col-lg-3 p-v-xs'}, ctrl.formatDate(project))
-                ])
-            ));
+            return m('div.row.m-v-sm', {onclick: function(){
+                ctrl.nodeDirect(project);
+            }}, m('div.col-xs-10.col-xs-offset-1.col-sm-10.col-sm-offset-1', m('div.row.node-styling', [
+                    m('div.col-sm-4.col-md-5.p-v-xs', project.attributes.title),
+                    m('div.col-sm-4.col-md-4.text-muted.p-v-xs', $osf.contribNameFormat(project, numContributors, ctrl.getFamilyName)),
+                    m('div.col-sm-4.col-md-3.p-v-xs', ctrl.formatDate(project))
+            ])));
         }
 
-        function xsDropdown () {
-            if (ctrl.loadingComplete()) {
-                return m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
-                    m('div. node-sort-dropdown.text-right', {'class': 'row'}, [
-                        m('div.f-w-xl', {'class': 'col-sm-12'},
-                            m('span', ascending(), descending()),
-                            m('label', [
-                                m('select', {'class': 'form-control', id: 'sortDropDown', onchange: function(dropdown){
-                                    ctrl.fieldSort(dropdown.target.value);
-                                    ctrl.sortFieldGivenDirection();
-                                }}, defaultSelected())
-                            ])
-                        )]
-                    ))
-                );
+        function xsDropdown() {
+            if (ctrl.loadingComplete()){
+                return m('div.row', m('div.col-xs-12.f-w-xl.node-sort-dropdown.text-right',
+                    m('span', ascending(), descending()),
+                    m('label', [
+                        m('select.form-control', {'id': 'sortDropDown', onchange: function(dropdown){
+                            ctrl.fieldSort(dropdown.target.value);
+                            ctrl.sortFieldGivenDirection();
+                        }}, defaultSelected())
+                    ])
+                ));
             }
         }
 
-        function resultsFound(){
-            return m('div', {'class': 'container quick-project'}, [
-                m('div', {'class': 'row'},
-                    m('div', {'class': 'col-sm-3'}),
-                    m('div.m-b-sm.text-center', {'class': 'col-sm-6'}, [
-                        searchBar(),
-                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('div.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
-                    ]),
-                    m('div', {'class': 'col-sm-3'})),
-
-                m('div', {class: 'row'},
-                    m('div.text-center.m-b-sm', {'class': 'col-sm-12'},
-                    m('h5', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')
-                    ))
-                ),
-
-                m('div', {'class': 'row'}, m('div', {'class': 'col-sm-8 col-sm-offset-2'},
-                    m('div.node-col-headers', {'class': 'row'}, [
-                        m('div.p-v-xs.f-w-xl', {'class': 'col-sm-6 col-md-6 col-lg-5'}, 'Title', sortAlphaAsc(), sortAlphaDesc()),
-                        m('div.f-w-xl.p-v-xs', {'class': 'col-sm-3 col-md-3 col-lg-4'}, 'Contributors'),
-                        m('div.f-w-xl.p-v-xs', {'class': 'col-sm-3 col-md-3 col-lg-3'}, 'Modified', m('span.sort-group', sortDateAsc(), sortDateDesc()))]
-                    )
+        function resultsFound() {
+            return m('div.row.quick-project',
+                m('div.col-sm-8.col-sm-offset-2.m-b-sm.text-center', [
+                    searchBar(),
+                    ctrl.loadingComplete() ? '' : m('.spinner-div', m('div.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
+                ]),
+                m('div.row', m('div.col-sm-12.text-center.m-b-sm',
+                    m('p', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything'))
                 )),
-
+                m('div.row', m('div.col-sm-10.col-sm-offset-1',
+                    m('div.row.node-col-headers', [
+                        m('div.col-sm-4.col-md-5', 'Title', sortAlphaAsc(), sortAlphaDesc()),
+                        m('div.col-sm-4.col-md-4', 'Contributors'),
+                        m('div.col-sm-4.col-md-3', 'Modified', m('span.sort-group', sortDateAsc(), sortDateDesc()))
+                ]))),
                 xsDropdown(),
-
                 displayNodes(),
-                m('div', {'class': 'row'}, [
-                    m('div', {'class': 'col-xs-5'}),
-                    m('div', {'class': 'col-xs-2'}, loadMoreButton()),
-                    m('div', {'class': 'col-xs-5'})
-                ])
-            ]);
+                m('div.row.text-center', m('div.col-xs-12', loadMoreButton()))
+            );
         }
 
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
-            return m('div', {'class': 'container'}, [
-                m('div', {'class': 'row'}, [
-                    m('div', {'class': 'col-sm-1'}),
-                    m('div', {'class': 'col-sm-11'}, m('h3', 'My Projects'))
-                ]),
-                m('div', {'class': 'row m-v-md'},
-                    m('div', {'class': 'col-sm-1'}),
-                    m('div', {'class': 'col-sm-11'}, m('h4', 'You have no projects. Go ', m('a', {href: '/dashboard'}, 'here'), ' to create one.'))
-            )]
-        );
+            return m('div.row.quick-project',
+                m('div.col-sm-8.col-sm-offset-2.m-b-sm',
+                    m('div.row', m('div.col-sm-12'), m('h4', 'You have no projects. Go ', m('a', {href: '/dashboard'}, 'here'), ' to create one.')))
+            );
         }
         else {
             return resultsFound();
