@@ -821,6 +821,16 @@ var contribNameFormat = function(node, number, getFamilyName) {
     }
 };
 
+// Returns single name representing contributor, First match found of family name, given name, middle names, full name.
+var findContribName = function (userAttributes) {
+    var names = [userAttributes.family_name, userAttributes.given_name, userAttributes.middle_names, userAttributes.full_name];
+    for (var n = 0; n < names.length; n++) {
+        if (names[n]) {
+            return names[n];
+        }
+    }
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -857,5 +867,6 @@ module.exports = window.$.osf = {
     currentUser: currentUser,
     any: any,
     dialog: dialog,
-    contribNameFormat: contribNameFormat
+    contribNameFormat: contribNameFormat,
+    findContribName: findContribName
 };
