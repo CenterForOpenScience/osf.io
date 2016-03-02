@@ -294,6 +294,7 @@ var QuickSearchProject = {
             if (ctrl.pendingNodes()){
                 return m('button.col-sm-12.text-muted', {onclick: function(){
                     ctrl.loadUpToTen();
+                    $osf.trackClick('quickSearch', 'view', 'load-more');
                 }},
                     m('i.fa.fa-caret-down.load-nodes.m-b-xl'));
             }
@@ -303,6 +304,7 @@ var QuickSearchProject = {
             if (ctrl.loadingComplete()) {
                 return m('button', {'class': ctrl.colorSortButtons('alphaAsc'), onclick: function() {
                     ctrl.sortBySortState(ctrl.sortState('alphaAsc'));
+                    $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                     m('i.fa.fa-angle-up'));
             }
@@ -312,6 +314,7 @@ var QuickSearchProject = {
             if (ctrl.loadingComplete()){
                 return m('button', {'class': ctrl.colorSortButtons('alphaDesc'), onclick: function() {
                     ctrl.sortBySortState(ctrl.sortState('alphaDesc'));
+                    $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                     m('i.fa.fa-angle-down'));
             }
@@ -321,6 +324,7 @@ var QuickSearchProject = {
             if (ctrl.loadingComplete()){
                  return m('button', {'class': ctrl.colorSortButtons('dateAsc'), onclick: function() {
                      ctrl.sortBySortState(ctrl.sortState('dateAsc'));
+                     $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                  }},
                      m('i.fa.fa-angle-up'));
             }
@@ -330,6 +334,7 @@ var QuickSearchProject = {
             if (ctrl.loadingComplete()){
                 return m('button', {'class': ctrl.colorSortButtons('dateDesc'), onclick: function() {
                     ctrl.sortBySortState(ctrl.sortState('dateDesc'));
+                    $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                }},
                     m('i.fa.fa-angle-down'));
             }
@@ -341,6 +346,7 @@ var QuickSearchProject = {
                 return m('button', {'class': ctrl.colorSortButtonsXS('Asc'), onclick: function() {
                      ctrl.directionSort('Asc');
                      ctrl.sortDirectionGivenField();
+                     $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                      m('i.fa.fa-angle-up'));
             }
@@ -352,6 +358,7 @@ var QuickSearchProject = {
                 return m('button', {'class': ctrl.colorSortButtonsXS('Desc'), onclick: function() {
                     ctrl.directionSort('Desc');
                     ctrl.sortDirectionGivenField();
+                    $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                 }},
                      m('i.fa.fa-angle-down'));
             }
@@ -374,9 +381,12 @@ var QuickSearchProject = {
                     m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
                         ctrl.filter(search.target.value);
                         ctrl.quickSearch();
+                    }, onchange: function(){
+                        $osf.trackClick('quickSearch', 'filter', 'search-projects');
                     }}),
                     m('span.input-group-addon', {onclick: function() {
                         ctrl.filter('');
+                        $osf.trackClick('quickSearch', 'filter', 'clear-search');
                         document.getElementById('searchQuery').value = '';
                         ctrl.quickSearch();
                     }},  m('button', m('i.fa.fa-times')))
@@ -403,6 +413,7 @@ var QuickSearchProject = {
             var numContributors = project.embeds.contributors.links.meta.total;
             return m('.row.m-v-sm', {onclick: function(){
                 ctrl.nodeDirect(project);
+                $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
             }}, m('.col-xs-10.col-xs-offset-1.col-sm-10.col-sm-offset-1', m('.row.node-styling',
                 [
                     m('.col-sm-4.col-md-5.p-v-xs', project.attributes.title),
@@ -419,6 +430,7 @@ var QuickSearchProject = {
                     m('label', [
                         m('select.form-control', {'id': 'sortDropDown', onchange: function(dropdown){
                             ctrl.fieldSort(dropdown.target.value);
+                            $osf.trackClick('quickSearch', 'view', 'sort-' + ctrl.sortState());
                             ctrl.sortFieldGivenDirection();
                         }}, defaultSelected())
                     ])
@@ -433,7 +445,11 @@ var QuickSearchProject = {
                     ctrl.loadingComplete() ? '' : m('.spinner-div', m('.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
                 ]),
                 m('.row', m('.col-sm-12.text-center.m-b-sm',
-                    m('p', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything'))
+                    m('p', 'Go to ', m('a', {href:'/dashboard/', onclick: function() {
+                        $osf.trackClick('quickSearch', 'navigate', 'navigate-to-my-projects');
+                    }}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/', onclick: function(){
+                        $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-everything');
+                    }}, 'Search Everything'))
                 )),
                 m('.row', m('.col-sm-10.col-sm-offset-1',
                     m('.row.node-col-headers', [
