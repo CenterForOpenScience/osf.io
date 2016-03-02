@@ -1413,19 +1413,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.node_license = record
 
         for node in self.node_and_primary_descendants():
-            node.add_log(
-                action=NodeLog.CHANGED_LICENSE,
-                params={
-                    'parent_node': node.parent_id,
-                    'node': node._primary_key,
-                    'new_license': node_license.name
-                },
-                auth=auth,
-                save=False,
-            )
-            if node._id != self._id:
-                node.save()
-
+            if node.node_license is None:
+                node.add_log(
+                    action=NodeLog.CHANGED_LICENSE,
+                    params={
+                        'parent_node': node.parent_id,
+                        'node': node._primary_key,
+                        'new_license': node_license.name
+                    },
+                    auth=auth,
+                    save=False,
+                )
+                if node._id != self._id:
+                    node.save()
         if save:
             self.save()
 
