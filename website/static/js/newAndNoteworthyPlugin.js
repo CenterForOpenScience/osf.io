@@ -80,6 +80,7 @@ var NewAndNoteworthy = {
 
             return m('.row.node-styling.noteworthy-spacing', {onclick: function(){
                 location.href = '/' + node.embeds.target_node.data.id;
+                $osf.trackClick('newAndNoteworthy', 'navigate', 'navigate-to-specific-project');
             }},
                 m('.col-sm-12', m('h5.prevent-overflow', {'data-title': title, 'data-location': 'top', onmouseover: function(){
                     ctrl.addToolTip(this);
@@ -106,7 +107,9 @@ var NewAndNoteworthy = {
         }
 
         function findMoreProjectsButton () {
-            return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search'}, 'Find more projects with advanced search');
+            return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search', onclick: function() {
+                $osf.trackClick('newAndNoteworthy', 'navigate', 'navigate-to-advanced-search');
+            }}, 'Find more projects with advanced search');
         }
 
         return m('.row', m('.col-xs-10.col-xs-offset-1.col-md-10.col-md-offset-1', m('.row',
