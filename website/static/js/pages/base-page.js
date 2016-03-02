@@ -115,6 +115,11 @@ $(function() {
         var params = {};
         params.currentUser = window.contextVars.currentUser;
         params.node = window.contextVars.node;
-        new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
+
+        //Don't track PhantomJS visits with KeenIO
+        if(!(/PhantomJS/.test(navigator.userAgent))){
+            new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
+        }
+
     }
 });
