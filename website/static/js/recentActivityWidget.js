@@ -207,6 +207,17 @@ var LogWrap = {
                         self.makeLine(canvas);
                     },
                     change: function (event, ui){
+                        if (event.toElement.className === 'ui-slider-label') {
+                            $osf.trackClick('recentActivity', 'filter', 'filter-by-slider-label');
+                        }
+                        else if (event.toElement.className.indexOf('ui-slider-handle') === 0) {
+                            if (ui.values[0] === ui.value) {
+                                $osf.trackClick('recentActivity', 'filter', 'filter-with-left-slider');
+                            }
+                            else if (ui.values[1] === ui.value) {
+                                $osf.trackClick('recentActivity', 'filter', 'filter-with-right-slider');
+                            }
+                        }
                         self.loading = true;
                         m.redraw();
                         self.select('#rAFilleBar').replaceWith(
@@ -262,17 +273,31 @@ var LogWrap = {
                 }
                 return m('p', [
                     'Filter on: ',
-                    fileEvents ? m('a', {onclick: function(){ctrl.callLogs('file')}}, 'Files' + (nodeEvents || commentEvents || wikiEvents ? ', ': '')): '', // jshint ignore:line
-                    nodeEvents ? m('a', {onclick: function(){ctrl.callLogs('project')}}, 'Projects' + (commentEvents || wikiEvents ? ', ': '')): '', // jshint ignore:line
-                    commentEvents ? m('a', {onclick: function(){ctrl.callLogs('comment')}}, 'Comments' + (wikiEvents ? ', ': '')): '',// jshint ignore:line
-                    wikiEvents ? m('a', {onclick: function(){ctrl.callLogs('wiki')}}, 'Wiki'): '' // jshint ignore:line
+                    fileEvents ? m('a', {onclick: function(){
+                        ctrl.callLogs('file');
+                        $osf.trackClick('recentActivity', 'filter', 'filter-on-files');
+                    }}, 'Files' + (nodeEvents || commentEvents || wikiEvents ? ', ': '')): '', // jshint ignore:line
+                    nodeEvents ? m('a', {onclick: function(){
+                        ctrl.callLogs('project');
+                        $osf.trackClick('recentActivity', 'filter', 'filter-on-projects');
+                    }}, 'Projects' + (commentEvents || wikiEvents ? ', ': '')): '', // jshint ignore:line
+                    commentEvents ? m('a', {onclick: function(){
+                        ctrl.callLogs('comment');
+                            $osf.trackClick('recentActivity', 'filter', 'filter-on-comments');
+                    }}, 'Comments' + (wikiEvents ? ', ': '')): '',// jshint ignore:line
+                    wikiEvents ? m('a', {onclick: function(){
+                        ctrl.callLogs('wiki');
+                        $osf.trackClick('recentActivity', 'filter', 'filter-on-wiki');
+                    }}, 'Wiki'): '' // jshint ignore:line
                 ]);
             } else {
                 return m('p', [
                     m('span','Filtering on '),
                     m('b', (ctrl.eventFilter === 'file' ? 'Files' : ctrl.eventFilter === 'project' ? 'Projects' : ctrl.eventFilter === 'comment' ? 'Comments' : 'Wiki') + ' '),
-                    m('span.badge.pointer.m-l-xs', {
-                        onclick: function(){ ctrl.callLogs(ctrl.eventFilter); },
+                    m('span.badge.pointer.m-l-xs', {onclick: function(){
+                            ctrl.callLogs(ctrl.eventFilter);
+                            $osf.trackClick('recentActivity', 'filter', 'clear-filter')
+                            ;}
                     }, [ m('i.fa.fa-close'), ' Clear'])
                 ]);
             }
@@ -293,21 +318,25 @@ var LogWrap = {
                                 m('a.progress-bar' + (ctrl.eventFilter === 'file' ||  ctrl.eventFilter === false ?  '.selected' : ''), {style: {width: fileEvents+'%'},
                                     onclick: function(){
                                         ctrl.callLogs('file');
+                                        $osf.trackClick('recentActivity', 'filter', 'filter-on-files-progress-bar');
                                     }}, m('i.fa.fa-file.progress-bar-button')
                                 ),
                                 m('a.progress-bar.progress-bar-warning' + (ctrl.eventFilter === 'project' ||  ctrl.eventFilter === false ?  '.selected' : ''), {style: {width: nodeEvents+'%'},
                                     onclick: function(){
                                         ctrl.callLogs('project');
+                                        $osf.trackClick('recentActivity', 'filter', 'filter-on-projects-progress-bar');
                                     }},  m('i.fa.fa-cube.progress-bar-button')
                                 ),
                                 m('a.progress-bar.progress-bar-info' + (ctrl.eventFilter === 'comment' || ctrl.eventFilter === false ?  '.selected' : ''), {style: {width: commentEvents+'%'},
                                     onclick: function(){
                                         ctrl.callLogs('comment');
+                                        $osf.trackClick('recentActivity', 'filter', 'filter-on-comments-progress-bar');
                                     }}, m('i.fa.fa-comment.progress-bar-button')
                                 ),
                                 m('a.progress-bar.progress-bar-danger' + (ctrl.eventFilter === 'wiki' || ctrl.eventFilter === false ?  '.selected' : ''), {style: {width: wikiEvents+'%'},
                                     onclick: function(){
                                         ctrl.callLogs('wiki');
+                                        $osf.trackClick('recentActivity', 'filter', 'filter-on-wiki-progress-bar');
                                     }}, m('i.fa.fa-book.progress-bar-button')
                                 ),
                                 (ctrl.totalEvents !== 0) ?
@@ -324,18 +353,20 @@ var LogWrap = {
                         onclick: function(){
                             ctrl.page--;
                             ctrl.getLogs();
+                            $osf.trackClick('recentActivity', 'paginate', 'get-prev-page-logs');
                         }},m('i.fa.fa-angle-left.page-button'))),
                     m('#rALogs.col-xs-10' ,(ctrl.activityLogs() && (ctrl.activityLogs().length > 0))? ctrl.activityLogs().map(function(item){
                         return m('.activity-item',
                             {style: {borderLeft: 'solid 5px ' + ctrl.categoryColor(item.attributes.action)}}, [
                             m('span.text-muted.m-r-xs', item.attributes.formattableDate.local),
-                            m.component(LogText,item)
+                            m.component(LogText, item, 'recentActivity', 'navigate')
                         ]);
                     }) : m('p','No activity in this time range.')),
                     m('.col-xs-1', {config: ctrl.addButtons}, m('#rARightButton' + (ctrl.lastPage > ctrl.page ? '' : '.disabled.hidden'),{
                         onclick: function(){
                             ctrl.page++;
                             ctrl.getLogs();
+                            $osf.trackClick('recentActivity', 'paginate', 'get-next-page-logs');
                         }
                     }, m('i.fa.fa-angle-right.page-button' )))
                 ]) : m('.spinner-loading-wrapper', [m('.logo-spin.logo-md'), m('p.m-t-sm.fg-load-message', 'Loading logs...')]),
