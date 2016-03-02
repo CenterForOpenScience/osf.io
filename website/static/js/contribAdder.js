@@ -60,10 +60,6 @@ AddContributorViewModel = oop.extend(Paginator, {
             m.redraw(true);
         });
 
-        self.hasChildren = ko.pureComputed(function () {
-            return (Object.keys(self.nodesOriginal).length > 1);
-        });
-
         //list of permission objects for select.
         self.permissionList = [
             {value: 'read', text: 'Read'},
@@ -450,7 +446,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             dataType: 'json'
         }).done(function (response) {
             self.nodesOriginal = $osf.getNodesOriginal(response[0], self.nodesOriginal);
-            self.hasChildren(Object.keys(self.nodesOriginal).length > 1);
+            self.hasChildren = (Object.keys(self.nodesOriginal).length > 1);
             var nodesState = $.extend(true, {}, self.nodesOriginal);
             var nodeParent = response[0].node.id;
             //parent node is changed by default
