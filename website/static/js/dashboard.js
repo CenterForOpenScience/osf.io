@@ -884,7 +884,7 @@ var Collections  = {
                     id: 'addColl',
                     header : m('.modal-header', [
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', {onclick: function() {
-                            $osf.trackClick('dashboard', 'add-collection', 'click-close-add-collection-modal')
+                            $osf.trackClick('dashboard', 'add-collection', 'click-close-add-collection-modal');
                         }}, [
                             m('span[aria-hidden="true"]','×')
                         ]),

@@ -466,7 +466,9 @@ var QuickSearchProject = {
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
             return m('.row.quick-project',
                 m('.col-sm-8.col-sm-offset-2.m-b-sm',
-                    m('.row', m('.col-sm-12'), m('h4', 'You have no projects. Go ', m('a', {href: '/dashboard'}, 'here'), ' to create one.')))
+                    m('.row', m('.col-sm-12'), m('h4', 'You have no projects. Go ', m('a', {href: '/dashboard', onclick: function() {
+                        $osf.trackClick('quickSearch', 'navigate', 'no-projects-go-here');
+                    }}, 'here'), ' to create one.')))
             );
         }
         else {
