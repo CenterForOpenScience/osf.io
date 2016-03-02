@@ -3461,7 +3461,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if inst.node == self.primary_institution:
             return False
-        previous = Institution(self.primary_institution)
+        previous = Institution(self.primary_institution) if self.primary_institution else None
         self.primary_institution = inst
         if inst.node not in self.affiliated_institutions:
             self.affiliated_institutions.append(inst.node)
@@ -3522,6 +3522,8 @@ class Institution():
     }
 
     def __init__(self, node):
+        if node is None:
+            return
         self.node = node
         for key, value in self.institution_node_translator.iteritems():
             setattr(self, key, getattr(node, value))

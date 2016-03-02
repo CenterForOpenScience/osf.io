@@ -1355,14 +1355,18 @@ class User(GuidStoredObject, AddonModelMixin):
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
     def is_affiliated_with_institution(self, inst):
-        return inst.node in self.affiliated_institutions
+        return inst in self.affiliated_institutions
 
     def remove_institution(self, inst_id):
-        try:
-            self.affiliated_institutions.remove(inst_id)
-        except ValueError:
-            return False
-        return True
+        node_id = False
+        for node in self._affiliated_institutions:
+            if node.institution_id == inst_id:
+                node_id = node._id
+                break
+        if node_id:
+            self._affiliated_institutions.remove(node_id)
+            return True
+        return False
 
     _affiliated_institutions = fields.ForeignField('node', list=True)
 
@@ -1370,6 +1374,11 @@ class User(GuidStoredObject, AddonModelMixin):
     def affiliated_institutions(self):
         from website.project.model import Institution
         return [Institution(inst) for inst in self._affiliated_institutions]
+
+    def affiliate_institution(self, inst):
+        self._affiliated_institutions.append(inst.node)
+        return True
+
 
     def get_node_comment_timestamps(self, node, page, file_id=None):
         """ Returns the timestamp for when comments were last viewed on a node or

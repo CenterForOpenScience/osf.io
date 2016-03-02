@@ -6,7 +6,7 @@ import urllib
 
 from website import settings
 from website.app import init_app
-from website.models import Institution
+from website.project.model import Institution, Node
 from framework.transactions.context import TokuTransaction
 
 ENVS = ['prod', 'nonprod']
@@ -17,15 +17,17 @@ def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
     if inst:
         for key, val in inst_data.iteritems():
-            setattr(inst, key, val)
-        changed_fields = inst.save()
+            setattr(inst.node, inst.institution_node_translator[key], val)
+        changed_fields = inst.node.save()
         if changed_fields:
             print('Updated {}: {}'.format(inst.name, changed_fields))
         return inst, False
     else:
-        new_inst = Institution(**inst_data)
+        inst = Institution(None)
+        inst_data = {inst.institution_node_translator[k]: v for k, v in inst_data.iteritems()}
+        new_inst = Node(**inst_data)
         new_inst.save()
-        print('Added new institution: {}'.format(new_inst._id))
+        print('Added new institution: {}'.format(new_inst.institution_id))
         return new_inst, True
 
 
