@@ -1,6 +1,6 @@
 Hello ${user.fullname},
 
-This email address has been added to an account on the Open Science Framework.
+Thank you for registering for an account on the Open Science Framework.
 
 Please verify your email address by visiting this link:
 

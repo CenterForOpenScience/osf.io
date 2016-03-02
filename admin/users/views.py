@@ -17,6 +17,15 @@ class UserFormView(GuidFormView):
         return reverse_user(self.guid)
 
 
+class UserView(GuidView):
+    template_name = 'users/user.html'
+    context_object_name = 'user'
+
+    def get_object(self, queryset=None):
+        self.guid = self.kwargs.get('guid', None)
+        return serialize_user(User.load(self.guid))
+
+
 class OSFUserFormView(FormView):
     template_name = 'users/notes.html'
     form_class = OSFUserForm
@@ -63,12 +72,3 @@ class OSFUserFormView(FormView):
     @property
     def success_url(self):
         return reverse_user(self.guid)
-
-
-class UserView(GuidView):
-    template_name = 'users/user.html'
-    context_object_name = 'user'
-
-    def get_object(self, queryset=None):
-        self.guid = self.kwargs.get('guid', None)
-        return serialize_user(User.load(self.guid))

@@ -225,6 +225,26 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(payload['data']['attributes']['content'], res.json['data']['attributes']['content'])
 
+    def test_public_node_non_contributor_commenter_cannot_update_own_comment_if_comment_level_private(self):
+        project = ProjectFactory(is_public=True, comment_level='public')
+        comment = CommentFactory(node=project, target=project, user=self.non_contributor)
+        project.comment_level = 'private'
+        project.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'content': 'Updating this comment',
+                    'deleted': False
+                }
+            }
+        }
+        res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
     def test_update_comment_cannot_exceed_max_length(self):
         self._set_up_private_project_with_comment()
         payload = {
@@ -687,6 +707,18 @@ class TestFileCommentDetailView(ApiTestCase):
         res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(payload['data']['attributes']['content'], res.json['data']['attributes']['content'])
+
+    def test_public_node_non_contributor_commenter_cannot_update_own_file_comment_if_comment_level_private(self):
+        project = ProjectFactory(is_public=True)
+        test_file = test_utils.create_test_file(project, project.creator)
+        comment = CommentFactory(node=project, target=test_file, user=self.non_contributor)
+        project.comment_level = 'private'
+        project.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = self._set_up_payload(comment._id)
+        res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_private_node_only_logged_in_contributor_commenter_can_delete_file_comment(self):
         self._set_up_private_project_with_file_comment()

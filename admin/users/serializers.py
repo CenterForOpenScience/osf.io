@@ -1,7 +1,6 @@
 """
 Serialize user
 """
-# from admin.nodes.serializers import serialize_simple_user
 
 
 def serialize_user(user):
