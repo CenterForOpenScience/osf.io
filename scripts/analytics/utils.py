@@ -52,10 +52,10 @@ def make_csv(fp, rows, headers=None):
     writer.writerows(rows)
 
 
-def send_file(app, path, content_type, file_like, node, user):
+def send_file(app, name, content_type, file_like, node, user):
     """Upload file to OSF.
-    :param str app: Flask app
-    :param str path: The path of the requested file or folder
+    :param str app: Flask app, deprecated when using waterbutler v1 api
+    :param str name: The nameof the requested file
     :param str content_type: Value for header 'Content-Type'
     :param StringIO file_like: file-like stream to upload
     :param Node node: The node being accessed
@@ -71,7 +71,8 @@ def send_file(app, path, content_type, file_like, node, user):
     cookies = {website_settings.COOKIE_NAME:user.get_or_create_cookie()}
 
     file_like.seek(0)
-    upload_url = util.waterbutler_api_url_for(node_id, 'osfstorage', path)
+    upload_url = util.waterbutler_api_url_for(node_id, 'osfstorage', '/', kind='file', name=name)
+    print(upload_url)
 
     # with app.test_request_context():
     #     upload_url = util.waterbutler_url_for('upload', 'osfstorage', name, node, user=user)
