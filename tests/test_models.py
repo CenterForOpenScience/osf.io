@@ -4059,6 +4059,39 @@ class TestNodeLog(OsfTestCase):
         assert_false(created_log.can_view(unrelated, Auth(user=project.creator)))
 
 
+    def test_original_node_and_current_node_for_registration_logs(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        registration = RegistrationFactory(project=project)
+
+        log_project_created_original = project.logs[0]
+        log_registration_initiated = project.logs[1]
+        log_project_created_registration = registration.logs[0]
+
+        assert_equal(project._id, log_project_created_original.original_node._id)
+        assert_equal(project._id, log_project_created_original.node._id)
+        assert_equal(registration._id, log_registration_initiated.original_node._id)
+        assert_equal(project._id, log_registration_initiated.node._id)
+        assert_equal(project._id, log_project_created_registration.original_node._id)
+        assert_equal(registration._id, log_project_created_registration.node._id)
+
+    def test_original_node_and_current_node_for_fork_logs(self):
+        user = UserFactory()
+        project = ProjectFactory(creator=user)
+        fork = project.fork_node(auth=Auth(user))
+
+        log_project_created_original = project.logs[0]
+        log_project_created_fork = fork.logs[0]
+        log_node_forked = fork.logs[1]
+
+        assert_equal(project._id, log_project_created_original.original_node._id)
+        assert_equal(project._id, log_project_created_original.node._id)
+        assert_equal(project._id, log_project_created_fork.original_node._id)
+        assert_equal(fork._id, log_project_created_fork.node._id)
+        assert_equal(project._id, log_node_forked.original_node._id)
+        assert_equal(fork._id, log_node_forked.node._id)
+
+
 class TestPermissions(OsfTestCase):
 
     def setUp(self):
