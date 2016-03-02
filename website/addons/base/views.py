@@ -386,7 +386,7 @@ def create_waterbutler_log(payload, **kwargs):
 
 @file_signals.file_updated.connect
 def addon_delete_file_node(self, node, event_type, payload, user=None):
-    if event_type == 'file_removed':
+    if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
         provider = payload['provider']
         path = payload['metadata']['path']
         materialized_path = payload['metadata']['materialized']
