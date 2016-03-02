@@ -2,6 +2,19 @@
 Changelog
 *********
 
+0.65.0 (unreleased)
+===================
+
+- Add UI for adding contributors from parent projects to subprojects.
+- Add UI for removing a contributor from multiple subprojects.
+- Add Baidu Scholar links to user profiles.
+- APIv2: Allow client to request specific relationship counts, e.g. `?related_counts=children`.
+- Backend for OSF4Institutions: nodes and users can be affiliated with an institution (alpha; disabled on production).
+- Add visitor tracking with Keen.io.
+- Refactor Google Drive addon to use generic views.
+- Use Sendgrid API for sending emails; add categorization of emails.
+- UI fixes.
+
 0.64.0 (2015-02-10)
 ===================
 
