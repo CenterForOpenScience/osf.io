@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>User</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <form action="{% url 'users:user' %}" method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div class="alert alert-danger">{{ form.errors }}</div>
+                {% endif %}
+                <div class="form-group">
+                    <label for="guid">User GUID:</label>
+                    {{ form.guid }}
+                </div>
+                <input type="submit" class="btn btn-primary" value="Submit" />
+            </form>
+        </div>
+
+        <hr>
+
+        {% if guid_object %}
+        {% with user=guid_object %}
+            <div class="row">
+                <h3>User information</h3>
+            </div>
+            <div class="row">
+                <strong>Name:</strong> {{ user.name }}
+            </div>
+            <div class="row">
+                <strong>Emails:</strong>
+                <ul>
+                {% for email in user.emails %}
+                    <li>
+                        {% if forloop.first %}
+                            <strong>Primary: </strong>
+                        {% endif %}
+                        {{ email }}
+                    </li>
+                {% endfor %}
+                </ul>
+            </div>
+            <div class="row">
+                <strong>Last logged in:</strong> {{ user.last_login }}
+            </div>
+            <div class="row">
+                <strong>Nodes</strong>
+                <table class="table table-striped table-hover table-responsive">
+                <thead>
+                    <tr>
+                        <th>GUID</th>
+                        <th>Name</th>
+                        <th>Public</th>
+                        <th># of Contributors</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for node in user.nodes %}
+                    <tr>
+                        <td>
+                            <a href="{{ node.id | reverse_node }}">
+                                {{ node.id }}
+                            </a>
+                        </td>
+                        <td>{{ node.title }}</td>
+                        <td>{{ node.public }}</td>
+                        <td>{{ node.number_contributors }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+            </div>
+        {% endwith %}
+        {% endif %}
+    </div>
+{% endblock content %}
