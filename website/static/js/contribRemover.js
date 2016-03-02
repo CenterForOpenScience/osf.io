@@ -52,9 +52,9 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.page = ko.observable(self.REMOVE);
         self.pageTitle = ko.computed(function() {
             return {
-                remove: 'Delete Contributor',
-                removeAll: 'Delete Contributor',
-                removeNoChildren: 'Delete Contributor'
+                remove: 'Remove Contributor',
+                removeAll: 'Remove Contributor',
+                removeNoChildren: 'Remove Contributor'
             }[self.page()];
         });
         self.userName = ko.observable(userName);
@@ -78,7 +78,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                     var node = nodesOriginalLocal[key];
                     var contributorOnNode = false;
                     //User cannot modify the node without admin permissions.
-                    if (node.isAdmin || self.removeSelf) {
+                    if (node.isAdmin || self.removeSelf()) {
                         for (var i = 0; i < node.contributors.length; i++) {
                             if (node.contributors[i].id === self.contributorToRemove().id) {
                                 contributorOnNode = true;
@@ -128,7 +128,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.hasChildrenToRemove = ko.computed(function() {
             //if there is more then one node to remove, then show a simplified page
-            if (self.canRemoveNodesLength() > 1) {
+            if (self.canRemoveNodesLength() > 1 && self.titlesToRemove().length > 1) {
                 self.page(self.REMOVE);
                 return true;
             }
@@ -178,6 +178,9 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 
         self.nodeIDsToRemove = ko.computed(function() {
             var nodeIDsToRemove = [];
+            if (!self.deleteAll()) {
+                return [self.nodeId];
+            }
             for (var key in self.nodesOriginal()) {
                 if (self.nodesOriginal().hasOwnProperty(key) && self.canRemoveNodes()[key]) {
                     var node = self.nodesOriginal()[key];

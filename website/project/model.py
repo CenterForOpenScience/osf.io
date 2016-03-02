@@ -1392,7 +1392,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return self.is_contributor(auth.user)
 
-    def set_node_license(self, license_id, year, copyright_holders, auth, save=True):
+    def set_node_license(self, license_id, year, copyright_holders, auth, save=False):
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError("Only admins can change a project's license.")
         try:
@@ -1411,16 +1411,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         record.copyright_holders = copyright_holders or []
         record.save()
         self.node_license = record
-        self.add_log(
-            action=NodeLog.CHANGED_LICENSE,
-            params={
-                'parent_node': self.parent_id,
-                'node': self._primary_key,
-                'new_license': node_license.name
-            },
-            auth=auth,
-            save=False,
-        )
+
+        for node in self.node_and_primary_descendants():
+            node.add_log(
+                action=NodeLog.CHANGED_LICENSE,
+                params={
+                    'parent_node': node.parent_id,
+                    'node': node._primary_key,
+                    'new_license': node_license.name
+                },
+                auth=auth,
+                save=False,
+            )
+            if node._id != self._id:
+                node.save()
+
         if save:
             self.save()
 
@@ -1431,14 +1436,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param Auth auth: Auth object for the user making the update.
         :param bool save: Whether to save after updating the object.
         """
-        if self.is_registration:
-            raise NodeUpdateError(reason="Registered content cannot be updated")
         if not fields:  # Bail out early if there are no fields to update
             return False
         values = {}
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
                 continue
+            if self.is_registration and key != 'is_public':
+                raise NodeUpdateError(reason="Registered content cannot be updated", key=key)
             # Title and description have special methods for logging purposes
             if key == 'title':
                 self.set_title(title=value, auth=auth, save=False)
@@ -1457,7 +1462,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     value.get('year'),
                     value.get('copyright_holders'),
                     auth,
-                    save=False
+                    save=save
                 )
             else:
                 with warnings.catch_warnings():
