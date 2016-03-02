@@ -1,13 +1,13 @@
 
 .node-styling {
-    background-color: rgba(252, 252, 252, 0.63);
+    background-color: #fff;
     border: 1px solid #ABC0CD;
     padding: 3px;
     color: #555;
 }
 
 .node-styling:hover {
-    background-color: #fff;
+    background-color: #f5f5f5;
     cursor: pointer;
 }
 
@@ -78,4 +78,16 @@
 
 .blank-line {
     margin-bottom: 15px;
+}
+
+.quick-search-input input {
+    height: 38px;
+    border: none;
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
+}
+.quick-search-input .input-group-addon {
+    border: 1px solid #fff;
+    background: #f5f5f5;
+
 }

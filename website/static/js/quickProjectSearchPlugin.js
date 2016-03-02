@@ -126,29 +126,8 @@ var QuickSearchProject = {
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
-            return node.embeds.contributors.data[i].embeds.users.data.attributes.family_name;
-        };
-
-        // Formats contrib family names for display
-        self.getContributors = function (node, number) {
-            if (number === 1) {
-                return self.getFamilyName(0, node);
-            }
-            else if (number === 2) {
-                return self.getFamilyName(0, node) + ' and ' +
-                    self.getFamilyName(1, node);
-            }
-            else if (number === 3) {
-                return self.getFamilyName(0, node) + ', ' +
-                    self.getFamilyName(1, node) + ', and ' +
-                    self.getFamilyName(2, node);
-            }
-            else {
-                return self.getFamilyName(0, node) + ', ' +
-                    self.getFamilyName(1, node) + ', ' +
-                    self.getFamilyName(2, node) + ' + ' + (number - 3);
-            }
-
+            var attributes = node.embeds.contributors.data[i].embeds.users.data.attributes;
+            return $osf.findContribName(attributes);
         };
 
          // Formats date for display
@@ -318,9 +297,6 @@ var QuickSearchProject = {
                 }},
                     m('i.fa.fa-caret-down.load-nodes.m-b-xl'));
             }
-            else {
-                return m('.m-b-xl');
-            }
         }
 
         function sortAlphaAsc() {
@@ -394,9 +370,8 @@ var QuickSearchProject = {
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('.m-v-sm.input-group', [
-                    m('span.input-group-addon', m('i.fa.fa-search')),
-                    m('input[type=search].form-control', {'id': 'searchQuery', placeholder: 'Quick search projects', onkeyup: function(search) {
+                return m('div.m-v-sm.input-group.quick-search-input', [
+                    m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
                         ctrl.filter(search.target.value);
                         ctrl.quickSearch();
                     }}),
