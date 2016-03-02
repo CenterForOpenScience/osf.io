@@ -82,12 +82,19 @@
 
 .quick-search-input input {
     height: 38px;
-    border: none;
-    border-top-left-radius: 2px;
-    border-bottom-left-radius: 2px;
+    border-radius: 5px;
+    display: inline-block;
+    padding-right: 40px;
 }
-.quick-search-input .input-group-addon {
-    border: 1px solid #fff;
-    background: #f5f5f5;
+
+.quick-search-input span {
+    display: inline-block;
+    margin-left: -36px;
+    background: #eee;
+    border-radius: 12px;
+    color: #888;
+    font-size: 13px;
+    padding: 1px;
+    width: 26px;
 
 }

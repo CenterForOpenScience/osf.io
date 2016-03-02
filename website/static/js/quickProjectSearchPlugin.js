@@ -370,12 +370,12 @@ var QuickSearchProject = {
 
         function searchBar() {
             if (ctrl.loadingComplete()){
-                return m('div.m-v-sm.input-group.quick-search-input', [
+                return m('div.m-v-sm.quick-search-input', [
                     m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
                         ctrl.filter(search.target.value);
                         ctrl.quickSearch();
                     }}),
-                    m('span.input-group-addon', {onclick: function() {
+                    m('span', {onclick: function() {
                         ctrl.filter('');
                         document.getElementById('searchQuery').value = '';
                         ctrl.quickSearch();

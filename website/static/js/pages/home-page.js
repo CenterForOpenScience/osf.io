@@ -19,6 +19,11 @@ $(document).ready(function(){
             return [
                 m('.quickSearch', m('.container.p-t-lg',
                     [
+                        m('h3', [
+                            m('span', 'My Projects'),
+                            m('button.btn.btn-success.btn-xs', 'New Project')
+                            ]
+                        ),
                         m.component(quickSearchProject, {})
                     ]
                 )),
