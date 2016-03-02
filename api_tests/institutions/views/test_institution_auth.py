@@ -81,7 +81,7 @@ class TestInstitutionAuth(ApiTestCase):
         username = 'hmoco@circle.edu'
 
         user = User(username=username, fullname='Mr Moco')
-        user.affiliated_institutions.append(self.institution.node)
+        user._affiliated_institutions.append(self.institution.node)
         user.save()
 
         res = self.app.post(self.url, self.build_payload(username))

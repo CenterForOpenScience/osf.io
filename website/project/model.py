@@ -3423,13 +3423,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @classmethod
     def find(cls, query, allow_institution=False, **kwargs):
         if not allow_institution:
-            query = (query & Q('is_institution', 'eq', False)) if query else Q('is_institution', 'eq', False)
+            query = (query & Q('is_institution', 'ne', True)) if query else Q('is_institution', 'ne', True)
         return super(Node, cls).find(query, **kwargs)
 
     @classmethod
     def find_one(cls, query, allow_institution=False, **kwargs):
         if not allow_institution:
-            query = (query & Q('is_institution', 'eq', False)) if query else Q('is_institution', 'eq', False)
+            query = (query & Q('is_institution', 'ne', True)) if query else Q('is_institution', 'ne', True)
         return super(Node, cls).find_one(query, **kwargs)
 
     @classmethod
@@ -3464,7 +3464,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         previous = Institution(self.primary_institution) if self.primary_institution else None
         self.primary_institution = inst
         if inst.node not in self.affiliated_institutions:
-            self.affiliated_institutions.append(inst.node)
+            self._affiliated_institutions.append(inst.node)
         if log:
             self.add_log(
                 action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
