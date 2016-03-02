@@ -12,6 +12,7 @@ from website.models import Node, User, Comment, Institution
 from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.files.models.base import File
 from website.util import permissions as osf_permissions
+from website.project.model import NodeUpdateError
 
 from api.nodes.utils import get_file_object
 from api.base.utils import get_object_or_error, absolute_reverse
@@ -283,6 +284,8 @@ class NodeSerializer(JSONAPISerializer):
                 raise InvalidModelValueError(detail=e.message)
             except PermissionsError:
                 raise exceptions.PermissionDenied
+            except NodeUpdateError as e:
+                raise ValidationError(detail=e.reason)
 
         return node
 

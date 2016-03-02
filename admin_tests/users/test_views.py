@@ -4,7 +4,6 @@ from nose.tools import *  # flake8: noqa
 from tests.base import AdminTestCase
 from tests.factories import UserFactory
 from admin_tests.utilities import setup_view
-
 from admin.users.views import UserView
 
 
