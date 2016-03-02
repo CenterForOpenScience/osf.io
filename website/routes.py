@@ -5,8 +5,6 @@ import httplib as http
 from flask import request
 from flask import send_from_directory
 
-from modularodm import Q
-
 from framework import status
 from framework import sentry
 from framework.auth import cas
