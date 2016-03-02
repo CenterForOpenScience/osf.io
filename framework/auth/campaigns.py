@@ -12,10 +12,10 @@ CAMPAIGNS = ImmutableDict({
         'redirect_url': lambda: web_url_for('prereg_landing_page'),
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
     },
-    'merge_user': {
-        'system_tag': 'merge_user_login',
+    'existing_user': {
+        'system_tag': 'existing_user_login',
         'redirect_url': lambda: web_url_for('auth_login'),
-        'confirmation_email_template': mails.CONFIRM_MERGE,
+        'confirmation_email_template': mails.CONFIRM_EMAIL,
     },
     'institution': {
         'system_tag': 'institution_campaign',

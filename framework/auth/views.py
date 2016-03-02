@@ -130,7 +130,7 @@ def auth_login(auth, **kwargs):
 
     status_message = request.args.get('status', '')
     if status_message == 'expired':
-        status.push_status_message('The private link you used is expired.')
+        status.push_status_message('The private link you used is expired.  Please Resend email.')
 
     # if next_url:
     #     status.push_status_message(language.MUST_LOGIN)
@@ -176,7 +176,6 @@ def auth_email_logout(token, auth=None, **kwargs):
             user.save()
             logout()
         else:
-            user.email_verifications[token]['confirmed'] = False
             status.push_status_message('The private link you used is expired.')
     resp = redirect(redirect_url)
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
@@ -184,35 +183,58 @@ def auth_email_logout(token, auth=None, **kwargs):
 
 
 @collect_auth
-def confirm_email_get(auth=None, **kwargs):
+def confirm_email_get(token, auth=None, **kwargs):
     """View for email confirmation links.
     Authenticates and redirects to user settings page if confirmation is
     successful, otherwise shows an "Expired Link" error.
 
     methods: GET
     """
-    # user = User.load(kwargs['uid'])
-    user = auth.user
-    verified_emails = []
-    for token in user.email_verifications:
-        if user.confirm_token(token):
-            if user.email_verifications[token]['confirmed']:
-                user_merge = True
-                try:
-                    User.find_one(Q('emails', 'iexact', user.email_verifications[token]['email']))
-                except NoResultsFound:
-                    user_merge = False
+    user = User.load(kwargs['uid'])
+    is_merge = 'confirm_merge' in request.args
+    is_initial_confirmation = not user.date_confirmed
+    existing_user = user.is_active
+    campaign = request.args.get('campaign') or campaigns.campaign_for_user(user)
+    if user is None:
+        raise HTTPError(http.NOT_FOUND)
+    if existing_user:
+        redirect = auth_email_logout(token, **kwargs)
 
-                #todo remove confirmed, and maybe token, from object
-                verified_emails.append({'address': user.email_verifications[token]['email'],
-                                        'token': token,
-                                        'confirmed': user.email_verifications[token]['confirmed'],
-                                        'user_merge': user_merge})
-            else:
-                #todo migrate to remove this hack
-                user.email_verifications[token]['confirmed'] = False
-                user.save()
-    return verified_emails
+    elif auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
+        if not is_merge:
+            # determine if the user registered through a campaign
+            if campaign:
+                return redirect(
+                    campaigns.campaign_url_for(campaign)
+                )
+            status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+            # Go to dashboard
+            return redirect(web_url_for('dashboard'))
+
+        status.push_status_message(language.MERGE_COMPLETE, 'success')
+        return redirect(web_url_for('user_account'))
+    elif is_initial_confirmation:
+        user.date_last_login = datetime.datetime.utcnow()
+        user.save()
+
+        # Send out our welcome message
+        mails.send_mail(
+            to_addr=user.username,
+            mail=mails.WELCOME,
+            mimetype='html',
+            user=user
+        )
+
+    # Redirect to CAS and authenticate the user with a verification key.
+    user.verification_key = security.random_string(20)
+    user.save()
+
+    return redirect(cas.get_login_url(
+        request.url,
+        auto=True,
+        username=user.username,
+        verification_key=user.verification_key
+    ))
 
 
 @collect_auth
@@ -239,7 +261,7 @@ def add_confirmed_emails(auth=None, **kwargs):
     user = auth.user
     confirmed_email = request.json.get('address')
     token = request.json.get('token')
-    is_merge = 'merge_user' in user.system_tags
+    is_merge = 'user_merge' in user.system_tags
     is_initial_confirmation = not user.date_confirmed
 
     if user is None:
@@ -314,10 +336,12 @@ def send_confirm_email(user, email):
     # Choose the appropriate email template to use
     if merge_target:
         mail_template = mails.CONFIRM_MERGE
+        confirmation_url += '?campaign=existing_user'
     elif campaign:
         mail_template = campaigns.email_template_for_campaign(campaign)
     elif user.is_active:
         mail_template = mails.CONFIRM_EMAIL
+        confirmation_url += '?campaign=existing_user'
     else:
         mail_template = mails.INITIAL_CONFIRM_EMAIL
 

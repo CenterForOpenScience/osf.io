@@ -330,15 +330,13 @@ def make_url_map(app):
     ], prefix='/api/v1')
 
     process_rules(app, [
-        Rule('/dashboard/confirmed_emails/', 'get', auth_views.confirm_email_get, json_renderer)
+        Rule('/dashboard/confirmed_emails/', 'get', auth_views.confirm_email_get, json_renderer),
+        Rule('/dashboard/confirmed_emails/', 'put', auth_views.add_confirmed_emails, json_renderer)
+
     ], prefix='/api/v1')
 
     process_rules(app, [
         Rule('/dashboard/remove_confirmed_emails/', 'put', auth_views.confirm_email_remove, json_renderer)
-    ], prefix='/api/v1')
-
-    process_rules(app, [
-        Rule('/dashboard/confirmed_emails/', 'put', auth_views.add_confirmed_emails, json_renderer)
     ], prefix='/api/v1')
 
 
@@ -398,7 +396,7 @@ def make_url_map(app):
         Rule(
             '/confirm/<uid>/<token>/',
             'get',
-            auth_views.auth_email_logout,
+            auth_views.confirm_email_get,
             # View will either redirect or display error message
             OsfWebRenderer('error.mako', render_mako_string)
         ),

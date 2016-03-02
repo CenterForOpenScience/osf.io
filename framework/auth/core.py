@@ -819,7 +819,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force)
-        return "{0}confirm/{1}/{2}/{3}".format(base, self._primary_key, token, '?campaign=merge_user')
+        return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
 
     def _get_unconfirmed_email_for_token(self, token):
         """Return whether or not a confirmation token is valid for this user.
@@ -842,7 +842,10 @@ class User(GuidStoredObject, AddonModelMixin):
         """Return whether or not a confirmation token is valid for this user.
         :rtype: bool
         """
-        verification = self.email_verifications[token]
+        try:
+            verification = self.email_verifications[token]
+        except:
+            return False
         # Check token for existance and date
         if (
             'expiration' in verification and

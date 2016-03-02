@@ -67,7 +67,7 @@
         </div>
     </div>
     %endif
-      %if campaign == "merge_user":
+      %if campaign == "existing_user":
     <div class="col-sm-6 col-sm-offset-4 p-h-lg">
       <h4>Please log in to continue</h4>
         <form
@@ -116,7 +116,7 @@
 
     %endif
 
-    %if (campaign != "institution" or not enable_institutions) and campaign != "merge_user":
+    %if (campaign != "institution" or not enable_institutions) and campaign != "existing_user":
       <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
           <form
             id="logInForm"
