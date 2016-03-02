@@ -27,7 +27,6 @@ env:
     - TEST_BUILD="osf"
     - TEST_BUILD="else"
     - TEST_BUILD="varnish"
-    fast_finish: true
 
 before_install:
     # cache directories
