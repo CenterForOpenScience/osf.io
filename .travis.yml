@@ -54,6 +54,7 @@ before_install:
       mkdir -p /tmp/tokumx/data
       tar xzf $TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
     - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
+    - export ENABLE_VARNISH=False
     # elasticsearch
     - |
       cd $HOME/.cache/downloads
@@ -71,6 +72,7 @@ before_install:
       mkdir -p /tmp/elasticsearch
       tar xzf $ELASTICSEARCH_ARCHIVE -C /tmp/elasticsearch --strip-components=1
     - /tmp/elasticsearch/bin/elasticsearch > /dev/null &
+    - export ENABLE_VARNISH=False
     # varnish
     - |
       cd $HOME/.cache/downloads
@@ -93,7 +95,7 @@ before_install:
     - |
       export LD_LIBRARY_PATH=/tmp/libpcre/lib/x86_64-linux-gnu:/tmp/libjemalloc/usr/lib/x86_64-linux-gnu:/tmp/varnish/usr/lib/varnish
       /tmp/varnish/usr/sbin/varnishd -n /tmp -p feature=+esi_disable_xml_check -p vmod_dir=/tmp/varnish/usr/lib/varnish/vmods -F -f $PROJECT_DIR/tests/test_files/varnish.vcl -a *:8080 > /dev/null &
-
+    - export ENABLE_VARNISH=True
 install:
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
