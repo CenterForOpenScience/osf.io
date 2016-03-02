@@ -65,6 +65,7 @@ from website.project import signals as project_signals
 from website.project.spam.model import SpamMixin
 from website.prereg import utils as prereg_utils
 
+
 logger = logging.getLogger(__name__)
 
 VIEW_PROJECT_URL_TEMPLATE = settings.DOMAIN + '{node_id}/'
@@ -1429,6 +1430,27 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if save:
             self.save()
 
+    def update_creator_notification_settings(self):
+        """ Update the creator's notification settings
+
+        :param: none yet but maybe
+        """
+        from website.notifications import utils as notification_utils
+        from website.notifications.model import NotificationSubscription
+
+        # Update the creator's email preferences to instantly for comments and files
+        event = 'file_updated'
+        # event2 = 'comments'
+        notification_type = 'email_transactional'
+        target_id = self._id
+
+        event_id = notification_utils.to_subscription_key(target_id, event)
+
+        if self.creator:
+            subscription = NotificationSubscription(_id=event_id, owner=self.creator, event_name=event)
+            subscription.add_user_to_subscription(self.creator, notification_type)
+            subscription.save()
+
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
 
@@ -1535,6 +1557,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # If you're saving a property, do it above this super call
         saved_fields = super(Node, self).save(*args, **kwargs)
+
+        if first_save:
+            self.update_creator_notification_settings()
 
         if first_save and is_original and not suppress_log:
             # TODO: This logic also exists in self.use_as_template()
