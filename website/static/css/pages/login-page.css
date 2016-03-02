@@ -1,6 +1,6 @@
-.toggle-box {
-height: 320px !important;
+#login-box {
     border: 1px solid #EEE;
+    backgroung-color:#ABCDEF
 }
 
 .toggle-box-left {
@@ -93,7 +93,7 @@ h3.login-tagline {
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
 }
 
-a {
-    color: #43a1f2;
+a.login-link {
+    color: #FFFFFF;
     text-decoration: none;
 }

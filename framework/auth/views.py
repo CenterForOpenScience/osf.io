@@ -177,9 +177,9 @@ def auth_email_logout(token, auth=None, **kwargs):
             logout()
         else:
             status.push_status_message('The private link you used is expired.')
-    resp = redirect(redirect_url)
-    resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
-    return resp
+    # resp = redirect(redirect_url)
+    # resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+    return redirect_url
 
 
 @collect_auth
@@ -197,9 +197,6 @@ def confirm_email_get(token, auth=None, **kwargs):
     campaign = request.args.get('campaign') or campaigns.campaign_for_user(user)
     if user is None:
         raise HTTPError(http.NOT_FOUND)
-    if existing_user:
-        redirect = auth_email_logout(token, **kwargs)
-
     elif auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
         if not is_merge:
             # determine if the user registered through a campaign
@@ -235,6 +232,37 @@ def confirm_email_get(token, auth=None, **kwargs):
         username=user.username,
         verification_key=user.verification_key
     ))
+
+
+@collect_auth
+def confirm_user_get(auth=None, **kwargs):
+    """View for email confirmation links.
+    Authenticates and redirects to user settings page if confirmation is
+    successful, otherwise shows an "Expired Link" error.
+
+    methods: GET
+    """
+    # user = User.load(kwargs['uid'])
+    user = auth.user
+    verified_emails = []
+    for token in user.email_verifications:
+        if user.confirm_token(token):
+            if user.email_verifications[token]['confirmed']:
+                try:
+                    user_merge = User.find_one(Q('emails', 'iexact', user.email_verifications[token]['email']))
+                except NoResultsFound:
+                    user_merge = False
+
+                #todo remove confirmed, and maybe token, from object
+                verified_emails.append({'address': user.email_verifications[token]['email'],
+                                        'token': token,
+                                        'confirmed': user.email_verifications[token]['confirmed'],
+                                        'user_merge': user_merge.email})
+            else:
+                #todo migrate to remove this hack
+                user.email_verifications[token]['confirmed'] = False
+                user.save()
+    return verified_emails
 
 
 @collect_auth

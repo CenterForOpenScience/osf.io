@@ -97,7 +97,7 @@
         currentUser: {
             'id': '${user_id}'
         },
-        confirmedEmailURL: ${ api_url_for('confirm_email_get') | sjson, n},
+        confirmedEmailURL: ${ api_url_for('confirm_user_get') | sjson, n},
         removeConfirmedEmailURL: ${ api_url_for('confirm_email_remove') | sjson, n}
     });
 </script>
