@@ -683,7 +683,7 @@ MEETING_DATA = {
     },
     'CNI2016': {
         'name': 'Coalition for Networked Information (CNI) Spring Membership Meeting 2016',
-        'info_url': 'https://www.cni.org/events/membership-meetings/upcoming-meeting/spring-2016',
+        'info_url': 'https://wp.me/P1LncT-6fd',
         'logo_url': None,
         'active': True,
         'admins': [],
