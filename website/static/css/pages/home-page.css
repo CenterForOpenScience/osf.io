@@ -1,6 +1,6 @@
 .quickSearch {
     min-height: 700px;
-    background: url('/static/img/bg6.jpg');
+    background: #C5D6E6 url('/static/img/bg6.jpg') top center no-repeat
 }
 .recentActvity {
     min-height: 650px;
@@ -19,14 +19,6 @@
     background: #166595 url("/static/img/front-page/bg-web.png") no-repeat center top;
     background-size: cover;
     color: #fff;
-}
-
-.meetings .btn {
-    padding: 15px;
-    border: 1px solid #eee;
-    border-radius: 5px;
-    color: #eee;
-    font-size: 18px;
 }
 
 .meetings .btn:hover {

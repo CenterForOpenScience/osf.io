@@ -12,7 +12,7 @@ var MeetingsAndConferences = {
         return m('.conferences-and-meetings.p-v-sm',
             m('.row',
                 [
-                    m('.col-md-6',
+                    m('.col-md-8',
                         [
                             m('div.conference-centering',  m('h2', 'Hosting a Conference or Meeting?')),
                             m('div.conference-centering',
@@ -20,11 +20,8 @@ var MeetingsAndConferences = {
                             )
                         ]
                     ),
-                    m('.col-md-6',
-                        m('.row', [
-                            m('div', {'class': 'col-xs-6'}, m('a.btn.btn-block.m-v-xl', {type:'button', href:'/meetings/'}, 'Find a Meeting')),
-                            m('div', {'class': 'col-xs-6'}, m('a.btn.btn-block.m-v-xl', {type:'button',  href:'/meetings/'}, 'Create a Meeting'))
-                        ])
+                    m('.col-md-4.text-center',
+                        m('div',  m('a.btn.btn-info.btn-lg.m-v-xl', {type:'button',  href:'/meetings/'}, 'Create a Meeting'))
                     )
                 ]
             )
