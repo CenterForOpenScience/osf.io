@@ -179,7 +179,7 @@ def before_request():
         except itsdangerous.BadData:
             return
         if session.data.get('auth_user_id'):
-            database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
+            database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_request': datetime.utcnow()}}, w=0)
         set_session(session)
 
 def after_request(response):

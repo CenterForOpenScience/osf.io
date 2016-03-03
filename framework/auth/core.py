@@ -388,8 +388,11 @@ class User(GuidStoredObject, AddonModelMixin):
     # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
 
-    # date the user last sent a request
+    # date user last authenticated with CAS
     date_last_login = fields.DateTimeField()
+
+    # date the user last sent a request
+    date_last_request = fields.DateTimeField()
 
     # date the user first successfully confirmed an email address
     date_confirmed = fields.DateTimeField(index=True)
