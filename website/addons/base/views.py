@@ -590,6 +590,7 @@ def addon_view_file(auth, node, file_node, version):
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
         'file_tags': [tag._id for tag in file_node.tags],
+        'file_guid': file_node.get_guid()._id,
         'file_id': file_node._id,
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE
     })
