@@ -107,12 +107,13 @@ var NewAndNoteworthy = {
             return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search'}, 'Find more projects with advanced search');
         }
 
-        return m('.row',[
-            m('.col-sm-6.col-xs-12', m('h4', 'New and Noteworthy'), newAndNoteworthyProjectsTemplate()),
-            m('.col-sm-6.col-xs-12', m('h4', 'Most Popular'), popularProjectsTemplate ()),
+        return m('',[
+            m('.row',[
+                m('.col-sm-6.col-xs-12', m('h4', 'New and Noteworthy'), newAndNoteworthyProjectsTemplate()),
+                m('.col-sm-6.col-xs-12', m('h4', 'Most Popular'), popularProjectsTemplate ()),
+            ]),
             m('.row', m('.text-center.col-sm-12', findMoreProjectsButton()))
         ]);
-
     }
 };
 

@@ -437,7 +437,7 @@ var QuickSearchProject = {
                         ctrl.loadingComplete() ? '' : m('.spinner-div', m('.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
                     ]),
                     m('p.text-center', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')),
-                    m('.row.node-col-headers', [
+                    m('.row.node-col-headers.m-t-md', [
                         m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
                         m('.col-sm-4.col-md-4', m('.quick-search-col', 'Contributors')),
                         m('.col-sm-4.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))

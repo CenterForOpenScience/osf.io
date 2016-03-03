@@ -87,11 +87,17 @@
     margin-bottom: 15px;
 }
 
+.quick-search-input {
+    width: 70%;
+    margin: 10px auto;
+}
+
 .quick-search-input input {
     height: 38px;
     border-radius: 5px;
     display: inline-block;
     padding-right: 40px;
+
 }
 
 .quick-search-input span {
