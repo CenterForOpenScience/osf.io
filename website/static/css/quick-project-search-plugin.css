@@ -9,6 +9,7 @@
 .node-styling:hover {
     background-color: #337AB7;
     cursor: pointer;
+    color: #FFF;
 }
 
 .quick-project button {
@@ -36,6 +37,9 @@
 .sort-group {
   display: inline-block;
 
+}
+.node-col-headers {
+    font-weight: bold;
 }
 
 @media screen and (max-width: 768px) {
@@ -110,4 +114,9 @@
     color: #333;
     padding: 10px;
     margin-bottom: 5px;
+}
+.public-projects-item:hover {
+    cursor: pointer;
+    background-color: #337AB7;
+    color: #fff;
 }
