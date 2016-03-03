@@ -3,7 +3,7 @@ import urlparse
 import requests
 import logging
 
-from api.base import settings
+from website import settings
 
 logger = logging.getLogger(__name__)
 
