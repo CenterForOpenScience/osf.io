@@ -7,7 +7,7 @@
 }
 
 .node-styling:hover {
-    background-color: #f5f5f5;
+    background-color: #337AB7;
     cursor: pointer;
 }
 
@@ -103,4 +103,11 @@
 }
 .quick-search-col {
     padding-left: 5px;
+}
+
+.public-projects-item {
+    background: #FFF;
+    color: #333;
+    padding: 10px;
+    margin-bottom: 5px;
 }

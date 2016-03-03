@@ -102,6 +102,9 @@
     opacity: 1;
 }
 
+.spinner-loading-wrapper {
+    background: transparent;
+}
 @media only screen and  (max-width : 992px) {
     .col-xs-1 .page-button {
         font-size: 20px;

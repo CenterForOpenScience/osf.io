@@ -401,7 +401,7 @@ var QuickSearchProject = {
                     }}, m('.row',
                         [
                             m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col', project.attributes.title)),
-                            m('.col-sm-4.col-md-4.text-muted.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, ctrl.getFamilyName))),
+                            m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, ctrl.getFamilyName))),
                             m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', ctrl.formatDate(project)))
                         ]
                     ));

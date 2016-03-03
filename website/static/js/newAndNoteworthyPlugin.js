@@ -78,19 +78,17 @@ var NewAndNoteworthy = {
             var title = node.embeds.target_node.data.attributes.title;
             var contributors = $osf.contribNameFormat(node, ctrl.contributorsMapping[node.id][1], ctrl.getFamilyName);
 
-            return m('.row.node-styling.noteworthy-spacing', {onclick: function(){
+            return m('.public-projects-item', {onclick: function(){
                 location.href = '/' + node.embeds.target_node.data.id;
-            }},
-                m('.col-sm-12', m('h5.prevent-overflow', {'data-title': title, 'data-location': 'top', onmouseover: function(){
+            }},[
+                m('h5', title),
+                description ? m('p.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){
                     ctrl.addToolTip(this);
-                }}, m('em', title)),
-                m('h5.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){
+                }}, description) : '',
+                m('p.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
                     ctrl.addToolTip(this);
-                }}, description ?  description : m('.blank-line')),
-                m('h5.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
-                    ctrl.addToolTip(this);
-                }}, m('span.f-w-xl', 'Contributors: '), m('span', contributors))
-            ));
+                }}, m('span', 'Contributors: '), m('span', contributors))
+            ]);
         }
 
         function newAndNoteworthyProjectsTemplate () {
@@ -109,12 +107,12 @@ var NewAndNoteworthy = {
             return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search'}, 'Find more projects with advanced search');
         }
 
-        return m('.row', m('.col-xs-10.col-xs-offset-1.col-md-10.col-md-offset-1', m('.row',
+        return m('.row',[
             m('.col-sm-6.col-xs-12', m('h4', 'New and Noteworthy'), newAndNoteworthyProjectsTemplate()),
-            m('.col-sm-6.col-xs-12', m('h4', 'Most Popular'), popularProjectsTemplate ())
-        )),
-            m('.row', m('.text-center.col-sm-12', findMoreProjectsButton())))
-        ;
+            m('.col-sm-6.col-xs-12', m('h4', 'Most Popular'), popularProjectsTemplate ()),
+            m('.row', m('.text-center.col-sm-12', findMoreProjectsButton()))
+        ]);
+
     }
 };
 

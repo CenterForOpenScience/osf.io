@@ -42,7 +42,7 @@ $(document).ready(function(){
                 )),
                 m('.newAndNoteworthy', m('.container',
                     [
-                        m('.row.p-t-lg', [
+                        m('.row', [
                             m(columnSizeClass,m('h3', 'Discover Public Projects'))
                         ]),
                         m('.rowm.m-t-lg', [
