@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.65.0 (unreleased)
+0.65.0 (2016-03-02)
 ===================
 
 - Add UI for adding contributors from parent projects to subprojects.
@@ -15,7 +15,7 @@ Changelog
 - Use Sendgrid API for sending emails; add categorization of emails.
 - UI fixes.
 
-0.64.0 (2015-02-10)
+0.64.0 (2016-02-10)
 ===================
 
 - By default, any OSF user can comment on public projects.
