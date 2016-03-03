@@ -3,8 +3,6 @@ import urlparse
 import requests
 import logging
 
-from requests.packages.urllib3.connection import ConnectionError
-
 from api.base import settings
 
 logger = logging.getLogger(__name__)
@@ -29,7 +27,7 @@ def ban_url(url):
                 response = requests.request('BAN', ban_url, timeout=timeout, headers=dict(
                     Host=parsed_url.hostname
                 ))
-            except ConnectionError as ex:
+            except Exception as ex:
                 logger.error('Banning {} failed: {}'.format(
                     url,
                     ex.message
