@@ -24,6 +24,9 @@ def main():
 def update_comment_targets_to_guids():
     comments = Comment.find()
     for comment in comments:
+        # Skip comments on deleted files
+        if not comment.target:
+            continue
         if isinstance(comment.root_target, StoredFileNode):
             comment.root_target = comment.root_target.get_guid()
         elif comment.root_target:
