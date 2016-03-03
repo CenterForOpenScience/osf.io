@@ -175,7 +175,9 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+        Rule('/dashboard/', 'get', website_views.redirect_to_myprojects, OsfWebRenderer('dashboard.mako')),
+        Rule('/myprojects/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 

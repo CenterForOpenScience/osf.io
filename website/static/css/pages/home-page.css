@@ -1,3 +1,6 @@
+h3 {
+    font-weight: 400;
+}
 .quickSearch {
     min-height: 700px;
     background: #C5D6E6 url('/static/img/bg6.jpg') top center no-repeat
@@ -19,6 +22,9 @@
     background: #166595 url("/static/img/front-page/bg-web.png") no-repeat center top;
     background-size: cover;
     color: #fff;
+}
+.meetings .btn {
+    box-shadow: 0 0 9px -4px #000;
 }
 
 .meetings .btn:hover {
