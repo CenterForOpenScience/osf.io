@@ -24,8 +24,6 @@ from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
 from framework import status
-
-
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.mongo import validators
@@ -78,16 +76,9 @@ def has_anonymous_link(node, auth):
     :param str link: any view-only link in the current url
     :return bool anonymous: Whether the node is anonymous to the user or not
     """
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    if not view_only_link:
-        return False
-    if node.is_public:
-        return False
-    return any(
-        link.anonymous
-        for link in node.private_links_active
-        if link.key == view_only_link
-    )
+    if auth.private_link:
+        return auth.private_link.anonymous
+    return False
 
 @unique_on(['name', 'schema_version', '_id'])
 class MetaSchema(StoredObject):
@@ -1142,6 +1133,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return False
 
     def can_view(self, auth):
+        if auth and getattr(auth.private_link, 'anonymous', False):
+            return self._id in auth.private_link.nodes
+
         if not auth and not self.is_public:
             return False
 
@@ -1398,7 +1392,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return self.is_contributor(auth.user)
 
-    def set_node_license(self, license_id, year, copyright_holders, auth, save=True):
+    def set_node_license(self, license_id, year, copyright_holders, auth, save=False):
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError("Only admins can change a project's license.")
         try:
@@ -1427,6 +1421,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=auth,
             save=False,
         )
+
         if save:
             self.save()
 
@@ -1437,14 +1432,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param Auth auth: Auth object for the user making the update.
         :param bool save: Whether to save after updating the object.
         """
-        if self.is_registration:
-            raise NodeUpdateError(reason="Registered content cannot be updated")
         if not fields:  # Bail out early if there are no fields to update
             return False
         values = {}
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
                 continue
+            if self.is_registration and key != 'is_public':
+                raise NodeUpdateError(reason="Registered content cannot be updated", key=key)
             # Title and description have special methods for logging purposes
             if key == 'title':
                 self.set_title(title=value, auth=auth, save=False)
@@ -1463,7 +1458,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     value.get('year'),
                     value.get('copyright_holders'),
                     auth,
-                    save=False
+                    save=save
                 )
             else:
                 with warnings.catch_warnings():
@@ -2719,12 +2714,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
 
         # Node must have at least one registered admin user
-        # TODO: Move to validator or helper
-        admins = [
-            user for user in self.contributors
-            if self.has_permission(user, 'admin')
-            and user.is_registered
-        ]
+        admins = list(self.get_admin_contributors(self.contributors))
         if not admins:
             return False
 
@@ -2884,12 +2874,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 else:
                     to_remove.append(user)
 
-            # TODO: Move to validator or helper @jmcarp
-            admins = [
-                user for user in users
-                if self.has_permission(user, 'admin')
-                and user.is_registered
-            ]
+            admins = list(self.get_admin_contributors(users))
             if users is None or not admins:
                 raise ValueError(
                     'Must have at least one registered admin contributor'
@@ -3459,6 +3444,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                             yield (contrib, node)
                     else:
                         yield (contrib, node)
+
+    def get_admin_contributors(self, users):
+        """Return a set of all admin contributors for this node. Excludes contributors on node links and
+        inactive users.
+        """
+        return (
+            user for user in users
+            if self.has_permission(user, 'admin') and
+            user.is_active)
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME

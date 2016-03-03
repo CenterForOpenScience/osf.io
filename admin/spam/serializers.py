@@ -21,6 +21,7 @@ def serialize_comment(comment):
         'has_children': bool(getattr(comment, 'commented', [])),
         'modified': comment.modified,
         'is_deleted': comment.is_deleted,
+        'spam_status': comment.spam_status,
         'reports': reports,
         'node': comment.node,
         'category': reports[0]['category'],

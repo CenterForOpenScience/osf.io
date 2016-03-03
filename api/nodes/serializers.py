@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from rest_framework.exceptions import ValidationError
+
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
@@ -11,6 +12,7 @@ from website.models import Node, User, Comment, Institution
 from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.files.models.base import File
 from website.util import permissions as osf_permissions
+from website.project.model import NodeUpdateError
 
 from api.nodes.utils import get_file_object
 from api.base.utils import get_object_or_error, absolute_reverse
@@ -103,7 +105,7 @@ class NodeSerializer(JSONAPISerializer):
                                         'public and private nodes. Administrators on a parent '
                                         'node have implicit read permissions for all child nodes')
 
-    links = LinksField({'html': 'get_absolute_url'})
+    links = LinksField({'html': 'get_absolute_html_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
     children = RelationshipField(
@@ -171,15 +173,17 @@ class NodeSerializer(JSONAPISerializer):
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
-            return ["read"]
-        else:
-            return obj.get_permissions(user=user)
+            return ['read']
+        permissions = obj.get_permissions(user=user)
+        if not permissions:
+            permissions = ['read']
+        return permissions
 
     class Meta:
         type_ = 'nodes'
 
     def get_absolute_url(self, obj):
-        return obj.absolute_url
+        return obj.get_absolute_url()
 
     # TODO: See if we can get the count filters into the filter rather than the serializer.
 
@@ -280,6 +284,8 @@ class NodeSerializer(JSONAPISerializer):
                 raise InvalidModelValueError(detail=e.message)
             except PermissionsError:
                 raise exceptions.PermissionDenied
+            except NodeUpdateError as e:
+                raise ValidationError(detail=e.reason)
 
         return node
 
@@ -439,7 +445,6 @@ class NodeLinksSerializer(JSONAPISerializer):
 
 
 class NodeProviderSerializer(JSONAPISerializer):
-
     id = ser.SerializerMethodField(read_only=True)
     kind = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
@@ -463,6 +468,16 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'nodes:node-provider-detail',
+            kwargs={
+                'node_id': obj.node._id,
+                'provider': obj.provider
+            }
+        )
+
 
 class NodeInstitutionRelationshipSerializer(ser.Serializer):
     id = ser.CharField(source='institution_id', required=False, allow_null=True)

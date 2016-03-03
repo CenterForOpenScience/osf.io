@@ -1690,10 +1690,10 @@ var FGToolbar = {
                 icon : 'fa fa-times'
             }, '');
         templates[toolbarModes.FILTER] =  [
-            m('.col-xs-10', [
+            m('.col-xs-9', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
                 ]),
-                m('.col-xs-2.tb-buttons-col',
+                m('.col-xs-3.tb-buttons-col',
                     m('.fangorn-toolbar.pull-right', [dismissIcon])
                 )
             ];
