@@ -1040,6 +1040,11 @@ var MicroPagination = {
 var Breadcrumbs = {
     view : function (ctrl, args) {
         var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
+        var updateFilesOnClick = function (item) {
+                args.updateFilesData(item);
+                $osf.trackClick('dashboard', 'projectOrganizer', 'click-on-breadcrumbs');
+        };
+
         var items = args.breadcrumbs();
         if (mobile && items.length > 1) {
             return m('.db-breadcrumbs', [
@@ -1119,12 +1124,10 @@ var Breadcrumbs = {
                 item.index = index; // Add index to update breadcrumbs
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',
-                    m('span.btn.btn-link', { onclick : args.updateFilesData.bind(null, item)},  item.label),
+                    m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  item.label),
                     m('i.fa.fa-angle-right')
                 );
             })
-
-
         ]));
     }
 };
