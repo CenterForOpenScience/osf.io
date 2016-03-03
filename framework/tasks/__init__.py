@@ -14,7 +14,7 @@ app = Celery()
 app.config_from_object('website.settings')
 
 if settings.SENTRY_DSN:
-    client = Client(settings.SENTRY_DSN)
+    client = Client(settings.SENTRY_DSN, release=settings.VERSION, tags={'App': 'celery'})
     register_signal(client)
 
 
