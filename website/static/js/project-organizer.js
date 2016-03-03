@@ -136,7 +136,9 @@ function _poResolveRows(item) {
             filter : false,
             custom : function (row){
                 return m('.btn.btn-default.btn-sm[data-toggle="modal"][data-target="#infoModal"]', {
-                }, m('i.fa.fa-ellipsis-h'));
+                }, m('i.fa.fa-ellipsis-h', {onclick: function() {
+                    $osf.trackClick('dashboard', 'mobile', 'open-information-panel');
+                }}));
             }
         });
     }

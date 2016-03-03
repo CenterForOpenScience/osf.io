@@ -529,6 +529,7 @@ var Dashboard = {
                         'class' : sidebarButtonClass,
                         onclick : function () {
                             ctrl.showSidebar(!ctrl.showSidebar());
+                            $osf.trackClick('dashboard', 'mobile', 'click-bars-to-toggle-collections-or-projects');
                         }
                     }, m('.fa.fa-bars')) : '',
                     m('.db-poFilter.m-r-xs')
@@ -539,6 +540,7 @@ var Dashboard = {
                 mobile ? [ m('.db-dismiss', m('button.close[aria-label="Close"]', {
                     onclick : function () {
                         ctrl.showSidebar(false);
+                        $osf.trackClick('dashboard', 'mobile', 'close-toggle-instructions');
                     }
                 }, [
                     m('span[aria-hidden="true"]','×')
