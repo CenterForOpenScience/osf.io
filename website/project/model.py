@@ -1439,17 +1439,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website.notifications.model import NotificationSubscription
 
         # Update the creator's email preferences to instantly for comments and files
-        event = 'file_updated'
-        # event2 = 'comments'
+        events = ['file_updated', 'comments']
         notification_type = 'email_transactional'
         target_id = self._id
-
-        event_id = notification_utils.to_subscription_key(target_id, event)
-
         if self.creator:
-            subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
-            subscription.add_user_to_subscription(self.creator, notification_type)
-            subscription.save()
+            for event in events:
+                event_id = notification_utils.to_subscription_key(target_id, event)
+                subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
+                subscription.add_user_to_subscription(self.creator, notification_type)
+                subscription.save()
 
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
