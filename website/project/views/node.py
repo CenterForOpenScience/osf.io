@@ -204,8 +204,9 @@ def project_new_node(auth, node, **kwargs):
             )
         redirect_url = node.url
         message = (
-            'Your component was created successfully. You can keep working on the component page below, '
-            'or return to the <u><a href="{url}">project page</a></u>.'
+            'Your component was created successfully. You can keep working on the project page below, '
+            'or go to the new <u><a href=' + new_component.url +
+            '>component</a></u>.'
         ).format(url=node.url)
         if form.inherit_contributors.data and node.has_permission(user, ADMIN):
             for contributor in node.contributors:
