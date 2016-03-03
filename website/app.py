@@ -5,6 +5,8 @@ import importlib
 from collections import OrderedDict
 import json
 
+import django
+
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
 import framework
@@ -15,6 +17,7 @@ from framework.addons.utils import render_addon_capabilities
 from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
 from framework.tasks import handlers as task_handlers
+from framework.tasks import postcommit_handlers as postcommit_handlers
 from framework.transactions import handlers as transaction_handlers
 
 import website.models
@@ -55,6 +58,7 @@ def attach_handlers(app, settings):
     add_handlers(app, mongo_handlers.handlers)
     add_handlers(app, task_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
+    add_handlers(app, postcommit_handlers.handlers)
 
     # Attach handler for checking view-only link keys.
     # NOTE: This must be attached AFTER the TokuMX to avoid calling
@@ -118,6 +122,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     build_log_templates(settings)
     init_addons(settings, routes)
     build_js_config_files(settings)
+
+    django.setup()
 
     app.debug = settings.DEBUG_MODE
 

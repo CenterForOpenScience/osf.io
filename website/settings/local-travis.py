@@ -4,8 +4,8 @@ These settings override what's in website/settings/defaults.py
 
 NOTE: local.py will not be added to source control.
 '''
-
 from . import defaults
+import os
 
 DB_PORT = 27017
 
@@ -42,4 +42,8 @@ TEST_DB_NAME = DB_NAME = 'osf_test'
 
 VARNISH_SERVERS = ['http://localhost:8080']
 
-ENABLE_VARNISH = True
+if (os.environ.get('ENABLE_VARNISH', False) == 'True'):
+    ENABLE_VARNISH = True
+else:
+    ENABLE_VARNISH = False
+
