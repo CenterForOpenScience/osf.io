@@ -44,6 +44,8 @@ VARNISH_SERVERS = ['http://localhost:8080']
 
 if (os.environ.get('ENABLE_VARNISH', False) == 'True'):
     ENABLE_VARNISH = True
+    print "------------------ VARNISH ENABLED ------------------"
 else:
     ENABLE_VARNISH = False
+    print "------------------ VARNISH DISABLED ------------------"
 
