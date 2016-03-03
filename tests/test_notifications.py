@@ -119,7 +119,7 @@ class TestNotificationsModels(OsfTestCase):
         user = factories.UserFactory()
         factories.NodeFactory(creator=user)
         user_subscriptions = [x for x in utils.get_all_user_subscriptions(user)]
-        assert_equal(len(user_subscriptions), 1)
+        assert_equal(len(user_subscriptions), 2)  # subscribed to both file_updated and comments
 
 
 class TestSubscriptionView(OsfTestCase):
