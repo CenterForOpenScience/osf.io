@@ -1430,15 +1430,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if save:
             self.save()
 
-    def update_creator_notification_settings(self):
+    @project_signals.node_first_save.connect
+    def subscribe_creator_to_notifications(self):
         """ Update the creator's notification settings
-
-        :param: none yet but maybe
         """
         from website.notifications import utils as notification_utils
         from website.notifications.model import NotificationSubscription
 
-        # Update the creator's email preferences to instantly for comments and files
         events = ['file_updated', 'comments']
         notification_type = 'email_transactional'
         target_id = self._id
@@ -1583,7 +1581,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 save=True,
             )
 
-            self.update_creator_notification_settings()
+            project_signals.node_first_save.send(self)
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
