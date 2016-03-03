@@ -116,9 +116,8 @@ class TestNotificationsModels(OsfTestCase):
         )
 
     def test_new_node_creator_is_subscribed(self):
-        user = factories.UserFactory
+        user = factories.UserFactory()
         factories.NodeFactory(creator=user)
-
         user_subscriptions = [x for x in utils.get_all_user_subscriptions(user)]
         assert_equal(len(user_subscriptions), 1)
 
