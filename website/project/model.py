@@ -382,7 +382,7 @@ class NodeLog(StoredObject):
     params = fields.DictionaryField()
     should_hide = fields.BooleanField(default=False)
     __indices__ = [
-            {
+        {
             'key_or_list': [
                 ('__backrefs.logged.node.logs.$', 1)
             ],
