@@ -12,7 +12,7 @@
     <div class="col-xs-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
           <h2 class="m-t-xl m-b-lg"> Getting Started with OSF </h2>
             <div class="support-item">
-                <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Use projects to organize your work</h5>
+                <h5 class="support-head f-w-xl"> Use projects to organize your work</h5>
                 <div class="support-body">The OSF organizes your lines of research into projects. Projects come with features meant to streamline
                 your workflow as well as make your work more discoverable.
                 <div class="row">
@@ -28,7 +28,7 @@
 
 
             <div class="support-item">
-                <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i>Collaborate with your colleagues  </h5>
+                <h5 class="support-head f-w-xl">Collaborate with your colleagues  </h5>
                 <div class="support-body">
                     <p>Keep yourself and your collaborators on point while collecting data by using the OSF. Add
                         contributors to your project so that everyone has access to the same files. Use our pre-formatted
@@ -44,7 +44,7 @@
             </div>
 
             <div class="support-item">
-                <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Simplify your life with version control </h5>
+                <h5 class="support-head f-w-xl"> Simplify your life with version control </h5>
                 <div class="support-body">
                     <p>Keep your research up to date by uploading new versions of documents to the OSF. We use version
                         control to keep track of older versions of your documents so you don't have to. You can also register
@@ -81,7 +81,7 @@
 
             <h3 class="m-t-lg">OSF Add-ons</h3>
             <div class="support-item">
-                <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> About Add-ons </h5>
+                <h5 class="support-head f-w-xl">About Add-ons </h5>
                 <div class="support-body">
                     <p>An add-on is a connection between the OSF to another tool such as Google Drive or GitHub.</p>
                     <p>You can connect an add-on from a project's "Settings" page.  Select the add-on to connect to your project.

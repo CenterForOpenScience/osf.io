@@ -30,6 +30,7 @@
               <li><a href="/explore/activity/">New Projects</a></li>
               <li><a href="/search/?q=*&amp;filter=registration">Registry</a></li>
               <li><a href="/meetings/">Meetings</a></li>
+              <li><a href="/getting-started/">Getting Started</a></li>
           </ul>
         </li>
         % if not user_name:
