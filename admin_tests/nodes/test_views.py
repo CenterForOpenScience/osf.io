@@ -1,11 +1,12 @@
 from django.test import RequestFactory
-from nose.tools import *  # flake8: noqa
+from nose import tools as nt
+import mock
 
 from tests.base import AdminTestCase
-from tests.factories import NodeFactory
+from tests.factories import NodeFactory, AuthUserFactory
 from admin_tests.utilities import setup_view
 
-from admin.nodes.views import NodeView
+from admin.nodes.views import NodeView, remove_contributor
 
 
 class TestNodeView(AdminTestCase):
@@ -14,7 +15,7 @@ class TestNodeView(AdminTestCase):
         request = RequestFactory().get('/fake_path')
         view = NodeView()
         view = setup_view(view, request)
-        with assert_raises(AttributeError):
+        with nt.assert_raises(AttributeError):
             view.get_object()
 
     def test_load_data(self):
@@ -24,7 +25,7 @@ class TestNodeView(AdminTestCase):
         view = NodeView()
         view = setup_view(view, request, guid=guid)
         res = view.get_object()
-        assert_is_instance(res, dict)
+        nt.assert_is_instance(res, dict)
 
     def test_name_data(self):
         node = NodeFactory()
@@ -35,4 +36,37 @@ class TestNodeView(AdminTestCase):
         temp_object = view.get_object()
         view.object = temp_object
         res = view.get_context_data()
-        assert_equal(res[NodeView.context_object_name], temp_object)
+        nt.assert_equal(res[NodeView.context_object_name], temp_object)
+
+
+class TestRemoveContributor(AdminTestCase):
+    def setUp(self):
+        super(TestRemoveContributor, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = NodeFactory()
+        self.node.add_contributor(self.user)
+        self.node.save()
+        self.request = RequestFactory().get('/fake_path')
+
+    @mock.patch('admin.nodes.views.Node.remove_contributor')
+    def test_remove_contributor(self, mock_remove_contributor):
+        user_id = self.user._id
+        node_id = self.node._id
+        remove_contributor(self.request, node_id, user_id)
+        mock_remove_contributor.assert_called_with(self.user, None, log=False)
+
+    def test_integration_remove_contributor(self):
+        nt.assert_in(self.user, self.node.contributors)
+        remove_contributor(self.request, self.node._id, self.user._id)
+        nt.assert_not_in(self.user, self.node.contributors)
+
+    def test_do_not_remove_last_admin(self):
+        nt.assert_equal(
+            len(list(self.node.get_admin_contributors(self.node.contributors))),
+            1
+        )
+        remove_contributor(self.request, self.node._id, self.user._id)
+        nt.assert_equal(
+            len(list(self.node.get_admin_contributors(self.node.contributors))),
+            1
+        )
