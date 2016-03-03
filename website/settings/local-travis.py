@@ -4,6 +4,8 @@ These settings override what's in website/settings/defaults.py
 
 NOTE: local.py will not be added to source control.
 '''
+import inspect
+
 from . import defaults
 import os
 
@@ -44,6 +46,14 @@ VARNISH_SERVERS = ['http://localhost:8080']
 
 if (os.environ.get('ENABLE_VARNISH', False) == 'True'):
     ENABLE_VARNISH = True
+    frm = inspect.stack()[1]
+    mod = inspect.getmodule(frm[0])
+    print mod.__name__
+    print "------------------ VARNISH ENABLED ------------------"
 else:
     ENABLE_VARNISH = False
+    frm = inspect.stack()[1]
+    mod = inspect.getmodule(frm[0])
+    print mod.__name__
+    print "------------------ VARNISH DISABLED ------------------"
 
