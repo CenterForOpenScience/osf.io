@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Unit tests for website.app."""
-from __future__ import print_function
 
 from nose.tools import *  # noqa (PEP8 asserts)
 from flask import Flask
