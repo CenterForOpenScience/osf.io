@@ -88,7 +88,6 @@
     cursor: pointer;
     color: #666;
     text-align: center;
-    border: 1px solid #f8f8f8;
 }
 
 #rARightButton:hover, #rALeftButton:hover {

@@ -24,17 +24,17 @@ $(document).ready(function(){
                             m('.col-xs-6 col-md-5 col-md-offset-1 col-lg-4 col-lg-offset-2', m('h3', 'My Projects')),
                             m('.col-xs-6 col-md-5 col-md-offset-1 col-lg-4 col-lg-offset-2', m('button.btn.btn-success.btn-xs', 'New Project'))
                         ]),
-                        m('.row', [
+                        m('.row.m-t-lg', [
                             m(columnSizeClass, m.component(quickSearchProject, {}))
                         ])
                     ]
                 )),
                 m('.recentActvity', m('.container',
                     [
-                        m('.row', [
+                        m('.row.p-t-lg', [
                             m(columnSizeClass,m('h3', 'Recent Activity'))
                         ]),
-                        m('.row', [
+                        m('.row.m-t-lg', [
                             m(columnSizeClass, m.component(LogWrap, {wrapper: 'recentActivity'}))
                         ])
 
@@ -42,10 +42,10 @@ $(document).ready(function(){
                 )),
                 m('.newAndNoteworthy', m('.container',
                     [
-                        m('.row', [
+                        m('.row.p-t-lg', [
                             m(columnSizeClass,m('h3', 'Discover Public Projects'))
                         ]),
-                        m('.row', [
+                        m('.rowm.m-t-lg', [
                             m(columnSizeClass, m.component(newAndNoteworthy, {}))
                         ])
 

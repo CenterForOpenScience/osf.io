@@ -19,7 +19,10 @@
 }
 
 .load-nodes {
-    font-size: 1.5em;
+    font-size: 2em;
+}
+.load-nodes:hover {
+    color: #333;
 }
 
 .quick-project .selected {
