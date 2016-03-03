@@ -189,8 +189,4 @@
         </div>
     </div>
 </div>
-<script type="text/javascript" src="/static/vendor/youtube/youtube-loader.js"></script>
-
-<script src=${"/static/public/js/support-page.js" | webpack_asset}></script>
-
 </%def>
