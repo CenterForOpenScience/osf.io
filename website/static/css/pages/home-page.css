@@ -1,9 +1,9 @@
-h3 {
+h3, h4 {
     font-weight: 400;
 }
 .quickSearch {
     min-height: 700px;
-    background: #C5D6E6 url('/static/img/bg6.jpg') top center no-repeat
+    background: #C5D6E6 url('/static/img/bg6.jpg') top center no-repeat;
 }
 .recentActvity {
     min-height: 650px;
@@ -16,6 +16,7 @@ h3 {
     border-top: 1px solid #eee;
     padding-top: 25px;
     color: #FFFFFF;
+    background: #34495e url('/static/img/bg7.jpg') top center no-repeat;
 }
 
 .meetings {

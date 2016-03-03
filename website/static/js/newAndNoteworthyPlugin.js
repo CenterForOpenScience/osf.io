@@ -82,12 +82,13 @@ var NewAndNoteworthy = {
                 location.href = '/' + node.embeds.target_node.data.id;
             }},[
                 m('h5', title),
+                m('span.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
+                    ctrl.addToolTip(this);
+                }}, m('span', 'Contributors: '), m('span', contributors)),
                 description ? m('p.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){
                     ctrl.addToolTip(this);
-                }}, description) : '',
-                m('p.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
-                    ctrl.addToolTip(this);
-                }}, m('span', 'Contributors: '), m('span', contributors))
+                }}, description) : ''
+
             ]);
         }
 
@@ -107,10 +108,11 @@ var NewAndNoteworthy = {
             return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search'}, 'Find more projects with advanced search');
         }
 
+
         return m('',[
             m('.row',[
-                m('.col-sm-6.col-xs-12', m('h4', 'New and Noteworthy'), newAndNoteworthyProjectsTemplate()),
-                m('.col-sm-6.col-xs-12', m('h4', 'Most Popular'), popularProjectsTemplate ()),
+                m('.col-xs-12.col-lg-6', m('.public-projects-box.', m('h4.m-b-md','New and Noteworthy'), newAndNoteworthyProjectsTemplate())),
+                m('.col-xs-12.col-lg-6', m('.public-projects-box.', m('h4.m-b-md','Most Popular'), popularProjectsTemplate ()))
             ]),
             m('.row', m('.text-center.col-sm-12', findMoreProjectsButton()))
         ]);
