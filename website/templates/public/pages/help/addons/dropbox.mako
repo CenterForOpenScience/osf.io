@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Dropbox </h5>
+    <h5 class="support-head f-w-xl">Dropbox </h5>
     <div class="support-body">
             <p><a href ="https://www.dropbox.com/">Dropbox</a> is a popular online file storage program. After linking your OSF
                 project to Dropbox, you can add files to your Dropbox folder and those files can be accessed via the OSF.

@@ -426,7 +426,7 @@ var QuickSearchProject = {
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
             return m('.row.quick-project',
                 m('m-b-sm',
-                    m('.row', m('.col-sm-12'), m('h4', 'You have no projects. Go ', m('a', {href: '/dashboard'}, 'here'), ' to create one.')))
+                    m('.row', m('.col-sm-12'), m('h4', 'You have no projects. Go ', m('a', {href: '/myprojects'}, 'here'), ' to create one.')))
             );
         }
         else {
@@ -436,7 +436,7 @@ var QuickSearchProject = {
                         searchBar(),
                         ctrl.loadingComplete() ? '' : m('.spinner-div', m('.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
                     ]),
-                    m('p.text-center', 'Go to ', m('a', {href:'/dashboard/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')),
+                    m('p.text-center', 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
                             m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),

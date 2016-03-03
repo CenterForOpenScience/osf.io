@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Mendeley </h5>
+    <h5 class="support-head f-w-xl"> Mendeley </h5>
     <div class="support-body">
         <p><a href="http://mendeley.com/">Mendeley</a> is a free reference and PDF manager. By Adding Mendeley to your OSF
         projects you can view, copy, and download your citations.</p>

@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Files  </h5>
+    <h5 class="support-head f-w-xl"> Files  </h5>
     <div class="support-body">
         <p>Each project and component can have its own set of files. This allows you to organize your files into meaningful
                 groups like datasets or background research.</p>

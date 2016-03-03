@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Collaborative Wiki </h5>
+    <h5 class="support-head f-w-xl"> Collaborative Wiki </h5>
     <div class="support-body">
         <p>The wiki is a versatile tool for interacting with your team or the people who view your work. Each project
         and component has a wiki and you can add more pages if you wish. For example, you might have a wiki page explaining

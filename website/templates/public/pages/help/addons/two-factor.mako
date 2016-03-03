@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Two-factor authentication </h5>
+    <h5 class="support-head f-w-xl"> Two-factor authentication </h5>
     <div class="support-body">
         <p>Two factor authentication protects your account with both your password and your mobile phone. Make sure nobody can
             log into your account even if they have access to your password or your email.</p>

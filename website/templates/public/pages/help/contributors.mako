@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Contributors </h5>
+    <h5 class="support-head f-w-xl">Contributors </h5>
     <div class="support-body">
         <p>Adding contributors to a project allows credit to be given to those who have worked on the project, and
                 allows them to make changes to the project.</p>

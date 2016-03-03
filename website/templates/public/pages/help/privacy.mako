@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Privacy </h5>
+    <h5 class="support-head f-w-xl"> Privacy </h5>
     <div class="support-body">
         <p>All projects are private by default. However, you can choose to make your project's contents available for
                 anyone to view. Once you make a project public, you can gain more feedback about the impact of your work by

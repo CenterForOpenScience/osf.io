@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Zotero </h5>
+    <h5 class="support-head f-w-xl"> Zotero </h5>
     <div class="support-body">
         <p><a href="https://www.zotero.org/">Zotero</a> is a free tool that helps you collect, cite, share, and organize your
                 research sources. By adding Zotero to your OSF projects you can view, copy, and download your citations.</p>

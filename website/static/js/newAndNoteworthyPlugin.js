@@ -84,7 +84,7 @@ var NewAndNoteworthy = {
                 m('h5', title),
                 m('span.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
                     ctrl.addToolTip(this);
-                }}, m('span', 'Contributors: '), m('span', contributors)),
+                }}, m('i', 'by ' + contributors)),
                 description ? m('p.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){
                     ctrl.addToolTip(this);
                 }}, description) : ''

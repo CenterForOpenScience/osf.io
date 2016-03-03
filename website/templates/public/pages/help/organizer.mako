@@ -1,5 +1,5 @@
     <div class="support-item">
-        <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Project Organizer </h5>
+        <h5 class="support-head f-w-xl"> Project Organizer </h5>
         <div class="support-body">
             <p>The Project Organizer displays your projects, components, and registrations and makes it easy for
                 you to arrange your projects and components into collections that make sense for your application. Your
