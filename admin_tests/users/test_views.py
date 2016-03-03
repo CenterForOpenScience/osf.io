@@ -4,12 +4,10 @@ from nose.tools import *  # flake8: noqa
 from tests.base import AdminTestCase
 from tests.factories import UserFactory
 from admin_tests.utilities import setup_view
-
 from admin.users.views import UserView
 
 
 class TestUserView(AdminTestCase):
-
     def test_no_guid(self):
         request = RequestFactory().get('/fake_path')
         view = UserView()
