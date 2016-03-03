@@ -22,7 +22,7 @@ $(document).ready(function(){
                     [
                         m('.row', [
                             m('.col-xs-6 col-md-5 col-md-offset-1 col-lg-4 col-lg-offset-2', m('h3', 'My Projects')),
-                            m('.col-xs-6 col-md-5 col-md-offset-1 col-lg-4 col-lg-offset-2', m('button.btn.btn-success.btn-xs', 'New Project'))
+                            m('.col-xs-6 col-md-5 col-lg-4', m('.pull-right', m('button.btn.btn-success.m-t-lg', 'Create New Project')))
                         ]),
                         m('.row.m-t-lg', [
                             m(columnSizeClass, m.component(quickSearchProject, {}))
