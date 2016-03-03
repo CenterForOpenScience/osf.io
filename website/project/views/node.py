@@ -202,7 +202,7 @@ def project_new_node(auth, node, **kwargs):
                 http.BAD_REQUEST,
                 data=dict(message_long=e.message)
             )
-        redirect_url = new_component.url
+        redirect_url = node.url
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
             'or return to the <u><a href="{url}">project page</a></u>.'
