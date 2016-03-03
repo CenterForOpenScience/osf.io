@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     # 3rd party
     'raven.contrib.django.raven_compat',
     'webpack_loader',
+    'allaccess',
 )
 
 # Custom user model (extends AbstractBaseUser)
@@ -141,3 +142,8 @@ WEBPACK_LOADER = {
         'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
     }
 }
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allaccess.backends.AuthorizedServiceBackend',
+)

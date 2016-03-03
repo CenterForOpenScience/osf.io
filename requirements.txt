@@ -60,3 +60,4 @@ pyjwe==0.1.6
 
 # Admin requirements
 django-webpack-loader==0.2.3
+django-all-access==0.8.0
