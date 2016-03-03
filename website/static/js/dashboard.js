@@ -1237,7 +1237,11 @@ var Information = {
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
             template = m('.p-sm', [
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', { onclick : args.removeProjectFromCollections }, 'Remove from collection')) : '',
+                filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', {onclick : function() {
+                    args.removeProjectFromCollections();
+                    $osf.trackClick('dashboard', 'information-panel', 'remove-project-from-collection')
+                }
+                }, 'Remove from collection')) : '',
                 m('h3', m('a', { href : item.links.html, onclick: function(){
                     $osf.trackClick('dashboard', 'information-panel', 'navigate-to-project');
                 }}, item.attributes.title)),
