@@ -1447,7 +1447,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         event_id = notification_utils.to_subscription_key(target_id, event)
 
         if self.creator:
-            subscription = NotificationSubscription(_id=event_id, owner=self.creator, event_name=event)
+            subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
             subscription.add_user_to_subscription(self.creator, notification_type)
             subscription.save()
 
@@ -1558,9 +1558,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # If you're saving a property, do it above this super call
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-        if first_save:
-            self.update_creator_notification_settings()
-
         if first_save and is_original and not suppress_log:
             # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
@@ -1587,6 +1584,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 log_date=self.date_created,
                 save=True,
             )
+
+            self.update_creator_notification_settings()
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
