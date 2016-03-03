@@ -7,4 +7,8 @@ urlpatterns = [
         name='search'),
     url(r'^id-(?P<guid>[a-z0-9]+)/$', views.NodeView.as_view(),
         name='node'),
+    url(r'^id-(?P<guid>[a-z0-9]+)/remove_node/$', views.remove_node,
+        name='remove_node'),
+    url(r'^id-(?P<guid>[a-z0-9]+)/restore_node/$', views.restore_node,
+        name='restore_node'),
 ]

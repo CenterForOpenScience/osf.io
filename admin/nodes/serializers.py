@@ -13,6 +13,7 @@ def serialize_node(node):
         'contributors': map(serialize_simple_user,
                             node.permissions.iteritems()),
         'children': map(serialize_simple_node, node.nodes),
+        'deleted': node.is_deleted,
     }
 
 

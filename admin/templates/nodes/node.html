@@ -9,7 +9,38 @@
     <div class="container-fluid">
         <div class="row">
             <a href="{% url 'nodes:search' %}"
-               class="btn btn-primary"><i class="fa fa-search"></i> </a>
+               class="btn btn-primary"><i class="fa fa-search"></i>
+            </a>
+            {% if not node.deleted %}
+                <button data-toggle="modal" data-target="#deleteModal"
+                        class="btn btn-danger">
+                    Delete Node
+                </button>
+                <div class="modal" id="deleteModal">
+                <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Are you sure you want to delete this node?</h3>
+                    </div>
+                    <div class="modal-body">
+                        This action will be reversible after the fact.
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{% url 'nodes:remove_node' node.id %}"
+                           class="btn btn-danger">
+                            Delete
+                        </a>
+                        <button class="btn btn-default">Cancel</button>
+                    </div>
+                </div>
+                </div>
+                </div>
+            {% else %}
+                <a href="{% url 'nodes:restore_node' node.id %}"
+                   class="btn btn-success">
+                    Restore Node
+                </a>
+            {% endif %}
         </div>
         <div class="row">
             <h3>Node details</h3>
