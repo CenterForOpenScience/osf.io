@@ -252,10 +252,11 @@ class FileNode(object):
 
     @classmethod
     def get_file_guids(cls, materialized_path, provider, guids, node):
+        materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
             folder_children = cls.find(Q('provider', 'eq', provider) &
                                        Q('node', 'eq', node) &
-                                       Q('materialized_path', 'startswith', '/' + materialized_path))
+                                       Q('materialized_path', 'startswith', materialized_path))
             for item in folder_children:
                 if item.kind == 'file':
                     guid = item.get_guid()
@@ -263,7 +264,7 @@ class FileNode(object):
                         guids.append(guid._id)
         else:
             try:
-                file_obj = cls.find_one(Q('node', 'eq', node) & Q('materialized_path', 'eq', '/' + materialized_path))
+                file_obj = cls.find_one(Q('node', 'eq', node) & Q('materialized_path', 'eq', materialized_path))
             except NoResultsFound:
                 return guids
             guid = file_obj.get_guid()

@@ -326,7 +326,7 @@ class FileCommentMoveRenameTestMixin(object):
         self.component_settings.save()
 
     def _create_source_payload(self, path, node, provider, file_id=None):
-        return OrderedDict([('materialized', path.strip('/')),
+        return OrderedDict([('materialized', path),
                             ('name', path.split('/')[-1]),
                             ('nid', node._id),
                             ('path', self._format_path(path, file_id)),
@@ -341,7 +341,7 @@ class FileCommentMoveRenameTestMixin(object):
                             ('etag', 'abcdefghijklmnop'),
                             ('extra', OrderedDict([('revisionId', '12345678910')])),
                             ('kind', 'file'),
-                            ('materialized', path.strip('/')),
+                            ('materialized', path),
                             ('modified', 'Tue, 02 Feb 2016 17:55:48 +0000'),
                             ('name', path.split('/')[-1]),
                             ('nid', node._id),
@@ -356,7 +356,7 @@ class FileCommentMoveRenameTestMixin(object):
             destination.update({'children': destination_children})
         return destination
 
-    def _create_payload(self, action, user, source, destination, file_id, file_guids=None, destination_file_id=None):
+    def _create_payload(self, action, user, source, destination, file_id, destination_file_id=None):
         return OrderedDict([
             ('action', action),
             ('auth', OrderedDict([('email', user.username), ('id', user._id), ('name', user.fullname)])),
@@ -368,8 +368,7 @@ class FileCommentMoveRenameTestMixin(object):
             ('source', self._create_source_payload(source['path'], source['node'], source['provider'], file_id=file_id)),
             ('time', 100000000),
             ('node', source['node']),
-            ('project', None),
-            ('passthrough', OrderedDict([('file_guids', file_guids)]))
+            ('project', None)
         ])
 
     def _create_file_with_comment(self, node, path):
@@ -378,7 +377,7 @@ class FileCommentMoveRenameTestMixin(object):
             node=node,
             path=path,
             name=path.strip('/'),
-            materialized_path=path.strip('/'))
+            materialized_path=path)
         self.guid = self.file.get_guid(create=True)
         self.file.save()
         self.comment = CommentFactory(user=self.user, node=node, target=self.guid)
@@ -395,7 +394,7 @@ class FileCommentMoveRenameTestMixin(object):
             'provider': self.provider
         }
         self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
         self.guid.reload()
 
@@ -418,7 +417,7 @@ class FileCommentMoveRenameTestMixin(object):
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
         self.guid.reload()
 
@@ -441,7 +440,7 @@ class FileCommentMoveRenameTestMixin(object):
         }
         file_path = 'sub-subfolder/file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_path))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_renamed', payload=payload)
         self.guid.reload()
 
@@ -462,7 +461,7 @@ class FileCommentMoveRenameTestMixin(object):
             'provider': self.provider
         }
         self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -483,7 +482,7 @@ class FileCommentMoveRenameTestMixin(object):
             'provider': self.provider
         }
         self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -504,7 +503,7 @@ class FileCommentMoveRenameTestMixin(object):
             'provider': self.provider
         }
         self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -526,7 +525,7 @@ class FileCommentMoveRenameTestMixin(object):
             'provider': self.provider
         }
         self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -550,7 +549,7 @@ class FileCommentMoveRenameTestMixin(object):
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -573,7 +572,7 @@ class FileCommentMoveRenameTestMixin(object):
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -596,7 +595,7 @@ class FileCommentMoveRenameTestMixin(object):
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -619,7 +618,7 @@ class FileCommentMoveRenameTestMixin(object):
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -653,7 +652,7 @@ class FileCommentMoveRenameTestMixin(object):
             'provider': 'osfstorage'
         }
         self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, destination_file_id=destination['path'].strip('/'), file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id, destination_file_id=destination['path'].strip('/'))
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -694,7 +693,7 @@ class FileCommentMoveRenameTestMixin(object):
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, destination_file_id=osf_file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id, destination_file_id=osf_file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -725,7 +724,7 @@ class FileCommentMoveRenameTestMixin(object):
             'provider': destination_provider
         }
         self._create_file_with_comment(node=source['node'], path=source['path'])
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -762,7 +761,7 @@ class FileCommentMoveRenameTestMixin(object):
         }
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -795,7 +794,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTes
             'contentType': 'img/png',
             'etag': 'abcdefghijklmnop'
         }).save()
-        self.file.materialized_path = path.strip('/')
+        self.file.materialized_path = path
         self.guid = self.file.get_guid(create=True)
         self.comment = CommentFactory(user=self.user, node=node, target=self.file)
 
@@ -812,7 +811,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTes
         }
         self._create_file_with_comment(node=source['node'], path=source['path'])
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -835,7 +834,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTes
         }
         self._create_file_with_comment(node=source['node'], path=source['path'])
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -859,7 +858,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTes
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -882,7 +881,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTes
         file_name = 'file.txt'
         self._create_file_with_comment(node=source['node'], path='{}{}'.format(source['path'], file_name))
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
-        payload = self._create_payload('move', self.user, source, destination, self.file._id, file_guids=[self.guid._id])
+        payload = self._create_payload('move', self.user, source, destination, self.file._id)
         update_file_guid_referent(self=None, node=destination['node'], event_type='addon_file_moved', payload=payload)
         self.guid.reload()
 
@@ -909,7 +908,7 @@ class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTestCase):
             node=node,
             path=self._format_path(path),
             name=path.strip('/'),
-            materialized_path=path.strip('/'))
+            materialized_path=path)
         self.guid = self.file.get_guid(create=True)
         self.file.save()
         self.comment = CommentFactory(user=self.user, node=node, target=self.guid)
@@ -931,7 +930,7 @@ class TestDropboxFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTestCa
             node=node,
             path='{}{}'.format(node.get_addon(self.provider).folder, path),
             name=path.strip('/'),
-            materialized_path=path.strip('/'))
+            materialized_path=path)
         self.guid = self.file.get_guid(create=True)
         self.file.save()
         self.comment = CommentFactory(user=self.user, node=node, target=self.guid)
