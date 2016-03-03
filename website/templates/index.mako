@@ -73,6 +73,9 @@
                               <p data-bind="html: flashMessage, attr.class: flashMessageClass" class=""></p>
                           </div>
                           <div>
+                              <small> By clicking "Sign up free", you agree to our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</small>
+                          </div>
+                          <div>
                               <button type="submit" class="btn btn-warning" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
                           </div>
                   </form>
