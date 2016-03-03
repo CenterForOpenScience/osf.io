@@ -384,11 +384,6 @@ class NodeLog(StoredObject):
     __indices__ = [
         {
             'key_or_list': [
-                ('__backrefs.logged.node.logs', 1)
-            ],
-        },
-        {
-            'key_or_list': [
                 ('__backrefs.logged.node.logs.$', 1)
             ],
         }
