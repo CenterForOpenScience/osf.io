@@ -382,12 +382,16 @@ var Dashboard = {
             self.reload(true);
             self.refreshView(false);
         };
+        self.reloadOnClick = function (item) {
+            self.updateFilter(item);
+            $osf.trackClick('dashboard', 'projectOrganizer', 'reload-all-my-projects');
+        };
+
         self.updateListError = function _updateListError (result){
             self.nonLoadTemplate(m('.db-error.text-danger.m-t-lg', [
                 m('p', m('i.fa.fa-exclamation-circle')),
                 m('p','Projects for this selection couldn\'t load.'),
-                m('p', m('.btn.btn-default', {
-                    onclick : self.updateFilter.bind(null, self.systemCollections[0])
+                m('p', m('.btn.btn-default', {onclick : self.reloadOnClick.bind(null, self.systemCollections[0])
                 },' Reload \'All my projects\''))
             ]));
             self.data([]);
@@ -1239,7 +1243,7 @@ var Information = {
             template = m('.p-sm', [
                 filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', {onclick : function() {
                     args.removeProjectFromCollections();
-                    $osf.trackClick('dashboard', 'information-panel', 'remove-project-from-collection')
+                    $osf.trackClick('dashboard', 'information-panel', 'remove-project-from-collection');
                 }
                 }, 'Remove from collection')) : '',
                 m('h3', m('a', { href : item.links.html, onclick: function(){
@@ -1296,14 +1300,17 @@ var Information = {
         }
         if (args.selected().length > 1) {
             template = m('.p-sm', [
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', { onclick : args.removeProjectFromCollections }, 'Remove selected from collection')) : '',
+                filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', {onclick : function() {
+                    args.removeProjectFromCollections();
+                    $osf.trackClick('dashboard', 'information-panel', 'remove-multiple-projects-from-collections');
+                }}, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
                     return m('.db-info-multi', [
                         m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
                         m('p.db-info-meta.text-muted', [
                             m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
                             m('span', ', Last Modified on ' + item.data.date.local)
-                        ]),
+                        ])
                     ]);
                 })
             ]);
