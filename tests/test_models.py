@@ -2023,6 +2023,14 @@ class TestNodeUpdate(OsfTestCase):
         last_log = self.node.logs[-1]
         assert_equal(last_log.action, NodeLog.MADE_PRIVATE)
 
+    def test_update_can_make_registration_public(self):
+        reg = RegistrationFactory(is_public=False)
+        reg.update({'is_public': True})
+
+        assert_true(reg.is_public)
+        last_log = reg.logs[-1]
+        assert_equal(last_log.action, NodeLog.MADE_PUBLIC)
+
     def test_updating_title_twice_with_same_title(self):
         original_n_logs = len(self.node.logs)
         new_title = fake.bs()
@@ -2618,18 +2626,32 @@ class TestProject(OsfTestCase):
         link.save()
         assert_in(link, self.project.private_links)
 
-    def test_has_anonymous_link(self):
-        link1 = PrivateLinkFactory(anonymous=True, key="link1")
+    @mock.patch('framework.auth.core.Auth.private_link')
+    def test_has_anonymous_link(self, mock_property):
+        mock_property.return_value(mock.MagicMock())
+        mock_property.anonymous = True
+
+        link1 = PrivateLinkFactory(key="link1")
         link1.nodes.append(self.project)
         link1.save()
+
         user2 = UserFactory()
         auth2 = Auth(user=user2, private_key="link1")
+
+        assert_true(has_anonymous_link(self.project, auth2))
+
+    @mock.patch('framework.auth.core.Auth.private_link')
+    def test_has_no_anonymous_link(self, mock_property):
+        mock_property.return_value(mock.MagicMock())
+        mock_property.anonymous = False
+
         link2 = PrivateLinkFactory(key="link2")
         link2.nodes.append(self.project)
         link2.save()
+
         user3 = UserFactory()
         auth3 = Auth(user=user3, private_key="link2")
-        assert_true(has_anonymous_link(self.project, auth2))
+
         assert_false(has_anonymous_link(self.project, auth3))
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
@@ -2857,7 +2879,7 @@ class TestProject(OsfTestCase):
         creator = UserFactory()
         project = ProjectFactory(creator=creator)
         contrib = UserFactory()
-        project.add_contributor(contrib, auth=Auth(user=creator))
+        project.add_contributor(contrib, permissions=['read', 'write', 'admin'], auth=Auth(user=creator))
         project.save()
         assert_in(creator, project.contributors)
         # Creator is removed from project

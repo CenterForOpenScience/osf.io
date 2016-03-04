@@ -27,6 +27,9 @@ ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
 
+with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
+    VERSION = json.load(fobj)['version']
+
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
@@ -217,6 +220,9 @@ SYSTEM_ADDED_ADDONS = {
 PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
+
+KEEN_PROJECT_ID = None
+KEEN_WRITE_KEY = None
 
 SENTRY_DSN = None
 SENTRY_DSN_JS = None

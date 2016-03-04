@@ -12,6 +12,8 @@ from nose.tools import *  # noqa PEP8 asserts
 from framework.auth import Auth
 from framework.auth.core import User
 from framework.auth.signals import contributor_removed, node_deleted
+from framework.guid.model import Guid
+
 from website.notifications.tasks import get_users_emails, send_users_email, group_by_node, remove_notifications
 from website.notifications import constants
 from website.notifications.model import NotificationDigest
@@ -1116,7 +1118,7 @@ class TestSendEmails(OsfTestCase):
             user=project.creator,
             node=project,
             content=content,
-            target=target,
+            target=Guid.load(target._id),
             is_public=True,
         )
         assert_true(mock_notify.called)
