@@ -15,8 +15,11 @@ CAMPAIGNS = ImmutableDict({
     'institution': {
         'system_tag': 'institution_campaign',
         'redirect_url': lambda: ''
-    }
-})
+    },
+    'sign_up': {
+        'system_tag': 'sign_up',
+        'redirect_url': lambda: ''
+    }})
 
 def system_tag_for_campaign(campaign):
     if campaign in CAMPAIGNS:

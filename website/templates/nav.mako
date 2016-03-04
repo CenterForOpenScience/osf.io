@@ -86,7 +86,7 @@
                   <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot password?</a></div>
                </form>
             </ul>
-            <a href="${web_url_for('auth_login')}" class="btn btn-warning m-l-sm btn-top-login ">Sign Up</a>
+            <a href="${web_url_for('auth_login')}?campaign=sign_up" class="btn btn-warning m-l-sm btn-top-login ">Sign Up</a>
           </div>
         </li>
         % endif
