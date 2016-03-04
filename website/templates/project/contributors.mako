@@ -58,7 +58,7 @@
                   <i class="fa fa-plus"></i> Add
                 </a>
             <!-- /ko -->
-            % if node['mailing_list_enabled'] and not node['is_registration']:
+            % if node['mailing_list_enabled']:
                 <span class="m-l-md pull-right" style="font-size: 65%">Mailing List Info: 
                 <a data-toggle="modal" data-target="#mailingListContributorsModal"><i class="fa fa-envelope"></i></a>
                 </span>

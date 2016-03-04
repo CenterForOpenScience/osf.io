@@ -139,7 +139,8 @@ function ProjectNotifications(data) {
                     }
                 });
             }
-            else if (item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading' && item.data.kind === 'event' && item.data.event.notificationType === 'mailing_list_events') {
+            // Special case for mailing list events -- no digest option
+            else if ((item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading') && item.data.kind === 'event' && item.data.event.notificationType === 'mailing_list_events') {
                 columns.push(
                 {
                     data : 'project',  // Data field name
