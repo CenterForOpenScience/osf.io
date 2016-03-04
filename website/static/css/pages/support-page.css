@@ -5,6 +5,18 @@
 
 .support-col {
     border: 1px solid #eee;
+    padding: 30px;
     background: #FFF;
     box-shadow: 0px 0px 1px #eee;
+    min-height: 300px;
+}
+
+.support-icon {
+    font-size: 40px;
+    color: #337AB7;
+}
+
+
+.footer{
+    margin-top:0;
 }
