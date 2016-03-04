@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Links  </h5>
+    <h5 class="support-head f-w-xl">Links  </h5>
     <div class="support-body">
         <p>Links are an alternative to building a component within a project. Adding a link means that
             instead of making a new component or project inside the project, the component already exists separately and

@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Forks </h5>
+    <h5 class="support-head f-w-xl"> Forks </h5>
     <div class="support-body">
         <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy
             for your own purposes. You will be the only contributor to the forked project until you add others.</p>

@@ -302,7 +302,7 @@ var LogWrap = {
                 ]);
             }
         };
-        return m('.fb-activity-list.col-md-10.col-md-offset-1.m-t-xl#' + ctrl.wrapper, [
+        return m('.fb-activity-list#' + ctrl.wrapper, [
                 m('.time-slider-parent',
                     m('#rASlider',  {config: ctrl.addSlider})
                 ),

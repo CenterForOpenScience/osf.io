@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Amazon Simple Storage Service Add-on </h5>
+    <h5 class="support-head f-w-xl"> Amazon Simple Storage Service Add-on </h5>
     <div class="support-body">
         <p><a href="http://aws.amazon.com/s3/">Amazon Simple Storage Service </a> (Amazon S3), provides developers and IT teams
                 with secure, durable, highly-scalable object storage."</p>

@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Comments </h5>
+    <h5 class="support-head f-w-xl">Comments </h5>
     <div class="support-body">
         <p>Commenting can be enabled for any OSF project. To leave a comment on a project, click on the blue speech bubbles in the top right corner of your screen and add your comment in the text box.</p>
             <p>You may find that you can view comments but not leave one. That is the administrator's choice, and it

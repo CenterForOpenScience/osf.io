@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i>Dashboards  </h5>
+    <h5 class="support-head f-w-xl"> Dashboards  </h5>
     <div class="support-body">
      <p>The Dashboard displays all of your projects and their components in the Project Organizer, and is
             linked in the blue navigation bar at the top of the page. From the Project Organizer, you can

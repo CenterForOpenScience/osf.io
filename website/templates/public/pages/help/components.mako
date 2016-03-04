@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Components  </h5>
+    <h5 class="support-head f-w-xl">Components  </h5>
     <div class="support-body">
         <p>Components are like sub-projects that help you organize different parts of your research. Components have their own privacy settings, contributors, wiki, add-ons, and files.</p>
 

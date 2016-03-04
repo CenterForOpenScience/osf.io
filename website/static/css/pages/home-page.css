@@ -1,13 +1,9 @@
+h3, h4 {
+    font-weight: 400;
+}
 .quickSearch {
     min-height: 700px;
-    background: rgba(103, 163, 191, 0.27);
-    background: -moz-linear-gradient(35deg, rgba(103, 163, 191, 0.27) 0%, rgba(22, 101, 150, 0.22) 18%, rgba(155, 179, 194, 0.93) 100%);
-    background: -webkit-gradient(linear, left bottom, right top, color-stop(0%, rgba(103, 163, 191, 0.27)), color-stop(18%, rgba(22, 101, 150, 0.22)), color-stop(100%, rgba(155, 179, 194, 0.93)));
-    background: -webkit-linear-gradient(35deg, rgba(103, 163, 191, 0.27) 0%, rgba(22, 101, 150, 0.22) 18%, rgba(155, 179, 194, 0.93) 100%);
-    background: -o-linear-gradient(35deg, rgba(103, 163, 191, 0.27) 0%, rgba(22, 101, 150, 0.22) 18%, rgba(155, 179, 194, 0.93) 100%);
-    background: -ms-linear-gradient(35deg, rgba(103, 163, 191, 0.27) 0%, rgba(22, 101, 150, 0.22) 18%, rgba(155, 179, 194, 0.93) 100%);
-    background: linear-gradient(35deg, rgba(103, 163, 191, 0.27) 0%, rgba(22, 101, 150, 0.22) 18%, rgba(155, 179, 194, 0.93) 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#67a3bf', endColorstr='#000000', GradientType=1);
+    background: #C5D6E6 url('/static/img/bg6.jpg') top center no-repeat;
 }
 .recentActvity {
     min-height: 650px;
@@ -19,9 +15,8 @@
     background: #34495e;
     border-top: 1px solid #eee;
     padding-top: 25px;
-    /*background: linear-gradient(0deg, rgba(60, 121, 183, 0.79) 0%, #337ab7 40%, #4678B7 100%);*/
-    /* Fill in other browsers */
     color: #FFFFFF;
+    background: #34495e url('/static/img/bg7.jpg') top center no-repeat;
 }
 
 .meetings {
@@ -29,13 +24,8 @@
     background-size: cover;
     color: #fff;
 }
-
 .meetings .btn {
-    padding: 15px;
-    border: 1px solid #eee;
-    border-radius: 5px;
-    color: #eee;
-    font-size: 18px;
+    box-shadow: 0 0 9px -4px #000;
 }
 
 .meetings .btn:hover {

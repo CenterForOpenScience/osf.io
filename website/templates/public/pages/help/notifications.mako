@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Notifications </h5>
+    <h5 class="support-head f-w-xl">Notifications </h5>
     <div class="support-body">
         <p>Notifications can be enabled for any OSF project or component. To be notified via email when a new comment
                 is added to a project or component, visit the settings page on the project. You can choose to receive an

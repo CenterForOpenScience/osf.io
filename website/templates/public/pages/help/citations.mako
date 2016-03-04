@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Citations </h5>
+    <h5 class="support-head f-w-xl">Citations </h5>
     <div class="support-body">
         <p>Every project, component, file, and user has a unique URL on the OSF. This means that anything you upload
         and make public on the OSF can be cited, giving you credit for your work.</p>

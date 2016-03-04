@@ -88,7 +88,6 @@
     cursor: pointer;
     color: #666;
     text-align: center;
-    border: 1px solid #f8f8f8;
 }
 
 #rARightButton:hover, #rALeftButton:hover {
@@ -103,6 +102,9 @@
     opacity: 1;
 }
 
+.spinner-loading-wrapper {
+    background: transparent;
+}
 @media only screen and  (max-width : 992px) {
     .col-xs-1 .page-button {
         font-size: 20px;

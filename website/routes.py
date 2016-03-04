@@ -175,15 +175,17 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+        Rule('/dashboard/', 'get', website_views.redirect_to_myprojects, OsfWebRenderer('dashboard.mako')),
+        Rule('/myprojects/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 
         Rule('/about/', 'get', website_views.redirect_about, json_renderer,),
         Rule('/howosfworks/', 'get', website_views.redirect_howosfworks, json_renderer,),
 
-        Rule('/faq/', 'get', lambda *args, **kwargs: redirect('/support/'), OsfWebRenderer('public/pages/support.mako')),
-        Rule('/getting-started/', 'get', website_views.redirect_to_support, OsfWebRenderer('public/pages/support.mako')),
+        Rule('/faq/', 'get', website_views.redirect_to_support, OsfWebRenderer('public/pages/support.mako')),
+        Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
         Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako')),
 
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),

@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i>User profile  </h5>
+    <h5 class="support-head f-w-xl">User profile  </h5>
     <div class="support-body">
         <p>Updating your profile only takes seconds and makes using the Open Science Framework better for everyone. The OSF
             lets you input your contact information, social media profiles, employment, and educational history so other researchers

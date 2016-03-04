@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Projects  </h5>
+    <h5 class="support-head f-w-xl">Projects  </h5>
     <div class="support-body">
         <p>Projects are the largest form of categorization that the OSF supports. A project could be an experiment,
             a lab group, or a paper&mdash;anything that has contributing members and files or explanatory texts/images.</p>

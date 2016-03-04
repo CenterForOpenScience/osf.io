@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> View-only links </h5>
+    <h5 class="support-head f-w-xl"> View-only links </h5>
     <div class="support-body">
         <p>View-only links can be created for sharing your private projects or components so that people can view&mdash;but
             not edit&mdash;them. These links can be anonymized, to remove contributors' names from the project and associated logs, for use

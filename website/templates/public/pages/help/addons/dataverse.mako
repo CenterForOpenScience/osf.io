@@ -1,5 +1,5 @@
 <div class="support-item">
-    <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Dataverse </h5>
+    <h5 class="support-head f-w-xl">Dataverse </h5>
     <div class="support-body">
         <p><a href="https://osf.io/w75g2/">Dataverse</a> is a an open source web application to share, preserve, cite, explore,
                 and analyze research data. Enabling Dataverse for your project will allow contributors to view, download,
