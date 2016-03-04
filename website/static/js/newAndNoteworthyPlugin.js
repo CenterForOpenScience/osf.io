@@ -22,6 +22,12 @@ var NewAndNoteworthy = {
         self.popularNodes = m.prop([]);
         self.contributorsMapping = {};
         self.SHOW_TOTAL = 5;
+        self.errorLoading = false;
+
+        // Switches errorLoading to true
+        self.requestError = function(){
+            self.errorLoading = true;
+        };
 
         // Load new and noteworthy nodes
         var newAndNoteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.newAndNoteworthy + '/node_links/', {});
@@ -32,7 +38,7 @@ var NewAndNoteworthy = {
                 self.newAndNoteworthyNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
             }
-        });
+        }, self.requestError);
 
         // Load popular nodes
         var popularUrl = $osf.apiV2Url('nodes/' + window.contextVars.popular + '/node_links/', {});
@@ -43,7 +49,7 @@ var NewAndNoteworthy = {
                 self.popularNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
             }
-        });
+        }, self.requestError);
 
         // Additional API call to fetch node link contributors
         self.fetchContributors = function(nodeLink) {
@@ -57,7 +63,7 @@ var NewAndNoteworthy = {
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;
                 self.contributorsMapping[nodeId] = [contribNames, numContrib];
-            });
+            }, self.requestError);
         };
 
         // Gets contrib family name for display
@@ -73,6 +79,10 @@ var NewAndNoteworthy = {
         };
     },
     view : function(ctrl) {
+        if (ctrl.errorLoading) {
+            return m('p.text-center.m-v-lg', 'Error loading projects. Please refresh the page.');
+        }
+
         function nodeDisplay(node) {
             var description = node.embeds.target_node.data.attributes.description;
             var title = node.embeds.target_node.data.attributes.title;
