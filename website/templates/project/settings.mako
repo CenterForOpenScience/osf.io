@@ -390,20 +390,21 @@
                             </div>
                         </form>
                     % endif  ## End PML Settings ## Begin Individual Email Notifications
-                <div class="help-block" style="padding-left: 15px">
-                    <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
-                </div>
-                <form id="notificationSettings" class="osf-treebeard-minimal">
-                    <div id="grid">
-                        <div class="spinner-loading-wrapper">
-                            <div class="logo-spin logo-lg"></div>
-                            <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
-                        </div>
-                    </div>
                     <div class="help-block" style="padding-left: 15px">
-                        <p id="configureNotificationsMessage"></p>
+                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                     </div>
-                </form>
+                    <form id="notificationSettings" class="osf-treebeard-minimal">
+                        <div id="grid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                            </div>
+                        </div>
+                        <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                        </div>
+                    </form>
+                </div>
 
             %endif
 
