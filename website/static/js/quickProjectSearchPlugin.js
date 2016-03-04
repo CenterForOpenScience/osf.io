@@ -424,8 +424,11 @@ var QuickSearchProject = {
 
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
             return m('.row.quick-project',
-                m('m-b-sm',
-                    m('.row', m('.col-sm-12'), m('h4', 'You have no projects. Go ', m('a', {href: '/myprojects'}, 'here'), ' to create one.')))
+                m('.col-xs-12',
+                    m('.row',
+                        m('.col-sm-12', m('h4', 'You have no projects yet. Create a project with the button on the top right.'))
+                    )
+                )
             );
         }
         else {
