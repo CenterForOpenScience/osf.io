@@ -55,7 +55,7 @@ $(document).ready(function(){
                             m('.col-xs-6 col-md-5 col-md-offset-1 col-lg-4 col-lg-offset-2', m('h3', 'My Projects')),
                             m('.col-xs-6 col-md-5 col-lg-4', m('.pull-right',
                                 m.component(AddProject, {
-                                    buttonTemplate : m('button.btn.btn-success.m-t-lg[data-toggle="modal"][data-target="#addProjectFromHome"]', 'Create New Project'),
+                                    buttonTemplate : m('button.btn.btn-success.m-t-md[data-toggle="modal"][data-target="#addProjectFromHome"]', 'Create New Project'),
                                     modalID : 'addProjectFromHome',
                                     categoryList : ctrl.categoryList,
                                     stayCallback : function _stayCallback_inPanel() {
