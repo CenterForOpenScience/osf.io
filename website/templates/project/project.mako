@@ -111,7 +111,7 @@
                     Contributors:
                 % endif
 
-                % if node['anonymous']:
+                % if node['anonymous'] and not node['is_public']:
                     <ol>Anonymous Contributors</ol>
                 % else:
                     <ol>

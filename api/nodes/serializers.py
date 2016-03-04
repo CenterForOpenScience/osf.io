@@ -7,10 +7,11 @@ from modularodm.exceptions import ValidationValueError
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
+from framework.guid.model import Guid
 
 from website.models import Node, User, Comment, Institution
 from website.exceptions import NodeStateError, UserNotAffiliatedError
-from website.files.models.base import File
+from website.files.models.base import FileNode
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
@@ -225,14 +226,15 @@ class NodeSerializer(JSONAPISerializer):
     def get_unread_file_comments(self, obj):
         user = self.get_user_auth(self.context['request']).user
         n_unread = 0
-        commented_files = File.find(Q('_id', 'in', obj.commented_files.keys()))
-        for file_obj in commented_files:
+        commented_file_guids = Guid.find(Q('_id', 'in', obj.commented_files.keys()))
+        for target in commented_file_guids:
+            file_obj = FileNode.resolve_class(target.referent.provider, FileNode.FILE).load(target.referent._id)
             if obj.get_addon(file_obj.provider):
                 try:
                     get_file_object(node=obj, path=file_obj.path, provider=file_obj.provider, request=self.context['request'])
                 except (exceptions.NotFound, exceptions.PermissionDenied):
                     continue
-                n_unread += Comment.find_n_unread(user, obj, page='files', root_id=file_obj._id)
+                n_unread += Comment.find_n_unread(user, obj, page='files', root_id=target._id)
         return n_unread
 
     def create(self, validated_data):
