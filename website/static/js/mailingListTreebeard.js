@@ -4,41 +4,8 @@ var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
+var $tb = require('js/treebeardHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
-
-function expandOnLoad() {
-    var tb = this;  // jshint ignore: line
-    for (var i = 0; i < tb.treeData.children.length; i++) {
-        var parent = tb.treeData.children[i];
-        tb.updateFolder(null, parent);
-        expandChildren(tb, parent.children);
-    }
-}
-
-function expandChildren(tb, children) {
-    var openParent = false;
-    for (var i = 0; i < children.length; i++) {
-        var child = children[i];
-        var parent = children[i].parent();
-        if (child.data.kind === 'event' && child.data.event.notificationType !== 'adopt_parent') {
-            openParent = true;
-        }
-        if (child.children.length > 0) {
-            expandChildren(tb, child.children);
-        }
-    }
-    if (openParent) {
-        openAncestors(tb, children[0]);
-    }
-}
-
-function openAncestors (tb, item) {
-    var parent = item.parent();
-    if(parent && parent.id > 0) {
-        tb.updateFolder(null, parent);
-        openAncestors(tb, parent);
-    }
-}
 
 function subscribe(item, notification_type, reload) {
     var id = item.data.node.id;
@@ -57,21 +24,6 @@ function subscribe(item, notification_type, reload) {
         item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
     });
 }
-
-function displayParentNotificationType(item){
-    var notificationTypeDescriptions = {
-        'enabled': 'Mailing List Enabled',
-        'disabled': 'Mailing List Disabled'
-    };
-
-    if (item.data.event.parent_notification_type) {
-        if (item.parent().parent().parent() === undefined) {
-            return '(' + notificationTypeDescriptions[item.data.event.parent_notification_type] + ')';
-        }
-    }
-    return '';
-}
-
 
 function ProjectMailingList(data, reload) {
 
@@ -157,7 +109,7 @@ function ProjectMailingList(data, reload) {
         }
     });
     var mailingListGrid = new Treebeard(tbOptions);
-    expandOnLoad.call(mailingListGrid.tbController);
+    $tb.expandOnLoad.call(mailingListGrid.tbController);
 }
 
 module.exports = ProjectMailingList;
