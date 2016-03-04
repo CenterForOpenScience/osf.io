@@ -205,19 +205,18 @@ def project_new_node(auth, node, **kwargs):
         redirect_url = node.url
         message = (
             'Your component was created successfully. You can keep working on the project page below, '
-            'or go to the new <u><a href=' + new_component.url +
-            '>component</a></u>.'
-        ).format(url=node.url)
+            'or go to the new <u><a href={component_url}>component</a></u>.'
+        ).format(component_url=new_component.url)
         if form.inherit_contributors.data and node.has_permission(user, ADMIN):
             for contributor in node.contributors:
                 new_component.add_contributor(contributor, permissions=node.get_permissions(contributor), auth=auth)
             new_component.save()
-            redirect_url = redirect_url + 'contributors/'
+            redirect_url = new_component.url + 'contributors/'
             message = (
                 'Your component was created successfully. You can edit the contributor permissions below, '
-                'work on your <u><a href=' + new_component.url +
-                '>component</a></u> or return to the <u><a href="{url}">project page</a></u>.'
-            ).format(url=node.url)
+                'work on your <u><a href={component_url}>component</a></u> or return to the <u> '
+                '<a href="{project_url}">project page</a></u>.'
+            ).format(component_url=new_component.url, project_url=node.url)
         status.push_status_message(message, kind='info', trust=True)
 
         return {
