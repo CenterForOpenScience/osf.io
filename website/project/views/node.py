@@ -892,36 +892,6 @@ def get_editable_children(auth, node, **kwargs):
     }
 
 
-def _get_user_activity(node, auth, rescale_ratio):
-
-    # Counters
-    total_count = len(node.logs)
-
-    # Note: It's typically much faster to find logs of a given node
-    # attached to a given user using node.logs.find(...) than by
-    # loading the logs into Python and checking each one. However,
-    # using deep caching might be even faster down the road.
-
-    if auth.user:
-        ua_count = node.logs.find(Q('user', 'eq', auth.user)).count()
-    else:
-        ua_count = 0
-
-    non_ua_count = total_count - ua_count  # base length of blue bar
-
-    # Normalize over all nodes
-    try:
-        ua = ua_count / rescale_ratio * 100
-    except ZeroDivisionError:
-        ua = 0
-    try:
-        non_ua = non_ua_count / rescale_ratio * 100
-    except ZeroDivisionError:
-        non_ua = 0
-
-    return ua_count, ua, non_ua
-
-
 @must_be_valid_project
 def get_recent_logs(node, **kwargs):
     logs = list(reversed(node.logs._to_primary_keys()))[:3]
