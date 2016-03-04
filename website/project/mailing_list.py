@@ -1,6 +1,7 @@
 import re
 
 from flask import request
+from modularodm import Q
 
 from framework.auth.core import get_user
 from framework.auth.signals import user_confirmed
@@ -45,7 +46,9 @@ def find_email(long_email):
     else:
         return long_email
 
-def reason_for_rejection(sender, node):
+def reason_for_rejection(sender, node, message):
+    if ('multipart/report' and 'delivery-status') in message['Content-Type']:
+        return MailingListEventLog.BOUNCED
     if not sender:
         return MailingListEventLog.UNAUTHORIZED
     elif not node:
@@ -58,6 +61,17 @@ def reason_for_rejection(sender, node):
         return MailingListEventLog.DISABLED
     elif not get_recipients(node, sender):
         return MailingListEventLog.NO_RECIPIENTS
+
+    p = re.compile('auto[- ]{0,1}reply', re.IGNORECASE)
+    if p.match(message['subject']):
+        return MailingListEventLog.AUTOREPLY
+    try:
+        last_sender_msg = MailingListEventLog.find(Q('sending_user', 'eq', sender) & Q('destination_node', 'eq', node))[0].content
+    except IndexError:
+        pass
+    else:
+        if len(message['stripped-text']) > 10 and message['stripped-text'] == last_sender_msg['stripped-text']:
+            return MailingListEventLog.AUTOREPLY
     return
 
 def route_message(**kwargs):
@@ -71,11 +85,12 @@ def route_message(**kwargs):
     sender_email = find_email(message['From'])
     sender = get_user(email=sender_email)
 
-    reason = reason_for_rejection(sender, node)
+    reason = reason_for_rejection(sender, node, message)
 
     if reason:
-        send_rejection(node, sender, sender_email, target, message, reason)
-        recipients = []
+        if reason not in (MailingListEventLog.BOUNCED, MailingListEventLog.AUTOREPLY):
+            send_rejection(node, sender, sender_email, target, message, reason)
+            recipients = []
     else:
         reason = MailingListEventLog.OK
         recipients = get_recipients(node, sender=sender)

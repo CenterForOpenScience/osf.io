@@ -4643,4 +4643,6 @@ class MailingListEventLog(StoredObject):
     FORBIDDEN = 'no_access'
     DISABLED = 'mailing_list_disabled'
     NO_RECIPIENTS = 'no_recipients'
+    BOUNCED = 'bounced'
+    AUTOREPLY = 'auto_reply'
     OK = 'sent'
