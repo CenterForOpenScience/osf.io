@@ -1430,13 +1430,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if save:
             self.save()
 
-    @project_signals.node_first_save.connect
-    @project_signals.contributor_added.connect
-    def subscribe_user_to_notifications(self, contributor, auth=None):
+    def subscribe_user_to_notifications(self, user):
         """ Update the notification settings for the creator or contributors
 
-        :param contributor: User to subscribe to notifications
-        :param auth: authorization for the user
+        :param user: User to subscribe to notifications
         """
         from website.notifications import utils as notification_utils
         from website.notifications.model import NotificationSubscription
@@ -1447,8 +1444,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for event in events:
             event_id = notification_utils.to_subscription_key(target_id, event)
-            subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
-            subscription.add_user_to_subscription(contributor, notification_type)
+
+            subscription = NotificationSubscription.load(event_id)
+            if not subscription:
+                subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
+
+            subscription.add_user_to_subscription(user, notification_type)
             subscription.save()
 
     def update(self, fields, auth=None, save=True):
@@ -1585,7 +1586,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 save=True,
             )
 
-            project_signals.node_first_save.send(self, contributor=self.creator)
+            self.subscribe_user_to_notifications(user=self.creator)
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
@@ -2983,9 +2984,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 user.recently_added.insert(0, contrib_to_add)
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
-            #
-            # if contrib_to_add.is_registered:
-            #     self.subscribe_user_to_notifications(contrib_to_add)
+
+            if contrib_to_add.is_registered:
+                self.subscribe_user_to_notifications(contrib_to_add)
 
             if log:
                 self.add_log(
