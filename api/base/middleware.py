@@ -1,11 +1,15 @@
+from modularodm import Q
 from pymongo.errors import OperationFailure
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
+
+import corsheaders.middleware
 
 from framework.tasks.handlers import (
     celery_before_request,
     celery_teardown_request
 )
 from framework.transactions import commands, messages, utils
+from website.institutions.model import Institution
 
 from .api_globals import api_globals
 
@@ -85,3 +89,14 @@ class DjangoGlobalMiddleware(object):
         celery_teardown_request()
         api_globals.request = None
         return response
+
+
+class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
+    """
+    Augment CORS origin white list with the Institution model's domains.
+    """
+    def origin_not_found_in_white_lists(self, origin, url):
+        not_found = (url.netloc not in settings.CORS_ORIGIN_WHITELIST and not self.regex_domain_match(origin))
+        if not_found:
+            not_found = Institution.find(Q('domain', 'eq', url.netloc.lower())).count() == 0
+        return not_found
