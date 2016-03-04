@@ -13,6 +13,7 @@ from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
+from website.project.model import Pointer
 from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, QA_USER_IDS, URL_BASE as BASE
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,6 @@ def retrieve_data(url):
     response = requests.get(url)
     data = response.json()
     return data
-
 
 def get_api_base_path():
     """ Returns api base path depending on environment"""
@@ -36,7 +36,6 @@ def get_api_base_path():
         base = 'http://127.0.0.1:5000/'
     return base
 
-
 def get_apiv2_base_path():
     """ Returns apiv2 base path depending on environment"""
     if BASE == 'PRODUCTION':
@@ -49,18 +48,17 @@ def get_apiv2_base_path():
         base = 'http://127.0.0.1:8000/'
     return base
 
-
 def get_popular_nodes():
     """ Fetch data from url that returns dict with a list of popular nodes from piwik """
     discover_url = get_api_base_path() + 'api/v1/explore/activity/popular/raw/'
     return retrieve_data(discover_url)
 
-
 def get_new_and_noteworthy_nodes():
     """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """
     today = datetime.datetime.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1)).isoformat()
-    discover_url = get_apiv2_base_path() + 'v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(last_month)
+    discover_url = get_apiv2_base_path() + \
+                   'v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(last_month)
     data = retrieve_data(discover_url)['data']
     node_log_count_mapping = {}
     for new_node in data:
@@ -84,7 +82,6 @@ def is_eligible_node(node):
 
     return True
 
-
 def update_node_links(designated_node, target_nodes, description):
     """ Takes designated node, removes current node links and replaces them with node links to target nodes """
     logger.info('Repopulating {} with latest {} nodes.'.format(designated_node._id, description))
@@ -93,7 +90,8 @@ def update_node_links(designated_node, target_nodes, description):
 
     for i in xrange(len(designated_node.nodes)-1, -1, -1):
         pointer = designated_node.nodes[i]
-        designated_node.rm_pointer(pointer, auth)
+        if isinstance(pointer, Pointer):
+            designated_node.rm_pointer(pointer, auth)
 
     for n_id in target_nodes:
         n = models.Node.find(Q('_id', 'eq', n_id))[0]

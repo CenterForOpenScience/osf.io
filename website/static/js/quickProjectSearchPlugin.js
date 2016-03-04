@@ -67,7 +67,6 @@ var QuickSearchProject = {
             }
             else {
                 self.loadingComplete(true);
-                m.redraw();
             }
         };
 

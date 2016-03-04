@@ -17,14 +17,6 @@ describe('AddProjectPlugin', () => {
         project.checkValid();
         assert.notOk(project.isValid(), false);
     });
-    it('should load project categories from api server', () => {
-        var project = new AddProject.controller();
-        var promise = project.loadCategories();
-        promise.then(function(){
-            assert.ok(project.categoryList.length > 0);
-            console.log(project.categoryList);
-        });
-    });
     it('should reset states and defaults when reset function runs', () => {
         var project = new AddProject.controller();
         // Change values
