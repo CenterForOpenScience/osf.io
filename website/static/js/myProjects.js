@@ -356,7 +356,7 @@ var MyProjects = {
                                 self.allProjectsLoaded(false);
                                 self.updateList(lastcrumb);
                             }
-                        })
+                        }, 'dashboard')
                     ]));
                 }
             }
@@ -1118,7 +1118,7 @@ var Breadcrumbs = {
                             args.allProjectsLoaded(false);
                             args.updateList(args.breadcrumbs()[args.breadcrumbs().length-1]);
                         }
-                    });
+                    }, 'dashboard');
                     return [
                         m('li',  [
                             m('span.btn', item.label),
@@ -1327,7 +1327,8 @@ var ActivityLogs = {
         return m('.db-activity-list.m-t-md', [
             args.activityLogs() ? args.activityLogs().map(function(item){
                 return m('.db-activity-item', [
-                    m('', [ m('.db-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})), m.component(LogText,item, 'dashboard', 'information-panel')]),
+                    m('', [ m('.db-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})),
+                        m.component(LogText, item, 'dashboard', 'information-panel')]),
                     m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : '',
