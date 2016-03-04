@@ -119,7 +119,11 @@ class TestNotificationsModels(OsfTestCase):
         user = factories.UserFactory()
         factories.NodeFactory(creator=user)
         user_subscriptions = [x for x in utils.get_all_user_subscriptions(user)]
+        event_types = [sub.event_name for sub in user_subscriptions]
+
         assert_equal(len(user_subscriptions), 2)  # subscribed to both file_updated and comments
+        assert_in('file_updated', event_types)
+        assert_in('comments', event_types)
 
     def test_contributor_subscribed_when_added(self):
         user = factories.UserFactory()
@@ -127,7 +131,11 @@ class TestNotificationsModels(OsfTestCase):
         project = factories.NodeFactory(creator=user)
         project.add_contributor(contributor=contributor)
         contributor_subscriptions = [x for x in utils.get_all_user_subscriptions(contributor)]
+        event_types = [sub.event_name for sub in contributor_subscriptions]
+
         assert_equal(len(contributor_subscriptions), 2)
+        assert_in('file_updated', event_types)
+        assert_in('comments', event_types)
 
     def test_unregistered_contributor_not_subscribed(self):
         user = factories.UserFactory()
