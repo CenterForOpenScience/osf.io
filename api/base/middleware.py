@@ -96,7 +96,7 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
     Augment CORS origin white list with the Institution model's domains.
     """
     def origin_not_found_in_white_lists(self, origin, url):
-        not_found = (url.netloc not in settings.CORS_ORIGIN_WHITELIST and not self.regex_domain_match(origin))
+        not_found = super(CorsMiddleware, self).origin_not_found_in_white_lists(origin, url)
         if not_found:
             not_found = Institution.find(Q('domain', 'eq', url.netloc.lower())).count() == 0
         return not_found
