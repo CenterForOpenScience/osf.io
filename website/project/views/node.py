@@ -974,12 +974,8 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
             'show_path': show_path
         })
         if rescale_ratio:
-            ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
             summary.update({
                 'nlogs': len(node.logs),
-                'ua_count': ua_count,
-                'ua': ua,
-                'non_ua': non_ua,
             })
     else:
         summary['can_view'] = False
