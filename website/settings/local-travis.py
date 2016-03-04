@@ -44,12 +44,5 @@ TEST_DB_NAME = DB_NAME = 'osf_test'
 
 VARNISH_SERVERS = ['http://localhost:8080']
 
-print os.environ.get('ENABLE_VARNISH', False)
-
-if (os.environ.get('ENABLE_VARNISH', False) == 'True'):
-    ENABLE_VARNISH = True
-    print "------------------ VARNISH ENABLED ------------------"
-else:
-    ENABLE_VARNISH = False
-    print "------------------ VARNISH DISABLED ------------------"
-
+# if ENABLE_VARNISH isn't set in python read it from the env var
+locals().setdefault('ENABLE_VARNISH', os.environ.get('ENABLE_VARNISH') == 'True')
