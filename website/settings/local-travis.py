@@ -49,4 +49,4 @@ locals().setdefault('ENABLE_VARNISH', os.environ.get('ENABLE_VARNISH') == 'True'
 
 print '--------------------------------- \
        ENABLE VARNISH: {} \
-       ---------------------------------'
+       ---------------------------------'.format(ENABLE_VARNISH)
