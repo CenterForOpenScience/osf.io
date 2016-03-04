@@ -24,17 +24,24 @@ $(document).ready(function(){
                 var tb = this;
                 return m('input.pull-right.form-control[placeholder=\'' + tb.options.filterPlaceholder + '\'][type=\'text\']', {
                     style: 'width:100%;display:inline;',
-                    oninput: tb.filter,
+                    oninput: tb.filter,                   // oninput reduces frequency of missed keypresses
                     value: tb.filterText()
                 });
             },
+
             onfilter: function(){
+                // Send query to elasticsearch file search lapi
                 var queryElasticSearch = function(query, node_id){
                     var data = {'q': query, 'pid': node_id};
                     var response = $.getJSON('/api/v1/project_files', data);
                     return response;
                 };
 
+                /**
+                 * Display results matching filter or from the elastic search query.
+                 * @param paths The list of file paths matched by elastic search.
+                 * @param tb Instance of treebeard object.
+                 */
                 var showResults = function(paths, tb){
 
                     // convert to a dictionary for constant time look-ups.
