@@ -70,7 +70,7 @@ def format_node_data_recursive(nodes, user):
                 'mailing_list': ('enabled' if node.mailing_enabled else 'disabled') if can_read else None
             },
             'children': children,
-            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'kind': 'folder' if node.is_folder else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
             'permissions': {
