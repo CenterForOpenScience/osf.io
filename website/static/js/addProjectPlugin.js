@@ -36,7 +36,6 @@ var AddProject = {
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
         };
-
         // Validation
         self.isValid = m.prop(false);
         self.checkValid = function _checkValid() {
