@@ -1,1 +1,10 @@
 /* Support css */
+.support-wrapper {
+    background: #f8f8f8;
+}
+
+.support-col {
+    border: 1px solid #eee;
+    background: #FFF;
+    box-shadow: 0px 0px 1px #eee;
+}
