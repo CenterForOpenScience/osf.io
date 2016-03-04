@@ -27,11 +27,12 @@ var QuickSearchProject = {
         self.filter = m.prop(); // Search query from user
         self.fieldSort = m.prop(); // For xs screen, either alpha or date
         self.directionSort = m.prop(); // For xs screen, either Asc or Desc
-        self.errorLoading = false;
+        self.errorLoading = m.prop(false);
 
         // Switches errorLoading to true
         self.requestError = function() {
-          self.errorLoading = true;
+          self.errorLoading(true);
+
         };
 
         // Load up to first ten nodes
@@ -296,7 +297,7 @@ var QuickSearchProject = {
 
     },
     view : function(ctrl) {
-        if (ctrl.errorLoading) {
+        if (ctrl.errorLoading()) {
             return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page.');
         }
 

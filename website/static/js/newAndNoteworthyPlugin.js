@@ -22,11 +22,11 @@ var NewAndNoteworthy = {
         self.popularNodes = m.prop([]);
         self.contributorsMapping = {};
         self.SHOW_TOTAL = 5;
-        self.errorLoading = false;
+        self.errorLoading = m.prop(false);
 
         // Switches errorLoading to true
         self.requestError = function(){
-            self.errorLoading = true;
+            self.errorLoading = m.prop(true);
         };
 
         // Load new and noteworthy nodes
@@ -79,7 +79,7 @@ var NewAndNoteworthy = {
         };
     },
     view : function(ctrl) {
-        if (ctrl.errorLoading) {
+        if (ctrl.errorLoading()) {
             return m('p.text-center.m-v-lg', 'Error loading projects. Please refresh the page.');
         }
 
