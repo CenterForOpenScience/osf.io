@@ -59,7 +59,7 @@ var QuickSearchProject = {
                     self.loadingComplete(true);
                 }
             }, function _error(result){
-            self.requestError(result);
+                self.requestError(result);
             });
 
         // Recursively fetches remaining user's nodes
