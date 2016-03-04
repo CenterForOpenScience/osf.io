@@ -424,6 +424,15 @@ class TestWikiViews(OsfTestCase):
         assert_in('...', res.json['wiki_content'])
         assert_true(res.json['more'])
 
+    def test_wiki_widget_with_multiple_short_pages_has_more(self):
+        project = ProjectFactory(is_public=True, creator=self.user)
+        short_content = 'a' * 150
+        project.update_node_wiki('home', short_content, Auth(self.user))
+        project.update_node_wiki('andanotherone', short_content, Auth(self.user))
+        url = project.api_url_for('wiki_widget', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_true(res.json['more'])
+
     @mock.patch('website.addons.wiki.model.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
     def test_wiki_widget_use_python_render(self, mock_rendered_before_update):
         # New pages use js renderer

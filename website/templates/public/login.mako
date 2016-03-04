@@ -2,50 +2,30 @@
 
 <%def name="title()">Sign In</%def>
 
-<%def name="content_wrap()">
-    <div class="watermarked">
-            % if status:
-                <%include file="alert.mako" args="extra_css='alert-front text-center'"/>
-            % endif
-            ${self.content()}
-    </div><!-- end watermarked -->
-</%def>
-
 <%def name="content()">
 
-        <div id="login-hero">
-        <div class="container text-center">
-            <div class="visible-xs-block visible-sm-block visible-md-block"></div>
-            %if campaign == "institution" and enable_institutions:
-                <h1 class="hero-brand">OSF For Institutions</h1>
-            %else:
-                <h1 class="hero-brand">Open Science Framework</h1>
-            %endif
-
-            %if campaign == "prereg":
-                <h3>Preregistration Challenge </h3>
-            %else:
-                <h3 class="login-tagline">A scholarly commons to connect the entire research cycle</h3>
-            %endif
-
-        </div>
 %if campaign == "prereg":
 <div class="text-center m-t-lg">
-    <h4>
+    <h3>Preregistration Challenge </h3>
+    <hr>
+    <p>
       Please login to the Open Science Framework or create a free account to continue.
-    </h4>
+    </p>
 </div>
 %endif
 
 %if campaign == "institution" and enable_institutions:
 <div class="text-center m-t-lg">
-    <h4>
-      Please select your institution below and sign in with your institutional credentials.
-    </h4>
+    <h3>OSF for Institutions </h3>
+    <hr>
+    <p>
+      If your institution has partnered with the Open Science Framework, please
+        select its name below and sign in with your institutional credentials.
+    </p>
+    <p> If you do not currently have an OSF account, this will create one. By creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
 </div>
 %endif
 <div class="row m-t-xl">
-
     %if campaign == "institution" and enable_institutions:
     <div class="col-sm-6 col-sm-offset-3 toggle-box toggle-box-active">
         <h3 class="m-b-lg"> Login through institution</h3>
@@ -67,67 +47,9 @@
         </div>
     </div>
     %endif
-      %if campaign == "existing_user":
-    <div id="login-box" class="col-sm-4 col-sm-offset-4">
-      <h3 class="text-center m-lg">Sign into the OSF</h3>
+    %if campaign != "institution" or not enable_institutions:
+    <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
         <form
-            id="logInForm"
-            class="form-horizontal"
-            action="${login_url}"
-            method="POST"
-            data-bind="submit: submit"
-        >
-            <div>
-                <h4 class="m-xs">Email</h4>
-                <div class="form-group p-l-md p-r-md p-b-xs">
-                    <div>
-                        <input
-                                type="email"
-                                class="form-control"
-                                data-bind="value: username"
-                                name="username"
-                                id="inputEmail3"
-                                placeholder="Email"
-                                autofocus
-                        >
-                    </div>
-                </div>
-                <h4 class="m-xs">Password</h4>
-                <div class="form-group p-l-md p-r-md">
-                    <div>
-                        <input
-                                type="password"
-                                class="form-control"
-                                id="inputPassword3"
-                                placeholder="Password"
-                                data-bind="value: password"
-                                name="password"
-                        >
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="form-group  pd-md col-sm-4">
-                    <div class="checkbox  m-md">
-                        <label><input type="checkbox"> Remember me</label>
-                    </div>
-                </div>
-                <div class="form-group  col-sm-8">
-                    <button type="submit" class="btn btn-success p-l-lg p-r-lg pull-right m-sm    ">Sign in</button>
-                </div>
-            </div>
-            <div class="col-sm-12 text-center m-b-lg">
-                <a class="col-sm-6  login-link" href="/forgotpassword/">Forgot your Password?</a>
-                <a class="col-sm-6 login-link" href="/login/?campaign=institution">Login through your institution</a>
-            </div>
-        </form>
-    </div>
-
-    %endif
-
-    %if (campaign != "institution" or not enable_institutions) and campaign != "existing_user":
-      <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
-          <form
             id="logInForm"
             class="form-horizontal"
             action="${login_url}"
@@ -136,6 +58,7 @@
         >
             <h3 class="m-b-lg"> Login </h3>
             <div class="form-group">
+                <label for="inputEmail3" class="col-sm-3 control-label">Email</label>
                 <div class="col-sm-9">
                     <input
                         type="email"
@@ -149,6 +72,7 @@
                 </div>
             </div>
             <div class="form-group">
+                <label for="inputPassword3" class="col-sm-3 control-label">Password</label>
                     <div class="col-sm-9">
                     <input
                         type="password"
@@ -280,6 +204,9 @@
             <div class="help-block" >
                 <p data-bind="html: flashMessage, attr.class: flashMessageClass"></p>
             </div>
+            <div>
+                <p> By clicking "Create account", you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
+            </div>
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
                     <button type="submit" class="btn pull-right btn-success ">Create account</button>
@@ -287,10 +214,7 @@
             </div>
         </form>
     </div>
-
     %endif
-                        </div>
-
 </div>
 
 </%def>
@@ -307,7 +231,6 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/css/pages/home-page.css">
-    <link rel="stylesheet" href="/static/css/front-page.css">
+
     <link rel="stylesheet" href="/static/css/pages/login-page.css">
 </%def>
