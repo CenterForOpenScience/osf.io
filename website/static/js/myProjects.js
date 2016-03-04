@@ -347,7 +347,7 @@ var MyProjects = {
                         'This project has no components.',
                         m.component(AddProject, {
                             buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', {onclick: function() {
-                                $osf.trackClick('dashboard', 'add-project', 'open-add-component-modal');
+                                $osf.trackClick('myProjects', 'add-project', 'open-add-component-modal');
                             }}, 'Add new component'),
                             parentID : lastcrumb.data.id,
                             modalID : 'addSubcomponent',
@@ -356,7 +356,7 @@ var MyProjects = {
                                 self.allProjectsLoaded(false);
                                 self.updateList(lastcrumb);
                             }
-                        }, 'dashboard')
+                        }, 'myProjects')
                     ]));
                 }
             }
@@ -384,7 +384,7 @@ var MyProjects = {
         };
         self.reloadOnClick = function (item) {
             self.updateFilter(item);
-            $osf.trackClick('dashboard', 'projectOrganizer', 'reload-all-my-projects');
+            $osf.trackClick('myProjects', 'projectOrganizer', 'reload-all-my-projects');
         };
 
         self.updateListError = function _updateListError (result){
@@ -529,7 +529,7 @@ var MyProjects = {
                         'class' : sidebarButtonClass,
                         onclick : function () {
                             ctrl.showSidebar(!ctrl.showSidebar());
-                            $osf.trackClick('dashboard', 'mobile', 'click-bars-to-toggle-collections-or-projects');
+                            $osf.trackClick('myProjects', 'mobile', 'click-bars-to-toggle-collections-or-projects');
                         }
                     }, m('.fa.fa-bars')) : '',
                     m('.db-poFilter.m-r-xs')
@@ -540,7 +540,7 @@ var MyProjects = {
                 mobile ? [ m('.db-dismiss', m('button.close[aria-label="Close"]', {
                     onclick : function () {
                         ctrl.showSidebar(false);
-                        $osf.trackClick('dashboard', 'mobile', 'close-toggle-instructions');
+                        $osf.trackClick('myProjects', 'mobile', 'close-toggle-instructions');
                     }
                 }, [
                     m('span[aria-hidden="true"]','×')
@@ -576,7 +576,7 @@ var MyProjects = {
             mobile ? '' : m('.db-info-toggle',{
                     onclick : function _showInfoOnclick(){
                         ctrl.showInfo(!ctrl.showInfo());
-                        $osf.trackClick('dashboard', 'information-panel', 'show-hide-information-panel');
+                        $osf.trackClick('myProjects', 'information-panel', 'show-hide-information-panel');
                     }
                 },
                 ctrl.showInfo() ? m('i.fa.fa-chevron-right') :  m('i.fa.fa-chevron-left')
@@ -784,7 +784,7 @@ var Collections  = {
         
         var collectionOnclick = function (item){
             args.updateFilter(item);
-            $osf.trackClick('dashboard', 'projectOrganizer', 'open-collection');
+            $osf.trackClick('myProjects', 'projectOrganizer', 'open-collection');
         };
         var collectionList = function () {
             var item;
@@ -817,7 +817,7 @@ var Collections  = {
                         'data-index' : i,
                         onclick : function (event){
                             openCollectionMenu.call(this, event);
-                            $osf.trackClick('dashboard', 'edit-collection', 'open-edit-collection-menu');
+                            $osf.trackClick('myProjects', 'edit-collection', 'open-edit-collection-menu');
                         }});
                 } else {
                     submenuTemplate = '';
@@ -843,7 +843,7 @@ var Collections  = {
                 }, ''),
                 m('.pull-right', [
                     m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', {onclick: function() {
-                        $osf.trackClick('dashboard', 'add-collection', 'open-add-collection-modal');
+                        $osf.trackClick('myProjects', 'add-collection', 'open-add-collection-modal');
                     }}, m('i.fa.fa-plus')),
                     m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages, type: 'collections'})
                     ]
@@ -857,14 +857,14 @@ var Collections  = {
                     m('.menuClose', { onclick : function (e) {
                         ctrl.showCollectionMenu(false);
                         ctrl.resetCollectionMenu();
-                        $osf.trackClick('dashboard', 'edit-collection', 'click-close-edit-collection-menu');
+                        $osf.trackClick('myProjects', 'edit-collection', 'click-close-edit-collection-menu');
                     }
                     }, m('.text-muted','×')),
                     m('ul', [
                         m('li[data-toggle="modal"][data-target="#renameColl"].pointer',{
                             onclick : function (e) {
                                 ctrl.showCollectionMenu(false);
-                                $osf.trackClick('dashboard', 'edit-collection', 'open-rename-collection-modal');
+                                $osf.trackClick('myProjects', 'edit-collection', 'open-rename-collection-modal');
                             }
                         }, [
                             m('i.fa.fa-pencil'),
@@ -873,7 +873,7 @@ var Collections  = {
                         m('li[data-toggle="modal"][data-target="#removeColl"].pointer',{
                             onclick : function (e) {
                                 ctrl.showCollectionMenu(false);
-                                $osf.trackClick('dashboard', 'edit-collection', 'open-delete-collection-modal');
+                                $osf.trackClick('myProjects', 'edit-collection', 'open-delete-collection-modal');
                             }
                         }, [
                             m('i.fa.fa-trash'),
@@ -890,7 +890,7 @@ var Collections  = {
                     id: 'addColl',
                     header : m('.modal-header', [
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', {onclick: function() {
-                            $osf.trackClick('dashboard', 'add-collection', 'click-close-add-collection-modal');
+                            $osf.trackClick('myProjects', 'add-collection', 'click-close-add-collection-modal');
                         }}, [
                             m('span[aria-hidden="true"]','×')
                         ]),
@@ -913,7 +913,7 @@ var Collections  = {
                                         ctrl.newCollectionName(val);
                                     },
                                     onchange: function() {
-                                      $osf.trackClick('dashboard', 'add-collection', 'type-collection-name');
+                                      $osf.trackClick('myProjects', 'add-collection', 'type-collection-name');
                                     },
                                     placeholder : 'e.g.  My Replications',
                                     value : ctrl.newCollectionName()
@@ -929,13 +929,13 @@ var Collections  = {
                                     ctrl.dismissModal();
                                     ctrl.newCollectionName('');
                                     ctrl.isValid(false);
-                                    $osf.trackClick('dashboard', 'add-collection', 'click-cancel-button');
+                                    $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
 
                                 }
                             }, 'Cancel'),
                         ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function() {
                             ctrl.addCollection();
-                            $osf.trackClick('dashboard', 'add-collection', 'click-add-button');
+                            $osf.trackClick('myProjects', 'add-collection', 'click-add-button');
                         }},'Add')
                             : m('button[type="button"].btn.btn-success[disabled]', 'Add')
                     ])
@@ -944,7 +944,7 @@ var Collections  = {
                     id : 'renameColl',
                     header: m('.modal-header', [
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', {onclick: function() {
-                            $osf.trackClick('dashboard', 'edit-collection', 'click-close-rename-modal');
+                            $osf.trackClick('myProjects', 'edit-collection', 'click-close-rename-modal');
                         }}, [
                             m('span[aria-hidden="true"]','×')
                         ]),
@@ -966,7 +966,7 @@ var Collections  = {
                                         ctrl.collectionMenuObject().item.renamedLabel = val;
                                     },
                                     onchange: function() {
-                                        $osf.trackClick('dashboard', 'edit-collection', 'type-rename-collection');
+                                        $osf.trackClick('myProjects', 'edit-collection', 'type-rename-collection');
                                     },
                                     value: ctrl.collectionMenuObject().item.renamedLabel}),
                                 m('span.help-block', ctrl.validationError())
@@ -978,12 +978,12 @@ var Collections  = {
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {
                             onclick : function(){
                                 ctrl.isValid(false);
-                                $osf.trackClick('dashboard', 'edit-collection', 'click-cancel-rename-button');
+                                $osf.trackClick('myProjects', 'edit-collection', 'click-cancel-rename-button');
                             }
                         },'Cancel'),
                         ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function() {
                             ctrl.renameCollection();
-                            $osf.trackClick('dashboard', 'edit-collection', 'click-rename-button');
+                            $osf.trackClick('myProjects', 'edit-collection', 'click-rename-button');
                         }},'Rename')
                             : m('button[type="button"].btn.btn-success[disabled]', 'Rename')
                     ])
@@ -992,7 +992,7 @@ var Collections  = {
                     id: 'removeColl',
                     header: m('.modal-header', [
                         m('button.close[data-dismiss="modal"][aria-label="Close"]', {onclick: function() {
-                            $osf.trackClick('dashboard', 'edit-collection', 'click-close-delete-collection');
+                            $osf.trackClick('myProjects', 'edit-collection', 'click-close-delete-collection');
                         }}, [
                             m('span[aria-hidden="true"]','×')
                         ]),
@@ -1004,12 +1004,12 @@ var Collections  = {
                     ]),
                     footer : m('.modal-footer', [
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {onclick: function() {
-                            $osf.trackClick('dashboard', 'edit-collection', 'click-cancel-delete-collection');
+                            $osf.trackClick('myProjects', 'edit-collection', 'click-cancel-delete-collection');
                         }}, 'Cancel'),
                         m('button[type="button"].btn.btn-danger', {
                             onclick : function() {
                                 ctrl.deleteCollection();
-                                $osf.trackClick('dashboard', 'edit-collection', 'click-delete-collection-button');
+                                $osf.trackClick('myProjects', 'edit-collection', 'click-delete-collection-button');
                             }},'Delete')
                     ])
                 })
@@ -1027,12 +1027,12 @@ var MicroPagination = {
         return m('span.osf-micro-pagination.m-l-xs', [
             args.currentPage() > 1 ? m('span.m-r-xs.arrow.left.live', { onclick : function(){
                     args.currentPage(args.currentPage() - 1);
-                    $osf.trackClick('dashboard', 'paginate', 'get-prev-page-' + args.type);
+                    $osf.trackClick('myProjects', 'paginate', 'get-prev-page-' + args.type);
              }}, m('i.fa.fa-angle-left')) : m('span.m-r-xs.arrow.left', m('i.fa.fa-angle-left')),
             m('span', args.currentPage() + '/' + args.totalPages()),
             args.currentPage() < args.totalPages() ? m('span.m-l-xs.arrow.right.live', { onclick : function(){
                     args.currentPage(args.currentPage() + 1);
-                    $osf.trackClick('dashboard', 'paginate', 'get-next-page-' + args.type);
+                    $osf.trackClick('myProjects', 'paginate', 'get-next-page-' + args.type);
             }}, m('i.fa.fa-angle-right')) : m('span.m-l-xs.arrow.right', m('i.fa.fa-angle-right'))
         ]);
     }
@@ -1048,7 +1048,7 @@ var Breadcrumbs = {
         var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
         var updateFilesOnClick = function (item) {
                 args.updateFilesData(item);
-                $osf.trackClick('dashboard', 'projectOrganizer', 'click-on-breadcrumbs');
+                $osf.trackClick('myProjects', 'projectOrganizer', 'click-on-breadcrumbs');
         };
 
         var items = args.breadcrumbs();
@@ -1109,7 +1109,7 @@ var Breadcrumbs = {
                     }
                     var addProjectTemplate = m.component(AddProject, {
                         buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', {onclick: function(){
-                            $osf.trackClick('dashboard', 'add-project', 'open-add-' + objectType + '-modal');
+                            $osf.trackClick('myProjects', 'add-project', 'open-add-' + objectType + '-modal');
                         }}, [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), label]),
                         parentID : args.breadcrumbs()[args.breadcrumbs().length-1].data.id,
                         modalID : 'addProject',
@@ -1118,7 +1118,7 @@ var Breadcrumbs = {
                             args.allProjectsLoaded(false);
                             args.updateList(args.breadcrumbs()[args.breadcrumbs().length-1]);
                         }
-                    }, 'dashboard');
+                    }, 'myProjects');
                     return [
                         m('li',  [
                             m('span.btn', item.label),
@@ -1162,12 +1162,12 @@ var Filters = {
         }
         var filterContributor = function(item, tracking) {
             args.updateFilter(item);
-            $osf.trackClick('dashboard', 'filter', 'filter-by-contributor');
+            $osf.trackClick('myProjects', 'filter', 'filter-by-contributor');
         };
 
         var filterTag = function(item, tracking) {
             args.updateFilter(item);
-            $osf.trackClick('dashboard', 'filter', 'filter-by-tag');
+            $osf.trackClick('myProjects', 'filter', 'filter-by-tag');
         };
 
         var returnNameFilters = function _returnNameFilters(){
@@ -1245,20 +1245,20 @@ var Information = {
             template = m('.p-sm', [
                 filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', {onclick : function() {
                     args.removeProjectFromCollections();
-                    $osf.trackClick('dashboard', 'information-panel', 'remove-project-from-collection');
+                    $osf.trackClick('myProjects', 'information-panel', 'remove-project-from-collection');
                 }
                 }, 'Remove from collection')) : '',
                 m('h3', m('a', { href : item.links.html, onclick: function(){
-                    $osf.trackClick('dashboard', 'information-panel', 'navigate-to-project');
+                    $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project');
                 }}, item.attributes.title)),
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
                         m('li[role="presentation"].active', m('a[href="#tab-information"][aria-controls="information"][role="tab"][data-toggle="tab"]', {onclick: function(){
-                            $osf.trackClick('dashboard', 'information-panel', 'open-information-tab');
+                            $osf.trackClick('myProjects', 'information-panel', 'open-information-tab');
                         }}, 'Information')),
                         m('li[role="presentation"]', m('a[href="#tab-activity"][aria-controls="activity"][role="tab"][data-toggle="tab"]', {onclick : function() {
                             args.getCurrentLogs();
-                            $osf.trackClick('dashboard', 'information-panel', 'open-activity-tab');
+                            $osf.trackClick('myProjects', 'information-panel', 'open-activity-tab');
                         }}, 'Activity'))
                     ]),
                     m('.tab-content', [
@@ -1276,20 +1276,20 @@ var Information = {
                                 m('h5', 'Tags'),
                                 item.attributes.tags.map(function(tag){
                                     return m('a.tag', { href : '/search/?q=(tags:' + tag + ')', onclick: function(){
-                                        $osf.trackClick('dashboard', 'information-panel', 'navigate-to-search-by-tag');
+                                        $osf.trackClick('myProjects', 'information-panel', 'navigate-to-search-by-tag');
                                     }}, tag);
                                 })
                             ]) : '',
                             m('p.m-t-md', [
                                 m('h5', 'Jump to Page'),
                                 m('a.p-xs', { href : item.links.html + 'wiki/home', onclick: function () {
-                                    $osf.trackClick('dashboard', 'information-panel', 'jump-to-wiki');
+                                    $osf.trackClick('myProjects', 'information-panel', 'jump-to-wiki');
                                 }}, 'Wiki'),
                                 m('a.p-xs', { href : item.links.html + 'files/', onclick: function () {
-                                    $osf.trackClick('dashboard', 'information-panel', 'jump-to-files');
+                                    $osf.trackClick('myProjects', 'information-panel', 'jump-to-files');
                                 }}, 'Files'),
                                 m('a.p-xs', { href : item.links.html + 'settings/', onclick: function () {
-                                    $osf.trackClick('dashboard', 'information-panel', 'jump-to-settings');
+                                    $osf.trackClick('myProjects', 'information-panel', 'jump-to-settings');
                                 }}, 'Settings')
                             ])
                         ]),
@@ -1304,7 +1304,7 @@ var Information = {
             template = m('.p-sm', [
                 filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', {onclick : function() {
                     args.removeProjectFromCollections();
-                    $osf.trackClick('dashboard', 'information-panel', 'remove-multiple-projects-from-collections');
+                    $osf.trackClick('myProjects', 'information-panel', 'remove-multiple-projects-from-collections');
                 }}, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
                     return m('.db-info-multi', [
@@ -1328,14 +1328,14 @@ var ActivityLogs = {
             args.activityLogs() ? args.activityLogs().map(function(item){
                 return m('.db-activity-item', [
                     m('', [ m('.db-log-avatar.m-r-xs', m('img', { src : item.embeds.user.data.links.profile_image})),
-                        m.component(LogText, item, 'dashboard', 'information-panel')]),
+                        m.component(LogText, item, 'myProjects', 'information-panel')]),
                     m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : '',
             m('.db-activity-nav.text-center', [
                 args.showMoreActivityLogs() ? m('.btn.btn-sm.btn-link', { onclick: function(){
                     args.getLogs(args.showMoreActivityLogs(), true);
-                    $osf.trackClick('dashboard', 'information-panel', 'show-more-activity');
+                    $osf.trackClick('myProjects', 'information-panel', 'show-more-activity');
                 }}, [ 'Show more', m('i.fa.fa-caret-down.m-l-xs')]) : ''
             ])
 

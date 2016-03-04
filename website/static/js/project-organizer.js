@@ -36,7 +36,7 @@ function _poTitleColumn(item) {
     } else if(node.links.html){
         return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, onclick : function(event) {
             preventSelect.call(this, event);
-            $osf.trackClick('dashboard', 'projectOrganizer', 'navigate-to-specific-project');
+            $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-specific-project');
         }}, node.attributes.title) ];
     } else {
         return  m('span', { 'class' : css, 'data-nodeID' : node.id }, node.attributes.title);
@@ -137,7 +137,7 @@ function _poResolveRows(item) {
             custom : function (row){
                 return m('.btn.btn-default.btn-sm[data-toggle="modal"][data-target="#infoModal"]', {
                 }, m('i.fa.fa-ellipsis-h', {onclick: function() {
-                    $osf.trackClick('dashboard', 'mobile', 'open-information-panel');
+                    $osf.trackClick('myProjects', 'mobile', 'open-information-panel');
                 }}));
             }
         });
@@ -245,10 +245,10 @@ function _poMultiselect(event, tree) {
     if (tb.multiselected().length === 1) {
         tb.select('#tb-tbody').removeClass('unselectable');
         if (event.currentTarget != null) {
-            $osf.trackClick('dashboard', 'projectOrganizer', 'single-project-selected');
+            $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-selected');
         }
     } else if (tb.multiselected().length > 1) {
-        $osf.trackClick('dashboard', 'projectOrganizer', 'multiple-projects-selected');
+        $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-selected');
         tb.select('#tb-tbody').addClass('unselectable');
     }
     m.redraw();
@@ -319,7 +319,7 @@ var tbOptions = {
         m.render($(tb.options.dragContainment + ' .db-poFilter').get(0), tb.options.filterTemplate.call(this));
     },
     ontogglefolder : function (item, event) {
-        $osf.trackClick('dashboard', 'projectOrganizer', 'expand-collapse-project-children');
+        $osf.trackClick('myProjects', 'projectOrganizer', 'expand-collapse-project-children');
         if (!item.open) {
             item.load = false;
         }
@@ -346,7 +346,7 @@ var tbOptions = {
     },
     ondblclickrow : function(item, event){
         var tb = this;
-        $osf.trackClick('dashboard', 'projectOrganizer', 'double-click-project');
+        $osf.trackClick('myProjects', 'projectOrganizer', 'double-click-project');
         var node = item.data;
         var linkObject = new LinkObject('node', node, node.attributes.title);
         // Get ancestors
@@ -376,12 +376,12 @@ var tbOptions = {
                 },
                 onchange: function() {
                     m.withAttr('value', tb.filterText);
-                    $osf.trackClick('dashboard', 'filter', 'search-projects');
+                    $osf.trackClick('myProjects', 'filter', 'search-projects');
                 },
                 value: tb.filterText()
             }),
             m('.filterReset', { onclick : function () {
-                $osf.trackClick('dashboard', 'filter', 'clear-search');
+                $osf.trackClick('myProjects', 'filter', 'clear-search');
                 tb.resetFilter.call(tb);
                 $('#poFilter>input').val('');
             } }, tb.options.removeIcon())
