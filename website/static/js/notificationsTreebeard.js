@@ -85,6 +85,7 @@ function ProjectNotifications(data) {
         filesData: data,
         naturalScrollLimit : 0,
         resolveRows: function notificationResolveRows(item){
+            var options = [];
             var columns = [];
             var iconcss = '';
             // check if should not get icon
@@ -139,38 +140,14 @@ function ProjectNotifications(data) {
                     }
                 });
             }
-            // Special case for mailing list events -- no digest option
-            else if ((item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading') && item.data.kind === 'event' && item.data.event.notificationType === 'mailing_list_events') {
-                columns.push(
-                {
-                    data : 'project',  // Data field name
-                    folderIcons : true,
-                    filter : true,
-                    css : iconcss,
-                    sortInclude : false,
-                    custom : function(item, col) {
-                        return item.data.event.description;
-                    }
-                },
-                {
-                    data : 'notificationType',  // Data field name
-                    folderIcons : false,
-                    filter : false,
-                    custom : function(item, col) {
-                        return m('div[style="padding-right:10px"]',
-                            [m('select.form-control', {
-                                onchange: function(ev) {
-                                    subscribe(item, ev.target.value);
-                                }},
-                                [
-                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                            ])
-                        ]);
-                    }
-                });
-            }
             else if (item.parent().data.kind === 'folder' || item.parent().data.kind === 'heading' && item.data.kind === 'event') {
+                options = [
+                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
+                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                ];
+                if (item.data.event.title !== 'mailing_list_events') {
+                    options.push(m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily'));
+                }
                 columns.push(
                 {
                     data : 'project',  // Data field name
@@ -192,16 +169,21 @@ function ProjectNotifications(data) {
                                 onchange: function(ev) {
                                     subscribe(item, ev.target.value);
                                 }},
-                                [
-                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
-                            ])
+                                options)
                         ]);
                     }
                 });
             }
             else {
+                options = [
+                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
+                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                ];
+                if (item.data.event.title !== 'mailing_list_events') {
+                    options.push(m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily'));
+                    options.push(m('option', {value: 'adopt_parent', selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
+                                                 'Adopt setting from parent project ' + displayParentNotificationType(item)));
+                }
                 columns.push(
                 {
                     data : 'project',  // Data field name
@@ -224,14 +206,7 @@ function ProjectNotifications(data) {
                                 onchange: function(ev) {
                                     subscribe(item, ev.target.value);
                                 }},
-                                [
-                                    m('option', {value: 'adopt_parent',
-                                                 selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
-                                                 'Adopt setting from parent project ' + displayParentNotificationType(item)),
-                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                                    m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
-                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
-                            ])
+                                options)
                         ]);
                     }
                 });
