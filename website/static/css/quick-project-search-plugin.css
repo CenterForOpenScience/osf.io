@@ -1,12 +1,15 @@
 
 .node-styling {
-    background-color: #fcfcfc;
-    border: 1px solid #cccccc;
+    background-color: #fff;
+    box-shadow: 1px 1px 1px #ccc;
+    padding: 6px;
+    color: #555;
 }
 
 .node-styling:hover {
-    background-color: #E0EBF3;
+    background-color: #337AB7;
     cursor: pointer;
+    color: #FFF;
 }
 
 .quick-project button {
@@ -17,7 +20,10 @@
 }
 
 .load-nodes {
-    font-size: 1.5em;
+    font-size: 2em;
+}
+.load-nodes:hover {
+    color: #333;
 }
 
 .quick-project .selected {
@@ -31,6 +37,9 @@
 .sort-group {
   display: inline-block;
 
+}
+.node-col-headers {
+    font-weight: bold;
 }
 
 @media screen and (max-width: 768px) {
@@ -68,10 +77,6 @@
     font-weight: normal;
 }
 
-.conferences-and-meetings {
-    background-color: #EEEEEE;
-}
-
 .prevent-overflow {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -80,4 +85,57 @@
 
 .blank-line {
     margin-bottom: 15px;
+}
+
+.quick-search-input {
+    width: 70%;
+    margin: 10px auto;
+}
+
+.quick-search-input input {
+    height: 38px;
+    border-radius: 5px;
+    display: inline-block;
+    padding-right: 40px;
+
+}
+
+.quick-search-input span {
+    display: inline-block;
+    margin-left: -36px;
+    background: #eee;
+    border-radius: 12px;
+    color: #888;
+    font-size: 13px;
+    padding: 1px;
+    width: 26px;
+
+}
+.quick-search-col {
+    padding-left: 5px;
+}
+
+.public-projects-box {
+    background: rgba(255, 255, 255, 0.22);
+    padding: 10px 15px;
+    border-radius: 2px;
+    margin-top: 20px;
+}
+.public-projects-item {
+    background-color: #fff;
+    box-shadow: 1px 1px 1px #898787;
+    padding: 8px 15px;
+    color: #555;
+    margin-bottom: 5px;
+}
+.public-projects-item:hover {
+    cursor: pointer;
+    background-color: #337AB7;
+    color: #fff;
+}
+.quick-search-table {
+    background: rgba(255, 255, 255, 0.49);
+    padding: 10px 15px;
+    border-radius: 2px;
+    margin-top: 20px;
 }

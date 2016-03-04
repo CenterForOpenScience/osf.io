@@ -1,0 +1,46 @@
+.support-head, .support-body {
+    padding: 10px;
+}
+
+.support-nomatch {
+    color: #999;
+}
+.support-nomatch a {
+    color: #87cefa;
+}
+
+.support-sidebar {
+    border-right: 1px solid #eee;
+    background: #f8f8f8;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    border-top: 1px solid #f5f5f5;
+    border-left: 1px solid #f5f5f5;
+}
+.support-sidebar p {
+    font-size: 13px;
+}
+
+/**/
+.content-layer {
+    border-top: 1px solid #eee;
+}
+.content-padding {
+    padding-top: 145px; /* To pad for the affixed menu changes */
+}
+
+/* embedded video */
+.gs-video {
+    margin-top: 25px;
+    margin-bottom: 25px;
+    margin-left: auto;
+    margin-right: auto;
+    border: solid 1px #ddd;
+    z-index: 98; /* Should be lower than 99 to be below filter bar */
+}
+
+/* phase number counters */
+.gs-count {
+    margin-bottom: 20px;
+    margin-top: 50px;
+}

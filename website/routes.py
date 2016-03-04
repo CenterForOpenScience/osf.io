@@ -126,7 +126,6 @@ def goodbye():
     status.push_status_message(language.LOGOUT, 'success')
     return {}
 
-
 def make_url_map(app):
     """Set up all the routes for the OSF app.
 
@@ -176,16 +175,19 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/home/', 'get', website_views.home, OsfWebRenderer('home.mako')),
+        Rule('/dashboard/', 'get', website_views.redirect_to_myprojects, OsfWebRenderer('dashboard.mako')),
+        Rule('/myprojects/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
 
-        Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 
         Rule('/about/', 'get', website_views.redirect_about, json_renderer,),
         Rule('/howosfworks/', 'get', website_views.redirect_howosfworks, json_renderer,),
-        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
+
+        Rule('/faq/', 'get', website_views.redirect_to_support, OsfWebRenderer('public/pages/support.mako')),
         Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
+        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako')),
+
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
 
@@ -716,9 +718,9 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-
+        # '/' route loads home.mako if logged in, otherwise loads landing.mako
         Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
-        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('index.mako')),
+        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('landing.mako')),
 
         Rule(
             [

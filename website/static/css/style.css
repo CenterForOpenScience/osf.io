@@ -603,3 +603,10 @@ button.close {
     max-width: 75%;
     display: inline-block
 }
+
+/* Navigation -- general style should be in style guide
+-------------------------------------------------- */
+#navbarScope a.nav-user-dropdown {
+    padding-top: 12px;
+    padding-bottom: 11px;
+}
