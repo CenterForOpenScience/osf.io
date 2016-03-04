@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="/static/css/mailing-list-modal.css">
 <div class="modal fade" id="mailingListContributorsModal">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -8,7 +9,7 @@
             <div class="modal-body">
                 <h4 class="row text-center">
                 <div class="btn-group">
-                    <button data-clipboard-text="${node['id']}@osf.io" title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button zeroclipboard-is-hover" style="margin-right: 0px">
+                    <button data-clipboard-text="${node['id']}@osf.io" title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button zeroclipboard-is-hover btn-no-pad">
                         <i class="fa fa-copy"></i>
                     </button>
                     <input readonly="readonly" class="link-url", click: toggle, clickBubble: false type="text", value="${node['id']}@osf.io">
@@ -23,14 +24,14 @@
                     % endif:
                         unsubscribe from this mailing list, visit the <a href="${node['url']}settings/#configureNotificationsAnchor" class="">${node['category']} settings</a>.
                     </p>
-                    <div style="padding-left: 15px; background-color: #F5F5F5; border: 1px solid #CCC;">
+                    <div class="padded-list contrib-list">
                         Contributors not on this list: 
                         <a id="unsubToggle" role="button" data-toggle="collapse" href="#unsubContribs" aria-expanded="false" aria-controls="unsubContribs">
                             Show
                         </a>
                         <div id="unsubContribs" class="panel-collapse collapse" role="tabpanel" aria-expanded="false" aria-labelledby="unsubToggle">
                         % for each in node['mailing_list_unsubs']:
-                            <div style="padding-left: 15px">
+                            <div class="padded-list">
                                ${each}
                             </div>
                         % endfor
