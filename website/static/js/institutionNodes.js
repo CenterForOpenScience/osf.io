@@ -8,7 +8,6 @@ var ViewModel = function(context) {
     var self = this;
     self.ctx = context;
     self.allNodes = ko.observable();
-    self.instDescription = ko.observable();
     // Need to get the node
     self.fetchInstitutionNodes = function _fetchInstitutionNodes(){
         return $osf.ajaxJSON(
@@ -19,7 +18,6 @@ var ViewModel = function(context) {
             }
         ).done( function(response){
             self.allNodes(response.data.embeds.nodes.data);
-            self.instDescription(response.data.attributes.description);
         }).fail(function(response){
         });
     };

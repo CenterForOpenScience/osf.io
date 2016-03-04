@@ -503,7 +503,9 @@ var Dashboard = {
                 self.updateList(self.systemCollections[0]);
             });
             var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
-            self.loadCollections(collectionsUrl);
+            if (!self.viewOnly){
+                self.loadCollections(collectionsUrl);
+            }
             self.activeFilter(self.collections()[0]);
         };
         self.init();
