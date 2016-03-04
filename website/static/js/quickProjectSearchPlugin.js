@@ -4,6 +4,7 @@
 
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
+var Raven = require('raven-js');
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -27,6 +28,13 @@ var QuickSearchProject = {
         self.filter = m.prop(); // Search query from user
         self.fieldSort = m.prop(); // For xs screen, either alpha or date
         self.directionSort = m.prop(); // For xs screen, either Asc or Desc
+        self.errorLoading = m.prop(false);
+
+        // Switches errorLoading to true
+        self.requestError = function(result) {
+            self.errorLoading(true);
+            Raven.captureMessage('Error loading user projects on home page.', {requestReturn: result});
+        };
 
         // Load up to first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
@@ -39,6 +47,8 @@ var QuickSearchProject = {
             });
             self.populateEligibleNodes(0, self.countDisplayed());
             self.next(result.links.next);
+        }, function _error(result){
+            self.requestError(result);
         });
         promise.then(
             function(){
@@ -48,8 +58,9 @@ var QuickSearchProject = {
                 else {
                     self.loadingComplete(true);
                 }
-            }
-        );
+            }, function _error(result){
+                self.requestError(result);
+            });
 
         // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
@@ -63,10 +74,13 @@ var QuickSearchProject = {
                 self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length);
                 self.next(result.links.next);
                 self.recursiveNodes(self.next());
+                }, function _error(result){
+                    self.requestError(result);
                 });
             }
             else {
                 self.loadingComplete(true);
+                m.redraw();
             }
         };
 
@@ -289,6 +303,10 @@ var QuickSearchProject = {
 
     },
     view : function(ctrl) {
+        if (ctrl.errorLoading()) {
+            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page.');
+        }
+
         function loadMoreButton(){
             if (ctrl.pendingNodes()){
                 return m('button.col-sm-12.text-muted', {onclick: function(){
