@@ -1431,8 +1431,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
 
     @project_signals.node_first_save.connect
-    def subscribe_creator_to_notifications(self):
-        """ Update the creator's notification settings
+    @project_signals.contributor_added.connect
+    def subscribe_user_to_notifications(self, contributor, auth=None):
+        """ Update the notification settings for the creator or contributors
+
+        :param contributor: User to subscribe to notifications
+        :param auth: authorization for the user
         """
         from website.notifications import utils as notification_utils
         from website.notifications.model import NotificationSubscription
@@ -1440,12 +1444,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         events = ['file_updated', 'comments']
         notification_type = 'email_transactional'
         target_id = self._id
-        if self.creator:
-            for event in events:
-                event_id = notification_utils.to_subscription_key(target_id, event)
-                subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
-                subscription.add_user_to_subscription(self.creator, notification_type)
-                subscription.save()
+
+        for event in events:
+            event_id = notification_utils.to_subscription_key(target_id, event)
+            subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
+            subscription.add_user_to_subscription(contributor, notification_type)
+            subscription.save()
 
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
@@ -1581,7 +1585,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 save=True,
             )
 
-            project_signals.node_first_save.send(self)
+            project_signals.node_first_save.send(self, contributor=self.creator)
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
@@ -2979,6 +2983,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 user.recently_added.insert(0, contrib_to_add)
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
+            #
+            # if contrib_to_add.is_registered:
+            #     self.subscribe_user_to_notifications(contrib_to_add)
 
             if log:
                 self.add_log(
