@@ -376,6 +376,14 @@ class Comment(GuidStoredObject, SpamMixin):
 class NodeLog(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    __indices__ = [
+        {
+            'key_or_list': [
+                ('user', 1),
+                ('node', 1)
+            ],
+        }
+    ]
 
     date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
     action = fields.StringField(index=True)
