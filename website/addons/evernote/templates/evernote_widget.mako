@@ -3,6 +3,7 @@
   <div class="evernote-test">Notebook: ${folder_name}</div>
   <div class="col-md-12">
     <table id="evernote-notes-list" class="display" cellspacing="0" width="100%">
+          <%doc>
           <thead>
               <tr>
                   <th>Edit</th>
@@ -10,6 +11,7 @@
                   <th>Title</th>
               </tr>
           </thead>
+
 
           <tbody data-bind="foreach: notes">
               <tr>
@@ -20,6 +22,7 @@
                 <td><span data-bind="text: title"></span></td>
               </tr>
           </tbody>
+          </%doc>
 
     </table>
     <div id="evernote-notedisplay"></div>
