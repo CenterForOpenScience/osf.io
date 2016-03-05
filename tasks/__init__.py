@@ -70,9 +70,9 @@ def server(host=None, port=5000, debug=True, live=False):
 def apiserver(port=8000, wait=True):
     """Run the API server."""
     env = os.environ.copy()
-    cmd = 'exec {} manage.py runserver {} --nothreading'.format(sys.executable, port)
+    cmd = '{} manage.py runserver {} --nothreading'.format(sys.executable, port)
     if wait:
-        return run(cmd, echo=True, pty=True, env=env)
+        return run(cmd, echo=True, pty=True)
     from subprocess import Popen
 
     return Popen(cmd, shell=True, env=env)
