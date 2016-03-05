@@ -94,8 +94,6 @@ before_install:
       if [ "$TEST_BUILD" = "varnish" ]; then
         export ENABLE_VARNISH=True
       fi
-      echo $TEST_BUILD
-      echo $ENABLE_VARNISH
 install:
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py

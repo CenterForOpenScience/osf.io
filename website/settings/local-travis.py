@@ -46,7 +46,3 @@ VARNISH_SERVERS = ['http://localhost:8080']
 
 # if ENABLE_VARNISH isn't set in python read it from the env var and set it
 locals().setdefault('ENABLE_VARNISH', os.environ.get('ENABLE_VARNISH') == 'True')
-
-print '--------------------------------- \
-       ENABLE VARNISH: {} \
-       ---------------------------------'.format(ENABLE_VARNISH)
