@@ -18,13 +18,13 @@ def ban_url(url):
 
         for host in get_varnish_servers():
             varnish_parsed_url = urlparse.urlparse(host)
-            ban_url = '{scheme}://{netloc}{path}.*'.format(
+            url_to_ban = '{scheme}://{netloc}{path}.*'.format(
                 scheme=varnish_parsed_url.scheme,
                 netloc=varnish_parsed_url.netloc,
                 path=parsed_url.path
             )
             try:
-                response = requests.request('BAN', ban_url, timeout=timeout, headers=dict(
+                response = requests.request('BAN', url_to_ban, timeout=timeout, headers=dict(
                     Host=parsed_url.hostname
                 ))
             except Exception as ex:
