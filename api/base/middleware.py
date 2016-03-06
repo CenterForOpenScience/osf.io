@@ -28,6 +28,7 @@ class MongoConnectionMiddleware(object):
         connection_teardown_request()
         return response
 
+
 class CeleryTaskMiddleware(object):
     """Celery Task middleware."""
 
