@@ -32,8 +32,11 @@ class ClientPool(object):
         return self._local[_id]
 
     def release(self, _id=None):
-        self._cache.append(self._local.pop(_id or self.thread_id))
-        self._sem.release()
+        _id = _id or self.thread_id
+
+        if _id in self._local:
+            self._cache.append(self._local.pop(_id))
+            self._sem.release()
 
     def transfer(self, to, from_):
         self._local[to] = self._local.pop(from_ or self.thread_id)
