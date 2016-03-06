@@ -26,6 +26,7 @@ def celery_before_request():
 def celery_after_request(response, base_status_code_error=500):
     if response.status_code >= base_status_code_error:
         _local.queue = []
+    return response
 
 
 def celery_teardown_request(error=None):
