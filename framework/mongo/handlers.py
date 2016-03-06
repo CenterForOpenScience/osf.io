@@ -4,7 +4,6 @@ import logging
 import threading
 
 import pymongo
-from flask import g
 from werkzeug.local import LocalProxy
 
 from website import settings
@@ -54,24 +53,17 @@ class ClientPool(object):
 
 CLIENT_POOL = ClientPool()
 
-def get_mongo_client():
-    """Create MongoDB client and authenticate database.
-    """
-    return CLIENT_POOL.acquire()
-
 
 def connection_before_request():
-    """Attach MongoDB client to `g`.
+    """Acquire a MongoDB client from the pool.
     """
-    g._mongo_client = get_mongo_client()
+    CLIENT_POOL.acquire()
 
 
 def connection_teardown_request(error=None):
-    """Close MongoDB client if attached to `g`.
+    """Release the MongoDB client back into the pool.
     """
-    if getattr(g, '_mongo_client', None):
-        CLIENT_POOL.release()
-        g._mongo_client = None
+    CLIENT_POOL.release()
 
 
 handlers = {
@@ -80,15 +72,10 @@ handlers = {
 }
 
 
-# Set up getters for `LocalProxy` objects
-_mongo_client = get_mongo_client()
-
-
 def _get_current_client():
-    """Getter for `client` proxy. Return default client if no client attached
-    to `g` or no request context.
+    """Get the current mongodb client from the pool.
     """
-    return get_mongo_client()
+    return CLIENT_POOL.acquire()
 
 
 def _get_current_database():
