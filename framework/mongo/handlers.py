@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 class ClientPool(object):
 
+    class ExtraneousReleaseError(Exception):
+        message = 'no cached connection to release'
+
     @property
     def thread_id(self):
         return threading.current_thread().ident
@@ -32,11 +35,11 @@ class ClientPool(object):
         return self._local[_id]
 
     def release(self, _id=None):
-        _id = _id or self.thread_id
-
-        if _id in self._local:
-            self._cache.append(self._local.pop(_id))
+        try:
+            self._cache.append(self._local.pop(_id or self.thread_id))
             self._sem.release()
+        except KeyError:
+            raise ClientPool.ExtraneousReleaseError
 
     def transfer(self, to, from_):
         self._local[to] = self._local.pop(from_ or self.thread_id)
@@ -54,6 +57,7 @@ class ClientPool(object):
             db.authenticate(settings.DB_USER, settings.DB_PASS)
         return client
 
+
 CLIENT_POOL = ClientPool()
 
 
@@ -66,7 +70,11 @@ def connection_before_request():
 def connection_teardown_request(error=None):
     """Release the MongoDB client back into the pool.
     """
-    CLIENT_POOL.release()
+    try:
+        CLIENT_POOL.release()
+    except ClientPool.ExtraneousReleaseError:
+        if not settings.DEBUG_MODE:
+            raise
 
 
 handlers = {
