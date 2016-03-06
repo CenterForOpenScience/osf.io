@@ -6,6 +6,7 @@ from framework.mongo.handlers import (
 )
 from framework.tasks.handlers import (
     celery_before_request,
+    celery_after_request,
     celery_teardown_request
 )
 from framework.transactions.handlers import (
@@ -33,7 +34,15 @@ class CeleryTaskMiddleware(object):
     def process_request(self, request):
         celery_before_request()
 
+    def process_exception(self, request, exception):
+        """If an exception occurs, clear the celery task queue so process_response has nothing."""
+        sentry_exception_handler(request=request)
+        celery_teardown_request(error=True)
+        return None
+
     def process_response(self, request, response):
+        """Clear the celery task queue if the response status code in the 400 or above range"""
+        celery_after_request(response, base_status_code_error=400)
         celery_teardown_request()
         return response
 

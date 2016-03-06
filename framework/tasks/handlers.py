@@ -23,8 +23,14 @@ def celery_before_request():
     _local.queue = []
 
 
+def celery_after_request(response, base_status_code_error=500):
+    if response.status_code >= base_status_code_error:
+        _local.queue = []
+
+
 def celery_teardown_request(error=None):
     if error is not None:
+        _local.queue = []
         return
     try:
         if queue():
@@ -65,5 +71,6 @@ def queued_task(task):
 
 handlers = {
     'before_request': celery_before_request,
+    'after_request': celery_after_request,
     'teardown_request': celery_teardown_request,
 }
