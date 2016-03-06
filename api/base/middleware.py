@@ -42,8 +42,8 @@ class CeleryTaskMiddleware(object):
         return None
 
     def process_response(self, request, response):
-        """Clear the celery task queue if the response status code is 500 or above"""
-        celery_after_request(response, base_status_code_error=500)
+        """Clear the celery task queue if the response status code is 400 or above"""
+        celery_after_request(response, base_status_code_error=400)
         celery_teardown_request()
         return response
 
