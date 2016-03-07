@@ -13,6 +13,7 @@ class Institution(StoredObject):
     logo_name = fields.StringField(required=True)
     auth_url = fields.StringField(required=False, validate=URLValidator())
     description = fields.StringField()
+    domain = fields.StringField(required=False, list=True)
 
     def __repr__(self):
         return '<Institution ({}) with id \'{}\'>'.format(self.name, self._id)
@@ -32,4 +33,4 @@ class Institution(StoredObject):
 
     @property
     def logo_path(self):
-        return '/static/img/institutions/{}/'.format(self.logo_name)
+        return '/static/img/institutions/{}'.format(self.logo_name)

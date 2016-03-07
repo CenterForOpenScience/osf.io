@@ -119,10 +119,13 @@
                                         <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
                                     </p>
                                 </div>
-                                <div data-bind="if: noResults">
-                                    No results found. Try a more specific search or  <a href="#"
-                                    data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                <div data-bind="if: showLoading">
+                                    <p class="text-muted">Searching contributors...</p>
                                 </div>
+                                    <div data-bind="if: noResults">
+                                        No results found. Try a more specific search or
+                                        <a href="#" data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                    </div>
                             </div>
                         </div><!-- ./col-md -->
 

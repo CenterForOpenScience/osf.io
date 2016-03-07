@@ -33,7 +33,7 @@ def main(env):
     INSTITUTIONS = [
         {
             'name': 'Virginia Tech',
-            '_id': 'VT',
+            '_id': 'vt',
             'logo_name': 'virginia-tech.jpg',
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://shib-pprd.middleware.vt.edu', safe='~()*!.\'')
@@ -43,7 +43,7 @@ def main(env):
         },
         {
             'name': 'Notre Dame',
-            '_id': 'ND',
+            '_id': 'nd',
             'logo_name': 'notre-dame.jpg',
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://login.nd.edu/idp/shibboleth', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://login-test.cc.nd.edu/idp/shibboleth', safe='~()*!.\'')

@@ -20,6 +20,9 @@ from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
+from modularodm import Q
+from modularodm.exceptions import QueryException
+
 from website import util
 from website import prereg
 from website import settings
@@ -38,13 +41,23 @@ from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
+from website.models import Institution
 
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
     """
     user = _get_current_user()
+    if request.host_url != settings.DOMAIN:
+        try:
+            inst_id = (Institution.find_one(Q('domain', 'eq', request.host)))._id
+            login_url = '{}institution/{}'.format(settings.DOMAIN, inst_id)
+        except:
+            login_url = request.url.replace(request.host_url, settings.DOMAIN)
+    else:
+        login_url = request.url
     return {
+        'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
@@ -74,11 +87,23 @@ def get_globals():
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
-        'login_url': cas.get_login_url(request.url, auto=True),
+        'login_url': cas.get_login_url(login_url, auto=True),
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
+        'keen_project_id': settings.KEEN_PROJECT_ID,
+        'keen_write_key': settings.KEEN_WRITE_KEY,
     }
+
+def is_private_link_anonymous_view():
+    try:
+        # Avoid circular import
+        from website.project.model import PrivateLink
+        return PrivateLink.find_one(
+            Q('key', 'eq', request.args.get('view_only'))
+        ).anonymous
+    except QueryException:
+        return False
 
 
 class OsfWebRenderer(WebRenderer):
@@ -1123,6 +1148,16 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/contributor/remove/',
+                '/project/<pid>/node/<nid>/contributor/remove/',
+            ],
+            'POST',
+            project_views.contributor.project_remove_contributor,
+            json_renderer,
+        ),
+
         Rule([
             '/project/<pid>/get_editable_children/',
             '/project/<pid>/node/<nid>/get_editable_children/',
@@ -1206,16 +1241,6 @@ def make_url_map(app):
             '/project/<pid>/contributors/',
             '/project/<pid>/node/<nid>/contributors/',
         ], 'post', project_views.contributor.project_contributors_post, json_renderer),
-        Rule([
-            '/project/<pid>/beforeremovecontributors/',
-            '/project/<pid>/node/<nid>/beforeremovecontributors/',
-        ], 'post', project_views.contributor.project_before_remove_contributor, json_renderer),
-        # TODO(sloria): should be a delete request to /contributors/
-        Rule([
-            '/project/<pid>/removecontributors/',
-            '/project/<pid>/node/<nid>/removecontributors/',
-        ], 'post', project_views.contributor.project_removecontributor, json_renderer),
-
         # Forks
         Rule(
             [

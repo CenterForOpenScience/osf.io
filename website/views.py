@@ -23,6 +23,7 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
 from website.models import Node
+from website.models import Institution
 from website.util import sanitize
 from website.project import model
 from website.util import permissions
@@ -95,7 +96,18 @@ def _render_nodes(nodes, auth=None, show_path=False):
 
 
 def index():
-    return {}
+    try:
+        #TODO : make this way more robust
+        inst = Institution.find_one(Q('domain', 'eq', request.host))
+        return {
+            'id': inst._id,
+            'name': inst.name,
+            'logo_path': inst.logo_path,
+            'home': False,
+        }
+    except:
+        pass
+    return {'home': True}
 
 
 def find_bookmark_collection(user):
