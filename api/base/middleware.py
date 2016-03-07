@@ -1,5 +1,4 @@
 from modularodm import Q
-from pymongo.errors import OperationFailure
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
 
 import corsheaders.middleware
