@@ -7,7 +7,6 @@ import urlparse
 
 import bson
 import pytz
-import pymongo
 import itsdangerous
 
 from modularodm import fields, Q
@@ -299,7 +298,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
     # all User's email lists
-    emails = fields.StringField(list=True, index=True)
+    emails = fields.StringField(list=True)
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
@@ -414,14 +413,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # user language and locale data (e.g. 'en_US')
     locale = fields.StringField(default='en_US')
-
-    __indices__ = [{
-        'unique': False,
-        'key_or_list': [
-            ('emails', pymongo.ASCENDING),
-            ('username', pymongo.ASCENDING),
-        ]
-    }]
 
     _meta = {'optimistic': True}
 
