@@ -104,6 +104,7 @@ def index():
             'name': inst.name,
             'logo_path': inst.logo_path,
             'home': False,
+            'institution': True,
         }
     except:
         pass

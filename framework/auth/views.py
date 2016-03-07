@@ -116,6 +116,13 @@ def auth_login(auth, **kwargs):
     """
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
+    instHost = request.args.get('instHost')
+    if instHost:
+        try:
+            inst_id = instHost.split('.')[1]
+            next_url = 'institution/{}'.format(inst_id)
+        except:
+            pass
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
     if auth.logged_in:
