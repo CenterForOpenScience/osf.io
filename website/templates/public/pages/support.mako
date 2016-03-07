@@ -20,18 +20,18 @@
 
         <div class="row m-b-lg">
             <div class="col-sm-4">
-                <div class="support-col">
+                <a href="/faq" class="support-col">
                     <div class="text-center support-icon"><i class="fa fa-question "></i></div>
                     <h4 class="f-w-lg"> Frequently Asked Questions</h4>
                     <p>Find out more about the Open Science Framework </p>
-                </div>
+                </a>
             </div>
             <div class="col-sm-4">
-                <div class="support-col">
+                <a href="/getting-started" class="support-col">
                     <div class="text-center support-icon"><i class="fa fa-video-camera"></i></div>
                     <h4 class="f-w-lg">Getting Started</h4>
                     <p>Learn more about how to use the OSF for your research workflow with screenshots and videos </p>
-                </div>
+                </a>
             </div>
             <div class="col-sm-4">
                 <div class="support-col">
@@ -57,10 +57,17 @@
 
         </div>
         <hr>
-        <h5 class="m-t-md f-w-xl"> Other ways to get help </h5>
-        <button class="btn btn-link"><i class="fa fa-twitter"></i> Ask us a question on twitter </button>
-        <button class="btn btn-link"><i class="fa fa-users"></i> Join our mailing list </button>
-        <button class="btn btn-link"><i class="fa fa-facebook"></i> Follow us on Facebook </button>
+        <div class="row m-b-lg">
+            <div class="col-sm-12 text-center">
+                <h4 class="m-t-md f-w-xl"> Other ways to get help </h4>
+                <a href="https://twitter.com/OSFramework" class="btn btn-link"><i class="fa fa-twitter"></i> Ask us a question on twitter </a>
+                <a href="https://groups.google.com/forum/#!forum/openscienceframework" class="btn btn-link"><i class="fa fa-users"></i> Join our mailing list </a>
+                <a href="https://www.facebook.com/OpenScienceFramework" class="btn btn-link"><i class="fa fa-facebook"></i> Follow us on Facebook </a>
+                <a href="https://github.com/centerforopenscience" class="btn btn-link"><i class="fa fa-github"></i> Connect with COS on Github</a>
+
+            </div>
+        </div>
+
     </div>
 </div>
 </%def>
