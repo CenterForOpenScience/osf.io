@@ -51,10 +51,10 @@ def send_comment_added_notification(comment, auth):
         gravatar_url=auth.user.profile_image_url(),
         content=comment.content,
         page_type='file' if comment.page == Comment.FILES else node.project_or_component,
-        page_title=comment.root_target.name if comment.page == Comment.FILES else '',
-        provider=PROVIDERS[comment.root_target.provider] if comment.page == Comment.FILES else '',
-        target_user=target.user if is_reply(target) else None,
-        parent_comment=target.content if is_reply(target) else "",
+        page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',
+        provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
+        target_user=target.referent.user if is_reply(target) else None,
+        parent_comment=target.referent.content if is_reply(target) else "",
         url=comment.get_comment_page_url()
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
@@ -67,7 +67,7 @@ def send_comment_added_notification(comment, auth):
     )
 
     if is_reply(target):
-        if target.user and target.user not in sent_subscribers:
+        if target.referent.user and target.referent.user not in sent_subscribers:
             notify(
                 event='comment_replies',
                 user=auth.user,
@@ -78,7 +78,7 @@ def send_comment_added_notification(comment, auth):
 
 
 def is_reply(target):
-    return isinstance(target, Comment)
+    return isinstance(target.referent, Comment)
 
 
 def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
