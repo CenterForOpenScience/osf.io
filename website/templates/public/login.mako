@@ -22,6 +22,7 @@
       If your institution has partnered with the Open Science Framework, please
         select its name below and sign in with your institutional credentials.
     </p>
+    <p> If you do not currently have an OSF account, this will create one. By creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
 </div>
 %endif
 <div class="row m-t-xl">
@@ -202,6 +203,9 @@
             <!-- Flashed Messages -->
             <div class="help-block" >
                 <p data-bind="html: flashMessage, attr.class: flashMessageClass"></p>
+            </div>
+            <div>
+                <p> By clicking "Create account", you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">

@@ -5,8 +5,6 @@ import httplib as http
 from flask import request
 from flask import send_from_directory
 
-from modularodm import Q
-
 from framework import status
 from framework import sentry
 from framework.auth import cas
@@ -21,6 +19,9 @@ from framework.routing import process_rules
 from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
+
+from modularodm import Q
+from modularodm.exceptions import QueryException
 
 from website import util
 from website import prereg
@@ -55,6 +56,7 @@ def get_globals():
     else:
         login_url = request.url
     return {
+        'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
@@ -89,7 +91,19 @@ def get_globals():
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'host': request.host,
+        'keen_project_id': settings.KEEN_PROJECT_ID,
+        'keen_write_key': settings.KEEN_WRITE_KEY,
     }
+
+def is_private_link_anonymous_view():
+    try:
+        # Avoid circular import
+        from website.project.model import PrivateLink
+        return PrivateLink.find_one(
+            Q('key', 'eq', request.args.get('view_only'))
+        ).anonymous
+    except QueryException:
+        return False
 
 
 class OsfWebRenderer(WebRenderer):
@@ -1134,6 +1148,16 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/contributor/remove/',
+                '/project/<pid>/node/<nid>/contributor/remove/',
+            ],
+            'POST',
+            project_views.contributor.project_remove_contributor,
+            json_renderer,
+        ),
+
         Rule([
             '/project/<pid>/get_editable_children/',
             '/project/<pid>/node/<nid>/get_editable_children/',
@@ -1217,16 +1241,6 @@ def make_url_map(app):
             '/project/<pid>/contributors/',
             '/project/<pid>/node/<nid>/contributors/',
         ], 'post', project_views.contributor.project_contributors_post, json_renderer),
-        Rule([
-            '/project/<pid>/beforeremovecontributors/',
-            '/project/<pid>/node/<nid>/beforeremovecontributors/',
-        ], 'post', project_views.contributor.project_before_remove_contributor, json_renderer),
-        # TODO(sloria): should be a delete request to /contributors/
-        Rule([
-            '/project/<pid>/removecontributors/',
-            '/project/<pid>/node/<nid>/removecontributors/',
-        ], 'post', project_views.contributor.project_removecontributor, json_renderer),
-
         # Forks
         Rule(
             [

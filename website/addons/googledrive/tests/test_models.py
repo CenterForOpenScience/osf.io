@@ -30,7 +30,7 @@ class TestGoogleDriveProvider(OsfTestCase):
         assert_equal(res['profile_url'], 'fakeUrl')
 
 class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
-    
+
     short_name = 'googledrive'
     full_name = 'Google Drive'
     ExternalAccountFactory = GoogleDriveAccountFactory
@@ -109,7 +109,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {
-        'folder': 
+            'folder':
             {
                 'id': self.node_settings.folder_id,
                 'name': self.node_settings.folder_name,

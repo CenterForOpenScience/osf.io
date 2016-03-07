@@ -10,38 +10,35 @@
                class="btn btn-primary">
                 Back to list
             </a>
-            <a href=""
+            <a href="{% url 'spam:email' comment.id %}?page={{ page_number }}"
                class="btn btn-default">
-                HAM
+                Email
             </a>
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-danger dropdown-toggle"
-                        data-toggle="dropdown" aria-haspopup="true"
-                        aria-expanded="false">
-                    SPAM
-                    <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a href="{% url 'spam:email' comment.id %}?page={{ page_number }}">
-                            Email
-                        </a>
-                    </li>
-                    <li>
-                        <a href="">
-                            Mark as Spam
-                        </a>
-                    </li>
-                    <li>
-                        <a href="">
-                            Escalate
-                        </a>
-                    </li>
-                </ul>
-            </div>
         </div>
 
-        <hr>
+        <br>
+
+        <div class="row">
+        <div class="panel col-md-6">
+        <form action="{% url 'spam:detail' comment.id %}?page={{ page_number }}"
+              method="post" class="form-inline">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div class="alert alert-danger">{{ form.errors }}</div>
+            {% endif %}
+            <label for="{{ form.confirm.id_for_label }}">Confirm:</label>
+            <div class="btn-group" data-toggle="buttons">
+                {% for choice in form.confirm  %}
+                    {{ choice.id }}
+                <label class="btn btn-primary">
+                    <input type="radio" id="{{ choice.id_for_label }}" autocomplete="off">{{ choice.choice_label }}{{ choice.tag }}
+                </label>
+                {% endfor %}
+            </div>
+            <input class="btn btn-danger" type="submit" value="Submit">
+        </form>
+        </div>
+        </div>
 
         {# General info about the comment #}
         <div class="row">
@@ -57,6 +54,24 @@
             </div>
             <div class="col-md-6">
                 <h4><strong>Comment ID:</strong> {{ comment.id }}</h4>
+            </div>
+        </div>
+
+        {# Spam Status #}
+        <div class="row">
+            <div class="col-md-6">
+                <h4>
+                    <strong>Status: </strong>
+                    {% if comment.spam_status == 0 %}
+                        <span class="label label-default">Unknown</span>
+                    {% elif comment.spam_status == 1 %}
+                        <span class="label label-warning">Flagged</span>
+                    {% elif comment.spam_status == 2 %}
+                        <span class="label label-danger">Spam</span>
+                    {% elif comment.spam_status == 4 %}
+                        <span class="label label-success">Ham</span>
+                    {% endif %}
+                </h4>
             </div>
         </div>
 
