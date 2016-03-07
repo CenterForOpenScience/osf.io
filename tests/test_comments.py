@@ -1,10 +1,11 @@
 from __future__ import absolute_import
 import datetime as dt
 from nose.tools import *  # noqa PEP8 asserts
-from modularodm.exceptions import ValidationValueError, ValidationTypeError, ValidationError
+from modularodm.exceptions import ValidationValueError, ValidationError
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
+from framework.guid.model import Guid
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.project.model import Comment, NodeLog
 from website.project.signals import comment_added
@@ -243,7 +244,7 @@ class TestCommentModel(OsfTestCase):
         project.add_contributor(user)
         project.save()
         comment = CommentFactory(node=project, user=user)
-        reply = CommentFactory(node=project, target=comment, user=project.creator)
+        reply = CommentFactory(node=project, target=Guid.load(comment._id), user=project.creator)
         n_unread = Comment.find_n_unread(user=user, node=project)
         assert_equal(n_unread, 1)
 
