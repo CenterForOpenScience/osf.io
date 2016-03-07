@@ -1194,13 +1194,7 @@ var Information = {
                                 item.attributes.tags.map(function(tag){
                                     return m('a.tag', { href : '/search/?q=(tags:' + tag + ')'}, tag);
                                 })
-                            ]) : '',
-                            m('p.m-t-md', [
-                                m('h5', 'Jump to Page'),
-                                m('a.p-xs', { href : item.links.html + 'wiki/home'}, 'Wiki'),
-                                m('a.p-xs', { href : item.links.html + 'files/'}, 'Files'),
-                                m('a.p-xs', { href : item.links.html + 'settings/'}, 'Settings'),
-                            ])
+                            ]) : ''
                         ]),
                         m('[role="tabpanel"].tab-pane#tab-activity',[
                             m.component(ActivityLogs, args)
