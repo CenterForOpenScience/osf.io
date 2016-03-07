@@ -12,6 +12,7 @@ from website.app import init_app
 from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
+from framework.mongo import database as db
 from framework.transactions.context import TokuTransaction
 from website.project.model import Pointer
 from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, QA_USER_IDS, DOMAIN, API_DOMAIN
@@ -24,30 +25,6 @@ def retrieve_data(url):
     data = response.json()
     return data
 
-def get_api_base_path():
-    """ Returns api base path depending on environment"""
-    if BASE == 'PRODUCTION':
-        base = 'https://osf.io/'
-    elif BASE == 'STAGING':
-        base = 'https://staging.osf.io/'
-    elif BASE == 'STAGING2':
-        base = 'https://staging2.osf.io/'
-    else:
-        base = 'http://127.0.0.1:5000/'
-    return base
-
-def get_apiv2_base_path():
-    """ Returns apiv2 base path depending on environment"""
-    if BASE == 'PRODUCTION':
-        base = 'https://api.osf.io/'
-    elif BASE == 'STAGING':
-        base = 'https://staging-api.osf.io/'
-    elif BASE == 'STAGING2':
-        base = 'https://staging2-api.osf.io/'
-    else:
-        base = 'http://127.0.0.1:8000/'
-    return base
-
 def get_popular_nodes():
     """ Fetch data from url that returns dict with a list of popular nodes from piwik """
     discover_url = DOMAIN + 'api/v1/explore/activity/popular/raw/'
@@ -56,13 +33,11 @@ def get_popular_nodes():
 def get_new_and_noteworthy_nodes():
     """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """
     today = datetime.datetime.now()
-    last_month = (today - dateutil.relativedelta.relativedelta(months=1)).isoformat()
-    discover_url = API_DOMAIN + \
-                   'v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(last_month)
-    data = retrieve_data(discover_url)['data']
+    last_month = (today - dateutil.relativedelta.relativedelta(months=1))
+    data = db.node.find({'date_created': {'$gt': last_month}})
     node_log_count_mapping = {}
     for new_node in data:
-        node_log_count_mapping[new_node['id']] = new_node['relationships']['logs']['links']['related']['meta']['count']
+        node_log_count_mapping[new_node['_id']] = len(new_node['logs'])
     sort_by_log_count = sorted(node_log_count_mapping.items(), key=operator.itemgetter(1), reverse=True)
     sorted_node_ids = [node[0] for node in sort_by_log_count]
     return sorted_node_ids[:25]
