@@ -18,7 +18,7 @@ var AddProject = {
     controller : function (options) {
         var self = this;
         self.defaults = {
-            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Add new project'),
+            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Create new project'),
             parentID : null,
             modalID : 'addProjectModal',
             stayCallback :null, // Function to call when user decides to stay after project creation
@@ -88,7 +88,7 @@ var AddProject = {
                     m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                         m('span[aria-hidden="true"]','×'),
                     ]),
-                    m('h3.modal-title', 'Add new project')
+                    m('h3.modal-title', 'Create new project')
                 ]),
                 m('.modal-body', [
                     m('.text-left', [
@@ -137,7 +137,7 @@ var AddProject = {
                 ]),
                 m('.modal-footer', [
                     m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : ctrl.reset},  'Cancel'),
-                    ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Add') : m('button[type="button"].btn.btn-success[disabled]','Add')
+                    ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Create') : m('button[type="button"].btn.btn-success[disabled]','Create')
                 ])
             ]),
             processing : m('.modal-content',
