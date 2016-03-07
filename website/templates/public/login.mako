@@ -214,6 +214,7 @@
             </div>
         </form>
     </div>
+        <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
     %endif
 </div>
 
