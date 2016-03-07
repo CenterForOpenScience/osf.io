@@ -47,7 +47,7 @@ def find_email(long_email):
         return long_email
 
 def reason_for_rejection(sender, node, message):
-    if ('multipart/report' and 'delivery-status') in message['Content-Type']:
+    if 'multipart/report' in message['Content-Type'] and 'delivery-status' in message['Content-Type']:
         return MailingListEventLog.BOUNCED
     if not sender:
         return MailingListEventLog.UNAUTHORIZED
@@ -90,7 +90,7 @@ def route_message(**kwargs):
     if reason:
         if reason not in (MailingListEventLog.BOUNCED, MailingListEventLog.AUTOREPLY):
             send_rejection(node, sender, sender_email, target, message, reason)
-            recipients = []
+        recipients = []
     else:
         reason = MailingListEventLog.OK
         recipients = get_recipients(node, sender=sender)

@@ -109,7 +109,8 @@ class TestEmailRejections(OsfTestCase):
             'To': '{}@osf.io'.format(self.project._id),
             'From': self.user.email,
             'subject': 'Hi, Friend!',
-            'stripped-text': 'Are you really my friend?'
+            'stripped-text': 'Are you really my friend?',
+            'Content-Type': 'multipart/fake',
         }
         self.post_url = api_url_for('route_message')
 
@@ -146,6 +147,29 @@ class TestEmailRejections(OsfTestCase):
             is_admin=True,
             mail_log_class=MailingListEventLog
         )
+        assert mock_send_list.call_count == 0
+
+            
+    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.project.mailing_list.send_acception')
+    def test_bounce(self, mock_send_list, mock_send_mail):
+        user2 = AuthUserFactory()
+        self.project.add_contributor(user2, save=True)
+        self.message['Content-Type'] = 'multipart/report report-type/delivery-status'
+        self.app.post(self.post_url, self.message)
+
+        assert mock_send_mail.call_count == 0
+        assert mock_send_list.call_count == 0    
+
+    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.project.mailing_list.send_acception')
+    def test_auto_reply(self, mock_send_list, mock_send_mail):
+        user2 = AuthUserFactory()
+        self.project.add_contributor(user2, save=True)
+        self.message['subject'] = 'Auto Reply from {}'.format(self.user.fullname)
+        self.app.post(self.post_url, self.message)
+
+        assert mock_send_mail.call_count == 0
         assert mock_send_list.call_count == 0
 
     @mock.patch('website.mails.send_mail')
