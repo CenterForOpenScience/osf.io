@@ -3454,7 +3454,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def affiliated_institutions(self):
-        return [Institution(node) for node in self._affiliated_institutions]
+        return SpecialList(self, '_affiliated_institutions', [Institution(node) for node in self._affiliated_institutions])
 
     def add_primary_institution(self, user, inst, log=True):
         if not user.is_affiliated_with_institution(inst):
@@ -3511,6 +3511,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def institution_relationship_url(self):
         return self.absolute_api_v2_url + 'relationships/institution/'
 
+class SpecialList(list):
+    def __init__(self, node, private_target, init=None):
+        self.node = node
+        self.target = private_target
+        self.lst = init or []
+
+    def append(self, to_append):
+        junk = getattr(self.node, self.target)
+        junk.append(to_append.node)
+        setattr(self.node, self.target, junk)
+
+
 class Institution():
 
     institution_node_translator = {
@@ -3533,6 +3545,12 @@ class Institution():
 
     def __eq__(self, other):
         return self._id == other._id
+
+    def save(self):
+        for key, value in self.institution_node_translator.iteritems():
+            if getattr(self, key) != getattr(self.node, value):
+                setattr(self.node, value, getattr(self, key))
+        self.node.save()
 
     @classmethod
     def find(cls, query, **kwargs):
