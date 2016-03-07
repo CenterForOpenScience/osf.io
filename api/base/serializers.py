@@ -470,7 +470,14 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         qd = QueryDict(mutable=True)
         filter_fields = self.filter.keys()
         for field_name in filter_fields:
-            qd.update({'[{}]'.format(field_name): self.lookup_attribute(obj, self.filter[field_name])})
+            try:
+                # check if serializer method passed in
+                value = getattr(self.parent, self.filter[field_name])
+            except AttributeError:
+                value = self.lookup_attribute(obj, self.filter[field_name])
+            else:
+                value = value(obj)
+            qd.update({'[{}]'.format(field_name): value})
         return qd.urlencode(safe=['[', ']'])
 
     # Overrides HyperlinkedIdentityField
