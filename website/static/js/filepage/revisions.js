@@ -98,7 +98,7 @@ var FileRevisionsTable = {
                     model.hasUser ? m('th', 'User') : false,
                     m('th[colspan=2]', 'Download'),
                     model.hasHashes ? m('th', 'MD5') : false,
-                    model.hasHashes ? m('th', 'SHA2, testing testing testing') : false,
+                    model.hasHashes ? m('th', 'SHA2') : false,
                 ].filter(TRUTHY))
             ]);
         };
