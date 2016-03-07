@@ -103,6 +103,7 @@ def index():
             'id': inst._id,
             'name': inst.name,
             'logo_path': inst.logo_path,
+            'description': inst.description or '',
             'home': False,
             'institution': True,
             'redirect_url': '/institution/{}'.format(inst._id)

@@ -20,6 +20,7 @@ $(document).ready(function() {
             new LinkObject('collection', { path : 'institutions/' + institutionId + '/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Projects'),
             new LinkObject('collection', { path : 'institutions/' + institutionId + '/registrations/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'registrations'}, 'All Registrations'),
         ],
+        initialBreadcrumbs: [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All Projects')],
         viewOnly: true,
         projectOrganizerOptions: {
             resolveToggle: function(){
