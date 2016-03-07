@@ -4,8 +4,9 @@ import os
 
 from modularodm import Q
 
+from framework.guid.model import Guid
 from website.files import exceptions
-from website.files.models.base import File, Folder, FileNode, FileVersion
+from website.files.models.base import File, Folder, FileNode, FileVersion, TrashedFileNode
 
 
 __all__ = ('OsfStorageFile', 'OsfStorageFolder', 'OsfStorageFileNode')
@@ -37,11 +38,17 @@ class OsfStorageFileNode(FileNode):
     def get_file_guids(cls, materialized_path, provider, guids, node=None):
         path = materialized_path
         file_obj = cls.load(path.strip('/'))
-        if file_obj.kind == 'folder':
+        if not file_obj:
+            file_obj = TrashedFileNode.load(path.strip('/'))
+
+        if not file_obj.is_file:
             for item in file_obj.children:
                 cls.get_file_guids(item.path, provider, guids, node)
         else:
-            guid = file_obj.stored_object.get_guid()
+            try:
+                guid = Guid.find(Q('referent', 'eq', file_obj))[0]
+            except IndexError:
+                guid = None
             if guid:
                 guids.append(guid._id)
         return guids
