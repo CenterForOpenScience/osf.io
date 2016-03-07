@@ -6,7 +6,7 @@ Serialize user
 
 def serialize_user(user):
     two_factor = user.get_addon('twofactor')
-    if two_factor is None or two_factor is False:
+    if not two_factor:
         two_factor = False
     else:
         two_factor = True

@@ -1,4 +1,5 @@
 from django.shortcuts import redirect
+from django.views.defaults import page_not_found
 
 from website.project.model import User
 
@@ -8,9 +9,11 @@ from .serializers import serialize_user
 
 
 def remove_2_factor(request, guid):
-    if request.method == 'POST' or request.method == 'DELETE':
-        user = User.load(guid)
+    user = User.load(guid)
+    try:
         user.delete_addon('twofactor')
+    except AttributeError:
+        page_not_found(request)
     return redirect(reverse_user(guid))
 
 
