@@ -46,21 +46,21 @@ def transaction_before_request():
     commands.begin()
 
 
-def transaction_after_request(response):
+def transaction_after_request(response, base_status_code_error=500):
     """Teardown transaction after handling the request. Rollback if an
     uncaught exception occurred, else commit. If the commit fails due to a lock
     error, rollback and return error response.
     """
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return response
-    if response.status_code >= 500:
+    if response.status_code >= base_status_code_error:
         commands.rollback()
     else:
         try:
             commands.commit()
         except OperationFailure as error:
             message = utils.get_error_message(error)
-            if 'lock not granted' in message.lower():
+            if messages.LOCK_ERROR in message:
                 commands.rollback()
                 return utils.handle_error(LOCK_ERROR_CODE)
             raise
