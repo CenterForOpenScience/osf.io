@@ -15,7 +15,7 @@ from scripts import utils as script_utils
 from framework.mongo import database as db
 from framework.transactions.context import TokuTransaction
 from website.project.model import Pointer
-from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, QA_USER_IDS, DOMAIN, API_DOMAIN
+from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST, DOMAIN
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +51,8 @@ def is_eligible_node(node):
         return False
 
     for contrib in node.contributors:
-        if contrib._id in QA_USER_IDS:
-            logger.info('Node {} skipped because a QA member, {}, is a contributor.'.format(node._id, contrib._id))
+        if contrib._id in NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST:
+            logger.info('Node {} skipped because a contributor, {}, is blacklisted.'.format(node._id, contrib._id))
             return False
 
     return True

@@ -233,7 +233,7 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
 
-QA_USER_IDS = []  # TODO Override in local.py in production.
+NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST = []  # TODO Override in local.py in production.
 
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
