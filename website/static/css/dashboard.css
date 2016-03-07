@@ -1,9 +1,15 @@
 
+.watermarked .container {
+    border-left: 1px solid #eee;
+    border-right: 1px solid #eee;
+}
+.footer {
+    margin-top: 0;
+}
 /* Main Wrapper */
 .dashboard {
     width: 100%;
     font-family: "Open Sans", 'Helvetica Neue', sans-serif;
-    border-bottom: 1px solid #eee;
     height: 584px;
 }
 
