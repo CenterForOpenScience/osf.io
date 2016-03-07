@@ -37,8 +37,8 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
         for guid in file_guids:
             obj = Guid.load(guid)
-            # if source_node != destination_node:
-            #     update_comment_node(guid, source_node, destination_node)
+            if source_node != destination_node and Comment.find(Q('root_target', 'eq', guid)).count() != 0:
+                update_comment_node(guid, source_node, destination_node)
 
             if not (source['provider'] == destination['provider'] and source['provider'] == 'osfstorage'):
                 if not source['path'].endswith('/'):
