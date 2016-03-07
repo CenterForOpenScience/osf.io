@@ -349,6 +349,7 @@ var Dashboard = {
                             buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new component'),
                             parentID : lastcrumb.data.id,
                             modalID : 'addSubcomponent',
+                            title: 'Create new component',
                             categoryList : self.categoryList,
                             stayCallback : function _stayCallback_inPanel() {
                                 self.allProjectsLoaded(false);
@@ -1047,10 +1048,12 @@ var Breadcrumbs = {
             items.map(function(item, index, array){
                 if(index === array.length-1){
                     var label = item.type === 'node' ? ' Add component' : ' Add project';
+                    var title = item.type === 'node' ? 'Create new component' : 'Create new project';
                     var addProjectTemplate = m.component(AddProject, {
                         buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), label]),
                         parentID : args.breadcrumbs()[args.breadcrumbs().length-1].data.id,
                         modalID : 'addProject',
+                        title : title,
                         categoryList : args.categoryList,
                         stayCallback : function () {
                             args.allProjectsLoaded(false);

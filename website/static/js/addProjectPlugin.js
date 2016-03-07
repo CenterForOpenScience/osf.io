@@ -20,6 +20,7 @@ var AddProject = {
         self.defaults = {
             buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Create new project'),
             parentID : null,
+            title: 'Create new project',
             modalID : 'addProjectModal',
             stayCallback :null, // Function to call when user decides to stay after project creation
             categoryList : []
@@ -88,7 +89,7 @@ var AddProject = {
                     m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                         m('span[aria-hidden="true"]','×'),
                     ]),
-                    m('h3.modal-title', 'Create new project')
+                    m('h3.modal-title', ctrl.options.title)
                 ]),
                 m('.modal-body', [
                     m('.text-left', [
