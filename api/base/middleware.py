@@ -5,7 +5,10 @@ from framework.tasks.handlers import (
     celery_before_request,
     celery_teardown_request
 )
-from framework.tasks.postcommit_handlers import postcommit_after_request, postcommit_before_request
+from framework.tasks.postcommit_handlers import (
+    postcommit_after_request,
+    postcommit_before_request
+)
 from framework.transactions import commands, messages, utils
 
 from .api_globals import api_globals
@@ -75,7 +78,6 @@ class DjangoGlobalMiddleware(object):
     """
     def process_request(self, request):
         api_globals.request = request
-        postcommit_before_request()
         celery_before_request()
 
     def process_exception(self, request, exception):
@@ -84,7 +86,19 @@ class DjangoGlobalMiddleware(object):
         return None
 
     def process_response(self, request, response):
-        postcommit_after_request()
         celery_teardown_request()
         api_globals.request = None
+        return response
+
+
+class PostcommitTaskMiddleware(object):
+    """
+    Handle postcommit tasks for django.
+    """
+
+    def process_request(self, request):
+        postcommit_before_request()
+
+    def process_response(self, request, response):
+        postcommit_after_request()
         return response
