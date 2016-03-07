@@ -43,22 +43,23 @@ class TestRemoveContributor(AdminTestCase):
     def setUp(self):
         super(TestRemoveContributor, self).setUp()
         self.user = AuthUserFactory()
-        self.node = NodeFactory()
-        self.node.add_contributor(self.user)
+        self.node = NodeFactory(creator=self.user)
+        self.user_2 = AuthUserFactory()
+        self.node.add_contributor(self.user_2)
         self.node.save()
         self.request = RequestFactory().get('/fake_path')
 
     @mock.patch('admin.nodes.views.Node.remove_contributor')
     def test_remove_contributor(self, mock_remove_contributor):
-        user_id = self.user._id
+        user_id = self.user_2._id
         node_id = self.node._id
         remove_contributor(self.request, node_id, user_id)
-        mock_remove_contributor.assert_called_with(self.user, None, log=False)
+        mock_remove_contributor.assert_called_with(self.user_2, None, log=False)
 
     def test_integration_remove_contributor(self):
-        nt.assert_in(self.user, self.node.contributors)
-        remove_contributor(self.request, self.node._id, self.user._id)
-        nt.assert_not_in(self.user, self.node.contributors)
+        nt.assert_in(self.user_2, self.node.contributors)
+        remove_contributor(self.request, self.node._id, self.user_2._id)
+        nt.assert_not_in(self.user_2, self.node.contributors)
 
     def test_do_not_remove_last_admin(self):
         nt.assert_equal(
@@ -66,6 +67,11 @@ class TestRemoveContributor(AdminTestCase):
             1
         )
         remove_contributor(self.request, self.node._id, self.user._id)
+        self.node.reload()  # Reloads instance to show that nothing was removed
+        nt.assert_equal(
+            len(list(self.node.get_admin_contributors(self.node.contributors))),
+            1
+        )
         nt.assert_equal(
             len(list(self.node.get_admin_contributors(self.node.contributors))),
             1
