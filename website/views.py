@@ -106,6 +106,7 @@ def index():
             'description': inst.description or '',
             'home': False,
             'institution': True,
+            'redirect_url': '/institution/{}'.format(inst._id)
         }
     except:
         pass

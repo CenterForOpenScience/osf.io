@@ -116,15 +116,11 @@ def auth_login(auth, **kwargs):
     """
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
-    instHost = request.args.get('instHost')
-    if instHost:
-        try:
-            inst_id = instHost.split('.')[1]
-            next_url = 'institution/{}'.format(inst_id)
-        except:
-            pass
+    redirect = request.args.get('redirect_url')
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
+    if redirect:
+        next_url = redirect
     if auth.logged_in:
         if not request.args.get('logout'):
             if next_url:
@@ -150,6 +146,7 @@ def auth_login(auth, **kwargs):
         if (campaign == 'institution' and settings.ENABLE_INSTITUTIONS) or campaign != 'institution':
             data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
+    data['redirect_url'] = redirect
 
     return data, http.OK
 
