@@ -19,4 +19,5 @@ def serialize_simple_node(node):
         'title': node.title,
         'public': node.is_public,
         'number_contributors': len(node.contributors),
+        'deleted': node.is_deleted,
     }
