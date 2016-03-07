@@ -146,6 +146,7 @@ def auth_login(auth, **kwargs):
         if (campaign == 'institution' and settings.ENABLE_INSTITUTIONS) or campaign != 'institution':
             data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
+    data['institution_redirect'] = cas.get_institution_target(redirect)
     data['redirect_url'] = redirect
 
     return data, http.OK
