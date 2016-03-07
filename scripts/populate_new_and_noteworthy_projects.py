@@ -14,7 +14,7 @@ from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
 from website.project.model import Pointer
-from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, QA_USER_IDS, URL_BASE as BASE
+from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, QA_USER_IDS, DOMAIN, API_DOMAIN
 
 logger = logging.getLogger(__name__)
 
@@ -50,14 +50,14 @@ def get_apiv2_base_path():
 
 def get_popular_nodes():
     """ Fetch data from url that returns dict with a list of popular nodes from piwik """
-    discover_url = get_api_base_path() + 'api/v1/explore/activity/popular/raw/'
+    discover_url = DOMAIN + 'api/v1/explore/activity/popular/raw/'
     return retrieve_data(discover_url)
 
 def get_new_and_noteworthy_nodes():
     """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """
     today = datetime.datetime.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1)).isoformat()
-    discover_url = get_apiv2_base_path() + \
+    discover_url = API_DOMAIN + \
                    'v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(last_month)
     data = retrieve_data(discover_url)['data']
     node_log_count_mapping = {}
@@ -133,5 +133,5 @@ if __name__ == '__main__':
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     with TokuTransaction():
-        main(dry_run=dry_run)
+        main(dry_run=True)
 

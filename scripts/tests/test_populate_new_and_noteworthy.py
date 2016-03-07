@@ -63,19 +63,19 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.new_noteworthy_json_body = json.dumps(new_and_noteworthy_json)
 
     def test_retrieve_data(self):
-        base = script.get_api_base_path()
+        base = script.DOMAIN
         httpretty.register_uri(httpretty.GET, base, status=200, body=self.popular_json_body, content_type='application/vnd.api+json')
         response = script.retrieve_data(base)
         assert_equal(response['popular_node_ids'], [self.pop1._id, self.pop2._id, self.pop3._id, self.pop4._id, self.pop5._id])
 
     def test_get_popular_nodes(self):
-        url = script.get_api_base_path() + 'api/v1/explore/activity/popular/raw/'
+        url = script.DOMAIN + 'api/v1/explore/activity/popular/raw/'
         httpretty.register_uri(httpretty.GET, url, status=200, body=self.popular_json_body, content_type='application/vnd.api+json')
         response = script.get_popular_nodes()
         assert_equal(response['popular_node_ids'], [self.pop1._id, self.pop2._id, self.pop3._id, self.pop4._id, self.pop5._id])
 
     def test_get_new_and_noteworthy_nodes(self):
-        base = script.get_apiv2_base_path()
+        base = script.API_DOMAIN
         url = base + 'v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(self.last_month)
         httpretty.register_uri(httpretty.GET, url, status=200, body=self.new_noteworthy_json_body, content_type='application/vnd.api+json')
         new_noteworthy = script.get_new_and_noteworthy_nodes()
@@ -99,9 +99,9 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         popular_json = json.dumps({"popular_node_ids": []})
         noteworthy_json = json.dumps({'data': []})
 
-        popular_url = script.get_api_base_path() + 'api/v1/explore/activity/popular/raw/'
+        popular_url = script.DOMAIN + 'api/v1/explore/activity/popular/raw/'
         httpretty.register_uri(httpretty.GET, popular_url, status=200, body=popular_json, content_type='application/vnd.api+json')
-        new_noteworthy_url = script.get_apiv2_base_path() + 'v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(self.last_month)
+        new_noteworthy_url = script.API_DOMAIN + 'v2/nodes/?sort=-date_created&page[size]=1000&related_counts=True&filter[date_created][gt]={}'.format(self.last_month)
         httpretty.register_uri(httpretty.GET, new_noteworthy_url, status=200, body=noteworthy_json, content_type='application/vnd.api+json')
 
         script.main(dry_run=False)
