@@ -41,6 +41,10 @@ def main(dry_run=True):
     embargoes.hour.on(0)
     embargoes.minute.on(0)  # Daily 12 a.m.
 
+    meeting_count = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/meeting_visit_count.sh')))
+    meeting_count.hour.on(0)
+    meeting_count.minute.on(0)  # Daily 12 a.m.
+
     registration_approvals = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/approve_registrations.sh')))
     registration_approvals.hour.on(0)
     registration_approvals.minute.on(0)  # Daily 12 a.m.
