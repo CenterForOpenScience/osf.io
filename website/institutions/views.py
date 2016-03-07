@@ -7,5 +7,5 @@ def view_institution(**kwargs):
         'id': kwargs.get('id'),
         'name': inst.name,
         'logo_path': inst.logo_path,
-        'description': inst.description if inst.description else None,
+        'description': inst.description or '',
     }
