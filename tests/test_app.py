@@ -27,8 +27,9 @@ def test_attach_handlers():
     }
 
     assert_after_funcs = {
-        framework.transactions.handlers.transaction_after_request,
         framework.tasks.postcommit_handlers.postcommit_after_request,
+        framework.tasks.handlers.celery_after_request,
+        framework.transactions.handlers.transaction_after_request,
         framework.sessions.after_request,
     }
 
