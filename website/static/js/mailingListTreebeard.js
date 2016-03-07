@@ -9,7 +9,7 @@ var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 function subscribe(item, notification_type, reload) {
     var id = item.data.node.id;
-    var url = window.contextVars.node.urls.api  + 'mailing_list/';
+    var url = '/api/v1/project/' + id + '/mailing_list/';
     var method = notification_type === 'enabled' ? 'POST' : 'DELETE';
     $.ajax({
         url: url,
