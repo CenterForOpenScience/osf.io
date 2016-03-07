@@ -39,6 +39,7 @@ from website.project import views as project_views
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
+from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 from website.models import Institution
 
@@ -731,7 +732,7 @@ def make_url_map(app):
     # Institution
 
     process_rules(app, [
-        Rule('/institution/<id>/', 'get', profile_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
+        Rule('/institution/<id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
     ])
 
     # Project

@@ -164,13 +164,12 @@ var Dashboard = {
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : true, 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
+            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
         ];
         // Initial Breadcrumb for All my projects
-        self.breadcrumbs = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
-        ]);
+        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')];
+        self.breadcrumbs = m.prop(initialBreadcrumbs);
         // Calculate name filters
         self.nameFilters = [];
         // Calculate tag filters
@@ -504,7 +503,9 @@ var Dashboard = {
                 self.updateList(self.systemCollections[0]);
             });
             var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
-            self.loadCollections(collectionsUrl);
+            if (!self.viewOnly){
+                self.loadCollections(collectionsUrl);
+            }
             self.activeFilter(self.collections()[0]);
         };
         self.init();
@@ -1084,7 +1085,7 @@ var Breadcrumbs = {
                             m('span.btn', item.label),
                             m('i.fa.fa-angle-right')
                         ]),
-                        (item.type === 'node' || (item.data.systemCollection === 'nodes' )) && !viewOnly ? addProjectTemplate : ''
+                        (item.type === 'node' || (item.data.systemCollection === 'nodes' )) ? addProjectTemplate : ''
                     ];
                 }
                 item.index = index; // Add index to update breadcrumbs

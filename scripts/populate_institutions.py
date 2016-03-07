@@ -39,6 +39,7 @@ def main(env):
                 urllib.quote('https://shib-pprd.middleware.vt.edu', safe='~()*!.\'')
             ),
             'domain': ['osf.vt.edu:5000'],
+            'description': 'this is vt'
         },
         {
             'name': 'Notre Dame',
@@ -48,6 +49,7 @@ def main(env):
                 urllib.quote('https://login.nd.edu/idp/shibboleth', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://login-test.cc.nd.edu/idp/shibboleth', safe='~()*!.\'')
             ),
             'domain': ['osf.nd.edu:5000'],
+            'description': 'this is nd'
         }
     ]
 
