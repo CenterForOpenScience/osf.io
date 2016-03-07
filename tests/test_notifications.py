@@ -687,9 +687,7 @@ class TestNotificationUtils(OsfTestCase):
         self.project_subscription.save()
         self.node.add_contributor(contributor=user, permissions=['read'])
         self.node.save()
-        node_subscriptions = [x for x in utils.get_all_node_subscriptions(user, self.node) if x.event_name != 'mailing_list_events']
-        data = utils.serialize_event(user=user, event_description='comments',
-                                     subscription=node_subscriptions, node=self.node)
+        data = utils.serialize_event(user=user, event_description='comments', node=self.node)
         expected = {
             'event': {
                 'title': 'comments',
