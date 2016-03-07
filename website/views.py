@@ -105,6 +105,7 @@ def index():
             'logo_path': inst.logo_path,
             'home': False,
             'institution': True,
+            'redirect_url': '/institution/{}'.format(inst._id)
         }
     except:
         pass
