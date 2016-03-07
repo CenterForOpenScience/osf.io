@@ -34,7 +34,7 @@ def get_new_and_noteworthy_nodes():
     """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """
     today = datetime.datetime.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1))
-    data = db.node.find({'date_created': {'$gt': last_month}})
+    data = db.node.find({'date_created': {'$gt': last_month}, 'is_public': True, 'is_registration': False})
     node_log_count_mapping = {}
     for new_node in data:
         node_log_count_mapping[new_node['_id']] = len(new_node['logs'])

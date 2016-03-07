@@ -23,11 +23,11 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.pop4 = ProjectFactory()
         self.pop5 = ProjectFactory()
 
-        self.nn1 = ProjectFactory()
-        self.nn2 = ProjectFactory()
-        self.nn3 = ProjectFactory()
-        self.nn4 = ProjectFactory()
-        self.nn5 = ProjectFactory()
+        self.nn1 = ProjectFactory(is_public=True)
+        self.nn2 = ProjectFactory(is_public=True)
+        self.nn3 = ProjectFactory(is_public=True)
+        self.nn4 = ProjectFactory(is_public=True)
+        self.nn5 = ProjectFactory(is_public=True)
 
         self.user = UserFactory()
 
@@ -55,8 +55,7 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
 
     def test_get_new_and_noteworthy_nodes(self):
         new_noteworthy = script.get_new_and_noteworthy_nodes()
-        assert_equal(set(new_noteworthy), {self.nn1._id, self.nn2._id, self.nn3._id, self.nn4._id, self.nn5._id,
-                                      self.pop1._id, self.pop2._id, self.pop3._id, self.pop4._id, self.pop5._id})
+        assert_equal(set(new_noteworthy), {self.nn1._id, self.nn2._id, self.nn3._id, self.nn4._id, self.nn5._id})
 
     def test_populate_new_and_noteworthy(self):
         self.popular_links_node = ProjectFactory(creator=self.user)
@@ -84,7 +83,7 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.new_and_noteworthy_links_node.reload()
 
         assert_equal(len(self.popular_links_node.nodes), 0)  # verifies remove pointer is working
-        assert_equal(len(self.new_and_noteworthy_links_node.nodes), 10)
+        assert_equal(len(self.new_and_noteworthy_links_node.nodes), 5)
 
         httpretty.register_uri(httpretty.GET, popular_url, status=200, body=self.popular_json_body, content_type='application/vnd.api+json')
 
@@ -98,5 +97,4 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
 
         new_and_noteworthy_node_links = {pointer.node._id for pointer in self.new_and_noteworthy_links_node.nodes}
 
-        assert_equal(set(new_and_noteworthy_node_links), {self.nn1._id, self.nn2._id, self.nn3._id, self.nn4._id, self.nn5._id,
-                                                          self.pop1._id, self.pop2._id, self.pop3._id, self.pop4._id, self.pop5._id})
+        assert_equal(set(new_and_noteworthy_node_links), {self.nn1._id, self.nn2._id, self.nn3._id, self.nn4._id, self.nn5._id})
