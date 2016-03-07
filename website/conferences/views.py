@@ -147,8 +147,7 @@ def _render_conference_node(node, idx, conf):
                 Q('is_file', 'eq', True)
             ).limit(1)
         ).wrapped()
-        download_count = record.get_download_count()
-        view_and_download = download_count + node.visit
+        view_and_download = record.get_download_count() + node.visit
 
         download_url = node.web_url_for(
             'addon_view_or_download_file',
