@@ -2023,6 +2023,14 @@ class TestNodeUpdate(OsfTestCase):
         last_log = self.node.logs[-1]
         assert_equal(last_log.action, NodeLog.MADE_PRIVATE)
 
+    def test_update_can_make_registration_public(self):
+        reg = RegistrationFactory(is_public=False)
+        reg.update({'is_public': True})
+
+        assert_true(reg.is_public)
+        last_log = reg.logs[-1]
+        assert_equal(last_log.action, NodeLog.MADE_PUBLIC)
+
     def test_updating_title_twice_with_same_title(self):
         original_n_logs = len(self.node.logs)
         new_title = fake.bs()

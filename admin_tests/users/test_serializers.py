@@ -7,9 +7,6 @@ from admin.users.serializers import serialize_user, serialize_simple_node
 
 
 class TestUserSerializers(AdminTestCase):
-    def setUp(self):
-        super(TestUserSerializers, self).setUp()
-
     def test_serialize_user(self):
         user = AuthUserFactory()
         info = serialize_user(user)

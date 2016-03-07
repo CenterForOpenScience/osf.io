@@ -17,6 +17,7 @@ class SpamList(ListView):
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'date_created'
+    context_object_name = 'spam'
 
     def __init__(self):
         self.status = str(Comment.FLAGGED)
@@ -131,7 +132,10 @@ class SpamDetail(FormView):
 
     @property
     def success_url(self):
-        return reverse('spam:detail', kwargs={'spam_id': self.spam_id}) + '?page={}'.format(self.page)
+        return '{}?page={}'.format(
+            reverse('spam:detail', kwargs={'spam_id': self.spam_id}),
+            self.page
+        )
 
 
 @login_required
