@@ -56,6 +56,7 @@ var entry = {
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
+    'faq-page' : staticPath('js/pages/faq-page.js'),
     'share-embed-page': staticPath('js/pages/share-embed-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
     // Commons chunk
