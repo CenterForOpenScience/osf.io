@@ -582,7 +582,7 @@ MEETING_DATA = {
         'poster': False,
         'talk': True,
     },
-        'ARCA2016': {
+    'ARCA2016': {
         'name': '5th Applied Research Conference in Africa',
         'info_url': 'http://www.arcaconference.org/',
         'logo_url': 'http://www.arcaconference.org/images/ARCA_LOGO_NEW.JPG',
@@ -592,7 +592,7 @@ MEETING_DATA = {
         'poster': False,
         'talk': True,
     },
-        'CURCONF2016': {
+    'CURCONF2016': {
         'name': 'CUR Biennial Conference 2016',
         'info_url': 'http://www.cur.org/conferences_and_events/biennial2016/',
         'logo_url': 'http://s11.postimg.org/v8feuna4y/Conference_logo_eps.jpg',
@@ -602,7 +602,7 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-        'CATALISE2016': {
+    'CATALISE2016': {
         'name': 'Criteria and Terminology Applied to Language Impairments: Synthesising the Evidence (CATALISE) 2016',
         'info_url': None,
         'logo_url': None,
@@ -662,7 +662,7 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-        'WSAN2016': {
+    'WSAN2016': {
         'name': 'WSAN2016 Erasmus University Rotterdam',
         'info_url': 'http://www.humane.eu/wsan/',
         'logo_url': None,
@@ -670,6 +670,25 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
         'poster': True,
+        'talk': True,
+    },
+    'ContainerStrategies': {
+        'name': 'Container Strategies for Data & Software Preservation',
+        'info_url': 'https://daspos.crc.nd.edu/index.php/workshops/container-strategies-for-data-software-preservation-that-promote-open-science',
+        'logo_url': 'http://s17.postimg.org/8nl1v5mxb/Screen_Shot_2016_03_02_at_9_05_24_PM.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+    },
+    'CNI2016': {
+        'name': 'Coalition for Networked Information (CNI) Spring Membership Meeting 2016',
+        'info_url': 'https://wp.me/P1LncT-6fd',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
         'talk': True,
     },
 }

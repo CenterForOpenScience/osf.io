@@ -105,8 +105,10 @@ MIDDLEWARE_CLASSES = (
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
+    'api.base.middleware.MongoConnectionMiddleware',
+    'api.base.middleware.CeleryTaskMiddleware',
+    'api.base.middleware.TokuTransactionMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
-    'api.base.middleware.TokuTransactionsMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',

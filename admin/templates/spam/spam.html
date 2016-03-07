@@ -7,7 +7,30 @@
 {% endblock title %}
 {% block content %}
     <h2>List of Spam</h2>
-    {% include "util/pagination.html" with items=page %}
+    <div class="btn-group">
+    {% if status == '1' %}
+        <a href="{% url 'spam:spam' %}?status=1&page={{ page_number }}"
+           class="btn btn-primary active disabled">Flagged</a>
+    {% else %}
+        <a href="{% url 'spam:spam' %}?status=1&page={{ page_number }}"
+           class="btn btn-primary">Flagged</a>
+    {% endif %}
+    {% if status == '2' %}
+        <a href="{% url 'spam:spam' %}?status=2&page={{ page_number }}"
+           class="btn btn-primary active disabled">Spam</a>
+    {% else %}
+        <a href="{% url 'spam:spam' %}?status=2&page={{ page_number }}"
+           class="btn btn-primary">Spam</a>
+    {% endif %}
+    {% if status == '4' %}
+        <a href="{% url 'spam:spam' %}?status=4&page={{ page_number }}"
+           class="btn btn-primary active disabled">Ham</a>
+    {% else %}
+        <a href="{% url 'spam:spam' %}?status=4&page={{ page_number }}"
+           class="btn btn-primary">Ham</a>
+    {% endif %}
+    </div>
+    {% include "util/pagination.html" with items=page status=status %}
     <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
