@@ -95,10 +95,9 @@ class PostcommitTaskMiddleware(object):
     """
     Handle postcommit tasks for django.
     """
-
     def process_request(self, request):
         postcommit_before_request()
 
     def process_response(self, request, response):
-        postcommit_after_request()
+        postcommit_after_request(response=response, base_status_error_code=400)
         return response

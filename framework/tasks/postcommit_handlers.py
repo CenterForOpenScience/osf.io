@@ -14,7 +14,10 @@ def postcommit_queue():
 def postcommit_before_request():
     _local.postcommit_queue = []
 
-def postcommit_after_request(response=None):
+def postcommit_after_request(response=None, base_status_error_code=500):
+    if response.status_code >= base_status_error_code:
+        _local.postcommmit_queue = []
+        return response
     try:
         if postcommit_queue():
             for task in postcommit_queue():
@@ -23,6 +26,7 @@ def postcommit_after_request(response=None):
         if not settings.DEBUG_MODE:
             logger.error('Post commit task queue not initialized')
     return response
+
 def enqueue_postcommit_task(f):
     try:
         if f not in postcommit_queue():
