@@ -174,6 +174,7 @@ var output = {
 module.exports = {
     entry: entry,
     resolve: resolve,
+    devtool: 'source-map',
     externals: externals,
     plugins: plugins,
     output: output,
