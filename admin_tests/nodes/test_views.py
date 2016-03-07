@@ -1,11 +1,15 @@
 from django.test import RequestFactory
-from nose.tools import *  # flake8: noqa
+from nose import tools as nt
 
 from tests.base import AdminTestCase
 from tests.factories import NodeFactory
 from admin_tests.utilities import setup_view
 
-from admin.nodes.views import NodeView
+from admin.nodes.views import (
+    NodeView,
+    remove_node,
+    restore_node,
+)
 
 
 class TestNodeView(AdminTestCase):
@@ -14,7 +18,7 @@ class TestNodeView(AdminTestCase):
         request = RequestFactory().get('/fake_path')
         view = NodeView()
         view = setup_view(view, request)
-        with assert_raises(AttributeError):
+        with nt.assert_raises(AttributeError):
             view.get_object()
 
     def test_load_data(self):
@@ -24,7 +28,7 @@ class TestNodeView(AdminTestCase):
         view = NodeView()
         view = setup_view(view, request, guid=guid)
         res = view.get_object()
-        assert_is_instance(res, dict)
+        nt.assert_is_instance(res, dict)
 
     def test_name_data(self):
         node = NodeFactory()
@@ -35,4 +39,21 @@ class TestNodeView(AdminTestCase):
         temp_object = view.get_object()
         view.object = temp_object
         res = view.get_context_data()
-        assert_equal(res[NodeView.context_object_name], temp_object)
+        nt.assert_equal(res[NodeView.context_object_name], temp_object)
+
+
+class TestRemoveNode(AdminTestCase):
+    def setUp(self):
+        super(TestRemoveNode, self).setUp()
+        self.node = NodeFactory()
+        self.request = RequestFactory().get('/fake_path')
+
+    def test_remove_node(self):
+        remove_node(self.request, self.node._id)
+        nt.assert_true(self.node.is_deleted)
+
+    def test_restore_node(self):
+        remove_node(self.request, self.node._id)
+        nt.assert_true(self.node.is_deleted)
+        restore_node(self.request, self.node._id)
+        nt.assert_false(self.node.is_deleted)
