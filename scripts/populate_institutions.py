@@ -10,8 +10,7 @@ from website.models import Institution
 from framework.transactions.context import TokuTransaction
 
 ENVS = ['prod', 'nonprod']
-TARGET_URL = '/login?service={}&auto=true'.format(urllib.quote(settings.DOMAIN, safe='~()*!.\''))
-SHIBBOLETH_SP = '{}/Shibboleth.sso/Login?entityID={{}}&target={}'.format(settings.CAS_SERVER_URL, urllib.quote(TARGET_URL, safe='~()*!.\''))
+SHIBBOLETH_SP = '{}/Shibboleth.sso/Login?entityID={{}}'.format(settings.CAS_SERVER_URL)
 
 def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
