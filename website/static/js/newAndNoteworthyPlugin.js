@@ -5,6 +5,7 @@
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
+var Raven = require('raven-js');
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -22,6 +23,13 @@ var NewAndNoteworthy = {
         self.popularNodes = m.prop([]);
         self.contributorsMapping = {};
         self.SHOW_TOTAL = 5;
+        self.errorLoading = m.prop(false);
+
+        // Switches errorLoading to true
+        self.requestError = function(result){
+            self.errorLoading = m.prop(true);
+            Raven.captureMessage('Error loading new and noteworthy projects on home page.', {requestReturn: result});
+        };
 
         // Load new and noteworthy nodes
         var newAndNoteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.newAndNoteworthy + '/node_links/', {});
@@ -32,6 +40,8 @@ var NewAndNoteworthy = {
                 self.newAndNoteworthyNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
             }
+        }, function _error(result){
+            self.requestError(result);
         });
 
         // Load popular nodes
@@ -43,6 +53,8 @@ var NewAndNoteworthy = {
                 self.popularNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
             }
+        }, function _error(result){
+            self.requestError(result);
         });
 
         // Additional API call to fetch node link contributors
@@ -57,6 +69,8 @@ var NewAndNoteworthy = {
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;
                 self.contributorsMapping[nodeId] = [contribNames, numContrib];
+            }, function _error(result){
+                self.requestError(result);
             });
         };
 
@@ -73,6 +87,10 @@ var NewAndNoteworthy = {
         };
     },
     view : function(ctrl) {
+        if (ctrl.errorLoading()) {
+            return m('p.text-center.m-v-lg', 'Error loading projects. Please refresh the page.');
+        }
+
         function nodeDisplay(node) {
             var description = node.embeds.target_node.data.attributes.description;
             var title = node.embeds.target_node.data.attributes.title;
