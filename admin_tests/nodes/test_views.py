@@ -6,6 +6,8 @@ from tests.base import AdminTestCase
 from tests.factories import NodeFactory, AuthUserFactory
 from admin_tests.utilities import setup_view
 
+from website.project.model import NodeLog
+
 from admin.nodes.views import NodeView, remove_contributor
 
 
@@ -76,3 +78,7 @@ class TestRemoveContributor(AdminTestCase):
             len(list(self.node.get_admin_contributors(self.node.contributors))),
             1
         )
+
+    def test_no_log(self):
+        remove_contributor(self.request, self.node._id, self.user_2._id)
+        nt.assert_not_equal(self.node.logs[-1].action, NodeLog.CONTRIB_REMOVED)
