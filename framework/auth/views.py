@@ -26,7 +26,7 @@ from website import settings
 from website import mails
 from website import language
 from website import security
-from website.models import User, Institution
+from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html
 
