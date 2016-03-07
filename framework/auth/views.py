@@ -26,7 +26,7 @@ from website import settings
 from website import mails
 from website import language
 from website import security
-from website.models import User
+from website.models import User, Institution
 from website.util import web_url_for
 from website.util.sanitize import strip_html
 
@@ -119,8 +119,8 @@ def auth_login(auth, **kwargs):
     instHost = request.args.get('instHost')
     if instHost:
         try:
-            inst_id = instHost.split('.')[1]
-            next_url = 'institution/{}'.format(inst_id)
+            inst = Institution.find_one(Q('domain', 'eq', instHost))
+            next_url = 'institution/{}'.format(inst._id)
         except:
             pass
     if campaign:
