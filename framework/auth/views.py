@@ -184,7 +184,7 @@ def confirm_email_get(token, auth=None, **kwargs):
                 return redirect(
                     campaigns.campaign_url_for(campaign)
                 )
-            if auth.user.emails == 1:
+            if len(auth.user.emails) == 1:
                 status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
             else:
                 status.push_status_message(language.CONFIRM_ALTERNATIVE_EMAIL_ERROR, 'danger')
