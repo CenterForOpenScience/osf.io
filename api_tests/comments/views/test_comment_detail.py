@@ -227,7 +227,7 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_public_node_non_contributor_commenter_cannot_update_own_comment_if_comment_level_private(self):
         project = ProjectFactory(is_public=True, comment_level='public')
-        comment = CommentFactory(node=project, target=project, user=self.non_contributor)
+        comment = CommentFactory(node=project, user=self.non_contributor)
         project.comment_level = 'private'
         project.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -711,7 +711,7 @@ class TestFileCommentDetailView(ApiTestCase):
     def test_public_node_non_contributor_commenter_cannot_update_own_file_comment_if_comment_level_private(self):
         project = ProjectFactory(is_public=True)
         test_file = test_utils.create_test_file(project, project.creator)
-        comment = CommentFactory(node=project, target=test_file, user=self.non_contributor)
+        comment = CommentFactory(node=project, target=test_file.get_guid(), user=self.non_contributor)
         project.comment_level = 'private'
         project.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
