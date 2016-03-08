@@ -118,3 +118,6 @@ def default_node_list_query():
         Q('is_collection', 'ne', True) &
         Q('is_registration', 'ne', True)
     )
+
+def extend_querystring_params(url, params):
+    return furl.furl(url).add(args=params).url

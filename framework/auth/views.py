@@ -116,8 +116,20 @@ def auth_login(auth, **kwargs):
     """
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
+    must_login_warning = True
+
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
+
+    if not next_url:
+        next_url = request.args.get('redirect_url')
+        must_login_warning = False
+
+    if next_url:
+        # Only allow redirects which are relative root or full domain, disallows external redirects.
+        if not (next_url[0] == '/' or next_url.startsWith(settings.DOMAIN)):
+            raise HTTPError(http.InvalidURL)
+
     if auth.logged_in:
         if not request.args.get('logout'):
             if next_url:
@@ -132,7 +144,7 @@ def auth_login(auth, **kwargs):
     if status_message == 'expired':
         status.push_status_message('The private link you used is expired.')
 
-    if next_url:
+    if next_url and must_login_warning:
         status.push_status_message(language.MUST_LOGIN)
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
     # allows for next to be followed or a redirect to the dashboard.
@@ -143,6 +155,8 @@ def auth_login(auth, **kwargs):
         if (campaign == 'institution' and settings.ENABLE_INSTITUTIONS) or campaign != 'institution':
             data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
+    data['institution_redirect'] = cas.get_institution_target(redirect_url)
+    data['redirect_url'] = next_url
 
     return data, http.OK
 
@@ -246,8 +260,10 @@ def send_confirm_email(user, email):
         mail_template = mails.CONFIRM_MERGE
     elif campaign:
         mail_template = campaigns.email_template_for_campaign(campaign)
-    else:
+    elif user.is_active:
         mail_template = mails.CONFIRM_EMAIL
+    else:
+        mail_template = mails.INITIAL_CONFIRM_EMAIL
 
     mails.send_mail(
         email,

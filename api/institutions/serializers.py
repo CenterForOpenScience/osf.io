@@ -35,5 +35,8 @@ class InstitutionSerializer(JSONAPISerializer):
     def get_api_url(self, obj):
         return obj.absolute_api_v2_url
 
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
     class Meta:
         type_ = 'institutions'

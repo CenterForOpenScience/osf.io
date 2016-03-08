@@ -23,7 +23,7 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.project.model import Node
+from website.project.model import Node, Institution
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
@@ -121,7 +121,7 @@ def resend_confirmation(auth):
 
     user.save()
 
-    return _profile_view(user)
+    return _profile_view(user, is_profile=True)
 
 @must_be_logged_in
 def update_user(auth):
@@ -243,7 +243,7 @@ def update_user(auth):
         if subscription:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
-    return _profile_view(user)
+    return _profile_view(user, is_profile=True)
 
 
 def _profile_view(profile, is_profile=False):
@@ -825,11 +825,11 @@ def redirect_to_twitter(twitter_handle):
 
 
 def view_institution(**kwargs):
-    from website.project.model import Institution
     inst = Institution.load(kwargs.get('id'))
 
     return {
         'id': kwargs.get('id'),
         'name': inst.name,
-        'logo_path': inst.logo_path
+        'logo_path': inst.logo_path,
+        'description': inst.description or '',
     }

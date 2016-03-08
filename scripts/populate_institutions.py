@@ -10,8 +10,7 @@ from website.project.model import Institution, Node
 from framework.transactions.context import TokuTransaction
 
 ENVS = ['prod', 'nonprod']
-TARGET_URL = '/login?service={}&auto=true'.format(urllib.quote(settings.DOMAIN, safe='~()*!.\''))
-SHIBBOLETH_SP = '{}/Shibboleth.sso/Login?entityID={{}}&target={}'.format(settings.CAS_SERVER_URL, urllib.quote(TARGET_URL, safe='~()*!.\''))
+SHIBBOLETH_SP = '{}/Shibboleth.sso/Login?entityID={{}}'.format(settings.CAS_SERVER_URL)
 
 def update_or_create(inst_data):
     inst = Institution.load(inst_data['_id'])
@@ -37,19 +36,23 @@ def main(env):
     INSTITUTIONS = [
         {
             'name': 'Virginia Tech',
-            '_id': 'VT',
+            '_id': 'vt',
             'logo_name': 'virginia-tech.jpg',
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://shib-pprd.middleware.vt.edu', safe='~()*!.\'')
-            )
+            ),
+            'domain': ['osf.vt.edu:5000'],
+            'description': 'this is vt'
         },
         {
             'name': 'Notre Dame',
-            '_id': 'ND',
+            '_id': 'nd',
             'logo_name': 'notre-dame.jpg',
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://login.nd.edu/idp/shibboleth', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://login-test.cc.nd.edu/idp/shibboleth', safe='~()*!.\'')
-            )
+            ),
+            'domain': ['osf.nd.edu:5000'],
+            'description': 'this is nd'
         }
     ]
 
