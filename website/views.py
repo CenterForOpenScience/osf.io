@@ -23,11 +23,11 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
 from website.models import Node
-from website.models import Institution
 from website.util import sanitize
 from website.project import model
 from website.util import permissions
 from website.project import new_bookmark_collection
+from website.project.model import Institution
 
 logger = logging.getLogger(__name__)
 
