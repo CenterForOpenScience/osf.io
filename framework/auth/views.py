@@ -116,6 +116,11 @@ def auth_login(auth, **kwargs):
     """
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
+    must_login_warning = True
+    if not next_url:
+        next_url = request.args.get('redirect_url')
+        must_login_warning = False
+
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
     elif next_url:
@@ -136,7 +141,7 @@ def auth_login(auth, **kwargs):
     if status_message == 'expired':
         status.push_status_message('The private link you used is expired.')
 
-    if next_url:
+    if next_url and must_login_warning:
         status.push_status_message(language.MUST_LOGIN)
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
     # allows for next to be followed or a redirect to the dashboard.
@@ -148,6 +153,7 @@ def auth_login(auth, **kwargs):
             data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
     data['institution_redirect'] = cas.get_institution_target(redirect_url)
+    data['redirect_url'] = next_url
 
     return data, http.OK
 
