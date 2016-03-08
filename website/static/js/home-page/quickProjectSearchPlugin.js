@@ -386,20 +386,27 @@ var QuickSearchProject = {
         }
 
         function searchBar() {
+            var searchClass = 'form-control disabled';
+            var searchPlaceholder = 'Loading projects for search...';
+
             if (ctrl.loadingComplete()){
-                return m('div.m-v-sm.quick-search-input', [
-                    m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
-                        ctrl.filter(search.target.value);
-                        ctrl.quickSearch();
-                    }}),
-                    m('span', {onclick: function() {
-                        ctrl.filter('');
-                        document.getElementById('searchQuery').value = '';
-                        ctrl.quickSearch();
-                    }},  m('button', m('i.fa.fa-times')))
-                ]);
+                searchClass = 'form-control';
+                searchPlaceholder = 'Quick search projects';
             }
-        }
+
+            return m('div.m-v-sm.quick-search-input', [
+                m('input[type=search]', {'id': 'searchQuery', 'class': searchClass, placeholder: searchPlaceholder, onkeyup: function(search) {
+                    ctrl.filter(search.target.value);
+                    ctrl.quickSearch();
+                }}),
+                m('span', {onclick: function() {
+                    ctrl.filter('');
+                    document.getElementById('searchQuery').value = '';
+                    ctrl.quickSearch();
+                }},  m('button', m('i.fa.fa-times')))
+            ]);
+            }
+
 
         function displayNodes() {
             if (ctrl.eligibleNodes().length === 0 && ctrl.filter() != null) {
@@ -453,8 +460,8 @@ var QuickSearchProject = {
             return m('.row.quick-project',
                 m('.col-xs-12',[
                     m('.m-b-sm.text-center', [
-                        searchBar(),
-                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
+                        searchBar()
+                        //ctrl.loadingComplete() ? '' : m('.spinner-div', m('.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
                     ]),
                     m('p.text-center', 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')),
                     m('.quick-search-table', [
