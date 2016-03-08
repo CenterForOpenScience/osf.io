@@ -15,3 +15,6 @@ TABULATE_LOGS_USER_ID = 'jm6t4'  # Daily updates user
 TABULATE_LOGS_FILE_NAME = 'log-counts.csv'
 TABULATE_LOGS_CONTENT_TYPE = 'text/csv'
 TABULATE_LOGS_TIME_OFFSET = relativedelta(days=1)
+
+ANALYTICS_LOGS_NODE_ID = 'ejnwh'
+ANALYTICS_LOGS_USER_ID = 'jm6t6'

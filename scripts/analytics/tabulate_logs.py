@@ -58,7 +58,7 @@ def main():
         ),
         ['name', 'count'],
     )
-    utils.send_file(app, settings.TABULATE_LOGS_FILE_NAME, settings.TABULATE_LOGS_CONTENT_TYPE, sio, node, user)
+    utils.send_file(settings.TABULATE_LOGS_FILE_NAME, settings.TABULATE_LOGS_CONTENT_TYPE, sio, node, user)
 
 
 if __name__ == '__main__':
