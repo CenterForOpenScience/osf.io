@@ -86,8 +86,6 @@
         % else:
          <div>Anonymous Contributors</div>
         % endif
-        <!--Stacked bar to visualize user activity level against total activity level of a project -->
-        <!--Length of the stacked bar is normalized over all projects -->
         % if not summary['anonymous']:
             <span class="text-muted">${summary['nlogs']} contributions</span>
         % endif

@@ -898,7 +898,7 @@ def get_recent_logs(node, **kwargs):
     return {'logs': logs}
 
 
-def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_path=False):
+def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
     # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
     summary = {
         'id': link_id if link_id else node._id,
@@ -933,7 +933,6 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
             'forked_date': node.forked_date.strftime('%Y-%m-%d %H:%M UTC')
             if node.is_fork
             else None,
-            'nlogs': None,
             'ua_count': None,
             'ua': None,
             'non_ua': None,
@@ -941,12 +940,9 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
             'is_public': node.is_public,
             'parent_title': node.parent_node.title if node.parent_node else None,
             'parent_is_public': node.parent_node.is_public if node.parent_node else False,
-            'show_path': show_path
+            'show_path': show_path,
+            'nlogs': len(node.logs),
         })
-        if rescale_ratio:
-            summary.update({
-                'nlogs': len(node.logs),
-            })
     else:
         summary['can_view'] = False
 
@@ -959,18 +955,12 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
 def get_summary(auth, node, **kwargs):
-    rescale_ratio = kwargs.get('rescale_ratio')
-    if rescale_ratio is None and request.args.get('rescale_ratio'):
-        try:
-            rescale_ratio = float(request.args.get('rescale_ratio'))
-        except (TypeError, ValueError):
-            raise HTTPError(http.BAD_REQUEST)
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
     show_path = kwargs.get('show_path', False)
 
     return _get_summary(
-        node, auth, rescale_ratio, primary=primary, link_id=link_id, show_path=show_path
+        node, auth, primary=primary, link_id=link_id, show_path=show_path
     )
 
 
