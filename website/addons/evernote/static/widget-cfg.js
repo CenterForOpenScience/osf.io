@@ -1,6 +1,7 @@
 'use strict';
 
 require('./evernote.css');
+require('datatables.net-dt/css/jquery.dataTables.css');
 
 var $ = require('jquery');
 // http://stackoverflow.com/a/34255097/7782 --> why datatables.net and not datatables-dt
@@ -44,6 +45,10 @@ var EvernoteWidget = function(urls) {
 
     }, null, "arrayChange");
 
+    // on selecting a row -- I think there should be a better way
+    $('#evernote-notes-list').on( 'click', 'tr', function () {
+       console.log( 'Row index: '+self.notes_dt.row( this ).index() );
+    } );
 
     self.fetchNotes = $.getJSON.bind(null, urls.notes, function(notes) {
        self.notes(notes);
