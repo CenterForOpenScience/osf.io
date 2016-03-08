@@ -134,7 +134,9 @@ def before_request():
             # Issuing a targeted delete of the legacy cookie ensures the user does not end up in a
             # login loop whereby both cookies are sent to the server and one of them at random
             # read for authentication.
-            resp.delete_cookie(settings.COOKIE_NAME, domain=None)
+            #
+            # Ensure the cookie deletion is read first.
+            resp.headers._list.insert(0, ('Set-Cookie', u'osf=; Expires=Thu, 01-Jan-1970 00:00:00 GMT; Max-Age=0; Path=/'))
         return resp
 
     if request.authorization:
