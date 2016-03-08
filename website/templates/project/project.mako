@@ -188,9 +188,11 @@
                 <span data-bind="css: icon"></span>
                 </p>
 
-                % if node['description'] or 'write' in user['permissions']:
+                % if not node['description']:
+                    <% pass %>
+                % elif node['description'] or 'write' in user['permissions']:
                     <p>
-                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                        <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                     </p>
                 % endif
                 % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
