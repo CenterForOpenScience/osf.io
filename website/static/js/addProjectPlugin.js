@@ -30,7 +30,7 @@ var AddProject = {
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
-        self.newProjectCategory = m.prop('project');
+        self.newProjectCategory = m.prop('');
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
@@ -78,7 +78,7 @@ var AddProject = {
             self.newProjectName('');
             self.viewState('form');
             self.newProjectDesc('');
-            self.newProjectCategory('project');
+            self.newProjectCategory('');
             $('.modal').modal('hide');
         };
     },
