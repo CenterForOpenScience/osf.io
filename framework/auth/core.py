@@ -1028,7 +1028,7 @@ class User(GuidStoredObject, AddonModelMixin):
             )
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             pass
-        except mailchimp_utils.mailchimp.InvalidApiKeyError as e:
+        except mailchimp_utils.mailchimp.InvalidApiKeyError:
             if not settings.ENABLE_EMAIL_SUBSCRIPTIONS:
                 pass
             else:
