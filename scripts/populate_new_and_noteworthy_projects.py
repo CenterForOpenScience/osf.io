@@ -26,12 +26,8 @@ def get_new_and_noteworthy_nodes():
     today = datetime.datetime.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1))
     data = db.node.find({'date_created': {'$gt': last_month}, 'is_public': True, 'is_registration': False})
-    node_log_count_mapping = {}
-    for new_node in data:
-        node_log_count_mapping[new_node['_id']] = len(new_node['logs'])
-    sort_by_log_count = sorted(node_log_count_mapping.items(), key=operator.itemgetter(1), reverse=True)
-    sorted_node_ids = [node[0] for node in sort_by_log_count]
-    return sorted_node_ids[:25]
+    noteworthy_nodes = sorted(data, key=lambda node: len(node['logs']), reverse=True)[:25]
+    return [each['_id'] for each in noteworthy_nodes]
 
 def is_eligible_node(node):
     """
