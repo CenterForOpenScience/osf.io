@@ -750,14 +750,16 @@ var Collections = {
                             config : xhrconfig,
                             data : dataArray[index]
                         }).then(doNext, function(result){
-                            var details = '';
+                            var message = '';
+                            var name = args.selected()[index] ? args.selected()[index].data.name : 'Item ';
                             if (result.errors.length > 0) {
                                 result.errors.forEach(function(error){
-                                    details += error.detail;
+                                    if(error.detail.indexOf('already pointed') > -1 ){
+                                        message = '"' + name + '" is already in "' + collection.label + '"' ;
+                                    }
                                 });
                             }
-                            var name = args.selected()[index] ? args.selected()[index].data.name : 'Project ';
-                            $osf.growl('"' + name + '" could not be added to Collection.', details);
+                            $osf.growl(message);
                             doNext();
                         }); // In case of success or error. It doesn't look like mithril has a general .done method
                     }
