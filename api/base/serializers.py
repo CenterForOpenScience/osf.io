@@ -448,7 +448,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 else:
                     url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
-                        url = '{}?filter{}'.format(url, self.format_filter(obj))
+                        formatted_filter = self.format_filter(obj)
+                        if formatted_filter:
+                            url = '{}?filter{}'.format(url, formatted_filter)
+                        else:
+                            url = None
                     urls[view_name] = url
         if not urls['self'] and not urls['related']:
             urls = None
@@ -477,7 +481,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 value = self.lookup_attribute(obj, self.filter[field_name])
             else:
                 value = value(obj)
+            if not value:
+                continue
             qd.update({'[{}]'.format(field_name): value})
+        if not qd.keys():
+            return None
         return qd.urlencode(safe=['[', ']'])
 
     # Overrides HyperlinkedIdentityField
