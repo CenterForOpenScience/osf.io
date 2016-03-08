@@ -189,11 +189,11 @@
                 </p>
 
                 % if not node['description']:
-                    <p></p>
+                    <% pass %>
                 % elif node['description'] or 'write' in user['permissions']:
-                <p>
-                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
-                </p>
+                    <p>
+                        <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    </p>
                 % endif
                 % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
                     <p>
