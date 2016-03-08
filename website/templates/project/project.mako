@@ -188,11 +188,14 @@
                 <span data-bind="css: icon"></span>
                 </p>
 
-                % if node['description'] or 'write' in user['permissions']:
-                    <p>
+
+                <p>
+                % if not node['description']:
+                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="text-muted" data-type="textarea">${'No description'}</span>
+                % elif node['description'] or 'write' in user['permissions']:
                     <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
-                    </p>
                 % endif
+                </p>
                 % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
                     <p>
                       <license-picker params="saveUrl: '${node['update_url']}',
