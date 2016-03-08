@@ -6,7 +6,7 @@ from modularodm import signals
 
 
 @signals.save.connect
-def log_object_saved(sender, instance, fields_changed, cached_data):
+def ban_object_from_cache(sender, instance, fields_changed, cached_data):
     abs_url = None
     if hasattr(instance, 'absolute_api_v2_url'):
         abs_url = instance.absolute_api_v2_url
