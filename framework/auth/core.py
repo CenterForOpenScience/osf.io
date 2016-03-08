@@ -1375,7 +1375,6 @@ class User(GuidStoredObject, AddonModelMixin):
         from website.project.model import Institution, SpecialList
         return SpecialList(self, '_affiliated_institutions', [Institution(inst) for inst in self._affiliated_institutions])
 
-
     def get_node_comment_timestamps(self, node, page, file_id=None):
         """ Returns the timestamp for when comments were last viewed on a node or
             a dictionary of timestamps for when comments were last viewed on files.

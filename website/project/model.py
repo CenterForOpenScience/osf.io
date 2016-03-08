@@ -22,6 +22,7 @@ from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
+from modularodm.storage.mongostorage import MongoQuerySet
 
 from api.base.utils import absolute_reverse
 from framework import status
@@ -847,7 +848,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     template_node = fields.ForeignField('node', backref='template_node', index=True)
 
     piwik_site_id = fields.StringField()
-
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
@@ -3438,7 +3438,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         query = query & Q('_primary_institution', 'eq', inst_node)
         return cls.find(query, allow_institution=True)
 
-
     # Primary institution node is attached to
     _primary_institution = fields.ForeignField('node')
 
@@ -3522,6 +3521,19 @@ class SpecialList(list):
         junk.append(to_append.node)
         setattr(self.node, self.target, junk)
 
+class InstitutionQuerySet(MongoQuerySet):
+    def __init__(self, queryset):
+        super(InstitutionQuerySet, self).__init__(queryset.schema, queryset.data)
+
+    def __iter__(self):
+        for each in super(InstitutionQuerySet, self).__iter__():
+            yield Institution(each)
+
+    def _do_getitem(self, index):
+        item = super(InstitutionQuerySet, self)._do_getitem(index)
+        if isinstance(item, MongoQuerySet):
+            return self.__class__(item)
+        return Institution(item)
 
 class Institution():
 
@@ -3560,7 +3572,7 @@ class Institution():
                 node.attribute = replacement_attr if False else node.attribute
         query = query & Q('is_institution', 'eq', True)
         nodes = Node.find(query, allow_institution=True, **kwargs)
-        return [cls(node) for node in nodes]
+        return InstitutionQuerySet(nodes)
 
     @classmethod
     def find_one(cls, query, **kwargs):
