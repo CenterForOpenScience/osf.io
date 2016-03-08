@@ -398,12 +398,7 @@ var QuickSearchProject = {
                 m('input[type=search]', {'id': 'searchQuery', 'class': searchClass, placeholder: searchPlaceholder, onkeyup: function(search) {
                     ctrl.filter(search.target.value);
                     ctrl.quickSearch();
-                }}),
-                m('span', {onclick: function() {
-                    ctrl.filter('');
-                    document.getElementById('searchQuery').value = '';
-                    ctrl.quickSearch();
-                }},  m('button', m('i.fa.fa-times')))
+                }})
             ]);
             }
 
