@@ -129,8 +129,8 @@ var NewAndNoteworthy = {
 
         return m('',[
             m('.row',[
-                m('.col-xs-12.col-lg-6', m('.public-projects-box.', m('h4.m-b-md','New and Noteworthy'), newAndNoteworthyProjectsTemplate())),
-                m('.col-xs-12.col-lg-6', m('.public-projects-box.', m('h4.m-b-md','Most Popular'), popularProjectsTemplate ()))
+                m('.col-xs-12.col-md-6', m('.public-projects-box.', m('h4.m-b-md','New and Noteworthy'), newAndNoteworthyProjectsTemplate())),
+                m('.col-xs-12.col-md-6', m('.public-projects-box.', m('h4.m-b-md','Most Popular'), popularProjectsTemplate ()))
             ]),
             m('.row', m('.text-center.col-sm-12', findMoreProjectsButton()))
         ]);

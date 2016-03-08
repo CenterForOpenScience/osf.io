@@ -10,7 +10,6 @@ var m = require('mithril');
 var quickSearchProject = require('js/quickProjectSearchPlugin');
 var newAndNoteworthy = require('js/newAndNoteworthyPlugin');
 var meetingsAndConferences = require('js/meetingsAndConferencesPlugin');
-var LogWrap = require('js/recentActivityWidget');
 var AddProject = require('js/addProjectPlugin');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
@@ -67,17 +66,6 @@ $(document).ready(function(){
                         m('.row.m-t-lg', [
                             m(columnSizeClass, m.component(quickSearchProject, {}))
                         ])
-                    ]
-                )),
-                m('.recentActvity', m('.container',
-                    [
-                        m('.row.p-t-lg', [
-                            m(columnSizeClass,m('h3', 'Recent Activity'))
-                        ]),
-                        m('.row.m-t-lg', [
-                            m(columnSizeClass, m.component(LogWrap, {wrapper: 'recentActivity'}))
-                        ])
-
                     ]
                 )),
                 m('.newAndNoteworthy', m('.container',
