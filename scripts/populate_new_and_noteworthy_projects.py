@@ -63,8 +63,7 @@ def update_node_links(designated_node, target_nodes, description):
     user = designated_node.creator
     auth = Auth(user)
 
-    for i in xrange(len(designated_node.nodes)-1, -1, -1):
-        pointer = designated_node.nodes[i]
+    for pointer in reversed(designated_node.nodes):
         if isinstance(pointer, Pointer):
             designated_node.rm_pointer(pointer, auth)
 
