@@ -403,9 +403,9 @@ var QuickSearchProject = {
 
         function displayNodes() {
             if (ctrl.eligibleNodes().length === 0 && ctrl.filter() != null) {
-                return m('.row.m-v-sm', m('.col-sm-10.col-sm-offset-1',
+                return m('.row.m-v-sm', m('.col-sm-12',
                     m('.row',
-                        m('.col-sm-12', [m('p.fa.fa-exclamation-triangle'), m('em', 'No results found!')])
+                        m('.col-sm-12', m('em', 'No results found!'))
                     ))
                 );
             }
@@ -464,7 +464,7 @@ var QuickSearchProject = {
                             m('.col-sm-4.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
                         xsDropdown(),
-                        displayNodes(),
+                        displayNodes()
                     ]),
                     m('.text-center', loadMoreButton())
                 ])
