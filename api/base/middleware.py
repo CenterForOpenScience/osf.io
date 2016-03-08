@@ -8,7 +8,7 @@ from framework.postcommit_tasks.handlers import (
     postcommit_after_request,
     postcommit_before_request
 )
-from framework.tasks.handlers import (
+from framework.celery_tasks.handlers import (
     celery_before_request,
     celery_after_request,
     celery_teardown_request

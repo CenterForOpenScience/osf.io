@@ -294,8 +294,8 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 #  Modules to import when celery launches
 CELERY_IMPORTS = (
-    'framework.tasks',
-    'framework.tasks.signals',
+    'framework.celery_tasks',
+    'framework.celery_tasks.signals',
     'framework.email.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',

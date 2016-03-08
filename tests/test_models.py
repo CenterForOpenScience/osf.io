@@ -25,7 +25,7 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
 from framework.auth.signals import user_merged
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError

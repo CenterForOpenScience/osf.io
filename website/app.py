@@ -17,7 +17,7 @@ from framework.mongo import handlers as mongo_handlers
 from framework.mongo import set_up_storage
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
-from framework.tasks import handlers as task_handlers
+from framework.celery_tasks import handlers as task_handlers
 from framework.transactions import handlers as transaction_handlers
 from modularodm import storage
 from website.addons.base import init_addon
