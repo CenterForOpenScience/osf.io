@@ -198,7 +198,11 @@ def confirm_email_get(token, auth=None, **kwargs):
                 return redirect(
                     campaigns.campaign_url_for(campaign)
                 )
-            status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+            if len(auth.user.emails) == 1 and len(auth.user.email_verifications) == 0:
+                status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+
+            if token in auth.user.email_verifications:
+                status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
             # Go to dashboard
             return redirect(web_url_for('dashboard'))
 
