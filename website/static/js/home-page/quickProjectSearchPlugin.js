@@ -461,7 +461,6 @@ var QuickSearchProject = {
                 m('.col-xs-12',[
                     m('.m-b-sm.text-center', [
                         searchBar()
-                        //ctrl.loadingComplete() ? '' : m('.spinner-div', m('.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
                     ]),
                     m('p.text-center', 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'Search Everything')),
                     m('.quick-search-table', [
