@@ -70,10 +70,7 @@ class TestRemoveContributor(AdminTestCase):
         )
         remove_contributor(self.request, self.node._id, self.user._id)
         self.node.reload()  # Reloads instance to show that nothing was removed
-        nt.assert_equal(
-            len(list(self.node.get_admin_contributors(self.node.contributors))),
-            1
-        )
+        nt.assert_equal(len(list(self.node.contributors)), 2)
         nt.assert_equal(
             len(list(self.node.get_admin_contributors(self.node.contributors))),
             1
