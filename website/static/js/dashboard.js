@@ -581,7 +581,7 @@ var Dashboard = {
  * Collections Module.
  * @constructor
  */
-var Collections  = {
+var Collections = {
     controller : function(args){
         var self = this;
         self.collections = args.collections;
@@ -771,6 +771,7 @@ var Collections  = {
     view : function (ctrl, args) {
         var selectedCSS;
         var submenuTemplate;
+        ctrl.calculateTotalPages();
         var collectionList = function () {
             var item;
             var index;
