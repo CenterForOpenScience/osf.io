@@ -49,7 +49,9 @@ INSTALLED_APPS = (
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
-    'dsn': osf_settings.SENTRY_DSN
+    'tags': {'App': 'api'},
+    'dsn': osf_settings.SENTRY_DSN,
+    'release': osf_settings.VERSION,
 }
 
 BULK_SETTINGS = {
@@ -103,7 +105,9 @@ MIDDLEWARE_CLASSES = (
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    'api.base.middleware.TokuTransactionsMiddleware',
+    'api.base.middleware.MongoConnectionMiddleware',
+    'api.base.middleware.CeleryTaskMiddleware',
+    'api.base.middleware.TokuTransactionMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',

@@ -53,7 +53,7 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
         assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.read_permissions)
 
-    def test_return_public_project_details_logged_in(self):
+    def test_return_public_project_details_contributor_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
@@ -61,6 +61,15 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
         assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
         assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.admin_permissions)
+
+    def test_return_public_project_details_non_contributor_logged_in(self):
+        res = self.app.get(self.public_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.public_project.title)
+        assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
+        assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.read_permissions)
 
     def test_return_private_project_details_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -143,7 +152,7 @@ class TestNodeDetail(ApiTestCase):
     def test_node_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()
         self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user), save=True)
-        comment = CommentFactory(node=self.public_project, target=self.public_project, user=contributor, page='node')
+        comment = CommentFactory(node=self.public_project, user=contributor, page='node')
         res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
         unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
         unread_comments_total = unread['total']
@@ -155,7 +164,7 @@ class TestNodeDetail(ApiTestCase):
         contributor = AuthUserFactory()
         self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user))
         test_file = test_utils.create_test_file(self.public_project, self.user)
-        comment = CommentFactory(node=self.public_project, target=test_file, user=contributor, page='files')
+        comment = CommentFactory(node=self.public_project, target=test_file.get_guid(), user=contributor, page='files')
         comment.node.commented_files[comment.root_target._id] = 1
         self.public_project.save()
         res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)

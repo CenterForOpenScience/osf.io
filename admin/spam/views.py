@@ -17,6 +17,7 @@ class SpamList(ListView):
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'date_created'
+    context_object_name = 'spam'
 
     def __init__(self):
         self.status = str(Comment.FLAGGED)
