@@ -19,23 +19,23 @@ def test_attach_handlers():
 
     assert_before_funcs = {
         framework.mongo.handlers.connection_before_request,
-        framework.tasks.handlers.celery_before_request,
+        framework.celery_tasks.handlers.celery_before_request,
         framework.transactions.handlers.transaction_before_request,
-        framework.tasks.postcommit_handlers.postcommit_before_request,
+        framework.postcommit_tasks.handlers.postcommit_before_request,
         framework.sessions.prepare_private_key,
         framework.sessions.before_request,
     }
 
     assert_after_funcs = {
-        framework.tasks.postcommit_handlers.postcommit_after_request,
-        framework.tasks.handlers.celery_after_request,
+        framework.postcommit_tasks.handlers.postcommit_after_request,
+        framework.celery_tasks.handlers.celery_after_request,
         framework.transactions.handlers.transaction_after_request,
         framework.sessions.after_request,
     }
 
     assert_teardown_funcs = {
         framework.mongo.handlers.connection_teardown_request,
-        framework.tasks.handlers.celery_teardown_request,
+        framework.celery_tasks.handlers.celery_teardown_request,
         framework.transactions.handlers.transaction_teardown_request,
     }
 

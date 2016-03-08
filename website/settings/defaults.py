@@ -301,8 +301,7 @@ CELERY_IMPORTS = (
     'website.mailchimp_utils',
     'website.notifications.tasks',
     'website.archiver.tasks',
-    'website.search.search',
-    'api.caching.tasks'
+    'website.search.search'
 )
 
 # celery.schedule will not be installed when running invoke requirements the first time.
