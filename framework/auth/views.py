@@ -187,7 +187,7 @@ def confirm_email_get(token, auth=None, **kwargs):
             if len(auth.user.emails) == 1:
                 status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
             else:
-                status.push_status_message(language.CONFIRM_ALTERNATIVE_EMAIL_ERROR, 'danger')
+                status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
             # Go to dashboard
             return redirect(web_url_for('dashboard'))
 
