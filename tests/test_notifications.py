@@ -191,9 +191,9 @@ class TestSubscriptionView(OsfTestCase):
         url = api_url_for('configure_subscription')
         self.app.post_json(url, payload, auth=self.node.creator.auth)
         event_id = self.node._id + '_' + 'comments'
-        # confirm subscription was not created
-        with assert_raises(NoResultsFound):
-            NotificationSubscription.find_one(Q('_id', 'eq', event_id))
+        # confirm subscription was created because parent had default subscription
+        s = NotificationSubscription.find_one(Q('_id', 'eq', event_id))
+        assert_equal(payload['event'], s.event_name)
 
     def test_change_subscription_to_adopt_parent_subscription_removes_user(self):
         payload = {
