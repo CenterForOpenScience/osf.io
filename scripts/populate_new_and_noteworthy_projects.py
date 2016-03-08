@@ -57,7 +57,7 @@ def is_eligible_node(node):
 
     return True
 
-def update_node_links(designated_node, target_nodes, description):
+def update_node_links(designated_node, target_node_ids, description):
     """ Takes designated node, removes current node links and replaces them with node links to target nodes """
     logger.info('Repopulating {} with latest {} nodes.'.format(designated_node._id, description))
     user = designated_node.creator
@@ -67,7 +67,7 @@ def update_node_links(designated_node, target_nodes, description):
         if isinstance(pointer, Pointer):
             designated_node.rm_pointer(pointer, auth)
 
-    for n_id in target_nodes:
+    for n_id in target_node_ids:
         n = models.Node.find(Q('_id', 'eq', n_id))[0]
         if is_eligible_node(n):
             designated_node.add_pointer(n, auth, save=True)
@@ -76,13 +76,13 @@ def update_node_links(designated_node, target_nodes, description):
 def main(dry_run=True):
     init_app(routes=False)
 
-    popular_nodes = get_popular_nodes()['popular_node_ids']
+    popular_node_ids = get_popular_nodes()['popular_node_ids']
     popular_links_node = models.Node.find(Q('_id', 'eq', POPULAR_LINKS_NODE))[0]
     new_and_noteworthy_links_node = models.Node.find(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))[0]
-    new_and_noteworthy_nodes = get_new_and_noteworthy_nodes()
+    new_and_noteworthy_node_ids = get_new_and_noteworthy_nodes()
 
-    update_node_links(popular_links_node, popular_nodes, 'popular')
-    update_node_links(new_and_noteworthy_links_node, new_and_noteworthy_nodes, 'new and noteworthy')
+    update_node_links(popular_links_node, popular_node_ids, 'popular')
+    update_node_links(new_and_noteworthy_links_node, new_and_noteworthy_node_ids, 'new and noteworthy')
 
     try:
         popular_links_node.save()
