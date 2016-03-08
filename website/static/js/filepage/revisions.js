@@ -93,10 +93,9 @@ var FileRevisionsTable = {
 
         var popOver = function(element, isInit) {
             if (!isInit) {
-                $(document.getElementById(element.id)).popover();
+                $(element).popover();
             }
-
-        }
+        };
 
         self.getTableHead = function() {
             return m('thead', [
@@ -106,16 +105,15 @@ var FileRevisionsTable = {
                     model.hasUser ? m('th', 'User') : false,
                     m('th[colspan=2]', 'Download'),
                     model.hasHashes ? m('th', [
-                        'MD5 ', m('#md5pop.fa.fa-question-circle[data-content="Unique 32-digit code for the file."][rel="popover"]' +
+                        'MD5 ', m('.fa.fa-question-circle[data-content="Unique 32-digit code for the file."][rel="popover"]' +
                             '[data-placement="top"][data-trigger="hover"]', {config: popOver}) ]) : false,
                     model.hasHashes ? m('th', [
-                        'SHA2 ', m('#sha2pop.fa.fa-question-circle[data-content="Unique 64-digit code for the file."][rel="popover"]' +
+                        'SHA2 ', m('.fa.fa-question-circle[data-content="Unique 64-digit code for the file."][rel="popover"]' +
                             '[data-placement="top"][data-trigger="hover"]', {config: popOver}) ]) : false,
                 ].filter(TRUTHY))
             ]);
 
         };
-
 
         self.makeTableRow = function(revision, index) {
             var isSelected = index === model.selectedRevision;
