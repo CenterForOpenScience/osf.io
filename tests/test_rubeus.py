@@ -341,7 +341,7 @@ class TestSerializingNodeWithAddon(OsfTestCase):
             len(self.project.get_addons.return_value) + len(self.project.nodes)
         )
         assert_equal(ret['kind'], rubeus.FOLDER)
-        assert_equal(ret['name'], 'Project: {0}'.format(self.project.title))
+        assert_equal(ret['name'], self.project.title)
         assert_equal(
             ret['permissions'],
             {
