@@ -7,9 +7,9 @@
 var $ = require('jquery');
 var m = require('mithril');
 
-var quickSearchProject = require('js/quickProjectSearchPlugin');
-var newAndNoteworthy = require('js/newAndNoteworthyPlugin');
-var meetingsAndConferences = require('js/meetingsAndConferencesPlugin');
+var QuickSearchProject = require('js/quickProjectSearchPlugin');
+var NewAndNoteworthy = require('js/newAndNoteworthyPlugin');
+var MeetingsAndConferences = require('js/meetingsAndConferencesPlugin');
 var LogWrap = require('js/recentActivityWidget');
 var AddProject = require('js/addProjectPlugin');
 var $osf = require('js/osfHelpers');
@@ -65,7 +65,7 @@ $(document).ready(function(){
                             ))
                         ]),
                         m('.row.m-t-lg', [
-                            m(columnSizeClass, m.component(quickSearchProject, {}))
+                            m(columnSizeClass, m.component(QuickSearchProject, {}))
                         ])
                     ]
                 )),
@@ -80,13 +80,13 @@ $(document).ready(function(){
 
                     ]
                 )),
-                m('.newAndNoteworthy', m('.container',
+                m('.NewAndNoteworthy', m('.container',
                     [
                         m('.row', [
                             m(columnSizeClass,m('h3', 'Discover Public Projects'))
                         ]),
                         m('.row', [
-                            m(columnSizeClass, m.component(newAndNoteworthy, {}))
+                            m(columnSizeClass, m.component(NewAndNoteworthy, {}))
                         ])
 
                     ]
@@ -94,7 +94,7 @@ $(document).ready(function(){
                 m('.meetings', m('.container',
                     [
                         m('.row', [
-                            m(columnSizeClass,  m.component(meetingsAndConferences, {}))
+                            m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
                         ])
 
                     ]
