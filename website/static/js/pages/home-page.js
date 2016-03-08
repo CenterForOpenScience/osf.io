@@ -7,10 +7,10 @@
 var $ = require('jquery');
 var m = require('mithril');
 
-var QuickSearchProject = require('js/quickProjectSearchPlugin');
-var NewAndNoteworthy = require('js/newAndNoteworthyPlugin');
-var MeetingsAndConferences = require('js/meetingsAndConferencesPlugin');
-var LogWrap = require('js/recentActivityWidget');
+var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
+var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
+var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
+var LogWrap = require('js/home-page/recentActivityWidget');
 var AddProject = require('js/addProjectPlugin');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
