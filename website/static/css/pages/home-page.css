@@ -5,18 +5,12 @@ h3, h4 {
     min-height: 700px;
     background: #C5D6E6 url('/static/img/bg6.jpg') top center no-repeat;
 }
-.recentActvity {
-    min-height: 650px;
-    background: #ecf0f1;
-}
 
 .newAndNoteworthy {
     min-height: 650px;
     background: #34495e;
-    border-top: 1px solid #eee;
     padding-top: 25px;
-    color: #FFFFFF;
-    background: #34495e url('/static/img/bg7.jpg') top center no-repeat;
+    color: #FFF;
 }
 
 .meetings {

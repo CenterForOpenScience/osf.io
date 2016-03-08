@@ -10,7 +10,6 @@ var m = require('mithril');
 var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
-var LogWrap = require('js/home-page/recentActivityWidget');
 var AddProject = require('js/addProjectPlugin');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
@@ -69,18 +68,7 @@ $(document).ready(function(){
                         ])
                     ]
                 )),
-                m('.recentActvity', m('.container',
-                    [
-                        m('.row.p-t-lg', [
-                            m(columnSizeClass,m('h3', 'Recent Activity'))
-                        ]),
-                        m('.row.m-t-lg', [
-                            m(columnSizeClass, m.component(LogWrap, {wrapper: 'recentActivity'}))
-                        ])
-
-                    ]
-                )),
-                m('.NewAndNoteworthy', m('.container',
+                m('.newAndNoteworthy', m('.container',
                     [
                         m('.row', [
                             m(columnSizeClass,m('h3', 'Discover Public Projects'))
