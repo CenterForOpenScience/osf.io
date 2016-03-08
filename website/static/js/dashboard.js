@@ -343,8 +343,12 @@ var Dashboard = {
                             'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
                     }
                 } else {
-                    var permissions = lastcrumb.data.attributes.current_user_permissions;
-                    if(permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1) {
+                    var showAddProject = true;
+                    if(lastcrumb.type === 'node'){
+                        var permissions = lastcrumb.data.attributes.current_user_permissions;
+                        showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
+                    }
+                    if(showAddProject){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
                             'This project has no components.',
                             m.component(AddProject, {
@@ -363,8 +367,6 @@ var Dashboard = {
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
                             'This project has no components.'));
                     }
-
-
                 }
             }
             // if we have more pages keep loading the pages
@@ -1056,11 +1058,16 @@ var Breadcrumbs = {
         return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
-                    var permissions = item.data.attributes.current_user_permissions;
-                    if(permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1) {
-                        var label = item.type === 'node' ? ' Add component' : ' Add project';
-                        var title = item.type === 'node' ? 'Create new component' : 'Create new project';
-                        var addProjectTemplate = m.component(AddProject, {
+                    var label = item.type === 'node' ? ' Add component' : ' Add project';
+                    var title = item.type === 'node' ? 'Create new component' : 'Create new project';
+                    var showAddProject = true;
+                    var addProjectTemplate = '';
+                    if(item.type === 'node'){
+                        var permissions = item.data.attributes.current_user_permissions;
+                        showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
+                    }
+                    if(showAddProject){
+                        addProjectTemplate = m.component(AddProject, {
                             buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
                             parentID: args.breadcrumbs()[args.breadcrumbs().length - 1].data.id,
                             modalID: 'addProject',
@@ -1071,14 +1078,14 @@ var Breadcrumbs = {
                                 args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
                             }
                         });
-                        return [
-                            m('li', [
-                                m('span.btn', item.label),
-                                m('i.fa.fa-angle-right')
-                            ]),
-                            item.type === 'node' || (item.data.systemCollection === 'nodes' ) ? addProjectTemplate : ''
-                        ];
                     }
+                    return [
+                        m('li', [
+                            m('span.btn', item.label),
+                            m('i.fa.fa-angle-right')
+                        ]),
+                        item.type === 'node' || (item.data.systemCollection === 'nodes' ) ? addProjectTemplate : ''
+                    ];
                 }
                 item.index = index; // Add index to update breadcrumbs
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
