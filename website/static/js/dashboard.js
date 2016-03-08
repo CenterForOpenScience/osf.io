@@ -343,20 +343,28 @@ var Dashboard = {
                             'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
                     }
                 } else {
-                    self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                        'This project has no components.',
-                        m.component(AddProject, {
-                            buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new component'),
-                            parentID : lastcrumb.data.id,
-                            modalID : 'addSubcomponent',
-                            title: 'Create new component',
-                            categoryList : self.categoryList,
-                            stayCallback : function _stayCallback_inPanel() {
-                                self.allProjectsLoaded(false);
-                                self.updateList(lastcrumb);
-                            }
-                        })
-                    ]));
+                    var permissions = lastcrumb.data.attributes.current_user_permissions;
+                    if(permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1) {
+                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
+                            'This project has no components.',
+                            m.component(AddProject, {
+                                buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new component'),
+                                parentID : lastcrumb.data.id,
+                                modalID : 'addSubcomponent',
+                                title: 'Create new component',
+                                categoryList : self.categoryList,
+                                stayCallback : function _stayCallback_inPanel() {
+                                    self.allProjectsLoaded(false);
+                                    self.updateList(lastcrumb);
+                                }
+                            })
+                        ]));
+                    } else {
+                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
+                            'This project has no components.'));
+                    }
+
+
                 }
             }
             // if we have more pages keep loading the pages
@@ -1048,26 +1056,29 @@ var Breadcrumbs = {
         return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
-                    var label = item.type === 'node' ? ' Add component' : ' Add project';
-                    var title = item.type === 'node' ? 'Create new component' : 'Create new project';
-                    var addProjectTemplate = m.component(AddProject, {
-                        buttonTemplate : m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', { style: 'font-size: 10px;'}), label]),
-                        parentID : args.breadcrumbs()[args.breadcrumbs().length-1].data.id,
-                        modalID : 'addProject',
-                        title : title,
-                        categoryList : args.categoryList,
-                        stayCallback : function () {
-                            args.allProjectsLoaded(false);
-                            args.updateList(args.breadcrumbs()[args.breadcrumbs().length-1]);
-                        }
-                    });
-                    return [
-                        m('li',  [
-                            m('span.btn', item.label),
-                            m('i.fa.fa-angle-right')
-                        ]),
-                        item.type === 'node' || (item.data.systemCollection === 'nodes' ) ? addProjectTemplate : ''
-                    ];
+                    var permissions = item.data.attributes.current_user_permissions;
+                    if(permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1) {
+                        var label = item.type === 'node' ? ' Add component' : ' Add project';
+                        var title = item.type === 'node' ? 'Create new component' : 'Create new project';
+                        var addProjectTemplate = m.component(AddProject, {
+                            buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
+                            parentID: args.breadcrumbs()[args.breadcrumbs().length - 1].data.id,
+                            modalID: 'addProject',
+                            title: title,
+                            categoryList: args.categoryList,
+                            stayCallback: function () {
+                                args.allProjectsLoaded(false);
+                                args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
+                            }
+                        });
+                        return [
+                            m('li', [
+                                m('span.btn', item.label),
+                                m('i.fa.fa-angle-right')
+                            ]),
+                            item.type === 'node' || (item.data.systemCollection === 'nodes' ) ? addProjectTemplate : ''
+                        ];
+                    }
                 }
                 item.index = index; // Add index to update breadcrumbs
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
