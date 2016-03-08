@@ -14,7 +14,7 @@ def postcommit_queue():
 def postcommit_before_request():
     _local.postcommit_queue = []
 
-def postcommit_after_request(response=None, base_status_error_code=500):
+def postcommit_after_request(response, base_status_error_code=500):
     if response.status_code >= base_status_error_code:
         _local.postcommmit_queue = []
         return response
