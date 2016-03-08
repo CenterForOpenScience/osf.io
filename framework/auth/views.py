@@ -117,13 +117,16 @@ def auth_login(auth, **kwargs):
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
     must_login_warning = True
+
+    if campaign:
+        next_url = campaigns.campaign_url_for(campaign)
+
     if not next_url:
         next_url = request.args.get('redirect_url')
         must_login_warning = False
 
-    if campaign:
-        next_url = campaigns.campaign_url_for(campaign)
-    elif next_url:
+    if next_url:
+        # Only allow redirects which are relative root or full domain, disallows external redirects.
         if not (next_url[0] == '/' or next_url.startsWith(settings.DOMAIN)):
             raise HTTPError(http.InvalidURL)
 
