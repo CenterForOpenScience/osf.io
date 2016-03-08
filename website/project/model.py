@@ -3464,7 +3464,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         previous = Institution(self.primary_institution) if self.primary_institution else None
         self.primary_institution = inst
         if inst.node not in self.affiliated_institutions:
-            self._affiliated_institutions.append(inst.node)
+            self.affiliated_institutions.append(inst)
         if log:
             self.add_log(
                 action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
@@ -3513,9 +3513,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
 class SpecialList(list):
     def __init__(self, node, private_target, init=None):
+        super(SpecialList, self).__init__(init or [])
         self.node = node
         self.target = private_target
-        self.lst = init or []
 
     def append(self, to_append):
         junk = getattr(self.node, self.target)

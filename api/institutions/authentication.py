@@ -62,7 +62,7 @@ class InstitutionAuthentication(BaseAuthentication):
             user.register(username)
 
         if institution not in user.affiliated_institutions:
-            user._affiliated_institutions.append(institution.node)
+            user.affiliated_institutions.append(institution)
             user.save()
 
         return user, None
