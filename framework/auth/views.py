@@ -116,11 +116,12 @@ def auth_login(auth, **kwargs):
     """
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
-    redirect = request.args.get('redirect_url')
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
-    if redirect:
-        next_url = redirect
+    elif next_url:
+        if not (next_url[0] == '/' or next_url.startsWith(settings.DOMAIN)):
+            raise HTTPError(http.InvalidURL)
+
     if auth.logged_in:
         if not request.args.get('logout'):
             if next_url:
@@ -146,8 +147,7 @@ def auth_login(auth, **kwargs):
         if (campaign == 'institution' and settings.ENABLE_INSTITUTIONS) or campaign != 'institution':
             data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
-    data['institution_redirect'] = cas.get_institution_target(redirect)
-    data['redirect_url'] = redirect
+    data['institution_redirect'] = cas.get_institution_target(redirect_url)
 
     return data, http.OK
 

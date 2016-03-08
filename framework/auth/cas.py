@@ -198,7 +198,7 @@ def get_login_url(*args, **kwargs):
     return get_client().get_login_url(*args, **kwargs)
 
 def get_institution_target(redirect_url):
-    return '/login?service={}&auto=true'.format(urllib.quote(settings.DOMAIN + redirect_url.lstrip('/'), safe='~()*!.\''))
+    return '/login?service={}&auto=true'.format(urllib.quote(redirect_url, safe='~()*!.\''))
 
 def get_logout_url(*args, **kwargs):
     """Convenience function for getting a logout URL for a service.
