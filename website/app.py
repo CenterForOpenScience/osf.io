@@ -17,7 +17,7 @@ from framework.mongo import handlers as mongo_handlers
 from framework.mongo import set_up_storage
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
-from framework.celery_tasks import handlers as task_handlers
+from framework.celery_tasks import handlers as celery_task_handlers
 from framework.transactions import handlers as transaction_handlers
 from modularodm import storage
 from website.addons.base import init_addon
@@ -25,8 +25,10 @@ from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas, Node
 from website.routes import make_url_map
 
-
 # This import is necessary to set up the archiver signal listeners
+from website.archiver import listeners  # noqa
+from website.mails import listeners  # noqa
+from api.caching import listeners  # noqa
 
 def build_js_config_files(settings):
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
@@ -54,7 +56,7 @@ def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
     add_handlers(app, mongo_handlers.handlers)
-    add_handlers(app, task_handlers.handlers)
+    add_handlers(app, celery_task_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
     add_handlers(app, postcommit_handlers.handlers)
 
