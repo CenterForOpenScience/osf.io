@@ -15,7 +15,7 @@ from framework.flask import app, add_handlers
 from framework.logging import logger
 from framework.mongo import handlers as mongo_handlers
 from framework.mongo import set_up_storage
-from framework.postcommit_tasks import postcommit_handlers as postcommit_handlers
+from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
 from framework.tasks import handlers as task_handlers
 from framework.transactions import handlers as transaction_handlers

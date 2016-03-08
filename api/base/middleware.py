@@ -4,7 +4,7 @@ from framework.mongo.handlers import (
     connection_before_request,
     connection_teardown_request
 )
-from framework.postcommit_tasks.postcommit_handlers import (
+from framework.postcommit_tasks.handlers import (
     postcommit_after_request,
     postcommit_before_request
 )
