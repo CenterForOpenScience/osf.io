@@ -95,11 +95,12 @@ var NewAndNoteworthy = {
             var description = node.embeds.target_node.data.attributes.description;
             var title = node.embeds.target_node.data.attributes.title;
             var contributors = $osf.contribNameFormat(node, ctrl.contributorsMapping[node.id][1], ctrl.getFamilyName);
+            var destination = '/' + node.embeds.target_node.data.id;
 
             return m('.public-projects-item', {onclick: function(){
-                location.href = '/' + node.embeds.target_node.data.id;
+                location.href = destination;
             }},[
-                m('h5', title),
+                m('h5', m('a', {href: destination}, title)),
                 m('span.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
                     ctrl.addToolTip(this);
                 }}, m('i', 'by ' + contributors)),

@@ -10,6 +10,11 @@
     background-color: #337AB7;
     cursor: pointer;
     color: #FFF;
+    link-color: #FFF
+}
+
+.node-styling:hover a {
+    color: #FFF
 }
 
 .quick-project button {
@@ -133,6 +138,11 @@
     background-color: #337AB7;
     color: #fff;
 }
+
+.public-projects-item:hover a {
+    color: #fff;
+}
+
 .quick-search-table {
     background: rgba(255, 255, 255, 0.49);
     padding: 10px 15px;
