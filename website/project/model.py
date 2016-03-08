@@ -3464,11 +3464,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def add_primary_institution(self, user, inst, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if inst.node == self.primary_institution:
+        if inst == self.primary_institution:
             return False
-        previous = Institution(self.primary_institution) if self.primary_institution else None
+        previous = self.primary_institution if self.primary_institution else None
         self.primary_institution = inst
-        if inst.node not in self.affiliated_institutions:
+        if inst not in self._affiliated_institutions:
             self.affiliated_institutions.append(inst)
         if log:
             self.add_log(
@@ -3495,7 +3495,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.primary_institution = None
         if inst in self.affiliated_institutions:
             self.affiliated_institutions.remove(inst)
-        inst = Institution(inst)
         if log:
             self.add_log(
                 action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
@@ -3562,6 +3561,8 @@ class Institution():
         return getattr(self.node, item)
 
     def __eq__(self, other):
+        if not other:
+            return False
         return self._id == other._id
 
     def save(self):

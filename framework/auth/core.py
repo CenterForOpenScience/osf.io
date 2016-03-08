@@ -1268,7 +1268,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for institution in user.affiliated_institutions:
             self.affiliated_institutions.append(institution)
-        user.affiliated_institutions = []
+        user._affiliated_institutions = []
 
         # FOREIGN FIELDS
         for watched in user.watched:
