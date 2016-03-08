@@ -14,6 +14,8 @@ var osfLanguage = require('js/osfLanguage');
 var Paginator = require('js/paginator');
 var NodeSelectTreebeard = require('js/nodeSelectTreebeard');
 var m = require('mithril');
+var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
+
 
 function Contributor(data) {
     $.extend(this, data);
@@ -344,7 +346,6 @@ AddContributorViewModel = oop.extend(Paginator, {
         for (var key in nodesState) {
             if (nodesState[key].enabled) {
                 nodesState[key].checked = true;
-                nodesState[key].changed = nodesState[key].checked !== self.nodesOriginal[key].checked;
             }
         }
         self.nodesState(nodesState);
@@ -357,7 +358,6 @@ AddContributorViewModel = oop.extend(Paginator, {
         for (var key in nodesState) {
             if (nodesState[key].enabled && nodesState[key].checked) {
                 nodesState[key].checked = false;
-                nodesState[key].changed = nodesState[key].checked !== self.nodesOriginal[key].checked;
             }
         }
         self.nodesState(nodesState);
@@ -445,7 +445,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             type: 'GET',
             dataType: 'json'
         }).done(function (response) {
-            self.nodesOriginal = $osf.getNodesOriginal(response[0], self.nodesOriginal);
+            self.nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], self.nodesOriginal);
             self.hasChildren = (Object.keys(self.nodesOriginal).length > 1);
             var nodesState = $.extend(true, {}, self.nodesOriginal);
             var nodeParent = response[0].node.id;
