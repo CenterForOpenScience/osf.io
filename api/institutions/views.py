@@ -76,6 +76,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         return Institution.find(self.get_query_from_request())
 
+
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
     """ Details about a given institution.
 

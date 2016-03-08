@@ -156,7 +156,7 @@ class TestNodeRelationshipInstitution(ApiTestCase):
     def test_remove_institution_not_admin_but_affiliated(self):
         node = NodeFactory(creator=self.user)
         user = AuthUserFactory()
-        self.user.affiliated_institutions.append(self.institution)
+        user.affiliated_institutions.append(self.institution)
         user.save()
         node.primary_institution = self.institution
         node.add_contributor(user, auth=Auth(self.user))

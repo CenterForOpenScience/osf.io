@@ -171,6 +171,7 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
         if data:
             id_ = data.get('id')
             type_ = data.get('type')
+
             if id_ is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
