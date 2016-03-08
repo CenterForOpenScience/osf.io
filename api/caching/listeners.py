@@ -1,7 +1,7 @@
 from functools import partial
 
 from api.caching.tasks import ban_url
-from framework.tasks.postcommit_handlers import enqueue_postcommit_task
+from framework.postcommit_tasks.postcommit_handlers import enqueue_postcommit_task
 from modularodm import signals
 
 

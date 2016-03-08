@@ -4,21 +4,20 @@ from framework.mongo.handlers import (
     connection_before_request,
     connection_teardown_request
 )
+from framework.postcommit_tasks.postcommit_handlers import (
+    postcommit_after_request,
+    postcommit_before_request
+)
 from framework.tasks.handlers import (
     celery_before_request,
     celery_after_request,
     celery_teardown_request
-)
-from framework.tasks.postcommit_handlers import (
-    postcommit_after_request,
-    postcommit_before_request
 )
 from framework.transactions.handlers import (
     transaction_before_request,
     transaction_after_request,
     transaction_teardown_request
 )
-
 from .api_globals import api_globals
 
 
