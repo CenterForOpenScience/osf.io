@@ -110,7 +110,7 @@ var AddProject = {
                             ctrl.showMore(!ctrl.showMore());
                         }},[
                             ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
-                            ' More (description, type)'
+                            ' More'
                         ]),
                         ctrl.showMore() ? [
                             m('.form-group.m-v-sm', [
@@ -120,19 +120,21 @@ var AddProject = {
                                     value : ctrl.newProjectDesc()
                                 })
                             ]),
-                            m('.f-w-lg.text-bigger','Category'),
-                            m('.category-radio.p-h-md', [
-                                ctrl.options.categoryList.map(function(cat){
-                                    return m('.radio', m('label', [  m('input', {
-                                        type: 'radio',
-                                        name: 'projectCategory',
-                                        value: cat.value,
-                                        checked: ctrl.newProjectCategory() === cat.value,
-                                        onchange : m.withAttr('value', ctrl.newProjectCategory)
-                                    }), cat.display_name || m('i.text-muted', '(Empty category)') ]));
+                            ctrl.options.parentID !== null ? [
+                                m('.f-w-lg.text-bigger','Category'),
+                                m('.category-radio.p-h-md', [
+                                    ctrl.options.categoryList.map(function(cat){
+                                        return m('.radio', m('label', [  m('input', {
+                                            type: 'radio',
+                                            name: 'projectCategory',
+                                            value: cat.value,
+                                            checked: ctrl.newProjectCategory() === cat.value,
+                                            onchange : m.withAttr('value', ctrl.newProjectCategory)
+                                        }), cat.display_name || m('i.text-muted', '(Empty category)') ]));
 
-                                })
-                            ])
+                                    })
+                                ])
+                            ] : ''
                         ] : ''
                     ])
                 ]),
