@@ -68,7 +68,7 @@ def update_node_links(designated_node, target_node_ids, description):
             designated_node.rm_pointer(pointer, auth)
 
     for n_id in target_node_ids:
-        n = models.Node.find(Q('_id', 'eq', n_id))[0]
+        n = models.Node.load(n_id)
         if is_eligible_node(n):
             designated_node.add_pointer(n, auth, save=True)
             logger.info('Added node link {} to {}'.format(n, designated_node))
