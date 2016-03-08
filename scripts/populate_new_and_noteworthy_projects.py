@@ -93,5 +93,5 @@ if __name__ == '__main__':
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     with TokuTransaction():
-        main(dry_run=True)
+        main(dry_run=dry_run)
 
