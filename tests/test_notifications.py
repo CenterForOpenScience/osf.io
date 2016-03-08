@@ -233,26 +233,17 @@ class TestRemoveContributor(OsfTestCase):
         self.project.add_contributor(contributor=self.contributor, permissions=['read'])
         self.project.save()
 
-        self.subscription = factories.NotificationSubscriptionFactory(
-            _id=self.project._id + '_comments',
-            owner=self.project
-        )
-        self.subscription.save()
-        self.subscription.email_transactional.append(self.contributor)
-        self.subscription.email_transactional.append(self.project.creator)
-        self.subscription.save()
+        self.subscription = NotificationSubscription.find_one(Q('owner', 'eq', self.project) & Q(
+            '_id', 'eq', self.project._id + '_comments'
+        ))
 
         self.node = factories.NodeFactory(parent=self.project)
         self.node.add_contributor(contributor=self.project.creator, permissions=['read', 'write', 'admin'])
         self.node.save()
-        self.node_subscription = factories.NotificationSubscriptionFactory(
-            _id=self.node._id + '_comments',
-            owner=self.node
+
+        self.node_subscription = NotificationSubscription.find_one(Q(
+                '_id', 'eq', self.node._id + '_comments') & Q('owner', 'eq', self.node)
         )
-        self.node_subscription.save()
-        self.node_subscription.email_transactional.append(self.project.creator)
-        self.node_subscription.email_transactional.append(self.node.creator)
-        self.node_subscription.save()
 
     def test_removed_non_admin_contributor_is_removed_from_subscriptions(self):
         assert_in(self.contributor, self.subscription.email_transactional)
