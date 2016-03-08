@@ -795,6 +795,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: KeyError if there no token for the email.
         """
         # TODO: Refactor "force" flag into User.get_or_add_confirmation_token
+        print(self.email_verifications.items())
         for token, info in self.email_verifications.items():
             if info['email'].lower() == email.lower():
                 # Old records will not have an expiration key. If it's missing,
@@ -806,7 +807,11 @@ class User(GuidStoredObject, AddonModelMixin):
                     else:
                         new_token = self.add_unconfirmed_email(email)
                         self.save()
+                        print("new")
+                        print(new_token)
                         return new_token
+                print("old")
+                print(token)
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
