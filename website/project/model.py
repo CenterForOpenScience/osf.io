@@ -3542,19 +3542,20 @@ class InstitutionQuerySet(MongoQuerySet):
 
 class Institution():
 
-    institution_node_translator = {
+    attribute_map = {
         '_id': 'institution_id',
         'auth_url': 'institution_auth_url',
         'domain': 'institution_domain',
         'name': 'title',
-        'logo_name': 'institution_logo_name'
+        'logo_name': 'institution_logo_name',
+        'description': 'description'
     }
 
     def __init__(self, node):
         if node is None:
             return
         self.node = node
-        for key, value in self.institution_node_translator.iteritems():
+        for key, value in self.attribute_map.iteritems():
             setattr(self, key, getattr(node, value))
 
     def __getattr__(self, item):
@@ -3566,7 +3567,7 @@ class Institution():
         return self._id == other._id
 
     def save(self):
-        for key, value in self.institution_node_translator.iteritems():
+        for key, value in self.attribute_map.iteritems():
             if getattr(self, key) != getattr(self.node, value):
                 setattr(self.node, value, getattr(self, key))
         self.node.save()
@@ -3575,7 +3576,7 @@ class Institution():
     def find(cls, query=None, **kwargs):
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
-                replacement_attr = cls.institution_node_translator.get(node.attribute, False)
+                replacement_attr = cls.attribute_map.get(node.attribute, False)
                 node.attribute = replacement_attr if False else node.attribute
         query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
         nodes = Node.find(query, allow_institution=True, **kwargs)
@@ -3585,7 +3586,7 @@ class Institution():
     def find_one(cls, query=None, **kwargs):
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
-                replacement_attr = cls.institution_node_translator.get(node.attribute, False)
+                replacement_attr = cls.attribute_map.get(node.attribute, False)
                 node.attribute = replacement_attr if False else node.attribute
         query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
         node = Node.find_one(query, allow_institution=True, **kwargs)
