@@ -3427,13 +3427,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     institution_logo_name = fields.StringField()
 
     @classmethod
-    def find(cls, query, allow_institution=False, **kwargs):
+    def find(cls, query=None, allow_institution=False, **kwargs):
         if not allow_institution:
             query = (query & Q('is_institution', 'ne', True)) if query else Q('is_institution', 'ne', True)
         return super(Node, cls).find(query, **kwargs)
 
     @classmethod
-    def find_one(cls, query, allow_institution=False, **kwargs):
+    def find_one(cls, query=None, allow_institution=False, **kwargs):
         if not allow_institution:
             query = (query & Q('is_institution', 'ne', True)) if query else Q('is_institution', 'ne', True)
         return super(Node, cls).find_one(query, **kwargs)
@@ -3571,22 +3571,22 @@ class Institution():
         self.node.save()
 
     @classmethod
-    def find(cls, query, **kwargs):
-        if getattr(query, 'nodes', False):
+    def find(cls, query=None, **kwargs):
+        if query and getattr(query, 'nodes', False):
             for node in query.nodes:
                 replacement_attr = cls.institution_node_translator.get(node.attribute, False)
                 node.attribute = replacement_attr if False else node.attribute
-        query = query & Q('is_institution', 'eq', True)
+        query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
         nodes = Node.find(query, allow_institution=True, **kwargs)
         return InstitutionQuerySet(nodes)
 
     @classmethod
-    def find_one(cls, query, **kwargs):
-        if getattr(query, 'nodes', False):
+    def find_one(cls, query=None, **kwargs):
+        if query and getattr(query, 'nodes', False):
             for node in query.nodes:
                 replacement_attr = cls.institution_node_translator.get(node.attribute, False)
                 node.attribute = replacement_attr if False else node.attribute
-        query = query & Q('is_institution', 'eq', True)
+        query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
         node = Node.find_one(query, allow_institution=True, **kwargs)
         return cls(node)
 

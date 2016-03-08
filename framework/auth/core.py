@@ -1266,6 +1266,10 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.email_verifications[k] = v
         user.email_verifications = {}
 
+        for institution in user.affiliated_institutions:
+            self.affiliated_institutions.append(institution)
+        user.affiliated_institutions = []
+
         # FOREIGN FIELDS
         for watched in user.watched:
             if watched not in self.watched:
