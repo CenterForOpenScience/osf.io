@@ -3462,6 +3462,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return SpecialList(self, '_affiliated_institutions', [Institution(node) for node in self._affiliated_institutions])
 
     def add_primary_institution(self, user, inst, log=True):
+        if not isinstance(inst, Institution):
+            raise TypeError
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
         if inst == self.primary_institution:
@@ -3562,7 +3564,7 @@ class Institution():
         return getattr(self.node, item)
 
     def __eq__(self, other):
-        if not other:
+        if not isinstance(other, self.__class__):
             return False
         return self._id == other._id
 
