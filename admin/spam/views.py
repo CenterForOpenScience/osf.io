@@ -13,22 +13,17 @@ from .forms import ConfirmForm
 
 
 class SpamList(ListView):
-    template_name = 'spam/spam.html'
+    template_name = 'spam/spam_list.html'
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'date_created'
     context_object_name = 'spam'
 
-    def __init__(self):
-        self.status = str(Comment.FLAGGED)
-        super(SpamList, self).__init__()
-
     def get_queryset(self):
-        self.status = self.request.GET.get('status', u'1')
         query = (
             Q('reports', 'ne', {}) &
             Q('reports', 'ne', None) &
-            Q('spam_status', 'eq', int(self.status))
+            Q('spam_status', 'eq', int(self.request.GET.get('status', u'1')))
         )
         return Comment.find(query).sort(self.ordering)
 
@@ -37,22 +32,43 @@ class SpamList(ListView):
         page_size = self.get_paginate_by(queryset)
         paginator, page, queryset, is_paginated = self.paginate_queryset(
             queryset, page_size)
-        context = {
-            'spam': map(serialize_comment, queryset),
-            'page': page,
-            'status': self.status,
-            'page_number': page.number
-        }
-        return super(SpamList, self).get_context_data(**context)
+        kwargs.setdefault('spam', map(serialize_comment, queryset))
+        kwargs.setdefault('page', page)
+        kwargs.setdefault('status', self.request.GET.get('status', u'1'))
+        kwargs.setdefault('page_number', page.number)
+        return super(SpamList, self).get_context_data(**kwargs)
+
+
+class UserSpamList(SpamList):
+    template_name = 'spam/user.html'
+
+    def get_queryset(self):
+        query = (
+            Q('reports', 'ne', {}) &
+            Q('reports', 'ne', None) &
+            Q('user', 'eq', self.kwargs.get('user_id', None)) &
+            Q('spam_status', 'eq', int(self.request.GET.get('status', u'1')))
+        )
+        return Comment.find(query).sort(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        queryset = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(queryset)
+        paginator, page, queryset, is_paginated = self.paginate_queryset(
+            queryset, page_size)
+        kwargs.setdefault('spam', map(serialize_comment, queryset))
+        kwargs.setdefault('page', page)
+        kwargs.setdefault('status', self.request.GET.get('status', u'1'))
+        kwargs.setdefault('page_number', page.number)
+        kwargs.setdefault('user_id', self.kwargs.get('user_id', None))
+        return super(UserSpamList, self).get_context_data(**kwargs)
 
 
 class SpamDetail(FormView):
     form_class = ConfirmForm
-    template_name = 'spam/comment.html'
+    template_name = 'spam/detail.html'
 
     def __init__(self):
-        self.spam_id = None
-        self.page = 1
         self.item = None
         super(SpamDetail, self).__init__()
 
@@ -72,12 +88,11 @@ class SpamDetail(FormView):
         return super(SpamDetail, self).post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        self.spam_id = self.kwargs['spam_id']
-        self.item = Comment.load(self.spam_id)
-        self.page = self.request.GET.get('page', 1)
+        self.item = Comment.load(self.kwargs.get('spam_id', None))
         kwargs = super(SpamDetail, self).get_context_data(**kwargs)
-        kwargs.setdefault('page_number', self.page)
+        kwargs.setdefault('page_number', self.request.GET.get('page', 1))
         kwargs.setdefault('comment', serialize_comment(self.item))
+        kwargs.setdefault('status', self.request.GET.get('status', u'1'))
         return kwargs
 
     def form_valid(self, form):
@@ -89,9 +104,10 @@ class SpamDetail(FormView):
 
     @property
     def success_url(self):
-        return '{}?page={}'.format(
+        return '{}?page={}&status={}'.format(
             reverse('spam:detail', kwargs={'spam_id': self.spam_id}),
-            self.page
+            self.request.GET.get('page', 1),
+            self.request.GET.get('status', u'1')
         )
 
 
