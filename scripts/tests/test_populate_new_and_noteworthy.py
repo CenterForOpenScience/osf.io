@@ -41,18 +41,6 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         super(TestPopulateNewAndNoteworthy, self).tearDown()
         Node.remove()
 
-    def test_retrieve_data(self):
-        base = script.DOMAIN
-        httpretty.register_uri(httpretty.GET, base, status=200, body=self.popular_json_body, content_type='application/vnd.api+json')
-        response = script.retrieve_data(base)
-        assert_equal(response['popular_node_ids'], [self.pop1._id, self.pop2._id, self.pop3._id, self.pop4._id, self.pop5._id])
-
-    def test_get_popular_nodes(self):
-        url = script.DOMAIN + 'api/v1/explore/activity/popular/raw/'
-        httpretty.register_uri(httpretty.GET, url, status=200, body=self.popular_json_body, content_type='application/vnd.api+json')
-        response = script.get_popular_nodes()
-        assert_equal(response['popular_node_ids'], [self.pop1._id, self.pop2._id, self.pop3._id, self.pop4._id, self.pop5._id])
-
     def test_get_new_and_noteworthy_nodes(self):
         new_noteworthy = script.get_new_and_noteworthy_nodes()
         assert_equal(set(new_noteworthy), {self.nn1._id, self.nn2._id, self.nn3._id, self.nn4._id, self.nn5._id})
@@ -73,10 +61,6 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         assert_equal(len(self.popular_links_node.nodes), 5)
         assert_equal(len(self.new_and_noteworthy_links_node.nodes), 0)
 
-        popular_json = json.dumps({"popular_node_ids": []})
-
-        popular_url = script.DOMAIN + 'api/v1/explore/activity/popular/raw/'
-        httpretty.register_uri(httpretty.GET, popular_url, status=200, body=popular_json, content_type='application/vnd.api+json')
 
         script.main(dry_run=False)
         self.popular_links_node.reload()
@@ -85,15 +69,13 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         assert_equal(len(self.popular_links_node.nodes), 0)  # verifies remove pointer is working
         assert_equal(len(self.new_and_noteworthy_links_node.nodes), 5)
 
-        httpretty.register_uri(httpretty.GET, popular_url, status=200, body=self.popular_json_body, content_type='application/vnd.api+json')
-
         script.main(dry_run=False)
 
         self.popular_links_node.reload()
         self.new_and_noteworthy_links_node.reload()
 
-        popular_node_links = {pointer.node._id for pointer in self.popular_links_node.nodes}
-        assert_equal(popular_node_links, {self.pop1._id, self.pop2._id, self.pop3._id, self.pop4._id, self.pop5._id})
+        popular_node_links = [pointer.node._id for pointer in self.popular_links_node.nodes]
+        assert_equal(popular_node_links, [])
 
         new_and_noteworthy_node_links = {pointer.node._id for pointer in self.new_and_noteworthy_links_node.nodes}
 

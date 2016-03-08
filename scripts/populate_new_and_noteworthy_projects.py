@@ -15,20 +15,11 @@ from scripts import utils as script_utils
 from framework.mongo import database as db
 from framework.transactions.context import TokuTransaction
 from website.project.model import Pointer
-from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST, DOMAIN
+from website.discovery.views import popular_activity_json
+from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST
 
 logger = logging.getLogger(__name__)
 
-def retrieve_data(url):
-    """ Fetch data and decode json """
-    response = requests.get(url)
-    data = response.json()
-    return data
-
-def get_popular_nodes():
-    """ Fetch data from url that returns dict with a list of popular nodes from piwik """
-    discover_url = DOMAIN + 'api/v1/explore/activity/popular/raw/'
-    return retrieve_data(discover_url)
 
 def get_new_and_noteworthy_nodes():
     """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """
@@ -63,9 +54,8 @@ def update_node_links(designated_node, target_node_ids, description):
     user = designated_node.creator
     auth = Auth(user)
 
-    for pointer in reversed(designated_node.nodes):
-        if isinstance(pointer, Pointer):
-            designated_node.rm_pointer(pointer, auth)
+    for pointer in designated_node.nodes_pointer:
+        designated_node.rm_pointer(pointer, auth)
 
     for n_id in target_node_ids:
         n = models.Node.load(n_id)
@@ -76,7 +66,7 @@ def update_node_links(designated_node, target_node_ids, description):
 def main(dry_run=True):
     init_app(routes=False)
 
-    popular_node_ids = get_popular_nodes()['popular_node_ids']
+    popular_node_ids = popular_activity_json()['popular_node_ids']
     popular_links_node = models.Node.find(Q('_id', 'eq', POPULAR_LINKS_NODE))[0]
     new_and_noteworthy_links_node = models.Node.find(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))[0]
     new_and_noteworthy_node_ids = get_new_and_noteworthy_nodes()
