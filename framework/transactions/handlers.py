@@ -8,8 +8,6 @@ from pymongo.errors import OperationFailure
 
 from framework.transactions import utils, commands, messages
 
-from website import settings
-
 
 LOCK_ERROR_CODE = httplib.BAD_REQUEST
 NO_AUTO_TRANSACTION_ATTR = '_no_auto_transaction'
