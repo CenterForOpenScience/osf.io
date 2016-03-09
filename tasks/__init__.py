@@ -54,6 +54,7 @@ def task(*args, **kwargs):
 def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     app = init_app(set_backends=True, routes=True)
     settings.API_SERVER_PORT = port
 
@@ -69,8 +70,8 @@ def server(host=None, port=5000, debug=True, live=False):
 @task
 def apiserver(port=8000, wait=True):
     """Run the API server."""
-    env = {"DJANGO_SETTINGS_MODULE": "api.base.settings"}
-    cmd = '{}={} exec  {} manage.py runserver {} --nothreading'.format(env.keys()[0], env[env.keys()[0]], sys.executable, port)
+    env = os.environ.copy()
+    cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {} --nothreading'.format(sys.executable, port)
     if wait:
         return run(cmd, echo=True, pty=True)
     from subprocess import Popen

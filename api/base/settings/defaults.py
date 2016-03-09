@@ -108,6 +108,7 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.MongoConnectionMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.TokuTransactionMiddleware',
+    'api.base.middleware.PostcommitTaskMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -173,7 +174,7 @@ SWAGGER_SETTINGS = {
 
 DEBUG_TRANSACTIONS = DEBUG
 
-ENABLE_VARNISH = False
-ENABLE_ESI = False
-VARNISH_SERVERS = []  # This should be set in local.py or cache invalidation won't work
-ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
+ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
+ENABLE_ESI = osf_settings.ENABLE_ESI
+VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
+ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
