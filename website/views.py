@@ -241,6 +241,6 @@ def redirect_about(**kwargs):
 def redirect_howosfworks(**kwargs):
     return redirect('/getting-started/')
 
-def redirect_to_myprojects():
+def redirect_to_home():
     # Redirect to support page
-    return redirect('/myprojects/')
+    return redirect('/')
