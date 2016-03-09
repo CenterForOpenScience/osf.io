@@ -33,9 +33,9 @@ $(document).ready(function(){
     function resetFilter (noCollapse) {
         if(!noCollapse){
             $('.support-item').each(function() {
-                var el = $(this);
-                changeExpandState(el, true);
-                el.removeClass('support-nomatch');
+                var $el = $(this);
+                changeExpandState($el, true);
+                $el.removeClass('support-nomatch');
             });
         }
         $('.support-filter').val('');
@@ -80,8 +80,8 @@ $(document).ready(function(){
 
     /* expand or collapse on clicking support item header */
     $('.support-head').click(function(){
-        var item = $(this).parent();
-        changeExpandState(item, item.hasClass('open'));
+        var $item = $(this).parent();
+        changeExpandState($item, $item.hasClass('open'));
     });
 
     /* Expand All button event  */
@@ -120,17 +120,17 @@ $(document).ready(function(){
         if (text.length < 2) {
             return;
         }
-        var el;
+        var $el;
         var content;
         $('.support-item').each(function(){
-            el = $(this);
-            content = el.text().toLowerCase();
+            $el = $(this);
+            content = $el.text().toLowerCase();
             if (content.indexOf(text) !== -1) {
-                changeExpandState(el);
-                el.removeClass('support-nomatch');
+                changeExpandState($el);
+                $el.removeClass('support-nomatch');
             } else {
-                changeExpandState(el, true);
-                el.addClass('support-nomatch');
+                changeExpandState($el, true);
+                $el.addClass('support-nomatch');
             }
         });
     });
