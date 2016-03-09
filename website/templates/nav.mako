@@ -71,22 +71,23 @@
         </li>
         % elif allow_login:
         <li class="dropdown sign-in" data-bind="with: $root.signIn">
+
           <div class="btn-group">
-            <button type="button" class="btn btn-info btn-top-login p-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-              Sign in <span class="caret hidden-xs"></span>
-            </button>
-            <ul class="dropdown-menu" id="menuLogin" role="menu">
-              <form class="form" id="signInForm" data-bind="submit: submit" action="${login_url}" method="POST">
-                  <div class="form-group"><input id="email" class="form-control" type="email" data-bind="value: username" name="username" placeholder="Email" aria-label="Username"></div>
-                  <div class="form-group"><input name="password" id="password" class="form-control" type="password" placeholder="Password" data-bind="value: password" aria-label="Password"></div>
-                  <div class="form-group"><button type="submit" id="btnLogin" class="btn btn-block btn-primary">Login</button></div>
-                 %if enable_institutions:
-                  <div class="text-center m-b-sm"> <a href="/login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
-                 %endif
-                  <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot password?</a></div>
-               </form>
-            </ul>
-            <a href="${web_url_for('auth_login')}?campaign=sign_up" class="btn btn-success  m-l-sm btn-top-login ">Sign up</a>
+              <a href="${web_url_for('auth_login')}?campaign=sign_up" class="btn btn-success btn-top-login m-r-sm">Sign up</a>
+              <button type="button" class="btn btn-info btn-top-login p-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                  Sign in <span class="caret hidden-xs"></span>
+              </button>
+              <ul class="dropdown-menu" id="menuLogin" role="menu">
+                  <form class="form" id="signInForm" data-bind="submit: submit" action="${login_url}" method="POST">
+                      <div class="form-group"><input id="email" class="form-control" type="email" data-bind="value: username" name="username" placeholder="Email" aria-label="Username"></div>
+                      <div class="form-group"><input name="password" id="password" class="form-control" type="password" placeholder="Password" data-bind="value: password" aria-label="Password"></div>
+                      <div class="form-group"><button type="submit" id="btnLogin" class="btn btn-block btn-primary">Login</button></div>
+                      %if enable_institutions:
+                          <div class="text-center m-b-sm"> <a href="/login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
+                      %endif
+                      <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot password?</a></div>
+                  </form>
+              </ul>
           </div>
         </li>
         % endif
