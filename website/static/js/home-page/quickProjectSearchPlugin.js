@@ -4,6 +4,7 @@
 
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
+var Raven = require('raven-js');
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -27,10 +28,18 @@ var QuickSearchProject = {
         self.filter = m.prop(); // Search query from user
         self.fieldSort = m.prop(); // For xs screen, either alpha or date
         self.directionSort = m.prop(); // For xs screen, either Asc or Desc
+        self.errorLoading = m.prop(false);  // True if error retrieving projects or contributors.
+        self.someDataLoaded = m.prop(false); // True when the initial request to retrieve projects is complete.
+
+        // Switches errorLoading to true
+        self.requestError = function(result) {
+            self.errorLoading(true);
+            Raven.captureMessage('Error loading user projects on home page.', {requestReturn: result});
+        };
 
         // Load up to first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
-        var promise = m.request({method: 'GET', url : url, config : xhrconfig});
+        var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
             result.data.forEach(function (node) {
@@ -38,7 +47,10 @@ var QuickSearchProject = {
                 self.retrieveContributors(node);
             });
             self.populateEligibleNodes(0, self.countDisplayed());
+            self.someDataLoaded(true);
             self.next(result.links.next);
+        }, function _error(result){
+            self.requestError(result);
         });
         promise.then(
             function(){
@@ -48,8 +60,9 @@ var QuickSearchProject = {
                 else {
                     self.loadingComplete(true);
                 }
-            }
-        );
+            }, function _error(result){
+                self.requestError(result);
+            });
 
         // Recursively fetches remaining user's nodes
         self.recursiveNodes = function (url) {
@@ -63,6 +76,8 @@ var QuickSearchProject = {
                 self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length);
                 self.next(result.links.next);
                 self.recursiveNodes(self.next());
+                }, function _error(result){
+                    self.requestError(result);
                 });
             }
             else {
@@ -290,6 +305,14 @@ var QuickSearchProject = {
 
     },
     view : function(ctrl) {
+        if (ctrl.errorLoading()) {
+            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page.');
+        }
+
+        if (!ctrl.someDataLoaded()) {
+            return m('.text-center', m('.logo-spin.logo-xl.m-v-xl'));
+        }
+
         function loadMoreButton(){
             if (ctrl.pendingNodes()){
                 return m('button.col-sm-12.text-muted', {onclick: function(){
@@ -376,49 +399,23 @@ var QuickSearchProject = {
         }
 
         function searchBar() {
-            if (ctrl.loadingComplete()){
-                return m('div.m-v-sm.quick-search-input', [
-                    m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
-                        ctrl.filter(search.target.value);
-                        ctrl.quickSearch();
-                    }, onchange: function(){
-                        $osf.trackClick('quickSearch', 'filter', 'search-projects');
-                    }}),
-                    m('span', {onclick: function() {
-                        ctrl.filter('');
-                        $osf.trackClick('quickSearch', 'filter', 'clear-search');
-                        document.getElementById('searchQuery').value = '';
-                        ctrl.quickSearch();
-                    }},  m('button', m('i.fa.fa-times')))
-                ]);
-            }
-        }
+            var searchClass = 'form-control disabled';
+            var searchPlaceholder = 'Loading projects for search...';
 
-        function displayNodes() {
-            if (ctrl.eligibleNodes().length === 0 && ctrl.filter() != null) {
-                return m('.row.m-v-sm', m('.col-sm-10.col-sm-offset-1',
-                    m('.row',
-                        m('.col-sm-12', [m('p.fa.fa-exclamation-triangle'), m('em', 'No results found!')])
-                    ))
-                );
+            if (ctrl.loadingComplete()){
+                searchClass = 'form-control';
+                searchPlaceholder = 'Quick search projects';
             }
-            else {
-                return ctrl.eligibleNodes().slice(0, ctrl.countDisplayed()).map(function(n){
-                    var project = ctrl.nodes()[n];
-                    var numContributors = project.embeds.contributors.links.meta.total;
-                    return m('.m-v-sm.node-styling', {onclick: function(){
-                        ctrl.nodeDirect(project);
-                        $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
-                    }}, m('.row',
-                        [
-                            m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col', project.attributes.title)),
-                            m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, ctrl.getFamilyName))),
-                            m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', ctrl.formatDate(project)))
-                        ]
-                    ));
-                });
+
+            return m('div.m-v-sm.quick-search-input', [
+                m('input[type=search]', {'id': 'searchQuery', 'class': searchClass, placeholder: searchPlaceholder, onkeyup: function(search) {
+                    ctrl.filter(search.target.value);
+                    ctrl.quickSearch();
+                }, onchange: function() {
+                    $osf.trackClick('quickSearch', 'filter', 'search-projects');
+                }})
+            ]);
             }
-        }
 
         function xsDropdown() {
             if (ctrl.loadingComplete()){
@@ -448,8 +445,7 @@ var QuickSearchProject = {
             return m('.row.quick-project',
                 m('.col-xs-12',[
                     m('.m-b-sm.text-center', [
-                        searchBar(),
-                        ctrl.loadingComplete() ? '' : m('.spinner-div', m('.logo-spin.logo-sm.m-r-md'), 'Loading projects...')
+                        searchBar()
                     ]),
                     m('p.text-center', 'Go to ', m('a', {href:'/myprojects/', onclick: function() {
                         $osf.trackClick('quickSearch', 'navigate', 'navigate-to-my-projects');
@@ -463,7 +459,21 @@ var QuickSearchProject = {
                             m('.col-sm-4.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
                         xsDropdown(),
-                        displayNodes()
+                        m.component(QuickSearchNodeDisplay, {
+                            eligibleNodes: ctrl.eligibleNodes,
+                            nodes: ctrl.nodes,
+                            filter: ctrl.filter,
+                            countDisplayed: ctrl.countDisplayed,
+                            getFamilyName: ctrl.getFamilyName,
+                            onClickNode: function(node) {
+                                location.href = '/'+ node.id;
+                                $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
+
+                            },
+                            formatDate: function(node) {
+                                return ctrl.formatDate(node);
+                            }
+                        })
                     ]),
                     m('.text-center', loadMoreButton())
                 ])
@@ -471,6 +481,33 @@ var QuickSearchProject = {
         }
     }
 };
+
+
+var QuickSearchNodeDisplay = {
+    view: function(ctrl, args) {
+        if (args.eligibleNodes().length === 0 && args.filter() != null) {
+            return m('.row.m-v-sm', m('.col-sm-12',
+                m('.row',
+                    m('.col-sm-12', m('em', 'No results found!'))
+                ))
+            );
+        }
+        else {
+            return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
+                var project = args.nodes()[n];
+                var numContributors = project.embeds.contributors.links.meta.total;
+                return m('.m-v-sm.node-styling', {onclick: args.onClickNode.bind(null, project)}, m('.row', m('div',
+                    [
+                        m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col', m('a', {href: '/' + project._id}, project.attributes.title))),
+                        m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
+                        m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
+                    ]
+                )));
+            }));
+        }
+    }
+};
+
 module.exports = QuickSearchProject;
 
 

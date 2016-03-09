@@ -6,12 +6,10 @@
 
 var $ = require('jquery');
 var m = require('mithril');
-var $osf = require('js/osfHelpers');
 
-var quickSearchProject = require('js/quickProjectSearchPlugin');
-var newAndNoteworthy = require('js/newAndNoteworthyPlugin');
-var meetingsAndConferences = require('js/meetingsAndConferencesPlugin');
-var LogWrap = require('js/recentActivityWidget');
+var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
+var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
+var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
 var AddProject = require('js/addProjectPlugin');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
@@ -56,7 +54,7 @@ $(document).ready(function(){
                             m('.col-xs-6 col-md-5 col-md-offset-1 col-lg-4 col-lg-offset-2', m('h3', 'My Projects')),
                             m('.col-xs-6 col-md-5 col-lg-4', m('.pull-right',
                                 m.component(AddProject, {
-                                    buttonTemplate : m('button.btn.btn-success.m-t-lg[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
+                                    buttonTemplate : m('button.btn.btn-success.m-t-md[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
                                         $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                                     }}, 'Create New Project'),
                                     modalID : 'addProjectFromHome',
@@ -68,19 +66,8 @@ $(document).ready(function(){
                             ))
                         ]),
                         m('.row.m-t-lg', [
-                            m(columnSizeClass, m.component(quickSearchProject, {}))
+                            m(columnSizeClass, m.component(QuickSearchProject, {}))
                         ])
-                    ]
-                )),
-                m('.recentActvity', m('.container',
-                    [
-                        m('.row.p-t-lg', [
-                            m(columnSizeClass,m('h3', 'Recent Activity'))
-                        ]),
-                        m('.row.m-t-lg', [
-                            m(columnSizeClass, m.component(LogWrap, {wrapper: 'recentActivity'}))
-                        ])
-
                     ]
                 )),
                 m('.newAndNoteworthy', m('.container',
@@ -89,7 +76,7 @@ $(document).ready(function(){
                             m(columnSizeClass,m('h3', 'Discover Public Projects'))
                         ]),
                         m('.row', [
-                            m(columnSizeClass, m.component(newAndNoteworthy, {}))
+                            m(columnSizeClass, m.component(NewAndNoteworthy, {}))
                         ])
 
                     ]
@@ -97,7 +84,7 @@ $(document).ready(function(){
                 m('.meetings', m('.container',
                     [
                         m('.row', [
-                            m(columnSizeClass,  m.component(meetingsAndConferences, {}))
+                            m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
                         ])
 
                     ]
