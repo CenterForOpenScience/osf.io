@@ -51,12 +51,6 @@ class SpamDetail(FormView):
     form_class = ConfirmForm
     template_name = 'spam/comment.html'
 
-    def __init__(self):
-        self.spam_id = None
-        self.page = 1
-        self.item = None
-        super(SpamDetail, self).__init__()
-
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
@@ -73,22 +67,23 @@ class SpamDetail(FormView):
         return super(SpamDetail, self).post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        self.spam_id = self.kwargs['spam_id']
-        self.item = Comment.load(self.spam_id)
-        self.page = self.request.GET.get('page', 1)
+        spam_id = self.kwargs['spam_id']
+        item = Comment.load(spam_id)
+        page = self.request.GET.get('page', 1)
         kwargs = super(SpamDetail, self).get_context_data(**kwargs)
-        kwargs.setdefault('page_number', self.page)
-        kwargs.setdefault('comment', serialize_comment(self.item))
+        kwargs.setdefault('page_number', page)
+        kwargs.setdefault('comment', serialize_comment(item))
         return kwargs
 
     def form_valid(self, form):
         spam_id = self.kwargs.get('spam_id', 'no find')
+        item = Comment.load(spam_id)
         if int(form.cleaned_data.get('confirm')) == Comment.SPAM:
-            self.item.confirm_spam(save=True)
+            item.confirm_spam(save=True)
             log_message = 'Confirmed SPAM: {}'.format(spam_id)
             log_action = CONFIRM_SPAM
         else:
-            self.item.confirm_ham(save=True)
+            item.confirm_ham(save=True)
             log_message = 'Confirmed HAM: {}'.format(spam_id)
             log_action = CONFIRM_HAM
         update_admin_log(
@@ -102,9 +97,11 @@ class SpamDetail(FormView):
 
     @property
     def success_url(self):
+        spam_id = self.kwargs['spam_id']
+        page = self.request.GET.get('page', 1)
         return '{}?page={}'.format(
-            reverse('spam:detail', kwargs={'spam_id': self.spam_id}),
-            self.page
+            reverse('spam:detail', kwargs={'spam_id': spam_id}),
+            page
         )
 
 
