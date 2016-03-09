@@ -98,35 +98,29 @@ var NewAndNoteworthy = {
             return m('.text-center', m('.logo-spin.logo-xl.m-v-xl'));
         }
 
-        function nodeDisplay(node) {
-            var description = node.embeds.target_node.data.attributes.description;
-            var title = node.embeds.target_node.data.attributes.title;
-            var contributors = $osf.contribNameFormat(node, ctrl.contributorsMapping[node.id][1], ctrl.getFamilyName);
-            var destination = '/' + node.embeds.target_node.data.id;
-
-            return m('.public-projects-item', {onclick: function(){
-                location.href = destination;
-            }},[
-                m('h5', m('a', {href: destination}, title)),
-                m('span.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
-                    ctrl.addToolTip(this);
-                }}, m('i', 'by ' + contributors)),
-                description ? m('p.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){
-                    ctrl.addToolTip(this);
-                }}, description) : ''
-
-            ]);
-        }
-
         function newAndNoteworthyProjectsTemplate () {
             return ctrl.newAndNoteworthyNodes().map(function(node){
-                return nodeDisplay(node);
+                return m.component(NoteworthyNodeDisplay, {
+                    node : node,
+                    getFamilyName: ctrl.getFamilyName,
+                    addToolTip: function(item) {
+                        return ctrl.addToolTip(item);
+                    },
+                    contributorsMapping: ctrl.contributorsMapping
+                });
             });
         }
 
         function popularProjectsTemplate () {
             return ctrl.popularNodes().map(function(node){
-                return nodeDisplay(node);
+                return m.component(NoteworthyNodeDisplay, {
+                    node : node,
+                    getFamilyName: ctrl.getFamilyName,
+                    addToolTip: function(item) {
+                        return ctrl.addToolTip(item);
+                    },
+                    contributorsMapping: ctrl.contributorsMapping
+                });
             });
         }
 
@@ -141,6 +135,29 @@ var NewAndNoteworthy = {
                 m('.col-xs-12.col-md-6', m('.public-projects-box.', m('h4.m-b-md','Most Popular'), popularProjectsTemplate ()))
             ]),
             m('.row', m('.text-center.col-sm-12', findMoreProjectsButton()))
+        ]);
+    }
+};
+
+
+var NoteworthyNodeDisplay = {
+    view: function(ctrl, args) {
+        var description = args.node.embeds.target_node.data.attributes.description;
+        var title = args.node.embeds.target_node.data.attributes.title;
+        var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id][1], args.getFamilyName);
+        var destination = '/' + args.node.embeds.target_node.data.id;
+
+        return m('.public-projects-item', {onclick: function(){
+            location.href = destination;
+        }},[
+            m('h5', m('a', {href: destination}, title)),
+            m('span.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
+                args.addToolTip(this);
+            }}, m('i', 'by ' + contributors)),
+            description ? m('p.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){
+                args.addToolTip(this);
+            }}, description) : ''
+
         ]);
     }
 };
