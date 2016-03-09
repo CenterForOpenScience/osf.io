@@ -65,7 +65,7 @@ class LogNodeList(JSONAPIBaseView, generics.ListAPIView, LogMixin, ODMFilterMixi
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
@@ -142,7 +142,7 @@ class NodeLogDetail(JSONAPIBaseView, generics.RetrieveAPIView, LogMixin):
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
@@ -216,7 +216,7 @@ class NodeLogContributors(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin,
     OSF User entities have the "users" `type`.
 
         name               type               description
-        ----------------------------------------------------------------------------------------
+        ========================================================================================
         full_name          string             full name of the user; used for display
         given_name         string             given name of the user; for bibliographic citations
         middle_names       string             middle name of user; for bibliographic citations
