@@ -17,11 +17,11 @@ $(document).ready(function(){
         var head = item.children('.support-head');
         var icon = head.children('.fa');
         if (turnOff){
-            body.slideUp();
+            body.slideUp(200);
             icon.removeClass('fa-angle-down').addClass('fa-angle-right');
             item.removeClass('open').addClass('collapsed');
         } else {
-            body.slideDown();
+            body.slideDown(200);
             icon.removeClass('fa-angle-right').addClass('fa-angle-down');
             item.removeClass('collapsed').addClass('open');
         }
