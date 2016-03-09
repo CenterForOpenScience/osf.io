@@ -3449,6 +3449,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def primary_institution(self):
+        '''
+        Should behave as if this was a foreign field pointing to Institution
+        :return: this node's _primary_institution wrapped with Institution.
+        '''
         return Institution(self._primary_institution) if self._primary_institution else None
 
     @primary_institution.setter
@@ -3459,6 +3463,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def affiliated_institutions(self):
+        '''
+        Should behave as if this was a foreign field pointing to Institution
+        :return: this node's _affiliated_institutions wrapped with Institution as a list.
+        '''
         return SpecialList(self, '_affiliated_institutions', [Institution(node) for node in self._affiliated_institutions])
 
     def add_primary_institution(self, user, inst, log=True):
@@ -3550,7 +3558,12 @@ class InstitutionQuerySet(MongoQuerySet):
         return Institution(item)
 
 class Institution():
-
+    '''
+    "wrapper" class for Node. Together with the find and institution attributes & methods in Node,
+    this is to be used to allow interaction with Institutions, which are Nodes (with ' is_institution ' == True),
+    as if they were a wholly separate collection. To find an institution, use the find methods here,
+    and to use a Node as Institution, instantiate an Institution with ' Institution(node) '
+    '''
     attribute_map = {
         '_id': 'institution_id',
         'auth_url': 'institution_auth_url',
