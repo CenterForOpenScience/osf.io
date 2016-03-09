@@ -110,7 +110,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
     OSF comment entities have the "comments" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         content        string             content of the comment
         date_created   iso8601 timestamp  timestamp that the comment was created
         date_modified  iso8601 timestamp  timestamp when the comment was last updated
@@ -232,7 +232,7 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     OSF comment report entities have the "comment_reports" `type`.
 
         name           type               description
-        -------------------------------------------------------------------------------------
+        =====================================================================================
         category        string            the type of spam, must be one of the allowed values
         message         string            description of why the comment was reported
 
@@ -306,7 +306,7 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
     OSF comment report entities have the "comment_reports" `type`.
 
         name           type               description
-        -------------------------------------------------------------------------------------
+        =====================================================================================
         category        string            the type of spam, must be one of the allowed values
         message         string            description of why the comment was reported
 
