@@ -73,15 +73,14 @@ def transaction_teardown_request(error=None):
     Werkzeug debugger.
     """
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
-        return None
+        return
     if error is not None:
-        if not settings.DEBUG_MODE:
-            logger.error('Uncaught error in `transaction_teardown_request`; '
-                         'this should never happen with `DEBUG_MODE = True`')
-        # If we're testing, the before_request handlers may not have been executed
-        # e.g. when Flask#test_request_context() is used
-        if not current_app.testing:
+        try:
             commands.rollback()
+        except OperationFailure as error:
+            message = utils.get_error_message(error)
+            if messages.NO_TRANSACTION_ERROR not in message:
+                raise
 
 
 handlers = {
