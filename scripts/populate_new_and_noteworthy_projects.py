@@ -5,8 +5,6 @@ import sys
 import logging
 import datetime
 import dateutil
-import operator
-import requests
 from modularodm import Q
 from website.app import init_app
 from website import models
