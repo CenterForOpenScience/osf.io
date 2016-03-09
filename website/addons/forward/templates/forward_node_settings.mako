@@ -53,7 +53,6 @@
                     <input type="submit"
                            class="btn btn-success pull-right"
                            value="Save"
-                           data-bind="disable: !validators.isValid()"
                     />
                 </div>
             </div>
