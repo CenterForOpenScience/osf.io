@@ -18,8 +18,9 @@ var AddProject = {
     controller : function (options) {
         var self = this;
         self.defaults = {
-            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Add new project'),
+            buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Create new project'),
             parentID : null,
+            title: 'Create new project',
             modalID : 'addProjectModal',
             stayCallback :null, // Function to call when user decides to stay after project creation
             categoryList : []
@@ -29,7 +30,7 @@ var AddProject = {
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
-        self.newProjectCategory = m.prop('project');
+        self.newProjectCategory = m.prop('');
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
@@ -76,7 +77,7 @@ var AddProject = {
             self.newProjectName('');
             self.viewState('form');
             self.newProjectDesc('');
-            self.newProjectCategory('project');
+            self.newProjectCategory('');
             $('.modal').modal('hide');
         };
     },
@@ -87,7 +88,7 @@ var AddProject = {
                     m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                         m('span[aria-hidden="true"]','×'),
                     ]),
-                    m('h3.modal-title', 'Add new project')
+                    m('h3.modal-title', ctrl.options.title)
                 ]),
                 m('.modal-body', [
                     m('.text-left', [
@@ -108,7 +109,7 @@ var AddProject = {
                             ctrl.showMore(!ctrl.showMore());
                         }},[
                             ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
-                            ' More (description, type)'
+                            ' More'
                         ]),
                         ctrl.showMore() ? [
                             m('.form-group.m-v-sm', [
@@ -118,25 +119,27 @@ var AddProject = {
                                     value : ctrl.newProjectDesc()
                                 })
                             ]),
-                            m('.f-w-lg.text-bigger','Category'),
-                            m('.category-radio.p-h-md', [
-                                ctrl.options.categoryList.map(function(cat){
-                                    return m('.radio', m('label', [  m('input', {
-                                        type: 'radio',
-                                        name: 'projectCategory',
-                                        value: cat.value,
-                                        checked: ctrl.newProjectCategory() === cat.value,
-                                        onchange : m.withAttr('value', ctrl.newProjectCategory)
-                                    }), cat.display_name || m('i.text-muted', '(Empty category)') ]));
+                            ctrl.options.parentID !== null ? [
+                                m('.f-w-lg.text-bigger','Category'),
+                                m('.category-radio.p-h-md', [
+                                    ctrl.options.categoryList.map(function(cat){
+                                        return m('.radio', m('label', [  m('input', {
+                                            type: 'radio',
+                                            name: 'projectCategory',
+                                            value: cat.value,
+                                            checked: ctrl.newProjectCategory() === cat.value,
+                                            onchange : m.withAttr('value', ctrl.newProjectCategory)
+                                        }), cat.display_name || m('i.text-muted', '(Empty category)') ]));
 
-                                })
-                            ])
+                                    })
+                                ])
+                            ] : ''
                         ] : ''
                     ])
                 ]),
                 m('.modal-footer', [
                     m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : ctrl.reset},  'Cancel'),
-                    ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Add') : m('button[type="button"].btn.btn-success[disabled]','Add')
+                    ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : ctrl.add },'Create') : m('button[type="button"].btn.btn-success[disabled]','Create')
                 ])
             ]),
             processing : m('.modal-content',
