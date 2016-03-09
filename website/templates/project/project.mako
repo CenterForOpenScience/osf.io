@@ -188,7 +188,7 @@
                 <span data-bind="css: icon"></span>
                 </p>
 
-                % if node['description'] or 'write' in user['permissions']:
+                % if node['description']:
                     <p>
                     <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                     </p>
