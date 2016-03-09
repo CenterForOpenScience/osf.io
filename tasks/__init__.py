@@ -54,6 +54,7 @@ def task(*args, **kwargs):
 def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     app = init_app(set_backends=True, routes=True)
     settings.API_SERVER_PORT = port
 
