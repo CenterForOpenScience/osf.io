@@ -69,7 +69,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     Registrations have the "registrations" `type`.
 
         name                            type               description
-        -------------------------------------------------------------------------------------------------------
+        =======================================================================================================
         title                           string             title of the registered project or component
         description                     string             description of the registered node
         category                        string             node category, must be one of the allowed values
@@ -174,7 +174,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
     Registrations have the "registrations" `type`.
 
         name                            type               description
-        -------------------------------------------------------------------------------------------------------
+        =======================================================================================================
         title                           string             title of the registered project or component
         description                     string             description of the registered node
         category                        string             node category, must be one of the allowed values

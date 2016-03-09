@@ -95,13 +95,13 @@ class RegistrationSerializer(NodeSerializer):
 
     # TODO: Override create?
 
-    links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_url'})
+    links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):
         return absolute_reverse('registrations:registration-detail', kwargs={'node_id': obj._id})
 
     def get_absolute_url(self, obj):
-        return obj.absolute_url
+        return self.get_registration_url(obj)
 
     def get_registered_meta(self, obj):
         if obj.registered_meta:

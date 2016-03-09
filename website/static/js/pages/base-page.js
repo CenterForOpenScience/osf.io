@@ -19,6 +19,7 @@ var $osf = require('js/osfHelpers');
 var NavbarControl = require('js/navbarControl');
 var Raven = require('raven-js');
 var moment = require('moment');
+var KeenTracker = require('js/keen');
 
 // Prevent IE from caching responses
 $.ajaxSetup({cache: false});
@@ -110,4 +111,15 @@ $(function() {
         $osf.initializeResponsiveAffix();
     }
     new NavbarControl('.osf-nav-wrapper');
+    if(window.contextVars.keenProjectId){
+        var params = {};
+        params.currentUser = window.contextVars.currentUser;
+        params.node = window.contextVars.node;
+
+        //Don't track PhantomJS visits with KeenIO
+        if(!(/PhantomJS/.test(navigator.userAgent))){
+            new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
+        }
+
+    }
 });

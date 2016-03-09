@@ -25,15 +25,20 @@ def update_comment_root_target_file(self, node, event_type, payload, user=None):
         destination_node = node
 
         if (source.get('provider') == destination.get('provider') == 'osfstorage') and source_node._id != destination_node._id:
-            old_file = FileNode.load(source.get('path').strip('/'))
-            new_file = FileNode.resolve_class(destination.get('provider'), FileNode.FILE).get_or_create(destination_node, destination.get('path'))
+            obj = FileNode.load(source.get('path').strip('/'))
+            update_folder_contents([obj], source_node, destination_node)
 
-            Comment.update(Q('root_target', 'eq', old_file._id), data={'node': destination_node})
 
+def update_folder_contents(children, source_node, destination_node):
+    for item in children:
+        if not item.is_file:
+            update_folder_contents(item.children, source_node, destination_node)
+        else:
+            Comment.update(Q('root_target', 'eq', item._id), data={'node': destination_node})
             # update node record of commented files
-            if old_file._id in source_node.commented_files:
-                destination_node.commented_files[new_file._id] = source_node.commented_files[old_file._id]
-                del source_node.commented_files[old_file._id]
+            if item._id in source_node.commented_files:
+                destination_node.commented_files[item._id] = source_node.commented_files[item._id]
+                del source_node.commented_files[item._id]
                 source_node.save()
                 destination_node.save()
 
@@ -46,10 +51,10 @@ def send_comment_added_notification(comment, auth):
         gravatar_url=auth.user.profile_image_url(),
         content=comment.content,
         page_type='file' if comment.page == Comment.FILES else node.project_or_component,
-        page_title=comment.root_target.name if comment.page == Comment.FILES else '',
-        provider=PROVIDERS[comment.root_target.provider] if comment.page == Comment.FILES else '',
-        target_user=target.user if is_reply(target) else None,
-        parent_comment=target.content if is_reply(target) else "",
+        page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',
+        provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
+        target_user=target.referent.user if is_reply(target) else None,
+        parent_comment=target.referent.content if is_reply(target) else "",
         url=comment.get_comment_page_url()
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
@@ -62,7 +67,7 @@ def send_comment_added_notification(comment, auth):
     )
 
     if is_reply(target):
-        if target.user and target.user not in sent_subscribers:
+        if target.referent.user and target.referent.user not in sent_subscribers:
             notify(
                 event='comment_replies',
                 user=auth.user,
@@ -73,7 +78,7 @@ def send_comment_added_notification(comment, auth):
 
 
 def is_reply(target):
-    return isinstance(target, Comment)
+    return isinstance(target.referent, Comment)
 
 
 def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
