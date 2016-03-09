@@ -1,4 +1,4 @@
-from django.contrib.admin.models import LogEntry, CHANGE
+from django.contrib.admin.models import LogEntry, CHANGE, LogEntryManager
 
 
 def update_admin_log(user_id, object_id, object_repr, message, action_flag=CHANGE):
@@ -15,7 +15,13 @@ def update_admin_log(user_id, object_id, object_repr, message, action_flag=CHANG
         print 'Failed to log changes to {}'.format(object_id)
 
 
+class OSFLogEntryManager(LogEntryManager):
+    pass
+
+
 class OSFLogEntry(LogEntry):
     def message(self):
         return self.change_message
     message.allow_tags = True
+
+    objects = OSFLogEntryManager()

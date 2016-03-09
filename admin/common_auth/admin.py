@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.contrib.admin.models import LogEntry, DELETION
+from django.contrib.admin.models import DELETION
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import Permission
@@ -72,7 +72,6 @@ class LogEntryAdmin(admin.ModelAdmin):
         'object_repr',
         'change_message'
     ]
-
 
     list_display = [
         'action_time',
