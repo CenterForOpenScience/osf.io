@@ -201,8 +201,6 @@ class FileSerializer(JSONAPISerializer):
             guid = obj.get_guid()
             if guid:
                 return guid._id
-            else:
-                return None
         return None
 
 

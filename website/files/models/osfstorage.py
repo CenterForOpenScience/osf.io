@@ -36,10 +36,10 @@ class OsfStorageFileNode(FileNode):
 
     @classmethod
     def get_file_guids(cls, materialized_path, provider, guids, node=None):
-        path = materialized_path
-        file_obj = cls.load(path.strip('/'))
+        path = materialized_path.strip('/')
+        file_obj = cls.load(path)
         if not file_obj:
-            file_obj = TrashedFileNode.load(path.strip('/'))
+            file_obj = TrashedFileNode.load(path)
 
         if not file_obj.is_file:
             for item in file_obj.children:

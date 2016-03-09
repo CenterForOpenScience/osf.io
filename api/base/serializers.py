@@ -476,11 +476,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         for field_name in filter_fields:
             try:
                 # check if serializer method passed in
-                value = getattr(self.parent, self.filter[field_name])
+                serializer_method = getattr(self.parent, self.filter[field_name])
             except AttributeError:
                 value = self.lookup_attribute(obj, self.filter[field_name])
             else:
-                value = value(obj)
+                value = serializer_method(obj)
             if not value:
                 continue
             qd.update({'[{}]'.format(field_name): value})
