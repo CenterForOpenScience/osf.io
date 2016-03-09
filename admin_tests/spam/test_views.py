@@ -1,4 +1,5 @@
 from django.test import Client
+from django.db import transaction
 from nose import tools as nt
 import mock
 
@@ -25,6 +26,7 @@ class TestSpamDetail(AdminTestCase):
         view = SpamDetail()
         view = setup_form_view(
             view, self.request, form, spam_id=self.comment._id)
-        view.form_valid(form)
+        with transaction.atomic():
+            view.form_valid(form)
         obj = OSFLogEntry.objects.latest(field_name='action_time')
         nt.assert_equal(obj.object_id, self.comment._id)
