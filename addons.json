@@ -34,5 +34,9 @@
         "github",
         "googledrive",
         "s3"
+    ],
+    "addons_based_on_ids": [
+        "osfstorage",
+        "box"
     ]
 }

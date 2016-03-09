@@ -295,6 +295,8 @@ class TestCommentModel(OsfTestCase):
 
 
 class FileCommentMoveRenameTestMixin(object):
+    # TODO: Remove skip decorators when waterbutler returns a consistently formatted payload
+    # for intra-provider folder moves and renames.
 
     id_based_providers = ['osfstorage']
 

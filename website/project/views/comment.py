@@ -15,6 +15,7 @@ from website.models import Comment
 from website.project.decorators import must_be_contributor_or_public
 from website.project.model import Node
 from website.project.signals import comment_added
+from website import settings
 
 
 @file_updated.connect
@@ -30,9 +31,10 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
             guids=[],
             node=source_node)
 
-        if event_type == 'addon_file_renamed' and (source['provider'] == 'osfstorage' or source['provider'] == 'box'):
+        if event_type == 'addon_file_renamed' and source['provider'] in settings.ADDONS_BASED_ON_IDS:
             return
-        if event_type == 'addon_file_moved' and (source['provider'] == destination['provider'] and (source['provider'] == 'osfstorage' or source['provider'] == 'box')) and source_node == destination_node:
+        if event_type == 'addon_file_moved' and (source['provider'] == destination['provider'] and
+                                                 source['provider'] in settings.ADDONS_BASED_ON_IDS) and source_node == destination_node:
             return
 
         for guid in file_guids:
@@ -40,7 +42,7 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
             if source_node != destination_node and Comment.find(Q('root_target', 'eq', guid)).count() != 0:
                 update_comment_node(guid, source_node, destination_node)
 
-            if not (source['provider'] == destination['provider'] and source['provider'] == 'osfstorage'):
+            if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
                 if not source['path'].endswith('/'):
                     data = dict(destination)
                     new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, destination['path'])
@@ -63,6 +65,10 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
 
 def create_file_from_metadata(children, source, destination, destination_node, obj):
+    """ Given a Guid obj, recursively search for the metadata of its referent (a file obj)
+    in the waterbutler response. If found, create a new addon FileNode with that metadata
+    and return the new file.
+    """
     for item in children:
         if item['kind'] == 'folder':
             return create_file_from_metadata(item.get('children', []), source, destination, destination_node, obj)
