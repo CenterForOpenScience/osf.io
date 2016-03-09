@@ -105,7 +105,9 @@ MIDDLEWARE_CLASSES = (
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    'api.base.middleware.TokuTransactionsMiddleware',
+    'api.base.middleware.MongoConnectionMiddleware',
+    'api.base.middleware.CeleryTaskMiddleware',
+    'api.base.middleware.TokuTransactionMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -163,7 +165,10 @@ SWAGGER_SETTINGS = {
         'description':
         """
         Welcome to the fine documentation for the Open Science Framework's API!  Please click
-        on the <strong>GET /v2/</strong> link below to get started.""",
+        on the <strong>GET /v2/</strong> link below to get started.
+
+        For the most recent docs, please check out our <a href="/v2/">Browsable API</a>.
+        """,
         'title': 'OSF APIv2 Documentation',
     },
     'doc_expansion': 'list',
