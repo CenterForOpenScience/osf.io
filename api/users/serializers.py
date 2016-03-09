@@ -77,7 +77,6 @@ class UserSerializer(JSONAPISerializer):
         self_view_kwargs={'user_id': '<pk>'}
     )
 
-
     class Meta:
         type_ = 'users'
 

@@ -1,15 +1,14 @@
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotAuthenticated, NotFound
+from rest_framework.exceptions import NotAuthenticated
 from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import User, Node, NodeLog
+from website.models import User, Node
 
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
@@ -18,14 +17,12 @@ from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.nodes.serializers import NodeSerializer
-from api.logs.serializers import NodeLogSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query, default_node_permission_query
 
-from .pagination import UserLogPagination
 from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
-from .permissions import CurrentUser, ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
+from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
 
 
 class UserMixin(object):
