@@ -48,7 +48,7 @@
     </div>
     %endif
     %if campaign != "institution" or not enable_institutions:
-        %if campaign == "sign_up":
+        %if sign_up:
             <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-muted p-h-lg">
         %else:
             <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
@@ -102,7 +102,7 @@
             </div>
         </form>
     </div>
-        %if campaign == "sign_up":
+        %if sign_up:
             <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-active p-h-lg" style="height: auto;">
         %else:
             <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
