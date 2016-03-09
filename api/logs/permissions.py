@@ -19,7 +19,5 @@ class ContributorOrPublicForLogs(permissions.BasePermission):
                     return True
 
         if getattr(obj, 'node'):
-            if ContributorOrPublic().has_object_permission(request, view, obj.node):
-                return True
-
+            return ContributorOrPublic().has_object_permission(request, view, obj.node)
         return False

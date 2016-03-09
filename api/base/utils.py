@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
@@ -126,3 +127,6 @@ def default_node_permission_query(user):
         permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
     return permission_query
+
+def extend_querystring_params(url, params):
+    return furl.furl(url).add(args=params).url

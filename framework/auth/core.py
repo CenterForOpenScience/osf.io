@@ -11,7 +11,7 @@ import itsdangerous
 
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError, ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
 
 import framework
@@ -160,11 +160,29 @@ class Auth(object):
     def logged_in(self):
         return self.user is not None
 
+    @property
+    def private_link(self):
+        if not self.private_key:
+            return None
+        try:
+            # Avoid circular import
+            from website.project.model import PrivateLink
+            private_link = PrivateLink.find_one(
+                Q('key', 'eq', self.private_key)
+            )
+
+            if private_link.is_deleted:
+                return None
+
+        except QueryException:
+            return None
+
+        return private_link
+
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
         user = request_args.get('user') or kwargs.get('user') or _get_current_user()
         private_key = request_args.get('view_only')
-
         return cls(
             user=user,
             private_key=private_key,

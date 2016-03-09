@@ -184,7 +184,11 @@ def confirm_email_get(token, auth=None, **kwargs):
                 return redirect(
                     campaigns.campaign_url_for(campaign)
                 )
-            status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+            if len(auth.user.emails) == 1 and len(auth.user.email_verifications) == 0:
+                status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+
+            if token in auth.user.email_verifications:
+                status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
             # Go to dashboard
             return redirect(web_url_for('dashboard'))
 
@@ -246,8 +250,10 @@ def send_confirm_email(user, email):
         mail_template = mails.CONFIRM_MERGE
     elif campaign:
         mail_template = campaigns.email_template_for_campaign(campaign)
-    else:
+    elif user.is_active:
         mail_template = mails.CONFIRM_EMAIL
+    else:
+        mail_template = mails.INITIAL_CONFIRM_EMAIL
 
     mails.send_mail(
         email,
