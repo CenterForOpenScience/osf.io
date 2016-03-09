@@ -72,7 +72,7 @@
         % elif allow_login:
         <li class="dropdown sign-in" data-bind="with: $root.signIn">
           <div class="btn-group">
-            <button type="button" class="btn btn-info btn-top-login dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+            <button type="button" class="btn btn-info btn-top-login p-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
               Sign in <span class="caret hidden-xs"></span>
             </button>
             <ul class="dropdown-menu" id="menuLogin" role="menu">
@@ -86,7 +86,7 @@
                   <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot password?</a></div>
                </form>
             </ul>
-            <a href="${web_url_for('auth_login')}?campaign=sign_up" class="btn btn-warning m-l-sm btn-top-login ">Sign Up</a>
+            <a href="${web_url_for('auth_login')}?campaign=sign_up" class="btn btn-success  m-l-sm btn-top-login ">Sign up</a>
           </div>
         </li>
         % endif
