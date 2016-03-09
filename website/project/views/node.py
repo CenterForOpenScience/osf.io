@@ -736,6 +736,8 @@ def _view_project(node, auth, primary=False):
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     data = {
         'node': {
+            'approval_link': node.registration_approval.stashed_urls.get(user._id, {}).get('approve', '') if node.registration_approval is not None else '',
+            'disapproval_link': node.registration_approval.stashed_urls.get(user._id, {}).get('reject', '') if node.registration_approval is not None else '',
             'id': node._primary_key,
             'title': node.title,
             'category': node.category_display,
