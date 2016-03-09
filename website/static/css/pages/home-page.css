@@ -3,7 +3,7 @@ h3, h4 {
 }
 .quickSearch {
     min-height: 700px;
-    background: #C5D6E6 url('/static/img/bg6.jpg') top center no-repeat;
+    background: #C5D6E6 url('/static/img/bg6.jpg') top center repeat-y;
 }
 
 .newAndNoteworthy {
