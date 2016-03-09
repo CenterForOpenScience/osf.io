@@ -723,7 +723,7 @@ var Collections = {
             return promise;
         };
         self.applyDroppable = function _applyDroppable ( ){
-            $('.db-collections ul>li').droppable({
+            $('.db-collections ul>li.acceptDrop').droppable({
                 hoverClass: 'bg-color-hover',
                 drop: function( event, ui ) {
                     var collection = self.collections()[$(this).attr('data-index')];
@@ -789,6 +789,7 @@ var Collections = {
             var index;
             var list = [];
             var childCount;
+            var dropAcceptClass;
             var begin = ((ctrl.currentPage()-1)*ctrl.pageSize()); // remember indexes start from 0
             var end = ((ctrl.currentPage()) *ctrl.pageSize()); // 1 more than the last item
             if (ctrl.collections().length < end) {
@@ -802,6 +803,7 @@ var Collections = {
             for (var i = begin; i < end; i++) {
                 item = ctrl.collections()[i];
                 index = i;
+                dropAcceptClass = index > 1 ? 'acceptDrop' : '';
                 childCount = item.data.count ? ' (' + item.data.count() + ')' : '';
                 if (item.id === args.activeFilter().id) {
                     selectedCSS = 'active';
@@ -818,7 +820,7 @@ var Collections = {
                 } else {
                     submenuTemplate = '';
                 }
-                list.push(m('li', { className : selectedCSS, 'data-index' : index },
+                list.push(m('li', { className : selectedCSS + ' ' + dropAcceptClass, 'data-index' : index },
                     [
                         m('a[role="button"]', {onclick : args.updateFilter.bind(null, item) },  item.label + childCount ),
                         submenuTemplate
