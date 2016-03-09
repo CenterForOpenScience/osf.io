@@ -13,7 +13,9 @@ from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from modularodm import Q
 
-from admin.common_auth.logs import update_admin_log
+from admin.common_auth.logs import (
+    update_admin_log, ACCEPT_PREREG, REJECT_PREREG, COMMENT_PREREG
+)
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from framework.exceptions import HTTPError
@@ -120,7 +122,9 @@ def approve_draft(request, draft_pk):
     user = request.user.osf_user
     draft.approve(user)
     update_admin_log(
-        request.user.id, draft._id, 'Draft Registration', 'approved')
+        request.user.id, draft._id, 'Draft Registration',
+        'approved', ACCEPT_PREREG
+    )
     return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 
@@ -138,7 +142,8 @@ def reject_draft(request, draft_pk):
     user = request.user.osf_user
     draft.reject(user)
     update_admin_log(
-        request.user.id, draft._id, 'Draft Registration', 'rejected')
+        request.user.id, draft._id, 'Draft Registration',
+        'rejected', REJECT_PREREG)
     return redirect(reverse('pre_reg:prereg') + "?page={0}".format(request.POST.get('page', 1)), permanent=True)
 
 
@@ -178,7 +183,8 @@ def update_draft(request, draft_pk):
                 user_id=request.user.id,
                 object_id=draft._id,
                 object_repr='Draft Registration',
-                message='Comments: <p>{}</p>'.format('</p><p>'.join(log_message))
+                message='Comments: <p>{}</p>'.format('</p><p>'.join(log_message)),
+                action_flag=COMMENT_PREREG
             )
         except (NodeStateError):
             raise HTTPError(http.BAD_REQUEST)

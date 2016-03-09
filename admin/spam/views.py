@@ -8,6 +8,7 @@ from django.views.defaults import page_not_found
 from modularodm import Q
 from website.project.model import Comment
 
+from admin.common_auth.logs import update_admin_log, CONFIRM_HAM, CONFIRM_SPAM
 from .serializers import serialize_comment
 from .forms import ConfirmForm
 
@@ -81,10 +82,22 @@ class SpamDetail(FormView):
         return kwargs
 
     def form_valid(self, form):
+        spam_id = self.kwargs.get('spam_id', 'no find')
         if int(form.cleaned_data.get('confirm')) == Comment.SPAM:
             self.item.confirm_spam(save=True)
+            log_message = 'Confirmed SPAM: {}'.format(spam_id)
+            log_action = CONFIRM_SPAM
         else:
             self.item.confirm_ham(save=True)
+            log_message = 'Confirmed HAM: {}'.format(spam_id)
+            log_action = CONFIRM_HAM
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=spam_id,
+            object_repr='Comment',
+            message=log_message,
+            action_flag=log_action
+        )
         return super(SpamDetail, self).form_valid(form)
 
     @property
