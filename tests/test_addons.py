@@ -814,8 +814,16 @@ class TestAddonFileViews(OsfTestCase):
         assert_false(StoredFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
-    def test_delete_action_for_folder_creates_trashed_file_nodes(self):
+    def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
         file_node = self.get_test_file()
+        subfolder = TestFolder(
+            name='folder',
+            node=self.project,
+            path='/test/folder/',
+            materialized_path='/test/folder/',
+            versions=[]
+        )
+        subfolder.save()
         payload = {
             'provider': file_node.provider,
             'metadata': {
@@ -826,6 +834,7 @@ class TestAddonFileViews(OsfTestCase):
         views.addon_delete_file_node(self=None, node=self.project, event_type='file_removed', payload=payload)
         assert_false(StoredFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
+        assert_false(StoredFileNode.load(subfolder._id))
 
 
 class TestLegacyViews(OsfTestCase):
