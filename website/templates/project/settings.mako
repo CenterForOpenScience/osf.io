@@ -77,24 +77,24 @@
                     <div id="projectSettings" class="panel-body">
                         <div class="form-group">
                             <label>Category:</label>
-                            <select data-bind="attr.disabled: disabled,
-                                                         options: categoryOptions,
-                                                         optionsValue: 'value',
-                                                         optionsText: 'label',
-                                                         value: selectedCategory"></select>
+                            <select id = categoryID data-bind="attr.disabled: disabled,
+                                               options: categoryOptions,
+                                               optionsValue: 'value',
+                                               optionsText: 'label',
+                                               value: selectedCategory"></select>
                             <span data-bind="if: disabled" class="help-block">
                               A top-level project's category cannot be changed
                             </span>
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>
-                            <input class="form-control" type="text" maxlength="200" placeholder="Required" data-bind="value: title,
+                            <input id= "titleID" class="form-control" type="text" maxlength="200" placeholder="Required" data-bind="value: title,
                                                                                                       valueUpdate: 'afterkeydown'">
                             <span class="text-danger" data-bind="validationMessage: title"></span>
                         </div>
                         <div class="form-group">
                             <label for="description">Description:</label>
-                            <textarea placeholder="Optional" data-bind="value: description,
+                              <textarea  id= descriptionID placeholder="Optional" data-bind="value: description,
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical"></textarea>
                         </div>
