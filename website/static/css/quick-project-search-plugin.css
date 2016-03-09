@@ -14,7 +14,7 @@
 }
 
 .node-styling:hover a {
-    color: #FFF
+    color: #5BC0DE;
 }
 
 .quick-project button {
@@ -140,7 +140,7 @@
 }
 
 .public-projects-item:hover a {
-    color: #fff;
+    color: #5BC0DE;
 }
 
 .quick-search-table {
