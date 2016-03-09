@@ -66,6 +66,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_equal(res_normal.status_code, 200)
         res_linked = self.app.get(self.private_node_one_url, {'view_only': self.private_node_one_private_link.key})
         assert_equal(res_linked.status_code, 200)
+        assert_items_equal(res_linked.json['data']['attributes']['current_user_permissions'], ['read'])
         assert_equal(res_linked.json, res_normal.json)
 
     def test_private_node_with_link_unauthorized_when_not_using_link(self):
@@ -160,6 +161,21 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_not_in(self.contributing_write_user._id, body)
         assert_not_in(self.contributing_read_user._id, body)
         assert_not_in(self.creation_user._id, body)
+
+    def test_private_project_with_anonymous_link_does_not_expose_registrations_or_forks(self):
+        res = self.app.get(self.private_node_one_url, {
+            'view_only': self.private_node_one_anonymous_link.key,
+        })
+        assert_equal(res.status_code, 200)
+        relationships = res.json['data']['relationships']
+        if 'embeds' in res.json['data']:
+            embeds = res.json['data']['embeds']
+        else:
+            embeds = {}
+        assert_not_in('registrations', relationships)
+        assert_not_in('forks', relationships, 'Add forks view to blacklist in hide_view_when_anonymous().')
+        assert_not_in('registrations', embeds)
+        assert_not_in('forks', embeds, 'Add forks view to blacklist in hide_view_when_anonymous().')
 
     def test_bad_view_only_link_does_not_modify_permissions(self):
         res = self.app.get(self.private_node_one_url+'logs/', {

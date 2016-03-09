@@ -10,14 +10,15 @@ from api.base.serializers import HideIfRetraction
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
-    RegistrationContributorsSerializer
+    RegistrationContributorsSerializer,
 )
 
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
-    NodeAlternativeCitationsList, NodeAlternativeCitationDetail)
+    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
+    NodeInstitutionDetail, WaterButlerMixin)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer
 
@@ -43,7 +44,7 @@ class RegistrationMixin(NodeMixin):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_folder:
+        if node.is_folder or not node.is_registration:
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -68,7 +69,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     Registrations have the "registrations" `type`.
 
         name                            type               description
-        -------------------------------------------------------------------------------------------------------
+        =======================================================================================================
         title                           string             title of the registered project or component
         description                     string             description of the registered node
         category                        string             node category, must be one of the allowed values
@@ -130,7 +131,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -158,7 +159,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         return nodes
 
 
-class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin):
+class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin, WaterButlerMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view shows details about the given registration.
@@ -174,7 +175,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
     Registrations have the "registrations" `type`.
 
         name                            type               description
-        -------------------------------------------------------------------------------------------------------
+        =======================================================================================================
         title                           string             title of the registered project or component
         description                     string             description of the registered node
         category                        string             node category, must be one of the allowed values
@@ -259,6 +260,11 @@ class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
     view_name = 'registration-comments'
 
 
+class RegistrationLogList(NodeLogList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-logs'
+
+
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-providers'
@@ -299,3 +305,8 @@ class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList, Registr
 class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-alternative-citation-detail'
+
+
+class RegistrationInstitutionDetail(NodeInstitutionDetail, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-institution-detail'

@@ -116,7 +116,7 @@ MEETING_DATA = {
         'name': 'Association for Psychological Science 2015',
         'info_url': None,
         'logo_url': 'http://www.psychologicalscience.org/images/APS_2015_Banner_990x157.jpg',
-        'active': True,
+        'active': False,
         'admins': [
         ],
         'public_projects': True,
@@ -138,7 +138,7 @@ MEETING_DATA = {
         'name': 'Midwestern Psychological Association 2015',
         'info_url': None,
         'logo_url': 'http://www.midwesternpsych.org/resources/Pictures/MPA%20logo.jpg',
-        'active': True,
+        'active': False,
         'admins': [
             'mpa@kent.edu',
         ],
@@ -229,7 +229,7 @@ MEETING_DATA = {
         'name': 'Association for Research in Personality 2015',
         'info_url': 'http://www.personality-arp.org/conference/',
         'logo_url': 'http://www.personality-arp.org/wp-content/uploads/conference/st-louis-arp.jpg',
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -249,7 +249,7 @@ MEETING_DATA = {
         'name': 'L. Starling Reid Undergraduate Psychology Conference 2015',
         'info_url': 'http://avillage.web.virginia.edu/Psych/Conference',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -279,7 +279,7 @@ MEETING_DATA = {
         'name': 'Mid-Atlantic Directors and Staff of Scientific Cores & Southeastern Association of Shared Services 2015',
         'info_url': 'http://madssci.abrf.org',
         'logo_url': 'http://s24.postimg.org/qtc3baefp/2015madssci_seasr.png',
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -289,7 +289,7 @@ MEETING_DATA = {
         'name': 'National Radio Astronomy Observatory Accretion 2015',
         'info_url': 'https://science.nrao.edu/science/meetings/2015/accretion2015/posters',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -309,7 +309,7 @@ MEETING_DATA = {
         'name': 'Single Case Designs in Clinical Psychology: Uniting Research and Practice',
         'info_url': 'https://www.royalholloway.ac.uk/psychology/events/eventsarticles/singlecasedesignsinclinicalpsychologyunitingresearchandpractice.aspx',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -329,7 +329,7 @@ MEETING_DATA = {
         'name': 'Japanese Society of Social Psychology 2015',
         'info_url': 'http://www.socialpsychology.jp/conf2015/index.html',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -339,7 +339,7 @@ MEETING_DATA = {
         'name': 'Society for Social Studies of Science 2015',
         'info_url': 'http://www.4sonline.org/meeting',
         'logo_url': 'http://www.4sonline.org/ee/denver-skyline.jpg',
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -379,7 +379,7 @@ MEETING_DATA = {
         'name': 'OpenCon2015',
         'info_url': 'http://opencon2015.org/',
         'logo_url': 'http://s8.postimg.org/w9b30pxyd/Open_Con2015_new_logo.png',
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -409,7 +409,7 @@ MEETING_DATA = {
         'name': '2015 National Astronomy Consortium (NAC) III Workshop',
         'info_url': 'https://info.nrao.edu/do/odi/meetings/2015/nac111/',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -419,7 +419,7 @@ MEETING_DATA = {
         'name': 'Cognitive Development Society 2015',
         'info_url': 'http://meetings.cogdevsoc.org/',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -439,7 +439,7 @@ MEETING_DATA = {
         'name': 'Observational Evidence of Gas Accretion onto Galaxies?',
         'info_url': 'https://science.nrao.edu/science/meetings/2015/accretion2015',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -449,7 +449,7 @@ MEETING_DATA = {
         'name': 'U.S. Radio/Millimeter/Submillimeter Science Futures in the 2020s',
         'info_url': 'https://science.nrao.edu/science/meetings/2015/2020futures/home',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -489,7 +489,7 @@ MEETING_DATA = {
         'name': 'Earth Science Information Partners Winter Meeting 2016',
         'info_url': 'http://commons.esipfed.org/2016WinterMeeting',
         'logo_url': 'http://s30.postimg.org/m2uz2g4pt/ESIP.png',
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -499,7 +499,7 @@ MEETING_DATA = {
         'name': 'University of Miami Brainhack 2015',
         'info_url': 'http://brainhack.org/americas/',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -528,7 +528,7 @@ MEETING_DATA = {
         'name': 'Genome Informatics 2015',
         'info_url': 'https://meetings.cshl.edu/meetings.aspx?meet=info&year=15',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -548,7 +548,7 @@ MEETING_DATA = {
         'name': 'The Society for Marine Mammalogy',
         'info_url': 'https://www.marinemammalscience.org/conference/',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
         'poster': True,
@@ -562,7 +562,15 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
         'poster': False,
-        'talk': False,
+        'talk': True,
+        'field_names': {
+            'submission1': 'poster',
+            'submission2': 'study',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'studies',
+            'meeting_title_type': 'Studies',
+            'add_submission': 'studies',
+        }
     },
     'ASCERM2016': {
         'name': 'ASCE Rocky Mountain Student Conference 2016',
@@ -574,7 +582,7 @@ MEETING_DATA = {
         'poster': False,
         'talk': True,
     },
-        'ARCA2016': {
+    'ARCA2016': {
         'name': '5th Applied Research Conference in Africa',
         'info_url': 'http://www.arcaconference.org/',
         'logo_url': 'http://www.arcaconference.org/images/ARCA_LOGO_NEW.JPG',
@@ -584,8 +592,106 @@ MEETING_DATA = {
         'poster': False,
         'talk': True,
     },
+    'CURCONF2016': {
+        'name': 'CUR Biennial Conference 2016',
+        'info_url': 'http://www.cur.org/conferences_and_events/biennial2016/',
+        'logo_url': 'http://s11.postimg.org/v8feuna4y/Conference_logo_eps.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'CATALISE2016': {
+        'name': 'Criteria and Terminology Applied to Language Impairments: Synthesising the Evidence (CATALISE) 2016',
+        'info_url': None,
+        'logo_url': None,
+        'active': False,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'Emergy2016': {
+        'name': '9th Biennial Emergy Research Conference',
+        'info_url': 'http://www.cep.ees.ufl.edu/emergy/conferences/ERC09_2016/index.shtml',
+        'logo_url': 'http://s12.postimg.org/uf9ioqmct/emergy.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'aps2016': {
+        'name': '28th APS Annual Convention',
+        'info_url': 'http://www.psychologicalscience.org/convention',
+        'logo_url': 'http://www.psychologicalscience.org/redesign/wp-content/uploads/2015/03/APS_2016_Banner_990x157.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'jssp2016': {
+        'name': 'Japanese Society of Social Psychology 2016',
+        'info_url': 'http://www.socialpsychology.jp/conf2016/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'sepech2016': {
+        'name': 'XI SEPECH - Research Seminar in Human Sciences (Seminário de Pesquisa em Ciências Humanas)',
+        'info_url': 'http://www.uel.br/eventos/sepech/sepech2016/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'etmaal2016': {
+        'name': 'Etmaal van de Communicatiewetenschap 2016 - Media Psychology',
+        'info_url': 'https://etmaal2016.wordpress.com',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'WSAN2016': {
+        'name': 'WSAN2016 Erasmus University Rotterdam',
+        'info_url': 'http://www.humane.eu/wsan/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'ContainerStrategies': {
+        'name': 'Container Strategies for Data & Software Preservation',
+        'info_url': 'https://daspos.crc.nd.edu/index.php/workshops/container-strategies-for-data-software-preservation-that-promote-open-science',
+        'logo_url': 'http://s17.postimg.org/8nl1v5mxb/Screen_Shot_2016_03_02_at_9_05_24_PM.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+    },
+    'CNI2016': {
+        'name': 'Coalition for Networked Information (CNI) Spring Membership Meeting 2016',
+        'info_url': 'https://wp.me/P1LncT-6fd',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+    },
 }
-
 
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
@@ -598,15 +704,24 @@ def populate_conferences():
                 admin_objs.append(user)
             except ModularOdmException:
                 raise RuntimeError('Username {0!r} is not registered.'.format(email))
+
+        custom_fields = attrs.pop('field_names', {})
+
         conf = Conference(
             endpoint=meeting, admins=admin_objs, **attrs
         )
+        conf.field_names.update(custom_fields)
         try:
             conf.save()
         except ModularOdmException:
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
-                setattr(conf, key, value)
+                if isinstance(value, dict):
+                    current = getattr(conf, key)
+                    current.update(value)
+                    setattr(conf, key, current)
+                else:
+                    setattr(conf, key, value)
             conf.admins = admin_objs
             changed_fields = conf.save()
             if changed_fields:

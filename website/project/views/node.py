@@ -37,7 +37,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from website.models import Node, Pointer, WatchConfig, PrivateLink
+from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
@@ -45,7 +45,6 @@ from website.project import new_folder
 from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
-
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
@@ -203,16 +202,26 @@ def project_new_node(auth, node, **kwargs):
                 http.BAD_REQUEST,
                 data=dict(message_long=e.message)
             )
-
+        redirect_url = node.url
         message = (
-            'Your component was created successfully. You can keep working on the component page below, '
-            'or return to the <u><a href="{url}">project page</a></u>.'
-        ).format(url=node.url)
+            'Your component was created successfully. You can keep working on the project page below, '
+            'or go to the new <u><a href={component_url}>component</a></u>.'
+        ).format(component_url=new_component.url)
+        if form.inherit_contributors.data and node.has_permission(user, ADMIN):
+            for contributor in node.contributors:
+                new_component.add_contributor(contributor, permissions=node.get_permissions(contributor), auth=auth)
+            new_component.save()
+            redirect_url = new_component.url + 'contributors/'
+            message = (
+                'Your component was created successfully. You can edit the contributor permissions below, '
+                'work on your <u><a href={component_url}>component</a></u> or return to the <u> '
+                '<a href="{project_url}">project page</a></u>.'
+            ).format(component_url=new_component.url, project_url=node.url)
         status.push_status_message(message, kind='info', trust=True)
 
         return {
             'status': 'success',
-        }, 201, None, new_component.url
+        }, 201, None, redirect_url
     else:
         # TODO: This function doesn't seem to exist anymore?
         status.push_errors_to_status(form.errors)
@@ -260,6 +269,10 @@ def node_fork_page(auth, node, **kwargs):
             http.FORBIDDEN,
             redirect_url=node.url
         )
+    message = '{} has been successfully forked.'.format(
+        node.project_or_component.capitalize()
+    )
+    status.push_status_message(message, kind='success', trust=False)
     return fork.url
 
 
@@ -302,8 +315,13 @@ def node_setting(auth, node, **kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name != 'wiki'
     ], key=lambda addon: addon.full_name.lower())
+
+    for addon in settings.ADDONS_AVAILABLE:
+        if 'node' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node'] and addon.short_name == 'wiki':
+            ret['wiki'] = addon
+            break
 
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
@@ -371,7 +389,6 @@ def configure_comments(node, **kwargs):
 @must_be_contributor_or_public
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
-
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
 
@@ -609,7 +626,7 @@ def component_remove(auth, node, **kwargs):
         )
     node.save()
 
-    message = '{} deleted'.format(
+    message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
     status.push_status_message(message, kind='success', trust=False)
@@ -691,6 +708,7 @@ def _should_show_wiki_widget(node, user):
     else:
         return has_wiki
 
+
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
@@ -764,14 +782,19 @@ def _view_project(node, auth, primary=False):
             'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
             'comment_level': node.comment_level,
-            'has_comments': bool(getattr(node, 'commented', [])),
-            'has_children': bool(getattr(node, 'commented', False)),
+            'has_comments': bool(Comment.find(Q('node', 'eq', node))),
+            'has_children': bool(Comment.find(Q('node', 'eq', node))),
             'identifiers': {
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
+            'institution': {
+                'name': node.primary_institution.name if node.primary_institution else None,
+                'logo_path': node.primary_institution.logo_path if node.primary_institution else None,
+            },
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
+            'contributors': [contributor._id for contributor in node.contributors]
         },
         'parent_node': {
             'exists': parent is not None,
@@ -869,43 +892,13 @@ def get_editable_children(auth, node, **kwargs):
     }
 
 
-def _get_user_activity(node, auth, rescale_ratio):
-
-    # Counters
-    total_count = len(node.logs)
-
-    # Note: It's typically much faster to find logs of a given node
-    # attached to a given user using node.logs.find(...) than by
-    # loading the logs into Python and checking each one. However,
-    # using deep caching might be even faster down the road.
-
-    if auth.user:
-        ua_count = node.logs.find(Q('user', 'eq', auth.user)).count()
-    else:
-        ua_count = 0
-
-    non_ua_count = total_count - ua_count  # base length of blue bar
-
-    # Normalize over all nodes
-    try:
-        ua = ua_count / rescale_ratio * 100
-    except ZeroDivisionError:
-        ua = 0
-    try:
-        non_ua = non_ua_count / rescale_ratio * 100
-    except ZeroDivisionError:
-        non_ua = 0
-
-    return ua_count, ua, non_ua
-
-
 @must_be_valid_project
 def get_recent_logs(node, **kwargs):
     logs = list(reversed(node.logs._to_primary_keys()))[:3]
     return {'logs': logs}
 
 
-def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_path=False):
+def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
     # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
     summary = {
         'id': link_id if link_id else node._id,
@@ -940,7 +933,6 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
             'forked_date': node.forked_date.strftime('%Y-%m-%d %H:%M UTC')
             if node.is_fork
             else None,
-            'nlogs': None,
             'ua_count': None,
             'ua': None,
             'non_ua': None,
@@ -948,16 +940,9 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
             'is_public': node.is_public,
             'parent_title': node.parent_node.title if node.parent_node else None,
             'parent_is_public': node.parent_node.is_public if node.parent_node else False,
-            'show_path': show_path
+            'show_path': show_path,
+            'nlogs': len(node.logs),
         })
-        if rescale_ratio:
-            ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
-            summary.update({
-                'nlogs': len(node.logs),
-                'ua_count': ua_count,
-                'ua': ua,
-                'non_ua': non_ua,
-            })
     else:
         summary['can_view'] = False
 
@@ -970,18 +955,12 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
 def get_summary(auth, node, **kwargs):
-    rescale_ratio = kwargs.get('rescale_ratio')
-    if rescale_ratio is None and request.args.get('rescale_ratio'):
-        try:
-            rescale_ratio = float(request.args.get('rescale_ratio'))
-        except (TypeError, ValueError):
-            raise HTTPError(http.BAD_REQUEST)
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
     show_path = kwargs.get('show_path', False)
 
     return _get_summary(
-        node, auth, rescale_ratio, primary=primary, link_id=link_id, show_path=show_path
+        node, auth, primary=primary, link_id=link_id, show_path=show_path
     )
 
 
@@ -1016,6 +995,15 @@ def node_child_tree(user, node_ids):
         can_read_children = node.has_permission_on_children(user, 'read')
         if not can_read and not can_read_children:
             continue
+
+        contributors = []
+        for contributor in node.contributors:
+            contributors.append({
+                'id': contributor._id,
+                'is_admin': node.has_permission(contributor, ADMIN),
+                'is_confirmed': contributor.is_confirmed
+            })
+
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
@@ -1035,7 +1023,10 @@ def node_child_tree(user, node_ids):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
-                'can_write': can_write
+                'can_write': can_write,
+                'contributors': contributors,
+                'visible_contributors': node.visible_contributor_ids,
+                'is_admin': node.has_permission(user, ADMIN)
             },
             'user_id': user._id,
             'children': children,
@@ -1048,7 +1039,6 @@ def node_child_tree(user, node_ids):
         }
 
         items.append(item)
-
     return items
 
 

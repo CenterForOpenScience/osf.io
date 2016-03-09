@@ -1033,6 +1033,8 @@ class TestArchiverScripts(ArchiverTestCase):
                 datetime.datetime.now() - delta,
                 safe=True
             )
+            reg.archive_job.status = ARCHIVER_INITIATED
+            reg.archive_job.save()
             reg.save()
             for addon in ['osfstorage', 'dropbox']:
                 reg.archive_job._set_target(addon)

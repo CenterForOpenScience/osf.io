@@ -1,6 +1,8 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from rest_framework.response import Response
 
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
@@ -9,11 +11,14 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.collections.serializers import (
     CollectionSerializer,
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
+    CollectionLinkedNodesRelationshipSerializer
 )
 from api.nodes.serializers import NodeSerializer
 
@@ -21,6 +26,7 @@ from api.nodes.permissions import (
     ContributorOrPublic,
     ReadOnlyIfRegistration,
     ContributorOrPublicForPointers,
+    ContributorOrPublicForRelationshipPointers,
 )
 
 from website.exceptions import NodeStateError
@@ -69,7 +75,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     OSF Organizer Collection entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of Organizer Collection
         date_created   iso8601 timestamp  timestamp that the collection was created
         date_modified  iso8601 timestamp  timestamp when the collection was last updated
@@ -137,7 +143,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -209,7 +215,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
     OSF Organizer Collection entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of Organizer Collection
         date_created   iso8601 timestamp  timestamp that the collection was created
         date_modified  iso8601 timestamp  timestamp when the collection was last updated
@@ -315,7 +321,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
@@ -533,3 +539,109 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         except ValueError as err:  # pointer doesn't belong to node
             raise ValidationError(err.message)
         node.save()
+
+class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, CollectionMixin):
+    """ Relationship Endpoint for Collection -> Linked Node relationships
+
+    Used to set, remove, update and retrieve the ids of the linked nodes attached to this collection. For each id, there
+    exists a node link that contains that node.
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_nodes",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires both edit permission on the collection, and for the user that is
+    making the request to be able to read the nodes requested. Data can be contain any number of
+    node identifiers. This will create a node_link for all node_ids in the request that
+    do not currently have a corresponding node_link in this collection.
+
+    ###Update
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_nodes",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       200
+
+    This requires both edit permission on the collection, and for the user that is
+    making the request to be able to read the nodes requested. Data can be contain any number of
+    node identifiers. This will replace the contents of the node_links for this collection with
+    the contents of the request. It will delete all node links that don't have a node_id in the data
+    array, create node links for the node_ids that don't currently have a node id, and do nothing
+    for node_ids that already have a corresponding node_link. This means a update request with
+    {"data": []} will remove all node_links in this collection
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_nodes",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires edit permission on the node. This will delete any node_links that have a
+    corresponding node_id in the request.
+    """
+    permission_classes = (
+        ContributorOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+
+    serializer_class = CollectionLinkedNodesRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'collections'
+    view_name = 'collection-node-pointer-relationship'
+
+    def get_object(self):
+        collection = self.get_node(check_object_permissions=False)
+        obj = {'data': [
+            pointer for pointer in
+            collection.nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_folder
+        ], 'self': collection}
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        auth = Auth(user)
+        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        collection = instance['self']
+        for val in data:
+            if val['id'] in current_pointers:
+                collection.rm_pointer(current_pointers[val['id']], auth)
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(CollectionLinkedNodesRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret

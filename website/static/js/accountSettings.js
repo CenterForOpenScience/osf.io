@@ -201,15 +201,28 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
 
             this.client.update(this.profile()).done(function (profile) {
                 this.profile(profile);
-
                 var emails = profile.emails();
+                var emailAdded = false;
                 for (var i=0; i<emails.length; i++) {
                     if (emails[i].address() === email.address()) {
+                        emailAdded = true;
                         this.emailInput('');
-                        var addrText = $osf.htmlEscape(email.address());
-                        $osf.growl('<em>' + addrText  + '</em> added to your account.','You will receive a confirmation email at <em>' + addrText  + '</em>. Please check your email and confirm.', 'success');
-                        return;
                     }
+                }
+                if (emailAdded === true) {
+                    var addrText = $osf.htmlEscape(email.address());
+                    bootbox.alert({
+                                title: 'Confirmation email sent',
+                                message: '<em>' + addrText + '</em>' + ' was added to your account.' +
+                                ' You will receive a confirmation email at ' + '<em>' + addrText + '</em>.' +
+                                ' Please log out of this account and check your email to confirm this action.',
+                                buttons: {
+                                    ok: {
+                                        label: 'Close',
+                                        className: 'btn-default'
+                                    }
+                                }
+                            });
                 }
             }.bind(this)).fail(function(){
                 this.profile().emails.remove(email);
@@ -217,6 +230,9 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         } else {
             this.changeMessage('Email cannot be empty.', 'text-danger');
         }
+        
+        
+        
     },
     resendConfirmation: function(email){
         var self = this;
@@ -230,7 +246,8 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     self.client.update(self.profile(), email).done(function () {
                         $osf.growl(
                             'Email confirmation resent to <em>' + addrText + '</em>',
-                            'You will receive a new confirmation email at <em>' + addrText  + '</em>. Please check your email and confirm.',
+                            'You will receive a new confirmation email at <em>' + addrText  + '</em>.' +
+                            ' Please log out of this account and check your email to confirm this action.',
                             'success');
                     });
                 }

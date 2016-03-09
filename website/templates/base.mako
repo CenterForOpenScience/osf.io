@@ -15,7 +15,6 @@
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
-    <script src="/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
     <script>
         Raven.config(${ sentry_dsn_js | sjson, n }, {}).install();
     </script>
@@ -50,6 +49,7 @@
 
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
+
     % if dev_mode:
     <style>
         #devmode {
@@ -173,6 +173,15 @@
             </script>
         % endif
 
+        %if keen_project_id:
+            <script>
+                window.contextVars = $.extend(true, {}, window.contextVars, {
+                    keenProjectId: ${keen_project_id | sjson, n},
+                    keenWriteKey: ${keen_write_key | sjson, n}
+                })
+            </script>
+        %endif
+
 
         ${self.javascript_bottom()}
     </body>
@@ -261,7 +270,11 @@
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
         <script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
     % endif
-
+    <!-- JQuery 3 for IE Patching -->
+    <script type="text/javascript" src="/static/vendor/jquery-compat-git/jquery-compat-git.js"></script>
+    <script type="text/javascript">
+        var $3 = jQuery.noConflict(true);
+    </script>
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.

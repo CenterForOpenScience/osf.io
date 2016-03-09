@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Asynchronous task queue module."""
-
 from celery import Celery
 from celery.utils.log import get_task_logger
 
@@ -15,7 +14,7 @@ app = Celery()
 app.config_from_object('website.settings')
 
 if settings.SENTRY_DSN:
-    client = Client(settings.SENTRY_DSN)
+    client = Client(settings.SENTRY_DSN, release=settings.VERSION, tags={'App': 'celery'})
     register_signal(client)
 
 

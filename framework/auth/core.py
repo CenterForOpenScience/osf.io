@@ -11,7 +11,7 @@ import itsdangerous
 
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError, ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
 
 import framework
@@ -160,11 +160,29 @@ class Auth(object):
     def logged_in(self):
         return self.user is not None
 
+    @property
+    def private_link(self):
+        if not self.private_key:
+            return None
+        try:
+            # Avoid circular import
+            from website.project.model import PrivateLink
+            private_link = PrivateLink.find_one(
+                Q('key', 'eq', self.private_key)
+            )
+
+            if private_link.is_deleted:
+                return None
+
+        except QueryException:
+            return None
+
+        return private_link
+
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
         user = request_args.get('user') or kwargs.get('user') or _get_current_user()
         private_key = request_args.get('view_only')
-
         return cls(
             user=user,
             private_key=private_key,
@@ -200,6 +218,10 @@ class User(GuidStoredObject, AddonModelMixin):
         'linkedIn': u'https://www.linkedin.com/{}',
         'impactStory': u'https://impactstory.org/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
+        'researchGate': u'https://researchgate.net/profile/{}',
+        'academiaInstitution': u'https://{}',
+        'academiaProfileID': u'.academia.edu/{}',
+        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}'
     }
 
     # This is a GuidStoredObject, so this will be a GUID.
@@ -378,7 +400,12 @@ class User(GuidStoredObject, AddonModelMixin):
     # when comments for a node were last viewed
     comments_viewed_timestamp = fields.DictionaryField()
     # Format: {
-    #   'node_id': 'timestamp'
+    #   'node_id': {
+    #     'node': 'timestamp',
+    #     'files': {
+    #        'file_id': 'timestamp'
+    #     }
+    #   }
     # }
 
     # timezone for user's locale (e.g. 'America/New_York')
@@ -405,7 +432,7 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def contributed(self):
         from website.project.model import Node
-        return Node.find(Q('contributors', 'contains', self._id))
+        return Node.find(Q('contributors', 'eq', self._id))
 
     @property
     def email(self):
@@ -993,11 +1020,14 @@ class User(GuidStoredObject, AddonModelMixin):
         from mailchimp emails.
         """
         from website import mailchimp_utils
-        mailchimp_utils.unsubscribe_mailchimp(
-            list_name=settings.MAILCHIMP_GENERAL_LIST,
-            user_id=self._id,
-            username=self.username
-        )
+        try:
+            mailchimp_utils.unsubscribe_mailchimp(
+                list_name=settings.MAILCHIMP_GENERAL_LIST,
+                user_id=self._id,
+                username=self.username
+            )
+        except mailchimp_utils.mailchimp.ListNotSubscribedError:
+            pass
         self.is_disabled = True
 
     @property
@@ -1331,8 +1361,8 @@ class User(GuidStoredObject, AddonModelMixin):
         or just their primary keys
         """
         if primary_keys:
-            projects_contributed_to = set([node._id for node in self.contributed])
-            other_projects_primary_keys = set([node._id for node in other_user.contributed])
+            projects_contributed_to = set(self.contributed.get_keys())
+            other_projects_primary_keys = set(other_user.contributed.get_keys())
             return projects_contributed_to.intersection(other_projects_primary_keys)
         else:
             projects_contributed_to = set(self.contributed)
@@ -1341,6 +1371,32 @@ class User(GuidStoredObject, AddonModelMixin):
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
+
+    def is_affiliated_with_institution(self, inst):
+        return inst in self.affiliated_institutions
+
+    def remove_institution(self, inst_id):
+        try:
+            self.affiliated_institutions.remove(inst_id)
+        except ValueError:
+            return False
+        return True
+
+    affiliated_institutions = fields.ForeignField('institution', list=True)
+
+    def get_node_comment_timestamps(self, node, page, file_id=None):
+        """ Returns the timestamp for when comments were last viewed on a node or
+            a dictionary of timestamps for when comments were last viewed on files.
+        """
+        default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0)
+        timestamps = self.comments_viewed_timestamp.get(node._id, {})
+        if page == 'node':
+            page_timestamps = timestamps.get(page, default_timestamp)
+        elif page == 'files':
+            page_timestamps = timestamps.get(page, {})
+            if file_id:
+                page_timestamps = page_timestamps.get(file_id, default_timestamp)
+        return page_timestamps
 
 
 def _merge_into_reversed(*iterables):

@@ -94,6 +94,32 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label>ResearchGate</label>
+                <div class="input-group">
+                <span class="input-group-addon">https://researchgate.net/profile/</span>
+                <input class="form-control" data-bind="value: researchGate" placeholder="profileID"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Academia</label>
+                <div class="input-group">
+                <span class="input-group-addon">https://</span>
+                <input class="form-control" data-bind="value: academiaInstitution" placeholder="institution" size="5"/>
+                <span class="input-group-addon">.academia.edu/</span>
+                <input class="form-control" data-bind="value: academiaProfileID" placeholder="profileID"/>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Baidu Scholar</label>
+                <div class="input-group">
+                <span class="input-group-addon">http://xueshu.baidu.com/scholarID/</span>
+                <input class="form-control" data-bind="value: baiduScholar" placeholder="profileID"/>
+                </div>
+            </div>
+
             <div class="p-t-lg p-b-lg">
 
                 <button

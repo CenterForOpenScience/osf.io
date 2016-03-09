@@ -10,6 +10,7 @@ from website.util import permissions
 from website.util.sanitize import strip_html
 
 from api.base.settings.defaults import API_BASE
+from api_tests import utils as test_utils
 
 from tests.base import ApiTestCase, fake
 from tests.factories import (
@@ -39,6 +40,9 @@ class TestNodeDetail(ApiTestCase):
 
         self.public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
         self.public_component_url = '/{}nodes/{}/'.format(API_BASE, self.public_component._id)
+        self.read_permissions = ['read']
+        self.write_permissions = ['read', 'write']
+        self.admin_permissions = ['read', 'admin', 'write']
 
     def test_return_public_project_details_logged_out(self):
         res = self.app.get(self.public_url)
@@ -47,27 +51,49 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], self.public_project.title)
         assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
         assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.read_permissions)
 
-    def test_return_public_project_details_logged_in(self):
+    def test_return_public_project_details_contributor_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], self.public_project.title)
         assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
         assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.admin_permissions)
+
+    def test_return_public_project_details_non_contributor_logged_in(self):
+        res = self.app.get(self.public_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.public_project.title)
+        assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
+        assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.read_permissions)
 
     def test_return_private_project_details_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
-    def test_return_private_project_details_logged_in_contributor(self):
+    def test_return_private_project_details_logged_in_admin_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], self.private_project.title)
         assert_equal(res.json['data']['attributes']['description'], self.private_project.description)
         assert_equal(res.json['data']['attributes']['category'], self.private_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.admin_permissions)
+
+    def test_return_private_project_details_logged_in_write_contributor(self):
+        self.private_project.add_contributor(contributor=self.user_two, auth=Auth(self.user), save=True)
+        res = self.app.get(self.private_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.private_project.title)
+        assert_equal(res.json['data']['attributes']['description'], self.private_project.description)
+        assert_equal(res.json['data']['attributes']['category'], self.private_project.category)
+        assert_items_equal(res.json['data']['attributes']['current_user_permissions'], self.write_permissions)
 
     def test_return_private_project_details_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
@@ -126,10 +152,27 @@ class TestNodeDetail(ApiTestCase):
     def test_node_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()
         self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user), save=True)
-        comment = CommentFactory(node=self.public_project, target=self.public_project, user=contributor)
+        comment = CommentFactory(node=self.public_project, user=contributor, page='node')
         res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
-        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
-        assert_equal(unread_comments, 1)
+        unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
+        unread_comments_total = unread['total']
+        unread_comments_node = unread['node']
+        assert_equal(unread_comments_total, 1)
+        assert_equal(unread_comments_node, 1)
+
+    def test_node_has_correct_unread_file_comments_count(self):
+        contributor = AuthUserFactory()
+        self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user))
+        test_file = test_utils.create_test_file(self.public_project, self.user)
+        comment = CommentFactory(node=self.public_project, target=test_file.get_guid(), user=contributor, page='files')
+        comment.node.commented_files[comment.root_target._id] = 1
+        self.public_project.save()
+        res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
+        unread = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
+        unread_comments_total = unread['total']
+        unread_comments_files = unread['files']
+        assert_equal(unread_comments_total, 1)
+        assert_equal(unread_comments_files, 1)
 
     def test_node_properties(self):
         res = self.app.get(self.public_url)

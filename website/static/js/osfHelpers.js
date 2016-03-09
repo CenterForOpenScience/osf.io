@@ -207,10 +207,12 @@ var handleAddonApiHTTPError = function(error){
 var handleJSONError = function(response) {
     var title = (response.responseJSON && response.responseJSON.message_short) || errorDefaultShort;
     var message = (response.responseJSON && response.responseJSON.message_long) || errorDefaultLong;
-
-    $.osf.growl(title, message);
-
-    Raven.captureMessage('Unexpected error occurred in JSON request');
+    // We can reach this error handler when the user leaves a page while a request is pending. In that
+    // case, response.status === 0, and we don't want to show an error message.
+    if (response && response.status && response.status >= 400) {
+        $.osf.growl(title, message);
+        Raven.captureMessage('Unexpected error occurred in JSON request');
+    }
 };
 
 var handleEditableError = function(response) {
@@ -570,6 +572,44 @@ function humanFileSize(bytes, si) {
 }
 
 /**
+ * take treebeard tree structure of nodes and get a dictionary of parent node and all its
+ * children
+ */
+function getNodesOriginal(nodeTree, nodesOriginal) {
+    var i;
+    var j;
+    var adminContributors = [];
+    var registeredContributors = [];
+    var nodeId = nodeTree.node.id;
+    for (i=0; i < nodeTree.node.contributors.length; i++) {
+        if (nodeTree.node.contributors[i].is_admin) {
+            adminContributors.push(nodeTree.node.contributors[i].id);
+        }
+        if (nodeTree.node.contributors[i].is_confirmed) {
+            registeredContributors.push(nodeTree.node.contributors[i].id);
+        }
+    }
+    nodesOriginal[nodeId] = {
+        public: nodeTree.node.is_public,
+        id: nodeTree.node.id,
+        title: nodeTree.node.title,
+        contributors: nodeTree.node.contributors,
+        isAdmin: nodeTree.node.is_admin,
+        visibleContributors: nodeTree.node.visible_contributors,
+        adminContributors: adminContributors,
+        registeredContributors: registeredContributors
+    };
+
+    if (nodeTree.children) {
+        for (j in nodeTree.children) {
+            nodesOriginal = getNodesOriginal(nodeTree.children[j], nodesOriginal);
+        }
+    }
+    return nodesOriginal;
+}
+
+
+/**
 *  returns a random name from this list to use as a confirmation string
 */
 var _confirmationString = function() {
@@ -741,10 +781,15 @@ function indexOf(array, searchFn) {
  * @param {Array[Any]} listOfBools
  * @returns {Boolean}
  **/
-var any = function(listOfBools) {
+var any = function(listOfBools, check) {
     var someTruthy = false;
     for(var i = 0; i < listOfBools.length; i++){
-        someTruthy = someTruthy || Boolean(listOfBools[i]);
+        if (check) {
+            someTruthy = someTruthy || Boolean(check(listOfBools[i]));
+        }
+        else {
+            someTruthy = someTruthy || Boolean(listOfBools[i]);
+        }
         if (someTruthy) {
             return someTruthy;
         }
@@ -817,6 +862,7 @@ module.exports = window.$.osf = {
     trackPiwik: trackPiwik,
     applyBindings: applyBindings,
     FormattableDate: FormattableDate,
+    getNodesOriginal: getNodesOriginal,
     throttle: throttle,
     debounce: debounce,
     htmlEscape: htmlEscape,
@@ -830,5 +876,6 @@ module.exports = window.$.osf = {
     isSafari:isSafari,
     indexOf: indexOf,
     currentUser: currentUser,
-    any: any
+    any: any,
+    dialog: dialog
 };
