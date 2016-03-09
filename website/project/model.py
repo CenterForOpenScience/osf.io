@@ -3517,6 +3517,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def institution_relationship_url(self):
         return self.absolute_api_v2_url + 'relationships/institution/'
 
+
 class SpecialList(list):
     def __init__(self, node, private_target, init=None):
         super(SpecialList, self).__init__(init or [])
@@ -3527,6 +3528,12 @@ class SpecialList(list):
         junk = getattr(self.node, self.target)
         junk.append(to_append.node)
         setattr(self.node, self.target, junk)
+
+    def remove(self, to_remove):
+        junk = getattr(self.node, self.target)
+        junk.remove(to_remove.node)
+        setattr(self.node, self.target, junk)
+
 
 class InstitutionQuerySet(MongoQuerySet):
     def __init__(self, queryset):
