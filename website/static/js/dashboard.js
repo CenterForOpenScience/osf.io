@@ -84,6 +84,9 @@ function _makeTree (flatData, lastcrumb) {
     var parentID;
     var crumbParent = lastcrumb ? lastcrumb.data.id : null;
     for (var i = 0; i < flatData.length; i++) {
+        if(flatData[i].errors){
+            continue;
+        }
         var n = _formatDataforPO(flatData[i]);
         if (!node_list[n.id]) { // If this node is not in the object list, add it
             node_list[n.id] = n;
