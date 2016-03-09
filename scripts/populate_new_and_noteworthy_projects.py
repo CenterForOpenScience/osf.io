@@ -14,7 +14,6 @@ from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.mongo import database as db
 from framework.transactions.context import TokuTransaction
-from website.project.model import Pointer
 from website.discovery.views import popular_activity_json
 from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST
 
@@ -32,7 +31,7 @@ def get_new_and_noteworthy_nodes():
 def is_eligible_node(node):
     """
     Check to ensure that node is not the POPULAR or NEW_AND_NOTEWORTHY LINKS_NODE.
-    Ensures QA members are not contributors
+    Ensures no blacklisted contributor nodes are shown (for example, a test project created by QA)
     """
     if node._id == POPULAR_LINKS_NODE or node._id == NEW_AND_NOTEWORTHY_LINKS_NODE:
         return False
