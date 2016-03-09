@@ -3454,7 +3454,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         approval.save()  # Save approval's approval_state
         return approval
 
-    def require_approval(self, user, notify_initiator_on_complete=False):
+    def require_approval(sehlf, user, notify_initiator_on_complete=False):
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')
         if not self.has_permission(user, 'admin'):
