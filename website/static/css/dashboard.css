@@ -20,7 +20,6 @@
     margin-right: 0px !important;
     margin-left: 0px !important;
     box-shadow: 0 3px 3px -3px #ccc;
-    position: relative;
     z-index: 99;
 }
 .db-breadcrumbs {
