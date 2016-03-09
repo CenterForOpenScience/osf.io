@@ -113,7 +113,7 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
         }
     });
     var grid = new Treebeard(tbOptions);
-    expandOnLoad.call(grid.tbController);
+    expandOnLoad.call(grid);
 }
 module.exports = NodesPrivacyTreebeard;
 

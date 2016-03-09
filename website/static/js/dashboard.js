@@ -354,19 +354,30 @@ var Dashboard = {
                             'This collection has no projects.' +  (options.institutionId ? '' : ' To add projects go to "All My Projects" collection; drag and drop projects into the collection link')));
                     }
                 } else {
-                    self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                        'This project has no components.',
-                        m.component(AddProject, {
-                            buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new component'),
-                            parentID : lastcrumb.data.id,
-                            modalID : 'addSubcomponent',
-                            categoryList : self.categoryList,
-                            stayCallback : function _stayCallback_inPanel() {
-                                self.allProjectsLoaded(false);
-                                self.updateList(lastcrumb);
-                            }
-                        })
-                    ]));
+                    var showAddProject = true;
+                    if(lastcrumb.type === 'node'){
+                        var permissions = lastcrumb.data.attributes.current_user_permissions;
+                        showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
+                    }
+                    if(showAddProject){
+                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
+                            'This project has no components.',
+                            m.component(AddProject, {
+                                buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new component'),
+                                parentID : lastcrumb.data.id,
+                                modalID : 'addSubcomponent',
+                                title: 'Create new component',
+                                categoryList : self.categoryList,
+                                stayCallback : function _stayCallback_inPanel() {
+                                    self.allProjectsLoaded(false);
+                                    self.updateList(lastcrumb);
+                                }
+                            })
+                        ]));
+                    } else {
+                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
+                            'This project has no components.'));
+                    }
                 }
             }
             // if we have more pages keep loading the pages
@@ -412,11 +423,9 @@ var Dashboard = {
                     var u = contributors[i];
                     if(self.users[u.id] === undefined) {
                         self.users[u.id] = {
-                            data : u,
-                            count: 1
+                            data : u
+
                         };
-                    } else {
-                        self.users[u.id].count++;
                     }
                 }
 
@@ -435,7 +444,7 @@ var Dashboard = {
             self.nameFilters = [];
             for (var user in self.users){
                 var u2 = self.users[user];
-                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name,  options.institutionId || false));
+                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
             }
             self.tagFilters = [];
             for (var tag in self.tags){
@@ -598,7 +607,7 @@ var Dashboard = {
  * Collections Module.
  * @constructor
  */
-var Collections  = {
+var Collections = {
     controller : function(args){
         var self = this;
         self.collections = args.collections;
@@ -757,14 +766,16 @@ var Collections  = {
                             config : xhrconfig,
                             data : dataArray[index]
                         }).then(doNext, function(result){
-                            var details = '';
+                            var message = '';
+                            var name = args.selected()[index] ? args.selected()[index].data.name : 'Item ';
                             if (result.errors.length > 0) {
                                 result.errors.forEach(function(error){
-                                    details += error.detail;
+                                    if(error.detail.indexOf('already pointed') > -1 ){
+                                        message = '"' + name + '" is already in "' + collection.label + '"' ;
+                                    }
                                 });
                             }
-                            var name = args.selected()[index] ? args.selected()[index].data.name : 'Project ';
-                            $osf.growl('"' + name + '" could not be added to Collection.', details);
+                            $osf.growl(message);
                             doNext();
                         }); // In case of success or error. It doesn't look like mithril has a general .done method
                     }
@@ -789,6 +800,7 @@ var Collections  = {
         var selectedCSS;
         var submenuTemplate;
         var viewOnly = args.viewOnly;
+        ctrl.calculateTotalPages();
         var collectionList = function () {
             var item;
             var index;
@@ -1065,23 +1077,32 @@ var Breadcrumbs = {
         }
         return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
-                if(index === array.length-1){
+                if(index === array.length-1) {
                     var addProjectTemplate = '';
                     if (!viewOnly) {
-                        var label = item.type === 'node' ? ' Add Component' : ' Add Project';
-                        addProjectTemplate = m.component(AddProject, {
-                            buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
-                            parentID: args.breadcrumbs()[args.breadcrumbs().length - 1].data.id,
-                            modalID: 'addProject',
-                            categoryList: args.categoryList,
-                            stayCallback: function () {
-                                args.allProjectsLoaded(false);
-                                args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
-                            }
-                        });
+                        var label = item.type === 'node' ? ' Add component' : ' Add project';
+                        var title = item.type === 'node' ? 'Create new component' : 'Create new project';
+                        var showAddProject = true;
+                        if(item.type === 'node'){
+                            var permissions = item.data.attributes.current_user_permissions;
+                            showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
+                        }
+                        if (showAddProject){
+                            addProjectTemplate = m.component(AddProject, {
+                                buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
+                                parentID: args.breadcrumbs()[args.breadcrumbs().length - 1].data.id,
+                                modalID: 'addProject',
+                                title: title,
+                                categoryList: args.categoryList,
+                                stayCallback: function () {
+                                    args.allProjectsLoaded(false);
+                                    args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
+                                }
+                            });
+                        }
                     }
                     return [
-                        m('li',  [
+                        m('li', [
                             m('span.btn', item.label),
                             m('i.fa.fa-angle-right')
                         ]),
@@ -1137,9 +1158,7 @@ var Filters = {
                 item = args.nameFilters[i];
                 selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                 list.push(m('li' + selectedCSS,
-                    m('a[role="button"]', {onclick : args.updateFilter.bind(null, item)},
-                        item.label + ' (' + item.data.count + ')'
-                    )
+                    m('a[role="button"]', {onclick : args.updateFilter.bind(null, item)},item.label)
                 ));
             }
             return list;
@@ -1219,13 +1238,7 @@ var Information = {
                                 item.attributes.tags.map(function(tag){
                                     return m('a.tag', { href : '/search/?q=(tags:' + tag + ')'}, tag);
                                 })
-                            ]) : '',
-                            m('p.m-t-md', [
-                                m('h5', 'Jump to Page'),
-                                m('a.p-xs', { href : item.links.html + 'wiki/home'}, 'Wiki'),
-                                m('a.p-xs', { href : item.links.html + 'files/'}, 'Files'),
-                                m('a.p-xs', { href : item.links.html + 'settings/'}, 'Settings'),
-                            ])
+                            ]) : ''
                         ]),
                         m('[role="tabpanel"].tab-pane#tab-activity',[
                             m.component(ActivityLogs, args)

@@ -368,7 +368,7 @@ var tbOptions = {
             }),
             m('.filterReset', { onclick : function () {
                 tb.resetFilter.call(tb);
-                $('#poFilter>input').val('');
+                $('.db-poFilter>input').val('');
             } }, tb.options.removeIcon())
         ];
     },
