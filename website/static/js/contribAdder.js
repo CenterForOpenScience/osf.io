@@ -143,13 +143,19 @@ AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         var nodesState = self.nodesState();
         for (var key in nodesState) {
+            var i;
             var node = nodesState[key];
             var enabled = nodesState[key].canWrite;
             var checked = nodesState[key].checked;
             if (enabled) {
-                for (var i = 0; i < self.contributorIDsToAdd().length; i++) {
-                    if (node.contributors.indexOf(self.contributorIDsToAdd()[i]) < 0) {
+                var nodeContributors = [];
+                for (i = 0; i < node.contributors.length; i++) {
+                    nodeContributors.push(node.contributors[i].id);
+                }
+                for (i = 0; i < self.contributorIDsToAdd().length; i++) {
+                    if (nodeContributors.indexOf(self.contributorIDsToAdd()[i]) < 0) {
                         enabled = true;
+                        break;
                     }
                     else {
                         checked = true;
