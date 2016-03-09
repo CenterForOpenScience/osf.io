@@ -1,4 +1,5 @@
 <div class="osf-nav-wrapper">
+
 <nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope" role="navigation">
     <div class="container">
     <div class="navbar-header">
@@ -71,7 +72,6 @@
         </li>
         % elif allow_login:
         <li class="dropdown sign-in" data-bind="with: $root.signIn">
-
           <div class="btn-group">
               <a href="${web_url_for('auth_login')}?campaign=sign_up" class="btn btn-success btn-top-login m-r-sm">Sign up</a>
               <button type="button" class="btn btn-info btn-top-login p-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
@@ -100,5 +100,3 @@
         <%include file='./search_bar.mako' />
     <!-- /ko -->
 </div>
-
-<link rel="stylesheet" href="/static/css/nav.css">
