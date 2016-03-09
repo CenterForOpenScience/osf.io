@@ -84,13 +84,17 @@
                 "replace": true
             }'></div>
         % else:
-         <div>Anonymous Contributors</div>
+            <div>Anonymous Contributors</div>
         % endif
         % if not summary['anonymous']:
-            <span class="text-muted">${summary['nlogs']} contributions</span>
+            % if summary['nlogs'] > 1:
+                <span class="text-muted">${summary['nlogs']} contributions</span>
+            % else:
+                <span class="text-muted">${summary['nlogs']} contribution</span>
+            % endif
         % endif
         % if not summary['archiving']:
-        <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
+            <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
             % if summary['is_retracted']:
                 <h4>Recent activity information has been retracted.</h4>
