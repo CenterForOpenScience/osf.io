@@ -28,7 +28,8 @@ var QuickSearchProject = {
         self.filter = m.prop(); // Search query from user
         self.fieldSort = m.prop(); // For xs screen, either alpha or date
         self.directionSort = m.prop(); // For xs screen, either Asc or Desc
-        self.errorLoading = m.prop(false);
+        self.errorLoading = m.prop(false);  // True if error retrieving projects or contributors.
+        self.someDataLoaded = m.prop(false); // True when the initial request to retrieve projects is complete.
 
         // Switches errorLoading to true
         self.requestError = function(result) {
@@ -38,7 +39,7 @@ var QuickSearchProject = {
 
         // Load up to first ten nodes
         var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
-        var promise = m.request({method: 'GET', url : url, config : xhrconfig});
+        var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
             result.data.forEach(function (node) {
@@ -46,6 +47,7 @@ var QuickSearchProject = {
                 self.retrieveContributors(node);
             });
             self.populateEligibleNodes(0, self.countDisplayed());
+            self.someDataLoaded(true);
             self.next(result.links.next);
         }, function _error(result){
             self.requestError(result);
@@ -305,6 +307,10 @@ var QuickSearchProject = {
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
             return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page.');
+        }
+
+        if (!ctrl.someDataLoaded()) {
+            return m('.text-center', m('.logo-spin.logo-xl.m-v-xl'));
         }
 
         function loadMoreButton(){

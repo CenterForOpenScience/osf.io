@@ -19,11 +19,12 @@ var xhrconfig = function(xhr) {
 var NewAndNoteworthy = {
     controller: function() {
         var self = this;
-        self.newAndNoteworthyNodes = m.prop([]);
-        self.popularNodes = m.prop([]);
-        self.contributorsMapping = {};
-        self.SHOW_TOTAL = 5;
-        self.errorLoading = m.prop(false);
+        self.newAndNoteworthyNodes = m.prop([]); // New and noteworthy nodes list
+        self.popularNodes = m.prop([]); // Most popular nodes list
+        self.contributorsMapping = {}; // Dictionary mapping node id to some of the contrib names and the contrib total.
+        self.SHOW_TOTAL = 5; // Number of new and noteworthy projects displayed in each column
+        self.errorLoading = m.prop(false);  // True if error retrieving projects or contributors.
+        self.someDataLoaded = m.prop(false); // True when the initial request to retrieve projects is complete.
 
         // Switches errorLoading to true
         self.requestError = function(result){
@@ -33,26 +34,28 @@ var NewAndNoteworthy = {
 
         // Load new and noteworthy nodes
         var newAndNoteworthyUrl = $osf.apiV2Url('nodes/' + window.contextVars.newAndNoteworthy + '/node_links/', {});
-        var newAndNoteworthyPromise = m.request({method: 'GET', url: newAndNoteworthyUrl, config: xhrconfig});
+        var newAndNoteworthyPromise = m.request({method: 'GET', url: newAndNoteworthyUrl, config: xhrconfig, background: true});
         newAndNoteworthyPromise.then(function(result){
             var numNew = Math.min(result.data.length, self.SHOW_TOTAL);
             for (var l = 0; l < numNew; l++) {
                 self.newAndNoteworthyNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
             }
+            self.someDataLoaded(true);
         }, function _error(result){
             self.requestError(result);
         });
 
         // Load popular nodes
         var popularUrl = $osf.apiV2Url('nodes/' + window.contextVars.popular + '/node_links/', {});
-        var popularPromise = m.request({method: 'GET', url: popularUrl, config: xhrconfig});
+        var popularPromise = m.request({method: 'GET', url: popularUrl, config: xhrconfig, background: true});
         popularPromise.then(function(result){
             var numPopular = Math.min(result.data.length, self.SHOW_TOTAL);
             for (var l = 0; l < numPopular; l++) {
                 self.popularNodes().push(result.data[l]);
                 self.fetchContributors(result.data[l]);
             }
+            self.someDataLoaded(true);
         }, function _error(result){
             self.requestError(result);
         });
@@ -89,6 +92,10 @@ var NewAndNoteworthy = {
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
             return m('p.text-center.m-v-lg', 'Error loading projects. Please refresh the page.');
+        }
+
+        if (!ctrl.someDataLoaded()) {
+            return m('.text-center', m('.logo-spin.logo-xl.m-v-xl'));
         }
 
         function nodeDisplay(node) {
