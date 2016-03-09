@@ -24,8 +24,7 @@ from framework.transactions.handlers import no_auto_transaction
 from framework.auth.decorators import must_be_logged_in, must_be_signed, collect_auth
 from website import mails
 from website import settings
-from website.files.models import FileNode
-from website.files.models import TrashedFileNode
+from website.files.models import FileNode, TrashedFileNode, StoredFileNode
 from website.project import decorators
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
@@ -386,6 +385,12 @@ def create_waterbutler_log(payload, **kwargs):
 
 @file_signals.file_updated.connect
 def addon_delete_file_node(self, node, event_type, payload, user=None):
+    """ Get addon StoredFileNode(s), move it into the TrashedFileNode collection
+    and remove it from StoredFileNode.
+
+    Required so that the guids of deleted addon files are not re-pointed when an
+    addon file or folder is moved or renamed.
+    """
     if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
         provider = payload['provider']
         path = payload['metadata']['path']
@@ -401,7 +406,10 @@ def addon_delete_file_node(self, node, event_type, payload, user=None):
                     item.delete()
         else:
             try:
-                file_node = FileNode.resolve_class(provider, FileNode.FILE).find_one(Q('node', 'eq', node) & Q('materialized_path', 'eq', materialized_path))
+                file_node = FileNode.resolve_class(provider, FileNode.FILE).find_one(
+                    Q('node', 'eq', node) &
+                    Q('materialized_path', 'eq', materialized_path)
+                )
             except NoResultsFound:
                 file_node = None
 
