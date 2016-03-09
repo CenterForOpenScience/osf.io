@@ -26,7 +26,6 @@ from framework.celery_tasks import handlers
 from framework.mongo import database
 
 from website import mailchimp_utils
-from website.views import _rescale_ratio
 from website.util import permissions
 from website.models import Node, Pointer, NodeLog, MetaSchema, DraftRegistration
 from website.project.model import ensure_schemas, has_anonymous_link
@@ -696,7 +695,7 @@ class TestProjectViews(OsfTestCase):
         pid = data['nodes'][0]['id']
         url2 = api_url_for('get_summary', pid=pid)
         # count contributions
-        res2 = self.app.get(url2, {'rescale_ratio': data['rescale_ratio']}, auth=self.auth)
+        res2 = self.app.get(url2, auth=self.auth)
         data = res2.json
         assert_is_not_none(data['summary']['nlogs'])
 
@@ -710,7 +709,7 @@ class TestProjectViews(OsfTestCase):
         pid = data['nodes'][0]['id']
         url2 = api_url_for('get_summary', pid=pid)
         # count contributions
-        res2 = self.app.get(url2, {'rescale_ratio': data['rescale_ratio']}, auth=self.auth)
+        res2 = self.app.get(url2, auth=self.auth)
         data = res2.json
         assert_is_not_none(data['summary']['nlogs'])
 
@@ -1146,17 +1145,6 @@ class TestChildrenViews(OsfTestCase):
         url = project.api_url_for('get_children', permissions='write')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['nodes']), 0)
-
-    def test_get_children_rescale_ratio(self):
-        project = ProjectFactory(creator=self.user)
-        child = NodeFactory(parent=project, creator=self.user)
-
-        url = project.api_url_for('get_children')
-        res = self.app.get(url, auth=self.user.auth)
-
-        rescale_ratio = res.json['rescale_ratio']
-        assert_is_instance(rescale_ratio, float)
-        assert_equal(rescale_ratio, _rescale_ratio(Auth(self.user), [child]))
 
     def test_get_children_render_nodes_receives_auth(self):
         project = ProjectFactory(creator=self.user)

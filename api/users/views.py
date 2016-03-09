@@ -71,7 +71,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     OSF User entities have the "users" `type`.
 
         name               type               description
-        ----------------------------------------------------------------------------------------
+        ========================================================================================
         full_name          string             full name of the user; used for display
         given_name         string             given name of the user; for bibliographic citations
         middle_names       string             middle name of user; for bibliographic citations
@@ -145,7 +145,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     OSF User entities have the "users" `type`.
 
         name               type               description
-        ----------------------------------------------------------------------------------------
+        ========================================================================================
         full_name          string             full name of the user; used for display
         given_name         string             given name of the user; for bibliographic citations
         middle_names       string             middle name of user; for bibliographic citations
@@ -247,7 +247,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
@@ -353,7 +353,7 @@ class UserRegistrations(UserNodes):
     Registrations have the "registrations" `type`.
 
         name                            type               description
-        -------------------------------------------------------------------------------------------------------
+        =======================================================================================================
         title                           string             title of the registered project or component
         description                     string             description of the registered node
         category                        string             node category, must be one of the allowed values
