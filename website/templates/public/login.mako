@@ -48,7 +48,11 @@
     </div>
     %endif
     %if campaign != "institution" or not enable_institutions:
-    <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
+        %if sign_up:
+            <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-muted p-h-lg">
+        %else:
+            <div class="col-sm-5 col-sm-offset-1 toggle-box toggle-box-left toggle-box-active p-h-lg">
+        %endif
         <form
             id="logInForm"
             class="form-horizontal"
@@ -61,13 +65,13 @@
                 <label for="inputEmail3" class="col-sm-3 control-label">Email</label>
                 <div class="col-sm-9">
                     <input
+                        ${'autofocus' if not sign_up else ''}
                         type="email"
                         class="form-control"
                         data-bind="value: username"
                         name="username"
                         id="inputEmail3"
                         placeholder="Email"
-                        autofocus
                     >
                 </div>
             </div>
@@ -98,7 +102,11 @@
             </div>
         </form>
     </div>
-    <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
+        %if sign_up:
+            <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-active p-h-lg" style="height: auto;">
+        %else:
+            <div id="signUpScope" class="col-sm-5 toggle-box toggle-box-right toggle-box-muted p-h-lg" style="height: auto;">
+        %endif
         <form data-bind="submit: submit" class="form-horizontal">
             <h3 class="m-b-lg"> Create a free account </h3>
                 <div
@@ -112,6 +120,7 @@
                     <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
                         <input
+                            ${'autofocus' if sign_up else ''}
                             type="text"
                             class="form-control"
                             id="inputName"
