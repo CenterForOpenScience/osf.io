@@ -27,6 +27,7 @@
 .load-nodes {
     font-size: 2em;
 }
+
 .load-nodes:hover {
     color: #333;
 }
@@ -51,30 +52,11 @@
     .node-col-headers {
         display: none;
     }
-
-    .sm-new-and-noteworthy {
-        display: none;
-    }
-
-    .noteworthy-spacing {
-        margin-top: 10px;
-    }
-
-    .conference-centering {
-        text-align: center;
-    }
-
 }
 
 @media screen and (min-width: 768px) {
     .node-sort-dropdown {
         display: none;
-    }
-
-    .noteworthy-spacing {
-        margin-left: 1px;
-        margin-right: 1px;
-        margin-top: 10px;
     }
 }
 
@@ -102,7 +84,6 @@
     border-radius: 5px;
     display: inline-block;
     padding-right: 40px;
-
 }
 
 .quick-search-input span {
@@ -114,33 +95,10 @@
     font-size: 13px;
     padding: 1px;
     width: 26px;
-
 }
+
 .quick-search-col {
     padding-left: 5px;
-}
-
-.public-projects-box {
-    background: rgba(255, 255, 255, 0.22);
-    padding: 10px 15px;
-    border-radius: 2px;
-    margin-top: 20px;
-}
-.public-projects-item {
-    background-color: #fff;
-    box-shadow: 1px 1px 1px #898787;
-    padding: 8px 15px;
-    color: #555;
-    margin-bottom: 5px;
-}
-.public-projects-item:hover {
-    cursor: pointer;
-    background-color: #337AB7;
-    color: #fff;
-}
-
-.public-projects-item:hover a {
-    color: #5BC0DE;
 }
 
 .quick-search-table {

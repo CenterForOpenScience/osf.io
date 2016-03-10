@@ -8,7 +8,7 @@ var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 
 // CSS
-require('css/quick-project-search-plugin.css');
+require('css/new-and-noteworthy-plugin.css');
 
 // XHR config for apiserver connection
 var xhrconfig = function(xhr) {
