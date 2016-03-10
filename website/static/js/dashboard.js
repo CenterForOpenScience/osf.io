@@ -810,6 +810,9 @@ var Collections = {
             var list = [];
             var childCount;
             var dropAcceptClass;
+            if(ctrl.currentPage() > ctrl.totalPages()){
+                ctrl.currentPage(ctrl.totalPages());
+            }
             var begin = ((ctrl.currentPage()-1)*ctrl.pageSize()); // remember indexes start from 0
             var end = ((ctrl.currentPage()) *ctrl.pageSize()); // 1 more than the last item
             if (ctrl.collections().length < end) {
