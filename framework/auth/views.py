@@ -146,7 +146,7 @@ def auth_login(auth, **kwargs):
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
 
     if sign_up:
-        data['sign_up'] = 1
+        data['sign_up'] = True
 
     return data, http.OK
 
