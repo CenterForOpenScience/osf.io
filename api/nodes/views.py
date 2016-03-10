@@ -13,7 +13,12 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
+    JSONAPIOnetoOneRelationshipParser,
+    JSONAPIOnetoOneRelationshipParserForRegularJSON
+)
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
@@ -28,6 +33,7 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
     NodeInstitutionRelationshipSerializer,
+    NodeInstitutionsRelationshipSerializer,
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
 )
@@ -2039,3 +2045,26 @@ class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
         if not inst:
             return Response(status=HTTP_204_NO_CONTENT)
         return Response(serializer.data)
+
+class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    serializer_class = NodeInstitutionsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'nodes'
+    view_name = 'node-relationships-institutions'
+
+    def get_object(self):
+        node = self.get_node(check_object_permissions=False)
+        obj = {
+            'data': node.affiliated_institutions,
+            'self': node
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
+

@@ -20,7 +20,7 @@ from api.nodes.utils import get_file_object
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
-                                  HideIfRegistration)
+                                  HideIfRegistration, JSONAPIRelationshipSerializer)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -534,6 +534,24 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
 
         return data
 
+class InstitutionRelated(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+    class Meta:
+        type_ = 'institutions'
+
+class NodeInstitutionsRelationshipSerializer(ser.Serializer):
+    data = ser.ListField(child=InstitutionRelated())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return 'self-url'
+
+    def get_related_url(self, obj):
+        return 'get-related-url'
+
+    class Meta:
+        type_ = 'institutions'
 
 class NodeAlternativeCitationSerializer(JSONAPISerializer):
 
