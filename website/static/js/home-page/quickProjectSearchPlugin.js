@@ -29,7 +29,7 @@ var QuickSearchProject = {
         self.fieldSort = m.prop(); // For xs screen, either alpha or date
         self.directionSort = m.prop(); // For xs screen, either Asc or Desc
         self.errorLoading = m.prop(false);  // True if error retrieving projects or contributors.
-        self.someDataLoaded = m.prop(false); // True when the initial request to retrieve projects is complete.
+        self.someDataLoaded = function() { return Boolean(self.nodes().length); };
 
         // Switches errorLoading to true
         self.requestError = function(result) {
@@ -47,8 +47,11 @@ var QuickSearchProject = {
                 self.retrieveContributors(node);
             });
             self.populateEligibleNodes(0, self.countDisplayed());
-            self.someDataLoaded(true);
             self.next(result.links.next);
+            // NOTE: This manual redraw is necessary because we set background: true on
+            // the request, which prevents a redraw. This redraw allows the loading
+            // indicator to go away and the first 10 nodes to be rendered
+            m.redraw();
         }, function _error(result){
             self.requestError(result);
             m.redraw();
@@ -303,7 +306,6 @@ var QuickSearchProject = {
         self.nodeDirect = function(node) {
             location.href = '/'+ node.id;
         };
-
     },
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
@@ -408,7 +410,7 @@ var QuickSearchProject = {
                 }})
             ]);
             }
-        
+
         function xsDropdown() {
             if (ctrl.loadingComplete()){
                 return m('.row', m('.col-xs-12.f-w-xl.node-sort-dropdown.text-right',
