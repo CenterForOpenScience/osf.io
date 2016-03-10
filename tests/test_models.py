@@ -933,6 +933,11 @@ class TestDisablingUsers(OsfTestCase):
         assert_true(isinstance(self.user.date_disabled, datetime.datetime))
         assert_false(self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
 
+    def test_disable_account_api(self):
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
+        with assert_raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
+            self.user.disable_account()
+
 
 class TestMergingUsers(OsfTestCase):
 
@@ -2022,6 +2027,14 @@ class TestNodeUpdate(OsfTestCase):
         self.node.update({'is_public': False}, auth=Auth(self.user), save=True)
         last_log = self.node.logs[-1]
         assert_equal(last_log.action, NodeLog.MADE_PRIVATE)
+
+    def test_update_can_make_registration_public(self):
+        reg = RegistrationFactory(is_public=False)
+        reg.update({'is_public': True})
+
+        assert_true(reg.is_public)
+        last_log = reg.logs[-1]
+        assert_equal(last_log.action, NodeLog.MADE_PUBLIC)
 
     def test_updating_title_twice_with_same_title(self):
         original_n_logs = len(self.node.logs)

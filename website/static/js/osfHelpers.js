@@ -207,10 +207,12 @@ var handleAddonApiHTTPError = function(error){
 var handleJSONError = function(response) {
     var title = (response.responseJSON && response.responseJSON.message_short) || errorDefaultShort;
     var message = (response.responseJSON && response.responseJSON.message_long) || errorDefaultLong;
-
-    $.osf.growl(title, message);
-
-    Raven.captureMessage('Unexpected error occurred in JSON request');
+    // We can reach this error handler when the user leaves a page while a request is pending. In that
+    // case, response.status === 0, and we don't want to show an error message.
+    if (response && response.status && response.status >= 400) {
+        $.osf.growl(title, message);
+        Raven.captureMessage('Unexpected error occurred in JSON request');
+    }
 };
 
 var handleEditableError = function(response) {

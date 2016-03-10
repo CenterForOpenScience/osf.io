@@ -2,6 +2,7 @@
 from nose.tools import *  # flake8: noqa
 
 from framework.auth import core
+from framework.guid.model import Guid
 
 from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings
@@ -14,7 +15,6 @@ from tests.factories import (
     CommentFactory,
     RetractedRegistrationFactory
 )
-from website.util.sanitize import strip_html
 
 
 class TestNodeCommentsList(ApiTestCase):
@@ -116,19 +116,19 @@ class TestNodeCommentsListFiles(ApiTestCase):
     def _set_up_private_project_with_file_comment(self):
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.file = test_utils.create_test_file(self.private_project, self.user)
-        self.comment = CommentFactory(node=self.private_project, user=self.user, target=self.file, page='files')
+        self.comment = CommentFactory(node=self.private_project, user=self.user, target=self.file.get_guid(), page='files')
         self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
 
     def _set_up_public_project_with_file_comment(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
-        self.public_comment = CommentFactory(node=self.public_project, user=self.user, target=self.public_file, page='files')
+        self.public_comment = CommentFactory(node=self.public_project, user=self.user, target=self.public_file.get_guid(), page='files')
         self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
 
     def _set_up_registration_with_file_comment(self):
         self.registration = RegistrationFactory(creator=self.user)
         self.registration_file = test_utils.create_test_file(self.registration, self.user)
-        self.registration_comment = CommentFactory(node=self.registration, user=self.user, target=self.registration_file, page='files')
+        self.registration_comment = CommentFactory(node=self.registration, user=self.user, target=self.registration_file.get_guid(), page='files')
         self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
 
     def test_return_public_file_comments_logged_out_user(self):
@@ -729,7 +729,7 @@ class TestFileCommentCreate(ApiTestCase):
         self.private_project.save()
         self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
         self.test_file = test_utils.create_test_file(self.private_project, self.user)
-        self.private_payload = self._set_up_payload(self.test_file._id)
+        self.private_payload = self._set_up_payload(self.test_file.get_guid()._id)
 
     def _set_up_public_project_with_private_comment_level(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user, comment_level='private')
@@ -737,7 +737,7 @@ class TestFileCommentCreate(ApiTestCase):
         self.public_project.save()
         self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
         self.test_file = test_utils.create_test_file(self.public_project, self.user)
-        self.public_payload = self._set_up_payload(self.test_file._id)
+        self.public_payload = self._set_up_payload(self.test_file.get_guid()._id)
 
     def _set_up_public_project_with_public_comment_level(self):
         """ Public project configured so that any logged-in user can comment."""
@@ -746,7 +746,7 @@ class TestFileCommentCreate(ApiTestCase):
         self.project_with_public_comment_level.save()
         self.public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project_with_public_comment_level._id)
         self.test_file = test_utils.create_test_file(self.project_with_public_comment_level, self.user)
-        self.public_comment_level_payload = self._set_up_payload(self.test_file._id)
+        self.public_comment_level_payload = self._set_up_payload(self.test_file.get_guid()._id)
 
     def _set_up_private_project_with_public_comment_level(self):
         self.private_project_with_public_comment_level = ProjectFactory(is_public=False, creator=self.user)
@@ -754,7 +754,7 @@ class TestFileCommentCreate(ApiTestCase):
         self.private_project_with_public_comment_level.save()
         self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level)
         self.test_file = test_utils.create_test_file(self.private_project_with_public_comment_level, self.user)
-        self.private_project_public_comments_payload = self._set_up_payload(self.test_file._id)
+        self.private_project_public_comments_payload = self._set_up_payload(self.test_file.get_guid()._id)
 
     def test_create_file_comment_invalid_target_id(self):
         self._set_up_private_project_with_private_comment_level()
@@ -776,7 +776,7 @@ class TestFileCommentCreate(ApiTestCase):
                     'target': {
                         'data': {
                             'type': 'Invalid',
-                            'id': self.test_file._id
+                            'id': self.test_file.get_guid()._id
                         }
                     }
                 }
@@ -956,7 +956,7 @@ class TestCommentRepliesCreate(ApiTestCase):
         self.private_project_with_public_comment_level = ProjectFactory(is_public=False, creator=self.user)
         self.private_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'], save=True)
         comment = CommentFactory(node=self.private_project_with_public_comment_level, user=self.user)
-        reply = CommentFactory(node=self.private_project_with_public_comment_level, target=comment, user=self.user)
+        reply = CommentFactory(node=self.private_project_with_public_comment_level, target=Guid.load(comment._id), user=self.user)
         self.private_project_with_public_comment_level_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level._id)
         self.private_project_with_public_comment_level_payload = self._set_up_payload(reply._id)
 
@@ -964,7 +964,7 @@ class TestCommentRepliesCreate(ApiTestCase):
         self.public_project_with_public_comment_level = ProjectFactory(is_public=True, creator=self.user)
         self.public_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'], save=True)
         comment = CommentFactory(node=self.public_project_with_public_comment_level, user=self.user)
-        reply = CommentFactory(node=self.public_project_with_public_comment_level, target=comment, user=self.user)
+        reply = CommentFactory(node=self.public_project_with_public_comment_level, target=Guid.load(comment._id), user=self.user)
         self.public_project_with_public_comment_level_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project_with_public_comment_level._id)
         self.public_project_with_public_comment_level_payload = self._set_up_payload(reply._id)
 
@@ -1178,7 +1178,7 @@ class TestCommentFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 0)
 
     def test_filtering_for_comment_replies(self):
-        reply = CommentFactory(node=self.project, user=self.user, target=self.comment)
+        reply = CommentFactory(node=self.project, user=self.user, target=Guid.load(self.comment._id))
         url = self.base_url + '?filter[target]=' + str(self.comment._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
@@ -1186,8 +1186,9 @@ class TestCommentFiltering(ApiTestCase):
 
     def test_filtering_by_target_file(self):
         test_file = test_utils.create_test_file(self.project, self.user)
-        file_comment = CommentFactory(node=self.project, user=self.user, target=test_file)
-        url = self.base_url + '?filter[target]=' + str(test_file._id)
+        target = test_file.get_guid()
+        file_comment = CommentFactory(node=self.project, user=self.user, target=target)
+        url = self.base_url + '?filter[target]=' + str(target._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
         assert_in(test_file._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
@@ -1201,7 +1202,7 @@ class TestCommentFiltering(ApiTestCase):
 
     def test_filtering_by_page_files(self):
         test_file = test_utils.create_test_file(self.project, self.user)
-        file_comment = CommentFactory(node=self.project, user=self.user, target=test_file, page='files')
+        file_comment = CommentFactory(node=self.project, user=self.user, target=test_file.get_guid(), page='files')
         url = self.base_url + '?filter[page]=files'
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
