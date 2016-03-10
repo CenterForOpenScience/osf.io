@@ -151,7 +151,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
-            metadata={'folder': 'fake_folder_id'}
+            metadata={'folder': '1234567890'}
         )
         self.user_settings.save()
 

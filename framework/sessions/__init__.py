@@ -162,8 +162,6 @@ def before_request():
             session.data['auth_user_username'] = user.username
             session.data['auth_user_id'] = user._primary_key
             session.data['auth_user_fullname'] = user.fullname
-            user.date_last_login = datetime.utcnow()
-            user.save()
         else:
             # Invalid key: Not found in database
             session.data['auth_error_code'] = http.UNAUTHORIZED
@@ -176,7 +174,7 @@ def before_request():
             session = Session.load(session_id) or Session(_id=session_id)
         except itsdangerous.BadData:
             return
-        if session.data.get('auth_user_id'):
+        if session.data.get('auth_user_id') and 'api' not in request.url:
             database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
         set_session(session)
 

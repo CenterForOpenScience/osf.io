@@ -66,7 +66,7 @@
                         <a href="#metrics">Metrics</a>
                         <ul class="nav">
 
-                            <li><a href="#statistics"><i class="fa fa-chevron-right"></i> Statistics</a></li>
+                            <li><a href="#statistics"><i class="fa fa-chevron-right"></i> Analytics</a></li>
                             <li><a href="#notifications"><i class="fa fa-chevron-right"></i> Notifications</a></li>
                         </ul>
                     </li>

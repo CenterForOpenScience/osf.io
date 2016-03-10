@@ -13,6 +13,9 @@ cache:
     - node_modules
     - website/static/vendor/bower_components
 
+matrix:
+  fast_finish: true
+
 env:
   global:
     - PROJECT_DIR="$PWD"

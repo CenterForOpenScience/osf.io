@@ -1822,6 +1822,14 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         assert_not_in(self.contributor_node._id, ids)
         assert_in(self.linked_node._id, ids)
 
+    def test_post_node_already_linked(self):
+        res = self.app.post_json_api(
+            self.url, self.payload([self.linked_node._id]),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 204)
+
     def test_put_contributing_node(self):
         res = self.app.put_json_api(
             self.url, self.payload([self.contributor_node._id]),
@@ -1905,6 +1913,18 @@ class TestCollectionRelationshipNodeLinks(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.json['data'], [])
 
+    def test_delete_not_present(self):
+        number_of_links = len(self.collection.nodes)
+        res = self.app.delete_json_api(
+            self.url, self.payload([self.other_node._id]),
+            auth=self.user.auth
+        )
+        assert_equal(res.status_code, 204)
+
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+        assert_equal(len(res.json['data']), number_of_links)
 
     def test_access_other_collection(self):
         other_collection = FolderFactory(creator=self.user2)

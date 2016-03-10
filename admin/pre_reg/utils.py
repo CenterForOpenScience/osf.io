@@ -3,6 +3,7 @@ from django.db.models import Value
 
 from admin.common_auth.models import MyUser
 
+
 def get_prereg_reviewers():
     # Note - fixes django.db.utils.OperationalError: no such table' error if ever one erases a db table and tries to remigrate
     try:

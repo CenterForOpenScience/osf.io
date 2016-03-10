@@ -27,7 +27,7 @@ class TestCommentReportsView(ApiTestCase):
     def _set_up_private_project_comment_reports(self):
         self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
-        self.comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.contributor)
+        self.comment = CommentFactory.build(node=self.private_project, user=self.contributor)
         self.comment.reports = self.comment.reports or {}
         self.comment.reports[self.user._id] = {
             'category': 'spam',
@@ -38,10 +38,10 @@ class TestCommentReportsView(ApiTestCase):
         self.comment.save()
         self.private_url = '/{}comments/{}/reports/'.format(API_BASE, self.comment._id)
 
-    def _set_up_public_project_comment_reports(self):
-        self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
+    def _set_up_public_project_comment_reports(self, comment_level='public'):
+        self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level=comment_level)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
-        self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_project, user=self.contributor)
+        self.public_comment = CommentFactory.build(node=self.public_project, user=self.contributor)
         self.public_comment.reports = self.public_comment.reports or {}
         self.public_comment.reports[self.user._id] = {
             'category': 'spam',
@@ -98,22 +98,41 @@ class TestCommentReportsView(ApiTestCase):
         assert_equal(len(report_json), 0)
         assert_not_in(self.contributor._id, report_ids)
 
-    def test_public_node_non_contributor_does_not_see_report(self):
+    def test_public_node_non_contributor_does_not_see_other_user_reports(self):
         self._set_up_public_project_comment_reports()
         res = self.app.get(self.public_url, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.status_code, 200)
+        report_json = res.json['data']
+        report_ids = [report['id'] for report in report_json]
+        assert_equal(len(report_json), 0)
+        assert_not_in(self.non_contributor._id, report_ids)
+
+    def test_public_node_non_contributor_reporter_can_view_own_report(self):
+        self._set_up_public_project_comment_reports()
+        self.public_comment.reports[self.non_contributor._id] = {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }
+        self.public_comment.save()
+        res = self.app.get(self.public_url, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 200)
+        report_json = res.json['data']
+        report_ids = [report['id'] for report in report_json]
+        assert_equal(len(report_json), 1)
+        assert_in(self.non_contributor._id, report_ids)
 
     def test_public_node_logged_out_user_cannot_view_reports(self):
         self._set_up_public_project_comment_reports()
         res = self.app.get(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    def test_public_node_non_contributor_reporter_can_view_report(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
-        comment = CommentFactory.build(node=project, user=project.creator)
-        comment.reports = comment.reports or {}
-        comment.reports[self.non_contributor._id] = {
+    def test_public_node_private_comment_level_non_contributor_cannot_see_reports(self):
+        project = ProjectFactory(is_public=True, creator=self.user, comment_level='private')
+        comment = CommentFactory(node=project, user=self.user)
+        comment.reports = dict()
+        comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
             'date': datetime.utcnow(),
@@ -121,12 +140,9 @@ class TestCommentReportsView(ApiTestCase):
         }
         comment.save()
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
-        res = self.app.get(url, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 200)
-        report_json = res.json['data']
-        report_ids = [report['id'] for report in report_json]
-        assert_equal(len(report_json), 1)
-        assert_in(self.non_contributor._id, report_ids)
+        res = self.app.get(url, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_report_comment_invalid_type(self):
         self._set_up_private_project_comment_reports()
@@ -234,11 +250,6 @@ class TestCommentReportsView(ApiTestCase):
         res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    def test_public_node_logged_in_non_contributor_cannot_report_comment(self):
-        self._set_up_public_project_comment_reports()
-        res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
     def test_public_node_contributor_can_report_comment(self):
         self._set_up_public_project_comment_reports()
         comment = CommentFactory(node=self.public_project, user=self.contributor)
@@ -253,13 +264,16 @@ class TestCommentReportsView(ApiTestCase):
             comment (comment_level == 'public), non-contributors
             can also report comments.
         """
-        project = ProjectFactory(is_public=True, comment_level='public')
-        comment = CommentFactory(node=project, user=project.creator)
-        url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
-
-        res = self.app.post_json_api(url, self.payload, auth=self.non_contributor.auth)
+        self._set_up_public_project_comment_reports()
+        res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.non_contributor._id)
+
+    def test_public_node_private_comment_level_non_contributor_cannot_report_comment(self):
+        self._set_up_public_project_comment_reports(comment_level='private')
+        res = self.app.get(self.public_url, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
 
 class TestFileCommentReportsView(ApiTestCase):
@@ -283,7 +297,7 @@ class TestFileCommentReportsView(ApiTestCase):
         self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
         self.file = test_utils.create_test_file(self.private_project, self.user)
-        self.comment = CommentFactory.build(node=self.private_project, target=self.file, user=self.contributor)
+        self.comment = CommentFactory.build(node=self.private_project, target=self.file.get_guid(), user=self.contributor)
         self.comment.reports = self.comment.reports or {}
         self.comment.reports[self.user._id] = {
             'category': 'spam',
@@ -294,11 +308,11 @@ class TestFileCommentReportsView(ApiTestCase):
         self.comment.save()
         self.private_url = '/{}comments/{}/reports/'.format(API_BASE, self.comment._id)
 
-    def _set_up_public_project_file_comment_reports(self):
-        self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
+    def _set_up_public_project_file_comment_reports(self, comment_level='public'):
+        self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level=comment_level)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
-        self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_file, user=self.contributor)
+        self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_file.get_guid(), user=self.contributor)
         self.public_comment.reports = self.public_comment.reports or {}
         self.public_comment.reports[self.user._id] = {
             'category': 'spam',
@@ -355,36 +369,41 @@ class TestFileCommentReportsView(ApiTestCase):
         assert_equal(len(report_json), 0)
         assert_not_in(self.contributor._id, report_ids)
 
-    def test_public_node_non_contributor_does_not_see_report(self):
+    def test_public_node_non_contributor_does_not_see_other_user_reports(self):
         self._set_up_public_project_file_comment_reports()
         res = self.app.get(self.public_url, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.status_code, 200)
+        report_json = res.json['data']
+        report_ids = [report['id'] for report in report_json]
+        assert_equal(len(report_json), 0)
+        assert_not_in(self.non_contributor._id, report_ids)
+
+    def test_public_node_non_contributor_reporter_can_view_own_file_comment_report(self):
+        self._set_up_public_project_file_comment_reports()
+        self.public_comment.reports[self.non_contributor._id] = {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }
+        self.public_comment.save()
+        res = self.app.get(self.public_url, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 200)
+        report_json = res.json['data']
+        report_ids = [report['id'] for report in report_json]
+        assert_equal(len(report_json), 1)
+        assert_in(self.non_contributor._id, report_ids)
 
     def test_public_node_logged_out_user_cannot_view_file_comment_reports(self):
         self._set_up_public_project_file_comment_reports()
         res = self.app.get(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    def test_public_node_non_contributor_reporter_can_view_file_comment_report(self):
-        project = ProjectFactory(is_public=True, comment_level='public')
-        test_file = test_utils.create_test_file(project, self.user)
-        comment = CommentFactory.build(node=project, target=test_file, user=project.creator)
-        comment.reports = comment.reports or {}
-        comment.reports[self.non_contributor._id] = {
-            'category': 'spam',
-            'text': 'This is spam',
-            'date': datetime.utcnow(),
-            'retracted': False,
-        }
-        comment.save()
-        url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
-        res = self.app.get(url, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 200)
-        report_json = res.json['data']
-        report_ids = [report['id'] for report in report_json]
-        assert_equal(len(report_json), 1)
-        assert_in(self.non_contributor._id, report_ids)
+    def test_public_node_private_comment_level_non_contributor_does_not_see_report(self):
+        self._set_up_public_project_file_comment_reports(comment_level='private')
+        res = self.app.get(self.public_url, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_report_file_comment_invalid_type(self):
         self._set_up_private_project_file_comment_reports()
@@ -493,10 +512,11 @@ class TestFileCommentReportsView(ApiTestCase):
         res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    def test_public_node_logged_in_non_contributor_cannot_report_file_comment(self):
+    def test_public_node_non_contributor_can_report_file_comment(self):
         self._set_up_public_project_file_comment_reports()
-        res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['id'], self.non_contributor._id)
 
     def test_public_node_contributor_can_report_file_comment(self):
         self._set_up_public_project_file_comment_reports()
@@ -507,16 +527,7 @@ class TestFileCommentReportsView(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user._id)
 
-    def test_public_node_non_contributor_can_report_file_comment(self):
-        """ Test that when a public project allows any osf user to
-            comment (comment_level == 'public), non-contributors
-            can also report comments.
-        """
-        project = ProjectFactory(is_public=True, comment_level='public')
-        test_file = test_utils.create_test_file(project, self.user)
-        comment = CommentFactory(node=project, target=test_file, user=project.creator)
-        url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
-
-        res = self.app.post_json_api(url, self.payload, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.non_contributor._id)
+    def test_public_node_private_comment_level_non_contributor_cannot_report_file_comment(self):
+        self._set_up_public_project_file_comment_reports(comment_level='private')
+        res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)

@@ -46,6 +46,8 @@ var ProjectViewModel = function(data) {
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
     self.nodeType = data.node.node_type;
+
+
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.pureComputed(function() {
         return self.watchedCount().toString();
@@ -106,6 +108,7 @@ var ProjectViewModel = function(data) {
                 }
             }
         }));
+
         $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
             name: 'description',
             title: 'Edit Description',
