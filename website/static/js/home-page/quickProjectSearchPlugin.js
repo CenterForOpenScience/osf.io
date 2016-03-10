@@ -29,7 +29,7 @@ var QuickSearchProject = {
         self.fieldSort = m.prop(); // For xs screen, either alpha or date
         self.directionSort = m.prop(); // For xs screen, either Asc or Desc
         self.errorLoading = m.prop(false);  // True if error retrieving projects or contributors.
-        self.someDataLoaded = function() { return Boolean(self.nodes().length); };
+        self.someDataLoaded = m.prop(false);
 
         // Switches errorLoading to true
         self.requestError = function(result) {
@@ -48,6 +48,7 @@ var QuickSearchProject = {
             });
             self.populateEligibleNodes(0, self.countDisplayed());
             self.next(result.links.next);
+            self.someDataLoaded = m.prop(true);
             // NOTE: This manual redraw is necessary because we set background: true on
             // the request, which prevents a redraw. This redraw allows the loading
             // indicator to go away and the first 10 nodes to be rendered
