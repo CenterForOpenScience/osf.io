@@ -1,4 +1,5 @@
 from django.shortcuts import redirect
+from django.views.defaults import page_not_found
 
 from website.project.model import User
 from website.mailchimp_utils import subscribe_on_confirm
@@ -20,6 +21,14 @@ def reactivate_user(request, guid):
     user.date_disabled = None
     subscribe_on_confirm(user)
     user.save()
+
+
+def remove_2_factor(request, guid):
+    user = User.load(guid)
+    try:
+        user.delete_addon('twofactor')
+    except AttributeError:
+        page_not_found(request)
     return redirect(reverse_user(guid))
 
 
