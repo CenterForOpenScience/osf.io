@@ -78,6 +78,13 @@ var LinkObject = function _LinkObject (type, data, label) {
 };
 
 
+function sortProjects (flatList) {
+    // Sorts by last modified
+    flatList.sort(function(a,b){
+        return new Date(b.attributes.date_modified) - new Date(a.attributes.date_modified);
+    });
+}
+
 function _makeTree (flatData, lastcrumb) {
     var root = {id:0, children: [], data : {} };
     var node_list = { 0 : root};
@@ -393,6 +400,7 @@ var Dashboard = {
                 self.loadingAllNodes = false;
                 self.allProjectsLoaded(true);
             }
+            sortProjects(self.data());
             self.reload(true);
             self.refreshView(false);
         };
