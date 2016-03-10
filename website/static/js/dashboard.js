@@ -291,6 +291,7 @@ var Dashboard = {
             }).then(function _removeProjectFromCollectionsSuccess(result){
                 self.currentLink = null; // To bypass the check when updating file list
                 self.updateFilter(self.activeFilter());
+                self.activeFilter().data.count(self.activeFilter().data.count() - data.data.length);
             }, function _removeProjectFromCollectionsFail(result){
                 var message = 'Some projects';
                 if(data.data.length === 1) {
