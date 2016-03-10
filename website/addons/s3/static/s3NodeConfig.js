@@ -333,31 +333,29 @@ ViewModel.prototype.openCreateBucket = function() {
     bootbox.dialog({
         title: 'Create a new bucket',
         message:
-                '<form class="form-horizontal" onsubmit="return false"> ' +
-                    '<div class="row"> ' +
-                        '<div class="col-md-12"> ' +
-                            '<form class="form-horizontal"> ' +
-                                '<div class="form-group"> ' +
-                                    '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
-                                    '<div class="col-md-8"> ' +
-                                        '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket name" class="form-control" autofocus> ' +
-                                        '<div>' +
-                                            '<span id="bucketModalErrorMessage" ></span>' +
-                                        '</div>'+
-                                    '</div>' +
+                '<div class="row"> ' +
+                    '<div class="col-md-12"> ' +
+                        '<form class="form-horizontal" onsubmit="return false"> ' +
+                            '<div class="form-group"> ' +
+                                '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
+                                '<div class="col-md-8"> ' +
+                                    '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket name" class="form-control" autofocus> ' +
+                                    '<div>' +
+                                        '<span id="bucketModalErrorMessage" ></span>' +
+                                    '</div>'+
                                 '</div>' +
-                                '<div class="form-group"> ' +
-                                    '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
-                                    '<div class="col-md-8"> ' +
-                                        '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
-                                            generateBucketOptions(self.settings.bucketLocations) +
-                                        '</select>' +
-                                    '</div>' +
+                            '</div>' +
+                            '<div class="form-group"> ' +
+                                '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
+                                '<div class="col-md-8"> ' +
+                                    '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
+                                        generateBucketOptions(self.settings.bucketLocations) +
+                                    '</select>' +
                                 '</div>' +
-                            '</form>' +
-                        '</div>' +
-                    '</div>'+
-                '</form>',
+                            '</div>' +
+                        '</form>' +
+                    '</div>' +
+                '</div>',
         buttons: {
             cancel: {
                 label: 'Cancel',
