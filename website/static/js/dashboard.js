@@ -332,7 +332,7 @@ var Dashboard = {
             } else {
                 self.data(value.data);
             }
-            if(!value.data[0]){ // If we have projects
+            if(!value.data[0]){
                 var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
@@ -371,6 +371,7 @@ var Dashboard = {
                             'This project has no components.'));
                     }
                 }
+                self.selected([]); // Empty selected
             }
             // if we have more pages keep loading the pages
             if (value.links.next) {
@@ -1197,6 +1198,9 @@ var Information = {
     view : function (ctrl, args) {
         var template = '';
         var filter = args.activeFilter();
+        if (args.selected().length === 0) {
+            template = m('.db-info-empty.text-muted.p-lg', 'Select a row to view project details.');
+        }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
             template = m('.p-sm', [
