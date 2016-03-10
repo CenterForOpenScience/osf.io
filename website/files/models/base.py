@@ -427,9 +427,6 @@ class FileNode(object):
         """
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
-        guid = self.get_guid()
-        if guid and guid._id in self.node.commented_files:
-            del self.node.commented_files[guid._id]
         self.node.save()
         StoredFileNode.remove_one(self.stored_object)
         return trashed

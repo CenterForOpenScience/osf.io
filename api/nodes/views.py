@@ -1901,8 +1901,6 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                     )
                 except NoResultsFound:
                     Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
-                    del root_target.referent.node.commented_files[root_target._id]
-
             else:
                 referent = root_target.referent
                 if referent.provider == 'dropbox':

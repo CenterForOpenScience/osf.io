@@ -85,8 +85,6 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
 
 def update_comment_node(root_target_id, source_node, destination_node):
     Comment.update(Q('root_target', 'eq', root_target_id), data={'node': destination_node})
-    destination_node.commented_files[root_target_id] = source_node.commented_files[root_target_id]
-    del source_node.commented_files[root_target_id]
     source_node.save()
     destination_node.save()
 
