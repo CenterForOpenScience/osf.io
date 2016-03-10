@@ -69,8 +69,8 @@ def main(dry_run=True):
     init_app(routes=False)
 
     popular_node_ids = popular_activity_json()['popular_node_ids']
-    popular_links_node = models.Node.find(Q('_id', 'eq', POPULAR_LINKS_NODE))[0]
-    new_and_noteworthy_links_node = models.Node.find(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))[0]
+    popular_links_node = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_NODE))[0]
+    new_and_noteworthy_links_node = models.Node.find_one(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))[0]
     new_and_noteworthy_node_ids = get_new_and_noteworthy_nodes()
 
     update_node_links(popular_links_node, popular_node_ids, 'popular')
