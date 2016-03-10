@@ -73,7 +73,7 @@ var NewAndNoteworthy = {
                 });
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;
-                self.contributorsMapping[nodeId] = [contribNames, numContrib];
+                self.contributorsMapping[nodeId] = {'names': contribNames, 'total': numContrib};
             }, function _error(result){
                 self.requestError(result);
             });
@@ -81,7 +81,7 @@ var NewAndNoteworthy = {
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
-            return self.contributorsMapping[node.id][0][i];
+            return self.contributorsMapping[node.id]['names'][i];
         };
 
         self.addToolTip = function(line) {
@@ -146,7 +146,7 @@ var NoteworthyNodeDisplay = {
     view: function(ctrl, args) {
         var description = args.node.embeds.target_node.data.attributes.description;
         var title = args.node.embeds.target_node.data.attributes.title;
-        var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id][1], args.getFamilyName);
+        var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id]['total'], args.getFamilyName);
         var destination = '/' + args.node.embeds.target_node.data.id;
 
         return m('.public-projects-item', {onclick: function(){
