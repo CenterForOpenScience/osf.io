@@ -316,6 +316,17 @@ ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
     });
 };
 
+// Prevents return key from refreshing the page inside openCreateBucket
+function stopRKey(evt) {
+  var evt = (evt) ? evt : ((event) ? event : null);
+  var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null);
+  if ((evt.keyCode == 13) && (node.type=="text"))  {
+      return false;
+  }
+}
+
+document.onkeypress = stopRKey;
+
 ViewModel.prototype.openCreateBucket = function() {
     var self = this;
 
