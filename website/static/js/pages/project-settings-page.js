@@ -245,6 +245,7 @@ $(document).ready(function() {
                     callback: function(result) {
                         if (!result) {
                             $(that).attr('checked', false);
+                        } else {
                             $('#selectAddonsForm').submit();
                         }
                     },

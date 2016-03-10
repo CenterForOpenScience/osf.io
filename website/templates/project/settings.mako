@@ -166,7 +166,7 @@
                             % endfor
 
                             <br />
-                            
+
                             <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
 
                         </form>
