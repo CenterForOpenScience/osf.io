@@ -146,18 +146,15 @@ var NoteworthyNodeDisplay = {
         var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id].total, args.getFamilyName);
         var destination = '/' + args.node.embeds.target_node.data.id;
 
-        return m('.public-projects-item', {onclick: function(){
-            location.href = destination;
-        }},[
-            m('h5', m('a', {href: destination}, title)),
+        return m('a', {href: destination}, m('.public-projects-item',[
+            m('h5', title),
             m('span.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
                 ctrl.addToolTip(this);
             }}, m('i', 'by ' + contributors)),
             description ? m('p.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){
                 ctrl.addToolTip(this);
             }}, description) : ''
-
-        ]);
+        ]));
     }
 };
 

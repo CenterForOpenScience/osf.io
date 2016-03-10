@@ -13,10 +13,6 @@
     link-color: #FFF
 }
 
-.node-styling:hover a {
-    color: #5BC0DE;
-}
-
 .quick-project button {
     -webkit-appearance: none;
     outline: none;
