@@ -7,15 +7,12 @@ from modularodm.exceptions import ValidationValueError
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from framework.guid.model import Guid
 
 from website.models import Node, User, Comment, Institution
 from website.exceptions import NodeStateError, UserNotAffiliatedError
-from website.files.models.base import FileNode
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
-from api.nodes.utils import get_file_object
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,

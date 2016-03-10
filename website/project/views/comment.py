@@ -28,7 +28,6 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
         file_guids = FileNode.resolve_class(source['provider'], FileNode.ANY).get_file_guids(
             materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
             provider=source['provider'],
-            guids=[],
             node=source_node)
 
         if event_type == 'addon_file_renamed' and source['provider'] in settings.ADDONS_BASED_ON_IDS:

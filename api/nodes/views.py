@@ -1904,6 +1904,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
             else:
                 referent = root_target.referent
                 if referent.provider == 'dropbox':
+                    # referent.path is the absolute path for the db file, but wb requires the relative path
                     referent = DropboxFile.load(root_target.referent._id)
                 url = waterbutler_api_url_for(self.get_node()._id, referent.provider, referent.path, meta=True)
                 waterbutler_request = requests.get(

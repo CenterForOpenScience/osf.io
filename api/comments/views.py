@@ -70,6 +70,7 @@ class CommentMixin(object):
                     raise NotFound
             else:
                 if referent.provider == 'dropbox':
+                    # referent.path is the absolute path for the db file, but wb requires the relative path
                     referent = DropboxFile.load(referent._id)
                 url = waterbutler_api_url_for(comment.node._id, referent.provider, referent.path, meta=True)
                 waterbutler_request = requests.get(

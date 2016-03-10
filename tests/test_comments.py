@@ -894,11 +894,13 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTes
         file_comments = Comment.find(Q('root_target', 'eq', self.guid._id))
         assert_equal(file_comments.count(), 1)
 
+    @unittest.skip
     def test_comments_move_when_file_moved_to_osfstorage(self):
-        pass
+        super(TestOsfstorageFileCommentMoveRename, self).test_comments_move_when_file_moved_to_osfstorage()
 
+    @unittest.skip
     def test_comments_move_when_folder_moved_to_osfstorage(self):
-        pass
+        super(TestOsfstorageFileCommentMoveRename, self).test_comments_move_when_folder_moved_to_osfstorage()
 
 
 class TestBoxFileCommentMoveRename(FileCommentMoveRenameTestMixin, OsfTestCase):
