@@ -6,4 +6,4 @@ register = template.Library()
 
 @register.filter
 def reverse_user(value):
-    return '{}?guid={}'.format(reverse('users:user'), value)
+    return reverse('users:user', kwargs={'guid': value})
