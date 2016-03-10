@@ -2,6 +2,7 @@
     is_project = node['node_type'] == 'project'
 %>
 
+
 <div id="projectBanner" >
     <header class="subhead" id="overview">
         <nav id="projectSubnav" class="navbar osf-project-navbar" role="navigation">
@@ -100,8 +101,7 @@
         padding-top: 55px;
     }
     </style>
-
-
+    
 
     % if node['is_registration']:  ## Begin registration undismissable labels
 
@@ -115,17 +115,51 @@
 
                     % if 'admin' in user['permissions']: 
                         <div>
-                            <button type="btn btn-default">
-                                <a href="${node['approval_link']}">Approve Registration</a>
+                            <br>
+                            <button type="button" class="btn btn-success">
+                                <a href="${node['approval_link']}"></a>
+                                Approve Registration
                             </button>
-                            <button type="btn btn-default">
-                                <a href="${node['disapproval_link']}">Cancel Registration</a>
+                            <button type="button" id="registrationCancelButton" class="btn btn-danger">
+                                <a href="${node['approval_link']}"></a>
+                                Cancel Registration
                             </button>
                         </div>
+                        <%def name="javascript_bottom()">
+                            console.log('hello')
+                            ${parent.javascript_bottom()}
+                            % for script in addon_page_js or []:
+                                <script type="text/javascript" src="${script}"></script>
+                            % endfor
+                        </%def>
+                        <%doc>
+                            <script type="text/javascript">
+                                $(document).ready(function(){
+                                    $('#registrationCancelButton').on('click', function() {
+                                        bootbox.confirm({
+                                            title: 'Cancel Registration?',
+                                            message: 'Are you sure you want to cancel the registration for this project?',
+                                            callback: function(result) {
+                                                if(result){
+                                                    window.open('${node['disapproval_link']}')
+                                                }
+                                            },
+                                            buttons:{
+                                                confirm:{
+                                                    label:'Cancel Registration',
+                                                    className:'btn-danger'
+                                                }
+                                            }
+                                        });
+                                    });
+                                });
+                            </script>
+                        </%doc>
                     % endif
                 </div>
            % endif
-
+           
+          
            <style type="text/css">
               .watermarked {
                   background-image:url('/static/img/read-only.png');
