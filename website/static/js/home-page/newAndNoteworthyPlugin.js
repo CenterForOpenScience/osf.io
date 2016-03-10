@@ -24,7 +24,7 @@ var NewAndNoteworthy = {
         self.contributorsMapping = {}; // Dictionary mapping node id to some of the contrib names and the contrib total.
         self.SHOW_TOTAL = 5; // Number of new and noteworthy projects displayed in each column
         self.errorLoading = m.prop(false);  // True if error retrieving projects or contributors.
-        self.someDataLoaded = m.prop(false); // True when the initial request to retrieve projects is complete.
+        self.someDataLoaded = m.prop(false);
 
         // Switches errorLoading to true
         self.requestError = function(result){
