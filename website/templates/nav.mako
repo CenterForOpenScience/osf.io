@@ -84,6 +84,7 @@
             %else :
                 <li class="dropdown sign-in" data-bind="with: $root.signIn">
                   <div class="btn-group">
+                    <a href="${web_url_for('auth_login')}?sign_up=True" class="btn btn-success btn-top-login m-r-sm">Sign up</a>
                     <button type="button" class="btn btn-info btn-top-login dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                       Sign in <span class="caret hidden-xs"></span>
                     </button>
