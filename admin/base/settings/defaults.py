@@ -40,6 +40,8 @@ INSTALLED_APPS = (
     'admin.pre_reg',
     'admin.spam',
     'admin.metrics',
+    'admin.nodes',
+    'admin.users',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
@@ -52,7 +54,9 @@ AUTH_USER_MODEL = 'common_auth.MyUser'
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
-    'dsn': osf_settings.SENTRY_DSN
+    'tags': {'App': 'admin'},
+    'dsn': osf_settings.SENTRY_DSN,
+    'release': osf_settings.VERSION,
 }
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
@@ -69,7 +73,9 @@ MIDDLEWARE_CLASSES = (
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    'api.base.middleware.TokuTransactionsMiddleware',
+    'api.base.middleware.MongoConnectionMiddleware',
+    'api.base.middleware.CeleryTaskMiddleware',
+    'api.base.middleware.TokuTransactionMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

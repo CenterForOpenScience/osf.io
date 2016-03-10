@@ -24,6 +24,7 @@ from modularodm.exceptions import NoResultsFound
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from framework.guid.model import Guid
 from framework.sessions.model import Session
 from website.addons import base as addons_base
 from website.files.models import StoredFileNode
@@ -481,7 +482,7 @@ class CommentFactory(ModularOdmFactory):
     def _build(cls, target_class, *args, **kwargs):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
-        target = kwargs.pop('target', None) or node
+        target = kwargs.pop('target', None) or Guid.load(node._id)
         content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
@@ -490,11 +491,11 @@ class CommentFactory(ModularOdmFactory):
             content=content,
             *args, **kwargs
         )
-        if isinstance(target, target_class):
-            instance.root_target = target.root_target
+        if isinstance(target.referent, target_class):
+            instance.root_target = target.referent.root_target
         else:
             instance.root_target = target
-            if isinstance(instance.root_target, StoredFileNode):
+            if isinstance(instance.root_target.referent, StoredFileNode):
                 file_id = instance.root_target._id
                 instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
         return instance
@@ -503,7 +504,7 @@ class CommentFactory(ModularOdmFactory):
     def _create(cls, target_class, *args, **kwargs):
         node = kwargs.pop('node', None) or NodeFactory()
         user = kwargs.pop('user', None) or node.creator
-        target = kwargs.pop('target', None) or node
+        target = kwargs.pop('target', None) or Guid.load(node._id)
         content = kwargs.pop('content', None) or 'Test comment.'
         instance = target_class(
             node=node,
@@ -512,11 +513,11 @@ class CommentFactory(ModularOdmFactory):
             content=content,
             *args, **kwargs
         )
-        if isinstance(target, target_class):
-            instance.root_target = target.root_target
+        if isinstance(target.referent, target_class):
+            instance.root_target = target.referent.root_target
         else:
             instance.root_target = target
-            if isinstance(instance.root_target, StoredFileNode):
+            if isinstance(instance.root_target.referent, StoredFileNode):
                 file_id = instance.root_target._id
                 instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
                 instance.node.save()

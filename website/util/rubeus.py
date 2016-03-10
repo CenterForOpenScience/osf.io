@@ -457,7 +457,7 @@ class NodeFileCollector(object):
         can_view = node.can_view(auth=self.auth)
 
         if can_view:
-            node_name = u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.unescape_entities(node.title))
+            node_name = sanitize.unescape_entities(node.title)
         elif node.is_registration:
             node_name = u'Private Registration'
         elif node.is_fork:
