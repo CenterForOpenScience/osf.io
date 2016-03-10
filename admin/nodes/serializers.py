@@ -21,5 +21,5 @@ def serialize_simple_user(user_info):
     return {
         'id': user._id,
         'name': user.fullname,
-        'permission': reduce_permissions(user_info[1])
+        'permission': reduce_permissions(user_info[1]),
     }
