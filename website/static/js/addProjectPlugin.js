@@ -102,7 +102,8 @@ var AddProject = {
                                     ctrl.newProjectName($(this).val());
                                     ctrl.checkValid();
                                 },
-                                value : ctrl.newProjectName()
+                                value : ctrl.newProjectName(),
+                                placeholder : 'Enter project title'
                             })
                         ]),
                         m('.text-muted.pointer', { onclick : function(){
@@ -116,7 +117,8 @@ var AddProject = {
                                 m('label[for="projectDesc].f-w-lg.text-bigger', 'Project Description'),
                                 m('textarea.form-control.noresize', {
                                     onchange: m.withAttr('value', ctrl.newProjectDesc),
-                                    value : ctrl.newProjectDesc()
+                                    value : ctrl.newProjectDesc(),
+                                    placeholder : 'Enter project description'
                                 })
                             ]),
                             ctrl.options.parentID !== null ? [
