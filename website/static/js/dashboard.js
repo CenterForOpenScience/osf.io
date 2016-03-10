@@ -679,8 +679,10 @@ var Collections = {
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
                 self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, systemCollection : false, node : node, count : m.prop(count) }, node.attributes.title));
-                args.sidebarInit();
                 self.newCollectionName('');
+                self.calculateTotalPages();
+                self.currentPage(self.totalPages()); // Go to last page
+                args.sidebarInit();
             }, function(){
                 var name = self.newCollectionName();
                 var message = '"' + name + '" collection could not be created.';
@@ -689,7 +691,6 @@ var Collections = {
                 self.newCollectionName('');
             });
             self.dismissModal();
-            self.calculateTotalPages();
             return promise;
         };
         self.deleteCollection = function _deleteCollection(){
