@@ -37,47 +37,90 @@ class SpamList(ListView):
         page_size = self.get_paginate_by(queryset)
         paginator, page, queryset, is_paginated = self.paginate_queryset(
             queryset, page_size)
-        context = {
+        return {
             'spam': map(serialize_comment, queryset),
             'page': page,
             'status': self.status,
             'page_number': page.number
         }
-        return super(SpamList, self).get_context_data(**context)
+
+
+class UserSpamList(SpamList):
+    template_name = 'users/spam.html'
+
+    def __init__(self):
+        self.user_id = None
+        super(UserSpamList, self).__init__()
+
+    def get_queryset(self):
+        self.status = self.request.GET.get('status', u'1')
+        self.user_id = self.kwargs.get('user_id', None)
+        query = (
+            Q('reports', 'ne', {}) &
+            Q('reports', 'ne', None) &
+            Q('user', 'eq', self.user_id) &
+            Q('spam_status', 'eq', int(self.status))
+        )
+        return Comment.find(query).sort(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        queryset = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(queryset)
+        paginator, page, queryset, is_paginated = self.paginate_queryset(
+            queryset, page_size)
+        return {
+            'spam': map(serialize_comment, queryset),
+            'page': page,
+            'status': self.status,
+            'user_id': self.user_id,
+            'page_number': page.number
+        }
 
 
 class SpamDetail(FormView):
     form_class = ConfirmForm
     template_name = 'spam/comment.html'
+    spam_id = None
+    page = 1
 
     def __init__(self):
-        self.spam_id = None
-        self.page = 1
         self.item = None
         super(SpamDetail, self).__init__()
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            return super(SpamDetail, self).get(request, *args, **kwargs)
+            context = self.get_context_data(**kwargs)
         except AttributeError:
             return page_not_found(request)  # TODO: 1.9 update to have exception with node/user 404.html will be added
+        self.page = request.GET.get('page', 1)
+        context['page_number'] = self.page
+        context['form'] = self.get_form()
+        return self.render_to_response(context)
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         try:
-            self.get_context_data(**kwargs)
+            context = self.get_context_data(**kwargs)
         except AttributeError:
             return page_not_found(request)  # TODO: 1.9 update to have exception
-        return super(SpamDetail, self).post(request, *args, **kwargs)
+        self.page = request.GET.get('page', 1)
+        context['page_number'] = self.page
+        context['form'] = self.get_form()
+        if context['form'].is_valid():
+            return self.form_valid(context['form'])
+        else:
+            return render(request, self.template_name, context=context)
+        # return super(SpamDetail, self).post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        self.spam_id = self.kwargs['spam_id']
+        self.spam_id = kwargs['spam_id']
         self.item = Comment.load(self.spam_id)
-        self.page = self.request.GET.get('page', 1)
         kwargs = super(SpamDetail, self).get_context_data(**kwargs)
-        kwargs.setdefault('page_number', self.page)
-        kwargs.setdefault('comment', serialize_comment(self.item))
+        try:
+            kwargs['comment'] = serialize_comment(self.item)
+        except AttributeError:
+            raise
         return kwargs
 
     def form_valid(self, form):
@@ -89,10 +132,7 @@ class SpamDetail(FormView):
 
     @property
     def success_url(self):
-        return '{}?page={}'.format(
-            reverse('spam:detail', kwargs={'spam_id': self.spam_id}),
-            self.page
-        )
+        return reverse('spam:detail', kwargs={'spam_id': self.spam_id}) + '?page={}'.format(self.page)
 
 
 @login_required

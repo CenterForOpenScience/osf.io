@@ -3,47 +3,56 @@ from nose.tools import *  # flake8: noqa
 
 from tests.base import AdminTestCase
 from tests.factories import UserFactory
+from website import settings
 from admin_tests.utilities import setup_view
 
-from admin.users.views import UserFormView
-from admin.base.forms import GuidForm
+from admin.users.views import UserView, disable_user, reactivate_user
 
 
-class TestUserFormView(AdminTestCase):
+class TestUserView(AdminTestCase):
 
-    def test_context_data_not_existing_guid(self):
-        guid = '12345'
-        request = RequestFactory().get('/fake-path/?guid={}'.format(guid))
-        view = UserFormView()
+    def test_no_guid(self):
+        request = RequestFactory().get('/fake_path')
+        view = UserView()
         view = setup_view(view, request)
         with assert_raises(AttributeError):
-            view.get_context_data()
+            view.get_object()
 
-    def test_context_data_no_guid(self):
-        request = RequestFactory().get('/fake-path')
-        view = UserFormView()
-        view = setup_view(view, request)
+    def test_load_data(self):
+        user = UserFactory()
+        guid = user._id
+        request = RequestFactory().get('/fake_path')
+        view = UserView()
+        view = setup_view(view, request, guid=guid)
+        res = view.get_object()
+        assert_is_instance(res, dict)
+
+    def test_name_data(self):
+        user = UserFactory()
+        guid = user._id
+        request = RequestFactory().get('/fake_path')
+        view = UserView()
+        view = setup_view(view, request, guid=guid)
+        temp_object = view.get_object()
+        view.object = temp_object
         res = view.get_context_data()
-        assert_is_instance(res['form'], GuidForm)
-        assert_is_instance(res['view'], UserFormView)
-        assert_is_none(res['guid_object'])
+        assert_equal(res[UserView.context_object_name], temp_object)
 
-    def test_context_data_load(self):
-        node = UserFactory()
-        guid = node._id
-        request = RequestFactory().get('/fake-path/?guid={}'.format(guid))
-        view = UserFormView()
-        view = setup_view(view, request)
-        res = view.get_context_data()
-        assert_is_instance(res['form'], GuidForm)
-        assert_is_instance(res['view'], UserFormView)
-        assert_is_instance(res['guid_object'], dict)
 
-    def test_success_url_implemented(self):
-        node = UserFactory()
-        guid = node._id
-        request = RequestFactory().get('/fake-path/?guid={}'.format(guid))
-        view = UserFormView()
-        view = setup_view(view, request)
-        view.get_context_data()
-        assert_equal(view.success_url, u'/admin/users/?guid={}'.format(guid))
+class TestDisableUser(AdminTestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.request = RequestFactory().get('/fake_path')
+
+    def test_disable_user(self):
+        guid = self.user._id
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+        disable_user(self.request, guid)
+        assert_true(self.user.is_disabled)
+
+    def test_reactivate_user(self):
+        guid = self.user._id
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+        disable_user(self.request, guid)
+        reactivate_user(self.request, guid)
+        assert_false(self.user.is_disabled)
