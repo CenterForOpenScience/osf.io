@@ -3425,6 +3425,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     institution_domain = fields.StringField(list=True)
     institution_auth_url = fields.StringField(validate=URLValidator())
     institution_logo_name = fields.StringField()
+    institution_email_domain = fields.StringField(list=True)
 
     @classmethod
     def find(cls, query=None, allow_institution=False, **kwargs):
@@ -3570,7 +3571,8 @@ class Institution():
         'domain': 'institution_domain',
         'name': 'title',
         'logo_name': 'institution_logo_name',
-        'description': 'description'
+        'description': 'description',
+        'email_domain': 'institution_email_domain'
     }
 
     def __init__(self, node):
