@@ -155,7 +155,7 @@ var Dashboard = {
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
         // VIEW STATES
         self.showInfo = m.prop(true); // Show the info panel
-        self.showSidebar = m.prop(true); // Show the links with collections etc. used in narrow views
+        self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
         self.refreshView = m.prop(true); // Internal loading indicator
         self.allProjectsLoaded = m.prop(false);
         self.allProjects = m.prop([]);
