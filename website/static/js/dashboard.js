@@ -417,12 +417,13 @@ var Dashboard = {
                     var u = contributors[i];
                     if(self.users[u.id] === undefined) {
                         self.users[u.id] = {
-                            data : u
-
+                            data : u,
+                            count: 1
                         };
+                    } else {
+                        self.users[u.id].count++;
                     }
                 }
-
                 var tags = item.attributes.tags || [];
                 for(var j = 0; j < tags.length; j++) {
                     var t = tags[j];
@@ -438,7 +439,7 @@ var Dashboard = {
             self.nameFilters = [];
             for (var user in self.users){
                 var u2 = self.users[user];
-                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name));
+                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name));
             }
             self.tagFilters = [];
             for (var tag in self.tags){
@@ -1145,7 +1146,7 @@ var Filters = {
                 item = args.nameFilters[i];
                 selectedCSS = item.id === args.activeFilter().id ? '.active' : '';
                 list.push(m('li' + selectedCSS,
-                    m('a[role="button"]', {onclick : args.updateFilter.bind(null, item)},item.label)
+                    m('a[role="button"]', {onclick : args.updateFilter.bind(null, item)},item.label + ' (' + item.data.count + ')')
                 ));
             }
             return list;
