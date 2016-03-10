@@ -215,29 +215,21 @@ class Comment(GuidStoredObject, SpamMixin):
     def find_n_unread(cls, user, node, page, root_id=None):
         if node.is_contributor(user):
             if page == Comment.OVERVIEW:
-                return cls.n_unread_node_comments(user, node)
+                view_timestamp = user.get_node_comment_timestamps(node, 'node')
+                root_target = Guid.load(node._id)
             elif page == Comment.FILES:
                 view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
                 root_target = Guid.load(root_id)
-                return Comment.find(Q('node', 'eq', node) &
-                                    Q('user', 'ne', user) &
-                                    Q('is_deleted', 'eq', False) &
-                                    (Q('date_created', 'gt', view_timestamp) |
-                                    Q('date_modified', 'gt', view_timestamp)) &
-                                    Q('root_target', 'eq', root_target)).count()
+            else:
+                raise ValueError('Invalid page')
+            return Comment.find(Q('node', 'eq', node) &
+                                Q('user', 'ne', user) &
+                                Q('is_deleted', 'eq', False) &
+                                (Q('date_created', 'gt', view_timestamp) |
+                                Q('date_modified', 'gt', view_timestamp)) &
+                                Q('root_target', 'eq', root_target)).count()
 
         return 0
-
-    @classmethod
-    def n_unread_node_comments(cls, user, node):
-        view_timestamp = user.get_node_comment_timestamps(node, 'node')
-        root_target = Guid.load(node._id)
-        return Comment.find(Q('node', 'eq', node) &
-                            Q('user', 'ne', user) &
-                            (Q('date_created', 'gt', view_timestamp) |
-                            Q('date_modified', 'gt', view_timestamp)) &
-                            Q('is_deleted', 'eq', False) &
-                            Q('root_target', 'eq', root_target)).count()
 
     @classmethod
     def create(cls, auth, **kwargs):
