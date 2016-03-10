@@ -307,7 +307,7 @@ var QuickSearchProject = {
     },
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
-            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page.');
+            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page. Contact support@osf.io for further assistance.');
         }
 
         if (!ctrl.someDataLoaded()) {
