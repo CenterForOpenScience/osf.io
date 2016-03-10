@@ -233,7 +233,7 @@ $(document).ready(function() {
       if ($('#titleID')[0].value != (projectSettingsVM).titlePlaceholder  ||
           $('#descriptionID')[0].value != (projectSettingsVM).descriptionPlaceholder ||
           $('#categoryID')[0].value != (projectSettingsVM).categoryPlaceholder  ) {
-          return "There are unsaved changes in your project section."
+          return "There are unsaved changes in your project section.";
       }
     });
 
