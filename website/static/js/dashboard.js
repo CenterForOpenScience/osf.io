@@ -399,6 +399,10 @@ var Dashboard = {
                 self.generateFiltersList();
                 self.loadingAllNodes = false;
                 self.allProjectsLoaded(true);
+            } else {
+                self.data().forEach(function(item){
+                    _formatDataforPO(item);
+                });
             }
             sortProjects(self.data());
             self.reload(true);
