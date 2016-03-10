@@ -1070,6 +1070,7 @@ var Breadcrumbs = {
                 if(index === array.length-1){
                     var label = item.type === 'node' ? ' Add component' : ' Add project';
                     var title = item.type === 'node' ? 'Create new component' : 'Create new project';
+                    var parentID = item.type === 'node' ? args.breadcrumbs()[args.breadcrumbs().length - 1].data.id : null;
                     var showAddProject = true;
                     var addProjectTemplate = '';
                     if(item.type === 'node'){
@@ -1079,7 +1080,7 @@ var Breadcrumbs = {
                     if(showAddProject){
                         addProjectTemplate = m.component(AddProject, {
                             buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
-                            parentID: args.breadcrumbs()[args.breadcrumbs().length - 1].data.id,
+                            parentID: parentID,
                             modalID: 'addProject',
                             title: title,
                             categoryList: args.categoryList,
