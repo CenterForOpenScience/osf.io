@@ -44,6 +44,7 @@ var NewAndNoteworthy = {
             self.someDataLoaded(true);
         }, function _error(result){
             self.requestError(result);
+            m.redraw()
         });
 
         // Load popular nodes
@@ -58,6 +59,7 @@ var NewAndNoteworthy = {
             self.someDataLoaded(true);
         }, function _error(result){
             self.requestError(result);
+            m.redraw()
         });
 
         // Additional API call to fetch node link contributors
