@@ -386,8 +386,8 @@ var Dashboard = {
             } else {
                 self.loadingNodePages = false;
             }
-            self.data(_makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));  // Do this regardless of what kind of source is loadin
             if(self.loadingAllNodes) {
+                self.data(_makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));
                 self.allProjects(self.data());
                 self.generateFiltersList();
                 self.loadingAllNodes = false;
