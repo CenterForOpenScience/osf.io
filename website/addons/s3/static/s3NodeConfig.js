@@ -316,17 +316,6 @@ ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
     });
 };
 
-// Prevents return key from refreshing the page inside openCreateBucket
-function stopRKey(evt) {
-  var evt = (evt) ? evt : ((event) ? event : null);
-  var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null);
-  if ((evt.keyCode == 13) && (node.type=="text"))  {
-      return false;
-  }
-}
-
-document.onkeypress = stopRKey;
-
 ViewModel.prototype.openCreateBucket = function() {
     var self = this;
 
@@ -344,29 +333,31 @@ ViewModel.prototype.openCreateBucket = function() {
     bootbox.dialog({
         title: 'Create a new bucket',
         message:
-                '<div class="row"> ' +
-                    '<div class="col-md-12"> ' +
-                        '<form class="form-horizontal"> ' +
-                            '<div class="form-group"> ' +
-                                '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
-                                '<div class="col-md-8"> ' +
-                                    '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket name" class="form-control" autofocus> ' +
-                                    '<div>' +
-                                        '<span id="bucketModalErrorMessage" ></span>' +
-                                    '</div>'+
+                '<form class="form-horizontal" onsubmit="return false"> ' +
+                    '<div class="row"> ' +
+                        '<div class="col-md-12"> ' +
+                            '<form class="form-horizontal"> ' +
+                                '<div class="form-group"> ' +
+                                    '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
+                                    '<div class="col-md-8"> ' +
+                                        '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket name" class="form-control" autofocus> ' +
+                                        '<div>' +
+                                            '<span id="bucketModalErrorMessage" ></span>' +
+                                        '</div>'+
+                                    '</div>' +
                                 '</div>' +
-                            '</div>' +
-                            '<div class="form-group"> ' +
-                                '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
-                                '<div class="col-md-8"> ' +
-                                    '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
-                                        generateBucketOptions(self.settings.bucketLocations) +
-                                    '</select>' +
+                                '<div class="form-group"> ' +
+                                    '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
+                                    '<div class="col-md-8"> ' +
+                                        '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
+                                            generateBucketOptions(self.settings.bucketLocations) +
+                                        '</select>' +
+                                    '</div>' +
                                 '</div>' +
-                            '</div>' +
-                        '</form>' +
-                    '</div>' +
-                '</div>',
+                            '</form>' +
+                        '</div>' +
+                    '</div>'+
+                '</form>',
         buttons: {
             cancel: {
                 label: 'Cancel',
