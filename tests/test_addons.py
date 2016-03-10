@@ -23,7 +23,7 @@ from tests import factories
 
 from website import settings
 from website.files import models
-from website.files.models.base import PROVIDER_MAP
+from website.files.models.base import PROVIDER_MAP, StoredFileNode, TrashedFileNode
 from website.project.model import MetaSchema, ensure_schemas
 from website.util import api_url_for, rubeus
 from website.project import new_private_link
@@ -586,6 +586,7 @@ class TestAddonFileViews(OsfTestCase):
         super(TestAddonFileViews, cls).tearDownClass()
         PROVIDER_MAP['github'] = [models.GithubFolder, models.GithubFile, models.GithubFileNode]
         del PROVIDER_MAP['test_addons']
+        TrashedFileNode.remove()
 
     def get_test_file(self):
         version = models.FileVersion(identifier='1')
@@ -799,6 +800,42 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 401)
+
+    def test_delete_action_creates_trashed_file_node(self):
+        file_node = self.get_test_file()
+        payload = {
+            'provider': file_node.provider,
+            'metadata': {
+                'path': '/test/Test',
+                'materialized': '/test/Test'
+            }
+        }
+        views.addon_delete_file_node(self=None, node=self.project, event_type='file_removed', payload=payload)
+        assert_false(StoredFileNode.load(file_node._id))
+        assert_true(TrashedFileNode.load(file_node._id))
+
+    def test_delete_action_for_folder_deletes_subfolders_and_creates_trashed_file_nodes(self):
+        file_node = self.get_test_file()
+        subfolder = TestFolder(
+            name='folder',
+            node=self.project,
+            path='/test/folder/',
+            materialized_path='/test/folder/',
+            versions=[]
+        )
+        subfolder.save()
+        payload = {
+            'provider': file_node.provider,
+            'metadata': {
+                'path': '/test/',
+                'materialized': '/test/'
+            }
+        }
+        views.addon_delete_file_node(self=None, node=self.project, event_type='file_removed', payload=payload)
+        assert_false(StoredFileNode.load(file_node._id))
+        assert_true(TrashedFileNode.load(file_node._id))
+        assert_false(StoredFileNode.load(subfolder._id))
+
 
 class TestLegacyViews(OsfTestCase):
 
