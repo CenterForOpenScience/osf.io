@@ -443,9 +443,8 @@ AddContributorViewModel = oop.extend(Paginator, {
     /**
      * get node tree for treebeard from API V1
      */
-    fetchNodeTree: function () {
+    fetchNodeTree: function (treebeardUrl) {
         var self = this;
-        var treebeardUrl = window.contextVars.node.urls.api + 'tree/';
         return $.ajax({
             url: treebeardUrl,
             type: 'GET',
@@ -495,8 +494,9 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, option
 
 ContribAdder.prototype.init = function() {
     var self = this;
+    var treebeardUrl = window.contextVars.node.urls.api + 'tree/';
     self.viewModel.getContributors();
-    self.viewModel.fetchNodeTree().done(function(response) {
+    self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
         new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
     });
     ko.applyBindings(self.viewModel, self.$element[0]);
