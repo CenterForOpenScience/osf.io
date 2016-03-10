@@ -84,12 +84,6 @@ var NewAndNoteworthy = {
             return self.contributorsMapping[node.id]['names'][i];
         };
 
-        self.addToolTip = function(line) {
-            var $line = $(line);
-            if (line.offsetWidth < line.scrollWidth) {
-                $line.tooltip('show');
-            }
-        };
     },
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
@@ -105,9 +99,6 @@ var NewAndNoteworthy = {
                 return m.component(NoteworthyNodeDisplay, {
                     node : node,
                     getFamilyName: ctrl.getFamilyName,
-                    addToolTip: function(item) {
-                        return ctrl.addToolTip(item);
-                    },
                     contributorsMapping: ctrl.contributorsMapping
                 });
             });
@@ -118,9 +109,6 @@ var NewAndNoteworthy = {
                 return m.component(NoteworthyNodeDisplay, {
                     node : node,
                     getFamilyName: ctrl.getFamilyName,
-                    addToolTip: function(item) {
-                        return ctrl.addToolTip(item);
-                    },
                     contributorsMapping: ctrl.contributorsMapping
                 });
             });
@@ -143,6 +131,15 @@ var NewAndNoteworthy = {
 
 
 var NoteworthyNodeDisplay = {
+    controller: function() {
+        var self = this;
+        self.addToolTip = function(line) {
+            var $line = $(line);
+            if (line.offsetWidth < line.scrollWidth) {
+                $line.tooltip('show');
+            }
+        };
+    },
     view: function(ctrl, args) {
         var description = args.node.embeds.target_node.data.attributes.description;
         var title = args.node.embeds.target_node.data.attributes.title;
@@ -154,10 +151,10 @@ var NoteworthyNodeDisplay = {
         }},[
             m('h5', m('a', {href: destination}, title)),
             m('span.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
-                args.addToolTip(this);
+                ctrl.addToolTip(this);
             }}, m('i', 'by ' + contributors)),
             description ? m('p.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){
-                args.addToolTip(this);
+                ctrl.addToolTip(this);
             }}, description) : ''
 
         ]);
