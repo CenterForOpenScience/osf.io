@@ -1380,15 +1380,12 @@ class User(GuidStoredObject, AddonModelMixin):
         return inst in self.affiliated_institutions
 
     def remove_institution(self, inst_id):
-        node_id = False
-        for node in self._affiliated_institutions:
-            if node.institution_id == inst_id:
-                node_id = node._id
-                break
-        if node_id:
-            self._affiliated_institutions.remove(node_id)
-            return True
-        return False
+        removed = False
+        for inst in self.affiliated_institutions:
+            if inst._id == inst_id:
+                self.affiliated_institutions.remove(inst)
+                removed = True
+        return removed
 
     _affiliated_institutions = fields.ForeignField('node', list=True)
 

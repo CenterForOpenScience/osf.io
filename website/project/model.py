@@ -3478,7 +3478,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
         previous = self.primary_institution if self.primary_institution else None
         self.primary_institution = inst
-        if inst not in self._affiliated_institutions:
+        if inst not in self.affiliated_institutions:
             self.affiliated_institutions.append(inst)
         if log:
             self.add_log(
@@ -3504,7 +3504,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
         self.primary_institution = None
         if inst in self.affiliated_institutions:
-            self.affiliated_institutions.remove(inst)
+           self.affiliated_institutions.remove(inst)
         if log:
             self.add_log(
                 action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
