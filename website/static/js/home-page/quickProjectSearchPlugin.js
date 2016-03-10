@@ -74,6 +74,9 @@ var QuickSearchProject = {
             if (self.next()) {
                 var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
                 nextPromise.then(function(result){
+                    // NOTE: We need to redraw here in because we set background: true on the request
+                    // This redraw allows the "load more" button to be displayed
+                    m.redraw();
                     result.data.forEach(function(node){
                         self.nodes().push(node);
                         self.retrieveContributors(node);
