@@ -4,7 +4,7 @@ from nose import tools as nt
 import mock
 
 from tests.base import AdminTestCase
-from tests.factories import NodeFactory, CommentFactory
+from tests.factories import CommentFactory
 from admin_tests.utilities import setup_form_view
 
 from admin.spam.views import SpamDetail
