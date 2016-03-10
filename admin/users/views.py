@@ -1,8 +1,26 @@
+from django.shortcuts import redirect
+
 from website.project.model import User
+from website.mailchimp_utils import subscribe_on_confirm
 
 from admin.base.views import GuidFormView, GuidView
 from admin.users.templatetags.user_extras import reverse_user
 from .serializers import serialize_user
+
+
+def disable_user(request, guid):
+    user = User.load(guid)
+    user.disable_account()
+    user.save()
+    return redirect(reverse_user(guid))
+
+
+def reactivate_user(request, guid):
+    user = User.load(guid)
+    user.date_disabled = None
+    subscribe_on_confirm(user)
+    user.save()
+    return redirect(reverse_user(guid))
 
 
 class UserFormView(GuidFormView):

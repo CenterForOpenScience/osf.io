@@ -933,6 +933,11 @@ class TestDisablingUsers(OsfTestCase):
         assert_true(isinstance(self.user.date_disabled, datetime.datetime))
         assert_false(self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
 
+    def test_disable_account_api(self):
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
+        with assert_raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
+            self.user.disable_account()
+
 
 class TestMergingUsers(OsfTestCase):
 

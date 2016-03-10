@@ -38,7 +38,6 @@ class SpamList(ListView):
         kwargs.setdefault('page_number', page.number)
         return super(SpamList, self).get_context_data(**kwargs)
 
-
 class UserSpamList(SpamList):
     template_name = 'spam/user.html'
 
@@ -67,6 +66,8 @@ class UserSpamList(SpamList):
 class SpamDetail(FormView):
     form_class = ConfirmForm
     template_name = 'spam/detail.html'
+    spam_id = None
+    page = 1
 
     def __init__(self):
         self.item = None
@@ -75,17 +76,28 @@ class SpamDetail(FormView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            return super(SpamDetail, self).get(request, *args, **kwargs)
+            context = self.get_context_data(**kwargs)
         except AttributeError:
             return page_not_found(request)  # TODO: 1.9 update to have exception with node/user 404.html will be added
+        self.page = request.GET.get('page', 1)
+        context['page_number'] = self.page
+        context['form'] = self.get_form()
+        return self.render_to_response(context)
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         try:
-            self.get_context_data(**kwargs)
+            context = self.get_context_data(**kwargs)
         except AttributeError:
             return page_not_found(request)  # TODO: 1.9 update to have exception
-        return super(SpamDetail, self).post(request, *args, **kwargs)
+        self.page = request.GET.get('page', 1)
+        context['page_number'] = self.page
+        context['form'] = self.get_form()
+        if context['form'].is_valid():
+            return self.form_valid(context['form'])
+        else:
+            return render(request, self.template_name, context=context)
+        # return super(SpamDetail, self).post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         self.item = Comment.load(self.kwargs.get('spam_id', None))
