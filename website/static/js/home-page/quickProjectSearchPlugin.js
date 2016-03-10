@@ -51,7 +51,7 @@ var QuickSearchProject = {
             self.next(result.links.next);
         }, function _error(result){
             self.requestError(result);
-            m.redraw()
+            m.redraw();
         });
         promise.then(
             function(){

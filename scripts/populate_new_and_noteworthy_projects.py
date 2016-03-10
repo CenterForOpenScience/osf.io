@@ -12,11 +12,20 @@ from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.mongo import database as db
 from framework.transactions.context import TokuTransaction
-from website.discovery.views import popular_activity_json
+from website.discovery.views import activity
 from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST
 
 logger = logging.getLogger(__name__)
 
+
+def popular_activity_json():
+    """ Return popular_public_projects node_ids """
+    activity_json = activity()
+    popular = activity_json['popular_public_projects']
+    popular_ids = {'popular_node_ids': []}
+    for project in popular:
+        popular_ids['popular_node_ids'].append(project._id)
+    return popular_ids
 
 def get_new_and_noteworthy_nodes():
     """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """

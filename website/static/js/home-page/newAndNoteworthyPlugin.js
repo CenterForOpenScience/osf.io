@@ -44,7 +44,7 @@ var NewAndNoteworthy = {
             self.someDataLoaded(true);
         }, function _error(result){
             self.requestError(result);
-            m.redraw()
+            m.redraw();
         });
 
         // Load popular nodes
@@ -59,7 +59,7 @@ var NewAndNoteworthy = {
             self.someDataLoaded(true);
         }, function _error(result){
             self.requestError(result);
-            m.redraw()
+            m.redraw();
         });
 
         // Additional API call to fetch node link contributors
@@ -81,7 +81,7 @@ var NewAndNoteworthy = {
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
-            return self.contributorsMapping[node.id]['names'][i];
+            return self.contributorsMapping[node.id].names[i];
         };
 
     },
@@ -143,7 +143,7 @@ var NoteworthyNodeDisplay = {
     view: function(ctrl, args) {
         var description = args.node.embeds.target_node.data.attributes.description;
         var title = args.node.embeds.target_node.data.attributes.title;
-        var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id]['total'], args.getFamilyName);
+        var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id].total, args.getFamilyName);
         var destination = '/' + args.node.embeds.target_node.data.id;
 
         return m('.public-projects-item', {onclick: function(){
