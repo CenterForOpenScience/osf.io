@@ -237,7 +237,7 @@ $(document).ready(function() {
     var permissionInfoHtml = '<dl>' +
         '<dt>Read</dt><dd><ul><li>View project content and comment</li></ul></dd>' +
         '<dt>Read + Write</dt><dd><ul><li>Read privileges plus add and configure components</li><li>Add and edit content</li></ul></dd>' +
-        '<dt>Administrator</dt><dd><ul><li>Read and write privilegesManage contributor</li>' +
+        '<dt>Administrator</dt><dd><ul><li>Read and write privileges</li><li>Manage contributor</li>' +
             '<li>Delete and register project</li><li>Public-private settings</li></ul></dd>' +
         '</dl>';
 
