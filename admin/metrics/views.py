@@ -17,3 +17,4 @@ class OSFStatisticsListView(ListView):
     context_object_name = 'metrics'
     paginate_by = 50
     paginate_orphans = 5
+    ordering = '-date'
