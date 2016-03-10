@@ -43,35 +43,38 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
                 update_comment_node(guid, source_node, destination_node)
 
             if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
-                if not source['path'].endswith('/'):
-                    data = dict(destination)
-                    new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, destination['path'])
-                    if destination['provider'] != 'osfstorage':
-                        new_file.update(revision=None, data=data)
-                else:
-                    new_file = create_file_from_metadata(destination.get('children', []), source, destination, destination_node, obj)
-                    if not new_file:
-                        if source['provider'] == 'box':
-                            new_path = obj.referent.path
-                        else:
-                            new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
-                        new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
-                        new_file.name = obj.referent.name
-                        new_file.materialized_path = new_path
-                        new_file.save()
-
-                obj.referent = new_file
+                obj.referent = create_new_file(obj, source, destination, destination_node)
                 obj.save()
 
 
-def create_file_from_metadata(children, source, destination, destination_node, obj):
+def create_new_file(obj, source, destination, destination_node):
+    if not source['path'].endswith('/'):
+        data = dict(destination)
+        new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, destination['path'])
+        if destination['provider'] != 'osfstorage':
+            new_file.update(revision=None, data=data)
+    else:
+        new_file = find_and_create_file_from_metadata(destination.get('children', []), source, destination, destination_node, obj)
+        if not new_file:
+            if source['provider'] == 'box':
+                new_path = obj.referent.path
+            else:
+                new_path = obj.referent.materialized_path.replace(source['materialized'], destination['materialized'])
+            new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, new_path)
+            new_file.name = obj.referent.name
+            new_file.materialized_path = new_path
+            new_file.save()
+    return new_file
+
+
+def find_and_create_file_from_metadata(children, source, destination, destination_node, obj):
     """ Given a Guid obj, recursively search for the metadata of its referent (a file obj)
     in the waterbutler response. If found, create a new addon FileNode with that metadata
     and return the new file.
     """
     for item in children:
         if item['kind'] == 'folder':
-            return create_file_from_metadata(item.get('children', []), source, destination, destination_node, obj)
+            return find_and_create_file_from_metadata(item.get('children', []), source, destination, destination_node, obj)
         elif item['kind'] == 'file' and item['materialized'].replace(destination['materialized'], source['materialized']) == obj.referent.materialized_path:
             data = dict(item)
             new_file = FileNode.resolve_class(destination['provider'], FileNode.FILE).get_or_create(destination_node, item['path'])
