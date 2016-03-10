@@ -166,10 +166,7 @@
                             % endfor
 
                             <br />
-
-                            <button id="settings-submit" class="btn btn-success">
-                                Apply
-                            </button>
+                            
                             <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
 
                         </form>
