@@ -13,9 +13,23 @@ class TestUserSerializers(AdminTestCase):
         info = serialize_user(user)
         nt.assert_is_instance(info, dict)
         nt.assert_equal(info['name'], user.fullname)
+        nt.assert_equal(info['id'], user._id)
         nt.assert_equal(info['emails'], user.emails)
         nt.assert_equal(info['last_login'], user.date_last_login)
         nt.assert_equal(len(info['nodes']), 0)
+
+    def test_serialize_two_factor(self):
+        user = UserFactory()
+        info = serialize_user(user)
+        nt.assert_false(info['two_factor'])
+        user.get_or_add_addon('twofactor')
+        info = serialize_user(user)
+        nt.assert_is_instance(info, dict)
+        nt.assert_equal(info['name'], user.fullname)
+        nt.assert_equal(info['emails'], user.emails)
+        nt.assert_equal(info['last_login'], user.date_last_login)
+        nt.assert_equal(len(info['nodes']), 0)
+        nt.assert_true(info['two_factor'])
 
     def test_serialize_account_status(self):
         user = UserFactory()

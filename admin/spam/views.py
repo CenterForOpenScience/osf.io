@@ -38,6 +38,7 @@ class SpamList(ListView):
         kwargs.setdefault('page_number', page.number)
         return super(SpamList, self).get_context_data(**kwargs)
 
+
 class UserSpamList(SpamList):
     template_name = 'spam/user.html'
 

@@ -11,4 +11,6 @@ urlpatterns = [
         name='disable'),
     url(r'^id-(?P<guid>[a-z0-9]+)/reactivate/$', views.reactivate_user,
         name='reactivate'),
+    url(r'^id-(?P<guid>[a-z0-9]+)/two-factor/disable/$', views.remove_2_factor,
+        name='remove2factor'),
 ]

@@ -11,6 +11,7 @@ def serialize_user(user):
         'emails': user.emails,
         'last_login': user.date_last_login,
         'disabled': user.date_disabled if user.is_disabled else False,
+        'two_factor': user.has_addon('twofactor'),
     }
 
 

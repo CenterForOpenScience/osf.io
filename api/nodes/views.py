@@ -1884,9 +1884,6 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                 commented_files.append(comment.root_target)
 
         for root_target in commented_files:
-            if root_target.referent.provider == 'dropbox':
-                root_target = DropboxFile.load(root_target._id)
-
             if root_target.referent.provider == 'osfstorage':
                 try:
                     StoredFileNode.find(
@@ -1899,7 +1896,10 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                     del root_target.referent.node.commented_files[root_target._id]
 
             else:
-                url = waterbutler_api_url_for(self.get_node()._id, root_target.referent.provider, root_target.referent.path, meta=True)
+                referent = root_target.referent
+                if referent.provider == 'dropbox':
+                    referent = DropboxFile.load(root_target.referent._id)
+                url = waterbutler_api_url_for(self.get_node()._id, referent.provider, referent.path, meta=True)
                 waterbutler_request = requests.get(
                     url,
                     cookies=self.request.COOKIES,
