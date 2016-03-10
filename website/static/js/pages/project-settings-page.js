@@ -230,10 +230,10 @@ $(document).ready(function() {
           return 'The changes on addon setting are not submitted!';
       }
     /* Before closing the page, Check whether changes made to category, title or description are updated or not */
-      if ($('#titleID')[0].value !== (projectSettingsVM).titlePlaceholder  ||
-          $('#descriptionID')[0].value !== (projectSettingsVM).descriptionPlaceholder ||
-          $('#categoryID')[0].value !== (projectSettingsVM).categoryPlaceholder  ) {
-          return 'There are unsaved changes in your project section.';
+      if (projectSettingsVM.title() !== projectSettingsVM.titlePlaceholder ||
+          projectSettingsVM.description() !== projectSettingsVM.descriptionPlaceholder ||
+          projectSettingsVM.selectedCategory() !== projectSettingsVM.categoryPlaceholder) {
+          return 'There are unsaved changes in your project settings.';
       }
     });
 
