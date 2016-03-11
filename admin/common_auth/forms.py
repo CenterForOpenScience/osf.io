@@ -11,7 +11,8 @@ class LoginForm(forms.Form):
 
 
 class CustomUserRegistrationForm(UserCreationForm):
-    group_perms = forms.ModelMultipleChoiceField(queryset=Group.objects.filter(name="prereg_group"), widget=FilteredSelectMultiple("verbose name", is_stacked=False))
+    group_perms = forms.ModelMultipleChoiceField(queryset=Group.objects.filter(name="prereg_group"),
+        widget=FilteredSelectMultiple("verbose name", is_stacked=False), required=False)
 
     class Meta:
             model = MyUser
