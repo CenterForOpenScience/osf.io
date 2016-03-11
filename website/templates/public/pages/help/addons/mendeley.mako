@@ -1,4 +1,5 @@
-<div class="support-item">
+<div class="support-item m-t-lg">
+    <span id="mendeley" class="anchor"></span>
     <h5 class="support-head f-w-xl"> Mendeley </h5>
     <div class="support-body">
         <p><a href="http://mendeley.com/">Mendeley</a> is a free reference and PDF manager. By Adding Mendeley to your OSF
