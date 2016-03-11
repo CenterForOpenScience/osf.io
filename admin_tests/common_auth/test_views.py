@@ -42,9 +42,7 @@ class UserRegSaveTestCase(TestCase):
         user.save()
 
 
-    def test_registration(self):
-        # request.user = self.user
-        # request = self.factory.post('/register')
+    def test_registration_view_success(self):
         group_perms = Group.objects.filter(name="prereg_group")
 
         post_data = {
