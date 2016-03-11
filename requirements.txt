@@ -61,3 +61,4 @@ pyjwe==0.1.6
 
 # Admin requirements
 django-webpack-loader==0.2.3
+django-queryset-csv==0.3.3

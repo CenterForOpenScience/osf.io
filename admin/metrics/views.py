@@ -1,6 +1,7 @@
 from django.views.generic import ListView
 from django.shortcuts import redirect
 from django.core.urlresolvers import reverse
+from djqscsv import render_to_csv_response
 
 from .models import OSFStatistic
 from .utils import osf_site
@@ -9,6 +10,11 @@ from .utils import osf_site
 def update_metrics(request):
     osf_site()
     return redirect(reverse('metrics:stats_list'))
+
+
+def download_csv(request):
+    queryset = OSFStatistic.objects.all()
+    return render_to_csv_response(queryset)
 
 
 class OSFStatisticsListView(ListView):

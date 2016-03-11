@@ -9,6 +9,9 @@
     <a href="{% url 'metrics:update' %}" class="btn btn-primary">
         Update
     </a>
+    <a href="{% url 'metrics:download' %}" class="btn btn-primary">
+        Download
+    </a>
     <h3>OSF Statistics</h3>
 
     {% include "util/pagination.html" with items=page_obj %}
