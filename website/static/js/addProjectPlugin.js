@@ -84,13 +84,13 @@ var AddProject = {
             $('.modal').modal('hide');
         };
     },
-    view : function (ctrl, options, trackingCategory) {
+    view : function (ctrl, options, trackingCategory, trackingAction) {
         var templates = {
             form : m('.modal-content', [
                 m('.modal-header', [
                     m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
                         ctrl.reset();
-                        $osf.trackClick(trackingCategory, 'add-project', 'click-close-add-project-modal');
+                        $osf.trackClick(trackingCategory, trackingAction, 'click-close-add-project-modal');
                     }}, [
                         m('span[aria-hidden="true"]','×')
                     ]),
@@ -109,15 +109,15 @@ var AddProject = {
                                     ctrl.checkValid();
                                 },
                                 onchange: function() {
-                                    $osf.trackClick(trackingCategory, 'add-project', 'type-project-name');
+                                    $osf.trackClick(trackingCategory, trackingAction, 'type-project-name');
                                 },
-                                value : ctrl.newProjectName()
+                                value : ctrl.newProjectName(),
                                 placeholder : 'Enter project title'
                             })
                         ]),
                         m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
-                            $osf.trackClick(trackingCategory, 'add-project', 'show-more-or-less');
+                            $osf.trackClick(trackingCategory, trackingAction, 'show-more-or-less');
                         }},[
                             ctrl.showMore() ? m('i.fa.fa-caret-down', { style: 'width: 10px;'}) : m('i.fa.fa-caret-right', { style: 'width: 10px;'}),
                             ' More'
@@ -128,10 +128,9 @@ var AddProject = {
                                 m('textarea.form-control.noresize', {
                                     onchange: function() {
                                         m.withAttr('value', ctrl.newProjectDesc);
-                                        $osf.trackClick(trackingCategory, 'add-project', 'type-project-description');
+                                        $osf.trackClick(trackingCategory, trackingAction, 'type-project-description');
                                     },
-                                    value : ctrl.newProjectDesc()
-                                    onchange: m.withAttr('value', ctrl.newProjectDesc),
+                                    value : ctrl.newProjectDesc(),
                                     placeholder : 'Enter project description'
                                 })
                             ]),
@@ -146,8 +145,8 @@ var AddProject = {
                                             checked: ctrl.newProjectCategory() === cat.value,
                                             onchange : function() {
                                                 m.withAttr('value', ctrl.newProjectCategory);
-                                                $osf.trackClick(trackingCategory, 'add-project', 'select-project-category');
-                                            },
+                                                $osf.trackClick(trackingCategory, trackingAction, 'select-project-category');
+                                            }
                                         }), cat.display_name || m('i.text-muted', '(Empty category)') ]));
 
                                     })
@@ -159,11 +158,11 @@ var AddProject = {
                 m('.modal-footer', [
                     m('button[type="button"].btn.btn-default[data-dismiss="modal"]', { onclick : function(){
                         ctrl.reset();
-                        $osf.trackClick(trackingCategory,'add-project', 'click-cancel-button');
+                        $osf.trackClick(trackingCategory, trackingAction, 'click-cancel-button');
                     }},  'Cancel'),
                     ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function(){
                         ctrl.add();
-                        $osf.trackClick(trackingCategory, 'add-project', 'click-add-button');
+                        $osf.trackClick(trackingCategory, trackingAction, 'click-create-button');
                     }},'Create') : m('button[type="button"].btn.btn-success[disabled]','Create')
                 ])
             ]),
@@ -185,7 +184,7 @@ var AddProject = {
                     m('.modal-body.text-left', [
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
                                 ctrl.reset();
-                                $osf.trackClick(trackingCategory, 'add-project', 'click-close-success-modal');
+                                $osf.trackClick(trackingCategory, trackingAction, 'click-close-success-modal');
                             }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
@@ -197,11 +196,11 @@ var AddProject = {
                             onclick : function() {
                                 ctrl.reset();
                                 ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
-                                $osf.trackClick(trackingCategory, 'add-project', 'keep-working-here');
+                                $osf.trackClick(trackingCategory, trackingAction, 'keep-working-here');
                             }
                         },  'Keep working here'),
                         m('a.btn.btn-success', { href : ctrl.goToProjectLink(), onclick: function(){
-                            $osf.trackClick(trackingCategory, 'add-project', 'go-to-new-project');
+                            $osf.trackClick(trackingCategory, trackingAction, 'go-to-new-project');
                         }},'Go to new ' + ctrl.nodeLanguage + '')
                     ])
                 )
@@ -211,7 +210,7 @@ var AddProject = {
                     m('.modal-body.text-left', [
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
                                 ctrl.reset();
-                                $osf.trackClick(trackingCategory, 'add-project', 'close-couldn\'t-create-your-project');
+                                $osf.trackClick(trackingCategory, trackingAction, 'close-couldn\'t-create-your-project');
                                 }}, [
                                 m('span[aria-hidden="true"]','×')
                             ]),
@@ -221,7 +220,7 @@ var AddProject = {
                     ),
                     m('.modal-footer', [
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {onclick: function() {
-                            $osf.trackClick(trackingCategory, 'add-project', 'click-OK-couldn\'t-create-your-project');
+                            $osf.trackClick(trackingCategory, trackingAction, 'click-OK-couldn\'t-create-your-project');
                         }},  'OK')
                     ])
                 )

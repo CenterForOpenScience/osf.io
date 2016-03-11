@@ -472,10 +472,6 @@ var QuickSearchProject = {
                             filter: ctrl.filter,
                             countDisplayed: ctrl.countDisplayed,
                             getFamilyName: ctrl.getFamilyName,
-                            onClickNode: function(node) {
-                                location.href = '/'+ node.id;
-                                $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
-                            },
                             formatDate: function(node) {
                                 return ctrl.formatDate(node);
                             }
@@ -502,7 +498,9 @@ var QuickSearchNodeDisplay = {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
-                return m('a', {href: '/' + project.id}, m('.m-v-sm.node-styling',  m('.row', m('div',
+                return m('a', {href: '/' + project.id, onclick: function() {
+                    $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
+                }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                     [
                         m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col',  project.attributes.title)),
                         m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),

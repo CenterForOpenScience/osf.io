@@ -116,7 +116,7 @@ var NewAndNoteworthy = {
 
         function findMoreProjectsButton () {
             return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search', onclick: function() {
-                $osf.trackClick('newAndNoteworthy', 'navigate', 'navigate-to-advanced-search');
+                $osf.trackClick('newAndNoteworthy', 'navigate', 'navigate-to-search-for-more-projects');
             }}, 'Search for more projects');
         }
 

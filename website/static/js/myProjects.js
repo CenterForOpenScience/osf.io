@@ -364,8 +364,8 @@ var MyProjects = {
                             'This project has no components.',
                             m.component(AddProject, {
                                 buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', {onclick: function() {
-                                    $osf.trackClick('myProjects', 'add-project', 'open-add-component-modal');
-                                }} 'Add new component'),
+                                    $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
+                                }}, 'Add new component'),
                                 parentID : lastcrumb.data.id,
                                 modalID : 'addSubcomponent',
                                 title: 'Create new component',
@@ -374,7 +374,7 @@ var MyProjects = {
                                     self.allProjectsLoaded(false);
                                     self.updateList(lastcrumb);
                                 }
-                            })
+                            }, 'myProjects', 'add-component')
                         ]));
                     } else {
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
@@ -1145,14 +1145,17 @@ var Breadcrumbs = {
                     var parentID = item.type === 'node' ? args.breadcrumbs()[args.breadcrumbs().length - 1].data.id : null;
                     var showAddProject = true;
                     var addProjectTemplate = '';
+                    var objectType = 'project';
                     if(item.type === 'node'){
                         var permissions = item.data.attributes.current_user_permissions;
                         showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
+                        objectType = 'component';
                     }
                     if(showAddProject){
                         addProjectTemplate = m.component(AddProject, {
                             buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
-                                $osf.trackClick('myProjects', 'add-project', 'open-add-' + objectType + '-modal');
+                                console.log(objectType);
+                                $osf.trackClick('myProjects', 'add-' + objectType, 'open-add-' + objectType + '-modal');
                             }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
                             parentID: parentID,
                             modalID: 'addProject',
@@ -1162,7 +1165,7 @@ var Breadcrumbs = {
                                 args.allProjectsLoaded(false);
                                 args.updateList(args.breadcrumbs()[args.breadcrumbs().length - 1]);
                             }
-                        });
+                        }, 'myProjects', 'add-' + objectType);
                     }
                     return [
                         m('li', [
