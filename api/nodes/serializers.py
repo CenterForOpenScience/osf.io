@@ -9,8 +9,7 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
 
-from website.models import Node, User, Comment
-from website.project.model import Institution
+from website.models import Node, User, Comment, Institution
 from website.exceptions import NodeStateError, UserNotAffiliatedError
 from website.files.models.base import FileNode
 from website.util import permissions as osf_permissions

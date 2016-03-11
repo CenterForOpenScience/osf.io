@@ -40,7 +40,7 @@ from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.notifications import views as notification_views
-from website.project.model import Institution
+from website.models import Institution
 
 def get_globals():
     """Context variables that are available for every template rendered by

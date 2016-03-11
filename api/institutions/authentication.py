@@ -7,7 +7,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
 from api.base import settings
-from website.project.model import Institution
+from website.models import Institution
 from framework.auth import get_or_create_user
 
 

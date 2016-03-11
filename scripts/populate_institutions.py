@@ -6,7 +6,7 @@ import urllib
 
 from website import settings
 from website.app import init_app
-from website.project.model import Institution, Node
+from website.models import Institution, Node
 from framework.transactions.context import TokuTransaction
 
 ENVS = ['prod', 'nonprod']

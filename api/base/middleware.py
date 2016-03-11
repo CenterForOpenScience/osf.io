@@ -12,7 +12,7 @@ from framework.tasks.handlers import (
     celery_after_request,
     celery_teardown_request
 )
-from website.project.model import Institution
+from website.models import Institution
 from framework.transactions.handlers import (
     transaction_before_request,
     transaction_after_request,

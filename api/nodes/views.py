@@ -47,8 +47,7 @@ from api.logs.serializers import NodeLogSerializer
 
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, NodeLog
-from website.project.model import Institution
+from website.models import Node, Pointer, Comment, NodeLog, Institution
 from website.files.models import StoredFileNode, FileNode, TrashedFileNode
 from website.files.models.dropbox import DropboxFile
 from framework.auth.core import User

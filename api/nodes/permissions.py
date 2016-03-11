@@ -2,8 +2,7 @@
 from rest_framework import permissions
 from rest_framework import exceptions
 
-from website.models import Node, Pointer, User
-from website.project.model import Institution
+from website.models import Node, Pointer, User, Institution
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth
