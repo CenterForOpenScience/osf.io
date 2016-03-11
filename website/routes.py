@@ -47,7 +47,7 @@ def get_globals():
     """
     user = _get_current_user()
     return {
-        'private_link_anonymous': is_private_link_anonymous_view(),
+        'private_link': get_private_link(),
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
@@ -84,16 +84,15 @@ def get_globals():
         'keen_write_key': settings.KEEN_WRITE_KEY,
     }
 
-def is_private_link_anonymous_view():
+def get_private_link():
     try:
         # Avoid circular import
         from website.project.model import PrivateLink
         return PrivateLink.find_one(
             Q('key', 'eq', request.args.get('view_only'))
-        ).anonymous
+        )
     except QueryException:
         return False
-
 
 class OsfWebRenderer(WebRenderer):
     """Render a Mako template with OSF context vars.

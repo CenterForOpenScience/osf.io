@@ -219,7 +219,7 @@
 
 <%include file="project/modal_add_component.mako"/>
 
-% if user['can_comment'] or node['has_comments']:
+% if not private_link and user['can_comment'] or node['has_comments']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
