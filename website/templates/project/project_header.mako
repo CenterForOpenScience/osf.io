@@ -116,10 +116,7 @@
                     % if 'admin' in user['permissions']: 
                         <div>
                             <br>
-                            <button type="button" class="btn btn-success">
-                                <a href="${node['approval_link']}"></a>
-                                Approve Registration
-                            </button>
+                            <a class="btn btn-success" href="${node['approval_link']}">Approve Registration</a>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
                                 Cancel Registration
                             </button>
