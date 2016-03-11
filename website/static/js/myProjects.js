@@ -306,7 +306,7 @@ var MyProjects = {
                 } else {
                     message += ' could not be removed from the collection';
                 }
-                $osf.growl(message, 'Please try again.');
+                $osf.growl(message, 'Please try again.', 'danger', 5000);
             });
         };
         // GETTING THE NODES
@@ -687,7 +687,7 @@ var Collections = {
             }, function(){
                 var name = self.newCollectionName();
                 var message = '"' + name + '" collection could not be created.';
-                $osf.growl(message, 'Please try again');
+                $osf.growl(message, 'Please try again', 'danger', 5000);
                 Raven.captureMessage(message, { url: url, data : data });
                 self.newCollectionName('');
             });
@@ -709,7 +709,7 @@ var Collections = {
             }, function(){
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be deleted.';
-                $osf.growl(message, 'Please try again');
+                $osf.growl(message, 'Please try again', 'danger', 5000);
                 Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
             });
             self.dismissModal();
@@ -734,7 +734,7 @@ var Collections = {
             }, function(){
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be renamed.';
-                $osf.growl(message, 'Please try again');
+                $osf.growl(message, 'Please try again', 'danger', 5000);
                 Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
             });
             self.dismissModal();
@@ -780,7 +780,7 @@ var Collections = {
                                     }
                                 });
                             }
-                            $osf.growl(message);
+                            $osf.growl(message,null, 'warning', 5000);
                             doNext(true); // don't add to count
                         }); // In case of success or error. It doesn't look like mithril has a general .done method
                     }
