@@ -730,8 +730,7 @@ var Collections = {
             };
             var promise = m.request({method : 'PATCH', url : url, config : xhrconfig, data : data});
             promise.then(function(result){
-                var updatedCollMenuObj = $.extend(true, {}, self.collectionMenuObject(), {item: {label: title}});
-                self.collectionMenuObject(updatedCollMenuObj);
+                self.collectionMenuObject().item.label = title;
             }, function(){
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be renamed.';
