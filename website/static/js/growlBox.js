@@ -12,10 +12,11 @@ var oop = require('js/oop');
 * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
 */
 var GrowlBox = oop.defclass({
-    constructor: function(title, message, type) {
+    constructor: function(title, message, type, delay) {
         this.title = title;
         this.message = message;
         this.type = type || 'danger';
+        this.delay = delay || 0;
         this.show();
     },
     show: function() {
@@ -24,7 +25,7 @@ var GrowlBox = oop.defclass({
             message: this.message
         },{
             type: this.type,
-            delay: 0,
+            delay: this.delay,
             animate: {
                 enter: 'animated fadeInDown',
                 exit: 'animated fadeOut'

@@ -1,4 +1,5 @@
-<div class="support-item">
+<div class="support-item m-t-lg">
+    <span id="amazon" class="anchor"></span>
     <h5 class="support-head f-w-xl"> Amazon Simple Storage Service Add-on </h5>
     <div class="support-body">
         <p><a href="http://aws.amazon.com/s3/">Amazon Simple Storage Service </a> (Amazon S3), provides developers and IT teams

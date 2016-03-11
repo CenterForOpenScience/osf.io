@@ -317,7 +317,7 @@ var MyProjects = {
                 } else {
                     message += ' could not be removed from the collection';
                 }
-                $osf.growl(message, 'Please try again.');
+                $osf.growl(message, 'Please try again.', 'danger', 5000);
             });
         };
         // GETTING THE NODES
@@ -563,7 +563,8 @@ var MyProjects = {
                 wrapperSelector : args.wrapperSelector,
                 allProjects : ctrl.allProjects,
                 reload : ctrl.reload,
-                resetUi : ctrl.resetUi
+                resetUi : ctrl.resetUi,
+                showSidebar : ctrl.showSidebar
             },
             ctrl.projectOrganizerOptions
         );
@@ -605,8 +606,7 @@ var MyProjects = {
             ]) : '',
             mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
                 ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
-                ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions)
-                )
+                ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
             ]),
             mobile ? '' : m('.db-info-toggle',{
                     onclick : function _showInfoOnclick(){
@@ -702,7 +702,7 @@ var Collections = {
             }, function(){
                 var name = self.newCollectionName();
                 var message = '"' + name + '" collection could not be created.';
-                $osf.growl(message, 'Please try again');
+                $osf.growl(message, 'Please try again', 'danger', 5000);
                 Raven.captureMessage(message, { url: url, data : data });
                 self.newCollectionName('');
             });
@@ -724,7 +724,7 @@ var Collections = {
             }, function(){
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be deleted.';
-                $osf.growl(message, 'Please try again');
+                $osf.growl(message, 'Please try again', 'danger', 5000);
                 Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
             });
             self.dismissModal();
@@ -745,12 +745,11 @@ var Collections = {
             };
             var promise = m.request({method : 'PATCH', url : url, config : xhrconfig, data : data});
             promise.then(function(result){
-                var updatedCollMenuObj = $.extend(true, {}, self.collectionMenuObject(), {item: {label: title}});
-                self.collectionMenuObject(updatedCollMenuObj);
+                self.collectionMenuObject().item.label = title;
             }, function(){
                 var name = self.collectionMenuObject().item.label;
                 var message = '"' + name + '" could not be renamed.';
-                $osf.growl(message, 'Please try again');
+                $osf.growl(message, 'Please try again', 'danger', 5000);
                 Raven.captureMessage(message, {collectionObject: self.collectionMenuObject() });
             });
             self.dismissModal();
@@ -796,7 +795,7 @@ var Collections = {
                                     }
                                 });
                             }
-                            $osf.growl(message);
+                            $osf.growl(message,null, 'warning', 5000);
                             doNext(true); // don't add to count
                         }); // In case of success or error. It doesn't look like mithril has a general .done method
                     }
@@ -1214,7 +1213,12 @@ var Filters = {
         return m('.db-filters.m-t-lg',
             [
                 m('h5', [
-                    'Contributors',
+                    'Contributors ',
+                    m('i.fa.fa-question-circle.text-muted', {
+                        'data-toggle':  'tooltip',
+                        'title':  'You can see the number of projects shared between a contributor and you. Click a name to display all the selected contributor’s projects which you can view, including any public projects.',
+                        'data-placement' : 'bottom'
+                    }, ''),
                     m('.pull-right', m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages }))
                 ]),
                 m('ul', [

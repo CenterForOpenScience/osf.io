@@ -1,4 +1,5 @@
-<div class="support-item">
+<div class="support-item m-t-lg">
+    <span id="zotero" class="anchor"></span>
     <h5 class="support-head f-w-xl"> Zotero </h5>
     <div class="support-body">
         <p><a href="https://www.zotero.org/">Zotero</a> is a free tool that helps you collect, cite, share, and organize your
