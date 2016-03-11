@@ -109,13 +109,6 @@ def dashboard(auth):
             'dashboard_id': dashboard_id,
             }
 
-@must_be_logged_in
-def home(auth):
-    user = auth.user
-    return {
-        'userId': user._id,
-    }
-
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):
         raise HTTPError(http.BAD_REQUEST, data=dict(
@@ -262,3 +255,7 @@ def redirect_about(**kwargs):
 
 def redirect_howosfworks(**kwargs):
     return redirect('/getting-started/')
+
+def redirect_to_home():
+    # Redirect to support page
+    return redirect('/')

@@ -53,7 +53,7 @@ from website.files.models import StoredFileNode, FileNode, TrashedFileNode
 from website.files.models.dropbox import DropboxFile
 from framework.auth.core import User
 from website.util import waterbutler_api_url_for
-from api.base.utils import default_node_list_query
+from api.base.utils import default_node_list_query, default_node_permission_query
 
 
 class NodeMixin(object):
@@ -185,10 +185,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous, so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for users and contributors and missing serializer fields and relationships.
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    `root`, and `parent`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 
@@ -210,18 +210,10 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('is_collection', 'ne', True) &
-            Q('is_registration', 'ne', True)
-        )
         user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', user._id))
-
-        query = base_query & permission_query
-        return query
+        base_query = default_node_list_query()
+        permissions_query = default_node_permission_query(user)
+        return base_query & permissions_query
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
@@ -1885,9 +1877,6 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                 commented_files.append(comment.root_target)
 
         for root_target in commented_files:
-            if root_target.referent.provider == 'dropbox':
-                root_target = DropboxFile.load(root_target._id)
-
             if root_target.referent.provider == 'osfstorage':
                 try:
                     StoredFileNode.find(
@@ -1900,7 +1889,10 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
                     del root_target.referent.node.commented_files[root_target._id]
 
             else:
-                url = waterbutler_api_url_for(self.get_node()._id, root_target.referent.provider, root_target.referent.path, meta=True)
+                referent = root_target.referent
+                if referent.provider == 'dropbox':
+                    referent = DropboxFile.load(root_target.referent._id)
+                url = waterbutler_api_url_for(self.get_node()._id, referent.provider, referent.path, meta=True)
                 waterbutler_request = requests.get(
                     url,
                     cookies=self.request.COOKIES,

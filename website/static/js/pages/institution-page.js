@@ -5,8 +5,8 @@ var ko = require('knockout');
 
 ko.punches.enableAll();
 
-var FileBrowser = require('js/dashboard.js').Dashboard;
-var LinkObject = require('js/dashboard.js').LinkObject;
+var Projects = require('js/myProjects.js').MyProjects;
+var LinkObject = require('js/myProjects.js').LinkObject;
 var InstitutionNodes = require('js/institutionNodes.js');
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 
@@ -14,7 +14,7 @@ var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 $(document).ready(function() {
     var institutionId = window.contextVars.institution.id;
     new InstitutionNodes('#inst', window.contextVars);
-    m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {
+    m.mount(document.getElementById('fileBrowser'), m.component(Projects, {
         wrapperSelector : '#fileBrowser',
         systemCollections:[
             new LinkObject('collection', { path : 'institutions/' + institutionId + '/nodes/', query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Projects'),

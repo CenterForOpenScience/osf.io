@@ -9,7 +9,7 @@ var $ = require('jquery');
 var jstz = require('jstimezonedetect');
 
 var $osf = require('js/osfHelpers');
-var Dashboard = require('js/dashboard.js').Dashboard;
+var MyProjects = require('js/myProjects.js').MyProjects;
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
@@ -38,7 +38,7 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
 };
 
 $(document).ready(function() {
-    m.mount(document.getElementById('dashboard'), m.component(Dashboard, {wrapperSelector : '#dashboard'}));
+    m.mount(document.getElementById('dashboard'), m.component(MyProjects, {wrapperSelector : '#dashboard'}));
     // TODO: new data does not have timezone information
     //ensureUserTimezone(result.timezone, result.locale, result.id);
 

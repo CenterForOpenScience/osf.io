@@ -25,6 +25,7 @@ var entry = {
     // JS
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
+    'landing-page': staticPath('js/pages/landing-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
     'profile-page': staticPath('js/pages/profile-page.js'),
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
@@ -55,10 +56,10 @@ var entry = {
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
+    'faq-page' : staticPath('js/pages/faq-page.js'),
     'share-embed-page': staticPath('js/pages/share-embed-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
     'institution-page': staticPath('js/pages/institution-page.js'),
-    'home': staticPath('js/home.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -147,7 +148,6 @@ var resolve = {
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
         'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
-        'sliderPips': staticPath('vendor/bower_components/jQuery-ui-Slider-Pips/dist/jquery-ui-slider-pips.min.js')
     }
 };
 
