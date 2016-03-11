@@ -8,23 +8,24 @@ from website.project.model import User, Node
 from .models import OSFStatistic
 
 
-def osf_site():
+def get_osf_statistics(time=None):
     current_time = datetime.utcnow()
+    if time is None:
+        time = current_time - timedelta(
+            hours=current_time.hour,
+            minutes=current_time.minute
+        )
     latest = None
     if OSFStatistic.objects.count() != 0:
         latest = OSFStatistic.objects.latest('date')
         if latest.date.date() == current_time.date():
             return  # Don't add another
-    midnight = current_time - timedelta(
-        hours=current_time.hour,
-        minutes=current_time.minute
-    )
     statistic = OSFStatistic(date=current_time)
-    query = Q('date_registered', 'lt', midnight)
+    query = Q('date_registered', 'lt', time)
     statistic.users = User.find(query).count()
-    statistic.projects = get_projects(time=midnight)
-    statistic.public_projects = get_projects(time=midnight, public=True)
-    statistic.registered_projects = get_projects(time=midnight, registered=True)
+    statistic.projects = get_projects(time=time)
+    statistic.public_projects = get_projects(time=time, public=True)
+    statistic.registered_projects = get_projects(time=time, registered=True)
     if latest:
         statistic.delta_users = statistic.users - latest.users
         statistic.delta_projects = statistic.projects - latest.projects

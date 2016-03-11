@@ -4,11 +4,11 @@ from django.core.urlresolvers import reverse
 from djqscsv import render_to_csv_response
 
 from .models import OSFStatistic
-from .utils import osf_site
+from .utils import get_osf_statistics
 
 
 def update_metrics(request):
-    osf_site()
+    get_osf_statistics()
     return redirect(reverse('metrics:stats_list'))
 
 

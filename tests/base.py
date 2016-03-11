@@ -334,7 +334,7 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
         settings.USE_EMAIL = False
 
 
-class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
+class AdminTestCase(DbTestCase, DjangoTestCase, UploadTestCase, MockRequestTestCase):
     pass
 
 
