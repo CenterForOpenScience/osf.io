@@ -3,6 +3,7 @@ from django.db.models import Value
 
 from admin.common_auth.models import MyUser
 
+
 def get_prereg_reviewers():
     return MyUser.objects.filter(
         groups__name='prereg_group'

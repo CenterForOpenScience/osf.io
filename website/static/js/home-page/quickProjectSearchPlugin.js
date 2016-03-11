@@ -29,7 +29,7 @@ var QuickSearchProject = {
         self.fieldSort = m.prop(); // For xs screen, either alpha or date
         self.directionSort = m.prop(); // For xs screen, either Asc or Desc
         self.errorLoading = m.prop(false);  // True if error retrieving projects or contributors.
-        self.someDataLoaded = m.prop(false); // True when the initial request to retrieve projects is complete.
+        self.someDataLoaded = m.prop(false);
 
         // Switches errorLoading to true
         self.requestError = function(result) {
@@ -47,10 +47,15 @@ var QuickSearchProject = {
                 self.retrieveContributors(node);
             });
             self.populateEligibleNodes(0, self.countDisplayed());
-            self.someDataLoaded(true);
             self.next(result.links.next);
+            self.someDataLoaded = m.prop(true);
+            // NOTE: This manual redraw is necessary because we set background: true on
+            // the request, which prevents a redraw. This redraw allows the loading
+            // indicator to go away and the first 10 nodes to be rendered
+            m.redraw();
         }, function _error(result){
             self.requestError(result);
+            m.redraw();
         });
         promise.then(
             function(){
@@ -69,6 +74,9 @@ var QuickSearchProject = {
             if (self.next()) {
                 var nextPromise = m.request({method: 'GET', url : url, config : xhrconfig, background : true});
                 nextPromise.then(function(result){
+                    // NOTE: We need to redraw here in because we set background: true on the request
+                    // This redraw allows the "load more" button to be displayed
+                    m.redraw();
                     result.data.forEach(function(node){
                         self.nodes().push(node);
                         self.retrieveContributors(node);
@@ -302,11 +310,10 @@ var QuickSearchProject = {
         self.nodeDirect = function(node) {
             location.href = '/'+ node.id;
         };
-
     },
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
-            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page.');
+            return m('p.text-center.m-v-md', 'Error loading projects. Please refresh the page. Contact support@osf.io for further assistance.');
         }
 
         if (!ctrl.someDataLoaded()) {
@@ -468,7 +475,6 @@ var QuickSearchProject = {
                             onClickNode: function(node) {
                                 location.href = '/'+ node.id;
                                 $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
-
                             },
                             formatDate: function(node) {
                                 return ctrl.formatDate(node);
@@ -496,13 +502,13 @@ var QuickSearchNodeDisplay = {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
-                return m('.m-v-sm.node-styling', {onclick: args.onClickNode.bind(null, project)}, m('.row', m('div',
+                return m('a', {href: '/' + project.id}, m('.m-v-sm.node-styling',  m('.row', m('div',
                     [
-                        m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col', m('a', {href: '/' + project._id}, project.attributes.title))),
+                        m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col',  project.attributes.title)),
                         m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
                         m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]
-                )));
+                ))));
             }));
         }
     }

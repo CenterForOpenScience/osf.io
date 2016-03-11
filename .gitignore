@@ -118,3 +118,4 @@ admin/webpack-stats.json
 # bower
 admin/static/vendor/
 admin/db.sqlite3
+admin/db.sqlite3-journal

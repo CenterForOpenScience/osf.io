@@ -6,11 +6,11 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 
 // CSS
-require('css/quick-project-search-plugin.css');
+require('css/meetings-and-conferences.css');
 
 var MeetingsAndConferences = {
     view: function(ctrl) {
-        return m('.conferences-and-meetings.p-v-sm',
+        return m('.p-v-sm',
             m('.row',
                 [
                     m('.col-md-8',

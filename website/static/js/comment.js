@@ -167,7 +167,7 @@ BaseComment.prototype.setUnreadCommentCount = function() {
     var self = this;
     var url;
     if (self.page() === FILES) {
-        url = osfHelpers.apiV2Url('files/' + self.$root.rootId() + '/', {query: 'related_counts=True'});
+        url = osfHelpers.apiV2Url('files/' + self.$root.fileId + '/', {query: 'related_counts=True'});
     } else {
         url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/', {query: 'related_counts=True'});
     }
@@ -586,6 +586,7 @@ var CommentListModel = function(options) {
     self.page(options.page);
     self.id = ko.observable(options.rootId);
     self.rootId = ko.observable(options.rootId);
+    self.fileId = options.fileId || '';
     self.canComment = ko.observable(options.canComment);
     self.hasChildren = ko.observable(options.hasChildren);
     self.author = options.currentUser;
@@ -653,6 +654,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      isRegistration: Node.is_registration,
  *      page: 'node',
  *      rootId: Node._id,
+ *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
  *      hasChildren: Node.hasChildren, 
  *      currentUser: {

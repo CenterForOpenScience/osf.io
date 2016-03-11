@@ -17,11 +17,11 @@ $(document).ready(function(){
         var head = item.children('.support-head');
         var icon = head.children('.fa');
         if (turnOff){
-            body.slideUp();
+            body.slideUp(200);
             icon.removeClass('fa-angle-down').addClass('fa-angle-right');
             item.removeClass('open').addClass('collapsed');
         } else {
-            body.slideDown();
+            body.slideDown(200);
             icon.removeClass('fa-angle-right').addClass('fa-angle-down');
             item.removeClass('collapsed').addClass('open');
         }
@@ -33,9 +33,9 @@ $(document).ready(function(){
     function resetFilter (noCollapse) {
         if(!noCollapse){
             $('.support-item').each(function() {
-                var el = $(this);
-                changeExpandState(el, true);
-                el.removeClass('support-nomatch');
+                var $el = $(this);
+                changeExpandState($el, true);
+                $el.removeClass('support-nomatch');
             });
         }
         $('.support-filter').val('');
@@ -63,15 +63,15 @@ $(document).ready(function(){
      */
     function fixSearchLayer () {
         var topOffset = $(window).scrollTop();
-        var searchLayer = $('.search-layer');
-        if(topOffset > 100 && !searchLayer.hasClass('fixed-layer')){
-            searchLayer.addClass('fixed-layer');
+        var $searchLayer = $('.search-layer');
+        if(topOffset > 100 && !$searchLayer.hasClass('fixed-layer')){
+            $searchLayer.addClass('fixed-layer');
             $('.support-title').hide();
             $('.search-up').removeClass('disabled');
             $('.content-layer').addClass('content-padding'); // To avoid a suddent layout shift when affixing search layer
         }
-        if(topOffset <= 100 && searchLayer.hasClass('fixed-layer')){
-            searchLayer.removeClass('fixed-layer');
+        if(topOffset <= 100 && $searchLayer.hasClass('fixed-layer')){
+            $searchLayer.removeClass('fixed-layer');
             $('.support-title').show();
             $('.search-up').addClass('disabled');
             $('.content-layer').removeClass('content-padding');
@@ -80,8 +80,8 @@ $(document).ready(function(){
 
     /* expand or collapse on clicking support item header */
     $('.support-head').click(function(){
-        var item = $(this).parent();
-        changeExpandState(item, item.hasClass('open'));
+        var $item = $(this).parent();
+        changeExpandState($item, $item.hasClass('open'));
     });
 
     /* Expand All button event  */
@@ -120,17 +120,17 @@ $(document).ready(function(){
         if (text.length < 2) {
             return;
         }
-        var el;
+        var $el;
         var content;
         $('.support-item').each(function(){
-            el = $(this);
-            content = el.text().toLowerCase();
+            $el = $(this);
+            content = $el.text().toLowerCase();
             if (content.indexOf(text) !== -1) {
-                changeExpandState(el);
-                el.removeClass('support-nomatch');
+                changeExpandState($el);
+                $el.removeClass('support-nomatch');
             } else {
-                changeExpandState(el, true);
-                el.addClass('support-nomatch');
+                changeExpandState($el, true);
+                $el.addClass('support-nomatch');
             }
         });
     });

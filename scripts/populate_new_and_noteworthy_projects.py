@@ -5,8 +5,6 @@ import sys
 import logging
 import datetime
 import dateutil
-import operator
-import requests
 from modularodm import Q
 from website.app import init_app
 from website import models
@@ -14,11 +12,20 @@ from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.mongo import database as db
 from framework.transactions.context import TokuTransaction
-from website.discovery.views import popular_activity_json
+from website.discovery.views import activity
 from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST
 
 logger = logging.getLogger(__name__)
 
+
+def popular_activity_json():
+    """ Return popular_public_projects node_ids """
+    activity_json = activity()
+    popular = activity_json['popular_public_projects']
+    popular_ids = {'popular_node_ids': []}
+    for project in popular:
+        popular_ids['popular_node_ids'].append(project._id)
+    return popular_ids
 
 def get_new_and_noteworthy_nodes():
     """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """
@@ -62,8 +69,8 @@ def main(dry_run=True):
     init_app(routes=False)
 
     popular_node_ids = popular_activity_json()['popular_node_ids']
-    popular_links_node = models.Node.find(Q('_id', 'eq', POPULAR_LINKS_NODE))[0]
-    new_and_noteworthy_links_node = models.Node.find(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))[0]
+    popular_links_node = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_NODE))[0]
+    new_and_noteworthy_links_node = models.Node.find_one(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))[0]
     new_and_noteworthy_node_ids = get_new_and_noteworthy_nodes()
 
     update_node_links(popular_links_node, popular_node_ids, 'popular')

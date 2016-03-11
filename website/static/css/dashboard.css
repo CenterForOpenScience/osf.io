@@ -1,10 +1,16 @@
 
+.watermarked .container {
+    border-left: 1px solid #eee;
+    border-right: 1px solid #eee;
+}
+.footer {
+    margin-top: 0;
+}
 /* Main Wrapper */
 .dashboard {
     width: 100%;
     font-family: "Open Sans", 'Helvetica Neue', sans-serif;
-    border-bottom: 1px solid #eee;
-    height: 584px;
+    height: 600px;
 }
 
 /* Header with breadcrumbs and buttons */
@@ -14,7 +20,6 @@
     margin-right: 0px !important;
     margin-left: 0px !important;
     box-shadow: 0 3px 3px -3px #ccc;
-    position: relative;
     z-index: 99;
 }
 .db-breadcrumbs {
@@ -55,11 +60,13 @@
 .db-sidebar {
     width: 25%;
     display: block;
-    height: 535px;
+    height: 550px;
     float: left;
     background-color: #fff;
     padding: 0 10px;
     overflow-y: auto;
+    border-right: 1px solid #eee;
+
 }
 
 .db-collections ul li , .db-filters ul li {
@@ -78,6 +85,9 @@
 
 .db-collections ul>li, .db-filters ul>li {
     padding: 5px;
+}
+.db-collections h5 , .db-filters h5 {
+    line-height: 25px;
 }
 .collectionMenu {
     position: absolute;
@@ -119,14 +129,13 @@
     float: left;
     padding: 0 0 1px 0;
     /* width is set as inline style in file-browser.js because it changes based on information panel visibility */
-    border-left: 1px solid #eee;
     position: relative; /* need this for absolute refresh positioning */
 }
 
 /* Information Panel */
 .db-infobar {
     background-color: #fafafa;
-    height: 535px;
+    height: 550px;
     width: 25%;
     float: left;
     overflow-y: auto;
@@ -140,7 +149,7 @@
 
 .db-info-toggle {
     display: block;
-    height: 535px;
+    height: 550px;
     width: 3%;
     float: left;
     background: #f5f5f5;
@@ -211,6 +220,11 @@
 /* Treebeard override */
 #projectOrganizer #tb-tbody {
     border: none;
+}
+
+.tb-row-titles {
+    border: none;
+    border-bottom: 1px solid #eee;
 }
 
 .spinner-div {

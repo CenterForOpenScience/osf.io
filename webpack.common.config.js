@@ -147,7 +147,6 @@ var resolve = {
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
         'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
-        'sliderPips': staticPath('vendor/bower_components/jQuery-ui-Slider-Pips/dist/jquery-ui-slider-pips.min.js')
     }
 };
 
@@ -189,6 +188,7 @@ var output = {
 module.exports = {
     entry: entry,
     resolve: resolve,
+    devtool: 'source-map',
     externals: externals,
     plugins: plugins,
     output: output,

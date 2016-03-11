@@ -24,8 +24,7 @@ from framework.transactions.handlers import no_auto_transaction
 from framework.auth.decorators import must_be_logged_in, must_be_signed, collect_auth
 from website import mails
 from website import settings
-from website.files.models import FileNode
-from website.files.models import TrashedFileNode
+from website.files.models import FileNode, TrashedFileNode, StoredFileNode
 from website.project import decorators
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
@@ -384,6 +383,42 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
+@file_signals.file_updated.connect
+def addon_delete_file_node(self, node, event_type, payload, user=None):
+    """ Get addon StoredFileNode(s), move it into the TrashedFileNode collection
+    and remove it from StoredFileNode.
+
+    Required so that the guids of deleted addon files are not re-pointed when an
+    addon file or folder is moved or renamed.
+    """
+    if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
+        provider = payload['provider']
+        path = payload['metadata']['path']
+        materialized_path = payload['metadata']['materialized']
+        if path.endswith('/'):
+            folder_children = FileNode.resolve_class(provider, FileNode.ANY).find(
+                Q('provider', 'eq', provider) &
+                Q('node', 'eq', node) &
+                Q('materialized_path', 'startswith', materialized_path)
+            )
+            for item in folder_children:
+                if item.kind == 'file' and not TrashedFileNode.load(item._id):
+                    item.delete()
+                elif item.kind == 'folder':
+                    StoredFileNode.remove_one(item.stored_object)
+        else:
+            try:
+                file_node = FileNode.resolve_class(provider, FileNode.FILE).find_one(
+                    Q('node', 'eq', node) &
+                    Q('materialized_path', 'eq', materialized_path)
+                )
+            except NoResultsFound:
+                file_node = None
+
+            if file_node and not TrashedFileNode.load(file_node._id):
+                file_node.delete()
+
+
 @must_be_valid_project
 def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
@@ -514,6 +549,11 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if version is None:
         if file_node.get_guid():
             # If this file has been successfully view before but no longer exists
+
+            # Move file to trashed file node
+            if not TrashedFileNode.load(file_node._id):
+                file_node.delete()
+
             # Show a nice error message
             return addon_deleted_file(file_node=file_node, **kwargs)
 
@@ -590,6 +630,7 @@ def addon_view_file(auth, node, file_node, version):
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
         'file_tags': [tag._id for tag in file_node.tags],
+        'file_guid': file_node.get_guid()._id,
         'file_id': file_node._id,
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE
     })

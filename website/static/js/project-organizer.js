@@ -383,7 +383,7 @@ var tbOptions = {
             m('.filterReset', { onclick : function () {
                 $osf.trackClick('myProjects', 'filter', 'clear-search');
                 tb.resetFilter.call(tb);
-                $('#poFilter>input').val('');
+                $('.db-poFilter>input').val('');
             } }, tb.options.removeIcon())
         ];
     },

@@ -8,7 +8,7 @@ var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 
 // CSS
-require('css/quick-project-search-plugin.css');
+require('css/new-and-noteworthy-plugin.css');
 
 // XHR config for apiserver connection
 var xhrconfig = function(xhr) {
@@ -24,7 +24,7 @@ var NewAndNoteworthy = {
         self.contributorsMapping = {}; // Dictionary mapping node id to some of the contrib names and the contrib total.
         self.SHOW_TOTAL = 5; // Number of new and noteworthy projects displayed in each column
         self.errorLoading = m.prop(false);  // True if error retrieving projects or contributors.
-        self.someDataLoaded = m.prop(false); // True when the initial request to retrieve projects is complete.
+        self.someDataLoaded = m.prop(false);
 
         // Switches errorLoading to true
         self.requestError = function(result){
@@ -44,6 +44,7 @@ var NewAndNoteworthy = {
             self.someDataLoaded(true);
         }, function _error(result){
             self.requestError(result);
+            m.redraw();
         });
 
         // Load popular nodes
@@ -58,6 +59,7 @@ var NewAndNoteworthy = {
             self.someDataLoaded(true);
         }, function _error(result){
             self.requestError(result);
+            m.redraw();
         });
 
         // Additional API call to fetch node link contributors
@@ -71,7 +73,7 @@ var NewAndNoteworthy = {
                 });
                 var numContrib = result.links.meta.total;
                 var nodeId = nodeLink.id;
-                self.contributorsMapping[nodeId] = [contribNames, numContrib];
+                self.contributorsMapping[nodeId] = {'names': contribNames, 'total': numContrib};
             }, function _error(result){
                 self.requestError(result);
             });
@@ -79,19 +81,13 @@ var NewAndNoteworthy = {
 
         // Gets contrib family name for display
         self.getFamilyName = function(i, node) {
-            return self.contributorsMapping[node.id][0][i];
+            return self.contributorsMapping[node.id].names[i];
         };
 
-        self.addToolTip = function(line) {
-            var $line = $(line);
-            if (line.offsetWidth < line.scrollWidth) {
-                $line.tooltip('show');
-            }
-        };
     },
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
-            return m('p.text-center.m-v-lg', 'Error loading projects. Please refresh the page.');
+            return m('p.text-center.m-v-lg', 'Error loading projects. Please refresh the page. Contact support@osf.io for further assistance.');
         }
 
         if (!ctrl.someDataLoaded()) {
@@ -103,9 +99,6 @@ var NewAndNoteworthy = {
                 return m.component(NoteworthyNodeDisplay, {
                     node : node,
                     getFamilyName: ctrl.getFamilyName,
-                    addToolTip: function(item) {
-                        return ctrl.addToolTip(item);
-                    },
                     contributorsMapping: ctrl.contributorsMapping
                 });
             });
@@ -116,9 +109,6 @@ var NewAndNoteworthy = {
                 return m.component(NoteworthyNodeDisplay, {
                     node : node,
                     getFamilyName: ctrl.getFamilyName,
-                    addToolTip: function(item) {
-                        return ctrl.addToolTip(item);
-                    },
                     contributorsMapping: ctrl.contributorsMapping
                 });
             });
@@ -127,7 +117,7 @@ var NewAndNoteworthy = {
         function findMoreProjectsButton () {
             return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search', onclick: function() {
                 $osf.trackClick('newAndNoteworthy', 'navigate', 'navigate-to-advanced-search');
-            }}, 'Find more projects with advanced search');
+            }}, 'Search for more projects');
         }
 
 
@@ -143,26 +133,32 @@ var NewAndNoteworthy = {
 
 
 var NoteworthyNodeDisplay = {
+    controller: function() {
+        var self = this;
+        self.addToolTip = function(line) {
+            var $line = $(line);
+            if (line.offsetWidth < line.scrollWidth) {
+                $line.tooltip('show');
+            }
+        };
+    },
     view: function(ctrl, args) {
         var description = args.node.embeds.target_node.data.attributes.description;
         var title = args.node.embeds.target_node.data.attributes.title;
-        var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id][1], args.getFamilyName);
+        var contributors = $osf.contribNameFormat(args.node, args.contributorsMapping[args.node.id].total, args.getFamilyName);
         var destination = '/' + args.node.embeds.target_node.data.id;
 
-        return m('.public-projects-item', {onclick: function(){
-            location.href = destination;
+        return m('a', {href: destination, onclick: function() {
             $osf.trackClick('newAndNoteworthy', 'navigate', 'navigate-to-specific-project');
-
-        }},[
-            m('h5', m('a', {href: destination}, title)),
+        }}, m('.public-projects-item',[
+            m('h5', title),
             m('span.prevent-overflow',  {'data-title': contributors, 'data-location': 'top', onmouseover: function() {
-                args.addToolTip(this);
+                ctrl.addToolTip(this);
             }}, m('i', 'by ' + contributors)),
             description ? m('p.prevent-overflow', {'data-title': description, 'data-location': 'top', onmouseover: function(){
-                args.addToolTip(this);
+                ctrl.addToolTip(this);
             }}, description) : ''
-
-        ]);
+        ]));
     }
 };
 
