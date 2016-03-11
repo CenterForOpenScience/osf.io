@@ -1,15 +1,14 @@
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotAuthenticated, NotFound
+from rest_framework.exceptions import NotAuthenticated
 from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
-from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import User, Node, NodeLog
+from website.models import User, Node
 
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
@@ -18,18 +17,16 @@ from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.nodes.serializers import NodeSerializer
-from api.logs.serializers import NodeLogSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.base.utils import default_node_list_query
+from api.base.utils import default_node_list_query, default_node_permission_query
 
-from .pagination import UserLogPagination
 from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
-from .permissions import CurrentUser, ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
+from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
 
 
 class UserMixin(object):
-    """Mixin with convenience methods for retrieving the current node based on the
+    """Mixin with convenience methods for retrieving the current user based on the
     current URL. By default, fetches the user based on the user_id kwarg.
     """
 
@@ -235,10 +232,11 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
-    Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
-    meaning additional requests to an individual node's detail view are not necessary. If the user id in the path is the
-    same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to see the other user's
-    publicly-visible nodes.  The special user id `me` can be used to represent the currently logged-in user.
+    Paginated list of nodes that the user contributes to ordered by `date_modified`.  Each resource contains the
+    full representation of the node, meaning additional requests to an individual node's detail view are not necessary.
+    If the user id in the path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be
+    able to see the other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently
+    logged-in user.
 
     ##Node Attributes
 
@@ -295,18 +293,13 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     view_category = 'users'
     view_name = 'user-nodes'
 
+    ordering = ('-date_modified',)
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
         current_user = self.request.user
-
-        query = (Q('contributors', 'eq', user) & default_node_list_query())
-
-        permission_query = Q('is_public', 'eq', True)
-        if not current_user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
-        query = (query & permission_query)
-        return query
+        return Q('contributors', 'eq', user) & default_node_list_query() & default_node_permission_query(current_user)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -435,78 +428,6 @@ class UserRegistrations(UserNodes):
         query = query & permission_query
         return query
 
-class UserLogs(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, UserMixin):
-    """ Logs from nodes a user is currently associated with.
-    This returns all logs from every node the user is currently associated with. This means
-    this might return logs from other users, and might not return all logs associated with
-    this particular user (if that user is no longer contributing to a node).
-
-    ##Attributes
-    <!--- Copied Attributes from LogList -->
-
-    OSF Log entities have the "logs" `type`.
-
-        name           type                   description
-        ----------------------------------------------------------------------------
-        date           iso8601 timestamp      timestamp of Log creation
-        action         string                 Log action
-
-    ##Query Params
-    <!--- Copied Query Params from LogList -->
-
-    Logs may be filtered by their `action` and `date`.
-
-    Also, this can take in `aggregates=true` as a param, which then will include in the meta
-    field a count of how many of each type of 4 types of actions would be returned (regardless
-    of pagination). Those types are files, comments, wiki, and nodes, each associated with a
-    subset of log actions. It will also return the last loggable action within the logs returned.
-
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        CurrentUser,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = NodeLogSerializer
-    pagination_class = UserLogPagination
-    view_category = 'users'
-    view_name = 'user-logs'
-
-    ordering = ('-date', )
-
-    def get_default_odm_query(self):
-        user = self.get_user()
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
-        raw_nodes = list(Node.find(
-            Q('contributors', 'eq', user) &
-            Q('is_folder', 'ne', True) &
-            Q('is_deleted', 'ne', True)
-        ))
-        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
-        if not nodes:
-            raise NotFound
-        query = [Q('params.node', 'eq', node._id) for node in nodes]
-        return reduce(lambda x, y: x | y, query)
-
-    def get_queryset(self):
-        self.paginator.node_log_aggregates = self.get_aggregates
-        return NodeLog.find(self.get_query_from_request())
-
-    def get_aggregates(self):
-        query = self.get_query_from_request()
-        query_files = Q('params.path', 'ne', None)  # Finds most files_added and file_updated
-        query_wiki = Q('action', 'eq', 'wiki_updated')
-        query_comments = Q('action', 'eq', 'comment_added')
-        query_nodes = Q('action', 'eq', 'project_created') | Q('action', 'eq', 'project_updated')
-        return (NodeLog.find(query & query_comments)).count(), (NodeLog.find(query & query_nodes)).count(), \
-               (NodeLog.find(query & query_wiki)).count(), (NodeLog.find(query & query_files)).count()
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
     permission_classes = (
