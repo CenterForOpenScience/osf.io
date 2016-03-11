@@ -3469,7 +3469,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         Should behave as if this was a foreign field pointing to Institution
         :return: this node's _affiliated_institutions wrapped with Institution as a list.
         '''
-        return SpecialList(self, '_affiliated_institutions', [Institution(node) for node in self._affiliated_institutions])
+        return AffiliatedInstitutionsList([Institution(node) for node in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
     def add_primary_institution(self, user, inst, log=True):
         if not isinstance(inst, Institution):
@@ -3528,21 +3528,37 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.absolute_api_v2_url + 'relationships/institution/'
 
 
-class SpecialList(list):
-    def __init__(self, node, private_target, init=None):
-        super(SpecialList, self).__init__(init or [])
-        self.node = node
+class AffiliatedInstitutionsList(list):
+    '''
+    A list to implement append and remove methods to a private node list through a
+    public Institution-returning property. Initialization should occur with the instance of the public list,
+    the object the list belongs to, and the private attribute ( a list) the public property
+    is attached to, and as the return value of the property.
+     Ex:
+     class Node():
+        _affiliated_institutions = []
+
+        @property
+        affiliated_institutions(self):
+            return AffiliatedInstitutionsList(
+                [Institution(node) for node in self._affiliated_institutions],
+                obj=self, private_target='_affiliated_institutions')
+            )
+    '''
+    def __init__(self, init, obj, private_target):
+        super(AffiliatedInstitutionsList, self).__init__(init or [])
+        self.obj = obj
         self.target = private_target
 
     def append(self, to_append):
-        junk = getattr(self.node, self.target)
-        junk.append(to_append.node)
-        setattr(self.node, self.target, junk)
+        temp_list = getattr(self.obj, self.target)
+        temp_list.append(to_append.node)
+        setattr(self.obj, self.target, temp_list)
 
     def remove(self, to_remove):
-        junk = getattr(self.node, self.target)
-        junk.remove(to_remove.node)
-        setattr(self.node, self.target, junk)
+        temp_list = getattr(self.obj, self.target)
+        temp_list.remove(to_remove.node)
+        setattr(self.obj, self.target, temp_list)
 
 
 class InstitutionQuerySet(MongoQuerySet):
@@ -3559,7 +3575,7 @@ class InstitutionQuerySet(MongoQuerySet):
             return self.__class__(item)
         return Institution(item)
 
-class Institution():
+class Institution(object):
     '''
     "wrapper" class for Node. Together with the find and institution attributes & methods in Node,
     this is to be used to allow interaction with Institutions, which are Nodes (with ' is_institution ' == True),
@@ -3576,10 +3592,10 @@ class Institution():
         'email_domain': 'institution_email_domain'
     }
 
-    def __init__(self, node):
+    def __init__(self, node=None):
+        self.node = node
         if node is None:
             return
-        self.node = node
         for key, value in self.attribute_map.iteritems():
             setattr(self, key, getattr(node, value))
 
