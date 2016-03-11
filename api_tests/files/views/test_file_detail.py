@@ -70,7 +70,7 @@ class TestFileView(ApiTestCase):
         res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('comments', res.json['data']['relationships'].keys())
-        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.node._id, self.file._id)
+        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.node._id, self.file.get_guid()._id)
         url = res.json['data']['relationships']['comments']['links']['related']['href']
         assert_in(expected_url, url)
 

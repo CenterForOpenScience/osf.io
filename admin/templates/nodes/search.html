@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>Node Search</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <form action="{% url 'nodes:search' %}" method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div class="alert alert-danger">{{ form.errors }}</div>
+                {% endif %}
+                <div class="form-group">
+                    <label for="guid">Node GUID:</label>
+                    {{ form.guid }}
+                </div>
+                <input type="submit" class="btn btn-primary" value="Submit" />
+            </form>
+        </div>
+    </div>
+{% endblock content %}
