@@ -36,25 +36,6 @@ from website.settings import ALL_MY_REGISTRATIONS_ID
 logger = logging.getLogger(__name__)
 
 
-def _rescale_ratio(auth, nodes):
-    """Get scaling denominator for log lists across a sequence of nodes.
-
-    :param nodes: Nodes
-    :return: Max number of logs
-
-    """
-    if not nodes:
-        return 0
-    counts = [
-        len(node.logs)
-        for node in nodes
-        if node.can_view(auth)
-    ]
-    if counts:
-        return float(max(counts))
-    return 0.0
-
-
 def _render_node(node, auth=None):
     """
 
@@ -93,7 +74,6 @@ def _render_nodes(nodes, auth=None, show_path=False):
             _render_node(node, auth)
             for node in nodes
         ],
-        'rescale_ratio': _rescale_ratio(auth, nodes),
         'show_path': show_path
     }
     return ret

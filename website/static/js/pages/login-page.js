@@ -1,15 +1,15 @@
 /**
  * Login page
  */
+'use strict';
 var $ = require('jquery');
+
 var SignUp = require('js/signUp');
 var LogInForm = require('js/signIn');
-
-new LogInForm.SignIn('#logInForm');
+var InstitutionSignIn = require('js/institutionSignIn');
 
 var registerUrl = window.contextVars.registerUrl;
 
-new SignUp('#signUpScope', registerUrl, $('#campaign').val());
 
 var activateToggleBox = function () {
     var el = $(this);
@@ -19,6 +19,16 @@ var activateToggleBox = function () {
         el.removeClass('toggle-box-muted').addClass('toggle-box-active');
     }
 };
+
+$(document).ready(function() {
+    var campaign = window.contextVars.campaign;
+    if (campaign === 'institution'){
+        new InstitutionSignIn('#inst');
+    } else {
+        new LogInForm.SignIn('#logInForm');
+        new SignUp('#signUpScope', registerUrl, campaign);
+    }
+});
 
 $('.toggle-box').on('click', activateToggleBox);
 $('.toggle-box').on('focus', '*', function() {

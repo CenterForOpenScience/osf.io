@@ -47,5 +47,4 @@ class RegistrationListView(ListView):
         return {
             'nodes': map(serialize_node, query_set),
             'page': page,
-            'status': '',
         }
