@@ -77,19 +77,20 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/login/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
         res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/dashboard/')
+        assert_equal(res.request.path, '/myprojects/')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
         project = ProjectFactory(creator=self.user)
         project.add_contributor(self.user)
         project.save()
-        res = self.app.get('/dashboard/', auth=self.user.auth)
+        res = self.app.get('/myprojects/', auth=self.user.auth)
         assert_in('Projects', res)  # Projects heading
 
     def test_logged_in_index_route_renders_home_template(self):
         res = self.app.get('/', auth=self.user.auth)
-        assert_in('Placeholder', res)  # Will change once home page populated
+        assert_equal(res.status_code, 200)
+        assert_in('My Projects', res)  # Will change once home page populated
 
     def test_logged_out_index_route_renders_landing_page(self):
         res = self.app.get('/')
@@ -136,9 +137,9 @@ class TestAUser(OsfTestCase):
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
-        res = self.app.get('/dashboard/', auth=self.auth, auto_follow=True)
+        res = self.app.get('/myprojects/', auth=self.auth, auto_follow=True)
         title = res.html.title.string
-        assert_equal('OSF | Dashboard', title)
+        assert_equal('OSF | My Projects', title)
 
     def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project

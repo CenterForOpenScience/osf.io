@@ -20,6 +20,9 @@ from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
+from modularodm import Q
+from modularodm.exceptions import QueryException
+
 from website import util
 from website import prereg
 from website import settings
@@ -44,6 +47,7 @@ def get_globals():
     """
     user = _get_current_user()
     return {
+        'private_link_anonymous': is_private_link_anonymous_view(),
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
@@ -63,7 +67,8 @@ def get_globals():
         'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
-        'noteworthy_links_node': settings.NOTEWORTHY_LINKS_NODE,
+        'noteworthy_links_node': settings.NEW_AND_NOTEWORTHY_LINKS_NODE,
+        'popular_links_node': settings.POPULAR_LINKS_NODE,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'api_v2_url': util.api_v2_url,  # URL function for templates
@@ -77,7 +82,19 @@ def get_globals():
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
+        'keen_project_id': settings.KEEN_PROJECT_ID,
+        'keen_write_key': settings.KEEN_WRITE_KEY,
     }
+
+def is_private_link_anonymous_view():
+    try:
+        # Avoid circular import
+        from website.project.model import PrivateLink
+        return PrivateLink.find_one(
+            Q('key', 'eq', request.args.get('view_only'))
+        ).anonymous
+    except QueryException:
+        return False
 
 
 class OsfWebRenderer(WebRenderer):
@@ -124,7 +141,6 @@ def goodbye():
         return redirect(util.web_url_for('dashboard'))
     status.push_status_message(language.LOGOUT, 'success')
     return {}
-
 
 def make_url_map(app):
     """Set up all the routes for the OSF app.
@@ -175,14 +191,19 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+        Rule('/dashboard/', 'get', website_views.redirect_to_home, OsfWebRenderer('home.mako')),
+        Rule('/myprojects/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 
         Rule('/about/', 'get', website_views.redirect_about, json_renderer,),
         Rule('/howosfworks/', 'get', website_views.redirect_howosfworks, json_renderer,),
+
         Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
         Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
+        Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako')),
+
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
 
@@ -1116,6 +1137,16 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/contributor/remove/',
+                '/project/<pid>/node/<nid>/contributor/remove/',
+            ],
+            'POST',
+            project_views.contributor.project_remove_contributor,
+            json_renderer,
+        ),
+
         Rule([
             '/project/<pid>/get_editable_children/',
             '/project/<pid>/node/<nid>/get_editable_children/',
@@ -1199,16 +1230,6 @@ def make_url_map(app):
             '/project/<pid>/contributors/',
             '/project/<pid>/node/<nid>/contributors/',
         ], 'post', project_views.contributor.project_contributors_post, json_renderer),
-        Rule([
-            '/project/<pid>/beforeremovecontributors/',
-            '/project/<pid>/node/<nid>/beforeremovecontributors/',
-        ], 'post', project_views.contributor.project_before_remove_contributor, json_renderer),
-        # TODO(sloria): should be a delete request to /contributors/
-        Rule([
-            '/project/<pid>/removecontributors/',
-            '/project/<pid>/node/<nid>/removecontributors/',
-        ], 'post', project_views.contributor.project_removecontributor, json_renderer),
-
         # Forks
         Rule(
             [

@@ -480,3 +480,7 @@ built when a file changes.
 
 Many addons require application credentials (typically an app key and secret) to be able to authenticate through the
 OSF. These credentials go in each addon's `local.py` settings file (e.g. `website/addons/dropbox/settings/local.py`).
+
+### COS is Hiring!
+
+Want to help save science? Want to get paid to develop free, open source software? [Check out our openings!](http://cos.io/jobs)

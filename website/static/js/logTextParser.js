@@ -51,6 +51,7 @@ var paramIsReturned = function _paramIsReturned (param, logObject){
  */
 var returnTextParams = function (param, text, logObject) {
     var source = logObject.attributes.params[param];
+
     if(paramIsReturned(source, logObject)){
         if($.isArray(source)){
             return m('span', [
@@ -109,10 +110,10 @@ var LogPieces = {
     user: {
         view: function (ctrl, logObject) {
             var userObject = logObject.embeds.user;
-            if(paramIsReturned(userObject, logObject)) {
+            if(paramIsReturned(userObject, logObject) && userObject.data) {
                 return m('a', {href: userObject.data.links.html}, userObject.data.attributes.full_name);
             } else {
-                return m('span', 'a user');
+                return m('span', 'A user');
             }
         }
     },
@@ -120,7 +121,7 @@ var LogPieces = {
     node: {
         view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.nodes;
-            if(paramIsReturned(nodeObject, logObject)){
+            if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
                 return m('a', {href: nodeObject.data[0].links.html}, nodeObject.data[0].attributes.title);
             } else {
                 return m('span', 'a project');
@@ -133,7 +134,7 @@ var LogPieces = {
             var contributors = logObject.embeds.contributors;
             if(paramIsReturned(contributors, logObject)) {
                 return contributors.map(function(item){
-                    return m('a', {href: '#'}, 'Person');
+                    return m('a', {href: item.data.links.html}, item.data.attributes.full_name);
                 });
             }
             return m('span', 'some users');
@@ -220,7 +221,7 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var source = logObject.attributes.params.source;
             if(paramIsReturned(source, logObject)){
-                return m('a', {href: source.url}, source.materialized);
+                return m('span', [source.materialized, ' in ', source.addon]);
             }
             return m('span','a name/location' );
         }
@@ -230,7 +231,10 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var destination = logObject.attributes.params.destination;
             if(paramIsReturned(destination, logObject)){
-                return m('a', {href: destination.url}, destination.materialized);
+                if (destination.materialized.endsWith('/')){
+                    return m('span', [destination.materialized, ' in ', destination.addon]);
+                }
+                return m('span', [m('a', {href: destination.url}, destination.materialized), ' in ', destination.addon]);
             }
             return m('span','a new name/location' );
         }
@@ -247,19 +251,125 @@ var LogPieces = {
             return returnTextParams('filename', 'a title', logObject);
         }
     },
-        //
-    study: {
-        view: function (ctrl, logObject) {
-            return returnTextParams('study', 'a study', logObject);
-        }
-    },
-        //
-    dataset: {
-        view: function (ctrl, logObject) {
-            return returnTextParams('dataset', 'a dataset', logObject);
-        }
-    },
-};
 
+    folder: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('folder', 'a folder', logObject);
+        }
+    },
+
+    repo: {
+        view: function(ctrl, logObject) {
+            var github_user = logObject.attributes.params.github_user;
+            var github_repo = logObject.attributes.params.github_repo;
+            if (paramIsReturned(github_repo, logObject) && paramIsReturned(github_user, logObject)){
+                return m('span', github_user + '/' + github_repo);
+            }
+            return m('span', '');
+        }
+    },
+
+    folder_name: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('folder_name', 'a folder', logObject);
+        }
+    },
+
+    bucket: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('bucket', 'a bucket', logObject);
+        }
+    },
+
+    forward_url: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('forward_url', 'a new URL', logObject);
+        }
+    },
+
+    box_folder: {
+        view: function(ctrl, logObject) {
+            var folder = logObject.attributes.params.folder;
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === 'All Files' ? '/ (Full Box)' : (folder || '').replace('All Files',''));
+            }
+            return m('span', '');
+        }
+    },
+
+    citation: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('citation_name', '', logObject);
+        }
+    },
+
+    dataset: {
+        view: function(ctrl, logObject){
+            return returnTextParams('data_set', '', logObject);
+        }
+    },
+
+    study: {
+        view: function(ctrl, logObject){
+            return returnTextParams('study', '', logObject);
+        }
+    },
+
+    googledrive_path: {
+        view: function(ctrl, logObject){
+            var path = logObject.attributes.params.path;
+            if(paramIsReturned(path, logObject)){
+                return m('span', decodeURIComponent(path));
+            }
+            return m('span', '');
+        }
+    },
+
+    googledrive_folder: {
+        view: function(ctrl, logObject){
+            var folder = logObject.attributes.params.folder;
+            if(paramIsReturned(folder, logObject)){
+                return m('span', folder === '/' ? '(Full Google Drive)' : decodeURIComponent(folder));
+            }
+            return m('span', '');
+        }
+    },
+
+    addon: {
+        view: function(ctrl, logObject){
+            return returnTextParams('addon', '', logObject);
+        }
+    },
+
+    previous_institution: {
+        view: function(ctrl, logObject){
+            var previous_institution = logObject.attributes.params.previous_institution;
+            if (paramIsReturned(previous_institution, logObject)){
+                return m('span', previous_institution.name);
+            }
+            return m('span', 'an institution');
+        }
+    },
+
+    institution: {
+        view: function(ctrl, logObject){
+            var institution = logObject.attributes.params.institution;
+            if (paramIsReturned(institution, logObject)){
+                return m('span', institution.name);
+            }
+            return m('span', 'an institution');
+        }
+    },
+
+    comment_file: {
+        view: function(ctrl,logObject){
+            var file = logObject.attributes.params.file;
+            if (file){  // skipe paramIsReturned, as not having a file is expected at times
+                return m('span', ['in ', m('a', {href: file.url}, file.name)]);
+            }
+            return m('span', '');
+        }
+    }
+};
 
 module.exports = LogText;

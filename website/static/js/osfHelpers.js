@@ -207,10 +207,12 @@ var handleAddonApiHTTPError = function(error){
 var handleJSONError = function(response) {
     var title = (response.responseJSON && response.responseJSON.message_short) || errorDefaultShort;
     var message = (response.responseJSON && response.responseJSON.message_long) || errorDefaultLong;
-
-    $.osf.growl(title, message);
-
-    Raven.captureMessage('Unexpected error occurred in JSON request');
+    // We can reach this error handler when the user leaves a page while a request is pending. In that
+    // case, response.status === 0, and we don't want to show an error message.
+    if (response && response.status && response.status >= 400) {
+        $.osf.growl(title, message);
+        Raven.captureMessage('Unexpected error occurred in JSON request');
+    }
 };
 
 var handleEditableError = function(response) {
@@ -570,6 +572,44 @@ function humanFileSize(bytes, si) {
 }
 
 /**
+ * take treebeard tree structure of nodes and get a dictionary of parent node and all its
+ * children
+ */
+function getNodesOriginal(nodeTree, nodesOriginal) {
+    var i;
+    var j;
+    var adminContributors = [];
+    var registeredContributors = [];
+    var nodeId = nodeTree.node.id;
+    for (i=0; i < nodeTree.node.contributors.length; i++) {
+        if (nodeTree.node.contributors[i].is_admin) {
+            adminContributors.push(nodeTree.node.contributors[i].id);
+        }
+        if (nodeTree.node.contributors[i].is_confirmed) {
+            registeredContributors.push(nodeTree.node.contributors[i].id);
+        }
+    }
+    nodesOriginal[nodeId] = {
+        public: nodeTree.node.is_public,
+        id: nodeTree.node.id,
+        title: nodeTree.node.title,
+        contributors: nodeTree.node.contributors,
+        isAdmin: nodeTree.node.is_admin,
+        visibleContributors: nodeTree.node.visible_contributors,
+        adminContributors: adminContributors,
+        registeredContributors: registeredContributors
+    };
+
+    if (nodeTree.children) {
+        for (j in nodeTree.children) {
+            nodesOriginal = getNodesOriginal(nodeTree.children[j], nodesOriginal);
+        }
+    }
+    return nodesOriginal;
+}
+
+
+/**
 *  returns a random name from this list to use as a confirmation string
 */
 var _confirmationString = function() {
@@ -800,6 +840,36 @@ var dialog = function(title, message, actionButtonLabel, options) {
     return ret.promise();
 };
 
+// Formats contributor family names for display.  Takes in project, number of contributors, and getFamilyName function
+var contribNameFormat = function(node, number, getFamilyName) {
+    if (number === 1) {
+        return getFamilyName(0, node);
+    }
+    else if (number === 2) {
+        return getFamilyName(0, node) + ' and ' +
+            getFamilyName(1, node);
+    }
+    else if (number === 3) {
+        return getFamilyName(0, node) + ', ' +
+            getFamilyName(1, node) + ', and ' +
+            getFamilyName(2, node);
+    }
+    else {
+        return getFamilyName(0, node) + ', ' +
+            getFamilyName(1, node) + ', ' +
+            getFamilyName(2, node) + ' + ' + (number - 3);
+    }
+};
+
+// Returns single name representing contributor, First match found of family name, given name, middle names, full name.
+var findContribName = function (userAttributes) {
+    var names = [userAttributes.family_name, userAttributes.given_name, userAttributes.middle_names, userAttributes.full_name];
+    for (var n = 0; n < names.length; n++) {
+        if (names[n]) {
+            return names[n];
+        }
+    }
+};
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -822,6 +892,7 @@ module.exports = window.$.osf = {
     trackPiwik: trackPiwik,
     applyBindings: applyBindings,
     FormattableDate: FormattableDate,
+    getNodesOriginal: getNodesOriginal,
     throttle: throttle,
     debounce: debounce,
     htmlEscape: htmlEscape,
@@ -836,5 +907,7 @@ module.exports = window.$.osf = {
     indexOf: indexOf,
     currentUser: currentUser,
     any: any,
-    dialog: dialog
+    dialog: dialog,
+    contribNameFormat: contribNameFormat,
+    findContribName: findContribName
 };

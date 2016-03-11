@@ -9,6 +9,7 @@ from website.models import User
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
+from api.base.utils import absolute_reverse
 
 
 class UserSerializer(JSONAPISerializer):
@@ -74,7 +75,7 @@ class UserSerializer(JSONAPISerializer):
         related_view='users:user-institutions',
         related_view_kwargs={'user_id': '<pk>'},
         self_view='users:user-institutions-relationship',
-        self_view_kwargs={'user_id': '<pk>'}
+        self_view_kwargs={'user_id': '<pk>'},
     )
 
     class Meta:
@@ -84,6 +85,9 @@ class UserSerializer(JSONAPISerializer):
         if obj is not None:
             return obj.absolute_url
         return None
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse('users:user-detail', kwargs={'user_id': obj._id})
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
@@ -116,6 +120,9 @@ class RelatedInstitution(JSONAPIRelationshipSerializer):
     class Meta:
         type_ = 'institutions'
 
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
+
 
 class UserInstitutionsRelationshipSerializer(ser.Serializer):
 
@@ -124,10 +131,13 @@ class UserInstitutionsRelationshipSerializer(ser.Serializer):
                         'html': 'get_related_url'})
 
     def get_self_url(self, obj):
-        return obj['self'].absolute_api_v2_url + 'relationships/institutions/'
+        return absolute_reverse('users:user-institutions-relationship', kwargs={'user_id': obj['self']._id})
 
     def get_related_url(self, obj):
-        return obj['self'].absolute_api_v2_url + 'institutions/'
+        return absolute_reverse('users:user-institutions', kwargs={'user_id': obj['self']._id})
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
 
     class Meta:
         type_ = 'institutions'
