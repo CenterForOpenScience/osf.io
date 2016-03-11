@@ -451,10 +451,23 @@ class TestNotificationUtils(OsfTestCase):
         configured_project_ids = utils.get_configured_projects(node.creator)
         assert_in(private_project._id, configured_project_ids)
 
+
     def test_get_configured_project_ids_excludes_private_projects_if_no_subscriptions_on_node(self):
         private_project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=private_project)
         configured_project_ids = utils.get_configured_projects(node.creator)
+        assert_not_in(private_project._id, configured_project_ids)
+
+    def test_get_configured_project_ids_excludes_private_projects_if_no_subscriptions_on_node(self):
+        user = factories.UserFactory()
+
+        private_project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=private_project)
+        node.add_contributor(user)
+
+        utils.remove_contributor_from_subscriptions(user, node)
+
+        configured_project_ids = utils.get_configured_projects(user)
         assert_not_in(private_project._id, configured_project_ids)
 
     def test_get_parent_notification_type(self):
@@ -653,10 +666,12 @@ class TestNotificationUtils(OsfTestCase):
         user = factories.UserFactory()
         self.project.add_contributor(contributor=user, permissions=['read'])
         self.project.save()
-        self.project_subscription.email_transactional.append(user)
-        self.project_subscription.save()
         self.node.add_contributor(contributor=user, permissions=['read'])
         self.node.save()
+
+        # set up how it was in original test - remove existing subscriptions
+        utils.remove_contributor_from_subscriptions(user, self.node)
+
         node_subscriptions = [x for x in utils.get_all_node_subscriptions(user, self.node)]
         data = utils.serialize_event(user=user, event_description='comments',
                                      subscription=node_subscriptions, node=self.node)
