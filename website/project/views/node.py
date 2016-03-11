@@ -37,7 +37,7 @@ from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
-from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment, NodeLog
+from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
