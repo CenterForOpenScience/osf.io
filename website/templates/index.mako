@@ -1,5 +1,4 @@
 <%def name="logged_in(name)">
-
     %if name != '':
         <%include file="home.mako"/>
     %else:
