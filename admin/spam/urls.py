@@ -14,4 +14,9 @@ urlpatterns = [
         views.EmailFormView.as_view(),
         name='email'
     ),
+    url(
+        r'^user/id-(?P<user_id>[a-z0-9]+)/$',
+        views.UserSpamList.as_view(),
+        name='user_spam'
+    ),
 ]

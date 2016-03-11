@@ -6,4 +6,4 @@ register = template.Library()
 
 @register.filter
 def reverse_node(value):
-    return '{}?guid={}'.format(reverse('nodes:node'), value)
+    return reverse('nodes:node', kwargs={'guid': value})

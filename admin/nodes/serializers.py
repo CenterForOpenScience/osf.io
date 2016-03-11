@@ -5,6 +5,7 @@ from admin.users.serializers import serialize_simple_node
 
 
 def serialize_node(node):
+
     return {
         'id': node._id,
         'title': node.title,
@@ -21,5 +22,5 @@ def serialize_simple_user(user_info):
     return {
         'id': user._id,
         'name': user.fullname,
-        'permission': reduce_permissions(user_info[1])
+        'permission': reduce_permissions(user_info[1]),
     }
