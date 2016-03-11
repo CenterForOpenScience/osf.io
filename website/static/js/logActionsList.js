@@ -31,7 +31,7 @@ var logActions = {
     'made_wiki_private':    '${user} made the wiki of ${node} privately editable',
     'addon_added':  '${user} added addon ${addon} to ${node}',
     'addon_removed':    '${user} removed addon ${addon} from ${node}',
-    'addon_file_moved':     '${user} copied ${source} to ${destination}',
+    'addon_file_moved':     '${user} moved ${source} to ${destination}',
     'addon_file_copied':    '${user} copied ${source} to ${destination}',
     'addon_file_renamed':   '${user} renamed ${source} to ${destination}',
     'folder_created':   '${user} created a folder in ${node}',

@@ -1,16 +1,15 @@
 
 //TODO uncomment and write more tests
-/* Tests for fileBrowser.js for My Projects in Dashboard */
+/* Tests for myprojects.js for My Projects in Dashboard */
 /*global describe, it, expect, example, before, after, beforeEach, afterEach, mocha, sinon*/
 'use strict';
 var assert = require('chai').assert;
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var fb = require('js/dashboard.js');
+var fb = require('js/myProjects.js');
 var m = require('mithril');
 
-var FileBrowser = fb.Dashboard;
 var LinkObject = fb.LinkObject;
 
 describe('fileBrowser', function() {
@@ -26,8 +25,8 @@ describe('fileBrowser', function() {
                 query: {'related_counts': 'children'},
                 systemCollection: true
             }, 'All My Projects');
-            tag = new LinkObject('tag', { tag : 'something', query : { 'related_counts' : 'children' }}, 'Something Else');
-            name = new LinkObject('name', { id : '8q36f', query : { 'related_counts' : 'children' }}, 'Caner Uguz');
+            tag = new LinkObject('tag', { tag : 'something', query : { 'related_counts' : true }}, 'Something Else');
+            name = new LinkObject('name', { id : '8q36f', query : { 'related_counts' : true }}, 'Caner Uguz');
             node = new LinkObject('node', { id : 'qwerty'}, 'Node Title');
         });
 

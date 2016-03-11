@@ -252,7 +252,7 @@ def node_setting(auth, node, **kwargs):
         inst = Institution.find_one(Q('email_domain', 'eq', auth.user.username.split('@')[1]))
         auth.user.affiliated_institutions.append(inst)
         auth.user.save()
-    except IndexError, NoResultsFound:
+    except (IndexError, NoResultsFound):
         pass
 
     ret = _view_project(node, auth, primary=True)

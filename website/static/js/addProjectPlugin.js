@@ -25,19 +25,21 @@ var AddProject = {
             stayCallback :null, // Function to call when user decides to stay after project creation
             categoryList : []
         };
+
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
         self.options = $.extend({}, self.defaults, options);
+        self.nodeLanguage = self.options.parentID === null ? 'project' : 'component';
+        self.defaultCat = self.options.parentID === null ? 'project' : '';
         self.showMore = m.prop(false);
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
-        self.newProjectCategory = m.prop('');
+        self.newProjectCategory = m.prop(self.defaultCat);
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
         };
-
         // Validation
         self.isValid = m.prop(false);
         self.checkValid = function _checkValid() {
@@ -78,7 +80,7 @@ var AddProject = {
             self.newProjectName('');
             self.viewState('form');
             self.newProjectDesc('');
-            self.newProjectCategory('');
+            self.newProjectCategory(self.defaultCat);
             $('.modal').modal('hide');
         };
     },
@@ -94,7 +96,7 @@ var AddProject = {
                 m('.modal-body', [
                     m('.text-left', [
                         m('.form-group.m-v-sm', [
-                            m('label[for="projectName].f-w-lg.text-bigger', 'Project Name'),
+                            m('label[for="projectName].f-w-lg.text-bigger', 'Title'),
                             m('input[type="text"].form-control', {
                                 onkeyup: function(ev){
                                     if (ev.which === 13) {
@@ -103,7 +105,8 @@ var AddProject = {
                                     ctrl.newProjectName($(this).val());
                                     ctrl.checkValid();
                                 },
-                                value : ctrl.newProjectName()
+                                value : ctrl.newProjectName(),
+                                placeholder : 'Enter project title'
                             })
                         ]),
                         m('.text-muted.pointer', { onclick : function(){
@@ -114,10 +117,11 @@ var AddProject = {
                         ]),
                         ctrl.showMore() ? [
                             m('.form-group.m-v-sm', [
-                                m('label[for="projectDesc].f-w-lg.text-bigger', 'Project Description'),
+                                m('label[for="projectDesc].f-w-lg.text-bigger', 'Description'),
                                 m('textarea.form-control.noresize', {
                                     onchange: m.withAttr('value', ctrl.newProjectDesc),
-                                    value : ctrl.newProjectDesc()
+                                    value : ctrl.newProjectDesc(),
+                                    placeholder : 'Enter project description'
                                 })
                             ]),
                             ctrl.options.parentID !== null ? [
@@ -151,7 +155,7 @@ var AddProject = {
                         ]),
                     ]),
                     m('.modal-body.text-left', [
-                            m('.add-project-processing', 'Saving your project...')
+                            m('.add-project-processing', 'Saving your ' + ctrl.nodeLanguage + '...')
                         ]
                     )
                 )
@@ -162,7 +166,7 @@ var AddProject = {
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
-                            m('h4.add-project-success.text-success', 'Project created successfully!')
+                            m('h4.add-project-success.text-success', 'New ' + ctrl.nodeLanguage + ' created successfully!')
                         ]
                     ),
                     m('.modal-footer', [
@@ -172,7 +176,7 @@ var AddProject = {
                                 ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
                             }
                         },  'Keep working here'),
-                        m('a.btn.btn-success', { href : ctrl.goToProjectLink() },'Go to new project')
+                        m('a.btn.btn-success', { href : ctrl.goToProjectLink() },'Go to new ' + ctrl.nodeLanguage + '')
                     ])
                 )
             ]),
@@ -182,7 +186,7 @@ var AddProject = {
                             m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : ctrl.reset}, [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
-                            m('h4.add-project-error.text-danger', 'Couldn\'t create your project'),
+                            m('h4.add-project-error.text-danger', 'Couldn\'t create your ' + ctrl.nodeLanguage + ''),
                             m('p', ctrl.errorMessage[ctrl.errorMessageType()])
                         ]
                     ),

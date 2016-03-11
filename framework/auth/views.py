@@ -158,6 +158,8 @@ def auth_login(auth, **kwargs):
     data['institution_redirect'] = cas.get_institution_target(redirect_url)
     data['redirect_url'] = next_url
 
+    data['sign_up'] = request.args.get('sign_up', False)
+
     return data, http.OK
 
 

@@ -22,6 +22,7 @@ from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
+from modularodm.query.query import RawQuery
 from modularodm.storage.mongostorage import MongoQuerySet
 
 from api.base.utils import absolute_reverse
@@ -3505,7 +3506,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
         self.primary_institution = None
         if inst in self.affiliated_institutions:
-           self.affiliated_institutions.remove(inst)
+            self.affiliated_institutions.remove(inst)
         if log:
             self.add_log(
                 action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
@@ -3601,7 +3602,10 @@ class Institution():
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
                 replacement_attr = cls.attribute_map.get(node.attribute, False)
-                node.attribute = replacement_attr if False else node.attribute
+                node.attribute = replacement_attr if replacement_attr else node.attribute
+        elif isinstance(query, RawQuery):
+            replacement_attr = cls.attribute_map.get(query.attribute, False)
+            query.attribute = replacement_attr if replacement_attr else query.attribute
         query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
         nodes = Node.find(query, allow_institution=True, **kwargs)
         return InstitutionQuerySet(nodes)
@@ -3611,7 +3615,10 @@ class Institution():
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
                 replacement_attr = cls.attribute_map.get(node.attribute, False)
-                node.attribute = replacement_attr if False else node.attribute
+                node.attribute = replacement_attr if replacement_attr else node.attribute
+        elif isinstance(query, RawQuery):
+            replacement_attr = cls.attribute_map.get(query.attribute, False)
+            query.attribute = replacement_attr if replacement_attr else query.attribute
         query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
         node = Node.find_one(query, allow_institution=True, **kwargs)
         return cls(node)
