@@ -145,6 +145,8 @@ def auth_login(auth, **kwargs):
             data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
 
+    data['sign_up'] = request.args.get('sign_up', False)
+
     return data, http.OK
 
 
@@ -185,7 +187,11 @@ def confirm_email_get(token, auth=None, **kwargs):
                 return redirect(
                     campaigns.campaign_url_for(campaign)
                 )
-            status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+            if len(auth.user.emails) == 1 and len(auth.user.email_verifications) == 0:
+                status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+
+            if token in auth.user.email_verifications:
+                status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
             # Go to dashboard
             return redirect(web_url_for('dashboard'))
 

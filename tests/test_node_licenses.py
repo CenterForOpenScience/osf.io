@@ -112,11 +112,11 @@ class TestNodeLicenses(OsfTestCase):
         with assert_raises(NoResultsFound):
             NodeLicense.find_one(
                 Q('id', 'eq', 'LGPL3')
-            )            
+            )
         ensure_licenses()
         found = NodeLicense.find_one(
             Q('id', 'eq', 'LGPL3')
-        )            
+        )
         assert_is_not_none(found)
 
     def test_ensure_licenses_updates_existing(self):
@@ -157,15 +157,3 @@ class TestNodeLicenses(OsfTestCase):
         }
         with assert_raises(NodeStateError):
             self.node.set_node_license(invalid_license['id'], 'foo', [], auth=Auth(self.user))
-
-    def test_Node_set_node_license_children(self):
-        child = ProjectFactory(creator=self.user, parent=self.node)
-        GPL3 = NodeLicense.find_one(
-            Q('id', 'eq', 'GPL3')
-        )
-        NEW_YEAR = '2014'
-        COPYLEFT_HOLDERS = ['Richard Stallman']
-        self.node.set_node_license('GPL3', NEW_YEAR, COPYLEFT_HOLDERS, auth=Auth(self.user), save=True)
-        last_parent_log = self.node.logs[-1]
-        last_child_log = child.logs[-1]
-        assert_equal(last_parent_log.params['new_license'], last_child_log.params['new_license'])

@@ -38,7 +38,7 @@
         <div id="hero-signup" class="container">
           <div class="row">
             <div class="col-sm-6 hidden-xs">
-              <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw"><i class="icon icon-play"></i></a>
+              <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw" aria-label="OSF YouTube Video"><i class="icon icon-play"></i></a>
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
             <div class="col-sm-6">
@@ -72,6 +72,11 @@
                           <div class="help-block osf-box-lt" >
                               <p data-bind="html: flashMessage, attr.class: flashMessageClass" class=""></p>
                           </div>
+                          <!-- ko ifnot: submitted -->
+                          <div>
+                              <small> By clicking "Sign up free", you agree to our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</small>
+                          </div>
+                          <!-- /ko -->
                           <div>
                               <button type="submit" class="btn btn-warning" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
                           </div>
