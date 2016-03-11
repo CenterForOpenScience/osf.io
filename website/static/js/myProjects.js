@@ -1194,7 +1194,12 @@ var Filters = {
         return m('.db-filters.m-t-lg',
             [
                 m('h5', [
-                    'Contributors',
+                    'Contributors ',
+                    m('i.fa.fa-question-circle.text-muted', {
+                        'data-toggle':  'tooltip',
+                        'title':  'You can see the number of projects shared between a contributor and you. Click a name to display all the selected contributor’s projects which you can view, including any public projects.',
+                        'data-placement' : 'bottom'
+                    }, ''),
                     m('.pull-right', m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages }))
                 ]),
                 m('ul', [
