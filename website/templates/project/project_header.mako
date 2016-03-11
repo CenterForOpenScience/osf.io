@@ -120,41 +120,11 @@
                                 <a href="${node['approval_link']}"></a>
                                 Approve Registration
                             </button>
-                            <button type="button" id="registrationCancelButton" class="btn btn-danger">
-                                <a href="${node['approval_link']}"></a>
+                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
                                 Cancel Registration
                             </button>
                         </div>
-                        <%def name="javascript_bottom()">
-                            console.log('hello')
-                            ${parent.javascript_bottom()}
-                            % for script in addon_page_js or []:
-                                <script type="text/javascript" src="${script}"></script>
-                            % endfor
-                        </%def>
-                        <%doc>
-                            <script type="text/javascript">
-                                $(document).ready(function(){
-                                    $('#registrationCancelButton').on('click', function() {
-                                        bootbox.confirm({
-                                            title: 'Cancel Registration?',
-                                            message: 'Are you sure you want to cancel the registration for this project?',
-                                            callback: function(result) {
-                                                if(result){
-                                                    window.open('${node['disapproval_link']}')
-                                                }
-                                            },
-                                            buttons:{
-                                                confirm:{
-                                                    label:'Cancel Registration',
-                                                    className:'btn-danger'
-                                                }
-                                            }
-                                        });
-                                    });
-                                });
-                            </script>
-                        </%doc>
+                        <%include file="modal_confirm_cancel_registration.mako"/>
                     % endif
                 </div>
            % endif
