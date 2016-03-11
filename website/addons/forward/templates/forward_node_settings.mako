@@ -17,7 +17,7 @@
                         class="form-control"
                         data-bind="value: url"
                         placeholder="Required"
-                        required />
+                        />
             </div>
 
             <div class="form-group">
@@ -53,7 +53,6 @@
                     <input type="submit"
                            class="btn btn-success pull-right"
                            value="Save"
-                           data-bind="disable: !validators.isValid()"
                     />
                 </div>
             </div>
