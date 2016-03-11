@@ -588,7 +588,8 @@ var MyProjects = {
                         wrapperSelector : args.wrapperSelector,
                         allProjects : ctrl.allProjects,
                         reload : ctrl.reload,
-                        resetUi : ctrl.resetUi
+                        resetUi : ctrl.resetUi,
+                        showSidebar : ctrl.showSidebar
                     })
                 )
             ]),
