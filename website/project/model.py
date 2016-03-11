@@ -153,6 +153,7 @@ class Comment(GuidStoredObject, SpamMixin):
 
     OVERVIEW = "node"
     FILES = "files"
+    WIKI = 'wiki'
 
     _id = fields.StringField(primary=True)
 
@@ -240,18 +241,13 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': comment.user._id,
             'comment': comment._id,
         }
-        if isinstance(comment.target.referent, Comment):
-            comment.root_target = comment.target.referent.root_target
-        else:
-            comment.root_target = comment.target
 
-        if isinstance(comment.root_target.referent, Node):
-            comment.page = Comment.OVERVIEW
-        elif isinstance(comment.root_target.referent, StoredFileNode):
+        if comment.page == Comment.FILES:
             log_dict['file'] = {'name': comment.root_target.referent.name, 'url': comment.get_comment_page_url()}
-            comment.page = Comment.FILES
-        else:
-            raise ValueError('Invalid root target.')
+        elif comment.page == Comment.WIKI:
+            # TODO: add logging
+            pass
+
         comment.save()
 
         comment.node.add_log(

@@ -5,6 +5,7 @@ from modularodm import Q
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
+from website.addons.wiki.model import NodeWikiPage
 from website.files.models import StoredFileNode
 from website.project.model import Comment, Node
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -108,6 +109,8 @@ class CommentSerializer(JSONAPISerializer):
             return 'comments'
         elif isinstance(obj.referent, StoredFileNode):
             return 'files'
+        elif isinstance(obj.referent, NodeWikiPage):
+            return 'wiki'
         else:
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/target/links/related/meta/type'},
@@ -152,10 +155,28 @@ class CommentCreateSerializer(CommentSerializer):
                 raise ValueError('Comments are not supported for this file provider.')
             elif referent.node._id != node_id:
                 raise ValueError('Cannot post comment to file on another node.')
+        elif isinstance(referent, NodeWikiPage):
+            if referent.node._id != node_id:
+                raise ValueError('Cannot post comment to wiki page on another node.')
         else:
             raise ValueError('Invalid comment target.')
 
         return target
+
+    def get_root_target(self, target):
+        if isinstance(target.referent, Comment):
+            return target.referent.root_target
+        return target
+
+    def get_page(self, root_target):
+        if isinstance(root_target.referent, Node):
+            return Comment.OVERVIEW
+        elif isinstance(root_target.referent, StoredFileNode):
+            return Comment.FILES
+        elif isinstance(root_target.referent, NodeWikiPage):
+            return Comment.WIKI
+        else:
+            raise ValueError('Invalid root target.')
 
     def create(self, validated_data):
         user = validated_data['user']
@@ -170,7 +191,10 @@ class CommentCreateSerializer(CommentSerializer):
                 source={'pointer': '/data/relationships/target/data/id'},
                 detail='Invalid comment target \'{}\'.'.format(target_id)
             )
+        root_target = self.get_root_target(target)
         validated_data['target'] = target
+        validated_data['root_target'] = root_target
+        validated_data['page'] = self.get_page(root_target)
         validated_data['content'] = validated_data.pop('get_content')
         try:
             comment = Comment.create(auth=auth, **validated_data)

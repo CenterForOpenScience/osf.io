@@ -530,6 +530,10 @@ class TargetField(ser.Field):
             'view': 'comments:comment-detail',
             'lookup_kwarg': 'comment_id'
         },
+        'wiki': {
+            'view': None,
+            'lookup_kwarg': None
+        }
     }
 
     def __init__(self, **kwargs):
