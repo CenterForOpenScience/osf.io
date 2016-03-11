@@ -30,6 +30,7 @@ def reactivate_user(request, guid):
     user.date_disabled = None
     subscribe_on_confirm(user)
     user.save()
+    return redirect(reverse_user(guid))
 
 
 def remove_2_factor(request, guid):
