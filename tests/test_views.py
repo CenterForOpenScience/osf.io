@@ -3381,8 +3381,10 @@ class TestAuthViews(OsfTestCase):
 
         # user goes to email confirmation link
         token = unclaimed_user.get_confirmation_token(unclaimed_user.username)
-        url = web_url_for('confirm_email_get', uid=unclaimed_user._id, token=token)
-        res = self.app.get(url)
+        email_url = web_url_for('confirm_email_get', uid=unclaimed_user._id, token=token)
+        confirm_url = web_url_for('confirm_user_get', auth=Auth(project.creator))
+        res = self.app.get(email_url)
+        self.app.get(confirm_url)
         assert_equal(res.status_code, 302)
 
         # unclaimed records and token are cleared
@@ -4458,8 +4460,11 @@ class TestUserConfirmSignal(OsfTestCase):
         # user goes to email confirmation link
         token = unconfirmed_user.get_confirmation_token(unconfirmed_user.username)
         with capture_signals() as mock_signals:
-            url = web_url_for('confirm_email_get', uid=unconfirmed_user._id, token=token)
-            res = self.app.get(url)
+            get_url = web_url_for('confirm_email_get', uid=unconfirmed_user._id, token=token)
+            remove_url = web_url_for('confirm_email_remove', uid=unconfirmed_user._id, token=token)
+            payload = self.app.get(get_url)
+            res_remove = self.app.get(remove_url, payload)
+
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))

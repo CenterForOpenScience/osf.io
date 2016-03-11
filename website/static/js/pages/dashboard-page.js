@@ -85,8 +85,6 @@ function confirm_emails(emails) {
     }
 }
 
-
-var confirmed_emails = [];
 request = $.getJSON(confirmedEmailURL, function(response) {
         confirm_emails(response);
  });

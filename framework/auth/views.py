@@ -132,10 +132,10 @@ def auth_login(auth, **kwargs):
     if status_message == 'expired':
         status.push_status_message('The private link you used is expired.  Please Resend email.')
 
-    # if next_url:
-    #     status.push_status_message(language.MUST_LOGIN)
-    # # set login_url to form action, upon successful authentication specifically w/o logout=True,
-    # # allows for next to be followed or a redirect to the dashboard.
+    if next_url:
+        status.push_status_message(language.MUST_LOGIN)
+    # set login_url to form action, upon successful authentication specifically w/o logout=True,
+    # allows for next to be followed or a redirect to the dashboard.
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
 
     data = {}
@@ -143,7 +143,6 @@ def auth_login(auth, **kwargs):
         if (campaign == 'institution' and settings.ENABLE_INSTITUTIONS) or campaign != 'institution':
             data['campaign'] = campaign
     data['login_url'] = cas.get_login_url(redirect_url, auto=True)
-
     data['sign_up'] = request.args.get('sign_up', False)
 
     return data, http.OK
@@ -163,25 +162,19 @@ def auth_logout(redirect_url=None):
     return resp
 
 
-def auth_email_logout(token, auth=None, **kwargs):
+def auth_email_logout(token, user):
     """Log out and delete cookie.
     """
-    redirect_url = web_url_for('goodbye', _absolute=True)
-    user = User.load(kwargs['uid'])
-    campaign = request.args.get('campaign') or campaigns.campaign_for_user(user)
-    if campaign:
-        redirect_url = web_url_for('auth_login') + '?campaign=' + campaign
-        # redirect_url = campaigns.campaign_url_for(campaign) + '?campaign=' + campaign
-
-        if user.confirm_token(token):
-            user.email_verifications[token]['confirmed'] = True
-            user.save()
-            logout()
-        else:
-            status.push_status_message('The private link you used is expired.')
-    # resp = redirect(redirect_url)
-    # resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
-    return redirect_url
+    redirect_url = web_url_for('auth_login') + '?existing_user=True'
+    if user.confirm_token(token):
+        user.email_verifications[token]['confirmed'] = True
+        user.save()
+        logout()
+    else:
+        status.push_status_message('The private link you used is expired.')
+    resp = redirect(redirect_url)
+    resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+    return resp
 
 
 @collect_auth
@@ -195,10 +188,12 @@ def confirm_email_get(token, auth=None, **kwargs):
     user = User.load(kwargs['uid'])
     is_merge = 'confirm_merge' in request.args
     is_initial_confirmation = not user.date_confirmed
-    existing_user = user.is_active
-    campaign = request.args.get('campaign') or campaigns.campaign_for_user(user)
+    existing_user = request.args.get('existing_user')
+    campaign = campaigns.campaign_for_user(user)
     if user is None:
         raise HTTPError(http.NOT_FOUND)
+    elif existing_user:
+        return auth_email_logout(token, user)
     elif auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
         if not is_merge:
             # determine if the user registered through a campaign
@@ -259,11 +254,11 @@ def confirm_user_get(auth=None, **kwargs):
                 verified_emails.append({'address': user.email_verifications[token]['email'],
                                         'token': token,
                                         'confirmed': user.email_verifications[token]['confirmed'],
-                                        'user_merge': user_merge.email})
+                                        'user_merge': user_merge.email if user_merge else False})
             else:
                 #todo migrate to remove this hack
                 user.email_verifications[token]['confirmed'] = False
-                user.save()
+    user.save()
     return verified_emails
 
 
@@ -271,13 +266,13 @@ def confirm_user_get(auth=None, **kwargs):
 def confirm_email_remove(auth=None, **kwargs):
     user = auth.user
     confirmed_email = request.json.get('address')
+    email_verifications = user.email_verifications.copy()
     for token in user.email_verifications:
         if user.confirm_token(token):
             if user.email_verifications[token]['email'] == confirmed_email:
-                del user.email_verifications[token]
-                user.save()
-                return True
-        return False
+                del email_verifications[token]
+    user.email_verifications = email_verifications
+    user.save()
 
 
 @collect_auth
@@ -370,12 +365,12 @@ def send_confirm_email(user, email):
     # Choose the appropriate email template to use
     if merge_target:
         mail_template = mails.CONFIRM_MERGE
-        confirmation_url += '?campaign=existing_user'
+        confirmation_url += '?existing_user=True'
     elif campaign:
         mail_template = campaigns.email_template_for_campaign(campaign)
     elif user.is_active:
         mail_template = mails.CONFIRM_EMAIL
-        confirmation_url += '?campaign=existing_user'
+        confirmation_url += '?existing_user=True'
     else:
         mail_template = mails.INITIAL_CONFIRM_EMAIL
 
