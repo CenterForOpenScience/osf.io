@@ -1,3 +1,4 @@
+
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated
@@ -18,14 +19,14 @@ from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParse
 from api.nodes.serializers import NodeSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.base.utils import default_node_list_query
+from api.base.utils import default_node_list_query, default_node_permission_query
 
 from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
 from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
 
 
 class UserMixin(object):
-    """Mixin with convenience methods for retrieving the current node based on the
+    """Mixin with convenience methods for retrieving the current user based on the
     current URL. By default, fetches the user based on the user_id kwarg.
     """
 
@@ -231,10 +232,11 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
-    Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
-    meaning additional requests to an individual node's detail view are not necessary. If the user id in the path is the
-    same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to see the other user's
-    publicly-visible nodes.  The special user id `me` can be used to represent the currently logged-in user.
+    Paginated list of nodes that the user contributes to ordered by `date_modified`.  Each resource contains the
+    full representation of the node, meaning additional requests to an individual node's detail view are not necessary.
+    If the user id in the path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be
+    able to see the other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently
+    logged-in user.
 
     ##Node Attributes
 
@@ -291,18 +293,13 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     view_category = 'users'
     view_name = 'user-nodes'
 
+    ordering = ('-date_modified',)
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.get_user()
         current_user = self.request.user
-
-        query = (Q('contributors', 'eq', user) & default_node_list_query())
-
-        permission_query = Q('is_public', 'eq', True)
-        if not current_user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
-        query = (query & permission_query)
-        return query
+        return Q('contributors', 'eq', user) & default_node_list_query() & default_node_permission_query(current_user)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -425,6 +422,7 @@ class UserRegistrations(UserNodes):
             Q('is_registration', 'eq', True) &
             Q('contributors', 'eq', user._id)
         )
+
         permission_query = Q('is_public', 'eq', True)
         if not current_user.is_anonymous():
             permission_query = (permission_query | Q('contributors', 'eq', current_user._id))

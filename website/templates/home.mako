@@ -1,5 +1,27 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Home</%def>
-<%def name="content()">
-    <h1>Placeholder</h1>
+
+<%def name="content_wrap()">
+    <div class="watermarked">
+            ${self.content()}
+    </div><!-- end watermarked -->
 </%def>
+
+
+<%def name="content()">
+
+    <div id="osfHome"></div>
+
+</%def>
+
+<%def name="stylesheets()">
+  <link rel="stylesheet" href="/static/css/pages/home-page.css">
+</%def>
+
+<%def name="javascript_bottom()">
+    ${parent.javascript_bottom()}
+    <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
+</%def>
+
+
+

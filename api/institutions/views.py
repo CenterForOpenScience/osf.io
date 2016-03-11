@@ -146,7 +146,9 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     def get_default_odm_query(self):
         inst = self.get_institution()
         inst_query = Q('primary_institution', 'eq', inst)
+
         base_query = self.base_node_query
+
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
