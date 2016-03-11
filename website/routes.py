@@ -21,7 +21,7 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from modularodm import Q
-from modularodm.exceptions import QueryException
+from modularodm.exceptions import QueryException, NoResultsFound
 
 from website import util
 from website import prereg
@@ -51,7 +51,7 @@ def get_globals():
         try:
             inst_id = (Institution.find_one(Q('domain', 'eq', request.host)))._id
             login_url = '{}institution/{}'.format(settings.DOMAIN, inst_id)
-        except:
+        except NoResultsFound:
             login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
         login_url = request.url

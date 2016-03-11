@@ -3618,10 +3618,10 @@ class Institution(object):
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
                 replacement_attr = cls.attribute_map.get(node.attribute, False)
-                node.attribute = replacement_attr if replacement_attr else node.attribute
+                node.attribute = replacement_attr or node.attribute
         elif isinstance(query, RawQuery):
             replacement_attr = cls.attribute_map.get(query.attribute, False)
-            query.attribute = replacement_attr if replacement_attr else query.attribute
+            query.attribute = replacement_attr or query.attribute
         query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
         nodes = Node.find(query, allow_institution=True, **kwargs)
         return InstitutionQuerySet(nodes)
@@ -3644,7 +3644,7 @@ class Institution(object):
         try:
             node = Node.find_one(Q('institution_id', 'eq', id) & Q('is_institution', 'eq', True), allow_institution=True)
             return cls(node)
-        except:
+        except NoResultsFound:
             return None
 
     def __repr__(self):
