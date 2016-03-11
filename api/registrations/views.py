@@ -10,14 +10,15 @@ from api.base.serializers import HideIfRetraction
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
-    RegistrationContributorsSerializer
+    RegistrationContributorsSerializer,
 )
 
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
-    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList, WaterButlerMixin)
+    NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
+    NodeInstitutionDetail, WaterButlerMixin)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer
 
@@ -68,7 +69,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     Registrations have the "registrations" `type`.
 
         name                            type               description
-        -------------------------------------------------------------------------------------------------------
+        =======================================================================================================
         title                           string             title of the registered project or component
         description                     string             description of the registered node
         category                        string             node category, must be one of the allowed values
@@ -130,7 +131,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
         query = base_query & permission_query
         return query
@@ -174,7 +175,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Registration
     Registrations have the "registrations" `type`.
 
         name                            type               description
-        -------------------------------------------------------------------------------------------------------
+        =======================================================================================================
         title                           string             title of the registered project or component
         description                     string             description of the registered node
         category                        string             node category, must be one of the allowed values
@@ -304,3 +305,8 @@ class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList, Registr
 class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-alternative-citation-detail'
+
+
+class RegistrationInstitutionDetail(NodeInstitutionDetail, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'registration-institution-detail'

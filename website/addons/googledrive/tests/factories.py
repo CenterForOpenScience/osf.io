@@ -36,6 +36,5 @@ class GoogleDriveNodeSettingsFactory(ModularOdmFactory):
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(GoogleDriveUserSettingsFactory)
-    folder_id = '12345'
-    folder_name = 'Folder'
+    folder_id = '1234567890'
     folder_path = 'Drive/Camera Uploads'

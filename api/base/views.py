@@ -74,8 +74,12 @@ class JSONAPIBaseView(generics.GenericAPIView):
             embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
 
         context.update({
-            'enable_esi': is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)),
+            'enable_esi': (
+                is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
+                self.request.accepted_media_type in django_settings.ESI_MEDIA_TYPES
+            ),
             'embed': embeds_partials,
+            'envelope': self.request.query_params.get('envelope', 'data'),
         })
         return context
 
@@ -355,7 +359,7 @@ def root(request, format=None):
     ###OSF Node Categories
 
         value                 description
-        ------------------------------------------
+        ==========================================
         project               Project
         hypothesis            Hypothesis
         methods and measures  Methods and Measures
@@ -369,7 +373,7 @@ def root(request, format=None):
     ###OSF Node Permission keys
 
         value        description
-        ------------------------------------------
+        ==========================================
         read         Read-only access
         write        Write access (make changes, cannot delete)
         admin        Admin access (full write, create, delete, contributor add)
@@ -379,7 +383,7 @@ def root(request, format=None):
     Valid storage providers are:
 
         value        description
-        ------------------------------------------
+        ==========================================
         box          Box.com
         cloudfiles   Rackspace Cloud Files
         dataverse    Dataverse
