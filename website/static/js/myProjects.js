@@ -85,40 +85,6 @@ function sortProjects (flatList) {
     });
 }
 
-function _makeTree (flatData, lastcrumb) {
-    var root = {id:0, children: [], data : {} };
-    var node_list = { 0 : root};
-    var parentID;
-    var crumbParent = lastcrumb ? lastcrumb.data.id : null;
-    for (var i = 0; i < flatData.length; i++) {
-        if(flatData[i].errors){
-            continue;
-        }
-        var n = _formatDataforPO(flatData[i]);
-        if (!node_list[n.id]) { // If this node is not in the object list, add it
-            node_list[n.id] = n;
-            node_list[n.id].children = [];
-        } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
-            n.children = node_list[n.id].children;
-            node_list[n.id] = n;
-        }
-
-        if (n.relationships.parent){
-            parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
-        } else {
-            parentID = null;
-        }
-        if(parentID && !n.attributes.registration && parentID !== crumbParent ) {
-            if(!node_list[parentID]){
-                node_list[parentID] = { children : [] };
-            }
-            node_list[parentID].children.push(node_list[n.id]);
-        } else {
-            node_list[0].children.push(node_list[n.id]);
-        }
-    }
-    return root.children;
-}
 
 /**
  * Returns the object to send to the API to end a node_link to collection
@@ -196,6 +162,42 @@ var MyProjects = {
                 Raven.captureMessage(message, {requestReturn: results});
             });
             return promise;
+        };
+
+
+        self.makeTree = function _makeTree(flatData, lastcrumb) {
+            var root = {id:0, children: [], data : {} };
+            var node_list = { 0 : root};
+            var parentID;
+            var crumbParent = lastcrumb ? lastcrumb.data.id : null;
+            for (var i = 0; i < flatData.length; i++) {
+                if(flatData[i].errors){
+                    continue;
+                }
+                var n = _formatDataforPO(flatData[i]);
+                if (!node_list[n.id]) { // If this node is not in the object list, add it
+                    node_list[n.id] = n;
+                    node_list[n.id].children = [];
+                } else { // If this node is in object list it's likely because it was created as a parent so fill out the rest of the information
+                    n.children = node_list[n.id].children;
+                    node_list[n.id] = n;
+                }
+
+                if (n.relationships.parent){
+                    parentID = n.relationships.parent.links.related.href.split('/')[5]; // Find where parent id string can be extracted
+                } else {
+                    parentID = null;
+                }
+                if(parentID && !n.attributes.registration && parentID !== crumbParent ) {
+                    if(!node_list[parentID]){
+                        node_list[parentID] = { children : [] };
+                    }
+                    node_list[parentID].children.push(node_list[n.id]);
+                } else {
+                    node_list[0].children.push(node_list[n.id]);
+                }
+            }
+            return root.children;
         };
 
         // Activity Logs
@@ -324,6 +326,7 @@ var MyProjects = {
             success = self.updateListSuccess;
             if(linkObject.data.systemCollection === 'nodes'){
                 self.loadingAllNodes = true;
+                self.refreshView(false);
             }
             error = self.updateListError;
             var url = linkObject.link;
@@ -394,7 +397,7 @@ var MyProjects = {
                 self.loadingNodePages = false;
             }
             if(self.loadingAllNodes) {
-                self.data(_makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));
+                self.data(self.makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));
                 self.allProjects(self.data());
                 self.generateFiltersList();
                 self.loadingAllNodes = false;
@@ -1329,7 +1332,6 @@ module.exports = {
     MicroPagination : MicroPagination,
     ActivityLogs : ActivityLogs,
     LinkObject: LinkObject,
-    PrivateFunctions : {
-        makeTree : _makeTree
-    }
+    PrivateFunctions : {}
+
 };
