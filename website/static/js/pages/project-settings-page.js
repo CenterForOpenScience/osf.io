@@ -245,6 +245,8 @@ $(document).ready(function() {
                     callback: function(result) {
                         if (!result) {
                             $(that).attr('checked', false);
+                        } else {
+                            $('#selectAddonsForm').submit();
                         }
                     },
                     buttons:{
@@ -253,7 +255,11 @@ $(document).ready(function() {
                         }
                     }
                });
+            } else {
+                $('#selectAddonsForm').submit();
             }
+        } else {
+            $('#selectAddonsForm').submit();
         }
     });
 });
