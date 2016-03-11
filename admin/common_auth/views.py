@@ -59,7 +59,7 @@ def register(request):
             else:
                 print(form.errors)
                 context = {'form': form}
-                return render(request, 'register.html', context)
+                return render(request, 'register.html', context, status=400)
         else:
             reg_form = CustomUserRegistrationForm()
             context = {'form': reg_form}
