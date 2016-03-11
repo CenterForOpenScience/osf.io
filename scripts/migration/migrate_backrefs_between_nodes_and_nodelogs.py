@@ -1,6 +1,6 @@
 """
-This migration will add original_node and node associated with the log to nodelogs. It will then make
-copies of each nodelog for the remaining nodes in the backref (registrations and forks),
+This migration will add original_node and node associated with the log to nodelogs. It will then
+clone each nodelog for the remaining nodes in the backref (registrations and forks),
 changing the node to the current node.
 """
 from copy import deepcopy
