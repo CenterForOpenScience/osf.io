@@ -141,6 +141,7 @@
                                 <th>GUID</th>
                                 <th>Name</th>
                                 <th>Public</th>
+                                <th>Registration</th>
                                 <th># of Contributors</th>
                             </tr>
                         </thead>
@@ -154,6 +155,7 @@
                                 </td>
                                 <td>{{ node.title | truncatechars:20 }}</td>
                                 <td>{{ node.public }}</td>
+                                <td>{{ node.is_registration }}</td>
                                 <td>{{ node.number_contributors }}</td>
                             </tr>
                         {% endfor %}

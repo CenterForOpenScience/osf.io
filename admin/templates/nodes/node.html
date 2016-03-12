@@ -104,6 +104,37 @@
                     </table>
                 </td>
             </tr>
+            <tr>
+                <td>Registration</td>
+                <td>
+                    {% if not node.is_registration %}
+                        {{ node.is_registration }}
+                    {% else %}
+                        <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <td>Field</td>
+                                <td>Value</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Date Created</td>
+                                <td>{{ node.date_created | date }}</td>
+                            </tr>
+                            <tr>
+                                <td>Retracted</td>
+                                <td>{{ node.retraction }}</td>
+                            </tr>
+                            <tr>
+                                <td>Embargo</td>
+                                <td>{{ node.embargo }}</td>
+                            </tr>
+                        </tbody>
+                        </table>
+                    {% endif %}
+                </td>
+            </tr>
         </tbody>
         </table>
         </div>
