@@ -92,7 +92,7 @@
                             <label for="description">Description:</label>
                             <textarea placeholder="Optional" data-bind="value: description,
                                              valueUpdate: 'afterkeydown'",
-                            class="form-control resize-vertical"></textarea>
+                            class="form-control resize-vertical" style="max-width: 100%"></textarea>
                         </div>
                            <button data-bind="click: cancelAll"
                             class="btn btn-default">Cancel</button>
