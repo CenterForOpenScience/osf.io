@@ -820,6 +820,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     primary_institution = fields.ForeignField('institution')
 
     affiliated_institutions = fields.ForeignField('institution', list=True)
+    visit = fields.IntegerField(default=0)
 
     def add_primary_institution(self, user, inst):
         if not user.is_affiliated_with_institution(inst):
