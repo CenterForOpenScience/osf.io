@@ -4,7 +4,11 @@ from framework.mongo.handlers import (
     connection_before_request,
     connection_teardown_request
 )
-from framework.tasks.handlers import (
+from framework.postcommit_tasks.handlers import (
+    postcommit_after_request,
+    postcommit_before_request
+)
+from framework.celery_tasks.handlers import (
     celery_before_request,
     celery_after_request,
     celery_teardown_request
@@ -14,7 +18,6 @@ from framework.transactions.handlers import (
     transaction_after_request,
     transaction_teardown_request
 )
-
 from .api_globals import api_globals
 
 
@@ -85,4 +88,16 @@ class DjangoGlobalMiddleware(object):
 
     def process_response(self, request, response):
         api_globals.request = None
+        return response
+
+
+class PostcommitTaskMiddleware(object):
+    """
+    Handle postcommit tasks for django.
+    """
+    def process_request(self, request):
+        postcommit_before_request()
+
+    def process_response(self, request, response):
+        postcommit_after_request(response=response, base_status_error_code=400)
         return response

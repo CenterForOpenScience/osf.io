@@ -257,7 +257,7 @@ class RegistrationFactory(AbstractNodeFactory):
             reg = register()
             add_approval_step(reg)
         else:
-            with patch('framework.tasks.handlers.enqueue_task'):
+            with patch('framework.celery_tasks.handlers.enqueue_task'):
                 reg = register()
                 add_approval_step(reg)
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):

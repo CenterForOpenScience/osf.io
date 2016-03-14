@@ -1,6 +1,6 @@
 import logging
 
-from framework.tasks.handlers import enqueue_task
+from framework.celery_tasks.handlers import enqueue_task
 
 from website import settings
 from website.search import share_search
