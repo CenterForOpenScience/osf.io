@@ -306,10 +306,6 @@ var QuickSearchProject = {
             }
         };
 
-        // Onclick, directs user to project page
-        self.nodeDirect = function(node) {
-            location.href = '/'+ node.id;
-        };
     },
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
