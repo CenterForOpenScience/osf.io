@@ -455,7 +455,8 @@ var QuickSearchProject = {
                             getFamilyName: ctrl.getFamilyName,
                             formatDate: function(node) {
                                 return ctrl.formatDate(node);
-                            }
+                            },
+                            loadingComplete: ctrl.loadingComplete
                         })
                     ]),
                     m('.text-center', loadMoreButton())
@@ -468,7 +469,7 @@ var QuickSearchProject = {
 
 var QuickSearchNodeDisplay = {
     view: function(ctrl, args) {
-        if (args.eligibleNodes().length === 0 && args.filter() != null) {
+        if (args.eligibleNodes().length === 0 && args.filter() != null && args.loadingComplete() === true) {
             return m('.row.m-v-sm', m('.col-sm-12',
                 m('.row',
                     m('.col-sm-12', m('em', 'No results found!'))
