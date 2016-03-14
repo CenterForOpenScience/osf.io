@@ -92,7 +92,7 @@
                          %if enable_institutions:
                           <div class="text-center m-b-sm"> <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
                          %endif
-                          <div class="text-center m-b-sm"> <a href="${domain}forgot_password/">Forgot password?</a></div>
+                          <div class="text-center m-b-sm"> <a href="${domain}forgotpassword/">Forgot password?</a></div>
                        </form>
                     </ul>
                   </div>
