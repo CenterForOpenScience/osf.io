@@ -837,6 +837,8 @@ var Collections = {
                 var index = $(this).attr('data-index');
                 var selectedItem = ctrl.collections()[index];
                 ctrl.updateCollectionMenu(selectedItem, e);
+                $osf.trackClick('myProjects', 'edit-collection', 'open-edit-collection-menu');
+
             };
             for (var i = begin; i < end; i++) {
                 item = ctrl.collections()[i];
@@ -853,10 +855,8 @@ var Collections = {
                 if (!item.data.systemCollection && !item.data.node.attributes.bookmarks) {
                     submenuTemplate = m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs.pointer', {
                         'data-index' : i,
-                        onclick : function (event){
-                            openCollectionMenu.call(this, event);
-                            $osf.trackClick('myProjects', 'edit-collection', 'open-edit-collection-menu');
-                        }});
+                        onclick : openCollectionMenu
+                        });
                 } else {
                     submenuTemplate = '';
                 }
