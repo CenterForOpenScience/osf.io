@@ -2,13 +2,20 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+from django.contrib.auth.models import Group
 import datetime
+
+
+def add_groups():
+    Group.objects.get_or_create(name='prereg_group')
+    Group.objects.get_or_create(name='osf_group')
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
         ('auth', '0006_require_contenttypes_0002'),
+        ('auth', '0001_initial'),
     ]
 
     operations = [
@@ -35,4 +42,5 @@ class Migration(migrations.Migration):
                 'ordering': ['email'],
             },
         ),
+        migrations.RunPython(add_groups),
     ]
