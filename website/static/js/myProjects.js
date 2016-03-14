@@ -591,7 +591,7 @@ var MyProjects = {
             mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
                 ctrl.loadValue() < 100 ? m('.line-loader', [
                     m('.line-empty'),
-                    m('.line-full', { style : 'width: ' + ctrl.loadValue() + '%;'}),
+                    m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() + '%;'}),
                     m('.load-message', '')
                 ]) : '',
                 ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, {

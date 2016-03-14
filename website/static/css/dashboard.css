@@ -304,7 +304,8 @@ div[data-growl="container"] {
 }
 .line-loader > .line-full {
     z-index: 100;
-    background: blue;
+    border-bottom-right-radius: 5px;
+    border-top-right-radius: 5px;
 }
 .line-loader > .load-message {
     float: right;
