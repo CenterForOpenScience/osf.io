@@ -4495,7 +4495,7 @@ class DraftRegistration(StoredObject):
         return draft
 
     def update_metadata(self, metadata):
-        if self.is_approved():
+        if self.is_approved:
             return False
 
         changes = []
