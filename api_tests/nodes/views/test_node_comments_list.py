@@ -13,7 +13,8 @@ from tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     CommentFactory,
-    RetractedRegistrationFactory
+    RetractedRegistrationFactory,
+    NodeWikiFactory
 )
 
 
@@ -81,6 +82,16 @@ class NodeCommentsListMixin(object):
         assert_equal(len(comment_json), 1)
         assert_in(self.registration_comment._id, comment_ids)
 
+    def test_return_both_deleted_and_undeleted_comments(self):
+        self._set_up_private_project_with_comment()
+        deleted_comment = CommentFactory(node=self.private_project, user=self.user, target=self.comment.target, is_deleted=True)
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_in(self.comment._id, comment_ids)
+        assert_in(deleted_comment._id, comment_ids)
+
 
 class TestNodeCommentsList(NodeCommentsListMixin, ApiTestCase):
 
@@ -98,16 +109,6 @@ class TestNodeCommentsList(NodeCommentsListMixin, ApiTestCase):
         self.registration = RegistrationFactory(creator=self.user)
         self.registration_comment = CommentFactory(node=self.registration, user=self.user)
         self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
-
-    def test_return_both_deleted_and_undeleted_comments(self):
-        self._set_up_private_project_with_comment()
-        deleted_comment = CommentFactory(node=self.private_project, user=self.user, is_deleted=True)
-        res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        comment_json = res.json['data']
-        comment_ids = [comment['id'] for comment in comment_json]
-        assert_in(self.comment._id, comment_ids)
-        assert_in(deleted_comment._id, comment_ids)
 
     def test_cannot_access_retracted_comments(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
@@ -139,16 +140,6 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin, ApiTestCase):
         self.registration_comment = CommentFactory(node=self.registration, user=self.user, target=self.registration_file.get_guid(), page='files')
         self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
 
-    def test_return_both_deleted_and_undeleted_file_comments(self):
-        self._set_up_private_project_with_comment()
-        deleted_comment = CommentFactory(node=self.private_project, user=self.user, target=self.comment.target, is_deleted=True)
-        res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        comment_json = res.json['data']
-        comment_ids = [comment['id'] for comment in comment_json]
-        assert_in(self.comment._id, comment_ids)
-        assert_in(deleted_comment._id, comment_ids)
-
     def test_comments_on_deleted_files_are_not_returned(self):
         self._set_up_private_project_with_comment()
         # Delete commented file
@@ -156,6 +147,37 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin, ApiTestCase):
         root_node = osfstorage.get_root()
         root_node.delete(self.file)
 
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_not_in(self.comment._id, comment_ids)
+
+
+class TestNodeCommentsListWiki(NodeCommentsListMixin, ApiTestCase):
+
+    def _set_up_private_project_with_comment(self):
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
+        self.comment = CommentFactory(node=self.private_project, user=self.user, target=Guid.load(self.wiki._id), page='wiki')
+        self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
+
+    def _set_up_public_project_with_comment(self):
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
+        self.public_comment = CommentFactory(node=self.public_project, user=self.user, target=Guid.load(self.public_wiki._id), page='wiki')
+        self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
+
+    def _set_up_registration_with_comment(self):
+        self.registration = RegistrationFactory(creator=self.user)
+        self.registration_wiki = NodeWikiFactory(node=self.registration, user=self.user)
+        self.registration_comment = CommentFactory(node=self.registration, user=self.user, target=Guid.load(self.registration_wiki._id), page='wiki')
+        self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
+
+    def test_comments_on_deleted_wikis_are_not_returned(self):
+        self._set_up_private_project_with_comment()
+        # Delete wiki
+        self.private_project.delete_node_wiki(self.wiki.page_name, core.Auth(self.user))
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         comment_json = res.json['data']
@@ -171,7 +193,7 @@ class NodeCommentsCreateMixin(object):
         self.read_only_contributor = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
-    def _set_up_payload(self, project_id):
+    def _set_up_payload(self, target_id):
         raise NotImplementedError
 
     def _set_up_private_project_with_private_comment_level(self):
@@ -308,13 +330,7 @@ class NodeCommentsCreateMixin(object):
 
 class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
 
-    def setUp(self):
-        super(TestNodeCommentCreate, self).setUp()
-        self.user = AuthUserFactory()
-        self.read_only_contributor = AuthUserFactory()
-        self.non_contributor = AuthUserFactory()
-
-    def _set_up_payload(self, project_id):
+    def _set_up_payload(self, target_id):
         return {
             'data': {
                 'type': 'comments',
@@ -325,7 +341,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'target': {
                         'data': {
                             'type': 'nodes',
-                            'id': project_id
+                            'id': target_id
                         }
                     }
                 }
@@ -668,7 +684,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
 
 class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
 
-    def _set_up_payload(self, file_id):
+    def _set_up_payload(self, target_id):
         return {
             'data': {
                 'type': 'comments',
@@ -679,7 +695,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'target': {
                         'data': {
                             'type': 'files',
-                            'id': file_id
+                            'id': target_id
                         }
                     }
                 }
@@ -749,12 +765,89 @@ class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Invalid target type. Expected "files", got "Invalid."')
 
-    def test_create_comment_nonexistent_target_file(self):
-        url = '/{}nodes/{}/comments/'.format(API_BASE, 'abcde')
-        payload = self._set_up_payload('abcde')
-        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        assert_equal(res.json['errors'][0]['detail'], 'Not found.')
+
+class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
+
+    def _set_up_payload(self, target_id):
+        return {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a comment'
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'wiki',
+                            'id': target_id
+                        }
+                    }
+                }
+            }
+        }
+
+    def _set_up_private_project_with_private_comment_level(self):
+        self.private_project = ProjectFactory(is_public=False, creator=self.user, comment_level='private')
+        self.private_project.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.private_project.save()
+        self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
+        self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
+        self.private_payload = self._set_up_payload(self.wiki._id)
+
+    def _set_up_public_project_with_private_comment_level(self):
+        self.public_project = ProjectFactory(is_public=True, creator=self.user, comment_level='private')
+        self.public_project.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.public_project.save()
+        self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
+        self.wiki = NodeWikiFactory(node=self.public_project, user=self.user)
+        self.public_payload = self._set_up_payload(self.wiki._id)
+
+    def _set_up_public_project_with_public_comment_level(self):
+        """ Public project configured so that any logged-in user can comment."""
+        self.project_with_public_comment_level = ProjectFactory(is_public=True, creator=self.user)
+        self.project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.project_with_public_comment_level.save()
+        self.public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project_with_public_comment_level._id)
+        self.wiki = NodeWikiFactory(node=self.project_with_public_comment_level, user=self.user)
+        self.public_comment_level_payload = self._set_up_payload(self.wiki._id)
+
+    def _set_up_private_project_with_public_comment_level(self):
+        self.private_project_with_public_comment_level = ProjectFactory(is_public=False, creator=self.user)
+        self.private_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.private_project_with_public_comment_level.save()
+        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level)
+        self.wiki = NodeWikiFactory(node=self.private_project_with_public_comment_level, user=self.user)
+        self.private_project_public_comments_payload = self._set_up_payload(self.wiki._id)
+
+    def test_create_wiki_comment_invalid_target_id(self):
+        self._set_up_private_project_with_private_comment_level()
+        wiki = NodeWikiFactory(node=ProjectFactory(), user=self.user)
+        payload = self._set_up_payload(wiki._id)
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid comment target \'" + str(wiki._id) + "\'.")
+
+    def test_create_wiki_comment_invalid_target_type(self):
+        self._set_up_private_project_with_private_comment_level()
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a comment'
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'Invalid',
+                            'id': self.wiki._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Invalid target type. Expected "wiki", got "Invalid."')
 
 
 class TestCommentRepliesCreate(NodeCommentsCreateMixin, ApiTestCase):
@@ -914,6 +1007,14 @@ class TestCommentFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 1)
         assert_in(test_file._id, res.json['data'][0]['relationships']['target']['links']['related']['href'])
 
+    def test_filtering_by_target_wiki(self):
+        test_wiki = NodeWikiFactory(node=self.project, user=self.user)
+        wiki_comment = CommentFactory(node=self.project, user=self.user, target=Guid.load(test_wiki._id), page='wiki')
+        url = self.base_url + '?filter[target]=' + str(test_wiki._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_in(test_wiki.page_name, res.json['data'][0]['relationships']['target']['links']['related']['href'])
+
     def test_filtering_by_page_node(self):
         url = self.base_url + '?filter[page]=node'
         res = self.app.get(url, auth=self.user.auth)
@@ -928,3 +1029,11 @@ class TestCommentFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
         assert_equal('files', res.json['data'][0]['attributes']['page'])
+
+    def test_filtering_by_page_wiki(self):
+        test_wiki = NodeWikiFactory(node=self.project, user=self.user)
+        wiki_comment = CommentFactory(node=self.project, user=self.user, target=Guid.load(test_wiki._id), page='wiki')
+        url = self.base_url + '?filter[page]=wiki'
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal('wiki', res.json['data'][0]['attributes']['page'])
