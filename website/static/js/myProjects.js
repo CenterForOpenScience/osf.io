@@ -128,6 +128,7 @@ var MyProjects = {
         self.loadingNodePages = false; // Since API returns pages of items, this state shows whether filebrowser is still loading the next pages.
         self.loadingAllNodes = false; // True if we are loading all nodes
         self.categoryList = [];
+        self.loadValue = m.prop(0); // What percentage of the project loading is done
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = [
@@ -519,6 +520,7 @@ var MyProjects = {
             self.activeFilter(linkObject);
         };
 
+
         self.init = function _init_fileBrowser() {
             self.loadCategories().then(function(){
                 self.updateList(self.systemCollections[0]);
@@ -527,6 +529,7 @@ var MyProjects = {
             self.loadCollections(collectionsUrl);
             self.activeFilter(self.collections()[0]);
         };
+
         self.init();
     },
     view : function (ctrl, args) {
@@ -584,6 +587,11 @@ var MyProjects = {
                 })
             ]) : '',
             mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
+                ctrl.loadValue() < 100 ? m('.line-loader', [
+                    m('.line-empty'),
+                    m('.line-full'),
+                    m('.load-message', 'Fetching more projects')
+                ]) : '',
                 ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
                 ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, {
                         filesData : ctrl.data,
