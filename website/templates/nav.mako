@@ -73,8 +73,8 @@
         </li>
         % elif allow_login:
         <li class="dropdown sign-in" data-bind="with: $root.signIn">
-          <div class="btn-group">
-              <a href="${web_url_for('auth_login')}?sign_up=True" class="btn btn-success btn-top-signup m-r-sm">Sign up</a>
+          <div  >
+                  <a href="${web_url_for('auth_login')}?sign_up=True" class="btn btn-success btn-top-signup m-r-xs">Sign up</a>
               <button type="button" class="btn btn-info btn-top-login p-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                   Sign in <span class="caret hidden-xs"></span>
               </button>
