@@ -402,7 +402,6 @@ var QuickSearchProject = {
 
         function searchBar() {
             return m('div.m-v-sm.quick-search-input', [
-                ctrl.loadingComplete() ? m('.m-v-md') : m('.spinner-div.m-v-md', m('.logo-spin.logo-sm.m-r-sm'), 'Loading projects...'),
                 m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
                     ctrl.filter(search.target.value);
                     ctrl.quickSearch();
@@ -457,7 +456,9 @@ var QuickSearchProject = {
                                 return ctrl.formatDate(node);
                             },
                             loadingComplete: ctrl.loadingComplete
-                        })
+                        }),
+                        !ctrl.loadingComplete() && ctrl.filter() ? m('.spinner-div.m-v-md.text-center', m('.logo-spin.logo-sm.m-r-sm'), 'Searching projects...') : m('.m-v-md') ,
+
                     ]),
                     m('.text-center', loadMoreButton())
                 ])
