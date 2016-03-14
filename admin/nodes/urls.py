@@ -7,4 +7,6 @@ urlpatterns = [
         name='search'),
     url(r'^id-(?P<guid>[a-z0-9]+)/$', views.NodeView.as_view(),
         name='node'),
+    url(r'^registration_list/$', views.RegistrationListView.as_view(),
+        name='registrations'),
 ]
