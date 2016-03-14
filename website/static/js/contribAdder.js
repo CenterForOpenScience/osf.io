@@ -440,6 +440,10 @@ AddContributorViewModel = oop.extend(Paginator, {
         // Update error message
         this.inviteError(response.message);
     },
+    hasChildren: function() {
+        var self = this;
+        return (Object.keys(self.nodesOriginal).length > 1);
+    },
     /**
      * get node tree for treebeard from API V1
      */
@@ -451,7 +455,6 @@ AddContributorViewModel = oop.extend(Paginator, {
             dataType: 'json'
         }).done(function (response) {
             self.nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], self.nodesOriginal);
-            self.hasChildren = function() { return (Object.keys(self.nodesOriginal).length > 1); };
             var nodesState = $.extend(true, {}, self.nodesOriginal);
             var nodeParent = response[0].node.id;
             //parent node is changed by default
