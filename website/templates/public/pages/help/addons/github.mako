@@ -1,5 +1,6 @@
-<div class="support-item">
-    <h5 class="support-head f-w-xl">GitHub </h5>
+<div class="support-item  m-t-lg">
+    <span id="github" class="anchor"></span>
+    <h5 class="support-head f-w-xl">Github </h5>
     <div class="support-body">
         <p><a href="https://github.com/">GitHub</a> is a commonly used web based Git repository hosting service. After linking
                 your OSF project to GitHub, you can add files to your GitHub repository and those files can be accessed via the OSF. Likewise, files added to the GitHub repository in your OSF account will update your GitHub account with that file. </p>

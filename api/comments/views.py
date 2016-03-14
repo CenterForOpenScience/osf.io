@@ -67,10 +67,10 @@ class CommentMixin(object):
                     )
                 except NoResultsFound:
                     Comment.update(Q('root_target', 'eq', root_target), data={'root_target': None})
-                    del comment.node.commented_files[root_target._id]
                     raise NotFound
             else:
                 if referent.provider == 'dropbox':
+                    # referent.path is the absolute path for the db file, but wb requires the relative path
                     referent = DropboxFile.load(referent._id)
                 url = waterbutler_api_url_for(comment.node._id, referent.provider, referent.path, meta=True)
                 waterbutler_request = requests.get(

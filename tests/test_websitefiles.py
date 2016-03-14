@@ -127,7 +127,6 @@ class TestFileNodeObj(FilesTestCase):
         created.save()
         file_guids = TestFile.get_file_guids(materialized_path=created.materialized_path,
                                              provider=created.provider,
-                                             guids=[],
                                              node=self.node)
         assert_in(created.get_guid()._id, file_guids)
 
@@ -139,7 +138,6 @@ class TestFileNodeObj(FilesTestCase):
         created.save()
         file_guids = TestFile.get_file_guids(materialized_path='folder/',
                                              provider=created.provider,
-                                             guids=[],
                                              node=self.node)
         assert_in(created.get_guid()._id, file_guids)
 
@@ -152,7 +150,6 @@ class TestFileNodeObj(FilesTestCase):
         created.delete()
         file_guids = TestFile.get_file_guids(materialized_path='folder/',
                                              provider=created.provider,
-                                             guids=[],
                                              node=self.node)
         assert_not_in(guid._id, file_guids)
 

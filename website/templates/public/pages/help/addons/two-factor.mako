@@ -1,4 +1,5 @@
-<div class="support-item">
+<div class="support-item m-t-lg">
+    <span id="twofactor" class="anchor"></span>
     <h5 class="support-head f-w-xl"> Two-factor authentication </h5>
     <div class="support-body">
         <p>Two factor authentication protects your account with both your password and your mobile phone. Make sure nobody can
