@@ -451,7 +451,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             dataType: 'json'
         }).done(function (response) {
             self.nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], self.nodesOriginal);
-            self.hasChildren = (Object.keys(self.nodesOriginal).length > 1);
+            self.hasChildren = function() { return (Object.keys(self.nodesOriginal).length > 1); };
             var nodesState = $.extend(true, {}, self.nodesOriginal);
             var nodeParent = response[0].node.id;
             //parent node is changed by default
