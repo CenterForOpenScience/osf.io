@@ -24,6 +24,8 @@ from api.comments.serializers import (
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
+from framework.mongo import utils as mongo_utils
+from website.addons.wiki.model import NodeWikiPage
 from website.project.model import Comment
 from website.files.models import StoredFileNode, TrashedFileNode
 from website.files.models.dropbox import DropboxFile
@@ -47,14 +49,17 @@ class CommentMixin(object):
 
         # Deleted root targets still appear as tuples in the database and are included in
         # the above query, requiring an additional check
-        if isinstance(comment.root_target.referent, TrashedFileNode):
+        if isinstance(comment.root_target.referent, NodeWikiPage):
+            key = mongo_utils.to_mongo_key(comment.root_target.referent.page_name)
+            if key not in comment.node.wiki_pages_current:
+                comment.root_target = None
+                comment.save()
+
+        elif isinstance(comment.root_target.referent, TrashedFileNode):
             comment.root_target = None
             comment.save()
 
-        if comment.root_target is None:
-            raise NotFound
-
-        if isinstance(comment.root_target.referent, StoredFileNode):
+        elif isinstance(comment.root_target.referent, StoredFileNode):
             root_target = comment.root_target
             referent = root_target.referent
 
@@ -93,6 +98,9 @@ class CommentMixin(object):
                     waterbutler_request.json()['data']
                 except KeyError:
                     raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
+
+        if comment.root_target is None:
+            raise NotFound
 
         if check_permissions:
             # May raise a permission denied
