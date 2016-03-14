@@ -271,10 +271,11 @@ var QuickSearchProject = {
         // Filtering on contrib
         self.contributorMatch = function (node) {
             var contributors = self.contributorMapping[node.id];
-            for (var c = 0; c < contributors.length; c++) {
+            if (contributors) {
+                for (var c = 0; c < contributors.length; c++) {
                 if (contributors[c].toUpperCase().indexOf(self.filter().toUpperCase()) !== -1){
                     return true;
-                }
+                }}
             }
             return false;
         };
