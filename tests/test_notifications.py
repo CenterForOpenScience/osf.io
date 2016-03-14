@@ -816,10 +816,10 @@ class TestCompileSubscriptions(OsfTestCase):
     def test_several_nodes_deep(self):
         self.base_sub.email_transactional.append(self.user_1)
         self.base_sub.save()
-        node2 = factories.NodeFactory(parent=self.shared_node)
-        node3 = factories.NodeFactory(parent=node2)
-        node4 = factories.NodeFactory(parent=node3)
-        node5 = factories.NodeFactory(parent=node4)
+        node2 = factories.NodeFactory(parent=self.shared_node, creator=self.user_1)
+        node3 = factories.NodeFactory(parent=node2, creator=self.user_1)
+        node4 = factories.NodeFactory(parent=node3, creator=self.user_1)
+        node5 = factories.NodeFactory(parent=node4, creator=self.user_1)
         subs = emails.compile_subscriptions(node5, 'file_updated')
         assert_equal(subs, {'email_transactional': [self.user_1._id], 'email_digest': [], 'none': []})
 
