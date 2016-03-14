@@ -401,16 +401,9 @@ var QuickSearchProject = {
         }
 
         function searchBar() {
-            var searchClass = 'form-control disabled';
-            var searchPlaceholder = 'Loading projects for search...';
-
-            if (ctrl.loadingComplete()){
-                searchClass = 'form-control';
-                searchPlaceholder = 'Quick search projects';
-            }
-
             return m('div.m-v-sm.quick-search-input', [
-                m('input[type=search]', {'id': 'searchQuery', 'class': searchClass, placeholder: searchPlaceholder, onkeyup: function(search) {
+                ctrl.loadingComplete() ? m('.m-v-md') : m('.spinner-div.m-v-md', m('.logo-spin.logo-sm.m-r-sm'), 'Loading projects...'),
+                m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
                     ctrl.filter(search.target.value);
                     ctrl.quickSearch();
                 }})
