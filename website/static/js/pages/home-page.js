@@ -62,7 +62,7 @@ $(document).ready(function(){
                                     stayCallback : function _stayCallback_inPanel() {
                                         document.location.reload(true);
                                     }
-                                },'quickSearch')
+                                },'quickSearch', 'add-project')
                             ))
                         ]),
                         m('.row.m-t-lg', [

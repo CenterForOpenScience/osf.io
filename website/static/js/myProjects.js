@@ -1154,7 +1154,6 @@ var Breadcrumbs = {
                     if(showAddProject){
                         addProjectTemplate = m.component(AddProject, {
                             buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
-                                console.log(objectType);
                                 $osf.trackClick('myProjects', 'add-' + objectType, 'open-add-' + objectType + '-modal');
                             }}, [m('i.fa.fa-plus', {style: 'font-size: 10px;'}), label]),
                             parentID: parentID,
