@@ -1,4 +1,5 @@
-<div class="support-item">
+<div class="support-item m-t-lg">
+    <span id="box" class="anchor"></span>
     <h5 class="support-head f-w-xl"> Box </h5>
     <div class="support-body">
         <p><a href="http://box.com/">Box</a> is an online file storage program. After linking your OSF project to Box, you can

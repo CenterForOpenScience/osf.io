@@ -251,7 +251,8 @@ class FileNode(object):
             return cls.create(node=node, path=path)
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, guids, node):
+    def get_file_guids(cls, materialized_path, provider, node, guids=None):
+        guids = guids or []
         materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
             folder_children = cls.find(Q('provider', 'eq', provider) &
@@ -427,9 +428,6 @@ class FileNode(object):
         """
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
-        guid = self.get_guid()
-        if guid and guid._id in self.node.commented_files:
-            del self.node.commented_files[guid._id]
         self.node.save()
         StoredFileNode.remove_one(self.stored_object)
         return trashed

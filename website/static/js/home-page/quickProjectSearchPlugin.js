@@ -411,7 +411,7 @@ var QuickSearchProject = {
 
             if (ctrl.loadingComplete()){
                 searchClass = 'form-control';
-                searchPlaceholder = 'Quick search projects';
+                searchPlaceholder = 'Quick search your projects';
             }
 
             return m('div.m-v-sm.quick-search-input', [
@@ -454,11 +454,11 @@ var QuickSearchProject = {
                     m('.m-b-sm.text-center', [
                         searchBar()
                     ]),
-                    m('p.text-center', 'Go to ', m('a', {href:'/myprojects/', onclick: function() {
+                    m('p.text-center', [ 'Go to ', m('a', {href:'/myprojects/', onclick: function(){
                         $osf.trackClick('quickSearch', 'navigate', 'navigate-to-my-projects');
-                    }}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/', onclick: function() {
+                    }}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/', onclick: function(){
                         $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-everything');
-                    }}, 'Search Everything')),
+                    }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
                             m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),

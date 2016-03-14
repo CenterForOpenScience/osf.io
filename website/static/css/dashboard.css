@@ -6,12 +6,20 @@
 .footer {
     margin-top: 0;
 }
+#alert-container {
+    margin-top:  0;
+}
+#alert-container .alert, .alert-flat {
+    margin-bottom: 0;
+    border-radius: 0;
+}
 /* Main Wrapper */
 .dashboard {
     width: 100%;
     font-family: "Open Sans", 'Helvetica Neue', sans-serif;
     height: 600px;
 }
+
 
 /* Header with breadcrumbs and buttons */
 
