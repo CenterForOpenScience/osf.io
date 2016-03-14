@@ -192,11 +192,9 @@ class Comment(GuidStoredObject, SpamMixin):
         return self.absolute_api_v2_url
 
     def get_comment_page_url(self):
-        if isinstance(self.root_target.referent, StoredFileNode):
-            file_guid = self.root_target._id
-            return settings.DOMAIN + str(file_guid) + '/'
-        else:
+        if isinstance(self.root_target.referent, Node):
             return self.node.absolute_url
+        return settings.DOMAIN + str(self.root_target._id) + '/'
 
     def get_content(self, auth):
         """ Returns the comment content if the user is allowed to see it. Deleted comments
@@ -209,6 +207,20 @@ class Comment(GuidStoredObject, SpamMixin):
             return None
 
         return self.content
+
+    def get_comment_page_title(self):
+        if self.page == Comment.FILES:
+            return self.root_target.referent.name
+        elif self.page == Comment.WIKI:
+            return self.root_target.referent.page_name
+        return ''
+
+    def get_comment_page_type(self):
+        if self.page == Comment.FILES:
+            return 'file'
+        elif self.page == Comment.WIKI:
+            return 'wiki'
+        return self.node.project_or_component
 
     @classmethod
     def find_n_unread(cls, user, node, page, root_id=None):
