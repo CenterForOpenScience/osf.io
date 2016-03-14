@@ -312,7 +312,7 @@ var MyProjects = {
             });
         };
         // GETTING THE NODES
-        self.updateList = function _updateList (linkObject){
+        self.updateList = function _updateList (linkObject, notFirst){
             var success;
             var error;
             if(linkObject.data.systemCollection === 'nodes' && self.allProjectsLoaded()){
@@ -321,7 +321,9 @@ var MyProjects = {
                 self.refreshView(false);
                 return;
             }
-            self.refreshView(true);
+            if(!notFirst){
+                self.refreshView(true);
+            }
             m.redraw();
             success = self.updateListSuccess;
             if(linkObject.data.systemCollection === 'nodes'){
@@ -391,7 +393,7 @@ var MyProjects = {
                 if(!self.allProjectsLoaded()) {
                     collData = { systemCollection : 'nodes' };
                 }
-                self.updateList({link : value.links.next, data : collData });
+                self.updateList({link : value.links.next, data : collData }, true);
                 //return; // stop here so the reloads below don't run
             } else {
                 self.loadingNodePages = false;
