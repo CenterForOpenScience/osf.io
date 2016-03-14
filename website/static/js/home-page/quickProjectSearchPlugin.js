@@ -8,6 +8,7 @@ var Raven = require('raven-js');
 
 // CSS
 require('css/quick-project-search-plugin.css');
+require('loaders.css/loaders.min.css');
 
 // XHR config for apiserver connection
 var xhrconfig = function(xhr) {
@@ -319,7 +320,7 @@ var QuickSearchProject = {
         }
 
         if (!ctrl.someDataLoaded()) {
-            return m('.text-center', m('.logo-spin.logo-xl.m-v-xl'));
+            return m('.loader-inner.ball-scale.text-center.m-v-xl', m(''))
         }
 
         function loadMoreButton(){
@@ -457,7 +458,7 @@ var QuickSearchProject = {
                             },
                             loadingComplete: ctrl.loadingComplete
                         }),
-                        !ctrl.loadingComplete() && ctrl.filter() ? m('.spinner-div.m-v-md.text-center', m('.logo-spin.logo-sm.m-r-sm'), 'Searching projects...') : m('.m-v-md') ,
+                        !ctrl.loadingComplete() && ctrl.filter() ? m('.loader-inner.ball-scale.text-center', m('')) : m('.m-v-md')
 
                     ]),
                     m('.text-center', loadMoreButton())

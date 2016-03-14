@@ -9,6 +9,8 @@ var Raven = require('raven-js');
 
 // CSS
 require('css/new-and-noteworthy-plugin.css');
+require('loaders.css/loaders.min.css');
+
 
 // XHR config for apiserver connection
 var xhrconfig = function(xhr) {
@@ -91,7 +93,7 @@ var NewAndNoteworthy = {
         }
 
         if (!ctrl.someDataLoaded()) {
-            return m('.text-center', m('.logo-spin.logo-xl.m-v-xl'));
+            return m('.loader-inner.ball-scale.text-center.m-v-xl', m(''))
         }
 
         function newAndNoteworthyProjectsTemplate () {
