@@ -22,6 +22,8 @@ def analyze_log_action(action):
         for log in logs
         if log['date']
     ]
+    if not dates:
+        return
     fig = plot_dates(dates)
     plt.title('logged actions for {} ({} total)'.format(action, len(dates)))
     plt.savefig(os.path.join(FIG_PATH, '{}.png'.format(action)))
