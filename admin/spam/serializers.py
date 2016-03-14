@@ -11,6 +11,7 @@ def serialize_comment(comment, full=False):
     return {
         'id': comment._id,
         'author': User.load(comment.user._id),
+        'author_id': comment.user._id,
         'author_path': author_abs_url.url,
         'date_created': comment.date_created,
         'date_modified': comment.date_modified,

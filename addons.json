@@ -26,6 +26,17 @@
         "wiki": "full"
     },
     "addons_commentable": [
-        "osfstorage"
+        "osfstorage",
+        "box",
+        "dataverse",
+        "dropbox",
+        "figshare",
+        "github",
+        "googledrive",
+        "s3"
+    ],
+    "addons_based_on_ids": [
+        "osfstorage",
+        "box"
     ]
 }

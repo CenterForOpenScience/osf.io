@@ -495,9 +495,6 @@ class CommentFactory(ModularOdmFactory):
             instance.root_target = target.referent.root_target
         else:
             instance.root_target = target
-            if isinstance(instance.root_target.referent, StoredFileNode):
-                file_id = instance.root_target._id
-                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
         return instance
 
     @classmethod
@@ -517,10 +514,6 @@ class CommentFactory(ModularOdmFactory):
             instance.root_target = target.referent.root_target
         else:
             instance.root_target = target
-            if isinstance(instance.root_target.referent, StoredFileNode):
-                file_id = instance.root_target._id
-                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
-                instance.node.save()
         instance.save()
         return instance
 

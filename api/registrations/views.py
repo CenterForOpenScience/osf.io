@@ -243,6 +243,9 @@ class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-contributors'
 
+    def get_serializer_class(self):
+        return RegistrationContributorsSerializer
+
 
 class RegistrationContributorDetail(NodeContributorDetail, RegistrationMixin):
     view_category = 'registrations'

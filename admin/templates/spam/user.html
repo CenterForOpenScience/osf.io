@@ -1,32 +1,35 @@
 {% extends "base.html" %}
 {% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+{% load user_extras %}
 
 {% load static %}
 {% block title %}
-    <title>List of Spam</title>
+    <title>User Spam</title>
 {% endblock title %}
 {% block content %}
-    <h2>List of Spam</h2>
+    <h2>User's List of Spam</h2>
+    <a href="{{ user_id | reverse_user }}" class="btn btn-primary">
+        <i class="fa fa-arrow-left"></i>
+        User details
+    </a>
     <div class="btn-group">
     {% if status == '1' %}
-        <a href="{% url 'spam:spam' %}?status=1&page={{ page_number }}"
-           class="btn btn-primary active disabled">Flagged</a>
+        <a href="" class="btn btn-primary active disabled">Flagged</a>
     {% else %}
-        <a href="{% url 'spam:spam' %}?status=1&page={{ page_number }}"
+        <a href="{% reverse_spam_user user_id page=page_number status=1 %}"
            class="btn btn-primary">Flagged</a>
     {% endif %}
     {% if status == '2' %}
-        <a href="{% url 'spam:spam' %}?status=2&page={{ page_number }}"
-           class="btn btn-primary active disabled">Spam</a>
+        <a href="" class="btn btn-primary active disabled">Spam</a>
     {% else %}
-        <a href="{% url 'spam:spam' %}?status=2&page={{ page_number }}"
+        <a href="{% reverse_spam_user user_id page=page_number status=2 %}"
            class="btn btn-primary">Spam</a>
     {% endif %}
     {% if status == '4' %}
-        <a href="{% url 'spam:spam' %}?status=4&page={{ page_number }}"
-           class="btn btn-primary active disabled">Ham</a>
+        <a href="" class="btn btn-primary active disabled">Ham</a>
     {% else %}
-        <a href="{% url 'spam:spam' %}?status=4&page={{ page_number }}"
+        <a href="{% reverse_spam_user user_id page=page_number status=4 %}"
            class="btn btn-primary">Ham</a>
     {% endif %}
     </div>
@@ -65,7 +68,7 @@
             {{ comment.content|truncatechars:30 }}
         </td>
         <td>
-            <a href="{% url 'spam:detail' comment.id %}?page={{ page_number }}"
+            <a href="{% reverse_spam_detail comment.id page=page_number status=status %}"
                class="btn btn-primary">
                 Detail
             </a>

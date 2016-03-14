@@ -64,8 +64,8 @@
             <div class="form-group">
                 <label for="inputEmail3" class="col-sm-3 control-label">Email</label>
                 <div class="col-sm-9">
-                    %if sign_up:
                     <input
+                        ${'autofocus' if not sign_up else ''}
                         type="email"
                         class="form-control"
                         data-bind="value: username"
@@ -73,17 +73,6 @@
                         id="inputEmail3"
                         placeholder="Email"
                     >
-                    %else:
-                    <input
-                        type="email"
-                        class="form-control"
-                        data-bind="value: username"
-                        name="username"
-                        id="inputEmail3"
-                        placeholder="Email"
-                        autofocus
-                    >
-                    %endif
                 </div>
             </div>
             <div class="form-group">
@@ -130,9 +119,8 @@
                 >
                     <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
-                        %if sign_up:
                         <input
-                            autofocus
+                            ${'autofocus' if sign_up else ''}
                             type="text"
                             class="form-control"
                             id="inputName"
@@ -143,19 +131,6 @@
                                     blur: trim.bind($data, fullName)
                                 }"
                         >
-                        %else:
-                            <input
-                            type="text"
-                            class="form-control"
-                            id="inputName"
-                            placeholder="Name"
-                            data-bind="
-                                value: fullName, disable: submitted(),
-                                event: {
-                                    blur: trim.bind($data, fullName)
-                                }"
-                        >
-                        %endif
                         <p class="help-block" data-bind="validationMessage: fullName" style="display: none;"></p>
                     </div>
                 </div>

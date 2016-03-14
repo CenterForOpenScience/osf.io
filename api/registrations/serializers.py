@@ -157,7 +157,7 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
-            'registrations:node-contributor-detail',
+            'registrations:registration-contributor-detail',
             kwargs={
                 'node_id': node_id,
                 'user_id': obj._id

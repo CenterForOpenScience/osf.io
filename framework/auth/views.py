@@ -116,7 +116,6 @@ def auth_login(auth, **kwargs):
     """
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
-    sign_up = request.args.get('sign_up')
     if campaign:
         next_url = campaigns.campaign_url_for(campaign)
     if auth.logged_in:
