@@ -401,7 +401,6 @@ var ProjectOrganizer = {
     },
     view : function (ctrl, args) {
         var tb = ctrl.tb;
-        console.log(args.reload(), args.filesData().length);
         if (args.reload()) {
             tb = ctrl.updateTB();
             args.reload(false);

@@ -129,6 +129,7 @@ var MyProjects = {
         self.loadingAllNodes = false; // True if we are loading all nodes
         self.categoryList = [];
         self.loadValue = m.prop(0); // What percentage of the project loading is done
+        self.loadCounter = m.prop(0); // Count how many items are received from the server
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = [
@@ -341,6 +342,8 @@ var MyProjects = {
             return promise;
         };
         self.updateListSuccess = function _updateListSuccess (value) {
+            self.loadCounter(self.loadCounter() + value.data.length);
+            self.loadValue(Math.round(self.loadCounter() / value.links.meta.total * 100));
             if(self.loadingNodePages){
                 self.data(self.data().concat(value.data));
             } else {
@@ -413,6 +416,7 @@ var MyProjects = {
             }
             sortProjects(self.data());
             self.refreshView(false);
+            value.links.meta
         };
         self.updateListError = function _updateListError (result){
             self.nonLoadTemplate(m('.db-error.text-danger.m-t-lg', [
@@ -589,7 +593,7 @@ var MyProjects = {
             mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
                 ctrl.loadValue() < 100 ? m('.line-loader', [
                     m('.line-empty'),
-                    m('.line-full'),
+                    m('.line-full', { style : 'width: ' + ctrl.loadValue() + '%;'}),
                     m('.load-message', 'Fetching more projects')
                 ]) : '',
                 ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
