@@ -1,4 +1,6 @@
 from django.views.generic import ListView
+from datetime import datetime
+from django.shortcuts import redirect
 
 from website.project.model import Node
 from modularodm import Q
@@ -6,6 +8,22 @@ from modularodm import Q
 from admin.base.views import GuidFormView, GuidView
 from admin.nodes.templatetags.node_extras import reverse_node
 from .serializers import serialize_node
+
+
+def remove_node(request, guid):
+    node = Node.load(guid)
+    node.is_deleted = True  # Auth required for
+    node.deleted_date = datetime.utcnow()
+    node.save()
+    return redirect(reverse_node(guid))
+
+
+def restore_node(request, guid):
+    node = Node.load(guid)
+    node.is_deleted = False
+    node.deleted_date = None
+    node.save()
+    return redirect(reverse_node(guid))
 
 
 class NodeFormView(GuidFormView):
