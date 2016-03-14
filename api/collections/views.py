@@ -75,7 +75,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     OSF Organizer Collection entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of Organizer Collection
         date_created   iso8601 timestamp  timestamp that the collection was created
         date_modified  iso8601 timestamp  timestamp when the collection was last updated
@@ -215,7 +215,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
     OSF Organizer Collection entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of Organizer Collection
         date_created   iso8601 timestamp  timestamp that the collection was created
         date_modified  iso8601 timestamp  timestamp when the collection was last updated
@@ -321,7 +321,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
     OSF Node entities have the "nodes" `type`.
 
         name           type               description
-        ---------------------------------------------------------------------------------
+        =================================================================================
         title          string             title of project or component
         description    string             description of the node
         category       string             node category, must be one of the allowed values
