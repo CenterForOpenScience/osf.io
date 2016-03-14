@@ -4,8 +4,6 @@
 from nose.tools import *  # noqa (PEP8 asserts)
 from flask import Flask
 
-from tests.base import assert_before
-
 import framework
 from website.app import attach_handlers
 from website import settings
@@ -16,18 +14,32 @@ def test_attach_handlers():
     attach_handlers(app, settings)
 
     before_funcs = app.before_request_funcs[None]
+    after_funcs = app.after_request_funcs[None]
+    teardown_funcs = app.teardown_request_funcs[None]
 
-    # Check that necessary handlers are attached
-    assert_in(framework.sessions.prepare_private_key, before_funcs)
-    assert_in(framework.sessions.before_request, before_funcs)
-    assert_in(framework.transactions.handlers.transaction_before_request, before_funcs)
-
-    # Check that the order is correct
-    assert_before(before_funcs, framework.sessions.prepare_private_key,
-                framework.sessions.before_request)
-
-    assert_before(
-        before_funcs,
+    assert_before_funcs = {
+        framework.mongo.handlers.connection_before_request,
+        framework.celery_tasks.handlers.celery_before_request,
         framework.transactions.handlers.transaction_before_request,
-        framework.sessions.prepare_private_key
-    )
+        framework.postcommit_tasks.handlers.postcommit_before_request,
+        framework.sessions.prepare_private_key,
+        framework.sessions.before_request,
+    }
+
+    assert_after_funcs = {
+        framework.postcommit_tasks.handlers.postcommit_after_request,
+        framework.celery_tasks.handlers.celery_after_request,
+        framework.transactions.handlers.transaction_after_request,
+        framework.sessions.after_request,
+    }
+
+    assert_teardown_funcs = {
+        framework.mongo.handlers.connection_teardown_request,
+        framework.celery_tasks.handlers.celery_teardown_request,
+        framework.transactions.handlers.transaction_teardown_request,
+    }
+
+    # Check that necessary handlers are attached and correctly ordered
+    assert_equal(sorted(set(before_funcs)), sorted(assert_before_funcs))
+    assert_equal(sorted(set(after_funcs)), sorted(assert_after_funcs))
+    assert_equal(sorted(set(teardown_funcs)), sorted(assert_teardown_funcs))

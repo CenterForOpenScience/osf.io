@@ -22,7 +22,7 @@ from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.auth.exceptions import InvalidTokenError
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 from framework.mongo import database
 
 from website import mailchimp_utils
