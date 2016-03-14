@@ -2,6 +2,7 @@ import urlparse
 
 import requests
 import logging
+from website.project.model import Comment
 
 from website import settings
 
@@ -17,8 +18,8 @@ def get_bannable_urls(instance, fields_changed):
     bannable_urls = []
     parsed_absolute_url = {}
 
-    # add instance url
     for host in get_varnish_servers():
+        # add instance url
         varnish_parsed_url = urlparse.urlparse(host)
         parsed_absolute_url = urlparse.urlparse(instance.absolute_api_v2_url)
         url_string = '{scheme}://{netloc}{path}.*'.format(scheme=varnish_parsed_url.scheme,
@@ -26,15 +27,28 @@ def get_bannable_urls(instance, fields_changed):
                                                           path=parsed_absolute_url.path)
         bannable_urls.append(url_string)
 
+        if isinstance(instance, Comment):
+            parsed_target_url = urlparse.urlparse(instance.target.referent.absolute_api_v2_url)
+            url_string = '{scheme}://{netloc}{path}.*'.format(scheme=varnish_parsed_url.scheme,
+                                                              netloc=varnish_parsed_url.netloc,
+                                                              path=parsed_target_url.path)
+            bannable_urls.append(url_string)
+            parsed_root_target_url = urlparse.urlparse(instance.root_target.referent.absolute_api_v2_url)
+            url_string = '{scheme}://{netloc}{path}.*'.format(scheme=varnish_parsed_url.scheme,
+                                                              netloc=varnish_parsed_url.netloc,
+                                                              path=parsed_root_target_url.path)
+            bannable_urls.append(url_string)
+
     return bannable_urls, parsed_absolute_url.hostname
 
 
 def ban_url(instance, fields_changed):
+    # TODO: Refactor; Pull url generation into postcommit_task handling so we only ban urls once per request
     timeout = 0.3  # 300ms timeout for bans
     if settings.ENABLE_VARNISH:
         bannable_urls, hostname = get_bannable_urls(instance, fields_changed)
 
-        for url_to_ban in bannable_urls:
+        for url_to_ban in set(bannable_urls):
             try:
                 response = requests.request('BAN', url_to_ban, timeout=timeout, headers=dict(
                     Host=hostname
