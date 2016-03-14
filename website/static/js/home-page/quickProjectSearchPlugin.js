@@ -81,7 +81,12 @@ var QuickSearchProject = {
                         self.nodes().push(node);
                         self.retrieveContributors(node);
                     });
-                self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length);
+                    if (self.filter()) {
+                        self.quickSearch();
+                    }
+                    else {
+                        self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length);
+                    }
                 self.next(result.links.next);
                 self.recursiveNodes(self.next());
                 }, function _error(result){
