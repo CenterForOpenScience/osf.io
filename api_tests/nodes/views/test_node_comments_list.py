@@ -17,27 +17,21 @@ from tests.factories import (
 )
 
 
-class TestNodeCommentsList(ApiTestCase):
+class NodeCommentsListMixin(object):
 
     def setUp(self):
-        super(TestNodeCommentsList, self).setUp()
+        super(NodeCommentsListMixin, self).setUp()
         self.user = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
     def _set_up_private_project_with_comment(self):
-        self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.comment = CommentFactory(node=self.private_project, user=self.user)
-        self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
+        raise NotImplementedError
 
     def _set_up_public_project_with_comment(self):
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_comment = CommentFactory(node=self.public_project, user=self.user)
-        self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
+        raise NotImplementedError
 
     def _set_up_registration_with_comment(self):
-        self.registration = RegistrationFactory(creator=self.user)
-        self.registration_comment = CommentFactory(node=self.registration, user=self.user)
-        self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
+        raise NotImplementedError
 
     def test_return_public_node_comments_logged_out_user(self):
         self._set_up_public_project_with_comment()
@@ -87,6 +81,24 @@ class TestNodeCommentsList(ApiTestCase):
         assert_equal(len(comment_json), 1)
         assert_in(self.registration_comment._id, comment_ids)
 
+
+class TestNodeCommentsList(NodeCommentsListMixin, ApiTestCase):
+
+    def _set_up_private_project_with_comment(self):
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.comment = CommentFactory(node=self.private_project, user=self.user)
+        self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
+
+    def _set_up_public_project_with_comment(self):
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_comment = CommentFactory(node=self.public_project, user=self.user)
+        self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
+
+    def _set_up_registration_with_comment(self):
+        self.registration = RegistrationFactory(creator=self.user)
+        self.registration_comment = CommentFactory(node=self.registration, user=self.user)
+        self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
+
     def test_return_both_deleted_and_undeleted_comments(self):
         self._set_up_private_project_with_comment()
         deleted_comment = CommentFactory(node=self.private_project, user=self.user, is_deleted=True)
@@ -107,80 +119,28 @@ class TestNodeCommentsList(ApiTestCase):
         assert_equal(res.status_code, 404)
 
 
-class TestNodeCommentsListFiles(ApiTestCase):
-    def setUp(self):
-        super(TestNodeCommentsListFiles, self).setUp()
-        self.user = AuthUserFactory()
-        self.non_contributor = AuthUserFactory()
+class TestNodeCommentsListFiles(NodeCommentsListMixin, ApiTestCase):
 
-    def _set_up_private_project_with_file_comment(self):
+    def _set_up_private_project_with_comment(self):
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.file = test_utils.create_test_file(self.private_project, self.user)
         self.comment = CommentFactory(node=self.private_project, user=self.user, target=self.file.get_guid(), page='files')
         self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
 
-    def _set_up_public_project_with_file_comment(self):
+    def _set_up_public_project_with_comment(self):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
         self.public_comment = CommentFactory(node=self.public_project, user=self.user, target=self.public_file.get_guid(), page='files')
         self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
 
-    def _set_up_registration_with_file_comment(self):
+    def _set_up_registration_with_comment(self):
         self.registration = RegistrationFactory(creator=self.user)
         self.registration_file = test_utils.create_test_file(self.registration, self.user)
         self.registration_comment = CommentFactory(node=self.registration, user=self.user, target=self.registration_file.get_guid(), page='files')
         self.registration_url = '/{}registrations/{}/comments/'.format(API_BASE, self.registration._id)
 
-    def test_return_public_file_comments_logged_out_user(self):
-        self._set_up_public_project_with_file_comment()
-        res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
-        comment_json = res.json['data']
-        comment_ids = [comment['id'] for comment in comment_json]
-        assert_equal(len(comment_json), 1)
-        assert_in(self.public_comment._id, comment_ids)
-
-    def test_return_public_file_comments_logged_in_user(self):
-        self._set_up_public_project_with_file_comment()
-        res = self.app.get(self.public_url, auth=self.non_contributor)
-        assert_equal(res.status_code, 200)
-        comment_json = res.json['data']
-        comment_ids = [comment['id'] for comment in comment_json]
-        assert_equal(len(comment_json), 1)
-        assert_in(self.public_comment._id, comment_ids)
-
-    def test_return_private_file_comments_logged_out_user(self):
-        self._set_up_private_project_with_file_comment()
-        res = self.app.get(self.private_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_return_private_file_comments_logged_in_non_contributor(self):
-        self._set_up_private_project_with_file_comment()
-        res = self.app.get(self.private_url, auth=self.non_contributor, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_return_private_file_comments_logged_in_contributor(self):
-        self._set_up_private_project_with_file_comment()
-        res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        comment_json = res.json['data']
-        comment_ids = [comment['id'] for comment in comment_json]
-        assert_equal(len(comment_json), 1)
-        assert_in(self.comment._id, comment_ids)
-
-    def test_return_registration_file_comments_logged_in_contributor(self):
-        self._set_up_registration_with_file_comment()
-        res = self.app.get(self.registration_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        comment_json = res.json['data']
-        comment_ids = [comment['id'] for comment in comment_json]
-        assert_equal(len(comment_json), 1)
-        assert_in(self.registration_comment._id, comment_ids)
-
     def test_return_both_deleted_and_undeleted_file_comments(self):
-        self._set_up_private_project_with_file_comment()
+        self._set_up_private_project_with_comment()
         deleted_comment = CommentFactory(node=self.private_project, user=self.user, target=self.comment.target, is_deleted=True)
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -190,7 +150,7 @@ class TestNodeCommentsListFiles(ApiTestCase):
         assert_in(deleted_comment._id, comment_ids)
 
     def test_comments_on_deleted_files_are_not_returned(self):
-        self._set_up_private_project_with_file_comment()
+        self._set_up_private_project_with_comment()
         # Delete commented file
         osfstorage = self.private_project.get_addon('osfstorage')
         root_node = osfstorage.get_root()
