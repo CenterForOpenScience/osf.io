@@ -69,7 +69,7 @@ var LinkObject = function _LinkObject (type, data, label) {
             return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : 'children', 'embed' : 'contributors' }});
         }
         else if (self.type === 'node') {
-            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }});
+            return $osf.apiV2Url('nodes/' + self.data.id + '/children/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
         }
         // If nothing
         throw new Error('Link could not be generated from linkObject data');
@@ -131,8 +131,8 @@ var MyProjects = {
 
         // Load 'All my Projects' and 'All my Registrations'
         self.systemCollections = [
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
-            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
+            new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
         ];
         // Initial Breadcrumb for All my projects
         self.breadcrumbs = m.prop([
@@ -392,15 +392,16 @@ var MyProjects = {
                     collData = { systemCollection : 'nodes' };
                 }
                 self.updateList({link : value.links.next, data : collData });
-                return; // stop here so the reloads below don't run
+                //return; // stop here so the reloads below don't run
             } else {
                 self.loadingNodePages = false;
+                self.loadingAllNodes = false;
+                self.reload(true);
             }
             if(self.loadingAllNodes) {
                 self.data(self.makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));
                 self.allProjects(self.data());
                 self.generateFiltersList();
-                self.loadingAllNodes = false;
                 self.allProjectsLoaded(true);
             } else {
                 self.data().forEach(function(item){
@@ -408,7 +409,6 @@ var MyProjects = {
                 });
             }
             sortProjects(self.data());
-            self.reload(true);
             self.refreshView(false);
         };
         self.updateListError = function _updateListError (result){
