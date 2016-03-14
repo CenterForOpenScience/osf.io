@@ -163,7 +163,150 @@ class TestNodeCommentsListFiles(NodeCommentsListMixin, ApiTestCase):
         assert_not_in(self.comment._id, comment_ids)
 
 
-class TestNodeCommentCreate(ApiTestCase):
+class NodeCommentsCreateMixin(object):
+
+    def setUp(self):
+        super(NodeCommentsCreateMixin, self).setUp()
+        self.user = AuthUserFactory()
+        self.read_only_contributor = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+
+    def _set_up_payload(self, project_id):
+        raise NotImplementedError
+
+    def _set_up_private_project_with_private_comment_level(self):
+        raise NotImplementedError
+
+    def _set_up_public_project_with_private_comment_level(self):
+        raise NotImplementedError
+
+    def _set_up_public_project_with_public_comment_level(self):
+        raise NotImplementedError
+
+    def _set_up_private_project_with_public_comment_level(self):
+        raise NotImplementedError
+
+    def test_private_node_private_comment_level_logged_in_admin_can_comment(self):
+        self._set_up_private_project_with_private_comment_level()
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
+
+    def test_private_node_private_comment_level_logged_in_read_contributor_can_comment(self):
+        self._set_up_private_project_with_private_comment_level()
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
+
+    def test_private_node_private_comment_level_non_contributor_cannot_comment(self):
+        self._set_up_private_project_with_private_comment_level()
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_private_node_private_comment_level_logged_out_user_cannot_comment(self):
+        self._set_up_private_project_with_private_comment_level()
+        res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_private_node_with_public_comment_level_admin_can_comment(self):
+        """ Test admin contributors can still comment on a private project with comment_level == 'public' """
+        self._set_up_private_project_with_public_comment_level()
+        res = self.app.post_json_api(self.private_project_public_comments_url,
+                                     self.private_project_public_comments_payload,
+                                     auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'],
+                     self.private_project_public_comments_payload['data']['attributes']['content'])
+
+    def test_private_node_with_public_comment_level_read_only_contributor_can_comment(self):
+        """ Test read-only contributors can still comment on a private project with comment_level == 'public' """
+        self._set_up_private_project_with_public_comment_level()
+        res = self.app.post_json_api(self.private_project_public_comments_url,
+                                     self.private_project_public_comments_payload,
+                                     auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'],
+                     self.private_project_public_comments_payload['data']['attributes']['content'])
+
+    def test_private_node_with_public_comment_level_non_contributor_cannot_comment(self):
+        """ Test non-contributors cannot comment on a private project with comment_level == 'public' """
+        self._set_up_private_project_with_public_comment_level()
+        res = self.app.post_json_api(self.private_project_public_comments_url,
+                                     self.private_project_public_comments_payload,
+                                     auth=self.non_contributor.auth,
+                                     expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_private_node_with_public_comment_level_logged_out_user_cannot_comment(self):
+        """ Test logged out users cannot comment on a private project with comment_level == 'public' """
+        self._set_up_private_project_with_public_comment_level()
+        res = self.app.post_json_api(self.private_project_public_comments_url,
+                                     self.private_project_public_comments_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_public_project_with_public_comment_level_admin_can_comment(self):
+        """ Test admin contributor can still comment on a public project when it is
+            configured so any logged-in user can comment (comment_level == 'public') """
+        self._set_up_public_project_with_public_comment_level()
+        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
+
+    def test_public_project_with_public_comment_level_read_only_contributor_can_comment(self):
+        """ Test read-only contributor can still comment on a public project when it is
+            configured so any logged-in user can comment (comment_level == 'public') """
+        self._set_up_public_project_with_public_comment_level()
+        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
+
+    def test_public_project_with_public_comment_level_non_contributor_can_comment(self):
+        """ Test non-contributors can comment on a public project when it is
+            configured so any logged-in user can comment (comment_level == 'public') """
+        self._set_up_public_project_with_public_comment_level()
+        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
+
+    def test_public_project_with_public_comment_level_logged_out_user_cannot_comment(self):
+        """ Test logged out users cannot comment on a public project when it is
+            configured so any logged-in user can comment (comment_level == 'public') """
+        self._set_up_public_project_with_public_comment_level()
+        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_public_node_private_comment_level_admin_can_comment(self):
+        """ Test only contributors can comment on a public project when it is
+            configured so only contributors can comment (comment_level == 'private') """
+        self._set_up_public_project_with_private_comment_level()
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
+
+    def test_public_node_private_comment_level_read_only_contributor_can_comment(self):
+        self._set_up_public_project_with_private_comment_level()
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
+
+    def test_public_node_private_comment_level_non_contributor_cannot_comment(self):
+        self._set_up_public_project_with_private_comment_level()
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_public_node_private_comment_level_logged_out_user_cannot_comment(self):
+        self._set_up_public_project_with_private_comment_level()
+        res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+
+class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
 
     def setUp(self):
         super(TestNodeCommentCreate, self).setUp()
@@ -332,22 +475,7 @@ class TestNodeCommentCreate(ApiTestCase):
     def test_create_comment_invalid_target_id(self):
         self._set_up_private_project_with_private_comment_level()
         project_id = ProjectFactory()._id
-        payload = {
-            'data': {
-                'type': 'comments',
-                'attributes': {
-                    'content': 'This is a comment'
-                },
-                'relationships': {
-                    'target': {
-                        'data': {
-                            'type': 'nodes',
-                            'id': project_id
-                        }
-                    }
-                }
-            }
-        }
+        payload = self._set_up_payload(project_id)
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "Invalid comment target \'" + str(project_id) + "\'.")
@@ -537,133 +665,8 @@ class TestNodeCommentCreate(ApiTestCase):
         assert_equal(res.status_code, 404)
         assert_equal(res.json['errors'][0]['detail'], 'Not found.')
 
-    def test_private_node_private_comment_level_logged_in_admin_can_comment(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
 
-    def test_private_node_private_comment_level_logged_in_read_contributor_can_comment(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
-
-    def test_private_node_private_comment_level_non_contributor_cannot_comment(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-    def test_private_node_private_comment_level_logged_out_user_cannot_comment(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_private_node_with_public_comment_level_admin_can_comment(self):
-        """ Test admin contributors can still comment on a private project with comment_level == 'public' """
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_public_comments_url,
-                                     self.private_project_public_comments_payload,
-                                     auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'],
-                     self.private_project_public_comments_payload['data']['attributes']['content'])
-
-    def test_private_node_with_public_comment_level_read_only_contributor_can_comment(self):
-        """ Test read-only contributors can still comment on a private project with comment_level == 'public' """
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_public_comments_url,
-                                     self.private_project_public_comments_payload,
-                                     auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'],
-                     self.private_project_public_comments_payload['data']['attributes']['content'])
-
-    def test_private_node_with_public_comment_level_non_contributor_cannot_comment(self):
-        """ Test non-contributors cannot comment on a private project with comment_level == 'public' """
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_public_comments_url,
-                                     self.private_project_public_comments_payload,
-                                     auth=self.non_contributor.auth,
-                                     expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-    def test_private_node_with_public_comment_level_logged_out_user_cannot_comment(self):
-        """ Test logged out users cannot comment on a private project with comment_level == 'public' """
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_public_comments_url,
-                                     self.private_project_public_comments_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_public_project_with_public_comment_level_admin_can_comment(self):
-        """ Test admin contributor can still comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
-
-    def test_public_project_with_public_comment_level_read_only_contributor_can_comment(self):
-        """ Test read-only contributor can still comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
-
-    def test_public_project_with_public_comment_level_non_contributor_can_comment(self):
-        """ Test non-contributors can comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
-
-    def test_public_project_with_public_comment_level_logged_out_user_cannot_comment(self):
-        """ Test logged out users cannot comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_public_node_private_comment_level_contributor_can_comment(self):
-        """ Test only contributors can comment on a public project when it is
-            configured so only contributors can comment (comment_level == 'private') """
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
-
-    def test_public_node_private_comment_level_read_only_contributor_can_comment(self):
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
-
-    def test_public_node_private_comment_level_non_contributor_cannot_comment(self):
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-    def test_public_node_private_comment_level_logged_out_user_cannot_comment(self):
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-
-class TestFileCommentCreate(ApiTestCase):
-
-    def setUp(self):
-        super(TestFileCommentCreate, self).setUp()
-        self.user = AuthUserFactory()
-        self.read_only_contributor = AuthUserFactory()
-        self.non_contributor = AuthUserFactory()
+class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
 
     def _set_up_payload(self, file_id):
         return {
@@ -753,132 +756,8 @@ class TestFileCommentCreate(ApiTestCase):
         assert_equal(res.status_code, 404)
         assert_equal(res.json['errors'][0]['detail'], 'Not found.')
 
-    def test_private_node_with_private_comment_level_logged_in_admin_can_comment_on_file(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
 
-    def test_private_node_with_private_comment_level_logged_in_read_contributor_can_comment_on_file(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
-
-    def test_private_node_with_private_comment_level_non_contributor_cannot_comment_on_file(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-    def test_private_node_with_private_comment_level_logged_out_user_cannot_comment_on_file(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_private_node_with_public_comment_level_admin_can_comment_on_file(self):
-        """ Test admin contributors can still comment on a private project with comment_level == 'public' """
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_public_comments_url,
-                                     self.private_project_public_comments_payload,
-                                     auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'],
-                     self.private_project_public_comments_payload['data']['attributes']['content'])
-
-    def test_private_node_with_public_comment_level_read_only_contributor_can_comment_on_file(self):
-        """ Test read-only contributors can still comment on a private project with comment_level == 'public' """
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_public_comments_url,
-                                     self.private_project_public_comments_payload,
-                                     auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'],
-                     self.private_project_public_comments_payload['data']['attributes']['content'])
-
-    def test_private_node_with_public_comment_level_non_contributor_cannot_comment_on_file(self):
-        """ Test non-contributors cannot comment on a private project with comment_level == 'public' """
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_public_comments_url,
-                                     self.private_project_public_comments_payload,
-                                     auth=self.non_contributor.auth,
-                                     expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-    def test_private_node_with_public_comment_level_logged_out_user_cannot_comment_on_file(self):
-        """ Test logged out users cannot comment on a private project with comment_level == 'public' """
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_public_comments_url,
-                                     self.private_project_public_comments_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_public_project_with_public_comment_level_admin_can_comment_on_file(self):
-        """ Test admin contributor can still comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
-
-    def test_public_project_with_public_comment_level_read_only_contributor_can_comment_on_file(self):
-        """ Test read-only contributor can still comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
-
-    def test_public_project_with_public_comment_level_non_contributor_can_comment_on_file(self):
-        """ Test non-contributors can comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_comment_level_payload['data']['attributes']['content'])
-
-    def test_public_project_with_public_comment_level_logged_out_user_cannot_comment_on_file(self):
-        """ Test logged out users cannot comment on a public project when it is
-            configured so any logged-in user can comment (comment_level == 'public') """
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_public_node_with_private_comment_level_contributor_can_comment_on_file(self):
-        self._set_up_public_project_with_private_comment_level()
-        """ Test only contributors can comment on a public project when it is
-            configured so only contributors can comment (comment_level == 'private') """
-        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
-
-    def test_public_node_with_private_comment_level_read_only_contributor_can_comment_on_file(self):
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
-
-    def test_public_node_with_private_comment_level_non_contributor_cannot_comment_on_file(self):
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-    def test_public_node_with_private_comment_level_logged_out_user_cannot_comment_on_file(self):
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-
-class TestCommentRepliesCreate(ApiTestCase):
-    def setUp(self):
-        super(TestCommentRepliesCreate, self).setUp()
-        self.user = AuthUserFactory()
-        self.read_only_contributor = AuthUserFactory()
-        self.non_contributor = AuthUserFactory()
+class TestCommentRepliesCreate(NodeCommentsCreateMixin, ApiTestCase):
 
     def _set_up_payload(self, comment_id):
         return {
@@ -917,16 +796,16 @@ class TestCommentRepliesCreate(ApiTestCase):
         self.private_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'], save=True)
         comment = CommentFactory(node=self.private_project_with_public_comment_level, user=self.user)
         reply = CommentFactory(node=self.private_project_with_public_comment_level, target=Guid.load(comment._id), user=self.user)
-        self.private_project_with_public_comment_level_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level._id)
-        self.private_project_with_public_comment_level_payload = self._set_up_payload(reply._id)
+        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level._id)
+        self.private_project_public_comments_payload = self._set_up_payload(reply._id)
 
     def _set_up_public_project_with_public_comment_level(self):
         self.public_project_with_public_comment_level = ProjectFactory(is_public=True, creator=self.user)
         self.public_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'], save=True)
         comment = CommentFactory(node=self.public_project_with_public_comment_level, user=self.user)
         reply = CommentFactory(node=self.public_project_with_public_comment_level, target=Guid.load(comment._id), user=self.user)
-        self.public_project_with_public_comment_level_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project_with_public_comment_level._id)
-        self.public_project_with_public_comment_level_payload = self._set_up_payload(reply._id)
+        self.public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project_with_public_comment_level._id)
+        self.public_comment_level_payload = self._set_up_payload(reply._id)
 
     def test_create_comment_reply_invalid_target_id(self):
         self._set_up_private_project_with_private_comment_level()
@@ -935,124 +814,6 @@ class TestCommentRepliesCreate(ApiTestCase):
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "Invalid comment target \'" + str(target_comment._id) + "\'.")
-
-    def test_private_node_with_private_comment_level_logged_in_admin_can_reply(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
-
-    def test_private_node_with_private_comment_level_logged_in_read_only_contributor_can_reply(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.private_payload['data']['attributes']['content'])
-
-    def test_private_node_with_private_comment_level_non_contributor_cannot_reply(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-    def test_private_node_with_private_comment_level_logged_out_user_cannot_reply(self):
-        self._set_up_private_project_with_private_comment_level()
-        res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_private_node_with_public_comment_level_admin_can_reply(self):
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_with_public_comment_level_url,
-                                     self.private_project_with_public_comment_level_payload,
-                                     auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'],
-                     self.private_project_with_public_comment_level_payload['data']['attributes']['content'])
-
-    def test_private_node_with_public_comment_level_read_only_contributor_can_reply(self):
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_with_public_comment_level_url,
-                                     self.private_project_with_public_comment_level_payload,
-                                     auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'],
-                     self.private_project_with_public_comment_level_payload['data']['attributes']['content'])
-
-    def test_private_node_with_public_comment_level_non_contributor_cannot_reply(self):
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_with_public_comment_level_url,
-                                     self.private_project_with_public_comment_level_payload,
-                                     auth=self.non_contributor.auth,
-                                     expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-    def test_private_node_with_public_comment_level_logged_out_user_cannot_reply(self):
-        self._set_up_private_project_with_public_comment_level()
-        res = self.app.post_json_api(self.private_project_with_public_comment_level_url,
-                                     self.private_project_with_public_comment_level_payload,
-                                     expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_public_node_public_comment_level_admin_can_reply(self):
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_project_with_public_comment_level_url,
-                                     self.public_project_with_public_comment_level_payload,
-                                     auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'],
-                     self.public_project_with_public_comment_level_payload['data']['attributes']['content'])
-
-    def test_public_node_public_comment_level_read_only_contributor_can_reply(self):
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_project_with_public_comment_level_url,
-                                     self.public_project_with_public_comment_level_payload,
-                                     auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'],
-                     self.public_project_with_public_comment_level_payload['data']['attributes']['content'])
-
-    def test_public_node_public_comment_level_non_contributor_can_reply(self):
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_project_with_public_comment_level_url,
-                                     self.public_project_with_public_comment_level_payload,
-                                     auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'],
-                     self.public_project_with_public_comment_level_payload['data']['attributes']['content'])
-
-    def test_public_node_public_comment_level_logged_out_user_cannot_reply(self):
-        self._set_up_public_project_with_public_comment_level()
-        res = self.app.post_json_api(self.public_project_with_public_comment_level_url,
-                                     self.public_project_with_public_comment_level_payload,
-                                     expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-
-    def test_public_node_with_private_comment_level_logged_in_admin_can_reply(self):
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
-
-    def test_public_node_with_private_comment_level_logged_in_read_only_contributor_can_reply(self):
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.public_payload['data']['attributes']['content'])
-
-    def test_public_node_with_private_comment_level_non_contributor_cannot_reply(self):
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.non_contributor.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
-
-    def test_public_node_with_private_comment_level_logged_out_user_cannot_reply(self):
-        self._set_up_public_project_with_private_comment_level()
-        res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
 
 class TestCommentFiltering(ApiTestCase):
