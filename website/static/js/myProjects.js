@@ -117,12 +117,11 @@ var MyProjects = {
         self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
-        self.nonLoadTemplate = m.prop(m('.db-non-load-template.m-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
+        self.nonLoadTemplate = m.prop(''); // Template for when data is not available or error happens
         self.logUrlCache = {}; // dictionary of load urls to avoid multiple calls with little refactor
         // VIEW STATES
         self.showInfo = m.prop(true); // Show the info panel
         self.showSidebar = m.prop(false); // Show the links with collections etc. used in narrow views
-        self.refreshView = m.prop(true); // Internal loading indicator
         self.allProjectsLoaded = m.prop(false);
         self.allProjects = m.prop([]);
         self.loadingNodePages = false; // Since API returns pages of items, this state shows whether filebrowser is still loading the next pages.
@@ -258,6 +257,7 @@ var MyProjects = {
         /* filesData is the link that loads tree data. This function refreshes that information. */
         self.updateFilesData = function _updateFilesData (linkObject) {
             if (linkObject.link !== self.currentLink) {
+                self.loadCounter(0);
                 self.updateBreadcrumbs(linkObject);
                 self.updateList(linkObject);
                 self.currentLink = linkObject.link;
@@ -314,30 +314,24 @@ var MyProjects = {
             });
         };
         // GETTING THE NODES
-        self.updateList = function _updateList (linkObject, notFirst){
+        self.updateList = function _updateList (linkObject){
             var success;
             var error;
             if(linkObject.data.systemCollection === 'nodes' && self.allProjectsLoaded()){
                 self.data(self.allProjects());
                 self.reload(true);
-                self.refreshView(false);
                 return;
             }
-            if(!notFirst){
-                self.refreshView(true);
-            }
-            m.redraw();
             success = self.updateListSuccess;
             if(linkObject.data.systemCollection === 'nodes'){
                 self.loadingAllNodes = true;
-                self.refreshView(false);
             }
             error = self.updateListError;
             var url = linkObject.link;
             if (typeof url !== 'string'){
                 throw new Error('Url argument for updateList needs to be string');
             }
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig, background: true});
             promise.then(success, error);
             return promise;
         };
@@ -390,6 +384,19 @@ var MyProjects = {
                 }
                 self.selected([]); // Empty selected
             }
+            if(self.loadingAllNodes) {
+                self.data(self.makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));
+                self.allProjects(self.data());
+                self.generateFiltersList();
+                if(self.loadValue() === 100){
+                    self.allProjectsLoaded(true);
+                }
+            } else {
+                self.data().forEach(function(item){
+                    _formatDataforPO(item);
+                });
+            }
+            sortProjects(self.data());
             // if we have more pages keep loading the pages
             if (value.links.next) {
                 self.loadingNodePages = true;
@@ -397,26 +404,18 @@ var MyProjects = {
                 if(!self.allProjectsLoaded()) {
                     collData = { systemCollection : 'nodes' };
                 }
-                self.updateList({link : value.links.next, data : collData }, true);
-                //return; // stop here so the reloads below don't run
+                // TODO: This is a hack, to avoid flashing caused by redraws, need to look into it
+                if(self.loadCounter() > 30){
+                    self.reload(true);
+                }
+                self.updateList({link : value.links.next, data : collData });
             } else {
                 self.loadingNodePages = false;
                 self.loadingAllNodes = false;
                 self.reload(true);
             }
-            if(self.loadingAllNodes) {
-                self.data(self.makeTree(self.data(), self.breadcrumbs()[self.breadcrumbs().length-1]));
-                self.allProjects(self.data());
-                self.generateFiltersList();
-                self.allProjectsLoaded(true);
-            } else {
-                self.data().forEach(function(item){
-                    _formatDataforPO(item);
-                });
-            }
-            sortProjects(self.data());
-            self.refreshView(false);
-            value.links.meta
+            //console.log(self.loadCounter());
+            m.redraw();
         };
         self.updateListError = function _updateListError (result){
             self.nonLoadTemplate(m('.db-error.text-danger.m-t-lg', [
@@ -427,7 +426,6 @@ var MyProjects = {
                 },' Reload \'All my projects\''))
             ]));
             self.data([]);
-            self.refreshView(false);
             throw new Error('Receiving initial data for File Browser failed. Please check your url');
         };
         self.generateFiltersList = function _generateFilterList () {
@@ -594,9 +592,8 @@ var MyProjects = {
                 ctrl.loadValue() < 100 ? m('.line-loader', [
                     m('.line-empty'),
                     m('.line-full', { style : 'width: ' + ctrl.loadValue() + '%;'}),
-                    m('.load-message', 'Fetching more projects')
+                    m('.load-message', '')
                 ]) : '',
-                ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
                 ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, {
                         filesData : ctrl.data,
                         updateSelected : ctrl.updateSelected,
@@ -606,7 +603,8 @@ var MyProjects = {
                         allProjects : ctrl.allProjects,
                         reload : ctrl.reload,
                         resetUi : ctrl.resetUi,
-                        showSidebar : ctrl.showSidebar
+                        showSidebar : ctrl.showSidebar,
+                        loadValue : ctrl.loadValue
                     })
                 )
             ]),

@@ -353,7 +353,10 @@ var tbOptions = {
     hScroll : 300,
     filterTemplate : function() {
         var tb = this;
-        return [
+        var disabledTemplate = m('input.form-control[placeholder="loading projects to search..."][type="text"][disabled]', {
+            style: 'display:inline;'
+        });
+        var enabledTemplate =  [
             m('input.form-control[placeholder="Search all my projects"][type="text"]', {
                 style: 'display:inline;',
                 onkeyup: function(event){
@@ -372,6 +375,11 @@ var tbOptions = {
                 $('.db-poFilter>input').val('');
             } }, tb.options.removeIcon())
         ];
+
+        if(tb.options.loadValue() < 100){
+            return disabledTemplate;
+        }
+        return enabledTemplate;
     },
     hiddenFilterRows : ['tags']
 };
@@ -388,7 +396,8 @@ var ProjectOrganizer = {
                     filesData: args.filesData(),
                     dragContainment : args.wrapperSelector,
                     resetUi : args.resetUi,
-                    showSidebar : args.showSidebar
+                    showSidebar : args.showSidebar,
+                    loadValue : args.loadValue
                 },
                 tbOptions
             );
@@ -401,11 +410,12 @@ var ProjectOrganizer = {
     },
     view : function (ctrl, args) {
         var tb = ctrl.tb;
+        console.log(args.reload(), args.filesData().length);
         if (args.reload()) {
             tb = ctrl.updateTB();
             args.reload(false);
         }
-        return m('.fb-project-organizer#projectOrganizer', tb );
+        return m('.fb-project-organizer#projectOrganizer',tb );
     }
 };
 
