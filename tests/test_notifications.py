@@ -737,6 +737,10 @@ class TestCompileSubscriptions(OsfTestCase):
             node.add_contributor(self.user_2, permissions='admin')
         self.base_project.add_contributor(self.user_3, permissions='write')
         self.shared_node.add_contributor(self.user_3, permissions='write')
+
+        # Remove subscriptions so we start from a blank slate
+        NotificationSubscription.remove()
+
         # Setting basic subscriptions
         self.base_sub = factories.NotificationSubscriptionFactory(
             _id=self.base_project._id + '_file_updated',
@@ -758,18 +762,15 @@ class TestCompileSubscriptions(OsfTestCase):
         self.private_sub.save()
 
     def test_no_subscription(self):
-        node = factories.NodeFactory()
+        node = factories.ProjectFactory()
+        utils.remove_contributor_from_subscriptions(node.creator, node)
+        utils.remove_subscription(node)
         result = emails.compile_subscriptions(node, 'file_updated')
         assert_equal({'email_transactional': [], 'none': [], 'email_digest': []}, result)
 
     def test_no_subscribers(self):
         node = factories.NodeFactory()
-        node_sub = factories.NotificationSubscriptionFactory(
-            _id=node._id + '_file_updated',
-            owner=node,
-            event_name='file_updated'
-        )
-        node_sub.save()
+        NotificationSubscription.remove()
         result = emails.compile_subscriptions(node, 'file_updated')
         assert_equal({'email_transactional': [], 'none': [], 'email_digest': []}, result)
 
