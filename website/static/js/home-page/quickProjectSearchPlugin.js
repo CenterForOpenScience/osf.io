@@ -320,7 +320,7 @@ var QuickSearchProject = {
         }
 
         if (!ctrl.someDataLoaded()) {
-            return m('.loader-inner.ball-scale.text-center.m-v-xl', m(''))
+            return m('.loader-inner.ball-scale.text-center.m-v-xl', m(''));
         }
 
         function loadMoreButton(){
