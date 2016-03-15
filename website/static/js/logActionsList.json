@@ -17,7 +17,7 @@
     "contributor_added":    "${user} added ${contributors} as contributor(s) to ${node}",
     "contributor_removed":  "${user} removed ${contributors} as contributor(s) from ${node}",
     "contributors_reordered":   "${user} reordered contributors for ${node}",
-    "permissions_update":   "${user} changed permissions for ${node}",
+    "permissions_updated":   "${user} changed permissions for ${node}",
     "made_contributor_visible":     "${user} made ${contributors} visible on ${node}",
     "made_contributor_invisible":   "${user} made ${contributors} invisible on ${node}",
     "wiki_updated":     "${user} updated wiki page ${page} to version ${version} of ${node}",

@@ -8,6 +8,7 @@ var Raven = require('raven-js');
 
 // CSS
 require('css/quick-project-search-plugin.css');
+require('loaders.css/loaders.min.css');
 
 // XHR config for apiserver connection
 var xhrconfig = function(xhr) {
@@ -81,7 +82,12 @@ var QuickSearchProject = {
                         self.nodes().push(node);
                         self.retrieveContributors(node);
                     });
-                self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length);
+                    if (self.filter()) {
+                        self.quickSearch();
+                    }
+                    else {
+                        self.populateEligibleNodes(self.eligibleNodes().length, self.nodes().length);
+                    }
                 self.next(result.links.next);
                 self.recursiveNodes(self.next());
                 }, function _error(result){
@@ -266,10 +272,11 @@ var QuickSearchProject = {
         // Filtering on contrib
         self.contributorMatch = function (node) {
             var contributors = self.contributorMapping[node.id];
-            for (var c = 0; c < contributors.length; c++) {
+            if (contributors) {
+                for (var c = 0; c < contributors.length; c++) {
                 if (contributors[c].toUpperCase().indexOf(self.filter().toUpperCase()) !== -1){
                     return true;
-                }
+                }}
             }
             return false;
         };
@@ -306,10 +313,6 @@ var QuickSearchProject = {
             }
         };
 
-        // Onclick, directs user to project page
-        self.nodeDirect = function(node) {
-            location.href = '/'+ node.id;
-        };
     },
     view : function(ctrl) {
         if (ctrl.errorLoading()) {
@@ -317,7 +320,7 @@ var QuickSearchProject = {
         }
 
         if (!ctrl.someDataLoaded()) {
-            return m('.text-center', m('.logo-spin.logo-xl.m-v-xl'));
+            return m('.loader-inner.ball-scale.text-center.m-v-xl', m(''));
         }
 
         function loadMoreButton(){
@@ -406,16 +409,8 @@ var QuickSearchProject = {
         }
 
         function searchBar() {
-            var searchClass = 'form-control disabled';
-            var searchPlaceholder = 'Loading projects for search...';
-
-            if (ctrl.loadingComplete()){
-                searchClass = 'form-control';
-                searchPlaceholder = 'Quick search your projects';
-            }
-
             return m('div.m-v-sm.quick-search-input', [
-                m('input[type=search]', {'id': 'searchQuery', 'class': searchClass, placeholder: searchPlaceholder, onkeyup: function(search) {
+                m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
                     ctrl.filter(search.target.value);
                     ctrl.quickSearch();
                 }, onchange: function() {
@@ -474,8 +469,11 @@ var QuickSearchProject = {
                             getFamilyName: ctrl.getFamilyName,
                             formatDate: function(node) {
                                 return ctrl.formatDate(node);
-                            }
-                        })
+                            },
+                            loadingComplete: ctrl.loadingComplete
+                        }),
+                        !ctrl.loadingComplete() && ctrl.filter() ? m('.loader-inner.ball-scale.text-center', m('')) : m('.m-v-md')
+
                     ]),
                     m('.text-center', loadMoreButton())
                 ])
@@ -487,7 +485,7 @@ var QuickSearchProject = {
 
 var QuickSearchNodeDisplay = {
     view: function(ctrl, args) {
-        if (args.eligibleNodes().length === 0 && args.filter() != null) {
+        if (args.eligibleNodes().length === 0 && args.filter() != null && args.loadingComplete() === true) {
             return m('.row.m-v-sm', m('.col-sm-12',
                 m('.row',
                     m('.col-sm-12', m('em', 'No results found!'))

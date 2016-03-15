@@ -75,6 +75,7 @@ var AddProject = {
             m.request({method : 'POST', url : url, data : data, config : xhrconfig})
                 .then(success, error);
             self.newProjectName('');
+            self.isValid(false);
         };
         self.reset = function _reset(){
             self.newProjectName('');
@@ -82,6 +83,7 @@ var AddProject = {
             self.newProjectDesc('');
             self.newProjectCategory(self.defaultCat);
             $('.modal').modal('hide');
+            self.isValid(false);
         };
     },
     view : function (ctrl, options, trackingCategory, trackingAction) {
