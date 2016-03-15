@@ -826,18 +826,27 @@ class TestCompileSubscriptions(OsfTestCase):
     def test_several_nodes_deep_precedence(self):
         self.base_sub.email_transactional.append(self.user_1)
         self.base_sub.save()
-        node2 = factories.NodeFactory(parent=self.shared_node)
-        node3 = factories.NodeFactory(parent=node2)
-        node4 = factories.NodeFactory(parent=node3)
-        node4_subscription = factories.NotificationSubscriptionFactory(
-            _id=node4._id + '_file_updated',
-            owner=node4,
-            event_name='file_updated'
+        node2 = factories.NodeFactory(parent=self.shared_node, creator=self.user_1)
+        utils.remove_contributor_from_subscriptions(self.user_1, node2)
+        utils.remove_subscription(node2)
+        node3 = factories.NodeFactory(parent=node2, creator=self.user_1)
+        utils.remove_contributor_from_subscriptions(self.user_1, node3)
+        utils.remove_subscription(node3)
+        node4 = factories.NodeFactory(parent=node3, creator=self.user_1)
+
+        node4_subscription = NotificationSubscription.find_one(
+            Q('_id', 'eq', node4._id + '_file_updated') &
+            Q('owner', 'eq', node4) &
+            Q('event_name', 'eq', 'file_updated')
         )
-        node4_subscription.save()
+
+        node4_subscription.email_transactional = []
         node4_subscription.email_digest.append(self.user_1)
         node4_subscription.save()
-        node5 = factories.NodeFactory(parent=node4)
+
+        node5 = factories.NodeFactory(parent=node4, creator=self.user_1)
+        utils.remove_contributor_from_subscriptions(node5.creator, node5)
+        utils.remove_subscription(node5)
         subs = emails.compile_subscriptions(node5, 'file_updated')
         assert_equal(subs, {'email_transactional': [], 'email_digest': [self.user_1._id], 'none': []})
 
