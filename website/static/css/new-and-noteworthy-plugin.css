@@ -22,3 +22,6 @@
     background-color: #337AB7;
     color: #fff;
 }
+.public-projects-box > a:hover {
+    text-decoration: none;
+}
