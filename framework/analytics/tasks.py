@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from framework.tasks import app
-from framework.tasks.handlers import queued_task
+from framework.celery_tasks import app
+from framework.celery_tasks.handlers import queued_task
 from framework.transactions.context import transaction
 
 from . import piwik

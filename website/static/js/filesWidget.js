@@ -96,8 +96,10 @@ FilesWidget.prototype.init = function() {
 };
 FilesWidget.prototype.destroy = function() {
     if (this.filebrowser) {
-        this.filebrowser.grid.tbController.destroy();
-        delete this.filebrowser.tbController;
+        if (this.filebrowser.grid.tbController) {
+            this.filebrowser.grid.tbController.destroy();
+            delete this.filebrowser.tbController;
+        }
         delete this.filebrowser;
     }
 };

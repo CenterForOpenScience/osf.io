@@ -37,6 +37,7 @@
     "list-of-licenses": "git://github.com/samchrisinger/list-of-licenses.git#1f1d9ca8a9aba56d57fca6e27df80b8298048cc8",
     "livedb": "~0.4.8",
     "livedb-mongo": "~0.4.1",
+    "loaders.css": "^0.1.2",
     "markdown-it": "~4.1.0",
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",
