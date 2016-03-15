@@ -1,15 +1,19 @@
 from django.views.generic import ListView
 from datetime import datetime
 from django.shortcuts import redirect
+from django.contrib.auth.decorators import user_passes_test
+from django.utils.decorators import method_decorator
 
 from website.project.model import Node
 from modularodm import Q
 
 from admin.base.views import GuidFormView, GuidView
+from admin.base.utils import osf_admin_check
 from admin.nodes.templatetags.node_extras import reverse_node
 from .serializers import serialize_node
 
 
+@user_passes_test(osf_admin_check)
 def remove_node(request, guid):
     node = Node.load(guid)
     node.is_deleted = True  # Auth required for
@@ -18,6 +22,7 @@ def remove_node(request, guid):
     return redirect(reverse_node(guid))
 
 
+@user_passes_test(osf_admin_check)
 def restore_node(request, guid):
     node = Node.load(guid)
     node.is_deleted = False
@@ -30,6 +35,10 @@ class NodeFormView(GuidFormView):
     template_name = 'nodes/search.html'
     object_type = 'node'
 
+    @method_decorator(user_passes_test(osf_admin_check))  # TODO: make into mix-in remove with 1.9
+    def dispatch(self, request, *args, **kwargs):
+        return super(NodeFormView, self).dispatch(request, *args, **kwargs)
+
     @property
     def success_url(self):
         return reverse_node(self.guid)
@@ -38,6 +47,10 @@ class NodeFormView(GuidFormView):
 class NodeView(GuidView):
     template_name = 'nodes/node.html'
     context_object_name = 'node'
+
+    @user_passes_test(osf_admin_check)  # TODO: make into mix-in remove with 1.9
+    def dispatch(self, request, *args, **kwargs):
+        return super(NodeView, self).dispatch(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
         self.guid = self.kwargs.get('guid', None)
@@ -50,6 +63,10 @@ class RegistrationListView(ListView):
     paginate_orphans = 1
     ordering = 'date_created'
     context_object_name = '-node'
+
+    @user_passes_test(osf_admin_check)  # TODO: make into mix-in remove with 1.9
+    def dispatch(self, request, *args, **kwargs):
+        return super(RegistrationListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         query = (
