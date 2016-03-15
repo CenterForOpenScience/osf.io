@@ -46,19 +46,19 @@ AddContributorViewModel = oop.extend(Paginator, {
             };
         self.nodesOriginal = {};
         //state of current nodes
-        self.nodesToChange = ko.observableArray();
+        self.childrenToChange = ko.observableArray();
         self.nodesState = ko.observable();
         //nodesState is passed to nodesSelectTreebeard which can update it and key off needed action.
         self.nodesState.subscribe(function (newValue) {
             //The subscribe causes treebeard changes to change which nodes will be affected
-            var nodesToChange = [];
+            var childrenToChange = [];
             for (var key in newValue) {
                 newValue[key].changed = newValue[key].checked !== self.nodesOriginal[key].checked;
-                if (newValue[key].changed) {
-                    nodesToChange.push(key);
+                if (newValue[key].changed && key !== self.nodeId) {
+                    childrenToChange.push(key);
                 }
             }
-            self.nodesToChange(nodesToChange);
+            self.childrenToChange(childrenToChange);
             m.redraw(true);
         });
 
@@ -92,7 +92,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.inviteError = ko.observable('');
         self.doneSearching = ko.observable(false);
         self.totalPages = ko.observable(0);
-        self.nodesToChange = ko.observableArray();
+        self.childrenToChange = ko.observableArray();
 
         self.foundResults = ko.pureComputed(function () {
             return self.query() && self.results().length;
@@ -380,7 +380,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                     tUser.permission = permission; //shoving the permission value into permission
                     return tUser; //user with simplified permissions
                 }),
-                node_ids: self.nodesToChange()
+                node_ids: self.childrenToChange()
             }
         ).done(function (response) {
             if (self.async) {
@@ -412,7 +412,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.query('');
         self.results([]);
         self.selection([]);
-        self.nodesToChange([]);
+        self.childrenToChange([]);
         self.notification(false);
     },
     postInviteRequest: function (fullname, email) {
