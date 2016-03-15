@@ -1106,7 +1106,7 @@ var Breadcrumbs = {
         return m('.db-breadcrumbs', m('ul', [
             items.map(function(item, index, array){
                 if(index === array.length-1){
-                    var label = item.type === 'node' ? ' Add component' : ' Add project';
+                    var label = item.type === 'node' ? ' Create component' : ' Create project';
                     var title = item.type === 'node' ? 'Create new component' : 'Create new project';
                     var parentID = item.type === 'node' ? args.breadcrumbs()[args.breadcrumbs().length - 1].data.id : null;
                     var showAddProject = true;
