@@ -447,17 +447,37 @@ var MyProjects = {
                 }
             });
 
+            // Sorting by number of items utility function
+            function sortByCountDesc (a,b){
+                var aValue = a.data.count;
+                var bValue = b.data.count;
+                if (bValue > aValue) {
+                    return 1;
+                }
+                if (bValue < aValue) {
+                    return -1;
+                }
+                return 0;
+            }
+
+
             // Add to lists with numbers
             self.nameFilters = [];
             for (var user in self.users){
                 var u2 = self.users[user];
                 self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name));
             }
+            // order names
+            self.nameFilters.sort(sortByCountDesc);
+
             self.tagFilters = [];
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
                 self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag));
             }
+            // order tags
+            self.tagFilters.sort(sortByCountDesc);
+
 
         };
 
@@ -780,7 +800,7 @@ var Collections = {
                                     }
                                 });
                             }
-                            $osf.growl(message,null, 'warning', 5000);
+                            $osf.growl(message,null, 'warning', 4000);
                             doNext(true); // don't add to count
                         }); // In case of success or error. It doesn't look like mithril has a general .done method
                     }

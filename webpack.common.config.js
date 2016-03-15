@@ -72,6 +72,7 @@ var entry = {
         'select2',
         'dropzone',
         'knockout-sortable',
+        'loaders.css',
         'treebeard',
         'jquery.cookie',
         'URIjs',
