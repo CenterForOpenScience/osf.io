@@ -9,7 +9,6 @@ logger = logging.getLogger(__file__)
 
 
 def add_groups(*args):
-    print args
     group, created = Group.objects.get_or_create(name='prereg_group')
     if created:
         logger.info('prereg_group created')
