@@ -1,10 +1,12 @@
 from nose.tools import *  # flake8: noqa
 from datetime import datetime
 
+from framework.guid.model import Guid
+
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from tests.base import ApiTestCase
-from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory
+from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, NodeWikiFactory
 
 
 class ReportDetailViewMixin(object):
@@ -276,3 +278,33 @@ class TestFileCommentReportDetailView(ReportDetailViewMixin, ApiTestCase):
         self.public_comment.save()
         self.public_url = '/{}comments/{}/reports/{}/'.format(API_BASE, self.public_comment._id, self.user._id)
 
+
+class TestWikiCommentReportDetailView(ReportDetailViewMixin, ApiTestCase):
+
+    def _set_up_private_project_comment_reports(self):
+        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
+        self.private_project.add_contributor(contributor=self.contributor, save=True)
+        self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
+        self.comment = CommentFactory.build(node=self.private_project, target=Guid.load(self.wiki._id), user=self.contributor)
+        self.comment.reports = {self.user._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
+        self.comment.save()
+        self.private_url = '/{}comments/{}/reports/{}/'.format(API_BASE, self.comment._id, self.user._id)
+
+    def _set_up_public_project_comment_reports(self):
+        self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
+        self.public_project.add_contributor(contributor=self.contributor, save=True)
+        self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
+        self.public_comment = CommentFactory.build(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.contributor)
+        self.public_comment.reports = {self.user._id: {
+            'category': 'spam',
+            'text': 'This is spam',
+            'date': datetime.utcnow(),
+            'retracted': False,
+        }}
+        self.public_comment.save()
+        self.public_url = '/{}comments/{}/reports/{}/'.format(API_BASE, self.public_comment._id, self.user._id)
