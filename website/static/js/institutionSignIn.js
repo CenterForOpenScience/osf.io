@@ -20,7 +20,7 @@ var ViewModel = function() {
         ).done(function (response) {
             self.instNames(response.data.map(function(item){
                 var name = item.attributes.name;
-                self.insts[name] = item.attributes.auth_url;
+                self.insts[name] = item.attributes.auth_url + '&target=' + encodeURIComponent(window.contextVars.institution_redirect);
                 return name;
             }));
         }).fail(function (xhr, status, error) {

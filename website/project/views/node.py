@@ -6,7 +6,7 @@ from itertools import islice
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationValueError
+from modularodm.exceptions import ModularOdmException, ValidationValueError, NoResultsFound
 
 from framework import status
 from framework.utils import iso8601format
@@ -33,7 +33,7 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title, Institution
 from website.project.forms import NewNodeForm
 from website.project.metadata.utils import serialize_meta_schemas
 from website.models import Node, Pointer, WatchConfig, PrivateLink, Comment
@@ -246,6 +246,15 @@ def node_forks(auth, node, **kwargs):
 @must_be_logged_in
 @must_be_contributor
 def node_setting(auth, node, **kwargs):
+
+    #check institutions:
+    try:
+        inst = Institution.find_one(Q('email_domain', 'eq', auth.user.username.split('@')[1]))
+        if inst not in auth.user.affiliated_institutions:
+            auth.user.affiliated_institutions.append(inst)
+            auth.user.save()
+    except (IndexError, NoResultsFound):
+        pass
 
     ret = _view_project(node, auth, primary=True)
 

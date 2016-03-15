@@ -392,6 +392,9 @@ var ProjectOrganizer = {
                 },
                 tbOptions
             );
+            if (args.resolveToggle){
+                poOptions.resolveToggle = args.resolveToggle;
+            }
             var tb = new Treebeard(poOptions, true);
             m.redraw.strategy('all');
             return tb;
