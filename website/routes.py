@@ -737,7 +737,7 @@ def make_url_map(app):
     # Institution
 
     process_rules(app, [
-        Rule('/institution/<id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
+        Rule('/institution/<inst_id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
     ])
 
     # Project
