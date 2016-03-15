@@ -951,6 +951,7 @@ def node_child_tree(user, node_ids):
         }
 
         items.append(item)
+
     return items
 
 
