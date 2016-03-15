@@ -35,7 +35,8 @@ class OsfStorageFileNode(FileNode):
         return cls.create(node=node, path=path)
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, guids, node=None):
+    def get_file_guids(cls, materialized_path, provider, node=None, guids=None):
+        guids = guids or []
         path = materialized_path.strip('/')
         file_obj = cls.load(path)
         if not file_obj:

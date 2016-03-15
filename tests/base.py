@@ -31,7 +31,7 @@ from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
-from framework.tasks.handlers import celery_before_request
+from framework.celery_tasks.handlers import celery_before_request
 
 from website.project.model import (
     Node, NodeLog, Tag, WatchConfig, MetaSchema,
