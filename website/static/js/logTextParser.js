@@ -138,6 +138,9 @@ var LogPieces = {
                     if(index !== arr.length - 1){
                         comma = ', ';
                     }
+                    if(index === arr.length-2){
+                        comma = ' and ';
+                    }
                     return [ m('a', {href: item.links.html}, item.attributes.full_name), comma];
                 }));
             }
