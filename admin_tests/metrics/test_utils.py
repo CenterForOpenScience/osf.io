@@ -1,12 +1,13 @@
 from nose import tools as nt
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from tests.base import AdminTestCase
 from tests.factories import NodeFactory, RegistrationFactory
 
 from website.project.model import Node
 
-from admin.metrics.utils import get_projects
+from admin.metrics.utils import get_projects, get_osf_statistics
+from admin.metrics.models import OSFStatistic
 
 
 class TestMetricsGetProjects(AdminTestCase):
@@ -34,3 +35,15 @@ class TestMetricsGetProjects(AdminTestCase):
         time = self.node.date_created - timedelta(seconds=1)
         count = get_projects(time=time)
         nt.assert_equal(count, 0)
+
+
+class TestMetricsGetStatistics(AdminTestCase):
+    def setUp(self):
+        super(TestMetricsGetStatistics, self).setUp()
+        Node.remove()
+        self.node = NodeFactory()
+        self.reg = RegistrationFactory()
+
+    def test_time_now(self):
+        get_osf_statistics(datetime.utcnow())
+        nt.assert_equal(OSFStatistic.objects.count(), 1)
