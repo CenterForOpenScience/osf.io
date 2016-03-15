@@ -22,7 +22,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 options={'verify_exp': False},
                 algorithm='HS256'
             )
-        except (jwt.InvalidTokenError, KeyError, ValueError, TypeError):
+        except (jwt.InvalidTokenError, TypeError):
             raise AuthenticationFailed
 
         # The JWT `data` payload is expected in the following structure.

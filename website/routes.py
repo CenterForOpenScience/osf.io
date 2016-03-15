@@ -21,7 +21,7 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from modularodm import Q
-from modularodm.exceptions import QueryException
+from modularodm.exceptions import QueryException, NoResultsFound
 
 from website import util
 from website import prereg
@@ -29,6 +29,7 @@ from website import settings
 from website import language
 from website.util import paths
 from website.util import sanitize
+from website.models import Institution
 from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.citations import views as citation_views
@@ -41,7 +42,6 @@ from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
-from website.models import Institution
 
 def get_globals():
     """Context variables that are available for every template rendered by
@@ -52,7 +52,7 @@ def get_globals():
         try:
             inst_id = (Institution.find_one(Q('domain', 'eq', request.host)))._id
             login_url = '{}institution/{}'.format(settings.DOMAIN, inst_id)
-        except:
+        except NoResultsFound:
             login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
         login_url = request.url
@@ -737,7 +737,7 @@ def make_url_map(app):
     # Institution
 
     process_rules(app, [
-        Rule('/institution/<id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
+        Rule('/institution/<inst_id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
     ])
 
     # Project

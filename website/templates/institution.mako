@@ -14,7 +14,9 @@
         <div class="col-sm-3"><img class="img-circle" height="110" width="110" src=${ logo_path }></div>
         <div class="col-sm-3">
             <h2>${ name }</h2>
-            <h4><small class="hidden-sm">${description}</small></h4>
+            % if description:
+                <h4><small class="hidden-sm">${description}</small></h4>
+            % endif
         </div>
         <div class="col-sm-2"></div>
     </div>

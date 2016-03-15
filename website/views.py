@@ -6,6 +6,7 @@ import urllib
 import httplib as http
 
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 from flask import request
 
 from framework import utils
@@ -22,8 +23,7 @@ from framework.auth.forms import ForgotPasswordForm
 from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
-from website.models import Node
-from website.models import Institution
+from website.models import Node, Institution
 from website.util import sanitize
 from website.project import model
 from website.util import permissions
@@ -88,7 +88,7 @@ def index():
             'institution': True,
             'redirect_url': '/institution/{}/'.format(inst._id)
         }
-    except:
+    except NoResultsFound:
         pass
     return {'home': True}
 
@@ -109,12 +109,6 @@ def dashboard(auth):
             'dashboard_id': dashboard_id,
             }
 
-@must_be_logged_in
-def home(auth):
-    user = auth.user
-    return {
-        'userId': user._id,
-    }
 
 def validate_page_num(page, pages):
     if page < 0 or (pages and page >= pages):

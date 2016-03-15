@@ -1,10 +1,14 @@
-from website.models import Institution
+import httplib as http
 
-def view_institution(**kwargs):
-    inst = Institution.load(kwargs.get('id'))
+from .model import Institution
+from framework.exceptions import HTTPError
 
+def view_institution(inst_id, **kwargs):
+    inst = Institution.load(inst_id)
+    if not inst:
+        raise HTTPError(http.NOT_FOUND)
     return {
-        'id': kwargs.get('id'),
+        'id': inst._id,
         'name': inst.name,
         'logo_path': inst.logo_path,
         'description': inst.description or '',

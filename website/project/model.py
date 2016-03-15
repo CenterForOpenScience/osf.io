@@ -13,6 +13,7 @@ import warnings
 
 import pytz
 from django.core.urlresolvers import reverse
+from django.core.validators import URLValidator
 
 from modularodm import Q
 from modularodm import fields
@@ -49,6 +50,7 @@ from website.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     UserNotAffiliatedError,
 )
+from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.files.models.base import StoredFileNode
@@ -809,68 +811,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     template_node = fields.ForeignField('node', backref='template_node', index=True)
 
     piwik_site_id = fields.StringField()
-
-    # Primary institution node is attached to
-    primary_institution = fields.ForeignField('institution')
-
-    affiliated_institutions = fields.ForeignField('institution', list=True)
-
-    def add_primary_institution(self, user, inst):
-        if not user.is_affiliated_with_institution(inst):
-            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if inst == self.primary_institution:
-            return False
-        previous = self.primary_institution
-        self.primary_institution = inst
-        if inst not in self.affiliated_institutions:
-            self.affiliated_institutions.append(inst)
-        self.add_log(
-            action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
-            params={
-                'node': self._primary_key,
-                'institution': {
-                    'id': inst._id,
-                    'name': inst.name
-                },
-                'previous_institution': {
-                    'id': previous._id if previous else None,
-                    'name': previous.name if previous else 'None'
-                }
-            },
-            auth=Auth(user)
-        )
-        return True
-
-    def remove_primary_institution(self, user):
-        inst = self.primary_institution
-        if not inst:
-            return False
-        self.primary_institution = None
-        if inst in self.affiliated_institutions:
-            self.affiliated_institutions.remove(inst)
-        self.add_log(
-            action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
-            params={
-                'node': self._primary_key,
-                'institution': {
-                    'id': inst._id,
-                    'name': inst.name
-                }
-            },
-            auth=Auth(user)
-        )
-        return True
-
-    def institution_id(self):
-        # Empty string over None, as None was somehow being serialized to <string>'None',
-        # there's probably a better way to do this or a problem there.
-        return self.primary_institution._id if self.primary_institution else ''
-
-    def institution_url(self):
-        return self.absolute_api_v2_url + 'institution/'
-
-    def institution_relationship_url(self):
-        return self.absolute_api_v2_url + 'relationships/institution/'
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
@@ -2201,7 +2141,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.tags = self.tags
         registered.piwik_site_id = None
         registered.primary_institution = self.primary_institution
-        registered.affiliated_institutions = self.affiliated_institutions
+        registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
 
@@ -3434,6 +3374,113 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
             save=True,
         )
+
+    is_institution = fields.BooleanField(default=False, index=True)
+
+    institution_id = fields.StringField(unique=True)
+    institution_domain = fields.StringField(list=True)
+    institution_auth_url = fields.StringField(validate=URLValidator())
+    institution_logo_name = fields.StringField()
+    institution_email_domain = fields.StringField(list=True)
+
+    @classmethod
+    def find(cls, query=None, allow_institution=False, **kwargs):
+        if not allow_institution:
+            query = (query & Q('is_institution', 'ne', True)) if query else Q('is_institution', 'ne', True)
+        return super(Node, cls).find(query, **kwargs)
+
+    @classmethod
+    def find_one(cls, query=None, allow_institution=False, **kwargs):
+        if not allow_institution:
+            query = (query & Q('is_institution', 'ne', True)) if query else Q('is_institution', 'ne', True)
+        return super(Node, cls).find_one(query, **kwargs)
+
+    @classmethod
+    def find_by_institution(cls, inst, query=None):
+        inst_node = inst.node
+        query = query & Q('_primary_institution', 'eq', inst_node)
+        return cls.find(query, allow_institution=True)
+
+    # Primary institution node is attached to
+    _primary_institution = fields.ForeignField('node')
+
+    @property
+    def primary_institution(self):
+        '''
+        Should behave as if this was a foreign field pointing to Institution
+        :return: this node's _primary_institution wrapped with Institution.
+        '''
+        return Institution(self._primary_institution) if self._primary_institution else None
+
+    @primary_institution.setter
+    def primary_institution(self, institution):
+        self._primary_institution = institution.node if institution else None
+
+    _affiliated_institutions = fields.ForeignField('node', list=True)
+
+    @property
+    def affiliated_institutions(self):
+        '''
+        Should behave as if this was a foreign field pointing to Institution
+        :return: this node's _affiliated_institutions wrapped with Institution as a list.
+        '''
+        return AffiliatedInstitutionsList([Institution(node) for node in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
+
+    def add_primary_institution(self, user, inst, log=True):
+        if not isinstance(inst, Institution):
+            raise TypeError
+        if not user.is_affiliated_with_institution(inst):
+            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
+        if inst == self.primary_institution:
+            return False
+        previous = self.primary_institution if self.primary_institution else None
+        self.primary_institution = inst
+        if inst not in self.affiliated_institutions:
+            self.affiliated_institutions.append(inst)
+        if log:
+            self.add_log(
+                action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
+                params={
+                    'node': self._primary_key,
+                    'institution': {
+                        'id': inst._id,
+                        'name': inst.name
+                    },
+                    'previous_institution': {
+                        'id': previous._id if previous else None,
+                        'name': previous.name if previous else 'None'
+                    }
+                },
+                auth=Auth(user)
+            )
+        return True
+
+    def remove_primary_institution(self, user, log=True):
+        inst = self.primary_institution
+        if not inst:
+            return False
+        self.primary_institution = None
+        if inst in self.affiliated_institutions:
+            self.affiliated_institutions.remove(inst)
+        if log:
+            self.add_log(
+                action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
+                params={
+                    'node': self._primary_key,
+                    'institution': {
+                        'id': inst._id,
+                        'name': inst.name
+                    }
+                },
+                auth=Auth(user)
+            )
+        return True
+
+    def institution_url(self):
+        return self.absolute_api_v2_url + 'institution/'
+
+    def institution_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institution/'
 
 
 @Node.subscribe('before_save')

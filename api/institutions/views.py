@@ -7,7 +7,7 @@ from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Institution, Node, User
+from website.models import Node, User, Institution
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
@@ -28,11 +28,12 @@ class InstitutionMixin(object):
 
     def get_institution(self):
         inst = get_object_or_error(
-            Institution,
-            self.kwargs[self.institution_lookup_url_kwarg],
-            display_name='institution'
+            Node,
+            Q('institution_id', 'eq', self.kwargs[self.institution_lookup_url_kwarg]),
+            display_name='institution',
+            allow_institution=True
         )
-        return inst
+        return Institution(inst)
 
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
@@ -149,21 +150,20 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        inst = self.get_institution()
-        inst_query = Q('primary_institution', 'eq', inst)
         base_query = self.base_node_query
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
             permission_query = (permission_query | Q('contributors', 'eq', user._id))
 
-        query = base_query & permission_query & inst_query
+        query = base_query & permission_query
         return query
 
     # overrides RetrieveAPIView
     def get_queryset(self):
+        inst = self.get_institution()
         query = self.get_query_from_request()
-        return Node.find(query)
+        return Node.find_by_institution(inst, query)
 
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
@@ -185,7 +185,7 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         inst = self.get_institution()
-        query = Q('affiliated_institutions', 'eq', inst)
+        query = Q('_affiliated_institutions', 'eq', inst.node)
         return query
 
     # overrides RetrieveAPIView
