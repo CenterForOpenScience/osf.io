@@ -978,44 +978,19 @@ class TestSendEmails(OsfTestCase):
         super(TestSendEmails, self).setUp()
         self.user = factories.AuthUserFactory()
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionFactory(
-            _id=self.project._id + '_' + 'comments',
-            owner=self.project,
-            event_name='comments'
-        )
-        self.project_subscription.save()
-        self.project_subscription.email_transactional.append(self.project.creator)
-        self.project_subscription.save()
-
         self.node = factories.NodeFactory(parent=self.project)
-        self.node_subscription = factories.NotificationSubscriptionFactory(
-            _id=self.node._id + '_comments',
-            owner=self.node,
-            event_name='comments'
-        )
-        self.node_subscription.save()
-        self.user_subscription = factories.NotificationSubscriptionFactory(
-            _id=self.user._id + '_' + 'comment_replies',
-            owner=self.user,
-            event_name='comment_replies',
-            email_transactional=[self.user._id]
-        )
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_no_subscription(self, mock_store):
-        node = factories.NodeFactory()
+        node = factories.ProjectFactory()
+        utils.remove_subscription(node)
         emails.notify('comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(mock_store.called)
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_no_subscribers(self, mock_store):
-        node = factories.NodeFactory()
-        node_subscription = factories.NotificationSubscriptionFactory(
-            _id=node._id + '_comments',
-            owner=node,
-            event_name='comments'
-        )
-        node_subscription.save()
+        node = factories.ProjectFactory()
+        utils.remove_contributor_from_subscriptions(node.creator, node)
         emails.notify('comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(mock_store.called)
 
@@ -1029,16 +1004,9 @@ class TestSendEmails(OsfTestCase):
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_does_not_send_to_users_subscribed_to_none(self, mock_store):
-        node = factories.NodeFactory()
+        node = factories.ProjectFactory()
+        utils.remove_subscription(node)
         user = factories.UserFactory()
-        node_subscription = factories.NotificationSubscriptionFactory(
-            _id=node._id + '_comments',
-            owner=node,
-            event_name='comments'
-        )
-        node_subscription.save()
-        node_subscription.none.append(user)
-        node_subscription.save()
         sent = emails.notify('comments', user=user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(mock_store.called)
         assert_equal(sent, [])
