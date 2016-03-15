@@ -108,7 +108,7 @@ var AddProject = {
                                     ctrl.checkValid();
                                 },
                                 value : ctrl.newProjectName(),
-                                placeholder : 'Enter project title'
+                                placeholder : 'Enter ' + ctrl.nodeLanguage + ' title'
                             })
                         ]),
                         m('.text-muted.pointer', { onclick : function(){
@@ -123,7 +123,7 @@ var AddProject = {
                                 m('textarea.form-control.noresize', {
                                     onchange: m.withAttr('value', ctrl.newProjectDesc),
                                     value : ctrl.newProjectDesc(),
-                                    placeholder : 'Enter project description'
+                                    placeholder : 'Enter ' + ctrl.nodeLanguage + ' description'
                                 })
                             ]),
                             ctrl.options.parentID !== null ? [
