@@ -4496,7 +4496,7 @@ class DraftRegistration(StoredObject):
 
     def update_metadata(self, metadata):
         if self.is_approved:
-            return {}
+            return []
 
         changes = []
         for question_id, value in metadata.iteritems():
