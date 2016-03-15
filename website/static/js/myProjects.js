@@ -800,7 +800,7 @@ var Collections = {
                                     }
                                 });
                             }
-                            $osf.growl(message,null, 'warning', 5000);
+                            $osf.growl(message,null, 'warning', 4000);
                             doNext(true); // don't add to count
                         }); // In case of success or error. It doesn't look like mithril has a general .done method
                     }
