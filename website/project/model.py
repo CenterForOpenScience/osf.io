@@ -51,7 +51,6 @@ from website.exceptions import (
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.files.models.base import StoredFileNode
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -257,8 +256,7 @@ class Comment(GuidStoredObject, SpamMixin):
         if comment.page == Comment.FILES:
             log_dict['file'] = {'name': comment.root_target.referent.name, 'url': comment.get_comment_page_url()}
         elif comment.page == Comment.WIKI:
-            # TODO: add logging
-            pass
+            log_dict['wiki'] = {'name': comment.root_target.referent.page_name, 'url': comment.get_comment_page_url()}
 
         comment.save()
 
@@ -283,8 +281,11 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': self.user._id,
             'comment': self._id,
         }
-        if isinstance(self.root_target.referent, StoredFileNode):
+        if self.page == Comment.FILES:
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        elif self.page == Comment.WIKI:
+            log_dict['wiki'] = {'name': self.root_target.referent.page_name, 'url': self.get_comment_page_url()}
+
         self.content = content
         self.modified = True
         if save:
@@ -307,8 +308,10 @@ class Comment(GuidStoredObject, SpamMixin):
             'comment': self._id,
         }
         self.is_deleted = True
-        if isinstance(self.root_target.referent, StoredFileNode):
+        if self.page == Comment.FILES:
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        elif self.page == Comment.WIKI:
+            log_dict['wiki'] = {'name': self.root_target.referent.page_name, 'url': self.get_comment_page_url()}
         if save:
             self.save()
             self.node.add_log(
@@ -329,8 +332,10 @@ class Comment(GuidStoredObject, SpamMixin):
             'user': self.user._id,
             'comment': self._id,
         }
-        if isinstance(self.root_target.referent, StoredFileNode):
+        if self.page == Comment.FILES:
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
+        elif self.page == Comment.WIKI:
+            log_dict['wiki'] = {'name': self.root_target.referent.page_name, 'url': self.get_comment_page_url()}
         if save:
             self.save()
             self.node.add_log(
