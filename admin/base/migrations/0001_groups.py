@@ -13,6 +13,9 @@ def add_groups(*args):
     group, created = Group.objects.get_or_create(name='prereg_group')
     if created:
         logger.info('prereg_group created')
+    group, created = Group.objects.get_or_create(name='osf_admin')
+    if created:
+        logger.info('osf_admin group created')
     group, created = Group.objects.get_or_create(name='osf_group')
     if created:
         logger.info('osf_group created')
