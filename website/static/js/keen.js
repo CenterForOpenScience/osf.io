@@ -11,7 +11,7 @@ var KeenTracker = oop.defclass({
             projectId: keenProjectId,
             writeKey: keenWriteKey
         });
-        this.currentUser = params.user || null;
+        this.currentUser = params.currentUser || null;
         this.node = params.node || null;
         this.init();
     },
