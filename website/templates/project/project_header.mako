@@ -72,7 +72,7 @@
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
 
-                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
+                        % if user['has_read_permissions'] and not private_link and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     % endif

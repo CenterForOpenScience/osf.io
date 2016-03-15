@@ -1112,6 +1112,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise ValueError('Cannot pass both `auth` and `user`')
         user = user or auth.user
         if auth:
+            if auth.private_link:
+                return False
             is_api_node = auth.api_node == self
         else:
             is_api_node = False
@@ -1133,7 +1135,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return False
 
     def can_view(self, auth):
-        if auth and getattr(auth.private_link, 'anonymous', False):
+        if getattr(auth, 'private_link', False):
             return self._id in auth.private_link.nodes
 
         if not auth and not self.is_public:

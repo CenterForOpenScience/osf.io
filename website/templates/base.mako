@@ -64,7 +64,11 @@
     </style>
     <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
     % endif
-    % if private_link:  
+    % if private_link:
+        <%user['permissions'] = ['read']%>
+        <%user['is_contributor'] = False%>
+        <%user['can_comment'] = False%>
+        <%node['has_comments'] = False%>
         <%include file="view_only_nav.mako"/>
     % else:
         <%include file="nav.mako"/>
