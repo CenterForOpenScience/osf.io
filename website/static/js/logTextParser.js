@@ -133,9 +133,13 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var contributors = logObject.embeds.contributors;
             if(paramIsReturned(contributors, logObject)) {
-                return contributors.map(function(item){
-                    return m('a', {href: item.data.links.html}, item.data.attributes.full_name);
-                });
+                return m('span', contributors.data.map(function(item, index, arr){
+                    var comma = ' ';
+                    if(index !== arr.length - 1){
+                        comma = ', ';
+                    }
+                    return [ m('a', {href: item.links.html}, item.attributes.full_name), comma];
+                }));
             }
             return m('span', 'some users');
         }
