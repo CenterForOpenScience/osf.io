@@ -41,7 +41,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # [DEVOPS] this should be set to 'django.core.mail.backends.smtp.EmailBackend' in the > dev local.py.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Sendgrip Email Settings - Using OSF credentials
+# Sendgrid Email Settings - Using OSF credentials
 
 EMAIL_HOST = 'smtp.sendgrid.net'
 EMAIL_HOST_USER = 'osf-smtp'
