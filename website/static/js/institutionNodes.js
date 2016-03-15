@@ -9,7 +9,7 @@ var $osf = require('js/osfHelpers');
 var ViewModel = function(context) {
     var self = this;
     self.ctx = context;
-    self.allNodes = ko.observable();
+    self.allNodes = ko.observableArray();
     // Need to get the node
     self.fetchInstitutionNodes = function _fetchInstitutionNodes(){
         var url = self.ctx.apiV2Prefix + 'institutions/' + self.ctx.institution.id + '/?embed=nodes';

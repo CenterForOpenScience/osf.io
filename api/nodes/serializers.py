@@ -507,11 +507,11 @@ class NodeInstitutionRelationshipSerializer(ser.Serializer):
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
         relation_id_field = self.fields['id']
-        attribute = obj.primary_institution._id if obj.primary_institution else None
-        relationship = relation_id_field.to_representation(attribute)
-        if relationship == 'None':
-            relationship = None
-        data['data'] = {'type': type_, 'id': relationship} if relationship else None
+        data['data'] = None
+        if obj.primary_institution:
+            attribute = obj.primary_institution._id
+            relationship = relation_id_field.to_representation(attribute)
+            data['data'] = {'type': type_, 'id': relationship}
         data['links'] = {key: val for key, val in self.fields.get('links').to_representation(obj).iteritems()}
 
         return data
