@@ -1,7 +1,7 @@
 from django.test import Client, TestCase
-from models import MyUser
+from admin.common_auth.models import MyUser
 from django.core.urlresolvers import reverse
-from forms import CustomUserRegistrationForm
+from admin.common_auth.forms import CustomUserRegistrationForm
 
 
 class UserRegFormTestCase(TestCase):

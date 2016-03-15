@@ -25,6 +25,7 @@ ALLOWED_HOSTS = [
     '.osf.io'
 ]
 
+# AUTH_PASSWORD_VALIDATORS available only in Django 1.9
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
