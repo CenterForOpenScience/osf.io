@@ -97,6 +97,14 @@ var AddProject = {
         };
     },
     view : function (ctrl, options) {
+        var templateDropdown = function() {
+            var dropdown = [m('option.template-placeholder', {selected: 'disabled', value: ''}, 'Select a project to use as a template')];
+            for (var i = 0; i < ctrl.userProjects.length; i++) {
+                dropdown.push(m('option', {value: ctrl.userProjects[i].id}, ctrl.userProjects[i].title));
+            }
+            return dropdown;
+        };
+
         var templates = {
             form : m('.modal-content', [
                 m('.modal-header', [
