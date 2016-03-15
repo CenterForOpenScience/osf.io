@@ -118,7 +118,7 @@ var NewAndNoteworthy = {
 
         function findMoreProjectsButton () {
             return m('a.btn.btn-default.m-v-lg', {type:'button', href:'/search', onclick: function() {
-                $osf.trackClick('newAndNoteworthy', 'navigate', 'navigate-to-search-for-more-projects');
+                $osf.trackClick('discoverPublicProjects', 'navigate', 'navigate-to-search-for-more-projects');
             }}, 'Search for more projects');
         }
 
@@ -152,7 +152,7 @@ var NoteworthyNodeDisplay = {
         var destination = '/' + args.node.embeds.target_node.data.id;
 
         return m('a', {href: destination, onclick: function() {
-            $osf.trackClick('newAndNoteworthy', 'navigate', 'navigate-to-specific-project');
+            $osf.trackClick('discoverPublicProjects', 'navigate', 'navigate-to-specific-project');
         }}, m('.public-projects-item',[
             m('h5', title),
             m('span.prevent-overflow', m('i', 'by ' + contributors)),
