@@ -40,11 +40,23 @@ var AddProject = {
         self.errorMessage = {
             'unknown' : 'There was an unknown error. Please try again later.'
         };
+        self.userProjects =  []; // User nodes
+
         // Validation
         self.isValid = m.prop(false);
         self.checkValid = function _checkValid() {
             self.isValid(self.newProjectName().trim().length > 0);
         };
+
+        var url = $osf.apiV2Url('users/me/nodes/', {query : {'page[size]': 1000}});
+        var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
+        promise.then(function(result) {
+            result.data.forEach(function (node) {
+                self.userProjects.push({'title': node.attributes.title, 'id': node.id});
+            });
+        }
+        );
+
         self.add = function _add () {
             var url;
             var data;
