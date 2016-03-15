@@ -1249,6 +1249,9 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
+            if(item.attributes.category === ''){
+                item.attributes.category = 'Uncategorized';
+            }
             template = m('.p-sm', [
                 filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', { onclick : args.removeProjectFromCollections }, 'Remove from collection')) : '',
                 m('h3', m('a', { href : item.links.html}, item.attributes.title)),
