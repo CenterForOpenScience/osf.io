@@ -13,7 +13,7 @@ import os  # noqa
 from website import settings  # noqa
 from website.app import init_app  # noqa
 
-app = init_app('website.settings', set_backends=True, routes=True)
+application = app = init_app('website.settings', set_backends=True, routes=True)
 
 if __name__ == '__main__':
     host = os.environ.get('OSF_HOST', None)
