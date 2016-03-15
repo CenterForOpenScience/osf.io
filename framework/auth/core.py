@@ -658,8 +658,27 @@ class User(GuidStoredObject, AddonModelMixin):
                     .format(**locals())
 
     def set_password(self, raw_password):
-        """Set the password for this user to the hash of ``raw_password``."""
+        """Set the password for this user to the hash of ``raw_password``.
+        If this is a new user, we're done. If this is a password change,
+        then email the user about the change and clear all the old sessions
+        so that users will have to log in again with the new password.
+
+        :param raw_password: the plaintext value of the new password
+        :rtype: list
+        :returns: Changed fields from the user save
+        """
+        had_existing_password = bool(self.password)
         self.password = generate_password_hash(raw_password)
+        return_value = self.save()
+        if had_existing_password:
+            mails.send_mail(
+                to_addr=self.username,
+                mail=mails.PASSWORD_RESET,
+                mimetype='plain',
+                user=self
+            )
+            remove_sessions_for_user(self)
+        return return_value
 
     def check_password(self, raw_password):
         """Return a boolean of whether ``raw_password`` was correct."""
