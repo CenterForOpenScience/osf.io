@@ -822,14 +822,3 @@ def redirect_to_twitter(twitter_handle):
         })
 
     return redirect(user.url)
-
-
-def view_institution(**kwargs):
-    inst = Institution.load(kwargs.get('id'))
-
-    return {
-        'id': kwargs.get('id'),
-        'name': inst.name,
-        'logo_path': inst.logo_path,
-        'description': inst.description or '',
-    }

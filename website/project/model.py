@@ -22,8 +22,6 @@ from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
-from modularodm.query.query import RawQuery
-from modularodm.storage.mongostorage import MongoQuerySet
 
 from api.base.utils import absolute_reverse
 from framework import status
@@ -54,6 +52,7 @@ from website.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     UserNotAffiliatedError,
 )
+from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.files.models.base import FileNode, StoredFileNode
@@ -3527,145 +3526,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def institution_relationship_url(self):
         return self.absolute_api_v2_url + 'relationships/institution/'
 
-
-class AffiliatedInstitutionsList(list):
-    '''
-    A list to implement append and remove methods to a private node list through a
-    public Institution-returning property. Initialization should occur with the instance of the public list,
-    the object the list belongs to, and the private attribute ( a list) the public property
-    is attached to, and as the return value of the property.
-     Ex:
-     class Node():
-        _affiliated_institutions = []
-
-        @property
-        affiliated_institutions(self):
-            return AffiliatedInstitutionsList(
-                [Institution(node) for node in self._affiliated_institutions],
-                obj=self, private_target='_affiliated_institutions')
-            )
-    '''
-    def __init__(self, init, obj, private_target):
-        super(AffiliatedInstitutionsList, self).__init__(init or [])
-        self.obj = obj
-        self.target = private_target
-
-    def append(self, to_append):
-        temp_list = getattr(self.obj, self.target)
-        temp_list.append(to_append.node)
-        setattr(self.obj, self.target, temp_list)
-
-    def remove(self, to_remove):
-        temp_list = getattr(self.obj, self.target)
-        temp_list.remove(to_remove.node)
-        setattr(self.obj, self.target, temp_list)
-
-
-class InstitutionQuerySet(MongoQuerySet):
-    def __init__(self, queryset):
-        super(InstitutionQuerySet, self).__init__(queryset.schema, queryset.data)
-
-    def __iter__(self):
-        for each in super(InstitutionQuerySet, self).__iter__():
-            yield Institution(each)
-
-    def _do_getitem(self, index):
-        item = super(InstitutionQuerySet, self)._do_getitem(index)
-        if isinstance(item, MongoQuerySet):
-            return self.__class__(item)
-        return Institution(item)
-
-class Institution(object):
-    '''
-    "wrapper" class for Node. Together with the find and institution attributes & methods in Node,
-    this is to be used to allow interaction with Institutions, which are Nodes (with ' is_institution ' == True),
-    as if they were a wholly separate collection. To find an institution, use the find methods here,
-    and to use a Node as Institution, instantiate an Institution with ' Institution(node) '
-    '''
-    attribute_map = {
-        '_id': 'institution_id',
-        'auth_url': 'institution_auth_url',
-        'domain': 'institution_domain',
-        'name': 'title',
-        'logo_name': 'institution_logo_name',
-        'description': 'description',
-        'email_domain': 'institution_email_domain'
-    }
-
-    def __init__(self, node=None):
-        self.node = node
-        if node is None:
-            return
-        for key, value in self.attribute_map.iteritems():
-            setattr(self, key, getattr(node, value))
-
-    def __getattr__(self, item):
-        return getattr(self.node, item)
-
-    def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            return False
-        return self._id == other._id
-
-    def save(self):
-        for key, value in self.attribute_map.iteritems():
-            if getattr(self, key) != getattr(self.node, value):
-                setattr(self.node, value, getattr(self, key))
-        self.node.save()
-
-    @classmethod
-    def find(cls, query=None, **kwargs):
-        if query and getattr(query, 'nodes', False):
-            for node in query.nodes:
-                replacement_attr = cls.attribute_map.get(node.attribute, False)
-                node.attribute = replacement_attr or node.attribute
-        elif isinstance(query, RawQuery):
-            replacement_attr = cls.attribute_map.get(query.attribute, False)
-            query.attribute = replacement_attr or query.attribute
-        query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
-        nodes = Node.find(query, allow_institution=True, **kwargs)
-        return InstitutionQuerySet(nodes)
-
-    @classmethod
-    def find_one(cls, query=None, **kwargs):
-        if query and getattr(query, 'nodes', False):
-            for node in query.nodes:
-                replacement_attr = cls.attribute_map.get(node.attribute, False)
-                node.attribute = replacement_attr if replacement_attr else node.attribute
-        elif isinstance(query, RawQuery):
-            replacement_attr = cls.attribute_map.get(query.attribute, False)
-            query.attribute = replacement_attr if replacement_attr else query.attribute
-        query = query & Q('is_institution', 'eq', True) if query else Q('is_institution', 'eq', True)
-        node = Node.find_one(query, allow_institution=True, **kwargs)
-        return cls(node)
-
-    @classmethod
-    def load(cls, id):
-        try:
-            node = Node.find_one(Q('institution_id', 'eq', id) & Q('is_institution', 'eq', True), allow_institution=True)
-            return cls(node)
-        except NoResultsFound:
-            return None
-
-    def __repr__(self):
-        return '<Institution ({}) with id \'{}\'>'.format(self.name, self._id)
-
-    @property
-    def pk(self):
-        return self._id
-
-    @property
-    def api_v2_url(self):
-        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
-
-    @property
-    def absolute_api_v2_url(self):
-        from api.base.utils import absolute_reverse
-        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
-
-    @property
-    def logo_path(self):
-        return '/static/img/institutions/{}/'.format(self.logo_name)
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):

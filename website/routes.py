@@ -29,6 +29,7 @@ from website import settings
 from website import language
 from website.util import paths
 from website.util import sanitize
+from website.models import Institution
 from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.citations import views as citation_views
@@ -39,8 +40,8 @@ from website.project import views as project_views
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
+from website.institutions import views as institution_views
 from website.notifications import views as notification_views
-from website.models import Institution
 
 def get_globals():
     """Context variables that are available for every template rendered by
@@ -736,7 +737,7 @@ def make_url_map(app):
     # Institution
 
     process_rules(app, [
-        Rule('/institution/<id>/', 'get', profile_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
+        Rule('/institution/<id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
     ])
 
     # Project

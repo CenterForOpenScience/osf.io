@@ -6,6 +6,7 @@ import urllib
 import httplib as http
 
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 from flask import request
 
 from framework import utils
@@ -87,7 +88,7 @@ def index():
             'institution': True,
             'redirect_url': '/institution/{}/'.format(inst._id)
         }
-    except:
+    except NoResultsFound:
         pass
     return {'home': True}
 

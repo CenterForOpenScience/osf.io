@@ -13,11 +13,11 @@ from website.project.model import (
     Retraction, Embargo, RegistrationApproval,
     AlternativeCitation,
     DraftRegistrationApproval, DraftRegistration,
-    Institution  # flake8: noqa
 )
 from website.oauth.models import ApiOAuth2Application, ExternalAccount, ApiOAuth2PersonalToken
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
+from website.institutions.model import Institution  # flake8: noqa
 
 from website.mails import QueuedMail
 from website.files.models.base import FileVersion

@@ -1396,7 +1396,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def affiliated_institutions(self):
-        from website.project.model import Institution, AffiliatedInstitutionsList
+        from website.institutions.model import Institution, AffiliatedInstitutionsList
         return AffiliatedInstitutionsList([Institution(inst) for inst in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
     def get_node_comment_timestamps(self, node, page, file_id=None):
