@@ -5,8 +5,9 @@ var ko = require('knockout');
 
 ko.punches.enableAll();
 
-var Projects = require('js/myProjects.js').MyProjects;
-var LinkObject = require('js/myProjects.js').LinkObject;
+var _myProjects = require('js/myProjects.js');
+var Projects = _myProjects.MyProjects;
+var LinkObject = _myProjects.LinkObject;
 var InstitutionNodes = require('js/institutionNodes.js');
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 
