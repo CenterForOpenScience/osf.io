@@ -103,14 +103,6 @@ var AddProject = {
         };
     },
     view : function (ctrl, options) {
-        var templateDropdown = function() {
-            var dropdown = [m('option.template-placeholder', {selected: 'disabled', value: ''}, 'Select a project to use as a template')];
-            for (var i = 0; i < ctrl.userProjects.length; i++) {
-                dropdown.push(m('option', {value: ctrl.userProjects[i].id}, ctrl.userProjects[i].title));
-            }
-            return dropdown;
-        };
-
         var templates = {
             form : m('.modal-content', [
                 m('.modal-header', [
@@ -165,12 +157,14 @@ var AddProject = {
                                     })
                                 ])
                             ] : '',
-                            m('.form-group.m-v-sm', [
+                            m('.form-group.m-v-md', [
                                 m('label[for="projectTemplate].f-w-lg.text-bigger', 'Template (optional)'),
-                                m('select.form-control.template-placeholder', {
-                                    onchange: m.withAttr('value', ctrl.newProjectTemplate),
-                                    value: ctrl.newProjectTemplate()
-                                }, templateDropdown())
+                                m('p.f-w-xs.help-text', 'Start typing to search. Selecting project as template will duplicate its ' +
+                                    'structure in the new project without importing the content of that project.'),
+                                m.component(Select2Template, {
+                                    data: ctrl.userProjects,
+                                    value: ctrl.newProjectTemplate
+                                })
                             ])
                         ] : ''
                     ])

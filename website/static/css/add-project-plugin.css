@@ -13,3 +13,7 @@
 select option:first-child {
     color: grey;
 }
+
+.help-text {
+    color: grey;
+}
