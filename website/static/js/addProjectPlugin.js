@@ -247,7 +247,7 @@ var Select2Template = {
             })
         ]);
     },
-    /**Select2 config factory - from https://lhorie.github.io/mithril/integration.html **/
+    /**Select2 config factory - adapted from https://lhorie.github.io/mithril/integration.html **/
     config: function(ctrl) {
         return function(element, isInitialized) {
             var el = $(element);
@@ -263,8 +263,7 @@ var Select2Template = {
                     });
                     m.endComputation();
                 });
-        }
-            el.val(ctrl.value().id).trigger('change');
+            }
         };
     }
 };
