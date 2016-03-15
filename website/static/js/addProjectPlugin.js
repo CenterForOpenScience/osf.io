@@ -241,4 +241,36 @@ var AddProject = {
     }
 };
 
+var Select2Template = {
+    view: function(ctrl, attrs) {
+        return m('select', {config: Select2Template.config(attrs)}, [
+            m('option', {value: ''}, ''),
+            attrs.data.map(function(node) {
+                var args = {value: node.id};
+                return m('option', args, node.title);
+            })
+        ]);
+    },
+    /**Select2 config factory - from https://lhorie.github.io/mithril/integration.html **/
+    config: function(ctrl) {
+        return function(element, isInitialized) {
+            var el = $(element);
+            if (!isInitialized) {
+                el.select2({placeholder: 'Select a project to use as a template', allowClear: true, width: '100%'}).on('change', function(e) {
+                    var id = el.select2('val');
+                    m.startComputation();
+                    //Set the value to the selected option
+                    ctrl.data.map(function(d){
+                        if(d.id === id) {
+                            ctrl.value(d.id);
+                        }
+                    });
+                    m.endComputation();
+                });
+        }
+            el.val(ctrl.value().id).trigger('change');
+        };
+    }
+};
+
 module.exports = AddProject;
