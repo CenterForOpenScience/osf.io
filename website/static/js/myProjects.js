@@ -45,7 +45,7 @@ function _formatDataforPO(item) {
     return item;
 }
 
-var LinkObject = function _LinkObject (type, data, label) {
+var LinkObject = function _LinkObject (type, data, label, institutionId) {
     if (type === undefined || data === undefined || label === undefined) {
         throw new Error('LinkObject expects type, data and label to be defined.');
     }
@@ -62,10 +62,17 @@ var LinkObject = function _LinkObject (type, data, label) {
                     }
                 );
         }
+        /// THIS NEEDS TO FILTER ON CURRENTLY FOUND THINGS INSTEAD
         else if (self.type === 'tag') {
+            if (institutionId){
+                return $osf.apiV2Url('institutions/' + institutionId + '/nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : 'children', 'embed' : 'contributors'}});
+            }
             return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : 'children', 'embed' : 'contributors'}});
         }
         else if (self.type === 'name') {
+            if (institutionId){
+                return $osf.apiV2Url('institutions/' + institutionId + '/nodes/', { query : {'related_counts' : 'children', 'embed' : 'contributors', 'filter[contributors]': self.data.id }});
+            }
             return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : 'children', 'embed' : 'contributors' }});
         }
         else if (self.type === 'node') {
@@ -149,6 +156,8 @@ var MyProjects = {
     controller : function (options) {
         var self = this;
         self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
+        self.projectOrganizerOptions = options.projectOrganizerOptions || {};
+        self.viewOnly = options.viewOnly || false;
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
         self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
         self.nonLoadTemplate = m.prop(m('.db-non-load-template.m-md.p-md.osf-box', 'Loading...')); // Template for when data is not available or error happens
@@ -164,14 +173,13 @@ var MyProjects = {
         self.categoryList = [];
 
         // Load 'All my Projects' and 'All my Registrations'
-        self.systemCollections = [
+        self.systemCollections = options.systemCollections || [
             new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects'),
             new LinkObject('collection', { path : 'users/me/registrations/', query : { 'related_counts' : 'children', 'page[size]'  : 60, 'embed' : 'contributors'}, systemCollection : 'registrations'}, 'All My Registrations')
         ];
         // Initial Breadcrumb for All my projects
-        self.breadcrumbs = m.prop([
-            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')
-        ]);
+        var initialBreadcrumbs = options.initialBreadcrumbs || [new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, systemCollection : 'nodes'}, 'All My Projects')];
+        self.breadcrumbs = m.prop(initialBreadcrumbs);
         // Calculate name filters
         self.nameFilters = [];
         // Calculate tag filters
@@ -183,7 +191,7 @@ var MyProjects = {
         self.loadCategories = function _loadCategories () {
             var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig});
             promise.then(function _success(results){
-                if(results.actions.POST.category){
+                if(results.actions && results.actions.POST.category){
                     self.categoryList = results.actions.POST.category.choices;
                     self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
                         if(a.value < b.value) return -1;
@@ -253,6 +261,9 @@ var MyProjects = {
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
         self.updateFilesData = function _updateFilesData (linkObject) {
+            if ((linkObject.type === 'node') && self.viewOnly){
+                return;
+            }
             if (linkObject.link !== self.currentLink) {
                 self.updateBreadcrumbs(linkObject);
                 self.updateList(linkObject);
@@ -345,13 +356,13 @@ var MyProjects = {
                 if(lastcrumb.type === 'collection'){
                     if(lastcrumb.data.systemCollection === 'nodes'){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            'You have not created any projects yet.'));
+                            options.institutionId ? 'This institution has no projects yet.':'You have not created any projects yet.'));
                     } else if (lastcrumb.data.systemCollection === 'registrations'){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            'You have not made any registrations yet.'));
+                            options.institutionId ? 'This institution has no registrations yet.':'You have not made any registrations yet.'));
                     } else {
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This collection has no projects. To add projects go to "All My Projects" collection; drag and drop projects into the collection link'));
+                            'This collection has no projects.' +  (options.institutionId ? '' : ' To add projects go to "All My Projects" collection; drag and drop projects into the collection link')));
                     }
                 } else {
                     var showAddProject = true;
@@ -471,7 +482,7 @@ var MyProjects = {
             self.nameFilters = [];
             for (var user in self.users){
                 var u2 = self.users[user];
-                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name));
+                self.nameFilters.push(new LinkObject('name', { id : u2.data.id, count : u2.count, query : { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false));
             }
             // order names
             self.nameFilters.sort(sortByCountDesc);
@@ -479,7 +490,7 @@ var MyProjects = {
             self.tagFilters = [];
             for (var tag in self.tags){
                 var t2 = self.tags[tag];
-                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag));
+                self.tagFilters.push(new LinkObject('tag', { tag : tag, count : t2, query : { 'related_counts' : 'children' }}, tag, options.institutionId || false));
             }
             // order tags
             self.tagFilters.sort(sortByCountDesc);
@@ -545,7 +556,9 @@ var MyProjects = {
                 self.updateList(self.systemCollections[0]);
             });
             var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
-            self.loadCollections(collectionsUrl);
+            if (!self.viewOnly){
+                self.loadCollections(collectionsUrl);
+            }
             self.activeFilter(self.collections()[0]);
         };
         self.init();
@@ -567,7 +580,20 @@ var MyProjects = {
         } else {
             ctrl.showSidebar(true);
         }
-
+        var projectOrganizerOptions = $.extend(
+            {}, {
+                filesData : ctrl.data,
+                updateSelected : ctrl.updateSelected,
+                updateFilesData : ctrl.updateFilesData,
+                LinkObject : LinkObject,
+                wrapperSelector : args.wrapperSelector,
+                allProjects : ctrl.allProjects,
+                reload : ctrl.reload,
+                resetUi : ctrl.resetUi,
+                showSidebar : ctrl.showSidebar
+            },
+            ctrl.projectOrganizerOptions
+        );
         return [
             m('.db-header.row', [
                 m('.col-xs-12.col-sm-8.col-lg-9', m.component(Breadcrumbs,ctrl)),
@@ -608,18 +634,7 @@ var MyProjects = {
             ]) : '',
             mobile && ctrl.showSidebar() ? '' : m('.db-main', { style : poStyle },[
                 ctrl.refreshView() ? m('.spinner-div', m('i.fa.fa-refresh.fa-spin')) : '',
-                ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, {
-                        filesData : ctrl.data,
-                        updateSelected : ctrl.updateSelected,
-                        updateFilesData : ctrl.updateFilesData,
-                        LinkObject : LinkObject,
-                        wrapperSelector : args.wrapperSelector,
-                        allProjects : ctrl.allProjects,
-                        reload : ctrl.reload,
-                        resetUi : ctrl.resetUi,
-                        showSidebar : ctrl.showSidebar
-                    })
-                )
+                ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('.db-poOrganizer',  m.component( ProjectOrganizer, projectOrganizerOptions))
             ]),
             mobile ? '' : m('.db-info-toggle',{
                     onclick : function _showInfoOnclick(){
@@ -833,6 +848,7 @@ var Collections = {
     view : function (ctrl, args) {
         var selectedCSS;
         var submenuTemplate;
+        var viewOnly = args.viewOnly;
         ctrl.calculateTotalPages();
 
         var collectionOnclick = function (item){
@@ -900,10 +916,10 @@ var Collections = {
                     'data-placement' : 'bottom'
                 }, ''),
                 m('.pull-right', [
-                    m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', {onclick: function() {
+                    !viewOnly ? m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', {onclick: function() {
                         $osf.trackClick('myProjects', 'add-collection', 'open-add-collection-modal');
-                    }}, m('i.fa.fa-plus')),
-                    m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages, type: 'collections'})
+                    }}, m('i.fa.fa-plus')) : '',
+                    m.component(MicroPagination, { currentPage : ctrl.currentPage, totalPages : ctrl.totalPages })
                     ]
                 )
             ]),
@@ -1103,6 +1119,7 @@ var MicroPagination = {
 
 var Breadcrumbs = {
     view : function (ctrl, args) {
+        var viewOnly = args.viewOnly;
         var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
         var updateFilesOnClick = function (item) {
                 args.updateFilesData(item);
@@ -1171,7 +1188,7 @@ var Breadcrumbs = {
                         showAddProject = permissions.indexOf('admin') > -1 || permissions.indexOf('write') > -1;
                         objectType = 'component';
                     }
-                    if(showAddProject){
+                    if(showAddProject && !viewOnly){
                         addProjectTemplate = m.component(AddProject, {
                             buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
                                 $osf.trackClick('myProjects', 'add-' + objectType, 'open-add-' + objectType + '-modal');
@@ -1191,7 +1208,7 @@ var Breadcrumbs = {
                             m('span.btn', item.label),
                             m('i.fa.fa-angle-right')
                         ]),
-                        item.type === 'node' || (item.data.systemCollection === 'nodes' ) ? addProjectTemplate : ''
+                        (item.type === 'node' || (item.data.systemCollection === 'nodes' )) ? addProjectTemplate : ''
                     ];
                 }
                 item.index = index; // Add index to update breadcrumbs
