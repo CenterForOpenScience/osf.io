@@ -34,6 +34,7 @@ var AddProject = {
         self.newProjectName = m.prop('');
         self.newProjectDesc = m.prop('');
         self.newProjectCategory = m.prop(self.defaultCat);
+        self.newProjectTemplate = m.prop('');
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
@@ -158,7 +159,14 @@ var AddProject = {
 
                                     })
                                 ])
-                            ] : ''
+                            ] : '',
+                            m('.form-group.m-v-sm', [
+                                m('label[for="projectTemplate].f-w-lg.text-bigger', 'Template (optional)'),
+                                m('select.form-control.template-placeholder', {
+                                    onchange: m.withAttr('value', ctrl.newProjectTemplate),
+                                    value: ctrl.newProjectTemplate()
+                                }, templateDropdown())
+                            ])
                         ] : ''
                     ])
                 ]),
