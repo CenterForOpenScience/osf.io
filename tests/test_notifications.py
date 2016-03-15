@@ -937,6 +937,7 @@ class TestMoveSubscription(OsfTestCase):
         self.private_node.save()
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
+        utils.remove_contributor_from_subscriptions(self.user_3, self.project)
         self.sub.email_digest.append(self.user_3)
         self.sub.save()
         self.file_sub.email_transactional.extend([self.user_2, self.user_4])
