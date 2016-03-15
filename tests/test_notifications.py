@@ -977,8 +977,16 @@ class TestSendEmails(OsfTestCase):
     def setUp(self):
         super(TestSendEmails, self).setUp()
         self.user = factories.AuthUserFactory()
+        self.project_creator = factories.UserFactory()
         self.project = factories.ProjectFactory()
-        self.node = factories.NodeFactory(parent=self.project)
+        self.node = factories.NodeFactory(parent=self.project, creator=self.project.creator)
+
+        self.user_subscription = factories.NotificationSubscriptionFactory(
+            _id=self.user._id + '_' + 'comment_replies',
+            owner=self.user,
+            event_name='comment_replies',
+            email_transactional=[self.user._id]
+        )
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_no_subscription(self, mock_store):
