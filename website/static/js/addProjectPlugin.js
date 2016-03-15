@@ -77,6 +77,11 @@ var AddProject = {
                         }
                     }
                 };
+
+            if (self.newProjectTemplate()) {
+                data.data.attributes.template_from = self.newProjectTemplate();
+            }
+
             var success = function _success (result) {
                 self.viewState('success');
                 self.goToProjectLink(result.data.links.html);
