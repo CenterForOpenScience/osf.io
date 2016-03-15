@@ -77,11 +77,7 @@
                     <div id="projectSettings" class="panel-body">
                         <div class="form-group">
                             <label>Category:</label>
-                            <select data-bind="attr.disabled: disabled,
-                                                         options: categoryOptions,
-                                                         optionsValue: 'value',
-                                                         optionsText: 'label',
-                                                         value: selectedCategory"></select>
+                            <select data-bind="attr.disabled: disabled, options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
                             <span data-bind="if: disabled" class="help-block">
                               A top-level project's category cannot be changed
                             </span>
@@ -96,7 +92,7 @@
                             <label for="description">Description:</label>
                             <textarea placeholder="Optional" data-bind="value: description,
                                              valueUpdate: 'afterkeydown'",
-                            class="form-control resize-vertical"></textarea>
+                            class="form-control resize-vertical" style="max-width: 100%"></textarea>
                         </div>
                            <button data-bind="click: cancelAll"
                             class="btn btn-default">Cancel</button>
@@ -167,9 +163,6 @@
 
                             <br />
 
-                            <button id="settings-submit" class="btn btn-success">
-                                Apply
-                            </button>
                             <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
 
                         </form>

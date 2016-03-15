@@ -359,6 +359,7 @@ var tbOptions = {
                 onkeyup: function(event){
                     if ($(this).val().length === 1){
                         tb.updateFolder(allProjectsCache(), tb.treeData);
+                        tb.options.showSidebar(false);
                         tb.options.resetUi();
                     }
                     tb.filter(event);
@@ -387,6 +388,7 @@ var ProjectOrganizer = {
                     filesData: args.filesData(),
                     dragContainment : args.wrapperSelector,
                     resetUi : args.resetUi,
+                    showSidebar : args.showSidebar
                 },
                 tbOptions
             );

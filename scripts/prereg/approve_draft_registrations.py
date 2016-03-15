@@ -4,7 +4,7 @@ DraftRegistrationApprovals.
 import sys
 import logging
 
-from framework.tasks.handlers import celery_teardown_request
+from framework.celery_tasks.handlers import celery_teardown_request
 
 from website.app import init_app
 from website.project.model import DraftRegistration, Sanction

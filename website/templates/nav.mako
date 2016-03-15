@@ -1,3 +1,4 @@
+<link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
 <nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope" role="navigation">
@@ -78,8 +79,8 @@
                 </li>
             %else :
                 <li class="dropdown sign-in" data-bind="with: $root.signIn">
-                  <div class="btn-group">
-                      <a href="${web_url_for('auth_login')}?sign_up=True" class="btn btn-success btn-top-login m-r-sm">Sign up</a>
+                  <div  >
+                          <a href="${web_url_for('auth_login')}?sign_up=True" class="btn btn-success btn-top-signup m-r-xs">Sign up</a>
                       <button type="button" class="btn btn-info btn-top-login p-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                           Sign in <span class="caret hidden-xs"></span>
                       </button>
@@ -96,7 +97,7 @@
                       </ul>
                   </div>
                 </li>
-            %endif
+             %endif
         % endif
     </div><!--/.navbar-collapse -->
     </div>

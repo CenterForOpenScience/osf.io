@@ -10,10 +10,8 @@ from dateutil.parser import parse as parse_date
 import urlparse
 from collections import OrderedDict
 import warnings
-import requests
 
 import pytz
-from flask import request
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
 
@@ -55,7 +53,7 @@ from website.exceptions import (
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.files.models.base import FileNode, StoredFileNode
+from website.files.models.base import StoredFileNode
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -214,55 +212,24 @@ class Comment(GuidStoredObject, SpamMixin):
         return self.content
 
     @classmethod
-    def find_n_unread(cls, user, node, page=None, root_id=None):
+    def find_n_unread(cls, user, node, page, root_id=None):
         if node.is_contributor(user):
-            if not page:
-                return cls.n_unread_node_comments(user, node) + cls.n_unread_file_comments(user, node)
-            elif page == Comment.OVERVIEW:
-                return cls.n_unread_node_comments(user, node)
+            if page == Comment.OVERVIEW:
+                view_timestamp = user.get_node_comment_timestamps(node, 'node')
+                root_target = Guid.load(node._id)
             elif page == Comment.FILES:
-                if root_id is None:
-                    return cls.n_unread_file_comments(user, node)
-                else:
-                    view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
-                    root_target = Guid.load(root_id)
-                    return Comment.find(Q('node', 'eq', node) &
-                                        Q('user', 'ne', user) &
-                                        Q('is_deleted', 'eq', False) &
-                                        (Q('date_created', 'gt', view_timestamp) |
-                                        Q('date_modified', 'gt', view_timestamp)) &
-                                        Q('root_target', 'eq', root_target)).count()
+                view_timestamp = user.get_node_comment_timestamps(node, page, file_id=root_id)
+                root_target = Guid.load(root_id)
+            else:
+                raise ValueError('Invalid page')
+            return Comment.find(Q('node', 'eq', node) &
+                                Q('user', 'ne', user) &
+                                Q('is_deleted', 'eq', False) &
+                                (Q('date_created', 'gt', view_timestamp) |
+                                Q('date_modified', 'gt', view_timestamp)) &
+                                Q('root_target', 'eq', root_target)).count()
 
         return 0
-
-    @classmethod
-    def n_unread_node_comments(cls, user, node):
-        view_timestamp = user.get_node_comment_timestamps(node, 'node')
-        root_target = Guid.load(node._id)
-        return Comment.find(Q('node', 'eq', node) &
-                            Q('user', 'ne', user) &
-                            (Q('date_created', 'gt', view_timestamp) |
-                            Q('date_modified', 'gt', view_timestamp)) &
-                            Q('is_deleted', 'eq', False) &
-                            Q('root_target', 'eq', root_target)).count()
-
-    @classmethod
-    def n_unread_file_comments(cls, user, node):
-        n_unread = 0
-        commented_file_guids = Guid.find(Q('_id', 'in', node.commented_files.keys()))
-        for target in commented_file_guids:
-            file_obj = FileNode.resolve_class(target.referent.provider, FileNode.FILE).load(target.referent._id)
-            if node.get_addon(file_obj.provider):
-                try:
-                    exists = file_obj and file_obj.touch(request.headers.get('Authorization'),
-                                                         cookie=request.cookies.get(settings.COOKIE_NAME))
-                except requests.ConnectionError:
-                    return 0
-                if not exists:
-                    Comment.update(Q('root_target', 'eq', target), data={'root_target': None})
-                    continue
-                n_unread += cls.find_n_unread(user, node, page=Comment.FILES, root_id=target._id)
-        return n_unread
 
     @classmethod
     def create(cls, auth, **kwargs):
@@ -285,8 +252,6 @@ class Comment(GuidStoredObject, SpamMixin):
         elif isinstance(comment.root_target.referent, StoredFileNode):
             log_dict['file'] = {'name': comment.root_target.referent.name, 'url': comment.get_comment_page_url()}
             comment.page = Comment.FILES
-            file_key = comment.root_target._id
-            comment.node.commented_files[file_key] = comment.node.commented_files.get(file_key, 0) + 1
         else:
             raise ValueError('Invalid root target.')
         comment.save()
@@ -338,9 +303,6 @@ class Comment(GuidStoredObject, SpamMixin):
         self.is_deleted = True
         if isinstance(self.root_target.referent, StoredFileNode):
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
-            self.node.commented_files[self.root_target._id] -= 1
-            if self.node.commented_files[self.root_target._id] == 0:
-                del self.node.commented_files[self.root_target._id]
         if save:
             self.save()
             self.node.add_log(
@@ -363,8 +325,6 @@ class Comment(GuidStoredObject, SpamMixin):
         }
         if isinstance(self.root_target.referent, StoredFileNode):
             log_dict['file'] = {'name': self.root_target.referent.name, 'url': self.get_comment_page_url()}
-            file_key = self.root_target._id
-            self.node.commented_files[file_key] = self.node.commented_files.get(file_key, 0) + 1
         if save:
             self.save()
             self.node.add_log(
@@ -855,10 +815,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
-
-    # Files that contains comments and the number of comments each contains
-    # {<File1.id>: int, <File2.id>: int}
-    commented_files = fields.DictionaryField(default=dict)
 
     alternative_citations = fields.ForeignField('alternativecitation', list=True, backref='citations')
 

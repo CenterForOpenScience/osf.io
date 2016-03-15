@@ -11,7 +11,7 @@ from website import models, project
 from tests import base
 from tests.base import fake
 from tests import factories
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 
 
 class TestUser(base.OsfTestCase):

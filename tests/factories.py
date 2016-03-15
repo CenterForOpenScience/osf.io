@@ -256,7 +256,7 @@ class RegistrationFactory(AbstractNodeFactory):
             reg = register()
             add_approval_step(reg)
         else:
-            with patch('framework.tasks.handlers.enqueue_task'):
+            with patch('framework.celery_tasks.handlers.enqueue_task'):
                 reg = register()
                 add_approval_step(reg)
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
@@ -494,9 +494,6 @@ class CommentFactory(ModularOdmFactory):
             instance.root_target = target.referent.root_target
         else:
             instance.root_target = target
-            if isinstance(instance.root_target.referent, StoredFileNode):
-                file_id = instance.root_target._id
-                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
         return instance
 
     @classmethod
@@ -516,10 +513,6 @@ class CommentFactory(ModularOdmFactory):
             instance.root_target = target.referent.root_target
         else:
             instance.root_target = target
-            if isinstance(instance.root_target.referent, StoredFileNode):
-                file_id = instance.root_target._id
-                instance.node.commented_files[file_id] = instance.node.commented_files.get(file_id, 0) + 1
-                instance.node.save()
         instance.save()
         return instance
 
