@@ -3339,6 +3339,20 @@ class TestAuthViews(OsfTestCase):
         with assert_raises(InvalidTokenError):
             self.user._get_unconfirmed_email_for_token(token)
 
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_click_confirmation_email(self, send_mail):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        url = '/confirm/{}/{}/?existing_user=True'.format(self.user._id, token)
+        res = self.app.get(url)
+        self.user.reload()
+        assert_equal(self.user.email_verifications[token]['confirmed'], True)
+        assert_equal(res.status_code, 302)
+        assert_in('/login/?existing_user=True', res.body)
+
     def test_resend_confirmation_without_user_id(self):
         email = 'test@example.com'
         url = api_url_for('resend_confirmation')
@@ -3381,10 +3395,8 @@ class TestAuthViews(OsfTestCase):
 
         # user goes to email confirmation link
         token = unclaimed_user.get_confirmation_token(unclaimed_user.username)
-        email_url = web_url_for('confirm_email_get', uid=unclaimed_user._id, token=token)
-        confirm_url = web_url_for('confirm_user_get', auth=Auth(project.creator))
-        res = self.app.get(email_url)
-        self.app.get(confirm_url)
+        url = web_url_for('confirm_email_get', uid=unclaimed_user._id, token=token)
+        res = self.app.get(url)
         assert_equal(res.status_code, 302)
 
         # unclaimed records and token are cleared
@@ -4460,11 +4472,8 @@ class TestUserConfirmSignal(OsfTestCase):
         # user goes to email confirmation link
         token = unconfirmed_user.get_confirmation_token(unconfirmed_user.username)
         with capture_signals() as mock_signals:
-            get_url = web_url_for('confirm_email_get', uid=unconfirmed_user._id, token=token)
-            remove_url = web_url_for('confirm_email_remove', uid=unconfirmed_user._id, token=token)
-            payload = self.app.get(get_url)
-            res_remove = self.app.get(remove_url, payload)
-
+            url = web_url_for('confirm_email_get', uid=unconfirmed_user._id, token=token)
+            res = self.app.get(url)
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))

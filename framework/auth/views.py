@@ -189,25 +189,39 @@ def confirm_email_get(token, auth=None, **kwargs):
     is_merge = 'confirm_merge' in request.args
     is_initial_confirmation = not user.date_confirmed
     existing_user = request.args.get('existing_user')
-    campaign = campaigns.campaign_for_user(user)
     if user is None:
         raise HTTPError(http.NOT_FOUND)
     elif existing_user:
         return auth_email_logout(token, user)
-    elif auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
+
+    if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
         if not is_merge:
             # determine if the user registered through a campaign
+            campaign = campaigns.campaign_for_user(user)
             if campaign:
                 return redirect(
                     campaigns.campaign_url_for(campaign)
                 )
-            status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+            if len(auth.user.emails) == 1 and len(auth.user.email_verifications) == 0:
+                status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+
+            if token in auth.user.email_verifications:
+                status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, 'danger')
             # Go to dashboard
             return redirect(web_url_for('dashboard'))
 
         status.push_status_message(language.MERGE_COMPLETE, 'success')
         return redirect(web_url_for('user_account'))
-    elif is_initial_confirmation:
+
+    try:
+        user.confirm_email(token, merge=is_merge)
+    except exceptions.EmailConfirmTokenError as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+
+    if is_initial_confirmation:
         user.date_last_login = datetime.datetime.utcnow()
         user.save()
 
