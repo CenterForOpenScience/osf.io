@@ -4443,7 +4443,7 @@ class DraftRegistration(StoredObject):
             else:
                 return self.approval.is_approved
         else:
-            return True
+            return False
 
     @property
     def is_rejected(self):
@@ -4467,6 +4467,9 @@ class DraftRegistration(StoredObject):
         return draft
 
     def update_metadata(self, metadata):
+        if self.is_approved:
+            return []
+
         changes = []
         for question_id, value in metadata.iteritems():
             old_value = self.registration_metadata.get(question_id)
