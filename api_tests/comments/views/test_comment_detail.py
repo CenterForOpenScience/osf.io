@@ -1,11 +1,21 @@
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
+from framework.auth import core
+from framework.guid.model import Guid
+
 from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings
 from api_tests import utils as test_utils
 from tests.base import ApiTestCase
-from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, RegistrationFactory, PrivateLinkFactory
+from tests.factories import (
+    ProjectFactory,
+    AuthUserFactory,
+    CommentFactory,
+    RegistrationFactory,
+    PrivateLinkFactory,
+    NodeWikiFactory
+)
 
 
 class CommentDetailMixin(object):
@@ -604,5 +614,78 @@ class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
         osfstorage = self.private_project.get_addon('osfstorage')
         root_node = osfstorage.get_root()
         root_node.delete(self.file)
+        res = self.app.get(self.private_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+
+class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
+
+    def _set_up_private_project_with_comment(self):
+        self.private_project = ProjectFactory.build(is_public=False, creator=self.user, comment_level='private')
+        self.private_project.add_contributor(self.contributor, save=True)
+        self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
+        self.comment = CommentFactory(node=self.private_project, target=Guid.load(self.wiki._id), user=self.user)
+        self.private_url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
+        self.payload = self._set_up_payload(self.comment._id)
+
+    def _set_up_public_project_with_comment(self):
+        self.public_project = ProjectFactory.build(is_public=True, creator=self.user, comment_level='private')
+        self.public_project.add_contributor(self.contributor, save=True)
+        self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
+        self.public_comment = CommentFactory(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.user)
+        self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
+        self.public_comment_payload = self._set_up_payload(self.public_comment._id)
+
+    def _set_up_registration_with_comment(self):
+        self.registration = RegistrationFactory(creator=self.user, comment_level='private')
+        self.registration_wiki = NodeWikiFactory(node=self.registration, user=self.user)
+        self.registration_comment = CommentFactory(node=self.registration, target=Guid.load(self.registration_wiki._id), user=self.user)
+        self.registration_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
+
+    def test_wiki_comment_has_target_link_with_correct_type(self):
+        self._set_up_public_project_with_comment()
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['target']['links']['related']['href']
+        expected_url = self.public_wiki.get_absolute_url()
+        target_type = res.json['data']['relationships']['target']['links']['related']['meta']['type']
+        expected_type = 'wiki'
+        assert_equal(res.status_code, 200)
+        assert_equal(url, expected_url)
+        assert_equal(target_type, expected_type)
+
+    def test_public_node_non_contributor_commenter_can_update_wiki_comment(self):
+        project = ProjectFactory(is_public=True)
+        test_wiki = NodeWikiFactory(node=project, user=self.user)
+        comment = CommentFactory(node=project, target=Guid.load(test_wiki), user=self.non_contributor)
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = self._set_up_payload(comment._id)
+        res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(payload['data']['attributes']['content'], res.json['data']['attributes']['content'])
+
+    def test_public_node_non_contributor_commenter_cannot_update_own_wiki_comment_if_comment_level_private(self):
+        project = ProjectFactory(is_public=True)
+        test_wiki = NodeWikiFactory(node=project, user=self.user)
+        comment = CommentFactory(node=project, target=Guid.load(test_wiki), user=self.non_contributor)
+        project.comment_level = 'private'
+        project.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = self._set_up_payload(comment._id)
+        res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_public_node_non_contributor_commenter_can_delete_wiki_comment(self):
+        project = ProjectFactory(is_public=True, comment_level='public')
+        test_wiki = NodeWikiFactory(node=project, user=self.user)
+        comment = CommentFactory(node=project, target=Guid.load(test_wiki), user=self.non_contributor)
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        res = self.app.delete_json_api(url, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 204)
+
+    def test_comment_detail_for_deleted_wiki_is_not_returned(self):
+        self._set_up_private_project_with_comment()
+        # Delete commented wiki page
+        self.private_project.delete_node_wiki(self.wiki.page_name, core.Auth(self.user))
         res = self.app.get(self.private_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
