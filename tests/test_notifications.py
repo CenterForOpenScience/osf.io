@@ -950,8 +950,10 @@ class TestMoveSubscription(OsfTestCase):
         # One user with a project sub does not have permission on new node. User should be listed.
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
         self.private_node.save()
+
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
+        self.sub.email_transactional = []
         self.sub.email_digest.append(self.user_3)
         self.sub.save()
         self.file_sub.email_transactional.extend([self.user_2])
