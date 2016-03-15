@@ -868,19 +868,7 @@ class TestMoveSubscription(OsfTestCase):
             Q('owner', 'eq', self.project) &
             Q('event_name', 'eq', 'file_updated')
         )
-        # self.sub = factories.NotificationSubscriptionFactory(
-        #     _id=self.project._id + '_file_updated',
-        #     owner=self.project,
-        #     event_name='file_updated'
-        # )
-        # self.sub.email_transactional.extend([self.user_1])
-        # self.sub.save()
 
-        # self.file_sub = NotificationSubscription.find_one(
-        #     Q('_id', 'eq', self.project._id + '_xyz42_file_updated') &
-        #     Q('owner', 'eq', self.project) &
-        #     Q('event_name', 'eq', 'xyz42_file_updated')
-        # )
         self.file_sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_xyz42_file_updated',
             owner=self.project,
