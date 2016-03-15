@@ -862,13 +862,25 @@ class TestMoveSubscription(OsfTestCase):
         self.user_4 = factories.AuthUserFactory()
         self.project = factories.ProjectFactory(creator=self.user_1)
         self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
-        self.sub = factories.NotificationSubscriptionFactory(
-            _id=self.project._id + '_file_updated',
-            owner=self.project,
-            event_name='file_updated'
+
+        self.sub = NotificationSubscription.find_one(
+            Q('_id', 'eq', self.project._id + '_file_updated') &
+            Q('owner', 'eq', self.project) &
+            Q('event_name', 'eq', 'file_updated')
         )
-        self.sub.email_transactional.extend([self.user_1])
-        self.sub.save()
+        # self.sub = factories.NotificationSubscriptionFactory(
+        #     _id=self.project._id + '_file_updated',
+        #     owner=self.project,
+        #     event_name='file_updated'
+        # )
+        # self.sub.email_transactional.extend([self.user_1])
+        # self.sub.save()
+
+        # self.file_sub = NotificationSubscription.find_one(
+        #     Q('_id', 'eq', self.project._id + '_xyz42_file_updated') &
+        #     Q('owner', 'eq', self.project) &
+        #     Q('event_name', 'eq', 'xyz42_file_updated')
+        # )
         self.file_sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_xyz42_file_updated',
             owner=self.project,
@@ -914,6 +926,7 @@ class TestMoveSubscription(OsfTestCase):
     def test_move_sub_with_none(self):
         # Attempt to reproduce an error that is seen when moving files
         self.project.add_contributor(self.user_2, permissions=['write', 'read'], auth=self.auth)
+        utils.remove_contributor_from_subscriptions(self.user_2, self.project)
         self.project.save()
         self.file_sub.none.append(self.user_2)
         self.file_sub.save()
