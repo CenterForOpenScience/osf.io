@@ -72,7 +72,7 @@ var returnTextParams = function (param, text, logObject) {
 };
 
 var LogText = {
-    view : function(ctrl, logObject, trackingLocation, action) {
+    view : function(ctrl, logObject) {
         var text = logActions[logObject.attributes.action];
         var message = '';
         if(text){
@@ -87,7 +87,7 @@ var LogText = {
                         var last = piece.length-1;
                         var logComponentName = piece.substring(2,last);
                         if(LogPieces[logComponentName]){
-                            return m.component(LogPieces[logComponentName], logObject, trackingLocation, action);
+                            return m.component(LogPieces[logComponentName], logObject);
                         } else {
                             message = 'There is no template in logTextParser.js for  ' + logComponentName + '.';
                             ravenMessage(message, logObject);
@@ -108,11 +108,11 @@ var LogText = {
 var LogPieces = {
     // User that took the action
     user: {
-        view: function (ctrl, logObject, trackingLocation, action) {
+        view: function (ctrl, logObject) {
             var userObject = logObject.embeds.user;
             if(paramIsReturned(userObject, logObject) && userObject.data) {
                 return m('a', {href: userObject.data.links.html, onclick: function() {
-                    $osf.trackClick(trackingLocation, action, 'navigate-to-user-from-logs');
+                    $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-user-from-logs');
                 }}, userObject.data.attributes.full_name);
             } else {
                 return m('span', 'A user');
@@ -121,11 +121,11 @@ var LogPieces = {
     },
     // Node involved
     node: {
-        view: function (ctrl, logObject, trackingLocation, action) {
+        view: function (ctrl, logObject) {
             var nodeObject = logObject.embeds.nodes;
             if(paramIsReturned(nodeObject, logObject) && nodeObject.data[0]){
                 return m('a', {href: nodeObject.data[0].links.html, onclick: function() {
-                    $osf.trackClick(trackingLocation, action, 'navigate-to-project-from-logs');
+                    $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-project-from-logs');
                 }}, nodeObject.data[0].attributes.title);
             } else {
                 return m('span', 'a project');
