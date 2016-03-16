@@ -128,8 +128,8 @@ var AddProject = {
                             m('.form-group.m-v-sm', [
                                 m('label[for="projectDesc].f-w-lg.text-bigger', 'Description'),
                                 m('textarea.form-control.noresize', {
-                                    onchange: function() {
-                                        m.withAttr('value', ctrl.newProjectDesc);
+                                    onchange: function(event) {
+                                        ctrl.newProjectDesc(event.value);
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'type-project-description');
                                     },
                                     value : ctrl.newProjectDesc(),
@@ -145,8 +145,8 @@ var AddProject = {
                                             name: 'projectCategory',
                                             value: cat.value,
                                             checked: ctrl.newProjectCategory() === cat.value,
-                                            onchange : function() {
-                                                m.withAttr('value', ctrl.newProjectCategory);
+                                            onchange : function(event) {
+                                                ctrl.newProjectCategory(event.value)
                                                 $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
                                             }
                                         }), cat.display_name || m('i.text-muted', '(Empty category)') ]));
