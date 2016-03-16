@@ -432,6 +432,11 @@ class TestFileCopied(OsfTestCase):
             payload=file_copied_payload
         )
         # Subscriptions
+
+        # Remove default subscriptions
+        for sub in NotificationSubscription.find():
+            sub.remove()
+
         # for parent node
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
@@ -474,8 +479,10 @@ class TestFileCopied(OsfTestCase):
         self.sub.email_transactional.append(self.user_1)
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
+        notification_utils.remove_contributor_from_subscriptions(self.user_3, self.project)
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
+        notification_utils.remove_contributor_from_subscriptions(self.user_3, self.private_node)
         self.sub.email_digest.append(self.user_3)
         self.sub.save()
         self.project.add_contributor(self.user_4, permissions=['write', 'read'], auth=self.auth)
