@@ -18,6 +18,7 @@ var $osf = require('js/osfHelpers');
 
 var LinkObject;
 var allProjectsCache;
+var formatDataforPO;
 /**
  * Edits the template for the column titles.
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -373,12 +374,27 @@ var tbOptions = {
             } }, tb.options.removeIcon())
         ];
     },
-    hiddenFilterRows : ['tags']
+    hiddenFilterRows : ['tags'],
+    lazyLoadOnLoad : function (tree, event) {
+        var tb = this;
+        function formatItems (arr) {
+            var item;
+            for(var i = 0; i < arr.length; i++){
+                item = arr[i];
+                formatDataforPO(item.data);
+                if(item.children.length > 0){
+                    formatItems(item.children);
+                }
+            }
+        }
+        formatItems(tree.children);
+    }
 };
 
 var ProjectOrganizer = {
     controller : function (args) {
         LinkObject = args.LinkObject;
+        formatDataforPO = args.formatDataforPO;
         var self = this;
         self.updateTB = function(){
             var poOptions = $.extend(
