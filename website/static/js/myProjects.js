@@ -1243,13 +1243,14 @@ var Filters = {
 var Information = {
     view : function (ctrl, args) {
         var template = '';
+        var showRemoveFromCollection;
         var filter = args.activeFilter();
         if (args.selected().length === 0) {
             template = m('.db-info-empty.text-muted.p-lg', 'Select a row to view project details.');
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            var showRemoveFromCollection = filter.type === 'collection' && !filter.data.systemCollection && !item.relationships.parent;
+            showRemoveFromCollection = filter.type === 'collection' && !filter.data.systemCollection && !item.relationships.parent;
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
@@ -1287,6 +1288,8 @@ var Information = {
             ]);
         }
         if (args.selected().length > 1) {
+            var item = args.selected()[0].data;
+            showRemoveFromCollection = filter.type === 'collection' && !filter.data.systemCollection && !item.relationships.parent;
             template = m('.p-sm', [
                 showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', { onclick : args.removeProjectFromCollections }, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
