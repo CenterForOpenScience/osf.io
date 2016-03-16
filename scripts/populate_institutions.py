@@ -65,7 +65,18 @@ def main(env):
             'description': None,
             'email_domain': ['cos.io'],
             'banner_name': 'cos-banner.png'
-        }
+        },
+        {
+            'name': 'University of Southern California',
+            '_id': 'usc',
+            'logo_name': 'usc-shield.jpg',
+            'auth_url': None, #michael change this
+            'domain': ['ALSO CHANGE THIS'],
+            'description': None,
+            'email_domain': [],
+            'banner_name': 'usc-banner.png'
+        },
+
     ]
 
     init_app(routes=False)
