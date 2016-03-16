@@ -947,26 +947,24 @@ var Collections = {
                     ]),
                     body : m('.modal-body', [
                         m('p', 'Collections are groups of projects that help you organize your work. After you create your collection you can add projects by dragging and dropping projects to the collection. '),
-                        m('.form-inline', [
-                            m('.form-group', [
-                                m('label[for="addCollInput]', 'Collection Name'),
-                                m('input[type="text"].form-control.m-l-sm#addCollInput', {
-                                    onkeyup: function (ev){
-                                        var val = $(this).val();
-                                        ctrl.validateName(val);
-                                        if(ctrl.isValid()){
-                                            if(ev.which === 13){
-                                                ctrl.addCollection();
-                                            }
+                        m('.form-group', [
+                            m('label[for="addCollInput].f-w-lg.text-bigger', 'Collection Name'),
+                            m('input[type="text"].form-control#addCollInput', {
+                                onkeyup: function (ev){
+                                    var val = $(this).val();
+                                    ctrl.validateName(val);
+                                    if(ctrl.isValid()){
+                                        if(ev.which === 13){
+                                            ctrl.addCollection();
                                         }
-                                        ctrl.newCollectionName(val);
-                                    },
-                                    placeholder : 'e.g.  My Replications',
-                                    value : ctrl.newCollectionName()
-                                }),
-                                m('span.help-block', ctrl.validationError())
-                            ])
-                        ]),
+                                    }
+                                    ctrl.newCollectionName(val);
+                                },
+                                placeholder : 'e.g.  My Replications',
+                                value : ctrl.newCollectionName()
+                            }),
+                            m('span.help-block', ctrl.validationError())
+                        ])
                     ]),
                     footer: m('.modal-footer', [
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]',
