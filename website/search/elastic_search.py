@@ -21,7 +21,7 @@ from elasticsearch import (
 )
 
 from framework import sentry
-from framework.tasks import app as celery_app
+from framework.celery_tasks import app as celery_app
 from framework.mongo.utils import paginated
 
 from website import settings
