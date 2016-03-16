@@ -275,6 +275,7 @@ class TestRemoveContributor(OsfTestCase):
 
 class TestRemoveNodeSignal(OsfTestCase):
         def test_node_subscriptions_and_backrefs_removed_when_node_is_deleted(self):
+            project = factories.ProjectFactory()
             s = getattr(project.creator, 'email_transactional', [])
             assert_equal(len(s), 2)
 
