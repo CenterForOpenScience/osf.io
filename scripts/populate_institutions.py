@@ -43,7 +43,7 @@ def main(env):
             ),
             'domain': ['osf.vt.edu:5000'],
             'description': 'this is vt',
-            'email_domain': ['vt.edu'],
+            'email_domains': ['vt.edu'],
         },
         {
             'name': 'Notre Dame',
@@ -54,7 +54,7 @@ def main(env):
             ),
             'domain': ['osf.nd.edu:5000'],
             'description': 'this is nd',
-            'email_domain': ['nd.edu'],
+            'email_domains': ['nd.edu'],
         },
         {
             'name': 'Center For Open Science',
@@ -63,7 +63,7 @@ def main(env):
             'auth_url': None,
             'domain': ['staging-osf.cos.io'],
             'description': None,
-            'email_domain': ['cos.io'],
+            'email_domains': ['cos.io'],
             'banner_name': 'cos-banner.png'
         },
         {
@@ -73,7 +73,7 @@ def main(env):
             'auth_url': None, #michael change this
             'domain': ['ALSO CHANGE THIS'],
             'description': None,
-            'email_domain': [],
+            'email_domains': [],
             'banner_name': 'usc-banner.png'
         },
 

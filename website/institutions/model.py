@@ -67,7 +67,7 @@ class Institution(object):
         'name': 'title',
         'logo_name': 'institution_logo_name',
         'description': 'description',
-        'email_domain': 'institution_email_domain',
+        'email_domains': 'institution_email_domains',
         'banner_name': 'institution_banner_name',
     }
 

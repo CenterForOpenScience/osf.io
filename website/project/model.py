@@ -3381,7 +3381,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     institution_domain = fields.StringField(list=True)
     institution_auth_url = fields.StringField(validate=URLValidator())
     institution_logo_name = fields.StringField()
-    institution_email_domain = fields.StringField(list=True)
+    institution_email_domains = fields.StringField(list=True)
     institution_banner_name = fields.StringField()
 
     @classmethod
