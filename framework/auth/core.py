@@ -670,7 +670,6 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         had_existing_password = bool(self.password)
         self.password = generate_password_hash(raw_password)
-        return_value = self.save()
         if had_existing_password and notify:
             mails.send_mail(
                 to_addr=self.username,
@@ -679,7 +678,6 @@ class User(GuidStoredObject, AddonModelMixin):
                 user=self
             )
             remove_sessions_for_user(self)
-        return return_value
 
     def check_password(self, raw_password):
         """Return a boolean of whether ``raw_password`` was correct."""
