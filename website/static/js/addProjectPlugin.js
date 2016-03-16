@@ -87,15 +87,6 @@ var AddProject = {
         };
     },
     view : function (ctrl, options) {
-        var capitalizeCategories = function(category) {
-            if (category === 'methods and measures') {
-                return 'Methods and Measures';
-            }
-            else {
-                return category.charAt(0).toUpperCase() + category.slice(1);
-            }
-        };
-
         var templates = {
             form : m('.modal-content', [
                 m('.modal-header', [
@@ -145,7 +136,7 @@ var AddProject = {
                                             value: cat.value,
                                             checked: ctrl.newProjectCategory() === cat.value,
                                             onchange : m.withAttr('value', ctrl.newProjectCategory)
-                                        }), capitalizeCategories(cat.display_name) || m('i.text-muted', '(Empty category)') ]));
+                                        }), cat.display_name|| m('i.text-muted', '(Empty category)') ]));
 
                                     })
                                 ])
