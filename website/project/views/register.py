@@ -26,7 +26,6 @@ from website.identifiers.metadata import datacite_metadata_for_node
 from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
 from website.models import MetaSchema, NodeLog
-from website.files.models import FileNode
 from website import language
 from website.project import signals as project_signals
 from website.project.metadata.schemas import _id_to_name
@@ -301,18 +300,6 @@ def get_referent_by_identifier(category, value):
 @must_be_signed
 @must_be_registration
 def registration_callbacks(node, payload, *args, **kwargs):
-    if payload['destination'].get('children'):
-        for child in payload['destination']['children']:
-
-            child.update({ 'archived_from_guid': '27p45' }) # GET THE ACTUAL FILE GUID HERE, NOT HARDCODED
-
-            if child['kind'] == 'file':
-                provider = child['provider']
-                path = child['path']
-                file_node = FileNode.resolve_class(provider, FileNode.FILE).get_or_create(node, path)
-                file_node.archived_from_id = child['archived_from_guid']
-                file_node.save()
-
     errors = payload.get('errors')
     src_provider = payload['source']['provider']
     if errors:
