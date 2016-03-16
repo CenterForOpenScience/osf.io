@@ -1,4 +1,5 @@
 import httplib
+import urllib.request
 
 from flask import request
 
@@ -15,8 +16,8 @@ from website.project.decorators import must_not_be_registration
 def sharelatex_post_user_settings(auth, **kwargs):
     user_addon = auth.user.get_or_add_addon('sharelatex')
     try:
-        sharelatex_url = request.json['sharelatex_url']
-        auth_token = request.json['auth_token']
+        sharelatex_url = request.json['sharelatex_url'].strip('/')
+        auth_token = request.json['auth_token'].strip()
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
@@ -29,6 +30,14 @@ def sharelatex_post_user_settings(auth, **kwargs):
         return {
             'message': ('Unable to list projects.\n'
                 'Listing projects is required permission that can be changed via IAM')
+        }, httplib.BAD_REQUEST
+
+    try:
+        urllib.request.urlopen(sharelatex_url)
+    except ValueError:
+        return {
+            'message': ('Invalid URL.\n'
+                'Please inform a valid URL starting with http:// or https://')
         }, httplib.BAD_REQUEST
 
     user_addon.sharelatex_url = sharelatex_url
