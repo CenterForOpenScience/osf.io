@@ -16,7 +16,6 @@ from framework import sentry
 from framework.auth import cas
 from framework.auth import Auth
 from framework.auth import oauth_scopes
-from framework.guid.model import Guid
 from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
@@ -26,14 +25,13 @@ from framework.auth.decorators import must_be_logged_in, must_be_signed, collect
 from website import mails
 from website import settings
 from website.files.models import FileNode, TrashedFileNode, StoredFileNode
-from website.files.models import FileNode, TrashedFileNode
 from website.project import decorators
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
 from website.addons.base import StorageAddonBase
 from website.models import User, Node, NodeLog
 from website.project.model import DraftRegistration, MetaSchema
-from website.util import rubeus, web_url_for
+from website.util import rubeus
 from website.profile.utils import get_gravatar
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 from website.project.utils import serialize_node
@@ -551,6 +549,11 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if version is None:
         if file_node.get_guid():
             # If this file has been successfully view before but no longer exists
+
+            # Move file to trashed file node
+            if not TrashedFileNode.load(file_node._id):
+                file_node.delete()
+
             # Show a nice error message
             return addon_deleted_file(file_node=file_node, **kwargs)
 

@@ -60,6 +60,8 @@ class TrashedFileNode(StoredObject):
     deleted_on = fields.DateTimeField(auto_now_add=True)
     tags = fields.ForeignField('Tag', list=True)
 
+    archived_from_id = fields.StringField(default=None)
+
     @property
     def deep_url(self):
         """Allows deleted files to resolve to a view

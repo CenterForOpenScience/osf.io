@@ -19,7 +19,6 @@ from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions.model import Session
 from framework.mongo import set_up_storage
-from framework.guid.model import Guid
 from tests import factories
 
 from website import settings
