@@ -6,7 +6,14 @@ from tests.factories import NodeFactory, RegistrationFactory
 
 from website.project.model import Node
 
-from admin.metrics.utils import get_projects, get_osf_statistics
+from admin.metrics.utils import (
+    get_projects,
+    get_osf_statistics,
+    get_list_of_dates,
+    get_previous_midnight,
+    get_days_statistics,
+    DAY_LEEWAY
+)
 from admin.metrics.models import OSFStatistic
 
 
@@ -15,7 +22,7 @@ class TestMetricsGetProjects(AdminTestCase):
         super(TestMetricsGetProjects, self).setUp()
         Node.remove()
         self.node = NodeFactory(
-            category='project', is_public=True)  # makes 2 nodes bc category
+            category='project', is_public=True)  # makes 2 nodes bc of category
         self.reg = RegistrationFactory()  # makes 2 nodes
         self.node_2 = NodeFactory()
 
@@ -37,13 +44,109 @@ class TestMetricsGetProjects(AdminTestCase):
         nt.assert_equal(count, 0)
 
 
-class TestMetricsGetStatistics(AdminTestCase):
+class TestMetricsGetDaysStatistics(AdminTestCase):
     def setUp(self):
-        super(TestMetricsGetStatistics, self).setUp()
+        super(TestMetricsGetDaysStatistics, self).setUp()
         Node.remove()
-        self.node = NodeFactory()
-        self.reg = RegistrationFactory()
+        NodeFactory(category='project')  # makes 2 nodes
+        NodeFactory(category='data')  # probably makes 1 data 1 project?
+        print get_projects()
 
     def test_time_now(self):
-        get_osf_statistics(datetime.utcnow())
+        get_days_statistics(datetime.utcnow())
         nt.assert_equal(OSFStatistic.objects.count(), 1)
+        nt.assert_equal(OSFStatistic.objects.latest('date').projects, 3)
+
+    def test_delta(self):
+        get_days_statistics(datetime.utcnow())
+        NodeFactory(category='project')  # makes 2 nodes
+        NodeFactory(category='project')  # makes 2 more nodes
+        latest = OSFStatistic.objects.latest('date')
+        get_days_statistics(datetime.utcnow(), latest)
+        even_later = OSFStatistic.objects.latest('date')
+        nt.assert_equal(even_later.delta_projects, 4)
+
+
+class TestMetricsGetOSFStatistics(AdminTestCase):
+    def setUp(self):
+        super(TestMetricsGetOSFStatistics, self).setUp()
+        Node.remove()
+        time_now = get_previous_midnight()
+        NodeFactory(category='project', date_created=time_now)
+        NodeFactory(category='project',
+                    date_created=time_now - timedelta(days=1))
+        last_time = time_now - timedelta(days=2)
+        NodeFactory(category='project', date_created=last_time)
+        NodeFactory(category='project', date_created=last_time)
+        get_days_statistics(last_time + timedelta(seconds=1))
+        self.time = time_now + timedelta(seconds=1)
+
+    def test_get_two_more_days(self):
+        nt.assert_equal(OSFStatistic.objects.count(), 1)
+        get_osf_statistics()
+        nt.assert_equal(OSFStatistic.objects.count(), 3)
+
+    def test_dont_add_another(self):
+        nt.assert_equal(OSFStatistic.objects.count(), 1)
+        get_osf_statistics()
+        nt.assert_equal(OSFStatistic.objects.count(), 3)
+        get_osf_statistics()
+        nt.assert_equal(OSFStatistic.objects.count(), 3)
+
+
+class TestMetricListDays(AdminTestCase):
+    def test_five_days(self):
+        time_now = datetime.utcnow()
+        time_past = time_now - timedelta(days=5)
+        dates = get_list_of_dates(time_past, time_now)
+        nt.assert_equal(len(dates), 5)
+        nt.assert_in(time_now, dates)
+
+    def test_month_transition(self):
+        time_now = datetime.utcnow()
+        time_end = time_now - timedelta(
+            days=(time_now.day - 2)
+        )
+        time_start = time_end - timedelta(days=5)
+        dates = get_list_of_dates(time_start, time_end)
+        nt.assert_equal(len(dates), 5)
+
+    def test_off_by_seconds(self):
+        time_now = datetime.utcnow()
+        time_start = time_now - timedelta(
+            seconds=DAY_LEEWAY + 1
+        )
+        dates = get_list_of_dates(time_start, time_now)
+        nt.assert_equal(len(dates), 1)
+
+    def test_on_exact_time(self):
+        time_now = datetime.utcnow()
+        time_start = time_now - timedelta(
+            seconds=DAY_LEEWAY
+        )
+        dates = get_list_of_dates(time_start, time_now)
+        nt.assert_equal(len(dates), 0)
+
+    def test_just_missed_time(self):
+        time_now = datetime.utcnow()
+        time_start = time_now - timedelta(
+            seconds=DAY_LEEWAY - 1
+        )
+        dates = get_list_of_dates(time_start, time_now)
+        nt.assert_equal(len(dates), 0)
+
+
+class TestMetricPreviousMidnight(AdminTestCase):
+    def test_midnight(self):
+        time_now = datetime.utcnow()
+        midnight = get_previous_midnight(time_now)
+        nt.assert_equal(midnight.date(), time_now.date())
+        nt.assert_equal(midnight.hour, 0)
+        nt.assert_equal(midnight.minute, 0)
+        nt.assert_equal(midnight.second, 0)
+        nt.assert_equal(midnight.microsecond, 1)
+
+    def test_no_time_given(self):
+        time_now = datetime.utcnow()
+        midnight = get_previous_midnight()
+        nt.assert_equal(midnight.date(), time_now.date())

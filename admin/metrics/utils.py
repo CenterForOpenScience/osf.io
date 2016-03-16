@@ -7,20 +7,47 @@ from website.project.model import User, Node
 
 from .models import OSFStatistic
 
+DAY_LEEWAY = 86400 - 60  # How many seconds are counted as a full day for the
+# last day
+
+
+def get_list_of_dates(start, end):
+    delta = end - start
+    if delta.seconds > DAY_LEEWAY:
+        delta = delta + timedelta(hours=1)
+    return [start + (s * timedelta(days=1)) for s in xrange(1, delta.days + 1)]
+
+
+def get_previous_midnight(time=None):
+    if time is None:
+        time = datetime.utcnow()
+    return time - timedelta(  # As close to midnight utc as possible
+        hours=time.hour,
+        minutes=time.minute,
+        seconds=time.second,
+        microseconds=time.microsecond - 1
+    )
+
 
 def get_osf_statistics(time=None):
-    current_time = datetime.utcnow()
-    if time is None:
-        time = current_time - timedelta(
-            hours=current_time.hour,
-            minutes=current_time.minute
-        )
+    """ get all dates since the latest
+
+    :param time: immediately turns into the previous midnight
+    :return: nothing
+    """
+    time = get_previous_midnight(time)
     latest = None
     if OSFStatistic.objects.count() != 0:
         latest = OSFStatistic.objects.latest('date')
-        if latest.date.date() == current_time.date():
+        if latest.date.date() == time.date():
             return  # Don't add another
-    statistic = OSFStatistic(date=current_time)
+    for date in get_list_of_dates(latest.date, time):
+        get_days_statistics(date, latest)
+        latest = OSFStatistic.objects.latest('date')
+
+
+def get_days_statistics(time, latest=None):
+    statistic = OSFStatistic(date=time)
     query = Q('date_registered', 'lt', time)
     statistic.users = User.find(query).count()
     statistic.projects = get_projects(time=time)
@@ -46,5 +73,4 @@ def get_projects(time=None, public=False, registered=False):
         query = query & Q('is_public', 'eq', True)
     if registered:
         query = query & Q('is_registration', 'eq', True)
-    projects = Node.find(query)
-    return len(projects)
+    return Node.find(query).count()
