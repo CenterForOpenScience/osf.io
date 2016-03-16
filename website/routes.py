@@ -51,7 +51,7 @@ def get_globals():
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domain', 'eq', request.host)))._id
-            login_url = '{}institution/{}'.format(settings.DOMAIN, inst_id)
+            login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
         except NoResultsFound:
             login_url = request.url.replace(request.host_url, settings.DOMAIN)
     else:
@@ -737,7 +737,7 @@ def make_url_map(app):
     # Institution
 
     process_rules(app, [
-        Rule('/institution/<inst_id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
+        Rule('/institutions/<inst_id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
     ])
 
     # Project

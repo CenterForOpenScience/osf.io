@@ -26,8 +26,11 @@ var ViewModel = function() {
             }));
             var inst_redirect = decodeURIComponent(decodeURIComponent(window.contextVars.institution_redirect));
             if (inst_redirect){
-                var inst_id = inst_redirect.split('institution')[1].split('/')[1];
-                inst_id ? self.selectedInst(self.insts[inst_id]) : function(){};
+                var inst_id = inst_redirect.split('institutions')[1];
+                inst_id = inst_id ? inst_id.split('/')[1] : false;
+                if (inst_id){
+                    self.selectedInst(self.insts[inst_id]);
+                }
             }
         }).fail(function (xhr, status, error) {
             Raven.captureMessage('Unable to fetch institutions', {
