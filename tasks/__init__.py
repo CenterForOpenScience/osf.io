@@ -468,12 +468,8 @@ def test_admin():
     """Run the Admin test suite."""
     # test_module(module="admin_tests/")
     module = "admin_tests/"
-    verbosity = 0
     module_fmt = ' '.join(module) if isinstance(module, list) else module
-    args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
-    env = 'DJANGO_SETTINGS_MODULE="admin.base.settings" '
-    # Use pty so the process buffers "correctly"
-    run(env + bin_prefix(TEST_CMD) + args, pty=True)
+    admin_tasks.manage('test {}'.format(module_fmt))
 
 @task
 def test_varnish():
