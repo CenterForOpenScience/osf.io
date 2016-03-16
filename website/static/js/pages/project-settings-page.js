@@ -227,7 +227,13 @@ $(document).ready(function() {
       var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
 
       if(unchecked.length > 0 || checked.length > 0) {
-        return 'The changes on addon setting are not submitted!';
+          return 'The changes on addon setting are not submitted!';
+      }
+    /* Before closing the page, Check whether changes made to category, title or description are updated or not */
+      if (projectSettingsVM.title() !== projectSettingsVM.titlePlaceholder ||
+          projectSettingsVM.description() !== projectSettingsVM.descriptionPlaceholder ||
+          projectSettingsVM.selectedCategory() !== projectSettingsVM.categoryPlaceholder) {
+          return 'There are unsaved changes in your project settings.';
       }
     });
 
@@ -245,6 +251,8 @@ $(document).ready(function() {
                     callback: function(result) {
                         if (!result) {
                             $(that).attr('checked', false);
+                        } else {
+                            $('#selectAddonsForm').submit();
                         }
                     },
                     buttons:{
@@ -253,7 +261,11 @@ $(document).ready(function() {
                         }
                     }
                });
+            } else {
+                $('#selectAddonsForm').submit();
             }
+        } else {
+            $('#selectAddonsForm').submit();
         }
     });
 });

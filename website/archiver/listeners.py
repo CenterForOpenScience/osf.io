@@ -1,6 +1,6 @@
 import celery
 
-from framework.tasks import handlers
+from framework.celery_tasks import handlers
 
 from website.archiver import utils as archiver_utils
 from website.archiver import (
