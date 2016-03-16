@@ -1030,7 +1030,7 @@ var Collections = {
                         m('h3.modal-title', 'Delete collection "' + ctrl.collectionMenuObject().item.label + '"?')
                     ]),
                     body: m('.modal-body', [
-                        m('p', 'This will delete your collection but your projects will not be deleted.'),
+                        m('p', 'This will delete your collection, but your projects will not be deleted.'),
 
                     ]),
                     footer : m('.modal-footer', [
