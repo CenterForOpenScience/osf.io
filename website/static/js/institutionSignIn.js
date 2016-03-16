@@ -18,19 +18,18 @@ var ViewModel = function() {
                 isCors: true
             }
         ).done(function (response) {
+            var validInsts = response.data.filter(function(item){
+                return item.attributes.auth_url;
+            });
             self.instNames(
-                response.data.filter(function (item) {
-                    return item.attributes.auth_url;
-                }).map(function(item){
+                validInsts.map(function(item){
                     return item.attributes.name;
                 })
             );
-            response.data.forEach(function(item){
-                if (item.attributes.auth_url){
-                    var name = item.attributes.name;
-                    self.insts[name] = item.attributes.auth_url + '&target=' + encodeURIComponent(window.contextVars.institution_redirect);
-                    self.insts[item.id] = name;
-                }
+            validInsts.forEach(function(item){
+                var name = item.attributes.name;
+                self.insts[name] = item.attributes.auth_url + '&target=' + encodeURIComponent(window.contextVars.institution_redirect);
+                self.insts[item.id] = name;
             });
             var instRedirect = decodeURIComponent(decodeURIComponent(window.contextVars.institution_redirect));
             if (instRedirect){
