@@ -946,7 +946,7 @@ var Collections = {
                         m('h3.modal-title', 'Add new collection')
                     ]),
                     body : m('.modal-body', [
-                        m('p', 'Collections are groups of projects that help you organize your work. After you create your collection you can add projects by dragging and dropping projects to the collection. '),
+                        m('p', 'Collections are groups of projects that help you organize your work. After you create your collection, you can add projects by dragging and dropping them to the collection. '),
                         m('.form-inline', [
                             m('.form-group', [
                                 m('label[for="addCollInput]', 'Collection Name'),
