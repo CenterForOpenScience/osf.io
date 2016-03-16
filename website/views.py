@@ -24,6 +24,7 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.models import Guid
 from website.models import Node, Institution
+from website.institutions.views import view_institution
 from website.util import sanitize
 from website.project import model
 from website.util import permissions
@@ -79,15 +80,13 @@ def index():
     try:
         #TODO : make this way more robust
         inst = Institution.find_one(Q('domain', 'eq', request.host))
-        return {
-            'id': inst._id,
-            'name': inst.name,
-            'logo_path': inst.logo_path,
-            'description': inst.description or '',
+        inst_dict = view_institution(inst._id)
+        inst_dict.update({
             'home': False,
             'institution': True,
             'redirect_url': '/institutions/{}/'.format(inst._id)
-        }
+        })
+        return inst_dict
     except NoResultsFound:
         pass
     return {'home': True}

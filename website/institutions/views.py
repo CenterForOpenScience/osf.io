@@ -12,4 +12,5 @@ def view_institution(inst_id, **kwargs):
         'name': inst.name,
         'logo_path': inst.logo_path,
         'description': inst.description or '',
+        'banner_path': inst.banner_path
     }
