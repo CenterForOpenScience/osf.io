@@ -215,12 +215,6 @@ class TestFileRemoved(OsfTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionFactory(
-            _id=self.project._id + '_file_updated',
-            owner=self.project,
-            event_name='file_updated'
-        )
-        self.project_subscription.save()
         self.user2 = factories.UserFactory()
         self.event = event_registry['file_removed'](
             self.user2, self.project, 'file_removed', payload=file_deleted_payload
