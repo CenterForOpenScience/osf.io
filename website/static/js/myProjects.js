@@ -372,7 +372,6 @@ var MyProjects = {
                     }
                     if(showAddProject){
                         self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box.text-center', [
-                            'This project has no components.',
                             m.component(AddProject, {
                                 buttonTemplate : m('.btn.btn-link[data-toggle="modal"][data-target="#addSubcomponent"]', 'Add new component'),
                                 parentID : lastcrumb.data.id,
@@ -385,9 +384,6 @@ var MyProjects = {
                                 }
                             })
                         ]));
-                    } else {
-                        self.nonLoadTemplate(m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This project has no components.'));
                     }
                 }
                 self.selected([]); // Empty selected
