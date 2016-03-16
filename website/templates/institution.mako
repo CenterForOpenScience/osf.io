@@ -8,7 +8,7 @@
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
     <div id="inst">
-<div class="dashboard-header" style="background: white">
+<div class="dashboard-header dashboard-header-institution">
     <div class="row" style="text-align: center">
         <div class="col-sm-3"></div>
         % if banner_path:

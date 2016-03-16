@@ -19,23 +19,25 @@ var ViewModel = function() {
             }
         ).done(function (response) {
             self.instNames(
-                response.data.map(function(item){
+                response.data.filter(function (item) {
+                    return item.attributes.auth_url;
+                }).map(function(item){
+                    return item.attributes.name;
+                })
+            );
+            response.data.forEach(function(item){
+                if (item.attributes.auth_url){
                     var name = item.attributes.name;
                     self.insts[name] = item.attributes.auth_url + '&target=' + encodeURIComponent(window.contextVars.institution_redirect);
                     self.insts[item.id] = name;
-                    if (item.attributes.auth_url){
-                        return name;
-                    }
-                }).filter(function (item) {
-                   return typeof item !== 'undefined';
-                })
-            );
-            var inst_redirect = decodeURIComponent(decodeURIComponent(window.contextVars.institution_redirect));
-            if (inst_redirect){
-                var inst_id = inst_redirect.split('institutions')[1];
-                inst_id = inst_id ? inst_id.split('/')[1] : false;
-                if (inst_id){
-                    self.selectedInst(self.insts[inst_id]);
+                }
+            });
+            var instRedirect = decodeURIComponent(decodeURIComponent(window.contextVars.institution_redirect));
+            if (instRedirect){
+                var instId = instRedirect.split('institutions')[1];
+                instId = instId ? instId.split('/')[1] : false;
+                if (instId){
+                    self.selectedInst(self.insts[instId]);
                 }
             }
         }).fail(function (xhr, status, error) {
