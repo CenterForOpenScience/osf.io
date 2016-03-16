@@ -1282,7 +1282,7 @@ var Information = {
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
-                                m('span', item.attributes.description)
+                                m('span', {style: 'white-space:pre-wrap'}, item.attributes.description)
                             ]),
                             item.attributes.tags.length > 0 ?
                             m('p.m-t-md', [
