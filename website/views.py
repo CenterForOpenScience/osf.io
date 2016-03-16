@@ -79,7 +79,7 @@ def _render_nodes(nodes, auth=None, show_path=False):
 def index():
     try:
         #TODO : make this way more robust
-        inst = Institution.find_one(Q('domain', 'eq', request.host.lower()))
+        inst = Institution.find_one(Q('domains', 'eq', request.host.lower()))
         inst_dict = view_institution(inst._id)
         inst_dict.update({
             'home': False,

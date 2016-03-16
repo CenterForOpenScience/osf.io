@@ -50,7 +50,7 @@ def get_globals():
     user = _get_current_user()
     if request.host_url != settings.DOMAIN:
         try:
-            inst_id = (Institution.find_one(Q('domain', 'eq', request.host.lower())))._id
+            inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
             login_url = '{}institutions/{}'.format(settings.DOMAIN, inst_id)
         except NoResultsFound:
             login_url = request.url.replace(request.host_url, settings.DOMAIN)

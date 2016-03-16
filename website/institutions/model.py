@@ -63,7 +63,7 @@ class Institution(object):
     attribute_map = {
         '_id': 'institution_id',
         'auth_url': 'institution_auth_url',
-        'domain': 'institution_domain',
+        'domains': 'institution_domains',
         'name': 'title',
         'logo_name': 'institution_logo_name',
         'description': 'description',

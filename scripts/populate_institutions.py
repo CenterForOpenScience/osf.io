@@ -41,7 +41,7 @@ def main(env):
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://login.nd.edu/idp/shibboleth', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://login-test.cc.nd.edu/idp/shibboleth', safe='~()*!.\'')
             ),
-            'domain': [
+            'domains': [
                 'osf.nd.edu' if env == 'prod' else 'staging-osf-nd.cos.io',
             ],
             'description': 'University of Notre Dame',
@@ -52,7 +52,7 @@ def main(env):
             '_id': 'cos',
             'logo_name': 'cos.png',
             'auth_url': None,
-            'domain': [
+            'domains': [
                 'osf.cos.io' if env == 'prod' else 'staging-osf.cos.io',
             ],
             'description': 'Center for Open Science',
@@ -68,7 +68,7 @@ def main(env):
             'auth_url': SHIBBOLETH_SP.format(
                 urllib.quote('https://shibboleth.usc.edu/shibboleth-idp', safe='~()*!.\'') if env == 'prod' else urllib.quote('https://shibboleth-test.usc.edu/shibboleth-idp', safe='~()*!.\'')
             ),
-            'domain': [
+            'domains': [
                 'osf.nd.edu' if env == 'prod' else 'staging-osf-usc.cos.io',
             ],
             'description': 'University of Southern California',
