@@ -70,7 +70,6 @@
         currentUser: {
             ## TODO: Abstract me
             username: ${ user['username'] | sjson, n },
-            id: ${ user_id | sjson, n },
             urls: {
                 api: userApiUrl,
                 profile: ${user_url | sjson, n}
