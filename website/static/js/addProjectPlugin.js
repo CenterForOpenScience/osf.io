@@ -136,7 +136,7 @@ var AddProject = {
                                             value: cat.value,
                                             checked: ctrl.newProjectCategory() === cat.value,
                                             onchange : m.withAttr('value', ctrl.newProjectCategory)
-                                        }), cat.display_name || m('i.text-muted', '(Empty category)') ]));
+                                        }), cat.display_name|| m('i.text-muted', '(Empty category)') ]));
 
                                     })
                                 ])

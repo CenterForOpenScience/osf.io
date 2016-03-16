@@ -72,8 +72,8 @@ class NodeSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
 
-    category_choices = Node.CATEGORY_MAP.keys()
-    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
+    category_choices = Node.CATEGORY_MAP.items()
+    category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)

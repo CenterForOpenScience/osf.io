@@ -403,7 +403,7 @@ var QuickSearchProject = {
 
         function searchBar() {
             return m('div.m-v-sm.quick-search-input', [
-                m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search projects', onkeyup: function(search) {
+                m('input[type=search]', {'id': 'searchQuery', 'class': 'form-control', placeholder: 'Quick search your projects', onkeyup: function(search) {
                     ctrl.filter(search.target.value);
                     ctrl.quickSearch();
                 }})
@@ -439,7 +439,7 @@ var QuickSearchProject = {
                     m('.m-b-sm.text-center', [
                         searchBar()
                     ]),
-                    m('p.text-center', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'search'), ' the OSF' ]),
+                    m('p.text-center', [ 'Go to ', m('a', {href:'/myprojects/'}, 'My Projects'),  ' to organize your work or ', m('a', {href: '/search/'}, 'search'), ' all projects on the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
                             m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
