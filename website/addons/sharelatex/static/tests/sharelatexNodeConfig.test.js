@@ -481,44 +481,4 @@ describe('sharelatexNodeConfigViewModel', () => {
             });
         });
     });
-    describe('#createBucket', () => {
-        var name = faker.internet.password().toLowerCase();
-        var projects = [];
-        for (var i = 0; i < 10; i++){
-            projects.push(faker.internet.password());
-        }
-        projects.push(name);
-        var createEndpoint = {
-            method:  'POST',
-            url: URLS.create_project,
-            response: {
-                projects: projects
-            }
-        };
-        var endpoints = [
-            makeSettingsEndpoint(),
-            createEndpoint
-        ];
-
-        var server;
-        before(() => {
-            server = utils.createServer(sinon, endpoints);
-        });
-        after(() => {
-            server.restore();
-        });
-
-        it('sends a POST to create project and on success updates the project list', (done) => {
-            var vm = new sharelatexNodeConfigVM('', {url: '/api/v1/12345/sharelatex/settings/' });
-            vm.updateFromData()
-                .always(function() {
-                    vm.createBucket(name)
-                        .always(function() {
-                            assert.isFalse(vm.creating());
-                            assert.notEqual(vm.projectList().indexOf(name), -1);
-                            done();
-                        });
-                });
-        });
-    });
 });
