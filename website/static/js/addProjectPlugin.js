@@ -256,9 +256,9 @@ var Select2Template = {
                     var id = el.select2('val');
                     m.startComputation();
                     //Set the value to the selected option
-                    ctrl.data.map(function(d){
-                        if(d.id === id) {
-                            ctrl.value(d.id);
+                    ctrl.data.map(function(node){
+                        if(node.id === id) {
+                            ctrl.value(node.id);
                         }
                     });
                     m.endComputation();
