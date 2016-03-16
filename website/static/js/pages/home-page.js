@@ -53,12 +53,16 @@ $(document).ready(function(){
                         m('.row', [
                             m(columnSizeClass, m('.pull-right',
                                 m.component(AddProject, {
-                                    buttonTemplate : m('button.btn.btn-success.m-t-md[data-toggle="modal"][data-target="#addProjectFromHome"]', 'Create New Project'),
+                                    buttonTemplate : m('button.btn.btn-success.m-t-md[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
+                                        $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
+                                    }}, 'Create New Project'),
                                     modalID : 'addProjectFromHome',
                                     categoryList : ctrl.categoryList,
                                     stayCallback : function _stayCallback_inPanel() {
                                         document.location.reload(true);
-                                    }
+                                    },
+                                    trackingCategory: 'quickSearch',
+                                    trackingAction: 'add-project'
                                 })
                             ))
                         ]),
