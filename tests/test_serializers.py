@@ -8,7 +8,7 @@ from tests.factories import (
     RegistrationFactory,
     NodeFactory,
     NodeLogFactory,
-    FolderFactory,
+    CollectionFactory,
 )
 from tests.base import OsfTestCase
 
@@ -165,8 +165,8 @@ class TestViewProject(OsfTestCase):
         pointed_project = ProjectFactory(creator=user)  # project that other project points to
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
-        # Project is in a dashboard folder
-        folder = FolderFactory(creator=pointed_project.creator)
+        # Project is in a organizer collection
+        folder = CollectionFactory(creator=pointed_project.creator)
         folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
 
         result = _view_project(pointed_project, Auth(pointed_project.creator))

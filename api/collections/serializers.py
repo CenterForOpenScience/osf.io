@@ -2,6 +2,7 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 from modularodm.exceptions import ValidationValueError
 from framework.exceptions import PermissionsError
+from website.exceptions import NodeStateError
 
 from website.models import Node
 from api.base.serializers import LinksField, RelationshipField, DevOnly, JSONAPIRelationshipSerializer
@@ -24,6 +25,7 @@ class CollectionSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
+    bookmarks = ser.BooleanField(read_only=False, default=False, source='is_bookmark_collection')
 
     links = LinksField({})
 
@@ -53,12 +55,14 @@ class CollectionSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = Node(**validated_data)
-        node.is_folder = True
+        node.is_collection = True
         node.category = ''
         try:
             node.save()
         except ValidationValueError as e:
             raise InvalidModelValueError(detail=e.message)
+        except NodeStateError:
+            raise ser.ValidationError('Each user cannot have more than one Bookmark collection.')
         return node
 
     def update(self, node, validated_data):
@@ -139,7 +143,7 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
         return {'data': [
             pointer for pointer in
             obj.nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_folder
+            if not pointer.node.is_deleted and not pointer.node.is_collection
         ], 'self': obj}
 
     def update(self, instance, validated_data):
