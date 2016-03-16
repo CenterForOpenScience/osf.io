@@ -1249,11 +1249,12 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
+            var showRemoveFromCollection = filter.type === 'collection' && !filter.data.systemCollection && !item.relationships.parent;
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
             template = m('.p-sm', [
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', { onclick : args.removeProjectFromCollections }, 'Remove from collection')) : '',
+                showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', { onclick : args.removeProjectFromCollections }, 'Remove from collection')) : '',
                 m('h3', m('a', { href : item.links.html}, item.attributes.title)),
                 m('[role="tabpanel"]', [
                     m('ul.nav.nav-tabs.m-b-md[role="tablist"]', [
@@ -1287,7 +1288,7 @@ var Information = {
         }
         if (args.selected().length > 1) {
             template = m('.p-sm', [
-                filter.type === 'collection' && !filter.data.systemCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', { onclick : args.removeProjectFromCollections }, 'Remove selected from collection')) : '',
+                showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.p-xs.text-danger.pull-right', { onclick : args.removeProjectFromCollections }, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
                     return m('.db-info-multi', [
                         m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
